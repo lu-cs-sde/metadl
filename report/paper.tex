@@ -1,0 +1,93 @@
+\documentclass[sigplan,10pt]{acmart}
+
+% review option: For printing line numbers:
+%\documentclass[sigplan,10pt,review]{acmart} 
+
+\settopmatter{printfolios=true,printccs=false,printacmref=false}
+%printfolios=true, means print page numbers
+%printccs=false, means don't show CCS categories
+%printacmref=false, means don't show acm reference
+
+
+\acmConference[Course paper, EDAN70]{Project in computer science}{Lund University}{Sweden}
+\acmYear{\today}
+\acmISBN{} % \acmISBN{978-x-xxxx-xxxx-x/YY/MM}
+\acmDOI{} % \acmDOI{10.1145/nnnnnnn.nnnnnnn}
+\startPage{1}
+
+\setcopyright{none}
+
+%% Bibliography style
+\bibliographystyle{ACM-Reference-Format}
+
+\usepackage{lipsum}
+
+\begin{document}
+
+%% Title information
+\title[Short Title]{Datalog Implementation in JastAdd}         %% [Short Title] is optional;
+                                        %% when present, will be used in
+                                        %% header instead of Full Title.
+%\subtitle{Subtitle}                     %% \subtitle is optional
+
+
+%% Author information
+%% Each author should be introduced by \author, followed by
+%% \affiliation, and \email.
+
+\author{Hampus Balldin}
+\affiliation{
+  \institution{C13, Lund University, Sweden}            %% \institution is required
+}
+\email{dat12hba@student.lu.se}          %% \email is recommended
+
+
+\begin{abstract}
+Text of abstract \ldots.
+\end{abstract}
+
+
+\maketitle
+
+
+\section{Introduction}
+\subsection{DataLog}
+\subsection{JastAdd}
+
+Text of paper \ldots
+
+Here is a reference to a journal article by Knuth~\cite{Knuth68}. And here is a reference to a conference paper by Georges and others~\cite{GeorgesBE07}.
+
+\lipsum[1-3] %% Boilerplate text
+
+\section{Content}
+Replace the header of this section with something appropriate for your paper. Use around 1-4 sections for the content.
+
+\lipsum[4-10] %% Boilerplate text
+
+
+\section{Evaluation}
+
+\lipsum[11-13] %% Boilerplate text
+
+
+\section{Related work}
+
+\lipsum[14-15] %% Boilerplate text
+
+\section{Conclusion}
+
+\lipsum[16-17] %% Boilerplate text
+
+%% Acknowledgments
+\begin{acks}
+Text of acknowledgments \ldots.
+\end{acks}
+
+
+%% Bibliography
+\bibliography{bibl}
+
+
+
+\end{document}

@@ -1,0 +1,133 @@
+buildscript {
+    // This configuration is needed to find the JastAdd plugin.
+    repositories.mavenCentral()
+        dependencies {
+            classpath 'org.jastadd:jastaddgradle:1.10.6'
+        }
+}
+
+apply plugin: 'java'
+apply plugin: 'jastadd'
+apply plugin: 'idea'
+
+defaultTasks 'test'
+
+// Specify where to look for dependencies like Beaver, JFlex:
+repositories.mavenCentral()
+
+    // Dependency configurations (https://docs.gradle.org/current/userguide/dependency_management.html#sub:configurations):
+    configurations {
+        jflex
+        beaver
+    }
+
+// Dependencies are Jar files needed to compile and generate the compiler.
+dependencies {
+    compile 'net.sf.beaver:beaver-rt:0.9.11'
+
+    testCompile 'org.junit.jupiter:junit-jupiter-api:5.1.0'
+    testCompile 'org.junit.jupiter:junit-jupiter-engine:5.1.0'
+
+    jflex 'de.jflex:jflex:1.6.1'
+    beaver 'net.sf.beaver:beaver-cc:0.9.11'
+}
+
+
+// This specifies where the source code is located:
+sourceSets {
+    main.java.srcDirs = [ 'src/java', 'src/gen' ]
+    test.java.srcDirs = [ 'src/test' ]
+}
+
+// Configuration for the test running.
+test {
+    useJUnitPlatform {
+        excludeTags 'slow'
+        includeEngines 'junit-jupiter', 'junit-vintage'
+    }
+    // failFast = true
+    dependsOn 'cleanTest'  // This causes tests to always be re-run.
+
+    // Summary of tests
+    afterSuite { desc, result ->
+        if (!desc.parent) {
+            println "\nTest result: ${result.resultType}"
+            println "Test summary: ${result.testCount} tests, " +
+                    "${result.successfulTestCount} succeeded, " +
+                    "${result.failedTestCount} failed, " +
+                    "${result.skippedTestCount} skipped"
+        }
+    }
+    // Enable stdout
+    testLogging {
+        outputs.upToDateWhen {false}
+        showStandardStreams true
+        events "passed", "skipped", "failed"
+    }
+    // Log passed/failed tests in the console (see also build/reports/tests):
+    // testLogging.events = 'passed', 'failed'
+}
+
+jar {
+    // The Main-Class attribute specifies which class should be run when by java -jar compiler.jar.
+    manifest.attributes 'Main-Class': 'lang.Compiler'
+        destinationDir = projectDir  // Gradle by default puts the Jar in build/libs/.
+        archiveName = 'compiler.jar'
+
+        // The following from-specification includes all dependencies in compiler.jar
+        // so that it can be run as a separate program easily.
+        // This is needed because the Beaver runtime classes are otherwise not included.
+        // Source: https://www.mkyong.com/gradle/gradle-create-a-jar-file-with-dependencies/
+        from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+}
+
+// Before compiling, we should generate some Java code:
+compileJava.dependsOn 'generateJava', 'generateScanner', 'generateParser'
+
+task generateJava(type: org.jastadd.JastAddTask) {
+    description 'Generates the compiler AST classes from JastAdd specifications.'
+    outputDir = file('src/gen')
+    sources = fileTree(dir: 'src/jastadd', includes: [ '**/*.jrag', '**/*.jadd', '**/*.ast' ])
+    options = [ '--package=lang.ast', '--beaver' ]
+}
+
+task generateScanner(type: JavaExec) {
+    description 'Generates the scanner with JFlex.'
+    classpath = configurations.jflex
+    main = 'jflex.Main'
+
+    // Options to JFlex (http://jflex.de/manual.html#running-jflex):
+    args '-d', file('src/gen/lang/ast').path, file('src/scanner/scanner.flex').path
+
+    doFirst {
+        // Ensure src/gen exists before running JFlex:
+        file('src/gen').mkdirs()
+    }
+}
+
+task generateParser(type: JavaExec) {
+    description 'Generates the parser with Beaver.'
+    classpath = configurations.beaver
+    main = 'beaver.comp.run.Make'
+
+    // Options to Beaver (http://beaver.sourceforge.net/):
+    args '-d', file('src/gen').path,
+    '-t', '-c', '-w',
+    file('src/parser/parser.beaver').path
+
+    doFirst {
+        // Ensure src/gen exists before running Beaver:
+        file('src/gen').mkdirs()
+    }
+}
+
+// The following makes the clean task also remove generated code:
+clean.dependsOn 'cleanGeneratedJava'
+
+task cleanGeneratedJava(type: Delete) {
+    description 'Remove generated Java code.'
+    delete file('src/gen')
+    delete file('interpreter.jar')
+    delete file('compiler.jar')
+}
+

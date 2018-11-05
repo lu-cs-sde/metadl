@@ -1,0 +1,183 @@
+%class "LangParser";
+%package "lang.ast";
+
+%embed {:
+	static public class SyntaxError extends RuntimeException { public SyntaxError(String msg) {super(msg);}}
+	// Disable syntax error recovery
+	protected void recoverFromError(Symbol token, TokenStream in) {
+		throw new SyntaxError("Cannot recover from the syntax error");
+	}
+:};
+
+%terminals ID, LPARA, RPARA, LBRACE, RBRACE, EQ, SEMICOLON, NUMERAL, PLUS, SUB, MUL, DIV, MOD, LT,
+           LTEQ, GT, GTEQ, LOEQ, LONOTEQ, COMMA, WHILE, RETURN, IF, ELSE, TRUE, FALSE;
+
+%typeof  program                      =  "Program";
+%typeof  function                     =  "Function";
+%typeof  function_list                =  "List";
+%typeof  funcarg_list                 =  "List";
+%typeof  funcarg                      =  "FuncArg";
+%typeof  type_id                      =  "TypeId";
+%typeof  stmnt_list                   =  "List";
+%typeof  stmnt                        =  "Stmnt";
+%typeof  decl_stmnt                   =  "DeclStmnt";
+%typeof  decl_stmnt_list              =  "List";
+%typeof  assign_stmnt                 =  "AssignStmnt";
+%typeof  expr                         =  "Expr";
+%typeof  add_expr                     =  "AddExpr";
+%typeof  sub_expr                     =  "SubExpr";
+%typeof  mul_expr                     =  "MulExpr";
+%typeof  div_expr                     =  "DivExpr";
+%typeof  mod_expr                     =  "ModExpr";
+%typeof  lt_expr                      =  "LTExpr";
+%typeof  lteq_expr                    =  "LTEqExpr";
+%typeof  gt_expr                      =  "GTExpr";
+%typeof  gteq_expr                    =  "GTEqExpr";
+%typeof  loeq_expr                    =  "LogEqExpr";
+%typeof  lonoteq_expr                 =  "LogNotEqExpr";
+%typeof  expr_prio1                   =  "Expr";
+%typeof  expr_prio2                   =  "Expr";
+%typeof  expr_prio3                   =  "Expr";
+%typeof  expr_prio4                   =  "Expr";
+%typeof  numeral                      =  "Numeral";
+%typeof  opt_expr                     =  "Opt";
+%typeof  while_stmnt                  =  "WhileStmnt";
+%typeof  return_stmnt                 =  "ReturnStmnt";
+%typeof  if_stmnt                     =  "IfStmnt";
+%typeof  func_call_arg_list           =  "List";
+%typeof  func_call_arg_list_no_empty  =  "List";
+%typeof  funcarg_list_no_empty        =  "List";
+%typeof  func_call_expr               =  "FunctionCall";
+%typeof  func_call_stmnt              =  "FunctionCallStmnt";
+%typeof  var_id_decl                  =  "VarIdDecl";
+%typeof  var_id_use                   =  "VarIdUse";
+%typeof  func_id_decl                 =  "FuncIdDecl";
+%typeof  func_id_use                  =  "FuncIdUse";
+%typeof  block                        =  "Block";
+%typeof  boolean                      =  "Boolean";
+%typeof  true                         =  "True";
+%typeof  false                        =  "False";
+
+%goal program;
+
+program = decl_stmnt_list.glob_vars function_list.list {: return new Program(glob_vars, list); :} ;
+
+function_list = 
+              function.f {: return new List().add(f); :}
+              | function_list.list function.f {: return list.add(f); :}
+              ;
+
+decl_stmnt_list = 
+           decl_stmnt_list.list decl_stmnt.d {: return list.add(d); :}
+           | /* epsilon */ {: return new List(); :}
+           ;
+
+function = type_id.rt func_id_decl.fn LPARA funcarg_list.args RPARA LBRACE
+           block.body RBRACE {: return new Function(rt, fn, args, body); :} ;
+
+type_id = ID.id {: return new TypeId(id); :};
+
+stmnt_list = 
+           stmnt_list.list stmnt.s {: return list.add(s); :}
+           | /* epsilon */ {: return new List(); :}
+           ;
+
+funcarg_list = 
+	      funcarg_list_no_empty
+	      | /* epsilon */ {: return new List(); :}
+	      ;
+
+funcarg_list_no_empty = 
+		       funcarg.fa {: return new List().add(fa); :}
+                       | funcarg_list_no_empty.list COMMA funcarg.fa {: return list.add(fa); :}
+		       ;
+
+funcarg = type_id.t var_id_decl.id {: return new FuncArg(t, id); :};
+
+/**
+--------------------------------------------------------------------------------
+                             STATEMENTS
+--------------------------------------------------------------------------------
+**/
+stmnt = decl_stmnt | assign_stmnt | while_stmnt | return_stmnt | if_stmnt | func_call_stmnt;
+
+block = stmnt_list.list {: return new Block(list); :};
+
+decl_stmnt     = type_id.t var_id_decl.id opt_expr.oe SEMICOLON                  {: return new DeclStmnt(t,id,oe); :};
+assign_stmnt   = var_id_use.id EQ expr.e SEMICOLON                           {: return new AssignStmnt(id,e); :};
+while_stmnt    = WHILE LPARA expr.e RPARA LBRACE block.blck RBRACE   {: return new WhileStmnt(e,blck); :};
+return_stmnt   = RETURN expr.e SEMICOLON                                  {: return new ReturnStmnt(e); :};
+
+if_stmnt           = if_else_stmnt | if_no_else_stmnt;
+
+if_else_stmnt      = IF LPARA expr.e RPARA LBRACE block.blck_if RBRACE ELSE LBRACE block.blck_else RBRACE
+		     {: return new IfStmnt(e,blck_if,blck_else); :};
+
+if_no_else_stmnt   = IF LPARA expr.e RPARA LBRACE block.blck_if RBRACE
+                     {: return new IfStmnt(e,blck_if, new Block(new List())); :};
+
+func_call_stmnt    = func_call_expr.fne SEMICOLON {: return new FunctionCallStmnt(fne); :};
+
+/**
+--------------------------------------------------------------------------------
+                             EXPRESSIONS
+--------------------------------------------------------------------------------
+**/
+expr = expr_prio1;
+
+expr_prio1  =  lt_expr   |  lteq_expr  |  gt_expr      |  gteq_expr    |  loeq_expr  |  lonoteq_expr  |  expr_prio2;
+expr_prio2  =  add_expr  |  sub_expr   |  expr_prio3;
+expr_prio3  =  mul_expr  |  div_expr   |  mod_expr     |  expr_prio4;
+expr_prio4 = 
+           var_id_use 
+           | numeral 
+           | boolean
+           | func_call_expr
+           | LPARA expr.e RPARA {: return e; :} 
+           ;
+
+lt_expr       =  expr_prio2.l  LT       expr_prio2.r  {:  return  new  LTExpr(l,r);        :};
+lteq_expr     =  expr_prio2.l  LTEQ     expr_prio2.r  {:  return  new  LTEqExpr(l,r);      :};
+gt_expr       =  expr_prio2.l  GT       expr_prio2.r  {:  return  new  GTExpr(l,r);        :};
+gteq_expr     =  expr_prio2.l  GTEQ     expr_prio2.r  {:  return  new  GTEqExpr(l,r);      :};
+loeq_expr     =  expr_prio2.l  LOEQ     expr_prio2.r  {:  return  new  LogEqExpr(l,r);     :};
+lonoteq_expr  =  expr_prio2.l  LONOTEQ  expr_prio2.r  {:  return  new  LogNotEqExpr(l,r);  :};
+
+sub_expr  =  expr_prio2.l  SUB   expr_prio3.r  {:  return  new  SubExpr(l,r);  :};
+add_expr  =  expr_prio2.l  PLUS  expr_prio3.r  {:  return  new  AddExpr(l,r);  :};
+mul_expr  =  expr_prio3.l  MUL   expr_prio4.r  {:  return  new  MulExpr(l,r);  :};
+div_expr  =  expr_prio3.l  DIV   expr_prio4.r  {:  return  new  DivExpr(l,r);  :};
+mod_expr  =  expr_prio3.l  MOD   expr_prio4.r  {:  return  new  ModExpr(l,r);  :};
+
+opt_expr = 
+         EQ expr.e {: return new Opt(e); :}
+         | /* epsilon */ {: return new Opt(); :}
+         ;
+
+func_call_expr = func_id_use.fn LPARA func_call_arg_list.args RPARA {: return new FunctionCall(fn, args); :};
+
+func_call_arg_list = 
+		   func_call_arg_list_no_empty
+		   | /* epsilon */ {: return new List(); :}
+	           ;
+
+func_call_arg_list_no_empty = 
+			    expr.e {: return new List().add(e); :}
+                            | func_call_arg_list_no_empty.list COMMA expr.e {: return list.add(e); :}
+			    ;
+
+var_id_use = ID.id {: return new VarIdUse(id); :};
+numeral = NUMERAL.no {: return new Numeral(no); :};
+
+boolean  =  true   |   false;
+true     =  TRUE   {:  return  new  True();   :};
+false    =  FALSE  {:  return  new  False();  :};
+
+/**
+--------------------------------------------------------------------------------
+                             MISC
+--------------------------------------------------------------------------------
+**/
+var_id_decl   =  ID.id  {:  return  new  VarIdDecl(id);   :};
+func_id_decl  =  ID.id  {:  return  new  FuncIdDecl(id);  :};
+func_id_use   =  ID.id  {:  return  new  FuncIdUse(id);   :};

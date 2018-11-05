@@ -24,3 +24,7 @@ For an introduction to Datalog see e.g. [Slides EDA045F](http://fileadmin.cs.lth
 
 ## Project Report
 Included in report/ folder as a .tex-file.
+
+
+## License
+This repository is covered by the license BSD 2-clause, see file LICENSE.md.

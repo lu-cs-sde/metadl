@@ -1,81 +1,15 @@
 /**
-       ENTRYPOINT
+        ENTRYPOINT
 **/
-Program  ::=  DeclStmnt * Function  *;
-
-/*
-    Represents a Statement (e.g. assign, while, ...)
-*/
-abstract Stmnt;
-
-/*
-    Represents an Expression (e.g. a + b, a != c, 10 * 3, ...)
-*/
-abstract Expr;
-
-/*
-        IDENTIFIER
-*/
-VarIdDecl   ::=  <ID>;
-FuncIdDecl  ::=  <ID>;
-FuncIdUse   ::=  <ID>;
-TypeId      ::=  <ID>;
+Program  ::=  Clause *; 
 
 /**
-        NTA
+        A Horn Clause Consists of a Head:Literal, and a Body (Literal*).
 **/
-UnknownVarDecl:VarIdDecl;
-UnknownFuncDecl:FuncIdDecl;
-UnknownFunc:Function;
+Clause ::= heads:Literal* body:Literal*;
+Literal ::= predicate:PredicateSymbol terms:Term*;
+PredicateSymbol ::= <ID>;
 
-
-//      TYPES
-abstract Type ::= <ID>;
-IntType:Type;
-BoolType:Type;
-VoidType:Type;
-UnknownType:Type;
-UndefinedType:Type;
-
-
-/*
-        FUNCTION
-*/
-Function  ::=  ReturnType:TypeId  FunctionName:FuncIdDecl  Argument:FuncArg*  Body:Block;
-FuncArg   ::=  TypeId             VarIdDecl;
-
-/*
-        STATEMENT
-*/
-Block:Stmnt              ::=  Stmnt*;
-DeclStmnt:Stmnt          ::=  TypeId            VarIdDecl    [Expr];
-AssignStmnt:Stmnt        ::=  VarIdUse       Expr;
-WhileStmnt:Stmnt         ::=  Condition:Expr  Body:Block;
-ReturnStmnt:Stmnt        ::=  Expr;
-IfStmnt:Stmnt            ::=  Condition:Expr  Body:Block   Else:Block;
-FunctionCallStmnt:Stmnt  ::=  FunctionCall;
-
-/*
-        EXPRESSION
-*/
-BinExpr:Expr ::= Left:Expr  Right:Expr;
-
-LTExpr:BinExpr;
-LTEqExpr:BinExpr;
-GTExpr:BinExpr;
-GTEqExpr:BinExpr;
-LogEqExpr:BinExpr;
-LogNotEqExpr:BinExpr;
-
-AddExpr:BinExpr;
-SubExpr:BinExpr;
-MulExpr:BinExpr;
-DivExpr:BinExpr;
-ModExpr:BinExpr;
-
-VarIdUse:Expr      ::=  <ID>;
-Numeral:Expr       ::=  <NUMERAL>;
-abstract Boolean:Expr;
-True:Boolean;
-False:Boolean;
-FunctionCall:Expr  ::=  FunctionName:FuncIdUse  Argument:Expr*;
+abstract Term;
+Variable:Term ::= <ID>;
+Constant:Term ::= <NUMERAL>;

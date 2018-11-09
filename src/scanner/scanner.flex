@@ -28,8 +28,8 @@ import lang.ast.LangParser.SyntaxError;
 
 // macros
 WhiteSpace = [ ] | \t | \f | \n | \r | \/\/[^\n<<EOF>>]*
-ID = [a-zA-Z][a-zA-Z0-9]*
-Numeral = [0-9]+ ("." [0-9]+)?
+ID = [a-zA-Z0-9\?_]+
+Numeral = [0-9]+
 
 %%
 
@@ -39,30 +39,11 @@ Numeral = [0-9]+ ("." [0-9]+)?
 // token definitions
 "("        {  return  sym(Terminals.LPARA);      }
 ")"        {  return  sym(Terminals.RPARA);      }
-"{"        {  return  sym(Terminals.LBRACE);     }
-"}"        {  return  sym(Terminals.RBRACE);     }
-"="        {  return  sym(Terminals.EQ);         }
-"+"        {  return  sym(Terminals.PLUS);       }
-"-"        {  return  sym(Terminals.SUB);        }
-"*"        {  return  sym(Terminals.MUL);        }
-"/"        {  return  sym(Terminals.DIV);        }
-"%"        {  return  sym(Terminals.MOD);        }
-"<"        {  return  sym(Terminals.LT);         }
-"<="       {  return  sym(Terminals.LTEQ);       }
-">"        {  return  sym(Terminals.GT);         }
-">="       {  return  sym(Terminals.GTEQ);       }
-"=="       {  return  sym(Terminals.LOEQ);       }
-"!="       {  return  sym(Terminals.LONOTEQ);    }
-";"        {  return  sym(Terminals.SEMICOLON);  }
+":-"       {  return  sym(Terminals.IMPLIED_BY); }
+"."        {  return  sym(Terminals.DOT);        }
 ","        {  return  sym(Terminals.COMMA);      }
-"true"     {  return  sym(Terminals.TRUE);       }
-"false"    {  return  sym(Terminals.FALSE);      }
-"while"    {  return  sym(Terminals.WHILE);      }
-"return"   {  return  sym(Terminals.RETURN);     }
-"if"       {  return  sym(Terminals.IF);         }
-"else"     {  return  sym(Terminals.ELSE);       }
-{ID}       {  return  sym(Terminals.ID);         }
 {Numeral}  {  return  sym(Terminals.NUMERAL);    }
+{ID}       {  return  sym(Terminals.ID);         }
 <<EOF>>    {  return  sym(Terminals.EOF);        }
 
 /* error fallback */

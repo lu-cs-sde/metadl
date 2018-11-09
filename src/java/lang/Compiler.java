@@ -1,14 +1,15 @@
 package lang;
 
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.FileNotFoundException;
 
 import beaver.Parser.Exception;
-
-import lang.ast.Program;
+import beaver.Scanner;
+import beaver.Symbol;
 import lang.ast.LangParser;
 import lang.ast.LangScanner;
+import lang.ast.Program;
 /* import lang.ast.ErrorMessage; */
 
 /**
@@ -35,6 +36,8 @@ public class Compiler {
 			LangParser parser = new LangParser();
 			Program program = (Program) parser.parse(scanner);
             DrAST_root_node = program; //Enable debugging with DrAST
+            
+            
 			// System.out.println(program.dumpTree());
 
             /* for(ErrorMessage m : program.errors()) */

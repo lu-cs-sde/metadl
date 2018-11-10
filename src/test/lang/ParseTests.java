@@ -25,6 +25,9 @@ public class ParseTests {
         ,"parseTest_8.in"
         ,"parseTest_9.in"
         ,"parseTest_10.in"
+        ,"parseTest_11.in"
+        ,"parseTest_12.in"
+        ,"parseTest_13.in"
     };
     private static final String[] INVALID_TESTS = {
          "parseTest_1.in"
@@ -41,6 +44,7 @@ public class ParseTests {
         ,"parseTest_12.in"
         ,"parseTest_13.in"
         ,"parseTest_14.in"
+        ,"parseTest_15.in"
     };
     
     private void doTest_Valid(String testName) {

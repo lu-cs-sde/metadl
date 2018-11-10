@@ -1,0 +1,8 @@
+EDB(A, "A.in")
+A("H", "B") :- H("B").
+
+EDB(A, "A.in")
+A("H", "B") :- H("B").
+
+EDB(A, "A.in")
+A("H", "B") :- H("B").

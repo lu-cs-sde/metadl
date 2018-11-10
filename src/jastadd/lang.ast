@@ -1,15 +1,24 @@
 /**
         ENTRYPOINT
 **/
-Program  ::=  Clause *; 
+Program  ::= Stmt*; 
+
+abstract Stmt;
 
 /**
         A Horn Clause Consists of a Head:Literal, and a Body (Literal*).
 **/
-Clause ::= heads:Literal* body:Literal*;
+Clause:Stmt ::= heads:Literal* body:Literal*;
+
+ExtensionalDB:Stmt ::= predRef:PredicateSymbol <STRING>;
+
 Literal ::= predicate:PredicateSymbol terms:Term*;
 PredicateSymbol ::= <ID>;
 
 abstract Term;
 Variable:Term ::= <ID>;
-Constant:Term ::= <NUMERAL>;
+
+abstract Constant:Term;
+
+StringConstant:Term ::= <STRING>;
+IntConstant:Term ::= <NUMERAL>;

@@ -9,30 +9,40 @@
 	}
 :};
 
-%terminals ID, LPARA, RPARA, NUMERAL, DOT, COMMA, IMPLIED_BY;
+%terminals ID, LPARA, RPARA, NUMERAL, STRING, DOT, COMMA, IMPLIED_BY, EDB;
 
 %typeof  program             =  "Program";
 %typeof  clause              =  "Clause";
-%typeof  clause_list         =  "List";
 %typeof  literal             =  "Literal";
 %typeof  predicate_sym       =  "PredicateSymbol";
 %typeof  variable            =  "Variable";
 %typeof  constant            =  "Constant";
+%typeof  int_constant        =  "IntConstant";
+%typeof  string_constant     =  "StringConstant";
 %typeof  term                =  "Term";
 %typeof  term_list           =  "List";
 %typeof  term_list_no_empty  =  "List";
 %typeof  lit_list            =  "List";
+%typeof  extensional_db      =  "ExtensionalDB";
+%typeof  stmt      =  "Stmt";
+%typeof  stmt_list =  "List";
 
 %goal program;
 
-program =  clause_list.list {: return new Program(list); :};
-clause_list = clause.c {: return new List().add(c); :}
-            | clause_list.list clause.c {: return list.add(c); :}
+program =  stmt_list.list {: return new Program(list); :};
+stmt_list = stmt.s {: return new List().add(s); :}
+            | stmt_list.list stmt.s {: return list.add(s); :}
             ;
+
+stmt = clause
+     | extensional_db
+     ;
 
 clause = lit_list.heads IMPLIED_BY lit_list.body DOT {: return new Clause(heads, body); :}
        | lit_list.heads DOT {: return new Clause(heads, new List()); :}
        ;
+
+extensional_db = EDB LPARA predicate_sym.pred COMMA STRING.fn RPARA {: return new ExtensionalDB(pred, fn); :};
 
 literal = predicate_sym.pred LPARA term_list.terms RPARA {: return new Literal(pred, terms); :};
 
@@ -51,7 +61,13 @@ term_list_no_empty = term.t {: return new List().add(t); :}
                    ;
 
 term = variable 
-     | constant;
+     | constant
+     ;
 
 variable = ID.id {: return new Variable(id); :};
-constant = NUMERAL.num {: return new Constant(num); :};
+constant = int_constant
+         | string_constant
+         ;
+
+int_constant = NUMERAL.num {: return new IntConstant(num); :};
+string_constant = STRING.str {: return new StringConstant(str); :};

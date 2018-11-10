@@ -30,6 +30,7 @@ import lang.ast.LangParser.SyntaxError;
 WhiteSpace = [ ] | \t | \f | \n | \r | \/\/[^\n<<EOF>>]*
 ID = [a-zA-Z0-9\?_]+
 Numeral = [0-9]+
+String  = \"[^\"]*\"
 
 %%
 
@@ -42,8 +43,10 @@ Numeral = [0-9]+
 ":-"       {  return  sym(Terminals.IMPLIED_BY); }
 "."        {  return  sym(Terminals.DOT);        }
 ","        {  return  sym(Terminals.COMMA);      }
+"EDB"      {  return  sym(Terminals.EDB);        }
 {Numeral}  {  return  sym(Terminals.NUMERAL);    }
 {ID}       {  return  sym(Terminals.ID);         }
+{String}   {  return  sym(Terminals.STRING);     }
 <<EOF>>    {  return  sym(Terminals.EOF);        }
 
 /* error fallback */

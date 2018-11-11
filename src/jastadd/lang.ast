@@ -15,7 +15,8 @@ Rule:Clause ::= Heads:RealLiteral* Body:RealLiteral*;
 Fact:Clause ::= Heads:RealLiteral*;
 
 // <STRING> refers to FileName
-ExtensionalDB:Stmt ::= Target:EDBLiteral <STRING>;
+ExtensionalDB:Stmt ::= Target:EDBLiteral FileLocation;
+FileLocation ::= <STRING>;
 
 // Indirection: Make EDBPredicate a Literal for symmetry
 abstract Literal;
@@ -33,6 +34,4 @@ StringConstant:Constant ::= <STRING>;
 IntConstant:Constant ::= <NUMERAL>;
 
 SelectedPredicateSymbol:PredicateSymbol;
-
-
 SuperPredicate ::= <STRING>;

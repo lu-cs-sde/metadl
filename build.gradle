@@ -25,6 +25,7 @@ repositories.mavenCentral()
 // Dependencies are Jar files needed to compile and generate the compiler.
 dependencies {
     compile 'net.sf.beaver:beaver-rt:0.9.11'
+    compile 'com.opencsv:opencsv:4.3.2'
 
     testCompile('org.junit.jupiter:junit-jupiter-api:5.3.1')
     testRuntime('org.junit.jupiter:junit-jupiter-engine:5.3.1')

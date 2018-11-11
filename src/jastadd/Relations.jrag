@@ -3,10 +3,14 @@ import java.util.HashMap;
 import java.util.TreeSet;
 import java.util.Comparator;
 import lang.relation.Relation;
+import lang.relation.PseudoTuple;
 
-aspect Relation {
+aspect ModelObjectsAndPredicates {
     syn Constant Variable.Instantiation() = null;
 
+	/**
+	 * Collect All Objects available in the File.
+	 */ 
     coll HashSet<Constant> Program.modelObjects() [new HashSet<Constant>()] with add;
     Constant contributes this
         when true
@@ -18,6 +22,9 @@ aspect Relation {
         return uniqueFileObjects;
     }
 
+	/**
+	 * Collect Predicates
+	 */ 
     coll HashSet<PredicateSymbol> Program.predicateSymbols() [new HashSet<PredicateSymbol>()] with add;
     PredicateSymbol contributes this
         when true
@@ -28,6 +35,9 @@ aspect Relation {
         return uniquePredicateSymbols;
     }
 
+	/**
+	 * Construct Map from a Predicate Name to all Occurrences of the Predicate
+	 */ 
     syn HashMap<String, HashSet<PredicateSymbol>> Program.predicateMap() {
         HashMap<String, HashSet<PredicateSymbol>> predicateMap = new HashMap<String, HashSet<PredicateSymbol>>();
         for(PredicateSymbol pred : uniquePredicateSymbols()) {
@@ -39,50 +49,6 @@ aspect Relation {
         }
         return predicateMap;
     }
-
-    syn HashMap<String, Relation> Program.relations() {
-        HashMap<String, Relation> relations = new HashMap<>();
-        for(PredicateSymbol p : uniquePredicateSymbols()) {
-            relations.put(p.getID(), new Relation(p.realArity()));
-        }
-        return relations;
-    }
-    
-    syn List Program.getSuperPredicateList() {
-    	List list = new List();
-    	HashMap<String, HashSet<PredicateSymbol>> predMap = predicateMap();
-    	for(PredicateSymbol k : uniquePredicateSymbols())
-    		list.add(new SuperPredicate(k.getID()));
-    	return list;
-    }
-    
-    inh HashSet<PredicateSymbol> SuperPredicate.predicates();
-    eq Program.getSuperPredicate(int index).predicates() = predicateMap().get(getSuperPredicate(index).getSTRING());
-    
-    
-    syn boolean SuperPredicate.mayHaveFacts() {
-    	for(PredicateSymbol pred : predicates()) {
-    		if(pred.isFact() || pred.isDef() || pred.isEDBFact()) return true;
-    	}
-    	return false;
-    }
-    
-    syn String SuperPredicate.predicateName() {
-    	if(predicates().size() == 0) return "NO_NAME";
-    	return predicates().iterator().next().getID();
-    }
-    
-    syn boolean SuperPredicate.hasRuleUse() {
-        for(PredicateSymbol pred : predicates()) {
-    		if(pred.isUse()) return true;
-    	}
-    	return false;
-    }
-    
-    Program contributes nta getSuperPredicateList() to Program.semanticErrors();
-    SuperPredicate contributes ("The use of " + predicateName() + " can give no facts")
-    	when !mayHaveFacts() && hasRuleUse()
-    	to Program.semanticErrors();
 }
 
 aspect Arity {
@@ -90,39 +56,46 @@ aspect Arity {
     eq EDBLiteral.arity() = -1;
     eq RealLiteral.arity() = getNumTerms();
     syn int PredicateSymbol.arity() = literal().arity();
-
-    syn HashSet<Integer> PredicateSymbol.arities() {
-        Program p = literal().stmt().program();
-        HashSet<PredicateSymbol> preds = p.predicateMap().get(getID());
-        HashSet<Integer> arities = new HashSet<Integer>();
-        for(PredicateSymbol pred : preds) {
-            int arity = pred.arity();
-            arities.add(arity);
-        }
+    
+    syn HashSet<Integer> SuperPredicate.arities() {
+    	HashSet<Integer> arities = new HashSet<Integer>();
+    	for(PredicateSymbol pred : predicates())
+            arities.add(pred.arity());
         return arities;
     }
-
-    syn HashSet<Integer> PredicateSymbol.realArities() {
+    
+    syn HashSet<Integer> SuperPredicate.realArities() {
         HashSet<Integer> realArities = new HashSet<Integer>(arities());
         realArities.remove(-1);
         return realArities;
     }
-
-    syn boolean PredicateSymbol.uniqueArity() {
+    
+    syn boolean SuperPredicate.uniqueArity() {
         return realArities().size() == 1;
     }
 
-    /**
-        EDB Arity not known until use / def in a stmt.
-    **/
-    syn int PredicateSymbol.realArity() {
+    syn int SuperPredicate.realArity() {
         if(!uniqueArity()) return 0;
         return realArities().iterator().next();
     }
-
-    PredicateSymbol contributes ("Different Arities for predicate symbol: " + getID())
+    
+    SuperPredicate contributes ("Different Arities for predicate symbol: " + predicateName())
         when !uniqueArity() && arities().size() != 1
         to Program.semanticErrors();
+}
+
+aspect Relation {
+	public Relation SuperPredicate.relation;
+	
+	syn Relation SuperPredicate.fileRelation() {
+		Relation r = new Relation(this, realArity());
+		for(PredicateSymbol pred : predicates()) {
+			if(pred.isFileFact()) {
+				r.addTuple(new PseudoTuple((RealLiteral)pred.literal()));
+			}
+		}
+		return r;
+	}
 }
 
 aspect Facts {

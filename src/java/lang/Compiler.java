@@ -4,11 +4,13 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.HashSet;
+import java.util.function.Predicate;
 
 import beaver.Parser.Exception;
 
 import lang.ast.LangParser;
 import lang.ast.LangScanner;
+import lang.ast.PredicateSymbol;
 import lang.ast.Program;
 /* import lang.ast.ErrorMessage; */
 
@@ -47,6 +49,10 @@ public class Compiler {
             
             Evaluation eval = new BacktrackingEvaluation();
             eval.evaluate(program);
+            
+            StringBuilder sb = new StringBuilder();
+            program.collectMetaInfo(sb);
+            System.out.println(sb.toString());
             
 			// System.out.println(program.dumpTree());
 

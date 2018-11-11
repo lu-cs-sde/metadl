@@ -29,6 +29,7 @@
 %typeof  stmt_list =  "List";
 %typeof  fact =  "Fact";
 %typeof  rule =  "Rule";
+%typeof  file_location = "FileLocation";
 
 %goal program;
 
@@ -48,7 +49,8 @@ clause = rule
 rule = lit_list.heads IMPLIED_BY lit_list.body DOT {: return new Rule(heads, body); :};
 fact = lit_list.heads DOT {: return new Fact(heads); :};
 
-extensional_db = EDB LPARA edb_literal.target COMMA STRING.fn RPARA {: return new ExtensionalDB(target, fn); :};
+extensional_db = EDB LPARA edb_literal.target COMMA file_location.fn RPARA {: return new ExtensionalDB(target, fn); :};
+file_location = STRING.fn {: return new FileLocation(fn); :};
 
 real_literal = predicate_sym.pred LPARA term_list.terms RPARA {: return new RealLiteral(pred, terms); :};
 

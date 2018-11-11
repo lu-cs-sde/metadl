@@ -1,5 +1,5 @@
 import java.util.HashSet;
-aspect SemanticAnalysis {
+aspect ErrorCollection {
     coll HashSet<String> Program.semanticErrors() [new HashSet<String>()] with add;
     syn boolean Program.hasSemanticErrors() = !semanticErrors().isEmpty();
     syn String Program.errorReport() {
@@ -7,4 +7,43 @@ aspect SemanticAnalysis {
         for(String err : semanticErrors()) sb.append(err).append("\n");
         return sb.toString();
     }
+}
+
+aspect EmptyRelationUse {
+    syn boolean SuperPredicate.hasRuleUse() {
+        for(PredicateSymbol pred : predicates()) {
+    		if(pred.isUse()) return true;
+    	}
+    	return false;
+    }
+    
+    syn boolean SuperPredicate.hasRuleDef() {
+        for(PredicateSymbol pred : predicates()) {
+    		if(pred.isDef()) return true;
+    	}
+    	return false;
+    }
+    
+   syn boolean SuperPredicate.hasRuleOccurrence() {
+    	return hasRuleDef() || hasRuleUse();
+    }
+    
+    syn boolean SuperPredicate.mayHaveFacts() {
+    	for(PredicateSymbol pred : predicates()) {
+    		if(pred.isFact() || pred.isDef() || pred.isEDBFact()) return true;
+    	}
+    	return false;
+    }
+    
+    Program contributes nta getSuperPredicateList() to Program.semanticErrors();
+    SuperPredicate contributes ("The use of " + predicateName() + " can give no facts")
+    	when !mayHaveFacts() && hasRuleUse()
+    	to Program.semanticErrors();
+}
+
+aspect UnusedRelation {
+    Program contributes nta getSuperPredicateList() to Program.semanticErrors();
+    SuperPredicate contributes ("The predicate " + predicateName() + " has no rule occurrence.")
+    	when !hasRuleOccurrence()
+    	to Program.semanticErrors();
 }

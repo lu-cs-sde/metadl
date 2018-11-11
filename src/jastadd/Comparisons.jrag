@@ -20,6 +20,10 @@ aspect Conversion {
 	public String IntConstant.constantValue() {
 		return getNUMERAL();
 	}
+	
+	public abstract String Term.string();
+	public String Constant.string() { return constantValue(); }
+	public String Variable.string() { return getID(); }
 }
 
 aspect Comparison {
@@ -75,4 +79,5 @@ aspect Comparison {
 		if(!(o instanceof PredicateSymbol)) return false;
 		return predicateSymbolComparator.compare(this, (PredicateSymbol)o) == 0;
 	}
+	
 }

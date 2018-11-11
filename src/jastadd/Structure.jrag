@@ -50,8 +50,40 @@ aspect Categorization {
     syn boolean PredicateSymbol.isDef()       =  literal().isRuleDef();
     syn boolean PredicateSymbol.isFileFact()  =  literal().isFact() && literal().stmt().isClause();
     syn boolean PredicateSymbol.isEDBFact()   =  literal().isFact() && !literal().stmt().isClause();
+}
 
-    /* PredicateSymbol contributes ("No Possible Facts for use of PredicateSymbol: " + getID()) */
-    /*     when  */
-    /*     to Program.semanticErrors(); */
+aspect SuperPredicate {
+    syn List Program.getSuperPredicateList() {
+    	List list = new List();
+    	HashMap<String, HashSet<PredicateSymbol>> predMap = predicateMap();
+    	for(PredicateSymbol k : uniquePredicateSymbols())
+    		list.add(new SuperPredicate(k.getID()));
+    	return list;
+    }
+    
+    inh HashSet<PredicateSymbol> SuperPredicate.predicates();
+    eq Program.getSuperPredicate(int index).predicates() = predicateMap().get(getSuperPredicate(index).getSTRING());
+    
+    syn String SuperPredicate.predicateName() {
+    	if(predicates().size() == 0) return "NO_NAME";
+    	return predicates().iterator().next().getID();
+    }
+    
+    syn SuperPredicate PredicateSymbol.superpredicate() {
+    	Program p = literal().stmt().program();
+    	for(SuperPredicate s : p.getSuperPredicates()) {
+    		if(s.predicateName().equals(getID())) return s;
+    	}
+    	return null;
+    }
+    
+    syn HashSet<PredicateSymbol> SuperPredicate.edbPredicates() {
+    	HashSet<PredicateSymbol> edbs = new HashSet<PredicateSymbol>();
+    	for(PredicateSymbol ps : predicates()) {
+    		if(ps.isEDBFact()) {
+    			edbs.add(ps);
+    		}
+    	}
+    	return edbs;
+    }
 }

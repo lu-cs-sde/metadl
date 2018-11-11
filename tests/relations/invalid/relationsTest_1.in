@@ -1,4 +1,4 @@
-EDB(E, "E.csv")
+EDB(E, "tests/relations/invalid/E.csv")
 
 A("A", "B").
 A("B", "C", "D", "E").

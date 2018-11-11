@@ -1,1 +1,9 @@
-FILE_CONSTANTS: {1,2,A,B,C},PREDICATE_MAP: {A: [A USE 2, A FILE_FACT 2, A FILE_FACT 2, A USE 2, A USE 2, A USE 2, A USE 2, ],B: [B DEF 2, ],C: [C DEF 2, C DEF 2, ],D: [D DEF 2, D DEF 2, ],}
+FILE_CONSTANTS: {1,2,A,B,C}
+PREDICATES: {
+A Arity: 2, [FILE_FACT,FILE_FACT,USE,USE,USE,USE,USE]
+B Arity: 2, [DEF]
+C Arity: 2, [DEF,DEF]
+D Arity: 2, [DEF,DEF]
+}
+RELATION: [[A]{(A,B)(B,C)}[B]{}[C]{}[D]{}]
+

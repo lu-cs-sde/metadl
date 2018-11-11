@@ -1,2 +1,1 @@
-FILE_CONSTANTS: {A,B,C,D,E},PREDICATE_MAP: {A: [A DEF 0, A FILE_FACT 0, A USE 0, A FILE_FACT 0, A USE 0, A USE 0, ],B: [B DEF 2, ],C: [C DEF 2, ],E: [E EDB_FACT 2, E USE 2, ],}
 Different Arities for predicate symbol: A

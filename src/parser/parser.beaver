@@ -13,7 +13,8 @@
 
 %typeof  program             =  "Program";
 %typeof  clause              =  "Clause";
-%typeof  literal             =  "Literal";
+%typeof  edb_literal             =  "EDBLiteral";
+%typeof  real_literal             =  "RealLiteral";
 %typeof  predicate_sym       =  "PredicateSymbol";
 %typeof  variable            =  "Variable";
 %typeof  constant            =  "Constant";
@@ -26,6 +27,8 @@
 %typeof  extensional_db      =  "ExtensionalDB";
 %typeof  stmt      =  "Stmt";
 %typeof  stmt_list =  "List";
+%typeof  fact =  "Fact";
+%typeof  rule =  "Rule";
 
 %goal program;
 
@@ -38,16 +41,21 @@ stmt = clause
      | extensional_db
      ;
 
-clause = lit_list.heads IMPLIED_BY lit_list.body DOT {: return new Clause(heads, body); :}
-       | lit_list.heads DOT {: return new Clause(heads, new List()); :}
+clause = rule
+       | fact
        ;
 
-extensional_db = EDB LPARA predicate_sym.pred COMMA STRING.fn RPARA {: return new ExtensionalDB(pred, fn); :};
+rule = lit_list.heads IMPLIED_BY lit_list.body DOT {: return new Rule(heads, body); :};
+fact = lit_list.heads DOT {: return new Fact(heads); :};
 
-literal = predicate_sym.pred LPARA term_list.terms RPARA {: return new Literal(pred, terms); :};
+extensional_db = EDB LPARA edb_literal.target COMMA STRING.fn RPARA {: return new ExtensionalDB(target, fn); :};
 
-lit_list = literal.lit {: return new List().add(lit); :}
-         | lit_list.list COMMA literal.c {: return list.add(c); :}
+real_literal = predicate_sym.pred LPARA term_list.terms RPARA {: return new RealLiteral(pred, terms); :};
+
+edb_literal = predicate_sym.pred {: return new EDBLiteral(pred); :};
+
+lit_list = real_literal.lit {: return new List().add(lit); :}
+         | lit_list.list COMMA real_literal.c {: return list.add(c); :}
          ;
 
 predicate_sym = ID.id {: return new PredicateSymbol(id); :};

@@ -1,18 +1,27 @@
 /**
         ENTRYPOINT
 **/
-Program  ::= Stmt*; 
+Program  ::= Stmt* /SuperPredicate*/; 
 
 abstract Stmt;
 
 /**
         A Horn Clause Consists of a Head:Literal, and a Body (Literal*).
+        Stmt[Clause, EDB]
+        Clause[Rule, Fact]
 **/
-Clause:Stmt ::= heads:Literal* body:Literal*;
+abstract Clause:Stmt;
+Rule:Clause ::= Heads:RealLiteral* Body:RealLiteral*;
+Fact:Clause ::= Heads:RealLiteral*;
 
-ExtensionalDB:Stmt ::= predRef:PredicateSymbol <STRING>;
+// <STRING> refers to FileName
+ExtensionalDB:Stmt ::= Target:EDBLiteral <STRING>;
 
-Literal ::= predicate:PredicateSymbol terms:Term*;
+// Indirection: Make EDBPredicate a Literal for symmetry
+abstract Literal;
+EDBLiteral:Literal ::= Predicate:PredicateSymbol;
+RealLiteral:Literal ::= Predicate:PredicateSymbol Terms:Term*;
+
 PredicateSymbol ::= <ID>;
 
 abstract Term;
@@ -20,5 +29,10 @@ Variable:Term ::= <ID>;
 
 abstract Constant:Term;
 
-StringConstant:Term ::= <STRING>;
-IntConstant:Term ::= <NUMERAL>;
+StringConstant:Constant ::= <STRING>;
+IntConstant:Constant ::= <NUMERAL>;
+
+SelectedPredicateSymbol:PredicateSymbol;
+
+
+SuperPredicate ::= <STRING>;

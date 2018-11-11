@@ -9,6 +9,7 @@ buildscript {
 apply plugin: 'java'
 apply plugin: 'jastadd'
 apply plugin: 'idea'
+apply plugin: 'eclipse'
 
 defaultTasks 'test'
 
@@ -25,8 +26,9 @@ repositories.mavenCentral()
 dependencies {
     compile 'net.sf.beaver:beaver-rt:0.9.11'
 
-    testCompile 'org.junit.jupiter:junit-jupiter-api:5.1.0'
-    testCompile 'org.junit.jupiter:junit-jupiter-engine:5.1.0'
+    testCompile('org.junit.jupiter:junit-jupiter-api:5.3.1')
+    testRuntime('org.junit.jupiter:junit-jupiter-engine:5.3.1')
+    testCompile('org.junit.jupiter:junit-jupiter-params:5.3.1')
 
     jflex 'de.jflex:jflex:1.6.1'
     beaver 'net.sf.beaver:beaver-cc:0.9.11'
@@ -41,10 +43,11 @@ sourceSets {
 
 // Configuration for the test running.
 test {
-    useJUnitPlatform {
-        excludeTags 'slow'
-        includeEngines 'junit-jupiter', 'junit-vintage'
-    }
+    useJUnitPlatform()
+    // {
+        // excludeTags 'slow'
+        // includeEngines 'junit-jupiter'
+    // }
     // failFast = true
     dependsOn 'cleanTest'  // This causes tests to always be re-run.
 
@@ -58,14 +61,17 @@ test {
                     "${result.skippedTestCount} skipped"
         }
     }
-    // Enable stdout
     testLogging {
         outputs.upToDateWhen {false}
+        // Enable stdout
         showStandardStreams true
+        // Log passed/failed tests in the console (see also build/reports/tests):
         events "passed", "skipped", "failed"
     }
-    // Log passed/failed tests in the console (see also build/reports/tests):
-    // testLogging.events = 'passed', 'failed'
+
+    reports {
+        junitXml.enabled = true
+    }
 }
 
 jar {
@@ -130,4 +136,3 @@ task cleanGeneratedJava(type: Delete) {
     delete file('interpreter.jar')
     delete file('compiler.jar')
 }
-

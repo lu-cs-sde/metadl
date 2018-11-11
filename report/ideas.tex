@@ -5,3 +5,35 @@
 \item Extensible Aggregators, Function Composition On Aggregator Level
 \item Strings as lists
 \end{enumerate}
+
+\paragraph{Validity Checks}\NL
+All usages/partial defs of a predicate must use the same number of terms.
+
+\paragraph{Sanity Checks}\NL
+Unused Predicate warning
+Unused EDB
+
+\paragraph{Safety Checks}\NL
+All facts must be ground.
+All variable terms in a head must be bound in the body.
+
+\subsubsection{Evaluation}
+Evaluation can be done in a number of different ways. Either iterative or recursive, bottom-up or top-down.
+
+\paragraph(Recursive Top-Down Query Proofs)\nl
+
+\begin{enumerate}
+\item Collect all (ground) facts.
+\item Let predicate under evaluation be P(x1, ..., xn).
+\item Collect all rules that define P.
+\item Do a Memoized Backtracking Search (Top-Down).
+\item Construct and AND-OR tree. Unify free-variables at AND-nodes.
+\item The OR-Branches are the different rules that can be used to prove the (x1, ..., xn) in P,
+i.e. all the rules that define P.
+\end{enumerate}
+
+Thus need to have a set of ground facts.
+Associate each predicate with a collection of rules that define it.
+    
+\paragraph{Cross-Compilation Evaluation}\NL
+Enable compile to datalog implementation X.

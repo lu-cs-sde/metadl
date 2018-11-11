@@ -1,0 +1,43 @@
+import java.util.Collections;
+import java.util.ArrayList;
+aspect TestInfo {
+	private void Program.collectFileObjectInfo(StringBuilder sb) {
+		sb.append("FILE_CONSTANTS: {");
+		for(Constant c : uniqueFileObjects()){
+			sb.append(c.constantValue());
+			sb.append(",");
+		}
+		if(uniqueFileObjects().size() > 0) sb.deleteCharAt(sb.length() - 1);
+		sb.append("}");
+	}
+	
+	private void Program.collectPredicateInfo(StringBuilder sb) {
+		sb.append("PREDICATE_MAP: {");
+		for(String predSymbol : predicateMap().keySet()) {
+
+            ArrayList<PredicateSymbol> l = new ArrayList<PredicateSymbol>(predicateMap().get(predSymbol));
+			sb.append(predSymbol);
+			sb.append(": [");
+            Collections.sort(l, PredicateSymbol.predicateSymbolComparator);
+			for(PredicateSymbol pred : l) {
+				sb.append(pred.getID());
+                if(pred.isUse()) sb.append(" USE ");
+                if(pred.isDef()) sb.append(" DEF ");
+                if(pred.isFileFact()) sb.append(" FILE_FACT ");
+                if(pred.isEDBFact()) sb.append(" EDB_FACT ");
+
+                sb.append(pred.realArity());
+                sb.append(", ");
+			}
+			sb.append("]");
+			sb.append(",");
+		}
+		sb.append("}");
+	}
+
+	public void Program.collectMetaInfo(StringBuilder sb) {
+		collectFileObjectInfo(sb);
+		sb.append(",");
+		collectPredicateInfo(sb);
+	}
+}

@@ -1,0 +1,57 @@
+import java.util.HashSet;
+aspect Categorization {
+	/**
+		Categorize Stmt
+	**/
+    syn boolean Stmt.isClause();
+    eq ExtensionalDB.isClause()  =  false;
+    eq Clause.isClause()         =  true;
+
+    inh Program Stmt.program();
+    eq Program.getStmt(int index).program() = this;
+
+	/**
+		Categorize Literal
+	**/
+    inh Stmt Literal.stmt();
+	eq Rule.getHeads(int index).stmt()  = this;
+	eq Rule.getBody(int index).stmt()   = this;
+    eq Fact.getHeads(int index).stmt()  = this;
+    eq ExtensionalDB.getTarget().stmt() = this;
+
+    inh boolean Literal.isRuleDef();
+    eq Rule.getHeads(int index).isRuleDef()   =  true;
+    eq Rule.getBody(int index).isRuleDef()    =  false;
+    eq Fact.getHeads(int index).isRuleDef()   =  false;
+    eq ExtensionalDB.getTarget().isRuleDef()  =  false;
+
+    inh boolean Literal.isRuleUse();
+    eq Rule.getHeads(int index).isRuleUse()   =  false;
+    eq Rule.getBody(int index).isRuleUse()    =  true;
+    eq Fact.getHeads(int index).isRuleUse()   =  false;
+    eq ExtensionalDB.getTarget().isRuleUse()  =  false;
+
+    inh boolean Literal.isFact();
+    eq Rule.getHeads(int index).isFact()   =  false;
+    eq Rule.getBody(int index).isFact()    =  false;
+    eq Fact.getHeads(int index).isFact()   =  true;
+    eq ExtensionalDB.getTarget().isFact()  =  true;
+
+	/**
+		Categorize PredicateSymbol
+	**/
+    inh Literal PredicateSymbol.literal();
+    eq EDBLiteral.getPredicate().literal()   =  this;
+    eq RealLiteral.getPredicate().literal()  =  this;
+
+    syn boolean PredicateSymbol.isRule()      =  literal().isRuleUse() || literal().isRuleDef();
+    syn boolean PredicateSymbol.isFact()      =  literal().isFact();
+    syn boolean PredicateSymbol.isUse()       =  literal().isRuleUse();
+    syn boolean PredicateSymbol.isDef()       =  literal().isRuleDef();
+    syn boolean PredicateSymbol.isFileFact()  =  literal().isFact() && literal().stmt().isClause();
+    syn boolean PredicateSymbol.isEDBFact()   =  literal().isFact() && !literal().stmt().isClause();
+
+    /* PredicateSymbol contributes ("No Possible Facts for use of PredicateSymbol: " + getID()) */
+    /*     when  */
+    /*     to Program.semanticErrors(); */
+}

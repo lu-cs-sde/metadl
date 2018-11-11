@@ -1,0 +1,130 @@
+import java.util.HashSet;
+import java.util.HashMap;
+import java.util.TreeSet;
+import java.util.Comparator;
+import lang.relation.Relation;
+
+aspect Relation {
+    syn Constant Variable.Instantiation() = null;
+
+    coll HashSet<Constant> Program.modelObjects() [new HashSet<Constant>()] with add;
+    Constant contributes this
+        when true
+        to Program.modelObjects();
+
+    syn TreeSet<Constant> Program.uniqueFileObjects() {
+        TreeSet<Constant> uniqueFileObjects = new TreeSet<>(Constant.constantComparator);
+        uniqueFileObjects.addAll(modelObjects());
+        return uniqueFileObjects;
+    }
+
+    coll HashSet<PredicateSymbol> Program.predicateSymbols() [new HashSet<PredicateSymbol>()] with add;
+    PredicateSymbol contributes this
+        when true
+        to Program.predicateSymbols();
+    syn TreeSet<PredicateSymbol> Program.uniquePredicateSymbols() {
+        TreeSet<PredicateSymbol> uniquePredicateSymbols = new TreeSet<>(PredicateSymbol.predicateSymbolComparator);
+        uniquePredicateSymbols.addAll(predicateSymbols());
+        return uniquePredicateSymbols;
+    }
+
+    syn HashMap<String, HashSet<PredicateSymbol>> Program.predicateMap() {
+        HashMap<String, HashSet<PredicateSymbol>> predicateMap = new HashMap<String, HashSet<PredicateSymbol>>();
+        for(PredicateSymbol pred : uniquePredicateSymbols()) {
+            predicateMap.put(pred.getID(), new HashSet<PredicateSymbol>());
+        }
+        for(PredicateSymbol pred : predicateSymbols()) {
+            HashSet<PredicateSymbol> predSet = predicateMap.get(pred.getID());
+            predSet.add(pred);
+        }
+        return predicateMap;
+    }
+
+    syn HashMap<String, Relation> Program.relations() {
+        HashMap<String, Relation> relations = new HashMap<>();
+        for(PredicateSymbol p : uniquePredicateSymbols()) {
+            relations.put(p.getID(), new Relation(p.realArity()));
+        }
+        return relations;
+    }
+    
+    syn List Program.getSuperPredicateList() {
+    	List list = new List();
+    	HashMap<String, HashSet<PredicateSymbol>> predMap = predicateMap();
+    	for(PredicateSymbol k : uniquePredicateSymbols())
+    		list.add(new SuperPredicate(k.getID()));
+    	return list;
+    }
+    
+    inh HashSet<PredicateSymbol> SuperPredicate.predicates();
+    eq Program.getSuperPredicate(int index).predicates() = predicateMap().get(getSuperPredicate(index).getSTRING());
+    
+    
+    syn boolean SuperPredicate.mayHaveFacts() {
+    	for(PredicateSymbol pred : predicates()) {
+    		if(pred.isFact() || pred.isDef() || pred.isEDBFact()) return true;
+    	}
+    	return false;
+    }
+    
+    syn String SuperPredicate.predicateName() {
+    	if(predicates().size() == 0) return "NO_NAME";
+    	return predicates().iterator().next().getID();
+    }
+    
+    syn boolean SuperPredicate.hasRuleUse() {
+        for(PredicateSymbol pred : predicates()) {
+    		if(pred.isUse()) return true;
+    	}
+    	return false;
+    }
+    
+    Program contributes nta getSuperPredicateList() to Program.semanticErrors();
+    SuperPredicate contributes ("The use of " + predicateName() + " can give no facts")
+    	when !mayHaveFacts() && hasRuleUse()
+    	to Program.semanticErrors();
+}
+
+aspect Arity {
+    syn int Literal.arity();
+    eq EDBLiteral.arity() = -1;
+    eq RealLiteral.arity() = getNumTerms();
+    syn int PredicateSymbol.arity() = literal().arity();
+
+    syn HashSet<Integer> PredicateSymbol.arities() {
+        Program p = literal().stmt().program();
+        HashSet<PredicateSymbol> preds = p.predicateMap().get(getID());
+        HashSet<Integer> arities = new HashSet<Integer>();
+        for(PredicateSymbol pred : preds) {
+            int arity = pred.arity();
+            arities.add(arity);
+        }
+        return arities;
+    }
+
+    syn HashSet<Integer> PredicateSymbol.realArities() {
+        HashSet<Integer> realArities = new HashSet<Integer>(arities());
+        realArities.remove(-1);
+        return realArities;
+    }
+
+    syn boolean PredicateSymbol.uniqueArity() {
+        return realArities().size() == 1;
+    }
+
+    /**
+        EDB Arity not known until use / def in a stmt.
+    **/
+    syn int PredicateSymbol.realArity() {
+        if(!uniqueArity()) return 0;
+        return realArities().iterator().next();
+    }
+
+    PredicateSymbol contributes ("Different Arities for predicate symbol: " + getID())
+        when !uniqueArity() && arities().size() != 1
+        to Program.semanticErrors();
+}
+
+aspect Facts {
+
+}

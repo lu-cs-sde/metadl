@@ -46,7 +46,12 @@ String  = \"[^\"]*\"
 "EDB"      {  return  sym(Terminals.EDB);        }
 {Numeral}  {  return  sym(Terminals.NUMERAL);    }
 {ID}       {  return  sym(Terminals.ID);         }
-{String}   {  return  sym(Terminals.STRING);     }
+{String}   {
+                // Remove Quotes from Matched String.
+                String text = yytext();
+                String data = text.substring(1, text.length() - 1);
+                return new beaver.Symbol(Terminals.STRING, yyline + 1, yycolumn + 1, yylength() - 2, data); 
+           }
 <<EOF>>    {  return  sym(Terminals.EOF);        }
 
 /* error fallback */

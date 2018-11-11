@@ -44,9 +44,8 @@ public final class Util {
 	public static void compareOutput(String actual, File out, File expected) {
 		try {
 			Files.write(out.toPath(), actual.getBytes());
-			assertEquals("Output differs",
-				readFileToString(expected),
-				normalizeText(actual));
+			assertEquals(readFileToString(expected),
+				normalizeText(actual),"Output differs");
 		} catch (IOException e) {
 			fail("IOException occurred while comparing output: " + e.getMessage());
 		}

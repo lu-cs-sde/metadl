@@ -1,0 +1,10 @@
+import java.util.HashSet;
+aspect SemanticAnalysis {
+    coll HashSet<String> Program.semanticErrors() [new HashSet<String>()] with add;
+    syn boolean Program.hasSemanticErrors() = !semanticErrors().isEmpty();
+    syn String Program.errorReport() {
+        StringBuilder sb = new StringBuilder();
+        for(String err : semanticErrors()) sb.append(err).append("\n");
+        return sb.toString();
+    }
+}

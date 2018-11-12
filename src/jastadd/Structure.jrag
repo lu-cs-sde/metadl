@@ -50,6 +50,12 @@ aspect Categorization {
     syn boolean PredicateSymbol.isDef()       =  literal().isRuleDef();
     syn boolean PredicateSymbol.isFileFact()  =  literal().isFact() && literal().stmt().isClause();
     syn boolean PredicateSymbol.isEDBFact()   =  literal().isFact() && !literal().stmt().isClause();
+    
+    /**
+    	Categorize Variable
+    **/
+   inh RealLiteral Variable.containedIn();
+   eq RealLiteral.getTerms(int index).containedIn() = this;
 }
 
 aspect SuperPredicate {

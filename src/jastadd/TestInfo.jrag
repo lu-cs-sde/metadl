@@ -1,9 +1,11 @@
 import java.util.Collections;
 import java.util.ArrayList;
+import lang.relation.PseudoTuple;
+
 import lang.printing.CollectUtil;
 aspect TestInfo {
 
-	private void Program.collectObjectInfo(StringBuilder sb) {
+	public void Program.collectObjectInfo(StringBuilder sb) {
 		sb.append("OBJECTS: {");
 		for(Constant c : objects){
 			sb.append(c.constantValue());
@@ -13,7 +15,7 @@ aspect TestInfo {
 		sb.append("}");
 	}
 
-	private void Program.collectFileObjectInfo(StringBuilder sb) {
+	public void Program.collectFileObjectInfo(StringBuilder sb) {
 		sb.append("FILE_CONSTANTS: {");
 		for(Constant c : uniqueFileObjects()){
 			sb.append(c.constantValue());
@@ -102,6 +104,14 @@ aspect TestInfo {
 				l.collectInfo(sb);
 			}
 		});
+		
+		sb.append("\n");
+		sb.append("BODYTUPLES {\n");
+		for(PseudoTuple r : bodyTuples()) {
+			r.collectTuple(sb);
+			sb.append("\n");
+		}
+		sb.append("}");
 	}
 	
 	public void SuperPredicate.collectRuleInfo(StringBuilder sb) {

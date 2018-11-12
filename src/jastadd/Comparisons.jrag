@@ -52,7 +52,7 @@ aspect Comparison {
 		@Override
 		public int compare(Term t1, Term t2) {
 			if(t1.isVariable() && t2.isVariable())
-				return ((StringConstant)t1).getSTRING().compareTo(((StringConstant)t2).getSTRING());
+				return ((Variable)t1).getID().compareTo(((Variable)t2).getID());
 			if(!t1.isVariable() && !t2.isVariable()) 
 				return Constant.constantComparator.compare((Constant)t1, (Constant)t2);
 			return t1.isVariable() ? -1 : 1;

@@ -120,4 +120,40 @@ aspect Rules {
 		}
 		return rules;
 	}
+	
+	syn RealLiteral SuperPredicate.findRuleHead(Rule rule) {
+		for(RealLiteral rl : rule.getHeadss()) {
+			if(rl.getPredicate().getID().equals(predicateName())) return rl;
+		}
+		return null;
+	}
+	
+	coll HashSet<Variable> Rule.variablesBody() [new HashSet<Variable>()] with add;
+	Variable contributes this
+        when containedIn().isRuleUse()
+        to Rule.variablesBody()
+        for (Rule)containedIn().stmt();
+        
+    syn TreeSet<Variable> Rule.uniqueVariablesBody() {
+    	TreeSet<Variable> vars = new TreeSet<Variable>(Term.termComparator);
+    	vars.addAll(variablesBody());
+    	return vars;
+    }
+    
+    coll HashSet<PseudoTuple> Rule.bodyTuples() [new HashSet<PseudoTuple>()] with add;
+    RealLiteral contributes new PseudoTuple(this)
+    	when isRuleUse()
+    	to Rule.bodyTuples()
+    	for (Rule)stmt();
+}
+
+aspect Proof {
+	syn boolean Program.mayProve(PseudoTuple t) {
+		if(!t.isGround()) return false;
+		for(int i = 0; i != t.size; ++i) {
+			Constant c = (Constant)t.coord(i);
+			if(!objects.contains(c)) return false;
+		}
+		return true;
+	}
 }

@@ -44,7 +44,7 @@ public abstract class InternalEvaluation extends Evaluation {
 							+ " but got " + line.length + "-sized tuple in .csv file");
 					System.exit(0);
 				}
-				PseudoTuple ps = new PseudoTuple(sp.realArity());
+				PseudoTuple ps = new PseudoTuple(sp);
 				for (int i = 0; i != line.length; ++i) {
 					Constant o;
 					if (isInteger(line[i])) {
@@ -64,6 +64,8 @@ public abstract class InternalEvaluation extends Evaluation {
 	}
 
 	protected void loadEBDFacts(Program program) {
+		program.objects.addAll(program.uniqueFileObjects());
+		
 		System.out.println("Load EDB Facts");
 		List<SuperPredicate> spreds = program.getSuperPredicateList();
 		spreds.forEach(sp -> {

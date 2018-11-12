@@ -21,6 +21,8 @@ aspect ModelObjectsAndPredicates {
         uniqueFileObjects.addAll(modelObjects());
         return uniqueFileObjects;
     }
+    
+    public TreeSet<Constant> Program.objects = new TreeSet<Constant>(Constant.constantComparator);
 
 	/**
 	 * Collect Predicates
@@ -98,6 +100,24 @@ aspect Relation {
 	}
 }
 
-aspect Facts {
-
+aspect Rules {
+	syn HashSet<Rule> SuperPredicate.useInRules() {
+		HashSet<Rule> rules = new HashSet<Rule>();
+		for(PredicateSymbol pred : predicates()) {
+			if(pred.isUse()) {
+				rules.add((Rule)pred.literal().stmt());
+			}
+		}
+		return rules;
+	}
+	
+	syn HashSet<Rule> SuperPredicate.definedInRules() {
+		HashSet<Rule> rules = new HashSet<Rule>();
+		for(PredicateSymbol pred : predicates()) {
+			if(pred.isDef()) {
+				rules.add((Rule)pred.literal().stmt());
+			}
+		}
+		return rules;
+	}
 }

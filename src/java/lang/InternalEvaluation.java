@@ -47,7 +47,7 @@ public abstract class InternalEvaluation extends Evaluation {
 				PseudoTuple ps = new PseudoTuple(sp.realArity());
 				for (int i = 0; i != line.length; ++i) {
 					Constant o;
-					if(isInteger(line[i])) {
+					if (isInteger(line[i])) {
 						o = new IntConstant(line[i]);
 					} else {
 						o = new StringConstant(line[i]);
@@ -68,7 +68,7 @@ public abstract class InternalEvaluation extends Evaluation {
 		List<SuperPredicate> spreds = program.getSuperPredicateList();
 		spreds.forEach(sp -> {
 			sp.relation = new Relation(sp.fileRelation());
-			
+
 			sp.edbPredicates().forEach(ps -> {
 				ExtensionalDB edb = (ExtensionalDB) ps.literal().stmt();
 				String fn = edb.getFileLocation().getSTRING();

@@ -1,0 +1,8 @@
+EDB(E, "tests/relations/valid/E.csv")
+
+A("A", "B").
+A("B", "C").
+
+C(x,y), B(x, y), A(x, z) :- A(x, y), A(y,z).
+B(x, "B") :- A(x, "A").
+C(x, y) :- E(y, x).

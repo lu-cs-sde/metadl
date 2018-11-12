@@ -1,6 +1,18 @@
 import java.util.Collections;
 import java.util.ArrayList;
+import lang.printing.CollectUtil;
 aspect TestInfo {
+
+	private void Program.collectObjectInfo(StringBuilder sb) {
+		sb.append("OBJECTS: {");
+		for(Constant c : objects){
+			sb.append(c.constantValue());
+			sb.append(",");
+		}
+		if(objects.size() > 0) sb.deleteCharAt(sb.length() - 1);
+		sb.append("}");
+	}
+
 	private void Program.collectFileObjectInfo(StringBuilder sb) {
 		sb.append("FILE_CONSTANTS: {");
 		for(Constant c : uniqueFileObjects()){
@@ -43,19 +55,12 @@ aspect TestInfo {
 	
 	public void Program.collectPredicateInfo(StringBuilder sb) {
 		List<SuperPredicate> spreds = getSuperPredicates();
-		int sizeSPreds = getNumSuperPredicate();
-		if(sizeSPreds == 0) return;
-		sb.append("PREDICATES: {\n");
-		getSuperPredicate(0).collectPredicateInfo(sb);
-		if(sizeSPreds == 1) {
-			sb.append("\n}");
-			return;
-		}
-		for(int i = 1; i != sizeSPreds; ++i) {
-			sb.append("\n");
-			getSuperPredicate(i).collectPredicateInfo(sb);
-		}
-		sb.append("\n}");
+		CollectUtil<SuperPredicate> collector = new CollectUtil<SuperPredicate>();
+		collector.collectList("PREDICATES: {", "\n}", "\n", sb, spreds, new CollectUtil.Collector<SuperPredicate> (){
+			public void collect(SuperPredicate t, StringBuilder sb) {
+				t.collectPredicateInfo(sb);
+			}
+		});
 	}
 	
 	public void Program.collectFileRelationInfo(StringBuilder sb) {
@@ -69,21 +74,82 @@ aspect TestInfo {
 			sp.relation.collectRelation(sb);
 		}
 	}
-
+	
+	public void Term.collectInfo(StringBuilder sb) {
+		sb.append(string());
+	}
+	
+	public void RealLiteral.collectInfo(StringBuilder sb) {
+		sb.append(getPredicate().getID());
+		CollectUtil<Term> collector = new CollectUtil<Term>();
+		collector.collectList("(", ")", ",", sb, getTermss(), new CollectUtil.Collector<Term> (){
+			public void collect(Term t, StringBuilder sb) {
+				t.collectInfo(sb);
+			}
+		});
+	}
+	
+	public void Rule.collectInfo(StringBuilder sb) {
+		CollectUtil<RealLiteral> collector = new CollectUtil<RealLiteral>();
+		collector.collectList("", "", ",", sb, getHeadss(), new CollectUtil.Collector<RealLiteral> (){
+			public void collect(RealLiteral l, StringBuilder sb) {
+				l.collectInfo(sb);
+			}
+		});
+		sb.append(" :- ");
+		collector.collectList("", "", ", ", sb, getBodys(), new CollectUtil.Collector<RealLiteral> (){
+			public void collect(RealLiteral l, StringBuilder sb) {
+				l.collectInfo(sb);
+			}
+		});
+	}
+	
+	public void SuperPredicate.collectRuleInfo(StringBuilder sb) {
+		HashSet<Rule> use_rules = useInRules();
+		sb.append("RULE USE [" + predicateName() + "] {\n");
+		for(Rule r : use_rules) {
+			r.collectInfo(sb);
+			sb.append("\n");
+		}
+		sb.append("}\n");
+		HashSet<Rule> def_rules = definedInRules();
+		sb.append("RULE DEF [" + predicateName() + "] {\n");
+		for(Rule r : def_rules) {
+			r.collectInfo(sb);
+			sb.append("\n");
+		}
+		sb.append("}");
+	}
+	
+	public void Program.collectRuleInfo(StringBuilder sb) {
+		CollectUtil<SuperPredicate> collector = new CollectUtil<SuperPredicate>();
+		collector.collectList("", "", "\n", sb, getSuperPredicates(), new CollectUtil.Collector<SuperPredicate> (){
+			public void collect(SuperPredicate l, StringBuilder sb) {
+				l.collectRuleInfo(sb);
+			}
+		});
+	}
+	
 	public void Program.collectInitialMetaInfo(StringBuilder sb) {
 		collectFileObjectInfo(sb);
 		sb.append("\n");
 		collectPredicateInfo(sb);
 		sb.append("\n");
-		sb.append("RELATION: [");
+		sb.append("FILE RELATION: {");
 		collectFileRelationInfo(sb);
-		sb.append("]\n");
+		sb.append("}\n");
 	}
 	
 	public void Program.collectMetaInfo(StringBuilder sb) {
 		collectInitialMetaInfo(sb);
-		sb.append("INITIAL RELATION: [");
+		sb.append("INITIAL RELATION: {");
 		collectRelationInfo(sb);
-		sb.append("]\n");
+		sb.append("}\n");
+		sb.append("RULE INFO: {\n");
+		collectRuleInfo(sb);
+		sb.append("}");
+		sb.append("OBJECTS INFO: {\n");
+		collectObjectInfo(sb);
+		sb.append("}");
 	}
 }

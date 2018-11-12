@@ -1,9 +1,8 @@
 FILE_CONSTANTS: {A,B,C}
-PREDICATES: {
-A Arity: 2, [DEF,FILE_FACT,FILE_FACT,USE,USE,USE]
+PREDICATES: {A Arity: 2, [DEF,FILE_FACT,FILE_FACT,USE,USE,USE]
 B Arity: 2, [DEF]
 C Arity: 2, [DEF,USE]
 E Arity: 2, [EDB_FACT,USE]
 }
-RELATION: [[A]{(A,B)(B,C)}[B]{}[C]{}[E]{}]
+FILE RELATION: {[A]{(A,B)(B,C)}[B]{}[C]{}[E]{}}
 

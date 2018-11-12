@@ -33,5 +33,4 @@ abstract Constant:Term;
 StringConstant:Constant ::= <STRING>;
 IntConstant:Constant ::= <NUMERAL>;
 
-SelectedPredicateSymbol:PredicateSymbol;
 SuperPredicate ::= <STRING>;

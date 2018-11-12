@@ -74,7 +74,9 @@ aspect SuperPredicate {
     	for(SuperPredicate s : p.getSuperPredicates()) {
     		if(s.predicateName().equals(getID())) return s;
     	}
-    	return null;
+    	System.err.println("Each Predicate should belong to a superpredicate");
+    	System.exit(0);
+    	return null; // Needed for JastAdd
     }
     
     syn HashSet<PredicateSymbol> SuperPredicate.edbPredicates() {

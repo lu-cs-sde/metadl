@@ -18,8 +18,6 @@ public class RelationTests {
    
     public void doTest(Program p, String filename, File dir) {
 		StringBuilder sb = new StringBuilder();
-	//	BacktrackingEvaluation bte = new BacktrackingEvaluation();
-	//	bte.evaluate(p);
         HashSet<String> serrs = p.semanticErrors();
         for(String serr : serrs) {
             sb.append(serr).append("\n");

@@ -22,7 +22,7 @@ import lang.relation.Relation;
 
 public abstract class InternalEvaluation extends Evaluation {
 
-	private boolean isInteger(String s) {
+	public static boolean isInteger(String s) {
 		try {
 			Integer.parseInt(s);
 			return true;
@@ -31,7 +31,7 @@ public abstract class InternalEvaluation extends Evaluation {
 		}
 	}
 
-	private void readFileInto(Program program, SuperPredicate sp, File f) throws IOException {
+	public static void readFileInto(Program program, SuperPredicate sp, File f) throws IOException {
 		CSVParser parser = new CSVParserBuilder().withSeparator(',').build();
 		CSVReader reader = null;
 

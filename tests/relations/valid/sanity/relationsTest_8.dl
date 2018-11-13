@@ -1,0 +1,13 @@
+.decl A(x:symbol, y:symbol)
+.decl B(x:symbol, y:symbol)
+.decl C(x:symbol, y:symbol)
+.output C
+
+A("A", "B").
+A("B", "C").
+
+B(x, y) :- A(y, x).
+A(x, y) :- B(x, y).
+
+C(x, "A") :- A(x, "B").
+C("A", x) :- A("B", x).

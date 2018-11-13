@@ -17,7 +17,7 @@ public class PseudoTuple implements Comparable<PseudoTuple> {
 	public final int size;
 	private Term[] tuple;
 	
-	private SuperPredicate sp;
+	public final SuperPredicate sp;
 	
 	public PseudoTuple(TreeSet<Variable> vars) {
 		this.size = vars.size();
@@ -29,7 +29,7 @@ public class PseudoTuple implements Comparable<PseudoTuple> {
 	public PseudoTuple(SuperPredicate sp) {
 		this.size = sp.realArity();
 		this.tuple = new Term[size];
-		// this.sp = sp;
+		this.sp = sp;
 	}
 
 	public PseudoTuple(RealLiteral fact) {
@@ -38,7 +38,7 @@ public class PseudoTuple implements Comparable<PseudoTuple> {
 		for (int i = 0; i != size; ++i) {
 			tuple[i] = fact.getTerms(i);
 		}
-		//this.sp = fact.getPredicate().superpredicate();
+		this.sp = fact.getPredicate().superpredicate();
 	}
 	
 	public PseudoTuple(PseudoTuple o) {
@@ -47,15 +47,16 @@ public class PseudoTuple implements Comparable<PseudoTuple> {
 		for (int i = 0; i != size; ++i) {
 			tuple[i] = o.tuple[i];
 		}
-		//this.sp = o.sp;
+		this.sp = o.sp;
 	}
 	
-	public PseudoTuple(int size) {
+	public PseudoTuple(SuperPredicate sp, int size) {
 		this.size = size;
 		this.tuple = new Term[size];
 		for (int i = 0; i != size; ++i) {
 			tuple[i] = new Variable("UNINITIALZIED VARIABLE");
 		}
+		this.sp = sp;
 	}
 
 	public boolean instantiatedAt(int i) {
@@ -66,8 +67,14 @@ public class PseudoTuple implements Comparable<PseudoTuple> {
 		return tuple[i];
 	}
 
-	public void instantiate(int i, Constant c) {
+	public PseudoTuple instantiate(int i, Constant c) {
 		tuple[i] = c;
+		return this;
+	}
+	
+	public PseudoTuple set(int i, Term t) {
+		tuple[i] = t;
+		return this;
 	}
 	
 	public void instantiateAll(Set<Integer> positions, Constant c) {
@@ -98,13 +105,18 @@ public class PseudoTuple implements Comparable<PseudoTuple> {
 	
 	public boolean instantiableAs(PseudoTuple pt) {
 		if(size != pt.size) return false;
+		TreeMap<Variable, Constant> binding = new TreeMap<>(Term.termComparator);
 		for(int i = 0; i != size; ++i) {
 			Term t1 = tuple[i];
 			Term t2 = pt.tuple[i];
 			
-			if(!t1.isVariable()) {
-				if(!((Constant)t1).equals(t2)) return false;
-			}
+			if(t1.isVariable()) {
+				Constant c = binding.get((Variable)t1);
+				if(c == null) 
+					binding.put((Variable)t1, (Constant)t2);
+				else if(!c.equals(t2)) 
+					return false;
+			} else if(!((Constant)t1).equals(t2)) return false;
 		}
 		return true;
 	}
@@ -153,9 +165,8 @@ public class PseudoTuple implements Comparable<PseudoTuple> {
 			}
 		}
 	}
-
-	@Override
-	public int compareTo(PseudoTuple arg0) {
+	
+	public int compareTuples(PseudoTuple arg0) {
 		for (int i = 0; i != size; ++i) {
 			int res = Term.termComparator.compare(coord(i), arg0.coord(i));
 			if (res != 0)
@@ -163,10 +174,25 @@ public class PseudoTuple implements Comparable<PseudoTuple> {
 		}
 		return 0;
 	}
+
+	@Override
+	public int compareTo(PseudoTuple arg0) {
+		if(sp == null) return compareTuples(arg0);
+		int pred_comp = sp.predicateName().compareTo(arg0.sp.predicateName());
+		if(pred_comp != 0) return pred_comp;
+		return compareTuples(arg0);
+	}
 	
 	@Override
 	public boolean equals(Object obj) {
 		if(!(obj instanceof PseudoTuple)) return false;
 		return compareTo((PseudoTuple) obj) == 0;
+	}
+	
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		collectTuple(sb);
+		return sb.toString();
 	}
 }

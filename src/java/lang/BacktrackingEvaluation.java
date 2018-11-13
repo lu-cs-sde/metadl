@@ -74,7 +74,7 @@ public class BacktrackingEvaluation extends InternalEvaluation {
 				return false;
 			}else {
 				prop.sp.relation.addTuple(prop);
-				System.out.println("AND ADD TUPLE: " + prop.sp.predicateName() + prop);
+				/* System.out.println("AND ADD TUPLE: " + prop.sp.predicateName() + prop); */
 			}
 		}
 		return true;
@@ -83,15 +83,15 @@ public class BacktrackingEvaluation extends InternalEvaluation {
 	private boolean proofOR(PseudoTuple t, Program p, TreeSet<PseudoTuple> visited) {
 		boolean haveProof = false;
 		
-		System.out.println("OR: " + t.sp.predicateName() + t);
+		/* System.out.println("OR: " + t.sp.predicateName() + t); */
 
 		for (Rule rule : t.sp.definedInRules()) {
 			RealLiteral head = t.sp.findRuleHead(rule);
 			assertTrue(head != null);
 			
-			StringBuilder sb = new StringBuilder();
-			rule.collectInfo(sb);
-			System.out.println(sb);
+			/* StringBuilder sb = new StringBuilder(); */
+			/* rule.collectInfo(sb); */
+			/* System.out.println(sb); */
 
 			/**
 			 * Bind the free variables in the head. Need to disqualify certain rules if the
@@ -104,7 +104,7 @@ public class BacktrackingEvaluation extends InternalEvaluation {
 				HashSet<PseudoTuple> bodyTuples = new HashSet<PseudoTuple>();
 				rule.bodyTuples().forEach(bt -> bodyTuples.add(new PseudoTuple(bt)));
 				
-				System.out.println("BODY: " + bodyTuples);
+				/* System.out.println("BODY: " + bodyTuples); */
 				bodyTuples.forEach(ps -> ps.instantiateWith(inst));
 
 				TreeSet<Variable> freeVars = freeVariables(bodyTuples);
@@ -121,12 +121,12 @@ public class BacktrackingEvaluation extends InternalEvaluation {
 						PseudoTuple cpy = new PseudoTuple(tup);
 						cpy.instantiateWith(instMap);
 						bodyTuples2.add(cpy);
-						System.out.println("Instantition of " + tup + " is " + cpy);
+						/* System.out.println("Instantition of " + tup + " is " + cpy); */
 					});
 					
 					if (proofAND(bodyTuples2, p, visited)) {
 						t.sp.relation.addTuple(t);
-						System.out.println("OR ADD TUPLE: " + t.sp.predicateName() + t);
+						/* System.out.println("OR ADD TUPLE: " + t.sp.predicateName() + t); */
 						return true;
 					}
 				}

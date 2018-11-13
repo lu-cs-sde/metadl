@@ -571,45 +571,45 @@ public class RelationTests {
         B(x, y) :- C(x,y,f).
         C(x,y,z) :- A(x,y), A(z,z).
     */
-	@Test
-	public void testDeriveAll8() {
-		try {
-			Program program = (Program) Util.parse(new File(TEST_DIRECTORY_VALID, "relationsTest_14.in"));
-			BacktrackingEvaluation bte = new BacktrackingEvaluation();
-			bte.evaluate(program);
-			StringBuilder sb = new StringBuilder();
-			
-			SuperPredicate spA = program.getSuperPredicate(0);
-			sb.setLength(0);
-			spA.relation.collectRelation(sb);
-			System.out.println(sb.toString());
-			assertTrue(sb.toString().equals("[A]{(A,B)}"));
-
-			SuperPredicate spB = program.getSuperPredicate(1);
-			sb.setLength(0);
-			spB.relation.collectRelation(sb);
-			System.out.println(sb.toString());
-			assertTrue(sb.toString().equals("[B]{(D,E)}"));
-			
-			SuperPredicate spC = program.getSuperPredicate(2);
-			sb.setLength(0);
-			spC.relation.collectRelation(sb);
-			System.out.println(sb.toString());
-			assertTrue(sb.toString().equals("[C]{(C11,C12,C13)(C21,C22,C23)}"));
-
-			bte.deriveAllFacts(spA, program);
-			sb.setLength(0);
-			spA.relation.collectRelation(sb);
-			System.out.println(sb.toString());
-			assertTrue(sb.toString().equals("[A]{(A,A)(A,B)(B,A)(B,B)(C11,C11)(C11,C12)(C12,C11)(C12,C12)(C21,C21)(C21,C22)(C22,C21)(C22,C22)(D,D)(D,E)(E,D)(E,E)}"));
-			
-			bte.deriveAllFacts(spB, program);
-			sb.setLength(0);
-			spB.relation.collectRelation(sb);
-			System.out.println(sb.toString());
-			assertTrue(sb.toString().equals("[B]{(B,A)(C11,C12)(C11,C13)(C12,C13)(C21,C22)(C21,C23)(C22,C23)(D,E)}"));
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
+	// @Test
+	// public void testDeriveAll8() {
+	//     try {
+	//         Program program = (Program) Util.parse(new File(TEST_DIRECTORY_VALID, "relationsTest_14.in"));
+	//         BacktrackingEvaluation bte = new BacktrackingEvaluation();
+	//         bte.evaluate(program);
+	//         StringBuilder sb = new StringBuilder();
+	//
+	//         SuperPredicate spA = program.getSuperPredicate(0);
+	//         sb.setLength(0);
+	//         spA.relation.collectRelation(sb);
+	//         System.out.println(sb.toString());
+	//         assertTrue(sb.toString().equals("[A]{(A,B)}"));
+    //
+	//         SuperPredicate spB = program.getSuperPredicate(1);
+	//         sb.setLength(0);
+	//         spB.relation.collectRelation(sb);
+	//         System.out.println(sb.toString());
+	//         assertTrue(sb.toString().equals("[B]{(D,E)}"));
+	//
+	//         SuperPredicate spC = program.getSuperPredicate(2);
+	//         sb.setLength(0);
+	//         spC.relation.collectRelation(sb);
+	//         System.out.println(sb.toString());
+	//         assertTrue(sb.toString().equals("[C]{(C11,C12,C13)(C21,C22,C23)}"));
+    //
+	//         bte.deriveAllFacts(spA, program);
+	//         sb.setLength(0);
+	//         spA.relation.collectRelation(sb);
+	//         System.out.println(sb.toString());
+	//         assertTrue(sb.toString().equals("[A]{(A,A)(A,B)(B,A)(B,B)(C11,C11)(C11,C12)(C12,C11)(C12,C12)(C21,C21)(C21,C22)(C22,C21)(C22,C22)(D,D)(D,E)(E,D)(E,E)}"));
+	//
+	//         bte.deriveAllFacts(spB, program);
+	//         sb.setLength(0);
+	//         spB.relation.collectRelation(sb);
+	//         System.out.println(sb.toString());
+	//         assertTrue(sb.toString().equals("[B]{(B,A)(C11,C12)(C11,C13)(C12,C13)(C21,C22)(C21,C23)(C22,C23)(D,E)}"));
+	//     } catch (Exception e) {
+	//         e.printStackTrace();
+	//     }
+	// }
 }

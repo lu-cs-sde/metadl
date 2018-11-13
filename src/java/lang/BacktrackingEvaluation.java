@@ -20,7 +20,7 @@ import lang.relation.PseudoTuple;
 
 public class BacktrackingEvaluation extends InternalEvaluation {
 	@Override
-	void evaluate(Program p) {
+	public void evaluate(Program p) {
 //		System.out.println("Evaluate Backtracking");
 		loadEBDFacts(p);
 		// p.getSuperPredicates().forEach(sp -> topDownProof(p, sp));

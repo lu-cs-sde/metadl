@@ -46,9 +46,14 @@ public class Compiler {
 			Evaluation eval = new BacktrackingEvaluation();
 			eval.evaluate(program);
 
-			StringBuilder sb = new StringBuilder();
-			program.collectMetaInfo(sb);
-			System.out.println(sb.toString());
+            System.out.println(program.prettyPrint());
+            program.soufflePrint("souffle_ex.dl");
+
+
+
+			// StringBuilder sb = new StringBuilder();
+			// program.collectMetaInfo(sb);
+			// System.out.println(sb.toString());
 
 			// System.out.println(program.dumpTree());
 

@@ -51,6 +51,16 @@ public final class Util {
 		}
 	}
 
+    public static void compareOutputFiles(File f1, File f2) {
+		try {
+			assertEquals(readFileToString(f1),
+                         readFileToString(f2),
+                        "Output differs");
+		} catch (IOException e) {
+			fail("IOException occurred while comparing output: " + e.getMessage());
+		}
+    }
+
 	/**
 	 * Reads an entire file to a string object.
 	 * <p>If the file does not exist an empty string is returned.

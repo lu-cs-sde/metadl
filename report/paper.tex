@@ -20,8 +20,8 @@
 %% Bibliography style
 \bibliographystyle{ACM-Reference-Format}
 
-\usepackage{lipsum}
-
+\usepackage{proof}
+\newcommand{\NL}[0]{ \hfill\\\noindent }
 \begin{document}
 
 %% Title information5
@@ -48,38 +48,13 @@ Text of abstract \ldots.
 
 
 \maketitle
-
-\section{Ideas}
-\input{ideas}
 \section{Introduction}
-\subsection{DataLog}
-\subsection{JastAdd}
-
-Text of paper \ldots
-
-Here is a reference to a journal article by Knuth~\cite{Knuth68}. And here is a reference to a conference paper by Georges and others~\cite{GeorgesBE07}.
-
-\lipsum[1-3] %% Boilerplate text
-
+\input{introduction}
 \section{Content}
 Replace the header of this section with something appropriate for your paper. Use around 1-4 sections for the content.
-
-\lipsum[4-10] %% Boilerplate text
-
-
 % \section{Evaluation}
-
-\lipsum[11-13] %% Boilerplate text
-
-
 % \section{Related work}
-
-\lipsum[14-15] %% Boilerplate text
-
 % \section{Conclusion}
-
-\lipsum[16-17] %% Boilerplate text
-
 %% Acknowledgments
 \begin{acks}
 Text of acknowledgments \ldots.

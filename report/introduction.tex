@@ -1,0 +1,48 @@
+Datalog is a syntactically simple declarative language that enables expression and evaluation of certain first-order logic propositions. From its' inception in the nineteen-eighties it received substantial interest from the academic community into the early nineteen-nineties\cite{Green:2013:DRQ:2688167.2688168}. The efforts primary drive were to enable knowledge based systems that allowed the generation of new facts based on rules stated using the logic programming paradigm. At the time, this had applications in both artificial intelligence as well as a complement to the traditional relational database querying systems such as SQL\cite{Ceri:1989:YAW:627272.627357}\cite{Bancilhon:1986:AIR:16894.16859}.
+
+\NL
+After a time of cooling interest, Datalog has emerged again as an attractive way to express complex inter-dependencies\cite{Green:2013:DRQ:2688167.2688168}. A notable example is from Program Analysis where systems such as Doop \cite{Smaragdakis:2010:UDF:2185923.2185939} make heavy use of Datalog to derive e.g. call-graph and points-to information, both of which typically have mutually recursive dependencies in languages using dynamic dispatch.
+
+\NL
+There are currently many (CITE) Datalog implementations.
+
+\subsection{Core Language}
+There are many flavors of the Datalog language but they all build on and possibly extend a common core. 
+
+\NL
+A \textit{program} $P$ consists of a set of \textit{Horn clauses} $H_1, \ldots H_n$. A horn clause has a \textit{head} and a \textit{body}. The head is a single \textit{literal} and the body is a sequence of literals. A literal is identified by a \textit{predicate symbol} and a sequence of \textit{terms}. An example of a propositional rule (without terms) is shown below:
+\begin{align*}
+A :- B_1, B_2, \ldots B_m
+\end{align*}
+\noindent
+Above we have a single horn clause (hereafter called a \textit{rule}). It has head $A$ body $B_1, B_2, \ldots B_m$. The semantics of the above rule is that if the conjunction of all the literals in the body hold in a given \textit{model} then we conclude that $A$ holds in that model.
+
+\NL
+A term is either \textit{variable} or \textit{constant}. 
+A model is a complete and consistent instatiation of all variables with constant values where each constant is drawn from the \textit{domain} of the model. Consider the following first-order example:
+\begin{align*}
+A(x, y, "C") :- B_1(x, "C"), B_2("C", y), B_3(x, y)
+\end{align*}
+Assume that we have model domain $\Omega$. Then the possible instantiations are $(x,y) \in \Omega \times \Omega$. A predicate that contain only constant terms is called \textit{ground}. A ground predicate is true if it can be derived by the set of rules in the program, or if it is declared as being axiomatically true. We call a true ground predicate a \textit{fact}. A fact $A(C_1, \ldots C_k)$ can be interpreted as the $k$-tuple $(C_1, \ldots, C_k)$ belonging to the relation $A$ of \textit{arity} $k$.
+
+\NL
+The most general goal then is to, for a given predicate symbol $A$, find all tuples that belong to $A$ in any possible model given the Datalog rules and the model domain of objects. Consider again the first-order rule above. In the rule we have variables $x,y$ and constant "$C$". The semantics of the rule is shown below with model domain $\Omega$.
+\begin{align*}
+\infer{(c_1, c_2, "C") \in A}{%
+	\forall c_1 \in \Omega.\;\forall c_2 \in \Omega. \;\; (c_1, "C") \in B_1, ("C", c_2) \in B_2, (c_1,c_2) \in B_3
+}
+\end{align*}
+
+\subsection{Security Features and Time Complexity}
+
+\subsection{Query Evaluation}
+
+\subsection{Goal}
+A common front-end that allows cross-compilation into different Datalog implementations. A common front-end enables a convenient way to compare the performance of different Datalog evaluation methods.
+
+\subsection{JastAdd}
+JastAdd (CITE) is a meta-compilation system that enables the expression of arbitrary graphs on top of an abstract syntax tree (AST). Information is propagated in the AST through the use of so called Reference Attribute Grammars. JastAdd also supports aspects (CITE) which allow the weaving of methods and class fields from different source locations into a single generated class. This allows easy extension of the generated AST classes with additional properties.
+
+% Expression Problem
+% (Knuth attribute Grammars)
+% (How much is interesting to write here?)

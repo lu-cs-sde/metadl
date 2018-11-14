@@ -1,7 +1,7 @@
 Datalog is a syntactically simple declarative language that enables expression and evaluation of certain first-order logic propositions. From its' inception in the nineteen-eighties it received substantial interest from the academic community into the early nineteen-nineties\cite{Green:2013:DRQ:2688167.2688168}. The efforts primary drive were to enable knowledge based systems that allowed the generation of new facts based on rules stated using the logic programming paradigm. At the time, this had applications in both artificial intelligence as well as a complement to the traditional relational database querying systems such as SQL\cite{Ceri:1989:YAW:627272.627357}\cite{Bancilhon:1986:AIR:16894.16859}.
 
 \NL
-After a time of cooling interest, Datalog has emerged again as an attractive way to express complex inter-dependencies\cite{Green:2013:DRQ:2688167.2688168}. A notable example is from Program Analysis where systems such as Doop \cite{Smaragdakis:2010:UDF:2185923.2185939} make heavy use of Datalog to derive e.g. call-graph and points-to information, both of which typically have mutually recursive dependencies in languages using dynamic dispatch.
+After a time of cooling interest, Datalog has emerged again as an attractive way to express complex inter-dependencies\cite{Green:2013:DRQ:2688167.2688168}. A notable example is from Program Analysis where frameworks such as Doop \cite{Smaragdakis:2010:UDF:2185923.2185939} make use of Datalog to derive e.g. call-graph and points-to information, both of which typically have mutually recursive dependencies in languages using dynamic dispatch.
 
 \NL
 There are currently many (CITE) Datalog implementations.
@@ -12,28 +12,72 @@ There are many flavors of the Datalog language but they all build on and possibl
 \NL
 A \textit{program} $P$ consists of a set of \textit{Horn clauses} $H_1, \ldots H_n$. A horn clause has a \textit{head} and a \textit{body}. The head is a single \textit{literal} and the body is a sequence of literals. A literal is identified by a \textit{predicate symbol} and a sequence of \textit{terms}. An example of a propositional rule (without terms) is shown below:
 \begin{align*}
-A :- B_1, B_2, \ldots B_m
+A :- \;B_1, B_2, \ldots B_m
 \end{align*}
 \noindent
-Above we have a single horn clause (hereafter called a \textit{rule}). It has head $A$ body $B_1, B_2, \ldots B_m$. The semantics of the above rule is that if the conjunction of all the literals in the body hold in a given \textit{model} then we conclude that $A$ holds in that model.
+Above we have a single horn clause (hereafter called a \textit{rule}). It has head $A$ and body $B_1, B_2, \ldots B_m$. The intuitive meaning of the above rule is that if the conjunction of all the literals in the body are true then we conclude $A$.
 
 \NL
-A term is either \textit{variable} or \textit{constant}. 
-A model is a complete and consistent instatiation of all variables with constant values where each constant is drawn from the \textit{domain} of the model. Consider the following first-order example:
+Datalog deals not only with propositional rules, but allows a restricted range of first-order propositions where each literal is associated with a sequence of terms. A term is either \textit{variable} or \textit{constant}. A literal that contain only constant terms is called a \textit{ground literal}. We further partition the predicates into extensional (EDB) and intensional (IDB). The EDB's are all predicates that are taken as input from an external database. The IDB's are the predicates that are not EDB and are intensionally defined through rules. The EDB's introduce \textit{facts}, i.e. ground literals. One may additionally introduce facts by declaring a rule with a ground literal head that has an empty body. 
+
+\begin{itemize}
+\item The set of all constants in all facts is called the \textit{domain} and is denoted $\Omega$.
+\item The set of all facts is called the \textit{active database instance} and is denoted $I$.
+\end{itemize}
+ 
+There are three main semantic interpretations of Datalog: model-, fixpoint-, and proof-theoretic semantics. \cite{Green:2013:DRQ:2688167.2688168}. A brief overview is given below.
+
+\paragraph{Model-theoretic Semantics}\NL
+A \textit{model} of a Datalog program $P$ is a consistent (satisfying all rules of $P$) extension of the initial EDB facts. Each rule is interpreted as a universally quantified rule. For example, below is given a rule and its' corresponding semantic interpretation. In the example $B(c_1, "C")$ is written as $(c_1, "C") \in B$ to emphasize the practical correspondence between predicates and relations.
 \begin{align*}
-A(x, y, "C") :- B_1(x, "C"), B_2("C", y), B_3(x, y)
+A(x, y, "C") :- \;B_1(x, "C"), B_2("C", y), B_3(x, y)
 \end{align*}
-Assume that we have model domain $\Omega$. Then the possible instantiations are $(x,y) \in \Omega \times \Omega$. A predicate that contain only constant terms is called \textit{ground}. A ground predicate is true if it can be derived by the set of rules in the program, or if it is declared as being axiomatically true. We call a true ground predicate a \textit{fact}. A fact $A(C_1, \ldots C_k)$ can be interpreted as the $k$-tuple $(C_1, \ldots, C_k)$ belonging to the relation $A$ of \textit{arity} $k$.
-
-\NL
-The most general goal then is to, for a given predicate symbol $A$, find all tuples that belong to $A$ in any possible model given the Datalog rules and the model domain of objects. Consider again the first-order rule above. In the rule we have variables $x,y$ and constant "$C$". The semantics of the rule is shown below with model domain $\Omega$.
 \begin{align*}
 \infer{(c_1, c_2, "C") \in A}{%
 	\forall c_1 \in \Omega.\;\forall c_2 \in \Omega. \;\; (c_1, "C") \in B_1, ("C", c_2) \in B_2, (c_1,c_2) \in B_3
 }
 \end{align*}
+An inference algorithm attempts to find the \textit{minimal model}, i.e. a model $m$ of $P$ such that for any other model $m'$ of $P$, all facts of $m$ are in $m'$. In practice this means that an inference algorithm should only add a fact if it is required by the semantics of a rule (even if adding the fact may lead to an extended model of $P$). 
+
+\paragraph{Fixpoint-theoretic Semantics}\NL
+Begin with the set of all facts in the active database instance $I^0$. The set of new facts that can be derived (under model-theoretic semantics) using the rules of a program $P$ and the existing facts in $I^i$ is denoted $\Delta_i$. We get the following inductive definition of $I$:
+\begin{align*}
+&I^0 = \{ \text{EDB Facts in } P \}\\
+&I^{i + 1} = I^i \cup \Delta_i 
+\end{align*}
+It can be shown(CITE) that the minimal model is computed as $I^{n}$ for $n$ such that $I^{n}$ = $I^{n + 1}$. Since $I^i \subseteq I^{i + 1}$ (monotonically increasing) and with the practical assumption of a finite domain, the fix-point algorithm is guaranteed to terminate.
+
+\paragraph{Proof-theoretic Semantics}\NL
+Consider a ground literal $A(C_1, \ldots, C_n)$. A query for the ground literal asks for a proof that $A(C_1, \ldots, C_n)$ is in the minimal model of a program $P$. A proof can be visualized as an \textit{and-or tree} $T$. $T$ has the proposition (ground literal) to prove as the root. At an OR-node, all possible rules are tested. If any of them succeed then the proposition has been proven. At an AND-node, all the children proposition need to be proven for the node to become true. An example is shown in figure X.
+\begin{align*}
+r_1: A :- \;B, C\\
+r_2: A :- \;B, D
+\end{align*}
+\begin{figure}[ht!]
+  \centering
+
+\begin{forest}
+for tree={circle, draw, l sep=1pt}
+[A,blue 
+	[$\lor$  
+		[$\land$, edge label={node[midway,left] {$r_1$}}
+			[B] 
+			[C] 
+		]
+		[$\land$, edge label={node[midway,right] {$r_2$}}
+			[B]
+			[D]
+		]
+	]
+]
+\end{forest}
+\caption{An and-or tree for rules $r_1: A :- \;B, C$, $r_2: A :- \;B, D$}
+\end{figure}
+\noindent
+When traversing the tree the model is updated with new facts that are needed to prove the root proposition. Those facts then become part of the extended model. 
 
 \subsection{Security Features and Time Complexity}
+Above a fact was stated to be a ground literal that is true in a given model. An axiomatic fact can be declared as a rule with no body: $A(t_1, \ldots, t_n)$. Datalog disallows axiomatic facts that contain variables. This is implied by the following more general rule: all variables occurring in the head of a rule must also occur in the body of the rule. This is called the \textit{range restriction property} \cite{Green:2013:DRQ:2688167.2688168}.
 
 \subsection{Query Evaluation}
 
@@ -45,4 +89,5 @@ JastAdd (CITE) is a meta-compilation system that enables the expression of arbit
 
 % Expression Problem
 % (Knuth attribute Grammars)
+% Parser / Lexer
 % (How much is interesting to write here?)

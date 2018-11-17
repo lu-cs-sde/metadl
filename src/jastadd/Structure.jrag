@@ -58,34 +58,34 @@ aspect Categorization {
    eq RealLiteral.getTerms(int index).containedIn() = this;
 }
 
-aspect SuperPredicate {
-    syn List Program.getSuperPredicateList() {
+aspect FormalPredicate {
+    syn List Program.getFormalPredicateList() {
     	List list = new List();
     	HashMap<String, HashSet<PredicateSymbol>> predMap = predicateMap();
     	for(PredicateSymbol k : uniquePredicateSymbols())
-    		list.add(new SuperPredicate(k.getID()));
+    		list.add(new FormalPredicate(k.getID()));
     	return list;
     }
     
-    inh HashSet<PredicateSymbol> SuperPredicate.predicates();
-    eq Program.getSuperPredicate(int index).predicates() = predicateMap().get(getSuperPredicate(index).getSTRING());
+    inh HashSet<PredicateSymbol> FormalPredicate.predicates();
+    eq Program.getFormalPredicate(int index).predicates() = predicateMap().get(getFormalPredicate(index).getSTRING());
     
-    syn String SuperPredicate.predicateName() {
+    syn String FormalPredicate.predicateName() {
     	if(predicates().size() == 0) return "NO_NAME";
     	return predicates().iterator().next().getID();
     }
     
-    syn SuperPredicate PredicateSymbol.superpredicate() {
+    syn FormalPredicate PredicateSymbol.formalpredicate() {
     	Program p = literal().stmt().program();
-    	for(SuperPredicate s : p.getSuperPredicates()) {
+    	for(FormalPredicate s : p.getFormalPredicates()) {
     		if(s.predicateName().equals(getID())) return s;
     	}
-    	System.err.println("Each Predicate should belong to a superpredicate");
+    	System.err.println("Each Predicate should belong to a FormalPredicate");
     	System.exit(0);
     	return null; // Needed for JastAdd
     }
     
-    syn HashSet<PredicateSymbol> SuperPredicate.edbPredicates() {
+    syn HashSet<PredicateSymbol> FormalPredicate.edbPredicates() {
     	HashSet<PredicateSymbol> edbs = new HashSet<PredicateSymbol>();
     	for(PredicateSymbol ps : predicates()) {
     		if(ps.isEDBFact()) {

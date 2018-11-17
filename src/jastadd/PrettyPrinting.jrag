@@ -139,7 +139,7 @@ aspect SoufflePrinting {
         pr.out.print(")\n");
     }
 
-    public void SuperPredicate.soufflePrint(PrettyPrinter pr) {
+    public void FormalPredicate.soufflePrint(PrettyPrinter pr) {
         pr.out.print(".decl " + predicateName() + "(");
         List<PredicateSymbol> constants = new List<PredicateSymbol>();
         for(int i = 0; i != realArity(); ++i) {
@@ -151,7 +151,7 @@ aspect SoufflePrinting {
     }
 
     public void Program.soufflePrint(PrettyPrinter pr) {
-        printList(getSuperPredicates(), "", "\n", "\n", pr);
+        printList(getFormalPredicates(), "", "\n", "\n", pr);
         prettyPrint(pr);
     }
 }

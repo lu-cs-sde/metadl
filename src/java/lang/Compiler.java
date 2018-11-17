@@ -13,6 +13,7 @@ import lang.ast.Program;
 import lang.ast.config.ConfigParser;
 import lang.ast.config.ConfigScanner;
 import lang.ast.config.Description;
+import lang.io.SimpleLogger;
 
 /**
  * Dumps the parsed Abstract Syntax Tree of a Calc program.
@@ -32,59 +33,34 @@ public class Compiler {
 				System.exit(1);
 				return;
 			}
-			
-			
+			/**
+			 * Collect program args and parse to collect problem description
+			 */
 			StringBuilder sb = new StringBuilder();
 			for(int i = 0; i != args.length; ++i) {
 				sb.append(args[i]);
 				sb.append(" ");
 			}
-			System.out.println("Got: " + sb.toString());
 			
 			ConfigScanner configScanner = new ConfigScanner(new StringReader(sb.toString()));
 			ConfigParser configParser   = new ConfigParser();
 			Description descr = (Description) configParser.parse(configScanner);
 			
-			System.out.println("IN: " + descr.inputFile());
-			System.out.println("OUT: " + descr.outputDir());
-			System.out.println("FACTS: " + descr.factsDir());
+			SimpleLogger.logger().log("IN: " + descr.inputFile()).log("OUT: " + descr.outputDir()).log("FACTS: " + descr.factsDir());
 
 			LangScanner scanner = new LangScanner(new FileReader(descr.getInput().getPath()));
 			LangParser parser = new LangParser();
 			Program program = (Program) parser.parse(scanner);
 			DrAST_root_node = program; // Enable debugging with DrAST
 			
-
 			HashSet<String> serrs = program.semanticErrors();
-
 			if (!serrs.isEmpty()) {
-				System.out.println("Compilation failed with the following error messages: ");
-				serrs.forEach(err -> System.out.println(err));
+				SimpleLogger.logger().log("Compilation failed with the following error messages: ", SimpleLogger.LogLevel.Level.ERROR);
+				serrs.forEach(err -> SimpleLogger.logger().log(err));
 				System.exit(0);
 			}
-			// BacktrackingEvaluation eval = new BacktrackingEvaluation();
-			// eval.evaluate(program);
-
-            System.out.println(program.prettyPrint());
-            program.soufflePrint("souffle_ex.dl");
-            
-//            program.getSuperPredicates().forEach(sp -> {
-//            	eval.deriveAllFacts(sp, program);
-//            	CSVUtil.dumpFileInto(sp, new File("output/" + sp.predicateName() + ".csv"));
-//            });
-
-
-			// StringBuilder sb = new StringBuilder();
-			// program.collectMetaInfo(sb);
-			// System.out.println(sb.toString());
-
-			// System.out.println(program.dumpTree());
-
-			/* for(ErrorMessage m : program.errors()) */
-			/* System.out.println(m); */
-			/*  */
-			/* if(program.errors().size() == 0) */
-			/* program.genCode(System.out); */
+			
+			descr.evaluationMethod().evaluate(program);
 
 		} catch (FileNotFoundException e) {
 			System.out.println("File not found!");
@@ -97,6 +73,6 @@ public class Compiler {
 	}
 
 	private static void printUsage() {
-		System.err.println("internal|external.souffle -F <INPUT-FILE>");
+		SimpleLogger.logger().log("internal|external.souffle -F <INPUT-FILE>", SimpleLogger.LogLevel.Level.ERROR);
 	}
 }

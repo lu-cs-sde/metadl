@@ -1,14 +1,6 @@
 package lang.evaluation;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.PrintStream;
-
 import lang.ast.Program;
-import lang.ast.SoufflePrettyPrinter;
-import lang.ast.config.Description;
 
 public class SouffleEvaluation extends ExternalEvaluation {
 	

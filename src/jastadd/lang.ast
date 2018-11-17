@@ -1,7 +1,7 @@
 /**
         ENTRYPOINT
 **/
-Program  ::= Stmt* /SuperPredicate*/; 
+Program  ::= Stmt* /FormalPredicate*/; 
 
 abstract Stmt;
 
@@ -33,4 +33,4 @@ abstract Constant:Term;
 StringConstant:Constant ::= <STRING>;
 IntConstant:Constant ::= <NUMERAL>;
 
-SuperPredicate ::= <STRING>;
+FormalPredicate ::= <STRING>;

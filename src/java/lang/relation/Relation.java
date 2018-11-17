@@ -5,14 +5,14 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import lang.ast.Constant;
-import lang.ast.SuperPredicate;
+import lang.ast.FormalPredicate;
 
 public class Relation {
-	private SuperPredicate superPredicate;
+	private FormalPredicate superPredicate;
 	private Set<PseudoTuple> relation = new TreeSet<PseudoTuple>();
 	private int arity;
 
-	public Relation(SuperPredicate superPredicate, int arity) {
+	public Relation(FormalPredicate superPredicate, int arity) {
 		this.superPredicate = superPredicate;
 		this.arity = arity;
 	}

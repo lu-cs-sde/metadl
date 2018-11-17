@@ -5,7 +5,7 @@ import java.io.File;
 import lang.ast.ExtensionalDB;
 import lang.ast.List;
 import lang.ast.Program;
-import lang.ast.SuperPredicate;
+import lang.ast.FormalPredicate;
 import lang.io.CSVUtil;
 import lang.relation.Relation;
 
@@ -15,7 +15,7 @@ public abstract class InternalEvaluation extends Evaluation {
 		program.objects.addAll(program.uniqueFileObjects());
 
 		System.out.println("Load EDB Facts");
-		List<SuperPredicate> spreds = program.getSuperPredicateList();
+		List<FormalPredicate> spreds = program.getFormalPredicateList();
 		spreds.forEach(sp -> {
 			sp.relation = new Relation(sp.fileRelation());
 

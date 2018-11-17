@@ -9,7 +9,7 @@ import java.util.TreeSet;
 
 import lang.ast.Constant;
 import lang.ast.RealLiteral;
-import lang.ast.SuperPredicate;
+import lang.ast.FormalPredicate;
 import lang.ast.Term;
 import lang.ast.Variable;
 
@@ -17,7 +17,7 @@ public class PseudoTuple implements Comparable<PseudoTuple> {
 	public final int size;
 	private Term[] tuple;
 	
-	public final SuperPredicate sp;
+	public final FormalPredicate sp;
 	
 	public PseudoTuple(TreeSet<Variable> vars) {
 		this.size = vars.size();
@@ -26,7 +26,7 @@ public class PseudoTuple implements Comparable<PseudoTuple> {
 		vars.toArray(this.tuple);
 	}
 	
-	public PseudoTuple(SuperPredicate sp) {
+	public PseudoTuple(FormalPredicate sp) {
 		this.size = sp.realArity();
 		this.tuple = new Term[size];
 		this.sp = sp;
@@ -38,7 +38,7 @@ public class PseudoTuple implements Comparable<PseudoTuple> {
 		for (int i = 0; i != size; ++i) {
 			tuple[i] = fact.getTerms(i);
 		}
-		this.sp = fact.getPredicate().superpredicate();
+		this.sp = fact.getPredicate().formalpredicate();
 	}
 	
 	public PseudoTuple(PseudoTuple o) {
@@ -50,7 +50,7 @@ public class PseudoTuple implements Comparable<PseudoTuple> {
 		this.sp = o.sp;
 	}
 	
-	public PseudoTuple(SuperPredicate sp, int size) {
+	public PseudoTuple(FormalPredicate sp, int size) {
 		this.size = size;
 		this.tuple = new Term[size];
 		for (int i = 0; i != size; ++i) {

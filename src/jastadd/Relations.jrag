@@ -59,37 +59,37 @@ aspect Arity {
     eq RealLiteral.arity() = getNumTerms();
     syn int PredicateSymbol.arity() = literal().arity();
     
-    syn HashSet<Integer> SuperPredicate.arities() {
+    syn HashSet<Integer> FormalPredicate.arities() {
     	HashSet<Integer> arities = new HashSet<Integer>();
     	for(PredicateSymbol pred : predicates())
             arities.add(pred.arity());
         return arities;
     }
     
-    syn HashSet<Integer> SuperPredicate.realArities() {
+    syn HashSet<Integer> FormalPredicate.realArities() {
         HashSet<Integer> realArities = new HashSet<Integer>(arities());
         realArities.remove(-1);
         return realArities;
     }
     
-    syn boolean SuperPredicate.uniqueArity() {
+    syn boolean FormalPredicate.uniqueArity() {
         return realArities().size() == 1;
     }
 
-    syn int SuperPredicate.realArity() {
+    syn int FormalPredicate.realArity() {
         if(!uniqueArity()) return 0;
         return realArities().iterator().next();
     }
     
-    SuperPredicate contributes ("Different Arities for predicate symbol: " + predicateName())
+    FormalPredicate contributes ("Different Arities for predicate symbol: " + predicateName())
         when !uniqueArity() && arities().size() != 1
         to Program.semanticErrors();
 }
 
 aspect Relation {
-	public Relation SuperPredicate.relation;
+	public Relation FormalPredicate.relation;
 	
-	syn Relation SuperPredicate.fileRelation() {
+	syn Relation FormalPredicate.fileRelation() {
 		Relation r = new Relation(this, realArity());
 		for(PredicateSymbol pred : predicates()) {
 			if(pred.isFileFact()) {
@@ -101,7 +101,7 @@ aspect Relation {
 }
 
 aspect Rules {
-	syn HashSet<Rule> SuperPredicate.useInRules() {
+	syn HashSet<Rule> FormalPredicate.useInRules() {
 		HashSet<Rule> rules = new HashSet<Rule>();
 		for(PredicateSymbol pred : predicates()) {
 			if(pred.isUse()) {
@@ -111,7 +111,7 @@ aspect Rules {
 		return rules;
 	}
 	
-	syn HashSet<Rule> SuperPredicate.definedInRules() {
+	syn HashSet<Rule> FormalPredicate.definedInRules() {
 		HashSet<Rule> rules = new HashSet<Rule>();
 		for(PredicateSymbol pred : predicates()) {
 			if(pred.isDef()) {
@@ -121,7 +121,7 @@ aspect Rules {
 		return rules;
 	}
 	
-	syn RealLiteral SuperPredicate.findRuleHead(Rule rule) {
+	syn RealLiteral FormalPredicate.findRuleHead(Rule rule) {
 		for(RealLiteral rl : rule.getHeadss()) {
 			if(rl.getPredicate().getID().equals(predicateName())) return rl;
 		}

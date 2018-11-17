@@ -16,7 +16,7 @@ import lang.ast.Constant;
 import lang.ast.IntConstant;
 import lang.ast.Program;
 import lang.ast.StringConstant;
-import lang.ast.SuperPredicate;
+import lang.ast.FormalPredicate;
 import lang.relation.PseudoTuple;
 
 public class CSVUtil {
@@ -29,7 +29,7 @@ public class CSVUtil {
 		}
 	}
 
-	public static void readFileInto(Program program, SuperPredicate sp, File f) {
+	public static void readFileInto(Program program, FormalPredicate sp, File f) {
 		CSVParser parser = new CSVParserBuilder().withSeparator(',').build();
 		try (CSVReader reader = new CSVReaderBuilder(new FileReader(f)).withCSVParser(parser).build()) {
 			String[] line;
@@ -57,7 +57,7 @@ public class CSVUtil {
 		}
 	}
 
-	public static void dumpFileInto(SuperPredicate sp, File f) {
+	public static void dumpFileInto(FormalPredicate sp, File f) {
 		try (CSVWriter writer = new CSVWriter(new OutputStreamWriter(new FileOutputStream(f)))) {
 			sp.relation.tuples().forEach(t -> {
 				writer.writeNext(t.toStringArray());
@@ -65,5 +65,9 @@ public class CSVUtil {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+	}
+	
+	public static void dumpFormalPredicatesInto(Program p, File f) {
+		p.getFormalPredicates().forEach(sp -> dumpFileInto(sp, f));
 	}
 }

@@ -32,7 +32,7 @@ aspect TestInfo {
 		if(isEDBFact()) sb.append("EDB_FACT");
 	}
 	
-	public void SuperPredicate.collectPredicateInfo(StringBuilder sb) {
+	public void FormalPredicate.collectPredicateInfo(StringBuilder sb) {
 		ArrayList<PredicateSymbol> predsList = new ArrayList<PredicateSymbol>(predicates());
 		if(predsList.size() == 0) return;
 		
@@ -56,23 +56,23 @@ aspect TestInfo {
 	}
 	
 	public void Program.collectPredicateInfo(StringBuilder sb) {
-		List<SuperPredicate> spreds = getSuperPredicates();
-		CollectUtil<SuperPredicate> collector = new CollectUtil<SuperPredicate>();
-		collector.collectList("PREDICATES: {", "\n}", "\n", sb, spreds, new CollectUtil.Collector<SuperPredicate> (){
-			public void collect(SuperPredicate t, StringBuilder sb) {
+		List<FormalPredicate> spreds = getFormalPredicates();
+		CollectUtil<FormalPredicate> collector = new CollectUtil<FormalPredicate>();
+		collector.collectList("PREDICATES: {", "\n}", "\n", sb, spreds, new CollectUtil.Collector<FormalPredicate> (){
+			public void collect(FormalPredicate t, StringBuilder sb) {
 				t.collectPredicateInfo(sb);
 			}
 		});
 	}
 	
 	public void Program.collectFileRelationInfo(StringBuilder sb) {
-		for(SuperPredicate sp : getSuperPredicates()) {
+		for(FormalPredicate sp : getFormalPredicates()) {
 			sp.fileRelation().collectRelation(sb);
 		}
 	}
 	
 	public void Program.collectRelationInfo(StringBuilder sb) {
-		for(SuperPredicate sp : getSuperPredicates()) {
+		for(FormalPredicate sp : getFormalPredicates()) {
 			sp.relation.collectRelation(sb);
 		}
 	}
@@ -114,7 +114,7 @@ aspect TestInfo {
 		sb.append("}");
 	}
 	
-	public void SuperPredicate.collectRuleInfo(StringBuilder sb) {
+	public void FormalPredicate.collectRuleInfo(StringBuilder sb) {
 		HashSet<Rule> use_rules = useInRules();
 		sb.append("RULE USE [" + predicateName() + "] {\n");
 		for(Rule r : use_rules) {
@@ -132,9 +132,9 @@ aspect TestInfo {
 	}
 	
 	public void Program.collectRuleInfo(StringBuilder sb) {
-		CollectUtil<SuperPredicate> collector = new CollectUtil<SuperPredicate>();
-		collector.collectList("", "", "\n", sb, getSuperPredicates(), new CollectUtil.Collector<SuperPredicate> (){
-			public void collect(SuperPredicate l, StringBuilder sb) {
+		CollectUtil<FormalPredicate> collector = new CollectUtil<FormalPredicate>();
+		collector.collectList("", "", "\n", sb, getFormalPredicates(), new CollectUtil.Collector<FormalPredicate> (){
+			public void collect(FormalPredicate l, StringBuilder sb) {
 				l.collectRuleInfo(sb);
 			}
 		});

@@ -21,7 +21,7 @@ import lang.ast.PredicateSymbol;
 import lang.ast.Program;
 import lang.ast.RealLiteral;
 import lang.ast.StringConstant;
-import lang.ast.SuperPredicate;
+import lang.ast.FormalPredicate;
 import lang.ast.Term;
 import lang.ast.Variable;
 import lang.evaluation.BacktrackingEvaluation;
@@ -196,7 +196,7 @@ public class RelationTests {
 	public void testFreeVarsTuple() {
 		try {
 			Program program = (Program) Util.parse(new File(TEST_DIRECTORY_VALID, "relationsTest_6.in"));
-			HashSet<PredicateSymbol> preds = program.getSuperPredicate(0).predicates();
+			HashSet<PredicateSymbol> preds = program.getFormalPredicate(0).predicates();
 			RealLiteral rl = (RealLiteral) preds.iterator().next().literal();
 
 			PseudoTuple ps = new PseudoTuple(rl);
@@ -213,7 +213,7 @@ public class RelationTests {
 	public void testFreeVarsTupleEmpty() {
 		try {
 			Program program = (Program) Util.parse(new File(TEST_DIRECTORY_VALID, "relationsTest_6.in"));
-			HashSet<PredicateSymbol> preds = program.getSuperPredicate(1).predicates();
+			HashSet<PredicateSymbol> preds = program.getFormalPredicate(1).predicates();
 			RealLiteral rl = (RealLiteral) preds.iterator().next().literal();
 
 			PseudoTuple ps = new PseudoTuple(rl);
@@ -231,7 +231,7 @@ public class RelationTests {
 			BacktrackingEvaluation bte = new BacktrackingEvaluation();
 			bte.evaluate(program);
 
-			HashSet<PredicateSymbol> preds = program.getSuperPredicate(0).predicates();
+			HashSet<PredicateSymbol> preds = program.getFormalPredicate(0).predicates();
 			RealLiteral rl = (RealLiteral) preds.iterator().next().literal();
 			PseudoTuple ps = new PseudoTuple(rl);
 
@@ -257,7 +257,7 @@ public class RelationTests {
 			Program program = (Program) Util.parse(new File(TEST_DIRECTORY_VALID, "relationsTest_7.in"));
 			BacktrackingEvaluation bte = new BacktrackingEvaluation();
 			bte.evaluate(program);
-			SuperPredicate sp = program.getSuperPredicate(0);
+			FormalPredicate sp = program.getFormalPredicate(0);
 
 			StringBuilder sb = new StringBuilder();
 			sp.relation.collectRelation(sb);
@@ -282,7 +282,7 @@ public class RelationTests {
 			Program program = (Program) Util.parse(new File(TEST_DIRECTORY_VALID, "relationsTest_7.in"));
 			BacktrackingEvaluation bte = new BacktrackingEvaluation();
 			bte.evaluate(program);
-			SuperPredicate sp = program.getSuperPredicate(0);
+			FormalPredicate sp = program.getFormalPredicate(0);
 			StringBuilder sb = new StringBuilder();
 			sp.relation.collectRelation(sb);
 			assertTrue(sb.toString().equals("[A]{(A,B)(C,D)}"));
@@ -308,7 +308,7 @@ public class RelationTests {
 			Program program = (Program) Util.parse(new File(TEST_DIRECTORY_VALID, "relationsTest_7.in"));
 			BacktrackingEvaluation bte = new BacktrackingEvaluation();
 			bte.evaluate(program);
-			SuperPredicate sp = program.getSuperPredicate(0);
+			FormalPredicate sp = program.getFormalPredicate(0);
 			StringBuilder sb = new StringBuilder();
 			sp.relation.collectRelation(sb);
 			assertTrue(sb.toString().equals("[A]{(A,B)(C,D)}"));
@@ -341,7 +341,7 @@ public class RelationTests {
 			Program program = (Program) Util.parse(new File(TEST_DIRECTORY_VALID, "relationsTest_7.in"));
 			BacktrackingEvaluation bte = new BacktrackingEvaluation();
 			bte.evaluate(program);
-			SuperPredicate sp = program.getSuperPredicate(0);
+			FormalPredicate sp = program.getFormalPredicate(0);
 			StringBuilder sb = new StringBuilder();
 			sp.relation.collectRelation(sb);
 			assertTrue(sb.toString().equals("[A]{(A,B)(C,D)}"));
@@ -369,12 +369,12 @@ public class RelationTests {
 			Program program = (Program) Util.parse(new File(TEST_DIRECTORY_VALID, "relationsTest_1.in"));
 			BacktrackingEvaluation bte = new BacktrackingEvaluation();
 			bte.evaluate(program);
-			SuperPredicate sp = program.getSuperPredicate(0);
+			FormalPredicate sp = program.getFormalPredicate(0);
 			StringBuilder sb = new StringBuilder();
 			sp.relation.collectRelation(sb);
 			assertTrue(sb.toString().equals("[A]{(A,B)(B,C)}"));
 
-			SuperPredicate spC = program.getSuperPredicate(2);
+			FormalPredicate spC = program.getFormalPredicate(2);
 			bte.deriveAllFacts(spC, program);
 			sb.setLength(0);
 			spC.relation.collectRelation(sb);
@@ -398,12 +398,12 @@ public class RelationTests {
 			Program program = (Program) Util.parse(new File(TEST_DIRECTORY_VALID, "relationsTest_8.in"));
 			BacktrackingEvaluation bte = new BacktrackingEvaluation();
 			bte.evaluate(program);
-			SuperPredicate sp = program.getSuperPredicate(0);
+			FormalPredicate sp = program.getFormalPredicate(0);
 			StringBuilder sb = new StringBuilder();
 			sp.relation.collectRelation(sb);
 			assertTrue(sb.toString().equals("[A]{(A,B)(B,C)}"));
 
-			SuperPredicate spC = program.getSuperPredicate(2);
+			FormalPredicate spC = program.getFormalPredicate(2);
 			bte.deriveAllFacts(spC, program);
 			sb.setLength(0);
 			spC.relation.collectRelation(sb);
@@ -423,7 +423,7 @@ public class RelationTests {
 			Program program = (Program) Util.parse(new File(TEST_DIRECTORY_VALID, "relationsTest_9.in"));
 			BacktrackingEvaluation bte = new BacktrackingEvaluation();
 			bte.evaluate(program);
-			SuperPredicate sp = program.getSuperPredicate(0);
+			FormalPredicate sp = program.getFormalPredicate(0);
 			StringBuilder sb = new StringBuilder();
 			sp.relation.collectRelation(sb);
 			assertTrue(sb.toString().equals("[A]{(A,B)(B,C)}"));
@@ -449,7 +449,7 @@ public class RelationTests {
 			bte.evaluate(program);
 			StringBuilder sb = new StringBuilder();
 
-			SuperPredicate spB = program.getSuperPredicate(0);
+			FormalPredicate spB = program.getFormalPredicate(0);
 			sb.setLength(0);
 			spB.relation.collectRelation(sb);
 			System.out.println(sb.toString());
@@ -486,13 +486,13 @@ public class RelationTests {
 			bte.evaluate(program);
 			StringBuilder sb = new StringBuilder();
 			
-			SuperPredicate spA = program.getSuperPredicate(0);
+			FormalPredicate spA = program.getFormalPredicate(0);
 			sb.setLength(0);
 			spA.relation.collectRelation(sb);
 			System.out.println(sb.toString());
 			assertTrue(sb.toString().equals("[A]{(A,B)}"));
 
-			SuperPredicate spB = program.getSuperPredicate(1);
+			FormalPredicate spB = program.getFormalPredicate(1);
 			sb.setLength(0);
 			spB.relation.collectRelation(sb);
 			System.out.println(sb.toString());
@@ -533,13 +533,13 @@ public class RelationTests {
 			bte.evaluate(program);
 			StringBuilder sb = new StringBuilder();
 			
-			SuperPredicate spA = program.getSuperPredicate(0);
+			FormalPredicate spA = program.getFormalPredicate(0);
 			sb.setLength(0);
 			spA.relation.collectRelation(sb);
 			System.out.println(sb.toString());
 			assertTrue(sb.toString().equals("[A]{(A,B)}"));
 
-			SuperPredicate spB = program.getSuperPredicate(1);
+			FormalPredicate spB = program.getFormalPredicate(1);
 			sb.setLength(0);
 			spB.relation.collectRelation(sb);
 			System.out.println(sb.toString());
@@ -580,19 +580,19 @@ public class RelationTests {
 	//         bte.evaluate(program);
 	//         StringBuilder sb = new StringBuilder();
 	//
-	//         SuperPredicate spA = program.getSuperPredicate(0);
+	//         FormalPredicate spA = program.getFormalPredicate(0);
 	//         sb.setLength(0);
 	//         spA.relation.collectRelation(sb);
 	//         System.out.println(sb.toString());
 	//         assertTrue(sb.toString().equals("[A]{(A,B)}"));
     //
-	//         SuperPredicate spB = program.getSuperPredicate(1);
+	//         FormalPredicate spB = program.getFormalPredicate(1);
 	//         sb.setLength(0);
 	//         spB.relation.collectRelation(sb);
 	//         System.out.println(sb.toString());
 	//         assertTrue(sb.toString().equals("[B]{(D,E)}"));
 	//
-	//         SuperPredicate spC = program.getSuperPredicate(2);
+	//         FormalPredicate spC = program.getFormalPredicate(2);
 	//         sb.setLength(0);
 	//         spC.relation.collectRelation(sb);
 	//         System.out.println(sb.toString());

@@ -12,7 +12,7 @@ import lang.ast.Constant;
 import lang.ast.Program;
 import lang.ast.RealLiteral;
 import lang.ast.Rule;
-import lang.ast.SuperPredicate;
+import lang.ast.FormalPredicate;
 import lang.ast.Term;
 import lang.ast.Variable;
 import lang.ast.config.Description;
@@ -27,7 +27,7 @@ public class BacktrackingEvaluation extends InternalEvaluation {
 		// p.getSuperPredicates().forEach(sp -> topDownProof(p, sp));
 	}
 	
-	public Set<PseudoTuple> allObjectTuples(Program p, int size, SuperPredicate sp) {
+	public Set<PseudoTuple> allObjectTuples(Program p, int size, FormalPredicate sp) {
 		HashSet<PseudoTuple> inst = new HashSet<PseudoTuple>();
 		HashMap<Integer, Constant> constMap = new HashMap<>();
 		
@@ -176,7 +176,7 @@ public class BacktrackingEvaluation extends InternalEvaluation {
 	/**
 	 * Derives all facts corresponding to the relation sp in the context of program p. 
 	 */
-	public void deriveAllFacts(SuperPredicate sp, Program p) {
+	public void deriveAllFacts(FormalPredicate sp, Program p) {
 		Set<PseudoTuple> universe = allObjectTuples(p, sp.realArity(), sp);
 		universe.forEach(t -> {
 //			System.out.println("Derive: " + t);

@@ -1,0 +1,60 @@
+%class "ConfigParser";
+%package "lang.ast.config";
+
+%embed {:
+	static public class SyntaxError extends RuntimeException { public SyntaxError(String msg) {super(msg);}}
+	// Disable syntax error recovery
+	protected void recoverFromError(Symbol token, TokenStream in) {
+		throw new SyntaxError("Cannot recover from the syntax error");
+	}
+:};
+
+%terminals FILEPATH, SEP, INTERNAL,TOPDOWNBASIC, SOUFFLE, EXTERNAL, OUTDIR, FACTSDIR;
+
+%typeof  descr                   =  "Description";
+%typeof  config                  =  "Configuration";
+%typeof  souffle                 =  "Souffle";
+%typeof  topdownbasic            =  "TopDownBasic";
+%typeof  file_path               =  "FilePath";
+%typeof  input_dir               =  "InputDir";
+%typeof  output_dir              =  "OutputDir";
+%typeof  facts_dir               =  "FactsDir";
+%typeof  internal                =  "Internal";
+%typeof  external                =  "External";
+%typeof  config_param            =  "ConfigParam";
+%typeof  config_params           =  "List";
+%typeof  config_params_no_empty  =  "List";
+
+%goal descr;
+
+descr = config.conf input_dir.fn {: return new Description(fn, conf); :};
+
+config =  external
+       |  internal
+       ;
+
+external      =  EXTERNAL SEP souffle;
+
+internal      =  INTERNAL SEP topdownbasic;
+
+topdownbasic  =  TOPDOWNBASIC config_params.params {: return new TopDownBasic(params); :};
+
+souffle       =  SOUFFLE config_params.params {: return new Souffle(params); :};
+
+config_params = config_params_no_empty
+          | /* epsilon */ {: return new List(); :}
+          ;
+
+config_params_no_empty = config_param.param {: return new List().add(param); :}
+                       | config_params_no_empty.list config_param.param {: return list.add(param); :} 
+                       ;
+
+config_param  = file_path;
+
+file_path     = output_dir
+              | facts_dir
+              ;
+
+input_dir   =  FILEPATH.fn {: return new InputDir(fn); :};
+output_dir  =  OUTDIR FILEPATH.fn {: return new OutputDir(fn); :};
+facts_dir   =  FACTSDIR FILEPATH.fn {: return new FactsDir(fn); :};

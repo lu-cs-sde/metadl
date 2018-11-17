@@ -1,0 +1,46 @@
+import lang.evaluation.*;
+import lang.ast.Program;
+
+aspect Configuration {
+	syn String Description.inputFile() = getInput().getPath();
+	
+	syn String Description.outputDir() {
+		FilePath fp = null;
+		for(ConfigParam param : getConfiguration().getParamss()) {
+			if(param.isOutputDir())
+				return ((OutputDir) param).getPath();
+		}
+		return System.getProperty("user.dir");
+	}
+	
+	syn String Description.factsDir() {
+		FilePath fp = null;
+		for(ConfigParam param : getConfiguration().getParamss()) {
+			if(param.isFactsDir())
+				return ((FactsDir) param).getPath();
+		}
+		return System.getProperty("user.dir");
+	}
+	
+	syn boolean ConfigParam.isOutputDir()  = false;
+	syn boolean OutputDir.isOutputDir()    = true;
+	
+	syn boolean ConfigParam.isFactsDir()   = false;
+	syn boolean FactsDir.isFactsDir()      = true;
+}
+
+aspect Evaluation {
+	public Evaluation Description.evaluationMethod() {
+		return getConfiguration().evaluationMethod();
+	}
+	
+	public abstract Evaluation Configuration.evaluationMethod();
+	
+	public Evaluation TopDownBasic.evaluationMethod() {
+		return new BacktrackingEvaluation();
+	}
+	
+	public Evaluation Souffle.evaluationMethod() {
+		return new SouffleEvaluation();
+	}
+}

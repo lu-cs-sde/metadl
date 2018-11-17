@@ -92,7 +92,7 @@ jar {
 }
 
 // Before compiling, we should generate some Java code:
-compileJava.dependsOn 'generateJava', 'generateScanner', 'generateParser'
+compileJava.dependsOn 'generateJava', 'generateScanner', 'generateParser', 'generateConfig', 'generateScannerConfig', 'generateParserConfig'
 
 task generateJava(type: org.jastadd.JastAddTask) {
     description 'Generates the compiler AST classes from JastAdd specifications.'
@@ -131,12 +131,51 @@ task generateParser(type: JavaExec) {
     }
 }
 
+task generateConfig(type: org.jastadd.JastAddTask) {
+    description 'Generates the compiler AST classes from JastAdd specifications.'
+    outputDir = file('src/gen')
+    sources = fileTree(dir: 'src/config', includes: [ '**/*.jrag', '**/*.jadd', '**/*.ast' ])
+    options = [ '--package=lang.ast.config', '--beaver' ]
+}
+
+task generateScannerConfig(type: JavaExec) {
+    description 'Generates the Configuration scanner with JFlex.'
+    classpath = configurations.jflex
+    main = 'jflex.Main'
+
+    // Options to JFlex (http://jflex.de/manual.html#running-jflex):
+    args '-d', file('src/gen/lang/ast/config').path, file('src/config/scanner/scanner.flex').path
+
+    doFirst {
+        // Ensure src/gen exists before running JFlex:
+        file('src/gen').mkdirs()
+    }
+}
+
+task generateParserConfig(type: JavaExec) {
+    description 'Generates the Configuration parser with Beaver.'
+    classpath = configurations.beaver
+    main = 'beaver.comp.run.Make'
+
+    // Options to Beaver (http://beaver.sourceforge.net/):
+    args '-d', file('src/gen').path,
+    '-t', '-c', '-w',
+    file('src/config/parser/parser.beaver').path
+
+    doFirst {
+        // Ensure src/gen exists before running Beaver:
+        file('src/gen').mkdirs()
+    }
+}
+
 // The following makes the clean task also remove generated code:
 clean.dependsOn 'cleanGeneratedJava'
 
 task cleanGeneratedJava(type: Delete) {
     description 'Remove generated Java code.'
     delete file('src/gen')
-    delete file('interpreter.jar')
     delete file('compiler.jar')
+    def tree = fileTree("./output")
+    tree.include '*.csv'
+    tree.each { it.delete() }
 }

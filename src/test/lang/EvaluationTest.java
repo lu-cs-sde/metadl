@@ -3,6 +3,7 @@ import java.io.File;
 import java.util.ArrayList;
 
 import lang.ast.Program;
+import lang.evaluation.Evaluation;
 
 public class EvaluationTest {
 

@@ -2,7 +2,7 @@ import java.util.Collections;
 import java.util.ArrayList;
 import lang.relation.PseudoTuple;
 
-import lang.printing.CollectUtil;
+import lang.io.CollectUtil;
 aspect TestInfo {
 
 	public void Program.collectObjectInfo(StringBuilder sb) {

@@ -1,6 +1,5 @@
 package lang.relation;
 
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.TreeSet;
@@ -25,18 +24,16 @@ public class Relation {
 		this.relation.addAll(r.relation);
 	}
 	
-
-	private void addAllHelper(int arity, int index, ArrayList<Constant> objects, Set<PseudoTuple> rel) {
-		for(PseudoTuple ps : rel) {
-//			ps.instantiate(index, c);
-		}
+	public Set<PseudoTuple> tuples() {
+		return relation;
 	}
 	
 	/**
 	 * Instantiate with all possible tuples of arity arity form objects objects. 
 	 */
 	public void allInstantiations(PseudoTuple ps, HashSet<Constant> objects) {
-		
+		System.out.println("UNIMPLEMENTED RELATIONS ALLINSTANTIATIONS");
+		System.exit(0);
 	}
 
 	public int size() {

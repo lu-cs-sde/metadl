@@ -13,8 +13,8 @@
 
 %typeof  program             =  "Program";
 %typeof  clause              =  "Clause";
-%typeof  edb_literal             =  "EDBLiteral";
-%typeof  real_literal             =  "RealLiteral";
+%typeof  edb_literal         =  "EDBLiteral";
+%typeof  real_literal        =  "RealLiteral";
 %typeof  predicate_sym       =  "PredicateSymbol";
 %typeof  variable            =  "Variable";
 %typeof  constant            =  "Constant";
@@ -25,11 +25,11 @@
 %typeof  term_list_no_empty  =  "List";
 %typeof  lit_list            =  "List";
 %typeof  extensional_db      =  "ExtensionalDB";
-%typeof  stmt      =  "Stmt";
-%typeof  stmt_list =  "List";
-%typeof  fact =  "Fact";
-%typeof  rule =  "Rule";
-%typeof  file_location = "FileLocation";
+%typeof  stmt                =  "Stmt";
+%typeof  stmt_list           =  "List";
+%typeof  fact                =  "Fact";
+%typeof  rule                =  "Rule";
+%typeof  file_location       =  "FileLocation";
 
 %goal program;
 

@@ -1,27 +1,25 @@
-package lang;
+package lang.io;
 
 import java.io.File;
-import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
 
 import com.opencsv.CSVParser;
 import com.opencsv.CSVParserBuilder;
 import com.opencsv.CSVReader;
 import com.opencsv.CSVReaderBuilder;
+import com.opencsv.CSVWriter;
 
 import lang.ast.Constant;
-import lang.ast.ExtensionalDB;
 import lang.ast.IntConstant;
-import lang.ast.List;
 import lang.ast.Program;
 import lang.ast.StringConstant;
 import lang.ast.SuperPredicate;
 import lang.relation.PseudoTuple;
-import lang.relation.Relation;
 
-public abstract class InternalEvaluation extends Evaluation {
-
+public class CSVUtil {
 	public static boolean isInteger(String s) {
 		try {
 			Integer.parseInt(s);
@@ -31,12 +29,9 @@ public abstract class InternalEvaluation extends Evaluation {
 		}
 	}
 
-	public static void readFileInto(Program program, SuperPredicate sp, File f) throws IOException {
+	public static void readFileInto(Program program, SuperPredicate sp, File f) {
 		CSVParser parser = new CSVParserBuilder().withSeparator(',').build();
-		CSVReader reader = null;
-
-		try {
-			reader = new CSVReaderBuilder(new FileReader(f)).withCSVParser(parser).build();
+		try (CSVReader reader = new CSVReaderBuilder(new FileReader(f)).withCSVParser(parser).build()) {
 			String[] line;
 			while ((line = reader.readNext()) != null) {
 				if (line.length != sp.realArity()) {
@@ -60,39 +55,15 @@ public abstract class InternalEvaluation extends Evaluation {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		reader.close();
 	}
 
-	protected void loadEBDFacts(Program program) {
-		program.objects.addAll(program.uniqueFileObjects());
-		
-		System.out.println("Load EDB Facts");
-		List<SuperPredicate> spreds = program.getSuperPredicateList();
-		spreds.forEach(sp -> {
-			sp.relation = new Relation(sp.fileRelation());
-
-			sp.edbPredicates().forEach(ps -> {
-				ExtensionalDB edb = (ExtensionalDB) ps.literal().stmt();
-				String fn = edb.getFileLocation().getSTRING();
-				File f = new File(fn);
-
-				if (!f.exists()) {
-					System.err.println("Missing EDB File: " + fn);
-					System.exit(0);
-				}
-
-				System.out.println("Read in: " + fn + " into relation: " + sp.predicateName());
-
-				try {
-					readFileInto(program, sp, f);
-				} catch (FileNotFoundException e) {
-					e.printStackTrace();
-					System.exit(0);
-				} catch (IOException e) {
-					e.printStackTrace();
-					System.exit(0);
-				}
+	public static void dumpFileInto(SuperPredicate sp, File f) {
+		try (CSVWriter writer = new CSVWriter(new OutputStreamWriter(new FileOutputStream(f)))) {
+			sp.relation.tuples().forEach(t -> {
+				writer.writeNext(t.toStringArray());
 			});
-		});
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 }

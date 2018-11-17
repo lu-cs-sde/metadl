@@ -24,6 +24,7 @@ import lang.ast.StringConstant;
 import lang.ast.SuperPredicate;
 import lang.ast.Term;
 import lang.ast.Variable;
+import lang.evaluation.BacktrackingEvaluation;
 import lang.relation.PseudoTuple;
 import lang.relation.ListUtil;
 

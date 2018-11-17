@@ -1,0 +1,16 @@
+Description ::= Input:InputDir Configuration;
+
+abstract Configuration ::= Params:ConfigParam *;
+
+abstract External:Configuration;
+abstract Internal:Configuration;
+
+TopDownBasic:Internal;
+Souffle:External;
+
+abstract ConfigParam;
+
+abstract FilePath:ConfigParam ::= <Path:String>;
+InputDir:FilePath;
+OutputDir:FilePath;
+FactsDir:FilePath;

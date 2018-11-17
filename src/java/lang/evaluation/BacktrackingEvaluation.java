@@ -1,4 +1,4 @@
-package lang;
+package lang.evaluation;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -15,14 +15,15 @@ import lang.ast.Rule;
 import lang.ast.SuperPredicate;
 import lang.ast.Term;
 import lang.ast.Variable;
+import lang.ast.config.Description;
 import lang.relation.ListUtil;
 import lang.relation.PseudoTuple;
 
 public class BacktrackingEvaluation extends InternalEvaluation {
 	@Override
-	public void evaluate(Program p) {
-//		System.out.println("Evaluate Backtracking");
-		loadEBDFacts(p);
+	public void evaluate(Program program) {
+		// System.out.println("Evaluate Backtracking");'
+		 loadEBDFacts(program);
 		// p.getSuperPredicates().forEach(sp -> topDownProof(p, sp));
 	}
 	

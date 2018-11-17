@@ -195,4 +195,12 @@ public class PseudoTuple implements Comparable<PseudoTuple> {
 		collectTuple(sb);
 		return sb.toString();
 	}
+	
+	public String[] toStringArray() {
+		String[] strs = new String[size];
+		for(int i = 0; i != size; ++i) {
+			strs[i] = tuple[i].string();
+		}
+		return strs;
+	}
 }

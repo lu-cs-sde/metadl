@@ -7,6 +7,7 @@ import lang.ast.List;
 import lang.ast.Program;
 import lang.ast.FormalPredicate;
 import lang.io.CSVUtil;
+import lang.io.SimpleLogger;
 import lang.relation.Relation;
 
 public abstract class InternalEvaluation extends Evaluation {
@@ -14,8 +15,8 @@ public abstract class InternalEvaluation extends Evaluation {
 	protected void loadEBDFacts(Program program) {
 		program.objects.addAll(program.uniqueFileObjects());
 
-		System.out.println("Load EDB Facts");
-		List<FormalPredicate> spreds = program.getFormalPredicateList();
+		SimpleLogger.logger().log("Load EDB Facts", SimpleLogger.LogLevel.Level.DEBUG);
+		List<FormalPredicate> spreds = program.getFormalPredicates();
 		spreds.forEach(sp -> {
 			sp.relation = new Relation(sp.fileRelation());
 
@@ -25,11 +26,11 @@ public abstract class InternalEvaluation extends Evaluation {
 				File f = new File(fn);
 
 				if (!f.exists()) {
-					System.err.println("Missing EDB File: " + fn);
+					SimpleLogger.logger().log("Missing EDB File: " + fn, SimpleLogger.LogLevel.Level.ERROR);
 					System.exit(0);
 				}
 
-				System.out.println("Read in: " + fn + " into relation: " + sp.predicateName());
+				SimpleLogger.logger().log("Read in: " + fn + " into relation: " + sp.predicateName(), SimpleLogger.LogLevel.Level.DEBUG);
 				CSVUtil.readFileInto(program, sp, f);
 			});
 		});

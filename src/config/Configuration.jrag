@@ -1,23 +1,27 @@
 import lang.evaluation.*;
 import lang.ast.Program;
+import lang.io.FileUtil;
+
 
 aspect Configuration {
 	syn String Description.inputFile() = getInput().getPath();
 	
+	syn String Description.inputFileName() {
+		return FileUtil.fileName(inputFile());
+	}
+	
 	syn String Description.outputDir() {
-		FilePath fp = null;
 		for(ConfigParam param : getConfiguration().getParamss()) {
 			if(param.isOutputDir())
-				return ((OutputDir) param).getPath();
+				return FileUtil.normalize(((OutputDir) param).getPath());
 		}
 		return System.getProperty("user.dir");
 	}
 	
 	syn String Description.factsDir() {
-		FilePath fp = null;
 		for(ConfigParam param : getConfiguration().getParamss()) {
 			if(param.isFactsDir())
-				return ((FactsDir) param).getPath();
+				return FileUtil.normalize(((FactsDir) param).getPath());
 		}
 		return System.getProperty("user.dir");
 	}
@@ -27,6 +31,27 @@ aspect Configuration {
 	
 	syn boolean ConfigParam.isFactsDir()   = false;
 	syn boolean FactsDir.isFactsDir()      = true;
+	
+	syn boolean Description.isSouffle() = getConfiguration().isSouffle();
+	syn boolean Configuration.isSouffle() = false;
+	syn boolean Souffle.isSouffle()       = true;
+}
+
+aspect SouffleConfiguration {
+	syn boolean SouffleParam.isOutputFileName()   = false;
+	syn boolean OutputFileName.isOutputFileName() = true;
+	
+	inh String Souffle.inputFileName();
+	eq Description.getChild().inputFileName() = inputFileName();
+	
+	
+	syn String Souffle.outputFileName() {
+		for(SouffleParam param : getSouffleSpecificParamss()) {
+			if(param.isOutputFileName())
+				return ((OutputFileName) param).getName();
+		}
+		return FileUtil.changeExtension(inputFileName(), ".dl");
+	}
 }
 
 aspect Evaluation {

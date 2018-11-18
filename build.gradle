@@ -76,6 +76,7 @@ test {
     reports {
         junitXml.enabled = true
     }
+    file('./tests/output/souffle').mkdirs()
 }
 
 jar {
@@ -175,7 +176,5 @@ task cleanGeneratedJava(type: Delete) {
     description 'Remove generated Java code.'
     delete file('src/gen')
     delete file('compiler.jar')
-    def tree = fileTree("./output")
-    tree.include '*.csv'
-    tree.each { it.delete() }
+    delete file('tests/output')
 }

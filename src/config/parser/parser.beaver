@@ -9,25 +9,29 @@
 	}
 :};
 
-%terminals FILEPATH, SEP, INTERNAL,TOPDOWNBASIC, SOUFFLE, EXTERNAL, OUTDIR, FACTSDIR;
+%terminals FILEPATH, SEP, INTERNAL,TOPDOWNBASIC, SOUFFLE, EXTERNAL, OUTDIR, FACTSDIR, SOUFFLEOUT;
 
-%typeof  descr                   =  "Description";
-%typeof  config                  =  "Configuration";
-%typeof  souffle                 =  "Souffle";
-%typeof  topdownbasic            =  "TopDownBasic";
-%typeof  file_path               =  "FilePath";
-%typeof  input_dir               =  "InputDir";
-%typeof  output_dir              =  "OutputDir";
-%typeof  facts_dir               =  "FactsDir";
-%typeof  internal                =  "Internal";
-%typeof  external                =  "External";
-%typeof  config_param            =  "ConfigParam";
-%typeof  config_params           =  "List";
-%typeof  config_params_no_empty  =  "List";
+%typeof  descr                    =  "Description";
+%typeof  config                   =  "Configuration";
+%typeof  souffle                  =  "Souffle";
+%typeof  topdownbasic             =  "TopDownBasic";
+%typeof  file_path                =  "FilePath";
+%typeof  input_file               =  "InputFile";
+%typeof  output_dir               =  "OutputDir";
+%typeof  facts_dir                =  "FactsDir";
+%typeof  internal                 =  "Internal";
+%typeof  external                 =  "External";
+%typeof  config_param             =  "ConfigParam";
+%typeof  config_params            =  "List";
+%typeof  config_params_no_empty   =  "List";
+%typeof  souffle_params           =  "List";
+%typeof  souffle_params_no_empty  =  "List";
+%typeof  souffle_param            =  "SouffleParam";
+%typeof  output_file_name         =  "OutputFileName";
 
 %goal descr;
 
-descr = config.conf input_dir.fn {: return new Description(fn, conf); :};
+descr = config.conf input_file.fn {: return new Description(fn, conf); :};
 
 config =  external
        |  internal
@@ -39,7 +43,17 @@ internal      =  INTERNAL SEP topdownbasic;
 
 topdownbasic  =  TOPDOWNBASIC config_params.params {: return new TopDownBasic(params); :};
 
-souffle       =  SOUFFLE config_params.params {: return new Souffle(params); :};
+souffle       =  SOUFFLE config_params.params souffle_params.s_params {: return new Souffle(params, s_params); :};
+
+souffle_params = souffle_params_no_empty
+          | /* epsilon */ {: return new List(); :}
+          ;
+
+souffle_params_no_empty = souffle_param.param {: return new List().add(param); :}
+                       | souffle_params_no_empty.list souffle_param.param {: return list.add(param); :} 
+                       ;
+
+souffle_param = output_file_name;
 
 config_params = config_params_no_empty
           | /* epsilon */ {: return new List(); :}
@@ -55,6 +69,7 @@ file_path     = output_dir
               | facts_dir
               ;
 
-input_dir   =  FILEPATH.fn {: return new InputDir(fn); :};
-output_dir  =  OUTDIR FILEPATH.fn {: return new OutputDir(fn); :};
-facts_dir   =  FACTSDIR FILEPATH.fn {: return new FactsDir(fn); :};
+input_file        =  FILEPATH.fn {: return new InputFile(fn); :};
+output_dir        =  OUTDIR FILEPATH.fn {: return new OutputDir(fn); :};
+facts_dir         =  FACTSDIR FILEPATH.fn {: return new FactsDir(fn); :};
+output_file_name  =  SOUFFLEOUT FILEPATH.fn {: return new OutputFileName(fn); :};

@@ -1,4 +1,4 @@
-Description ::= Input:InputDir Configuration;
+Description ::= Input:InputFile Configuration;
 
 abstract Configuration ::= Params:ConfigParam *;
 
@@ -6,11 +6,14 @@ abstract External:Configuration;
 abstract Internal:Configuration;
 
 TopDownBasic:Internal;
-Souffle:External;
+Souffle:External ::= SouffleSpecificParams:SouffleParam*;
 
 abstract ConfigParam;
 
 abstract FilePath:ConfigParam ::= <Path:String>;
-InputDir:FilePath;
+InputFile:FilePath;
 OutputDir:FilePath;
 FactsDir:FilePath;
+
+abstract SouffleParam;
+OutputFileName:SouffleParam ::= <Name:String>;

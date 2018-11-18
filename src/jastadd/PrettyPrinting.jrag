@@ -147,7 +147,7 @@ aspect SoufflePrinting {
         }
         printList(constants, "", "", ", ", pr);
         pr.out.print(")\n");
-        pr.out.print(".output " + predicateName());
+        pr.out.print(".output " + predicateName() + "(delimiter=\",\")");
     }
 
     public void Program.soufflePrint(PrettyPrinter pr) {

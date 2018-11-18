@@ -1,2 +1,0 @@
-EDB(B, "B.edb")
-A(x,y) :- B(x, "A").

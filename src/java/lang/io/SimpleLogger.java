@@ -15,17 +15,25 @@ public class SimpleLogger {
 		if(!mode.equals("true")) return false; 
 		return true;
 	}
-
-	public SimpleLogger log(String msg, LogLevel.Level level) {
+	
+	private SimpleLogger log(String msg, LogLevel.Level level, String classname, String methodname) {
 		lastMode = level;
 		if(level == LogLevel.Level.DEBUG && !isDebugMode()) return logger;
-		System.out.println("[" + LogLevel.toString(level) + "]: " + msg);
+		System.out.println("[" + LogLevel.toString(level) + "]: " + classname + "@" + methodname + " -- " + msg);
+		return logger;
+	}
+
+	public SimpleLogger log(String msg, LogLevel.Level level) {
+		StackTraceElement[] stackTraceElements = Thread.currentThread().getStackTrace();
+		StackTraceElement prev = stackTraceElements[2];
+		log(msg, lastMode, prev.getClassName(), prev.getMethodName());
 		return logger;
 	}
 	
 	public SimpleLogger log(String msg) {
-		if(lastMode == LogLevel.Level.DEBUG && !isDebugMode()) return logger;
-		System.out.println("[" + LogLevel.toString(lastMode) + "]: " + msg);
+		StackTraceElement[] stackTraceElements = Thread.currentThread().getStackTrace();
+		StackTraceElement prev = stackTraceElements[2];
+		log(msg, lastMode, prev.getClassName(), prev.getMethodName());
 		return logger;
 	}
 

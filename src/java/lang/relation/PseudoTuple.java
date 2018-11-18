@@ -29,6 +29,9 @@ public class PseudoTuple implements Comparable<PseudoTuple> {
 	public PseudoTuple(FormalPredicate sp) {
 		this.size = sp.realArity();
 		this.tuple = new Term[size];
+		for (int i = 0; i != size; ++i) {
+			tuple[i] = new Variable("UNINITIALZIED VARIABLE");
+		}
 		this.sp = sp;
 	}
 

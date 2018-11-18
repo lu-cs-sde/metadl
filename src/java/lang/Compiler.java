@@ -1,18 +1,14 @@
 package lang;
 
+import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
-import java.io.StringReader;
 import java.util.HashSet;
 
 import beaver.Parser.Exception;
-import lang.ast.LangParser;
-import lang.ast.LangScanner;
 import lang.ast.Program;
-import lang.ast.config.ConfigParser;
-import lang.ast.config.ConfigScanner;
 import lang.ast.config.Description;
+import lang.io.FileUtil;
 import lang.io.SimpleLogger;
 
 /**
@@ -42,15 +38,9 @@ public class Compiler {
 				sb.append(" ");
 			}
 			
-			ConfigScanner configScanner = new ConfigScanner(new StringReader(sb.toString()));
-			ConfigParser configParser   = new ConfigParser();
-			Description descr = (Description) configParser.parse(configScanner);
-			
-			SimpleLogger.logger().log("IN: " + descr.inputFile()).log("OUT: " + descr.outputDir()).log("FACTS: " + descr.factsDir());
-
-			LangScanner scanner = new LangScanner(new FileReader(descr.getInput().getPath()));
-			LangParser parser = new LangParser();
-			Program program = (Program) parser.parse(scanner);
+			Description descr = FileUtil.parseDescription(sb.toString());
+			SimpleLogger.logger().log(descr.debugInfo());
+			Program program = (Program) FileUtil.parse(new File(descr.getInput().getPath()));
 			DrAST_root_node = program; // Enable debugging with DrAST
 			
 			HashSet<String> serrs = program.semanticErrors();
@@ -60,7 +50,7 @@ public class Compiler {
 				System.exit(0);
 			}
 			
-			descr.evaluationMethod().evaluate(program);
+			descr.evaluationMethod().evaluate(program, descr);
 
 		} catch (FileNotFoundException e) {
 			System.out.println("File not found!");

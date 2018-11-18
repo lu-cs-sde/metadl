@@ -2,6 +2,7 @@ package lang.evaluation;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.File;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
@@ -16,15 +17,19 @@ import lang.ast.FormalPredicate;
 import lang.ast.Term;
 import lang.ast.Variable;
 import lang.ast.config.Description;
+import lang.io.CSVUtil;
 import lang.relation.ListUtil;
 import lang.relation.PseudoTuple;
 
 public class BacktrackingEvaluation extends InternalEvaluation {
 	@Override
-	public void evaluate(Program program) {
+	public void evaluate(Program program, Description descr) {
 		// System.out.println("Evaluate Backtracking");'
 		 loadEBDFacts(program);
-		// p.getSuperPredicates().forEach(sp -> topDownProof(p, sp));
+		 program.getFormalPredicates().forEach(fp-> {
+			 deriveAllFacts(fp, program);
+			 CSVUtil.dumpFileInto(fp, new File(descr.outputDir() + "/" + fp.predicateName() + ".csv"));
+		 });
 	}
 	
 	public Set<PseudoTuple> allObjectTuples(Program p, int size, FormalPredicate sp) {

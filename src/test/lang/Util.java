@@ -7,7 +7,6 @@ import static org.junit.jupiter.api.Assertions.fail;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.nio.file.Files;
@@ -15,8 +14,7 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.Scanner;
 
-import lang.ast.LangParser;
-import lang.ast.LangScanner;
+import lang.io.FileUtil;
 
 /** Utility methods for running tests. */
 public final class Util {
@@ -24,15 +22,7 @@ public final class Util {
 
 	private Util() { }
 
-	/**
-	 * Parses the given file
-	 * @return parser result, if everything went OK
-	 */
-	public static Object parse(File file) throws Exception {
-		LangScanner scanner = new LangScanner(new FileReader(file));
-		LangParser parser = new LangParser();
-		return parser.parse(scanner);
-	}
+
 
 	/**
 	 * Check that the string matches the contents of the given file.
@@ -88,7 +78,7 @@ public final class Util {
 
 	public static void testValidSyntax(File directory, String filename) {
 		try {
-			Util.parse(new File(directory, filename));
+			FileUtil.parse(new File(directory, filename));
 		} catch (Exception e) {
 			fail("Unexpected error while parsing '" + filename + "': "
 					+ e.getMessage());
@@ -102,7 +92,7 @@ public final class Util {
 		// We discard these messages since a syntax error is expected.
 		System.setErr(new PrintStream(new ByteArrayOutputStream()));
 		try {
-			Util.parse(new File(directory, filename));
+			FileUtil.parse(new File(directory, filename));
 
 			fail("syntax is valid, expected syntax error");
 		} catch (beaver.Parser.Exception | lang.ast.LangParser.SyntaxError e) {
@@ -117,14 +107,7 @@ public final class Util {
 	}
 	
 
-	public static String changeExtension(String filename, String newExtension) {
-		int index = filename.lastIndexOf('.');
-		if (index != -1) {
-			return filename.substring(0, index) + newExtension;
-		} else {
-			return filename + newExtension;
-		}
-	}
+
 
 	@SuppressWarnings("javadoc")
 	public static Iterable<Object[]> getTestParameters(File testDirectory, String extension) {

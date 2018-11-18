@@ -1,38 +1,16 @@
 package lang;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 import java.io.File;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.TreeSet;
 
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
-
-import lang.ast.Constant;
-import lang.ast.IntConstant;
-import lang.ast.List;
-import lang.ast.PredicateSymbol;
-import lang.ast.Program;
-import lang.ast.RealLiteral;
-import lang.ast.StringConstant;
-import lang.ast.FormalPredicate;
-import lang.ast.Term;
-import lang.ast.Variable;
-import lang.evaluation.BacktrackingEvaluation;
-import lang.relation.PseudoTuple;
-import lang.relation.ListUtil;
+import lang.ast.config.Description;
 
 public class RelationTests {
 	/** Directory where the test input files are stored. */
 	private static final File TEST_DIRECTORY_VALID = new File("tests/relations/valid");
 	private static final File TEST_DIRECTORY_INVALID = new File("tests/relations/invalid");
-
+	
+	private static final Description defaultDescr = new Description();
+/*
 	public void doTest(Program p, String filename, File dir) {
 		StringBuilder sb = new StringBuilder();
 		HashSet<String> serrs = p.semanticErrors();
@@ -45,8 +23,8 @@ public class RelationTests {
 			sb.append("\n");
 		}
 
-		Util.compareOutput(sb.toString(), new File(dir, Util.changeExtension(filename, "_relationTests.out")),
-				new File(dir, Util.changeExtension(filename, "_relationTests.expected")));
+		Util.compareOutput(sb.toString(), new File(dir, FileUtil.changeExtension(filename, "_relationTests.out")),
+				new File(dir, FileUtil.changeExtension(filename, "_relationTests.expected")));
 	}
 
 	@DisplayName("Test Relation Data such as File Constants")
@@ -54,7 +32,7 @@ public class RelationTests {
 	@ValueSource(strings = { "relationsTest_1.in", "relationsTest_2.in", "relationsTest_3.in" })
 	public void relationTestsValid(String filename) throws Exception {
 		System.out.println("valid/" + filename);
-		Program program = (Program) Util.parse(new File(TEST_DIRECTORY_VALID, filename));
+		Program program = (Program) FileUtil.parse(new File(TEST_DIRECTORY_VALID, filename));
 		doTest(program, filename, TEST_DIRECTORY_VALID);
 	}
 
@@ -63,7 +41,7 @@ public class RelationTests {
 	@ValueSource(strings = { "relationsTest_1.in", "relationsTest_2.in", "relationsTest_3.in" })
 	public void relationTestsInvalid(String filename) throws Exception {
 		System.out.println("invalid/" + filename);
-		Program program = (Program) Util.parse(new File(TEST_DIRECTORY_INVALID, filename));
+		Program program = (Program) FileUtil.parse(new File(TEST_DIRECTORY_INVALID, filename));
 		doTest(program, filename, TEST_DIRECTORY_INVALID);
 	}
 
@@ -168,9 +146,9 @@ public class RelationTests {
 	@Test
 	public void testAllObjectGen() {
 		try {
-			Program program = (Program) Util.parse(new File(TEST_DIRECTORY_VALID, "relationsTest_1.in"));
+			Program program = (Program) FileUtil.parse(new File(TEST_DIRECTORY_VALID, "relationsTest_1.in"));
 			BacktrackingEvaluation bte = new BacktrackingEvaluation();
-			bte.evaluate(program);
+			bte.evaluate(program, defaultDescr);
 
 			for (int k = 0; k != 8; ++k) {
 				assertEquals(program.objects.size(), 5);
@@ -195,7 +173,7 @@ public class RelationTests {
 	@Test
 	public void testFreeVarsTuple() {
 		try {
-			Program program = (Program) Util.parse(new File(TEST_DIRECTORY_VALID, "relationsTest_6.in"));
+			Program program = (Program) FileUtil.parse(new File(TEST_DIRECTORY_VALID, "relationsTest_6.in"));
 			HashSet<PredicateSymbol> preds = program.getFormalPredicate(0).predicates();
 			RealLiteral rl = (RealLiteral) preds.iterator().next().literal();
 
@@ -212,7 +190,7 @@ public class RelationTests {
 	@Test
 	public void testFreeVarsTupleEmpty() {
 		try {
-			Program program = (Program) Util.parse(new File(TEST_DIRECTORY_VALID, "relationsTest_6.in"));
+			Program program = (Program) FileUtil.parse(new File(TEST_DIRECTORY_VALID, "relationsTest_6.in"));
 			HashSet<PredicateSymbol> preds = program.getFormalPredicate(1).predicates();
 			RealLiteral rl = (RealLiteral) preds.iterator().next().literal();
 
@@ -227,9 +205,9 @@ public class RelationTests {
 	@Test
 	public void testAllInstantiations() {
 		try {
-			Program program = (Program) Util.parse(new File(TEST_DIRECTORY_VALID, "relationsTest_6.in"));
+			Program program = (Program) FileUtil.parse(new File(TEST_DIRECTORY_VALID, "relationsTest_6.in"));
 			BacktrackingEvaluation bte = new BacktrackingEvaluation();
-			bte.evaluate(program);
+			bte.evaluate(program, defaultDescr);
 
 			HashSet<PredicateSymbol> preds = program.getFormalPredicate(0).predicates();
 			RealLiteral rl = (RealLiteral) preds.iterator().next().literal();
@@ -254,9 +232,9 @@ public class RelationTests {
 	@Test
 	public void testDeriveFact1() {
 		try {
-			Program program = (Program) Util.parse(new File(TEST_DIRECTORY_VALID, "relationsTest_7.in"));
+			Program program = (Program) FileUtil.parse(new File(TEST_DIRECTORY_VALID, "relationsTest_7.in"));
 			BacktrackingEvaluation bte = new BacktrackingEvaluation();
-			bte.evaluate(program);
+			bte.evaluate(program, defaultDescr);
 			FormalPredicate sp = program.getFormalPredicate(0);
 
 			StringBuilder sb = new StringBuilder();
@@ -279,9 +257,9 @@ public class RelationTests {
 	@Test
 	public void testDeriveFact2() {
 		try {
-			Program program = (Program) Util.parse(new File(TEST_DIRECTORY_VALID, "relationsTest_7.in"));
+			Program program = (Program) FileUtil.parse(new File(TEST_DIRECTORY_VALID, "relationsTest_7.in"));
 			BacktrackingEvaluation bte = new BacktrackingEvaluation();
-			bte.evaluate(program);
+			bte.evaluate(program, defaultDescr);
 			FormalPredicate sp = program.getFormalPredicate(0);
 			StringBuilder sb = new StringBuilder();
 			sp.relation.collectRelation(sb);
@@ -305,9 +283,9 @@ public class RelationTests {
 	@Test
 	public void testDeriveFact3() {
 		try {
-			Program program = (Program) Util.parse(new File(TEST_DIRECTORY_VALID, "relationsTest_7.in"));
+			Program program = (Program) FileUtil.parse(new File(TEST_DIRECTORY_VALID, "relationsTest_7.in"));
 			BacktrackingEvaluation bte = new BacktrackingEvaluation();
-			bte.evaluate(program);
+			bte.evaluate(program, defaultDescr);
 			FormalPredicate sp = program.getFormalPredicate(0);
 			StringBuilder sb = new StringBuilder();
 			sp.relation.collectRelation(sb);
@@ -338,9 +316,9 @@ public class RelationTests {
 	@Test
 	public void testDeriveAll1() {
 		try {
-			Program program = (Program) Util.parse(new File(TEST_DIRECTORY_VALID, "relationsTest_7.in"));
+			Program program = (Program) FileUtil.parse(new File(TEST_DIRECTORY_VALID, "relationsTest_7.in"));
 			BacktrackingEvaluation bte = new BacktrackingEvaluation();
-			bte.evaluate(program);
+			bte.evaluate(program, defaultDescr);
 			FormalPredicate sp = program.getFormalPredicate(0);
 			StringBuilder sb = new StringBuilder();
 			sp.relation.collectRelation(sb);
@@ -353,6 +331,7 @@ public class RelationTests {
 			e.printStackTrace();
 		}
 	}
+	*/
 
 	/**
 	 * relationsTest_1.in A("A", "B"). A("B", "C").
@@ -363,27 +342,27 @@ public class RelationTests {
 	 * 
 	 * D(1, x) :- A("A", x). D(2, x) :- A("B", x).
 	 */
-	@Test
-	public void testDeriveAll2() {
-		try {
-			Program program = (Program) Util.parse(new File(TEST_DIRECTORY_VALID, "relationsTest_1.in"));
-			BacktrackingEvaluation bte = new BacktrackingEvaluation();
-			bte.evaluate(program);
-			FormalPredicate sp = program.getFormalPredicate(0);
-			StringBuilder sb = new StringBuilder();
-			sp.relation.collectRelation(sb);
-			assertTrue(sb.toString().equals("[A]{(A,B)(B,C)}"));
-
-			FormalPredicate spC = program.getFormalPredicate(2);
-			bte.deriveAllFacts(spC, program);
-			sb.setLength(0);
-			spC.relation.collectRelation(sb);
-			assertTrue(sb.toString().equals("[C]{(A,A)(A,C)}"));
-
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
+//	@Test
+//	public void testDeriveAll2() {
+//		try {
+//			Program program = (Program) FileUtil.parse(new File(TEST_DIRECTORY_VALID, "relationsTest_1.in"));
+//			BacktrackingEvaluation bte = new BacktrackingEvaluation();
+//			bte.evaluate(program, defaultDescr);
+//			FormalPredicate sp = program.getFormalPredicate(0);
+//			StringBuilder sb = new StringBuilder();
+//			sp.relation.collectRelation(sb);
+//			assertTrue(sb.toString().equals("[A]{(A,B)(B,C)}"));
+//
+//			FormalPredicate spC = program.getFormalPredicate(2);
+//			bte.deriveAllFacts(spC, program);
+//			sb.setLength(0);
+//			spC.relation.collectRelation(sb);
+//			assertTrue(sb.toString().equals("[C]{(A,A)(A,C)}"));
+//
+//		} catch (Exception e) {
+//			e.printStackTrace();
+//		}
+//	}
 
 	/**
 	 * relationsTest_8.in A("A", "B"). A("B", "C").
@@ -392,78 +371,78 @@ public class RelationTests {
 	 * 
 	 * C(x, "A") :- A(x, "B"). C("A", x) :- A("B", x).
 	 */
-	@Test
-	public void testDeriveAll3() {
-		try {
-			Program program = (Program) Util.parse(new File(TEST_DIRECTORY_VALID, "relationsTest_8.in"));
-			BacktrackingEvaluation bte = new BacktrackingEvaluation();
-			bte.evaluate(program);
-			FormalPredicate sp = program.getFormalPredicate(0);
-			StringBuilder sb = new StringBuilder();
-			sp.relation.collectRelation(sb);
-			assertTrue(sb.toString().equals("[A]{(A,B)(B,C)}"));
-
-			FormalPredicate spC = program.getFormalPredicate(2);
-			bte.deriveAllFacts(spC, program);
-			sb.setLength(0);
-			spC.relation.collectRelation(sb);
-			assertTrue(sb.toString().equals("[C]{(A,A)(A,C)(C,A)}"));
-
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
+//	@Test
+//	public void testDeriveAll3() {
+//		try {
+//			Program program = (Program) FileUtil.parse(new File(TEST_DIRECTORY_VALID, "relationsTest_8.in"));
+//			BacktrackingEvaluation bte = new BacktrackingEvaluation();
+//			bte.evaluate(program, defaultDescr);
+//			FormalPredicate sp = program.getFormalPredicate(0);
+//			StringBuilder sb = new StringBuilder();
+//			sp.relation.collectRelation(sb);
+//			assertTrue(sb.toString().equals("[A]{(A,B)(B,C)}"));
+//
+//			FormalPredicate spC = program.getFormalPredicate(2);
+//			bte.deriveAllFacts(spC, program);
+//			sb.setLength(0);
+//			spC.relation.collectRelation(sb);
+//			assertTrue(sb.toString().equals("[C]{(A,A)(A,C)(C,A)}"));
+//
+//		} catch (Exception e) {
+//			e.printStackTrace();
+//		}
+//	}
 
 	/**
 	 * relationsTest_9.in A("A", "B"). A("B", "C"). A(x, z) :- A(x, y), A(y, z).
 	 */
-	@Test
-	public void testDeriveAll4() {
-		try {
-			Program program = (Program) Util.parse(new File(TEST_DIRECTORY_VALID, "relationsTest_9.in"));
-			BacktrackingEvaluation bte = new BacktrackingEvaluation();
-			bte.evaluate(program);
-			FormalPredicate sp = program.getFormalPredicate(0);
-			StringBuilder sb = new StringBuilder();
-			sp.relation.collectRelation(sb);
-			assertTrue(sb.toString().equals("[A]{(A,B)(B,C)}"));
-
-			bte.deriveAllFacts(sp, program);
-			sb.setLength(0);
-			sp.relation.collectRelation(sb);
-			System.out.println(sb.toString());
-			assertTrue(sb.toString().equals("[A]{(A,B)(A,C)(B,C)}"));
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
+//	@Test
+//	public void testDeriveAll4() {
+//		try {
+//			Program program = (Program) FileUtil.parse(new File(TEST_DIRECTORY_VALID, "relationsTest_9.in"));
+//			BacktrackingEvaluation bte = new BacktrackingEvaluation();
+//			bte.evaluate(program, defaultDescr);
+//			FormalPredicate sp = program.getFormalPredicate(0);
+//			StringBuilder sb = new StringBuilder();
+//			sp.relation.collectRelation(sb);
+//			assertTrue(sb.toString().equals("[A]{(A,B)(B,C)}"));
+//
+//			bte.deriveAllFacts(sp, program);
+//			sb.setLength(0);
+//			sp.relation.collectRelation(sb);
+//			System.out.println(sb.toString());
+//			assertTrue(sb.toString().equals("[A]{(A,B)(A,C)(B,C)}"));
+//		} catch (Exception e) {
+//			e.printStackTrace();
+//		}
+//	}
 
 	/**
 	 * relationsTest_11.in C("C11", "C12", "C13"). B(x, x) :- C(x, y, z).
 	 */
-	@Test
-	public void testDeriveAll5() {
-		try {
-			Program program = (Program) Util.parse(new File(TEST_DIRECTORY_VALID, "relationsTest_11.in"));
-			BacktrackingEvaluation bte = new BacktrackingEvaluation();
-			bte.evaluate(program);
-			StringBuilder sb = new StringBuilder();
-
-			FormalPredicate spB = program.getFormalPredicate(0);
-			sb.setLength(0);
-			spB.relation.collectRelation(sb);
-			System.out.println(sb.toString());
-			assertTrue(sb.toString().equals("[B]{}"));
-
-			bte.deriveAllFacts(spB, program);
-			sb.setLength(0);
-			spB.relation.collectRelation(sb);
-			System.out.println(sb.toString());
-			assertTrue(sb.toString().equals("[B]{(C11,C11)}"));
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
+//	@Test
+//	public void testDeriveAll5() {
+//		try {
+//			Program program = (Program) FileUtil.parse(new File(TEST_DIRECTORY_VALID, "relationsTest_11.in"));
+//			BacktrackingEvaluation bte = new BacktrackingEvaluation();
+//			bte.evaluate(program, defaultDescr);
+//			StringBuilder sb = new StringBuilder();
+//
+//			FormalPredicate spB = program.getFormalPredicate(0);
+//			sb.setLength(0);
+//			spB.relation.collectRelation(sb);
+//			System.out.println(sb.toString());
+//			assertTrue(sb.toString().equals("[B]{}"));
+//
+//			bte.deriveAllFacts(spB, program);
+//			sb.setLength(0);
+//			spB.relation.collectRelation(sb);
+//			System.out.println(sb.toString());
+//			assertTrue(sb.toString().equals("[B]{(C11,C11)}"));
+//		} catch (Exception e) {
+//			e.printStackTrace();
+//		}
+//	}
 
 	/**
 	 * relationsTest_12.in
@@ -478,41 +457,41 @@ public class RelationTests {
 		B(x, x) :- C(f1, x, f2).
 		B(x, x) :- C(f1, f2, x)
 	 */
-	@Test
-	public void testDeriveAll6() {
-		try {
-			Program program = (Program) Util.parse(new File(TEST_DIRECTORY_VALID, "relationsTest_12.in"));
-			BacktrackingEvaluation bte = new BacktrackingEvaluation();
-			bte.evaluate(program);
-			StringBuilder sb = new StringBuilder();
-			
-			FormalPredicate spA = program.getFormalPredicate(0);
-			sb.setLength(0);
-			spA.relation.collectRelation(sb);
-			System.out.println(sb.toString());
-			assertTrue(sb.toString().equals("[A]{(A,B)}"));
-
-			FormalPredicate spB = program.getFormalPredicate(1);
-			sb.setLength(0);
-			spB.relation.collectRelation(sb);
-			System.out.println(sb.toString());
-			assertTrue(sb.toString().equals("[B]{(D,E)}"));
-
-			bte.deriveAllFacts(spA, program);
-			sb.setLength(0);
-			spA.relation.collectRelation(sb);
-			System.out.println(sb.toString());
-			assertTrue(sb.toString().equals("[A]{(A,B)(C11,C11)(C12,C12)(C13,C13)(E,D)}"));
-			
-			bte.deriveAllFacts(spB, program);
-			sb.setLength(0);
-			spB.relation.collectRelation(sb);
-			System.out.println(sb.toString());
-			assertTrue(sb.toString().equals("[B]{(B,A)(C11,C11)(C12,C12)(C13,C13)(D,E)}"));
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
+//	@Test
+//	public void testDeriveAll6() {
+//		try {
+//			Program program = (Program) FileUtil.parse(new File(TEST_DIRECTORY_VALID, "relationsTest_12.in"));
+//			BacktrackingEvaluation bte = new BacktrackingEvaluation();
+//			bte.evaluate(program, defaultDescr);
+//			StringBuilder sb = new StringBuilder();
+//			
+//			FormalPredicate spA = program.getFormalPredicate(0);
+//			sb.setLength(0);
+//			spA.relation.collectRelation(sb);
+//			System.out.println(sb.toString());
+//			assertTrue(sb.toString().equals("[A]{(A,B)}"));
+//
+//			FormalPredicate spB = program.getFormalPredicate(1);
+//			sb.setLength(0);
+//			spB.relation.collectRelation(sb);
+//			System.out.println(sb.toString());
+//			assertTrue(sb.toString().equals("[B]{(D,E)}"));
+//
+//			bte.deriveAllFacts(spA, program);
+//			sb.setLength(0);
+//			spA.relation.collectRelation(sb);
+//			System.out.println(sb.toString());
+//			assertTrue(sb.toString().equals("[A]{(A,B)(C11,C11)(C12,C12)(C13,C13)(E,D)}"));
+//			
+//			bte.deriveAllFacts(spB, program);
+//			sb.setLength(0);
+//			spB.relation.collectRelation(sb);
+//			System.out.println(sb.toString());
+//			assertTrue(sb.toString().equals("[B]{(B,A)(C11,C11)(C12,C12)(C13,C13)(D,E)}"));
+//		} catch (Exception e) {
+//			e.printStackTrace();
+//		}
+//	}
 	/*
 	A("A", "B").
 	B("D", "E").
@@ -525,41 +504,41 @@ public class RelationTests {
 	B(x, y) :- C(f, x, y).
 	B(x, y) :- C(x, f, y).
 	*/
-	@Test
-	public void testDeriveAll7() {
-		try {
-			Program program = (Program) Util.parse(new File(TEST_DIRECTORY_VALID, "relationsTest_13.in"));
-			BacktrackingEvaluation bte = new BacktrackingEvaluation();
-			bte.evaluate(program);
-			StringBuilder sb = new StringBuilder();
-			
-			FormalPredicate spA = program.getFormalPredicate(0);
-			sb.setLength(0);
-			spA.relation.collectRelation(sb);
-			System.out.println(sb.toString());
-			assertTrue(sb.toString().equals("[A]{(A,B)}"));
-
-			FormalPredicate spB = program.getFormalPredicate(1);
-			sb.setLength(0);
-			spB.relation.collectRelation(sb);
-			System.out.println(sb.toString());
-			assertTrue(sb.toString().equals("[B]{(D,E)}"));
-
-			bte.deriveAllFacts(spA, program);
-			sb.setLength(0);
-			spA.relation.collectRelation(sb);
-			System.out.println(sb.toString());
-			assertTrue(sb.toString().equals("[A]{(A,B)(C12,C11)(C13,C11)(C13,C12)(C22,C21)(C23,C21)(C23,C22)(E,D)}"));
-			
-			bte.deriveAllFacts(spB, program);
-			sb.setLength(0);
-			spB.relation.collectRelation(sb);
-			System.out.println(sb.toString());
-			assertTrue(sb.toString().equals("[B]{(B,A)(C11,C12)(C11,C13)(C12,C13)(C21,C22)(C21,C23)(C22,C23)(D,E)}"));
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
+//	@Test
+//	public void testDeriveAll7() {
+//		try {
+//			Program program = (Program) FileUtil.parse(new File(TEST_DIRECTORY_VALID, "relationsTest_13.in"));
+//			BacktrackingEvaluation bte = new BacktrackingEvaluation();
+//			bte.evaluate(program, defaultDescr);
+//			StringBuilder sb = new StringBuilder();
+//			
+//			FormalPredicate spA = program.getFormalPredicate(0);
+//			sb.setLength(0);
+//			spA.relation.collectRelation(sb);
+//			System.out.println(sb.toString());
+//			assertTrue(sb.toString().equals("[A]{(A,B)}"));
+//
+//			FormalPredicate spB = program.getFormalPredicate(1);
+//			sb.setLength(0);
+//			spB.relation.collectRelation(sb);
+//			System.out.println(sb.toString());
+//			assertTrue(sb.toString().equals("[B]{(D,E)}"));
+//
+//			bte.deriveAllFacts(spA, program);
+//			sb.setLength(0);
+//			spA.relation.collectRelation(sb);
+//			System.out.println(sb.toString());
+//			assertTrue(sb.toString().equals("[A]{(A,B)(C12,C11)(C13,C11)(C13,C12)(C22,C21)(C23,C21)(C23,C22)(E,D)}"));
+//			
+//			bte.deriveAllFacts(spB, program);
+//			sb.setLength(0);
+//			spB.relation.collectRelation(sb);
+//			System.out.println(sb.toString());
+//			assertTrue(sb.toString().equals("[B]{(B,A)(C11,C12)(C11,C13)(C12,C13)(C21,C22)(C21,C23)(C22,C23)(D,E)}"));
+//		} catch (Exception e) {
+//			e.printStackTrace();
+//		}
+//	}
     /*
         relationsTest_14.in
         A("A", "B").

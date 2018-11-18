@@ -1,4 +1,5 @@
 import java.util.HashSet;
+import lang.io.SimpleLogger;
 aspect Categorization {
 	/**
 		Categorize Stmt
@@ -80,7 +81,7 @@ aspect FormalPredicate {
     	for(FormalPredicate s : p.getFormalPredicates()) {
     		if(s.predicateName().equals(getID())) return s;
     	}
-    	System.err.println("Each Predicate should belong to a FormalPredicate");
+    	SimpleLogger.logger().log("Each Predicate should belong to a FormalPredicate", SimpleLogger.LogLevel.Level.ERROR);
     	System.exit(0);
     	return null; // Needed for JastAdd
     }
@@ -93,5 +94,17 @@ aspect FormalPredicate {
     		}
     	}
     	return edbs;
+    }
+    
+    /**
+    * A FormalPredicate is defined to be EDB if it consists only of EDB Predicats.
+	* Thus, even if this method returns false, the relation may need to be initially
+    * filled by loading the EDB facts from the external database.
+    */
+    syn boolean FormalPredicate.isEDB() {
+    	for(PredicateSymbol pred : predicates()) {
+    		if(!pred.isEDBFact()) return false;
+    	}
+    	return true;
     }
 }

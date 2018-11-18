@@ -36,14 +36,22 @@ public class EvaluationTest {
         	assertTrue(r1.equals(r2));
         });
     }
-	
+	// evalTest_8.in is correct but takes about 40 seconds to complete.
 	@DisplayName("Compare Internal Evaluation to Souffle")
 	@ParameterizedTest(name = "Evaluation Tests Valid")
-	@ValueSource(strings = { "evalTest_1.in", "evalTest_2.in" })
-	void evaluationTestsSouffle(String fileName) throws Exception {
+	@ValueSource(strings = { "evalTest_1.in", "evalTest_2.in", "evalTest_3.in", "evalTest_4.in", "evalTest_5.in", "evalTest_6.in", "evalTest_7.in"})
+	void evaluationTestsTopDownBasicCompareSouffle(String fileName) throws Exception {
 		Description d1 = FileUtil.parseDescription("external::souffle      -OUT ./tests/output/souffle ./tests/evaluation/" + fileName);
 		Description d2 = FileUtil.parseDescription("internal::topdownbasic -OUT ./tests/output         ./tests/evaluation/" + fileName);
 		doEvaluationTest(d1, d2);
 	}
 
+	@DisplayName("Compare Internal Evaluation to Souffle")
+	@ParameterizedTest(name = "Evaluation Tests Valid")
+	@ValueSource(strings = { "evalTest_1.in", "evalTest_2.in"})
+	void evaluationTestsTopDownBasicCompareSouffleWithEDBs(String fileName) throws Exception {
+		Description d1 = FileUtil.parseDescription("external::souffle      -OUT ./tests/output/souffle -FACTS ./tests/evaluation/withedbs/ ./tests/evaluation/withedbs/" + fileName);
+		Description d2 = FileUtil.parseDescription("internal::topdownbasic -OUT ./tests/output         -FACTS ./tests/evaluation/withedbs/ ./tests/evaluation/withedbs/" + fileName);
+		doEvaluationTest(d1, d2);
+	}
 }

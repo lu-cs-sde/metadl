@@ -1,15 +1,13 @@
-.decl A(x:symbol, y:symbol)
-.decl B(x:symbol, y:symbol)
-.decl C(x:symbol, y:symbol, z:symbol)
-.output A
-.output B
-.output C
-
+.decl A(x_0:symbol, x_1:symbol)
+.output A(delimiter=",")
+.decl B(x_0:symbol, x_1:symbol)
+.output B(delimiter=",")
+.decl C(x_0:symbol, x_1:symbol, x_2:symbol)
+.output C(delimiter=",")
 A("A", "B").
 B("D", "E").
 C("C11", "C12", "C13").
 C("C21", "C22", "C23").
-
 A(x, y) :- B(y, x).
 B(x, y) :- A(y, x).
 B(x, y) :- C(x, y, f).

@@ -62,7 +62,7 @@ aspect Evaluation {
 	public abstract Evaluation Configuration.evaluationMethod();
 	
 	public Evaluation TopDownBasic.evaluationMethod() {
-		return new BacktrackingEvaluation();
+		return new TopDownBasicRecursive();
 	}
 	
 	public Evaluation Souffle.evaluationMethod() {

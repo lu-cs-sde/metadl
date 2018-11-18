@@ -26,7 +26,7 @@ public class SimpleLogger {
 	public SimpleLogger log(String msg, LogLevel.Level level) {
 		StackTraceElement[] stackTraceElements = Thread.currentThread().getStackTrace();
 		StackTraceElement prev = stackTraceElements[2];
-		log(msg, lastMode, prev.getClassName(), prev.getMethodName());
+		log(msg, level, prev.getClassName(), prev.getMethodName());
 		return logger;
 	}
 	

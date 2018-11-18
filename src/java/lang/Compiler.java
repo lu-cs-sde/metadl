@@ -49,9 +49,7 @@ public class Compiler {
 				serrs.forEach(err -> SimpleLogger.logger().log(err));
 				System.exit(0);
 			}
-			
 			descr.evaluationMethod().evaluate(program, descr);
-
 		} catch (FileNotFoundException e) {
 			System.out.println("File not found!");
 			System.exit(1);

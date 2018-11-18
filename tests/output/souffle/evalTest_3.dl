@@ -1,0 +1,5 @@
+.decl A(x_0:symbol, x_1:symbol)
+.output A(delimiter=",")
+A("A", "B").
+A("C", "D").
+A(x, y) :- A(y, x).

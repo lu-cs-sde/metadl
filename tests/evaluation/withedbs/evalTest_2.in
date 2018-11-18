@@ -1,0 +1,5 @@
+EDB(A, "A.csv")
+A(x, z) :- A(x, y), A(y, z).
+A(x, y) :- A(y, x).
+A(x, x) :- A(y, x).
+A(y, y) :- A(y, x).

@@ -17,11 +17,11 @@ public class PseudoTuple implements Comparable<PseudoTuple> {
 	public final int size;
 	private Term[] tuple;
 	
-	public final FormalPredicate sp;
+	public final FormalPredicate fp;
 	
 	public PseudoTuple(TreeSet<Variable> vars) {
 		this.size = vars.size();
-		this.sp = null;
+		this.fp = null;
 		this.tuple = new Term[size];
 		vars.toArray(this.tuple);
 	}
@@ -32,7 +32,7 @@ public class PseudoTuple implements Comparable<PseudoTuple> {
 		for (int i = 0; i != size; ++i) {
 			tuple[i] = new Variable("UNINITIALZIED VARIABLE");
 		}
-		this.sp = sp;
+		this.fp = sp;
 	}
 
 	public PseudoTuple(RealLiteral fact) {
@@ -41,7 +41,7 @@ public class PseudoTuple implements Comparable<PseudoTuple> {
 		for (int i = 0; i != size; ++i) {
 			tuple[i] = fact.getTerms(i);
 		}
-		this.sp = fact.getPredicate().formalpredicate();
+		this.fp = fact.getPredicate().formalpredicate();
 	}
 	
 	public PseudoTuple(PseudoTuple o) {
@@ -50,7 +50,7 @@ public class PseudoTuple implements Comparable<PseudoTuple> {
 		for (int i = 0; i != size; ++i) {
 			tuple[i] = o.tuple[i];
 		}
-		this.sp = o.sp;
+		this.fp = o.fp;
 	}
 	
 	public PseudoTuple(FormalPredicate sp, int size) {
@@ -59,7 +59,7 @@ public class PseudoTuple implements Comparable<PseudoTuple> {
 		for (int i = 0; i != size; ++i) {
 			tuple[i] = new Variable("UNINITIALZIED VARIABLE");
 		}
-		this.sp = sp;
+		this.fp = sp;
 	}
 
 	public boolean instantiatedAt(int i) {
@@ -180,8 +180,8 @@ public class PseudoTuple implements Comparable<PseudoTuple> {
 
 	@Override
 	public int compareTo(PseudoTuple arg0) {
-		if(sp == null) return compareTuples(arg0);
-		int pred_comp = sp.predicateName().compareTo(arg0.sp.predicateName());
+		if(fp == null) return compareTuples(arg0);
+		int pred_comp = fp.predicateName().compareTo(arg0.fp.predicateName());
 		if(pred_comp != 0) return pred_comp;
 		return compareTuples(arg0);
 	}

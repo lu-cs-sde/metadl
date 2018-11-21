@@ -51,7 +51,7 @@ public class Compiler {
 			}
 			descr.evaluationMethod().evaluate(program, descr);
 		} catch (FileNotFoundException e) {
-			System.out.println("File not found!");
+			SimpleLogger.logger().log("File not found!", SimpleLogger.LogLevel.Level.ERROR);
 			System.exit(1);
 		} catch (IOException e) {
 			e.printStackTrace(System.err);
@@ -61,6 +61,6 @@ public class Compiler {
 	}
 
 	private static void printUsage() {
-		SimpleLogger.logger().log("internal|external.souffle -F <INPUT-FILE>", SimpleLogger.LogLevel.Level.ERROR);
+		SimpleLogger.logger().log("internal::topdownbasic|external::souffle [-OUT <OUT_DIR>] [-FACTS <FACT_DIR>]", SimpleLogger.LogLevel.Level.ERROR);
 	}
 }

@@ -21,6 +21,7 @@ public class SouffleEvaluation extends ExternalEvaluation {
 		if (!descr.isSouffle()) {
 			SimpleLogger.logger().log("Can not perform SouffleEvaluation on non-souffle program",
 					SimpleLogger.LogLevel.Level.ERROR);
+			System.exit(0);
 		}
 		try {
 			Souffle souffleDescr = (Souffle) descr.getConfiguration();

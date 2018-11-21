@@ -28,8 +28,8 @@ public abstract class InternalEvaluation extends Evaluation {
 				
 			    if(f.getName().equals(fn)) {
 			    	f = new File(descr.factsDir() + "/" + f.getName());
-			    	
 			    }
+			    
 				if (!f.exists()) {
 					SimpleLogger.logger().log("Missing EDB File: " + f.getAbsolutePath(), SimpleLogger.LogLevel.Level.ERROR);
 					System.exit(0);

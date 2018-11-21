@@ -23,27 +23,32 @@ import lang.relation.PseudoTuple;
 public class TopDownBasicRecursive extends InternalEvaluation {
 	@Override
 	public void evaluate(Program program, Description descr) {
-		 loadEBDFacts(program, descr);
-		 program.getFormalPredicates().forEach(fp-> {
-			 deriveAllFacts(fp, program);
-			 CSVUtil.dumpFileInto(fp, new File(descr.outputDir() + "/" + fp.predicateName() + ".csv"));
-		 });
+		if (!descr.isTopDownBasic()) {
+			SimpleLogger.logger().log("Can not perform TopDownBasicRecursive on non-topdownbasic-program",
+					SimpleLogger.LogLevel.Level.ERROR);
+			System.exit(0);
+		}
+		loadEBDFacts(program, descr);
+		program.getFormalPredicates().forEach(fp -> {
+			deriveAllFacts(fp, program);
+			CSVUtil.dumpFileInto(fp, new File(descr.outputDir() + "/" + fp.predicateName() + ".csv"));
+		});
 	}
-	
+
 	public Set<PseudoTuple> allObjectTuples(Program p, int size, FormalPredicate sp) {
 		HashSet<PseudoTuple> inst = new HashSet<PseudoTuple>();
 		HashMap<Integer, Constant> constMap = new HashMap<>();
-		
+
 		int i = 0;
-		for(Constant c : p.objects)
+		for (Constant c : p.objects)
 			constMap.put(i++, c);
-		
-		int N = (int)Math.pow(p.objects.size(), size);
-		for(i = 0; i != N; ++i) {
+
+		int N = (int) Math.pow(p.objects.size(), size);
+		for (i = 0; i != N; ++i) {
 			java.util.List<Integer> rad = ListUtil.toRadix(i, p.objects.size(), size);
 			PseudoTuple tup = new PseudoTuple(sp, size);
-		
-			for(int j = 0; j != rad.size(); ++j) {
+
+			for (int j = 0; j != rad.size(); ++j) {
 				tup.instantiate(j, constMap.get(rad.get(j)));
 			}
 			inst.add(tup);
@@ -71,11 +76,11 @@ public class TopDownBasicRecursive extends InternalEvaluation {
 	 * Takes a set of Propositions which must ALL hold in some given proof.
 	 */
 	private boolean proofAND(HashSet<PseudoTuple> propositions, Program p, TreeSet<PseudoTuple> visited) {
-		for(PseudoTuple prop : propositions) {
-			if(!topDownProof(prop, p, visited)) {
+		for (PseudoTuple prop : propositions) {
+			if (!topDownProof(prop, p, visited)) {
 				return false;
-			}else {
-				prop.sp.relation.addTuple(prop);
+			} else {
+				prop.fp.relation.addTuple(prop);
 			}
 		}
 		return true;
@@ -83,9 +88,9 @@ public class TopDownBasicRecursive extends InternalEvaluation {
 
 	private boolean proofOR(PseudoTuple t, Program p, TreeSet<PseudoTuple> visited) {
 		boolean haveProof = false;
-		for (Rule rule : t.sp.definedInRules()) {
-			RealLiteral head = t.sp.findRuleHead(rule);
-			
+		for (Rule rule : t.fp.definedInRules()) {
+			RealLiteral head = t.fp.findRuleHead(rule);
+
 			/**
 			 * Bind the free variables in the head. Need to disqualify certain rules if the
 			 * head cannot be bound correctly. E.g. if try to prove A(o1, o2) and have rule
@@ -96,7 +101,7 @@ public class TopDownBasicRecursive extends InternalEvaluation {
 				TreeMap<Variable, Constant> inst = t_head.createInstantiationFrom(t);
 				HashSet<PseudoTuple> bodyTuples = new HashSet<PseudoTuple>();
 				rule.bodyTuples().forEach(bt -> bodyTuples.add(new PseudoTuple(bt)));
-				
+
 				bodyTuples.forEach(ps -> ps.instantiateWith(inst));
 
 				TreeSet<Variable> freeVars = freeVariables(bodyTuples);
@@ -114,9 +119,9 @@ public class TopDownBasicRecursive extends InternalEvaluation {
 						cpy.instantiateWith(instMap);
 						bodyTuples2.add(cpy);
 					});
-					
+
 					if (proofAND(bodyTuples2, p, visited)) {
-						t.sp.relation.addTuple(t);
+						t.fp.relation.addTuple(t);
 						return true;
 					}
 				}
@@ -130,37 +135,39 @@ public class TopDownBasicRecursive extends InternalEvaluation {
 	 * relation R in the context of program P.
 	 */
 	private boolean topDownProof(PseudoTuple t, Program p, TreeSet<PseudoTuple> visited) {
-		if(visited.contains(t)) {
-			return t.sp.relation.contains(t);
+		if (visited.contains(t)) {
+			return t.fp.relation.contains(t);
 		}
 		visited.add(t);
-		
+
 		if (!t.isGround()) {
 			SimpleLogger.logger().log("Can only prove ground facts", SimpleLogger.LogLevel.Level.ERROR);
 			return false;
 		}
 		if (!p.mayProve(t)) {
-			SimpleLogger.logger().log("The provided tuple cannot be proven within the program.", SimpleLogger.LogLevel.Level.ERROR);
+			SimpleLogger.logger().log("The provided tuple cannot be proven within the program.",
+					SimpleLogger.LogLevel.Level.ERROR);
 			return false;
 		}
-		if (t.size != t.sp.realArity()) {
+		if (t.size != t.fp.realArity()) {
 			SimpleLogger.logger().log("The tuple to be proven has the wrong arity", SimpleLogger.LogLevel.Level.ERROR);
 			return false;
 		}
-		if (t.sp.relation.contains(t))
+		if (t.fp.relation.contains(t))
 			return true;
 		return proofOR(t, p, visited);
 	}
-	
+
 	/**
 	 * Attempts to prove fact t in relation t.sp in context of program p
 	 */
 	public boolean deriveFact(PseudoTuple t, Program p) {
 		return topDownProof(t, p, new TreeSet<PseudoTuple>());
 	}
-	
+
 	/**
-	 * Derives all facts corresponding to the relation sp in the context of program p. 
+	 * Derives all facts corresponding to the relation sp in the context of program
+	 * p.
 	 */
 	public void deriveAllFacts(FormalPredicate sp, Program p) {
 		Set<PseudoTuple> universe = allObjectTuples(p, sp.realArity(), sp);

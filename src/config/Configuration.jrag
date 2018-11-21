@@ -31,13 +31,20 @@ aspect Configuration {
 	
 	syn boolean ConfigParam.isFactsDir()   = false;
 	syn boolean FactsDir.isFactsDir()      = true;
-	
+}
+
+aspect TopDownBasicConfiguration {
+	syn boolean Description.isTopDownBasic() = getConfiguration().isTopDownBasic();
+	syn boolean Configuration.isTopDownBasic() = false;
+	syn boolean TopDownBasic.isTopDownBasic()  = true;
+}
+
+
+aspect SouffleConfiguration {
 	syn boolean Description.isSouffle() = getConfiguration().isSouffle();
 	syn boolean Configuration.isSouffle() = false;
 	syn boolean Souffle.isSouffle()       = true;
-}
-
-aspect SouffleConfiguration {
+	
 	syn boolean SouffleParam.isOutputFileName()   = false;
 	syn boolean OutputFileName.isOutputFileName() = true;
 	

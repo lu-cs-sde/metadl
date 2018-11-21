@@ -1,7 +1,0 @@
-.decl A(x_0:symbol, x_1:symbol)
-.output A(delimiter=",")
-.input A(filename="A.csv", delimiter=",")
-A(x, z) :- A(x, y), A(y, z).
-A(x, y) :- A(y, x).
-A(x, x) :- A(y, x).
-A(y, y) :- A(y, x).

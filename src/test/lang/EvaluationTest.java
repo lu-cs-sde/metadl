@@ -50,7 +50,8 @@ public class EvaluationTest {
 	@ParameterizedTest(name = "Evaluation Tests Valid")
 	@ValueSource(strings = { "evalTest_1.in", "evalTest_2.in"})
 	void evaluationTestsTopDownBasicCompareSouffleWithEDBs(String fileName) throws Exception {
-		Description d1 = FileUtil.parseDescription("external::souffle      -OUT ./tests/output/souffle -FACTS ./tests/evaluation/withedbs/ ./tests/evaluation/withedbs/" + fileName);
+		String outname = FileUtil.changeExtension(fileName, "_with_edb.dl");
+		Description d1 = FileUtil.parseDescription("external::souffle      -OUT ./tests/output/souffle -FACTS ./tests/evaluation/withedbs/ -SOUFFLEOUT " + outname + " ./tests/evaluation/withedbs/" + fileName);
 		Description d2 = FileUtil.parseDescription("internal::topdownbasic -OUT ./tests/output         -FACTS ./tests/evaluation/withedbs/ ./tests/evaluation/withedbs/" + fileName);
 		doEvaluationTest(d1, d2);
 	}

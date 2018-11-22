@@ -114,6 +114,11 @@ aspect TestInfo {
 		sb.append("}");
 	}
 	
+	@Override
+	public String FormalPredicate.toString() {
+		return "FP_" + predicateName();
+	}
+	
 	public void FormalPredicate.collectRuleInfo(StringBuilder sb) {
 		HashSet<Rule> use_rules = useInRules();
 		sb.append("RULE USE [" + predicateName() + "] {\n");

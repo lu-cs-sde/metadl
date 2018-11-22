@@ -6,6 +6,7 @@ abstract External:Configuration;
 abstract Internal:Configuration;
 
 TopDownBasic:Internal;
+TopDownStratified:Internal;
 Souffle:External ::= SouffleSpecificParams:SouffleParam*;
 
 abstract ConfigParam;

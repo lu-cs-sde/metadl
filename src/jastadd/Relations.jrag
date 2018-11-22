@@ -147,6 +147,18 @@ aspect Rules {
     	for (Rule)stmt();
 }
 
+aspect DependencyGraph {
+	syn HashSet<FormalPredicate> FormalPredicate.dependsOn() {
+		HashSet<FormalPredicate> rules = new HashSet<FormalPredicate>();
+		for(Rule r : definedInRules()) {
+			for(RealLiteral rl : r.getBodys()) {
+				rules.add(rl.getPredicate().formalpredicate());
+			}
+		}
+		return rules;
+	}	
+}
+
 aspect Proof {
 	syn boolean Program.mayProve(PseudoTuple t) {
 		if(!t.isGround()) return false;

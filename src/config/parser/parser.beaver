@@ -9,12 +9,13 @@
 	}
 :};
 
-%terminals FILEPATH, SEP, INTERNAL,TOPDOWNBASIC, SOUFFLE, EXTERNAL, OUTDIR, FACTSDIR, SOUFFLEOUT;
+%terminals FILEPATH, SEP, INTERNAL,TOPDOWNBASIC, TOPDOWNSTRAT, SOUFFLE, EXTERNAL, OUTDIR, FACTSDIR, SOUFFLEOUT;
 
 %typeof  descr                    =  "Description";
 %typeof  config                   =  "Configuration";
 %typeof  souffle                  =  "Souffle";
 %typeof  topdownbasic             =  "TopDownBasic";
+%typeof  topdownstratified        =  "TopDownStratified";
 %typeof  file_path                =  "FilePath";
 %typeof  input_file               =  "InputFile";
 %typeof  output_dir               =  "OutputDir";
@@ -33,15 +34,18 @@
 
 descr = config.conf input_file.fn {: return new Description(fn, conf); :};
 
-config =  external
-       |  internal
+config =  EXTERNAL SEP external
+       |  INTERNAL SEP internal
        ;
 
-external      =  EXTERNAL SEP souffle;
+external      =  souffle;
 
-internal      =  INTERNAL SEP topdownbasic;
+internal      =  topdownbasic
+			  |  topdownstratified
+			  ;
 
-topdownbasic  =  TOPDOWNBASIC config_params.params {: return new TopDownBasic(params); :};
+topdownbasic      =  TOPDOWNBASIC config_params.params {: return new TopDownBasic(params); :};
+topdownstratified =  TOPDOWNSTRAT config_params.params {: return new TopDownStratified(params); :};
 
 souffle       =  SOUFFLE config_params.params souffle_params.s_params {: return new Souffle(params, s_params); :};
 

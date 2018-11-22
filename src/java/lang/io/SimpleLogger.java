@@ -19,7 +19,7 @@ public class SimpleLogger {
 	private SimpleLogger log(String msg, LogLevel.Level level, String classname, String methodname) {
 		lastMode = level;
 		if(level == LogLevel.Level.DEBUG && !isDebugMode()) return logger;
-		System.out.println("[" + LogLevel.toString(level) + "]: " + classname + "@" + methodname + " -- " + msg);
+		System.out.println("[" + LogLevel.toString(level) + " (" + classname + "@" + methodname + ")]: " + msg);
 		return logger;
 	}
 

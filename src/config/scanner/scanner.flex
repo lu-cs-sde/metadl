@@ -48,6 +48,7 @@ FilePath = [^\s(::)]+
 "external"      {  return  sym(Terminals.EXTERNAL);      }
 "::"            {  return  sym(Terminals.SEP);           }
 "topdownbasic"  {  return  sym(Terminals.TOPDOWNBASIC);  }
+"topdownstrat"  {  return  sym(Terminals.TOPDOWNSTRAT);  }
 "souffle"       {  return  sym(Terminals.SOUFFLE);       }
 {FilePath}      {  return  sym(Terminals.FILEPATH);      }
 <<EOF>>         {  return  sym(Terminals.EOF);           }

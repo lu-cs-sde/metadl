@@ -52,7 +52,7 @@ test {
         // excludeTags 'slow'
         // includeEngines 'junit-jupiter'
     // }
-    // failFast = true
+    failFast = true
     dependsOn 'cleanTest'  // This causes tests to always be re-run.
 
     // Summary of tests

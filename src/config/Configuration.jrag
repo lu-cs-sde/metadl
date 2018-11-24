@@ -39,6 +39,11 @@ aspect TopDownBasicConfiguration {
 	syn boolean TopDownBasic.isTopDownBasic()  = true;
 }
 
+aspect BottomUpNaiveConfiguration {
+	syn boolean Description.isBottomUpNaive() = getConfiguration().isBottomUpNaive();
+	syn boolean Configuration.isBottomUpNaive() = false;
+	syn boolean BottomUpNaive.isBottomUpNaive()  = true;
+}
 
 aspect SouffleConfiguration {
 	syn boolean Description.isSouffle() = getConfiguration().isSouffle();
@@ -78,5 +83,9 @@ aspect Evaluation {
 	
 	public Evaluation TopDownStratified.evaluationMethod() {
 		return new TopDownStratifiedRecursive();
+	}
+	
+	public Evaluation BottomUpNaive.evaluationMethod() {
+		return new BottomUpNaiveIterative();
 	}
 }

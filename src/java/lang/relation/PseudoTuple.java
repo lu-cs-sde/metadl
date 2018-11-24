@@ -1,15 +1,12 @@
 package lang.relation;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 import java.util.HashSet;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.TreeSet;
 
 import lang.ast.Constant;
-import lang.ast.RealLiteral;
 import lang.ast.FormalPredicate;
+import lang.ast.RealLiteral;
 import lang.ast.Term;
 import lang.ast.Variable;
 
@@ -26,13 +23,13 @@ public class PseudoTuple implements Comparable<PseudoTuple> {
 		vars.toArray(this.tuple);
 	}
 	
-	public PseudoTuple(FormalPredicate sp) {
-		this.size = sp.realArity();
+	public PseudoTuple(FormalPredicate fp) {
+		this.size = fp.realArity();
 		this.tuple = new Term[size];
 		for (int i = 0; i != size; ++i) {
 			tuple[i] = new Variable("UNINITIALZIED VARIABLE");
 		}
-		this.fp = sp;
+		this.fp = fp;
 	}
 
 	public PseudoTuple(RealLiteral fact) {
@@ -53,13 +50,21 @@ public class PseudoTuple implements Comparable<PseudoTuple> {
 		this.fp = o.fp;
 	}
 	
-	public PseudoTuple(FormalPredicate sp, int size) {
+	public PseudoTuple(FormalPredicate fp, int size) {
 		this.size = size;
 		this.tuple = new Term[size];
 		for (int i = 0; i != size; ++i) {
 			tuple[i] = new Variable("UNINITIALZIED VARIABLE");
 		}
-		this.fp = sp;
+		this.fp = fp;
+	}
+	
+	public static PseudoTuple of(Constant ... consts) {
+		PseudoTuple pt = new PseudoTuple(null, consts.length);
+		for(int i = 0; i != consts.length; ++i) {
+			pt.instantiate(i, consts[i]);
+		}
+		return pt;
 	}
 
 	public boolean instantiatedAt(int i) {
@@ -82,6 +87,24 @@ public class PseudoTuple implements Comparable<PseudoTuple> {
 	
 	public void instantiateAll(Set<Integer> positions, Constant c) {
 		positions.forEach(i -> tuple[i] = c);
+	}
+	
+	public PseudoTuple project(Set<Integer> positions) {
+		PseudoTuple t = new PseudoTuple(null, positions.size());
+		int i = 0;
+		for(Integer j : positions) {
+			t.tuple[i++] = tuple[j];
+		}
+		return t;
+	}
+	
+	public boolean isUniInfo() {
+		if(tuple.length <= 1) return true;
+		Term first = tuple[0];
+		for(int i = 1; i != tuple.length; ++i) {
+			if(Term.termComparator.compare(first, tuple[i]) != 0) return false;
+		}
+		return true;
 	}
 
 	public void collectTuple(StringBuilder sb) {
@@ -106,24 +129,6 @@ public class PseudoTuple implements Comparable<PseudoTuple> {
 		return true;
 	}
 	
-	public boolean instantiableAs(PseudoTuple pt) {
-		if(size != pt.size) return false;
-		TreeMap<Variable, Constant> binding = new TreeMap<>(Term.termComparator);
-		for(int i = 0; i != size; ++i) {
-			Term t1 = tuple[i];
-			Term t2 = pt.tuple[i];
-			
-			if(t1.isVariable()) {
-				Constant c = binding.get((Variable)t1);
-				if(c == null) 
-					binding.put((Variable)t1, (Constant)t2);
-				else if(!c.equals(t2)) 
-					return false;
-			} else if(!((Constant)t1).equals(t2)) return false;
-		}
-		return true;
-	}
-	
 	public Set<Integer> unboundPositions() {
 		Set<Integer> unbound = new HashSet<Integer>();
 		for (int i = 0; i != size; ++i) {
@@ -141,32 +146,6 @@ public class PseudoTuple implements Comparable<PseudoTuple> {
 			}
 		}
 		return freeVars;
-	}
-	
-	public TreeMap<Variable, Constant> createInstantiationFrom(PseudoTuple pt) {
-		assertTrue(pt.isGround());
-		assertTrue(instantiableAs(pt));
-		TreeMap<Variable, Constant> inst = new TreeMap<Variable, Constant>(Term.termComparator);
-		for(int i = 0; i != size; ++i) {
-			Term t1 = tuple[i];
-			Term t2 = pt.tuple[i];
-			if(t1.isVariable()) {
-				inst.put((Variable)t1, (Constant)t2);
-			}
-		}
-		return inst;
-	}
-	
-	public void instantiateWith(TreeMap<Variable, Constant> inst) {
-		for(int i = 0; i != size; ++i) {
-			Term t = tuple[i];
-			if(t.isVariable()) {
-				Constant c = inst.get((Variable) t);
-				if(c != null) {
-					instantiate(i, c);
-				}
-			}
-		}
 	}
 	
 	public int compareTuples(PseudoTuple arg0) {

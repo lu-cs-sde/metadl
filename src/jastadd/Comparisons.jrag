@@ -80,4 +80,17 @@ aspect Comparison {
 		return predicateSymbolComparator.compare(this, (PredicateSymbol)o) == 0;
 	}
 	
+	public class CompareFormalPredicate implements Comparator<FormalPredicate> {
+		@Override
+		public int compare(FormalPredicate p1, FormalPredicate p2) {
+			return p1.predicateName().compareTo(p2.predicateName());
+		}
+	}
+	
+	public static final CompareFormalPredicate FormalPredicate.formalPredicateComparator = new CompareFormalPredicate();
+	@Override
+	public boolean FormalPredicate.equals(Object o) {
+		if(!(o instanceof FormalPredicate)) return false;
+		return formalPredicateComparator.compare(this, (FormalPredicate)o) == 0;
+	}
 }

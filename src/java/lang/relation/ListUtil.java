@@ -1,9 +1,7 @@
 package lang.relation;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 public class ListUtil<T> {
 	public static List<Integer> toRadix(int nbr, int base, int minSize) {

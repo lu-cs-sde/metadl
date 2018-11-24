@@ -49,6 +49,7 @@ FilePath = [^\s(::)]+
 "::"            {  return  sym(Terminals.SEP);           }
 "topdownbasic"  {  return  sym(Terminals.TOPDOWNBASIC);  }
 "topdownstrat"  {  return  sym(Terminals.TOPDOWNSTRAT);  }
+"bottomupnaive" {  return  sym(Terminals.BOTTOMUPNAIVE); }
 "souffle"       {  return  sym(Terminals.SOUFFLE);       }
 {FilePath}      {  return  sym(Terminals.FILEPATH);      }
 <<EOF>>         {  return  sym(Terminals.EOF);           }

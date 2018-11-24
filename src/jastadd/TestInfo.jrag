@@ -115,6 +115,11 @@ aspect TestInfo {
 	}
 	
 	@Override
+	public String Term.toString() {
+		return string();
+	}
+	
+	@Override
 	public String FormalPredicate.toString() {
 		return "FP_" + predicateName();
 	}
@@ -167,4 +172,6 @@ aspect TestInfo {
 		collectObjectInfo(sb);
 		sb.append("}");
 	}
+	
+	
 }

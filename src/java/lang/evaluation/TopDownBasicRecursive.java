@@ -4,7 +4,6 @@ import java.io.File;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.TreeSet;
 
 import lang.ast.Constant;
@@ -17,6 +16,7 @@ import lang.ast.Variable;
 import lang.ast.config.Description;
 import lang.io.CSVUtil;
 import lang.io.SimpleLogger;
+import lang.relation.Instantiation;
 import lang.relation.ListUtil;
 import lang.relation.PseudoTuple;
 
@@ -56,13 +56,13 @@ public class TopDownBasicRecursive extends InternalEvaluation {
 		return inst;
 	}
 
-	public HashSet<TreeMap<Variable, Constant>> allInstantiations(Program p, TreeSet<Variable> freeVars) {
-		HashSet<TreeMap<Variable, Constant>> inst_set = new HashSet<TreeMap<Variable, Constant>>();
+	public HashSet<Instantiation> allInstantiations(Program p, TreeSet<Variable> freeVars) {
+		HashSet<Instantiation> inst_set = new HashSet<Instantiation>();
 		if (freeVars.size() > p.objects.size())
 			return inst_set;
 		Set<PseudoTuple> universe = allObjectTuples(p, freeVars.size(), null);
 		PseudoTuple var_tuple = new PseudoTuple(freeVars);
-		universe.forEach(ground -> inst_set.add(var_tuple.createInstantiationFrom(ground)));
+		universe.forEach(ground -> inst_set.add(new Instantiation(var_tuple, ground)));
 		return inst_set;
 	}
 
@@ -97,12 +97,12 @@ public class TopDownBasicRecursive extends InternalEvaluation {
 			 * A(o3, y) :- ... with o1 != o3.
 			 */
 			PseudoTuple t_head = new PseudoTuple(head);
-			if (t_head.instantiableAs(t)) {
-				TreeMap<Variable, Constant> inst = t_head.createInstantiationFrom(t);
+			if (Instantiation.instantiableAs(t_head, t)) {
+				Instantiation inst = new Instantiation(t_head, t);
 				HashSet<PseudoTuple> bodyTuples = new HashSet<PseudoTuple>();
 				rule.bodyTuples().forEach(bt -> bodyTuples.add(new PseudoTuple(bt)));
 
-				bodyTuples.forEach(ps -> ps.instantiateWith(inst));
+				bodyTuples.forEach(ps -> inst.instantiate(ps));
 
 				TreeSet<Variable> freeVars = freeVariables(bodyTuples);
 
@@ -110,13 +110,13 @@ public class TopDownBasicRecursive extends InternalEvaluation {
 				 * Will do lots of unnecessary work here since instantiations not calculated
 				 * lazily! This is only a proof of concept, thus keep as is for now for clarity.
 				 */
-				HashSet<TreeMap<Variable, Constant>> instantiations = allInstantiations(p, freeVars);
+				HashSet<Instantiation> instantiations = allInstantiations(p, freeVars);
 
-				for (TreeMap<Variable, Constant> instMap : instantiations) {
+				for (Instantiation instMap : instantiations) {
 					HashSet<PseudoTuple> bodyTuples2 = new HashSet<>();
 					bodyTuples.forEach(tup -> {
 						PseudoTuple cpy = new PseudoTuple(tup);
-						cpy.instantiateWith(instMap);
+						instMap.instantiate(cpy);
 						bodyTuples2.add(cpy);
 					});
 

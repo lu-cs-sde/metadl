@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Stack;
+import java.util.TreeSet;
 
 import lang.ast.FormalPredicate;
 import lang.ast.Program;
@@ -17,6 +18,9 @@ public class Stratification {
 	private static HashMap<FormalPredicate, Stratum> iso = new  HashMap<>();
 	private static int dfnum;
 	
+	/**
+	 * Tarjan's Strongly-Connect Components Alg.
+	 */
 	private static void strongConnect(FormalPredicate fp, Stack<FormalPredicate> stack, HashMap<FormalPredicate, NodeInfo> infoMap) {
 		NodeInfo fpInfo = new NodeInfo(dfnum, dfnum);
 		infoMap.put(fp, fpInfo);
@@ -71,12 +75,7 @@ public class Stratification {
 		order.offerLast(s);
 	}
 	
-	public static Deque<Stratum> stratification(Program p) {
-		if(isComputed) {
-			Deque<Stratum> orderCpy = new LinkedList<>();
-			order.forEach(s -> orderCpy.offerLast(s));
-			return orderCpy;
-		}
+	private static Deque<Stratum> stratificationHelper(Program p) {
 		dfnum = 0;
 		HashMap<FormalPredicate, NodeInfo> infoMap = new HashMap<>();
 		Stack<FormalPredicate> stack = new Stack<>();
@@ -92,16 +91,37 @@ public class Stratification {
 				reversePostOrder(s, order);
 			}
 		}
-		isComputed = true;
 		Deque<Stratum> orderCpy = new LinkedList<>();
 		order.forEach(s -> orderCpy.offerLast(s));
+		isComputed = true;
 		return orderCpy;
 	}
 	
+	public static Deque<Stratum> stratification(Program p) {
+		if(isComputed) {
+			Deque<Stratum> orderCpy = new LinkedList<>();
+			order.forEach(s -> orderCpy.offerLast(s));
+			return orderCpy;
+		}
+		return stratificationHelper(p);
+	}
+	
+	public static Deque<Stratum> stratificationForceCompute(Program p) {
+		dfnum = 0;
+		order = new LinkedList<>();
+		strat = new HashSet<Stratum>();
+		iso = new  HashMap<>();
+		return stratificationHelper(p);
+	}
+	
 	@SuppressWarnings("serial")
-	public static class Stratum extends HashSet<FormalPredicate> {
+	public static class Stratum extends TreeSet<FormalPredicate> {
 		public HashSet<Stratum> succ = new HashSet<>();
 		public boolean visited = false;
+		
+		public Stratum() {
+			super(FormalPredicate.formalPredicateComparator);
+		}
 	}
 	
 	private static class NodeInfo {

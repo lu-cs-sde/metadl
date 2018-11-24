@@ -7,6 +7,9 @@ aspect Categorization {
     syn boolean Stmt.isClause();
     eq ExtensionalDB.isClause()  =  false;
     eq Clause.isClause()         =  true;
+    
+    syn boolean Stmt.isRule() = false;
+    syn boolean Rule.isRule() = true;
 
     inh Program Stmt.program();
     eq Program.getStmt(int index).program() = this;

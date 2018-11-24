@@ -140,8 +140,10 @@ aspect Rules {
     	return vars;
     }
     
+    syn PseudoTuple RealLiteral.toTuple() = new PseudoTuple(this);
+    
     coll HashSet<PseudoTuple> Rule.bodyTuples() [new HashSet<PseudoTuple>()] with add;
-    RealLiteral contributes new PseudoTuple(this)
+    RealLiteral contributes toTuple()
     	when isRuleUse()
     	to Rule.bodyTuples()
     	for (Rule)stmt();

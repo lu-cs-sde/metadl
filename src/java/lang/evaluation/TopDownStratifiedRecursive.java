@@ -17,11 +17,7 @@ public class TopDownStratifiedRecursive extends Evaluation {
 			Stratum s = order.poll();
 			SimpleLogger.logger().log("S: " + s, SimpleLogger.LogLevel.Level.DEBUG);
 		}
-		
 		order = Stratification.stratification(program);
-		while(!order.isEmpty()) {
-			Stratum s = order.poll();
-			SimpleLogger.logger().log("S: " + s, SimpleLogger.LogLevel.Level.DEBUG);
-		}
+		System.out.println(order);
 	}
 }

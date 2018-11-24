@@ -55,4 +55,23 @@ public class EvaluationTest {
 		Description d2 = FileUtil.parseDescription("internal::topdownbasic -OUT ./tests/output         -FACTS ./tests/evaluation/withedbs/ ./tests/evaluation/withedbs/" + fileName);
 		doEvaluationTest(d1, d2);
 	}
+	
+	@DisplayName("Compare Internal Evaluation to Souffle")
+	@ParameterizedTest(name = "Evaluation Tests Valid")
+	@ValueSource(strings = { "evalTest_1.in", "evalTest_2.in", "evalTest_3.in", "evalTest_4.in", "evalTest_5.in", "evalTest_6.in", "evalTest_7.in", "evalTest_8.in"})
+	void evaluationTestsBottomUpNaiveCompareSouffle(String fileName) throws Exception {
+		Description d1 = FileUtil.parseDescription("external::souffle      -OUT ./tests/evaluation/bottomupout/souffle ./tests/evaluation/" + fileName);
+		Description d2 = FileUtil.parseDescription("internal::bottomupnaive -OUT ./tests/evaluation/bottomupout         ./tests/evaluation/" + fileName);
+		doEvaluationTest(d1, d2);
+	}
+	
+	@DisplayName("Compare Internal Evaluation to Souffle")
+	@ParameterizedTest(name = "Evaluation Tests Valid")
+	@ValueSource(strings = { "evalTest_1.in", "evalTest_2.in"})
+	void evaluationTestsBottomUpNaiveCompareSouffleWithEDBs(String fileName) throws Exception {
+		String outname = FileUtil.changeExtension(fileName, "_with_edb.dl");
+		Description d1 = FileUtil.parseDescription("external::souffle      -OUT ./tests/evaluation/bottomupout/souffle -FACTS ./tests/evaluation/withedbs/ -SOUFFLEOUT " + outname + " ./tests/evaluation/withedbs/" + fileName);
+		Description d2 = FileUtil.parseDescription("internal::bottomupnaive -OUT ./tests/evaluation/bottomupout         -FACTS ./tests/evaluation/withedbs/ ./tests/evaluation/withedbs/" + fileName);
+		doEvaluationTest(d1, d2);
+	}
 }

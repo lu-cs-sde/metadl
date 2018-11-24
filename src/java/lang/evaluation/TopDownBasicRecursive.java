@@ -21,6 +21,43 @@ import lang.relation.ListUtil;
 import lang.relation.PseudoTuple;
 
 public class TopDownBasicRecursive extends InternalEvaluation {
+	
+	public class TaggedTuple extends PseudoTuple {
+		private FormalPredicate fp;
+		
+		public TaggedTuple(TaggedTuple t) {
+			super(t);
+			this.fp = t.fp;
+		}
+		
+		public TaggedTuple(FormalPredicate fp) {
+			super(fp.realArity());
+			this.fp = fp;
+		}
+		public TaggedTuple(FormalPredicate fp, PseudoTuple t) {
+			super(t);
+			this.fp = fp;
+		}
+		public TaggedTuple(FormalPredicate fp, TreeSet<Variable> vars) {
+			super(vars);
+			this.fp = fp;
+		}
+		
+		public TaggedTuple(RealLiteral rl) {
+			super(rl);
+			this.fp = rl.getPredicate().formalpredicate();
+		}
+		
+		@Override
+		public int compareTo(PseudoTuple arg0) {
+			if(arg0 instanceof TaggedTuple) {
+				int pred_comp = fp.predicateName().compareTo(((TaggedTuple)arg0).fp.predicateName());
+				if(pred_comp != 0) return pred_comp;
+			}
+			return super.compareTo(arg0);
+		}
+	}
+	
 	@Override
 	public void evaluate(Program program, Description descr) {
 		if (!descr.isTopDownBasic()) {
@@ -35,7 +72,7 @@ public class TopDownBasicRecursive extends InternalEvaluation {
 		});
 	}
 
-	public Set<PseudoTuple> allObjectTuples(Program p, int size, FormalPredicate sp) {
+	public Set<PseudoTuple> allObjectTuples(Program p, int size) {
 		HashSet<PseudoTuple> inst = new HashSet<PseudoTuple>();
 		HashMap<Integer, Constant> constMap = new HashMap<>();
 
@@ -46,7 +83,7 @@ public class TopDownBasicRecursive extends InternalEvaluation {
 		int N = (int) Math.pow(p.objects.size(), size);
 		for (i = 0; i != N; ++i) {
 			java.util.List<Integer> rad = ListUtil.toRadix(i, p.objects.size(), size);
-			PseudoTuple tup = new PseudoTuple(sp, size);
+			PseudoTuple tup = new PseudoTuple(size);
 
 			for (int j = 0; j != rad.size(); ++j) {
 				tup.instantiate(j, constMap.get(rad.get(j)));
@@ -60,13 +97,13 @@ public class TopDownBasicRecursive extends InternalEvaluation {
 		HashSet<Instantiation> inst_set = new HashSet<Instantiation>();
 		if (freeVars.size() > p.objects.size())
 			return inst_set;
-		Set<PseudoTuple> universe = allObjectTuples(p, freeVars.size(), null);
+		Set<PseudoTuple> universe = allObjectTuples(p, freeVars.size());
 		PseudoTuple var_tuple = new PseudoTuple(freeVars);
 		universe.forEach(ground -> inst_set.add(new Instantiation(var_tuple, ground)));
 		return inst_set;
 	}
 
-	public TreeSet<Variable> freeVariables(HashSet<PseudoTuple> tuples) {
+	public TreeSet<Variable> freeVariables(HashSet<TaggedTuple> tuples) {
 		TreeSet<Variable> freeVars = new TreeSet<Variable>(Term.termComparator);
 		tuples.forEach(t -> freeVars.addAll(t.freeVariables()));
 		return freeVars;
@@ -75,8 +112,8 @@ public class TopDownBasicRecursive extends InternalEvaluation {
 	/**
 	 * Takes a set of Propositions which must ALL hold in some given proof.
 	 */
-	private boolean proofAND(HashSet<PseudoTuple> propositions, Program p, TreeSet<PseudoTuple> visited) {
-		for (PseudoTuple prop : propositions) {
+	private boolean proofAND(HashSet<TaggedTuple> propositions, Program p, TreeSet<TaggedTuple> visited) {
+		for (TaggedTuple prop : propositions) {
 			if (!topDownProof(prop, p, visited)) {
 				return false;
 			} else {
@@ -86,7 +123,7 @@ public class TopDownBasicRecursive extends InternalEvaluation {
 		return true;
 	}
 
-	private boolean proofOR(PseudoTuple t, Program p, TreeSet<PseudoTuple> visited) {
+	private boolean proofOR(TaggedTuple t, Program p, TreeSet<TaggedTuple> visited) {
 		boolean haveProof = false;
 		for (Rule rule : t.fp.definedInRules()) {
 			RealLiteral head = t.fp.findRuleHead(rule);
@@ -96,14 +133,15 @@ public class TopDownBasicRecursive extends InternalEvaluation {
 			 * head cannot be bound correctly. E.g. if try to prove A(o1, o2) and have rule
 			 * A(o3, y) :- ... with o1 != o3.
 			 */
-			PseudoTuple t_head = new PseudoTuple(head);
+			TaggedTuple t_head = new TaggedTuple(head);
 			if (Instantiation.instantiableAs(t_head, t)) {
 				Instantiation inst = new Instantiation(t_head, t);
-				HashSet<PseudoTuple> bodyTuples = new HashSet<PseudoTuple>();
-				rule.bodyTuples().forEach(bt -> bodyTuples.add(new PseudoTuple(bt)));
-
+				HashSet<TaggedTuple> bodyTuples = new HashSet<TaggedTuple>();
+				
+				rule.getBodyList().forEach(rl -> {
+					bodyTuples.add(new TaggedTuple(rl));
+				});
 				bodyTuples.forEach(ps -> inst.instantiate(ps));
-
 				TreeSet<Variable> freeVars = freeVariables(bodyTuples);
 
 				/**
@@ -113,9 +151,9 @@ public class TopDownBasicRecursive extends InternalEvaluation {
 				HashSet<Instantiation> instantiations = allInstantiations(p, freeVars);
 
 				for (Instantiation instMap : instantiations) {
-					HashSet<PseudoTuple> bodyTuples2 = new HashSet<>();
+					HashSet<TaggedTuple> bodyTuples2 = new HashSet<>();
 					bodyTuples.forEach(tup -> {
-						PseudoTuple cpy = new PseudoTuple(tup);
+						TaggedTuple cpy = new TaggedTuple(tup);
 						instMap.instantiate(cpy);
 						bodyTuples2.add(cpy);
 					});
@@ -134,7 +172,7 @@ public class TopDownBasicRecursive extends InternalEvaluation {
 	 * Takes a GROUND tuple t, and attempts to prove that it is included in the
 	 * relation R in the context of program P.
 	 */
-	private boolean topDownProof(PseudoTuple t, Program p, TreeSet<PseudoTuple> visited) {
+	private boolean topDownProof(TaggedTuple t, Program p, TreeSet<TaggedTuple> visited) {
 		if (visited.contains(t)) {
 			return t.fp.relation.contains(t);
 		}
@@ -161,18 +199,18 @@ public class TopDownBasicRecursive extends InternalEvaluation {
 	/**
 	 * Attempts to prove fact t in relation t.sp in context of program p
 	 */
-	public boolean deriveFact(PseudoTuple t, Program p) {
-		return topDownProof(t, p, new TreeSet<PseudoTuple>());
+	public boolean deriveFact(TaggedTuple t, Program p) {
+		return topDownProof(t, p, new TreeSet<TaggedTuple>());
 	}
 
 	/**
 	 * Derives all facts corresponding to the relation sp in the context of program
 	 * p.
 	 */
-	public void deriveAllFacts(FormalPredicate sp, Program p) {
-		Set<PseudoTuple> universe = allObjectTuples(p, sp.realArity(), sp);
+	public void deriveAllFacts(FormalPredicate fp, Program p) {
+		Set<PseudoTuple> universe = allObjectTuples(p, fp.realArity());
 		universe.forEach(t -> {
-			deriveFact(t, p);
+			deriveFact(new TaggedTuple(fp, t), p);
 		});
 	}
 }

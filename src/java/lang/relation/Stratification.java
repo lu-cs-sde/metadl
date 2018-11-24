@@ -107,11 +107,15 @@ public class Stratification {
 	}
 	
 	public static Deque<Stratum> stratificationForceCompute(Program p) {
+		System.out.println("Begin Strat");
 		dfnum = 0;
 		order = new LinkedList<>();
 		strat = new HashSet<Stratum>();
 		iso = new  HashMap<>();
-		return stratificationHelper(p);
+		Deque<Stratum> strat  = stratificationHelper(p);
+		
+		System.out.println("End Strat");
+		return strat;
 	}
 	
 	@SuppressWarnings("serial")

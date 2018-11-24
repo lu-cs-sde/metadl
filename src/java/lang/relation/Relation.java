@@ -5,7 +5,6 @@ import java.util.TreeSet;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import lang.ast.FormalPredicate;
 import lang.ast.Term;
 import lang.relation.Binding.BindOverlap;
 import lang.relation.Binding.BindResult;
@@ -14,19 +13,12 @@ import lang.relation.Binding.BindResult.TaggedBind;
 import lang.relation.Binding.BindTerm;
 
 public class Relation {
-	private FormalPredicate formalPredicate = null;
 	private Set<PseudoTuple> relation = new TreeSet<PseudoTuple>();
 	private int arity;
 	public Binding binding = Binding.anyBinding;
 
-	public Relation(FormalPredicate formalPredicate) {
-		this.formalPredicate = formalPredicate;
-		this.arity = formalPredicate.realArity();
-	}
-
 	public Relation(Relation r) {
 		this.arity = r.arity;
-		this.formalPredicate = r.formalPredicate;
 		this.relation = new TreeSet<PseudoTuple>();
 		this.relation.addAll(r.relation);
 	}
@@ -59,18 +51,55 @@ public class Relation {
 	}
 
 	public void collectRelation(StringBuilder sb) {
-		sb.append("[" + formalPredicate.predicateName() + "]{");
 		relation.forEach(pt -> pt.collectTuple(sb));
 		sb.append("}");
 	}
 
 	private Supplier<TreeSet<PseudoTuple>> supplier = () -> new TreeSet<PseudoTuple>();
 
+	/**
+	 * Selects a set of tuples based on the binding disregarding the current names of the relation columns
+	 */
 	public Relation select(Binding selectBind) {
 		Relation r = new Relation(this.arity);
 		r.binding = selectBind;
 		r.relation = relation.parallelStream().filter(t -> selectBind.satisfiedBy(t))
 				.collect(Collectors.toCollection(supplier));
+		return r;
+	}
+	
+	public void addAll(Relation r) {
+		relation.addAll(r.tuples());
+	}
+	
+	/**
+	 * Selects a set of tuples respecting the names of the relation columns
+	 * Name is given by a Variable Name
+	 * The semantics of a constant in the selectBind is that it is added to the 
+	 * selected tuple at the given coordinate.
+	 */
+	public Relation selectNamed(Binding selectBind) {
+		if(binding == Binding.anyBinding) return select(selectBind);
+		Relation r = new Relation(selectBind.totalSize());
+		r.binding = selectBind;
+		TreeSet<BindOverlap> intersect = Binding.intersect(selectBind, binding);
+		Binding difference = Binding.difference(intersect, selectBind);
+		
+		tuples().forEach(t -> {
+			PseudoTuple tuple = new PseudoTuple(r.arity);
+			for(BindOverlap bo : intersect) {
+				Term val = t.coord(bo.b2.coords.first());
+				for(Integer i : bo.b1.coords) {
+					tuple.set(i, val);
+				}
+			}
+			for(BindTerm bt : difference) {
+				for(Integer i : bt.coords) {
+					tuple.set(i, bt.t);
+				}
+			}
+			r.addTuple(tuple);
+		});
 		return r;
 	}
 
@@ -100,7 +129,7 @@ public class Relation {
 
 		r1.tuples().forEach(t_left -> {
 			r2.tuples().forEach(t_right -> {
-				PseudoTuple build = new PseudoTuple(null, r.arity);
+				PseudoTuple build = new PseudoTuple(r.arity);
 				if (agrees(br, t_left, t_right, build))
 					r.addTuple(build);
 			});

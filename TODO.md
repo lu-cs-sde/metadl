@@ -3,7 +3,12 @@ Add Security Checks:
     All head-variables are bound in the body of the rule.
 
 Add Extension-Capabilities to Evaluation.
-=> Types
-=> Negation
-=> Aggregation
-=> Predicates without object creation
+* Types
+* Negation
+* Aggregation
+* Predicates without object creation
+
+Pre-defined Predicates for Meta-Programming
+* Edb
+* Output
+* Preds

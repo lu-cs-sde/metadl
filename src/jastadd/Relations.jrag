@@ -90,7 +90,7 @@ aspect Relation {
 	public Relation FormalPredicate.relation;
 	
 	syn Relation FormalPredicate.fileRelation() {
-		Relation r = new Relation(this);
+		Relation r = new Relation(realArity());
 		for(PredicateSymbol pred : predicates()) {
 			if(pred.isFileFact()) {
 				r.addTuple(new PseudoTuple((RealLiteral)pred.literal()));

@@ -59,16 +59,4 @@ public class Instantiation extends TreeMap<Variable, Constant> {
 		}
 		return true;
 	}
-	
-	public static Instantiation union(Instantiation i1, Instantiation i2) {
-		Instantiation i = new Instantiation();
-		for(Variable v : i1.keySet()) {
-			i.put(v, i1.get(v));
-		}
-		for(Variable v : i2.keySet()) {
-			i.put(v, i2.get(v));
-		}
-		return i;
-	}
-	
 }

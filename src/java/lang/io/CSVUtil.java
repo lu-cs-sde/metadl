@@ -43,7 +43,7 @@ public class CSVUtil {
 									SimpleLogger.LogLevel.Level.ERROR);
 					System.exit(0);
 				}
-				PseudoTuple ps = new PseudoTuple(sp);
+				PseudoTuple ps = new PseudoTuple(sp.realArity());
 				for (int i = 0; i != line.length; ++i) {
 					Constant o = isInteger(line[i]) ? new IntConstant(line[i]) : new StringConstant(line[i]);
 					program.objects.add(o);
@@ -59,12 +59,12 @@ public class CSVUtil {
 	public static Relation readRelationFrom(File f, FormalPredicate fp) {
 		if (!f.exists())
 			return null;
-		Relation r = new Relation(fp);
+		Relation r = new Relation(fp.realArity());
 		CSVParser parser = new CSVParserBuilder().withSeparator(',').build();
 		try (CSVReader reader = new CSVReaderBuilder(new FileReader(f)).withCSVParser(parser).build()) {
 			String[] line;
 			while ((line = reader.readNext()) != null) {
-				PseudoTuple ps = new PseudoTuple(fp);
+				PseudoTuple ps = new PseudoTuple(fp.realArity());
 				for (int i = 0; i != line.length; ++i) {
 					ps.instantiate(i, isInteger(line[i]) ? new IntConstant(line[i]) : new StringConstant(line[i]));
 				}

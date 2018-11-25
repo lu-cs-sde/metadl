@@ -9,15 +9,14 @@ abstract Clause:Stmt;
 Rule:Clause ::= Heads:RealLiteral* Body:RealLiteral*;
 Fact:Clause ::= Heads:RealLiteral*;
 
-ExtensionalDB:Stmt ::= Target:EDBLiteral FileLocation;
+ExtensionalDB:Stmt ::= Target:MetaLiteral FileLocation;
 FileLocation ::= <STRING>;
 
-// Indirection: Make EDBPredicate a Literal for symmetry
 /**
    Literals 
 **/
 abstract Literal;
-EDBLiteral:Literal ::= Predicate:PredicateSymbol;
+MetaLiteral:Literal ::= Predicate:PredicateSymbol;
 RealLiteral:Literal ::= Predicate:PredicateSymbol Terms:Term*;
 
 PredicateSymbol ::= <ID>;
@@ -31,6 +30,8 @@ Variable:Term ::= <ID>;
 abstract Constant:Term;
 StringConstant:Constant ::= <STRING>;
 IntConstant:Constant    ::= <NUMERAL>;
+
+
 
 /**
     NTA to collect various information that is common to all predicates that refer to the same relation.

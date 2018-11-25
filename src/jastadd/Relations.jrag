@@ -31,6 +31,7 @@ aspect ModelObjectsAndPredicates {
     PredicateSymbol contributes this
         when true
         to Program.predicateSymbols();
+        
     syn TreeSet<PredicateSymbol> Program.uniquePredicateSymbols() {
         TreeSet<PredicateSymbol> uniquePredicateSymbols = new TreeSet<>(PredicateSymbol.predicateSymbolComparator);
         uniquePredicateSymbols.addAll(predicateSymbols());
@@ -55,7 +56,7 @@ aspect ModelObjectsAndPredicates {
 
 aspect Arity {
     syn int Literal.arity();
-    eq EDBLiteral.arity() = -1;
+    eq MetaLiteral.arity() = -1;
     eq RealLiteral.arity() = getNumTerms();
     syn int PredicateSymbol.arity() = literal().arity();
     

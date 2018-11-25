@@ -3,7 +3,7 @@ package lang.io;
 import lang.ast.ASTNode;
 import lang.ast.List;
 
-public class CollectUtil<T extends ASTNode> {
+public class CollectUtil<T extends ASTNode<?>> {
 
 	public void collectList(String pre, String post, String delim, StringBuilder sb, List<T> list,
 			Collector<T> collector) {
@@ -23,7 +23,7 @@ public class CollectUtil<T extends ASTNode> {
 		sb.append(post);
 	}
 
-	public interface Collector<T extends ASTNode> {
+	public interface Collector<T extends ASTNode<?>> {
 		void collect(T t, StringBuilder sb);
 	}
 }

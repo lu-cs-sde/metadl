@@ -35,14 +35,14 @@ aspect EmptyRelationUse {
     	return false;
     }
     
-    Program contributes nta getFormalPredicateList() to Program.semanticErrors();
+    Program contributes nta getFormalPredicates() to Program.semanticErrors();
     FormalPredicate contributes ("The use of " + predicateName() + " can give no facts")
     	when !mayHaveFacts() && hasRuleUse()
     	to Program.semanticErrors();
 }
 
 aspect UnusedRelation {
-    Program contributes nta getFormalPredicateList() to Program.semanticErrors();
+    Program contributes nta getFormalPredicates() to Program.semanticErrors();
     FormalPredicate contributes ("The predicate " + predicateName() + " has no rule occurrence.")
     	when !hasRuleOccurrence()
     	to Program.semanticErrors();

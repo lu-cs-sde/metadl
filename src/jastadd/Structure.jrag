@@ -45,7 +45,7 @@ aspect Categorization {
 		Categorize PredicateSymbol
 	**/
     inh Literal PredicateSymbol.literal();
-    eq EDBLiteral.getPredicate().literal()   =  this;
+    eq MetaLiteral.getPredicate().literal()   =  this;
     eq RealLiteral.getPredicate().literal()  =  this;
 
     syn boolean PredicateSymbol.isRule()      =  literal().isRuleUse() || literal().isRuleDef();
@@ -63,6 +63,7 @@ aspect Categorization {
 }
 
 aspect FormalPredicate {
+	// Needed to keep JastAdd Happy for some reason.
     syn List Program.getFormalPredicateList() {
     	List list = new List();
     	HashMap<String, HashSet<PredicateSymbol>> predMap = predicateMap();

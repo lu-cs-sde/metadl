@@ -13,7 +13,7 @@
 
 %typeof  program             =  "Program";
 %typeof  clause              =  "Clause";
-%typeof  edb_literal         =  "EDBLiteral";
+%typeof  meta_literal        =  "MetaLiteral";
 %typeof  real_literal        =  "RealLiteral";
 %typeof  predicate_sym       =  "PredicateSymbol";
 %typeof  variable            =  "Variable";
@@ -49,12 +49,12 @@ clause = rule
 rule = lit_list.heads IMPLIED_BY lit_list.body DOT {: return new Rule(heads, body); :};
 fact = lit_list.heads DOT {: return new Fact(heads); :};
 
-extensional_db = EDB LPARA edb_literal.target COMMA file_location.fn RPARA {: return new ExtensionalDB(target, fn); :};
+extensional_db = EDB LPARA meta_literal.target COMMA file_location.fn RPARA {: return new ExtensionalDB(target, fn); :};
 file_location = STRING.fn {: return new FileLocation(fn); :};
 
 real_literal = predicate_sym.pred LPARA term_list.terms RPARA {: return new RealLiteral(pred, terms); :};
 
-edb_literal = predicate_sym.pred {: return new EDBLiteral(pred); :};
+meta_literal = predicate_sym.pred {: return new MetaLiteral(pred); :};
 
 lit_list = real_literal.lit {: return new List().add(lit); :}
          | lit_list.list COMMA real_literal.c {: return list.add(c); :}

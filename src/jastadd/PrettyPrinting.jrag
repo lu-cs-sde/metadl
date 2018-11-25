@@ -65,7 +65,7 @@ aspect PretyPrinting {
         printList(getHeadss(), "", ".\n", ", ", pr);
     }
 
-    public void EDBLiteral.prettyPrint(PrettyPrinter pr) {
+    public void MetaLiteral.prettyPrint(PrettyPrinter pr) {
         pr.prettyPrint(getPredicate());
     }
 

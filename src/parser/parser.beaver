@@ -63,7 +63,7 @@ atom = predicate_sym.pred LPARA term_list.terms RPARA {: return new Atom(pred, t
 
 edb_literal = EDB LPARA predicate_sym.pred COMMA term.filelocs RPARA {: return new EDBLiteral(pred, filelocs); :};
 
-neg_literal = NOT LPARA literal.lit LPARA {: return new NEGLiteral(lit); :};
+neg_literal = NOT LPARA formal_literal.lit RPARA {: return new NEGLiteral(lit); :};
 
 lit_list = literal.lit {: return new List().add(lit); :}
          | lit_list.list COMMA literal.c {: return list.add(c); :}

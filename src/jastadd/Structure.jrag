@@ -1,4 +1,107 @@
 import java.util.HashSet;
+import java.util.HashMap;
+import java.util.TreeSet;
 import lang.io.SimpleLogger;
+import java.util.Collections;
 aspect Categorization {
+	inh Program Clause.program();
+    eq Program.getClause(int index).program() = this;
+    
+    inh Clause Literal.clause();
+	eq Rule.getHeads(int index).clause()  = this;
+	eq Rule.getBody(int index).clause()   = this;
+    eq Fact.getHeads(int index).clause()  = this;
+}
+
+aspect Predicates {
+    /**
+     * NTAs
+     */ 
+    syn nta EDBPredicate EDBLiteral.edbPredicate() = new EDBPredicate("EDB");
+    syn nta NEGPredicate NEGLiteral.negPredicate() = new NEGPredicate("NEG");
+    
+    syn PredicateSymbol Literal.predicate();
+	eq Atom.predicate()       = getPredicate();
+	eq EDBLiteral.predicate() = edbPredicate();
+	eq NEGLiteral.predicate() = negPredicate();
+	
+	inh Literal PredicateSymbol.literal();
+	eq  EDBLiteral.getChild().literal() = this;
+	eq  NEGLiteral.getChild().literal() = this;
+	eq  Atom.getChild().literal()       = this;
+	
+ 	inh Literal Literal.parent();
+ 	eq Program.getChild().parent() = null;
+ 	eq NEGLiteral.getFormalLiteral().parent() = this;
+	
+	coll TreeSet<PredicateSymbol> Literal.literalPredicates() [new TreeSet<PredicateSymbol>(Term.termComparator)] with addAll;
+	PredicateSymbol contributes Collections.singleton(this)
+		when true
+		to Literal.literalPredicates()
+		for literal();
+		
+	Literal contributes literalPredicates()
+		when parent() != null
+		to Literal.literalPredicates()
+		for parent();
+		
+	EDBLiteral contributes nta edbPredicate() to Literal.literalPredicates();
+	NEGLiteral contributes nta negPredicate() to Literal.literalPredicates();
+	
+
+}
+
+aspect Types {
+	syn boolean Term.isString()     = typeCompValue() == 0;
+	syn boolean Term.isInt()        = typeCompValue() == 1;
+	syn boolean Term.isPredicate()  = typeCompValue() == 2;
+	syn boolean Term.isVariable()   = typeCompValue() == 3;
+	syn boolean Term.isConstant()   = typeCompValue() == 0 || typeCompValue() == 1;
+	
+	syn int Term.typeCompValue();
+	eq StringConstant.typeCompValue()  = 0;
+	eq IntConstant.typeCompValue()     = 1;
+	eq PredicateSymbol.typeCompValue() = 2;
+	eq Variable.typeCompValue()        = 3;
+}
+
+aspect FormalPredicate {
+    syn List Program.getFormalPredicateList() {
+    	List list = new List();
+    	for(PredicateSymbol pred : uniquePredicateSymbols())
+    		list.add(new FormalPredicate(pred.getPRED_ID()));
+    	return list;
+    }
+    
+	coll HashSet<PredicateSymbol> Program.predicateSymbols() [new HashSet<PredicateSymbol>()] with add;
+	EDBLiteral contributes nta edbPredicate() to Program.predicateSymbols();
+    NEGLiteral contributes nta negPredicate() to Program.predicateSymbols();
+    PredicateSymbol contributes this
+        when true
+        to Program.predicateSymbols();
+        
+    syn TreeSet<PredicateSymbol> Program.uniquePredicateSymbols() {
+        TreeSet<PredicateSymbol> uniquePredicateSymbols = new TreeSet<>(Term.termComparator);
+        uniquePredicateSymbols.addAll(predicateSymbols());
+        return uniquePredicateSymbols;
+    }
+    
+    syn HashMap<String, HashSet<PredicateSymbol>> Program.predicateMap() {
+        HashMap<String, HashSet<PredicateSymbol>> predicateMap = new HashMap<String, HashSet<PredicateSymbol>>();
+        for(PredicateSymbol pred : uniquePredicateSymbols()) {
+            predicateMap.put(pred.getPRED_ID(), new HashSet<PredicateSymbol>());
+        }
+        for(PredicateSymbol pred : predicateSymbols()) {
+            HashSet<PredicateSymbol> predSet = predicateMap.get(pred.getPRED_ID());
+            predSet.add(pred);
+        }
+        return predicateMap;
+    }
+    
+    inh HashSet<PredicateSymbol> FormalPredicate.predicates();
+    eq Program.getFormalPredicate(int index).predicates() = predicateMap().get(getFormalPredicate(index).getSTRING());
+    
+    syn String FormalPredicate.predicateName() {
+    	return getSTRING();
+    }
 }

@@ -1,0 +1,4 @@
+ALocs("A_file1.in").
+ALocs("A_file2.in").
+EDB(A, x) :- ALocs(x).
+B(x) :- NOT(EDB(A, x)).

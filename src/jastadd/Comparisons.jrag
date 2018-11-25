@@ -1,0 +1,47 @@
+
+import java.util.Comparator;
+
+aspect Conversion {
+	syn int IntConstant.intValue() = Integer.parseInt(getNUMERAL());
+	public abstract String Constant.constantValue();
+	public String StringConstant.constantValue() { return getSTRING();}
+	public String IntConstant.constantValue() {return getNUMERAL();}
+	
+	public abstract String Term.string();
+	public String Constant.string() { return constantValue(); }
+	public String Variable.string() { return getVAR_ID(); }
+	public String PredicateSymbol.string() { return getPRED_ID(); }
+}
+
+aspect Comparison {
+	public class CompareTerm implements Comparator<Term> {
+		@Override
+		public int compare(Term t1, Term t2) {
+			int tv1 = t1.typeCompValue();
+			int tv2 = t2.typeCompValue();
+			if(tv1 != tv2) return tv1 < tv2 ? -1 : 1;
+			return t1.string().compareTo(t2.string());
+		}
+	}
+
+	public static final CompareTerm Term.termComparator = new CompareTerm();
+	@Override
+	public boolean Term.equals(Object o) {
+		if(!(o instanceof Term)) return false;
+		return termComparator.compare(this, (Term)o) == 0;
+	}
+	
+	public class CompareFormalPredicate implements Comparator<FormalPredicate> {
+		@Override
+		public int compare(FormalPredicate p1, FormalPredicate p2) {
+			return p1.predicateName().compareTo(p2.predicateName());
+		}
+	}
+	
+	public static final CompareFormalPredicate FormalPredicate.formalPredicateComparator = new CompareFormalPredicate();
+	@Override
+	public boolean FormalPredicate.equals(Object o) {
+		if(!(o instanceof FormalPredicate)) return false;
+		return formalPredicateComparator.compare(this, (FormalPredicate)o) == 0;
+	}
+}

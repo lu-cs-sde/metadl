@@ -1,7 +1,7 @@
 /**
         ENTRYPOINT
 **/
-Program  ::= Clause*; ///FormalPredicate*/; 
+Program  ::= Clause* /FormalPredicate*/; 
 
 abstract Clause;
 Rule:Clause ::= Heads:FormalLiteral* Body:Literal*;
@@ -17,7 +17,7 @@ abstract PredicateLiteral:Literal;
 Atom:FormalLiteral       ::= Predicate:PredicateSymbol Terms:Term*;
 EDBLiteral:FormalLiteral ::= Predicate:PredicateSymbol FileLocs:Term;
 
-NEGLiteral:PredicateLiteral ::= Literal;
+NEGLiteral:PredicateLiteral ::= FormalLiteral;
 
 /**
     Terms
@@ -34,7 +34,7 @@ IntConstant:Constant    ::= <NUMERAL>;
 /**
     NTA to collect various information that is common to all predicates that refer to the same relation.
 **/
-//FormalPredicate ::= <STRING>;
+FormalPredicate ::= <STRING>;
 
-NullLiteral:Literal;
-NullClause:Literal;
+EDBPredicate:PredicateSymbol;
+NEGPredicate:PredicateSymbol;

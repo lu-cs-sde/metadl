@@ -1,39 +1,40 @@
 /**
         ENTRYPOINT
 **/
-Program  ::= Stmt* /FormalPredicate*/; 
+Program  ::= Clause*; ///FormalPredicate*/; 
 
-abstract Stmt;
-
-abstract Clause:Stmt;
-Rule:Clause ::= Heads:RealLiteral* Body:RealLiteral*;
-Fact:Clause ::= Heads:RealLiteral*;
-
-ExtensionalDB:Stmt ::= Target:MetaLiteral FileLocation;
-FileLocation ::= <STRING>;
+abstract Clause;
+Rule:Clause ::= Heads:FormalLiteral* Body:Literal*;
+Fact:Clause ::= Heads:FormalLiteral*;
 
 /**
    Literals 
 **/
 abstract Literal;
-MetaLiteral:Literal ::= Predicate:PredicateSymbol;
-RealLiteral:Literal ::= Predicate:PredicateSymbol Terms:Term*;
+abstract FormalLiteral:Literal;
+abstract PredicateLiteral:Literal;
 
-PredicateSymbol ::= <ID>;
+Atom:FormalLiteral       ::= Predicate:PredicateSymbol Terms:Term*;
+EDBLiteral:FormalLiteral ::= Predicate:PredicateSymbol FileLocs:Term;
+
+NEGLiteral:PredicateLiteral ::= Literal;
 
 /**
     Terms
 **/
 abstract Term;
-Variable:Term ::= <ID>;
+Variable:Term ::= <VAR_ID>;
+
+PredicateSymbol:Term ::= <PRED_ID>;
 
 abstract Constant:Term;
 StringConstant:Constant ::= <STRING>;
 IntConstant:Constant    ::= <NUMERAL>;
 
-
-
 /**
     NTA to collect various information that is common to all predicates that refer to the same relation.
 **/
-FormalPredicate ::= <STRING>;
+//FormalPredicate ::= <STRING>;
+
+NullLiteral:Literal;
+NullClause:Literal;

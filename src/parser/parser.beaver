@@ -9,12 +9,16 @@
 	}
 :};
 
-%terminals ID, LPARA, RPARA, NUMERAL, STRING, DOT, COMMA, IMPLIED_BY, EDB;
+%terminals VAR_ID, PRED_ID, LPARA, RPARA, NUMERAL, STRING, DOT, COMMA, IMPLIED_BY, EDB, NOT;
 
 %typeof  program             =  "Program";
 %typeof  clause              =  "Clause";
-%typeof  meta_literal        =  "MetaLiteral";
-%typeof  real_literal        =  "RealLiteral";
+%typeof  literal             =  "Literal";
+%typeof  formal_literal      =  "FormalLiteral";
+%typeof  pred_literal        =  "PredicateLiteral";
+%typeof  edb_literal         =  "EDBLiteral";
+%typeof  neg_literal         =  "NEGLiteral";
+%typeof  atom                =  "Atom";
 %typeof  predicate_sym       =  "PredicateSymbol";
 %typeof  variable            =  "Variable";
 %typeof  constant            =  "Constant";
@@ -24,43 +28,52 @@
 %typeof  term_list           =  "List";
 %typeof  term_list_no_empty  =  "List";
 %typeof  lit_list            =  "List";
-%typeof  extensional_db      =  "ExtensionalDB";
-%typeof  stmt                =  "Stmt";
-%typeof  stmt_list           =  "List";
+%typeof  form_lit_list       =  "List";
+%typeof  clause_list         =  "List";
 %typeof  fact                =  "Fact";
 %typeof  rule                =  "Rule";
-%typeof  file_location       =  "FileLocation";
 
 %goal program;
 
-program =  stmt_list.list {: return new Program(list); :};
-stmt_list = stmt.s {: return new List().add(s); :}
-            | stmt_list.list stmt.s {: return list.add(s); :}
+program =  clause_list.list {: return new Program(list); :};
+clause_list = clause.c {: return new List().add(c); :}
+            | clause_list.list clause.c {: return list.add(c); :}
             ;
-
-stmt = clause
-     | extensional_db
-     ;
 
 clause = rule
        | fact
        ;
 
-rule = lit_list.heads IMPLIED_BY lit_list.body DOT {: return new Rule(heads, body); :};
-fact = lit_list.heads DOT {: return new Fact(heads); :};
+rule = form_lit_list.heads IMPLIED_BY lit_list.body DOT {: return new Rule(heads, body); :};
+fact = form_lit_list.heads DOT {: return new Fact(heads); :};
 
-extensional_db = EDB LPARA meta_literal.target COMMA file_location.fn RPARA {: return new ExtensionalDB(target, fn); :};
-file_location = STRING.fn {: return new FileLocation(fn); :};
 
-real_literal = predicate_sym.pred LPARA term_list.terms RPARA {: return new RealLiteral(pred, terms); :};
+literal = formal_literal
+        | pred_literal
+        ;
+        
+formal_literal = edb_literal
+			   | atom
+			   ;
+			  
+pred_literal = neg_literal
+             ;
 
-meta_literal = predicate_sym.pred {: return new MetaLiteral(pred); :};
+atom = predicate_sym.pred LPARA term_list.terms RPARA {: return new Atom(pred, terms); :};
 
-lit_list = real_literal.lit {: return new List().add(lit); :}
-         | lit_list.list COMMA real_literal.c {: return list.add(c); :}
+edb_literal = EDB LPARA predicate_sym.pred COMMA term.filelocs RPARA {: return new EDBLiteral(pred, filelocs); :};
+
+neg_literal = NOT LPARA literal.lit LPARA {: return new NEGLiteral(lit); :};
+
+lit_list = literal.lit {: return new List().add(lit); :}
+         | lit_list.list COMMA literal.c {: return list.add(c); :}
+         ;
+         
+form_lit_list = formal_literal.lit {: return new List().add(lit); :}
+         | form_lit_list.list COMMA formal_literal.lit {: return list.add(lit); :}
          ;
 
-predicate_sym = ID.id {: return new PredicateSymbol(id); :};
+predicate_sym = PRED_ID.id {: return new PredicateSymbol(id); :};
 
 term_list = term_list_no_empty
           | /* epsilon */ {: return new List(); :}
@@ -69,12 +82,13 @@ term_list = term_list_no_empty
 term_list_no_empty = term.t {: return new List().add(t); :}
                    | term_list_no_empty.list COMMA term.t {: return list.add(t); :} 
                    ;
-
+                   
 term = variable 
      | constant
+     | predicate_sym
      ;
 
-variable = ID.id {: return new Variable(id); :};
+variable = VAR_ID.id {: return new Variable(id); :};
 constant = int_constant
          | string_constant
          ;

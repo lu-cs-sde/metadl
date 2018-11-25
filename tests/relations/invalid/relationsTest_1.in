@@ -1,8 +1,0 @@
-EDB(E, "tests/relations/invalid/E.csv")
-
-A("A", "B").
-A("B", "C", "D", "E").
-
-A(x, z) :- A(x, y), A(y,z).
-B(x, "B") :- A(x, "A").
-C(x, y) :- E(y, x).

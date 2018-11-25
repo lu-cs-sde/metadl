@@ -28,7 +28,8 @@ import lang.ast.LangParser.SyntaxError;
 
 // macros
 WhiteSpace = [ ] | \t | \f | \n | \r | \/\/[^\n<<EOF>>]*
-ID = [a-zA-Z0-9\?_]+
+VAR_ID = [a-z][a-zA-Z0-9]*
+PRED_ID = [A-Z][a-zA-Z0-9]*
 Numeral = [0-9]+
 String  = \"[^\"]*\"
 
@@ -44,8 +45,10 @@ String  = \"[^\"]*\"
 "."        {  return  sym(Terminals.DOT);        }
 ","        {  return  sym(Terminals.COMMA);      }
 "EDB"      {  return  sym(Terminals.EDB);        }
+"NOT"      {  return  sym(Terminals.NOT);        }
 {Numeral}  {  return  sym(Terminals.NUMERAL);    }
-{ID}       {  return  sym(Terminals.ID);         }
+{VAR_ID}   {  return  sym(Terminals.VAR_ID);     }
+{PRED_ID}  {  return  sym(Terminals.PRED_ID);    }
 {String}   {
                 // Remove Quotes from Matched String.
                 String text = yytext();

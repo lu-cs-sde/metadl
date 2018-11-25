@@ -9,7 +9,7 @@
 	}
 :};
 
-%terminals VAR_ID, PRED_ID, LPARA, RPARA, NUMERAL, STRING, DOT, COMMA, IMPLIED_BY, EDB, NOT;
+%terminals VAR_ID, PRED_ID, PRED_REF, LPARA, RPARA, NUMERAL, STRING, DOT, COMMA, IMPLIED_BY, EDB, NOT;
 
 %typeof  program             =  "Program";
 %typeof  clause              =  "Clause";
@@ -20,6 +20,7 @@
 %typeof  neg_literal         =  "NEGLiteral";
 %typeof  atom                =  "Atom";
 %typeof  predicate_sym       =  "PredicateSymbol";
+%typeof  pred_ref            =  "PredicateSymbol";
 %typeof  variable            =  "Variable";
 %typeof  constant            =  "Constant";
 %typeof  int_constant        =  "IntConstant";
@@ -61,7 +62,7 @@ pred_literal = neg_literal
 
 atom = predicate_sym.pred LPARA term_list.terms RPARA {: return new Atom(pred, terms); :};
 
-edb_literal = EDB LPARA predicate_sym.pred COMMA term.filelocs RPARA {: return new EDBLiteral(pred, filelocs); :};
+edb_literal = EDB LPARA pred_ref.pred COMMA term.filelocs RPARA {: return new EDBLiteral(pred, filelocs); :};
 
 neg_literal = NOT LPARA formal_literal.lit RPARA {: return new NEGLiteral(lit); :};
 
@@ -83,11 +84,13 @@ term_list_no_empty = term.t {: return new List().add(t); :}
                    | term_list_no_empty.list COMMA term.t {: return list.add(t); :} 
                    ;
                    
-term = variable 
+term = variable
      | constant
-     | predicate_sym
+     | pred_ref
      ;
-
+     
+pred_ref = PRED_REF.id {: return new PredicateSymbol(id); :};
+     
 variable = VAR_ID.id {: return new Variable(id); :};
 constant = int_constant
          | string_constant

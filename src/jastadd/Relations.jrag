@@ -77,7 +77,6 @@ aspect Rules {
 	}
 }
 
-
 aspect DependencyGraph {
 	syn HashSet<FormalPredicate> FormalPredicate.dependsOn() {
 		HashSet<FormalPredicate> rules = new HashSet<FormalPredicate>();

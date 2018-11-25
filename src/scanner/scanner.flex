@@ -30,6 +30,7 @@ import lang.ast.LangParser.SyntaxError;
 WhiteSpace = [ ] | \t | \f | \n | \r | \/\/[^\n<<EOF>>]*
 VAR_ID = [a-z][a-zA-Z0-9]*
 PRED_ID = [A-Z][a-zA-Z0-9]*
+PRED_REF = '{PRED_ID}
 Numeral = [0-9]+
 String  = \"[^\"]*\"
 
@@ -49,6 +50,11 @@ String  = \"[^\"]*\"
 {Numeral}  {  return  sym(Terminals.NUMERAL);    }
 {VAR_ID}   {  return  sym(Terminals.VAR_ID);     }
 {PRED_ID}  {  return  sym(Terminals.PRED_ID);    }
+{PRED_REF} {  
+                String text = yytext();
+                String data = text.substring(1, text.length());
+                return new beaver.Symbol(Terminals.PRED_REF, yyline + 1, yycolumn + 1, yylength() - 1, data); 
+		   }
 {String}   {
                 // Remove Quotes from Matched String.
                 String text = yytext();

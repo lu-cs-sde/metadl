@@ -1,0 +1,91 @@
+import lang.evaluation.*;
+import lang.ast.Program;
+import lang.io.FileUtil;
+
+
+aspect Configuration {
+	syn String Description.inputFile() = getInput().getPath();
+	
+	syn String Description.inputFileName() {
+		return FileUtil.fileName(inputFile());
+	}
+	
+	syn String Description.outputDir() {
+		for(ConfigParam param : getConfiguration().getParamss()) {
+			if(param.isOutputDir())
+				return FileUtil.normalize(((OutputDir) param).getPath());
+		}
+		return System.getProperty("user.dir");
+	}
+	
+	syn String Description.factsDir() {
+		for(ConfigParam param : getConfiguration().getParamss()) {
+			if(param.isFactsDir())
+				return FileUtil.normalize(((FactsDir) param).getPath());
+		}
+		return System.getProperty("user.dir");
+	}
+	
+	syn boolean ConfigParam.isOutputDir()  = false;
+	syn boolean OutputDir.isOutputDir()    = true;
+	
+	syn boolean ConfigParam.isFactsDir()   = false;
+	syn boolean FactsDir.isFactsDir()      = true;
+}
+
+aspect TopDownBasicConfiguration {
+	syn boolean Description.isTopDownBasic() = getConfiguration().isTopDownBasic();
+	syn boolean Configuration.isTopDownBasic() = false;
+	syn boolean TopDownBasic.isTopDownBasic()  = true;
+}
+
+aspect BottomUpNaiveConfiguration {
+	syn boolean Description.isBottomUpNaive() = getConfiguration().isBottomUpNaive();
+	syn boolean Configuration.isBottomUpNaive() = false;
+	syn boolean BottomUpNaive.isBottomUpNaive()  = true;
+}
+
+aspect SouffleConfiguration {
+	syn boolean Description.isSouffle() = getConfiguration().isSouffle();
+	syn boolean Configuration.isSouffle() = false;
+	syn boolean Souffle.isSouffle()       = true;
+	
+	syn boolean SouffleParam.isOutputFileName()   = false;
+	syn boolean OutputFileName.isOutputFileName() = true;
+	
+	inh String Souffle.inputFileName();
+	eq Description.getChild().inputFileName() = inputFileName();
+	
+	
+	syn String Souffle.outputFileName() {
+		for(SouffleParam param : getSouffleSpecificParamss()) {
+			if(param.isOutputFileName())
+				return ((OutputFileName) param).getName();
+		}
+		return FileUtil.changeExtension(inputFileName(), ".dl");
+	}
+}
+
+aspect Evaluation {
+	public Evaluation Description.evaluationMethod() {
+		return getConfiguration().evaluationMethod();
+	}
+	
+	public abstract Evaluation Configuration.evaluationMethod();
+	
+	public Evaluation TopDownBasic.evaluationMethod() {
+		return null;
+	}
+	
+	public Evaluation Souffle.evaluationMethod() {
+		return new SouffleEvaluation();
+	}
+	
+	public Evaluation TopDownStratified.evaluationMethod() {
+		return null;
+	}
+	
+	public Evaluation BottomUpNaive.evaluationMethod() {
+		return new BottomUpNaiveIterative();
+	}
+}

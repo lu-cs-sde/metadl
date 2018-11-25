@@ -12,6 +12,10 @@ aspect Categorization {
 	eq Rule.getBody(int index).clause()   = this;
     eq Fact.getHeads(int index).clause()  = this;
     
+    syn boolean Clause.isRule();
+    eq Rule.isRule() = true;
+    eq Fact.isRule() = false;
+    
     /**
      * NTAs
      */ 
@@ -63,6 +67,7 @@ aspect Predicates {
     inh boolean Literal.isRuleDef();
     eq Clause.getChild().isRuleDef() = false;
     eq Rule.getHeads().isRuleDef()   =  true;
+    eq Fact.getHeads().isRuleDef()   =  true;
 
     inh boolean Literal.isRuleUse();
     eq Clause.getChild().isRuleUse() = false;
@@ -101,8 +106,10 @@ aspect Types {
 aspect FormalPredicate {
     syn List Program.getFormalPredicateList() {
     	List list = new List();
-    	for(PredicateSymbol pred : uniquePredicateSymbols())
-    		list.add(new FormalPredicate(pred.getPRED_ID()));
+    	for(PredicateSymbol pred : uniquePredicateSymbols()) {
+    		FormalPredicate fp = new FormalPredicate(pred.getPRED_ID());
+    		list.add(fp);
+    	}
     	return list;
     }
     

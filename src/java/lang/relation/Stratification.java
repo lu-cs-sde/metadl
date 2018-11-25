@@ -79,7 +79,6 @@ public class Stratification {
 		dfnum = 0;
 		HashMap<FormalPredicate, NodeInfo> infoMap = new HashMap<>();
 		Stack<FormalPredicate> stack = new Stack<>();
-		
 		for(FormalPredicate fp : p.getFormalPredicates()) {
 			if(infoMap.get(fp) == null) {
 				strongConnect(fp, stack, infoMap);

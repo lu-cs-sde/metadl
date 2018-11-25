@@ -3,9 +3,9 @@
 **/
 Program  ::= Clause* /FormalPredicate*/; 
 
-abstract Clause;
-Rule:Clause ::= Heads:FormalLiteral* Body:Literal*;
-Fact:Clause ::= Heads:FormalLiteral*;
+abstract Clause ::= Heads:FormalLiteral*;
+Rule:Clause ::=  Body:Literal*;
+Fact:Clause;
 
 /**
    Literals 

@@ -53,6 +53,13 @@ aspect Relation {
 		}
 		return r;
 	}
+	
+	syn PseudoTuple FormalLiteral.toTuple();
+	eq Atom.toTuple() = new PseudoTuple(this);
+	eq EDBLiteral.toTuple() = new PseudoTuple(this);
+	
+	syn PseudoTuple Literal.toTuple();
+	eq NEGLiteral.toTuple() = getFormalLiteral().toTuple();
 }
 
 aspect Rules {
@@ -66,11 +73,11 @@ aspect Rules {
 		return rules;
 	}
 
-	syn HashSet<Rule> FormalPredicate.definedInRules() {
-		HashSet<Rule> rules = new HashSet<Rule>();
+	syn HashSet<Clause> FormalPredicate.definedIn() {
+		HashSet<Clause> rules = new HashSet<Clause>();
 		for(PredicateSymbol pred : predicates()) {
 			if(pred.isDef()) {
-				rules.add((Rule)pred.literal().clause());
+				rules.add(pred.literal().clause());
 			}
 		}
 		return rules;
@@ -79,25 +86,28 @@ aspect Rules {
 
 aspect DependencyGraph {
 	syn HashSet<FormalPredicate> FormalPredicate.dependsOn() {
-		HashSet<FormalPredicate> rules = new HashSet<FormalPredicate>();
-		for(Rule r : definedInRules()) {
-			for(Literal l : r.getBodys()) {
-				if(l.predicate().isNeg()) {
-					NEGLiteral nl = (NEGLiteral)l;
-					rules.add(nl.getFormalLiteral().predicate().formalpredicate());
-				}else {
-					rules.add(l.predicate().formalpredicate());
+		HashSet<FormalPredicate> defIn = new HashSet<FormalPredicate>();
+		for(Clause c : definedIn()) {
+			if(c.isRule()) {
+				Rule r = (Rule) c;
+				for(Literal l : r.getBodys()) {
+					if(l.predicate().isNeg()) {
+						NEGLiteral nl = (NEGLiteral) l;
+						defIn.add(nl.getFormalLiteral().predicate().formalpredicate());
+					}else {
+						defIn.add(l.predicate().formalpredicate());
+					}
 				}
 			}
 		}
 		
 		for(PredicateSymbol pred : predicates()) {
 			if(pred.isInEDB() && !pred.isEDB()) {
-				rules.add(pred.literal().predicate().formalpredicate());
+				defIn.add(pred.literal().predicate().formalpredicate());
 				break;
 			}
 		}
-		return rules;
+		return defIn;
 	}	
 }
 /*

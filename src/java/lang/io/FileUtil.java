@@ -3,12 +3,16 @@ package lang.io;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.StringReader;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import lang.ast.LangParser;
 import lang.ast.LangScanner;
 import lang.ast.Program;
+import lang.ast.config.ConfigParser;
+import lang.ast.config.ConfigScanner;
+import lang.ast.config.Description;
 
 public class FileUtil {
 	public static String changeExtension(String filename, String newExtension) {
@@ -37,10 +41,10 @@ public class FileUtil {
 		return (Program)parser.parse(scanner);
 	}
 	
-//	public static Description parseDescription(String s) throws IOException, beaver.Parser.Exception {
-//		ConfigScanner configScanner = new ConfigScanner(new StringReader(s));
-//		ConfigParser configParser   = new ConfigParser();
-//		Description descr = (Description) configParser.parse(configScanner);
-//		return descr;
-//	}
+	public static Description parseDescription(String s) throws IOException, beaver.Parser.Exception {
+		ConfigScanner configScanner = new ConfigScanner(new StringReader(s));
+		ConfigParser configParser   = new ConfigParser();
+		Description descr = (Description) configParser.parse(configScanner);
+		return descr;
+	}
 }

@@ -37,4 +37,10 @@ public class FileUtil {
 		return (Program)parser.parse(scanner);
 	}
 	
+//	public static Description parseDescription(String s) throws IOException, beaver.Parser.Exception {
+//		ConfigScanner configScanner = new ConfigScanner(new StringReader(s));
+//		ConfigParser configParser   = new ConfigParser();
+//		Description descr = (Description) configParser.parse(configScanner);
+//		return descr;
+//	}
 }

@@ -11,9 +11,7 @@ aspect Categorization {
 	eq Rule.getHeads(int index).clause()  = this;
 	eq Rule.getBody(int index).clause()   = this;
     eq Fact.getHeads(int index).clause()  = this;
-}
-
-aspect Predicates {
+    
     /**
      * NTAs
      */ 
@@ -47,8 +45,43 @@ aspect Predicates {
 		
 	EDBLiteral contributes nta edbPredicate() to Literal.literalPredicates();
 	NEGLiteral contributes nta negPredicate() to Literal.literalPredicates();
-	
+}
 
+aspect Predicates {
+	inh boolean Literal.isFact();
+    eq Clause.getChild().isFact()        = false;
+    eq Fact.getHeads(int index).isFact() =  true;
+    
+   	syn boolean Literal.isEDB();
+    eq  Literal.isEDB()    = false;
+    eq  EDBLiteral.isEDB() = true;
+    
+    syn boolean Literal.isAtom();
+    eq  Literal.isAtom() = false;
+    eq  Atom.isAtom()    = true;
+    
+    inh boolean Literal.isRuleDef();
+    eq Clause.getChild().isRuleDef() = false;
+    eq Rule.getHeads().isRuleDef()   =  true;
+
+    inh boolean Literal.isRuleUse();
+    eq Clause.getChild().isRuleUse() = false;
+    eq Rule.getBody().isRuleUse()    = true;
+    
+    syn boolean PredicateSymbol.isFact()  = literal().isFact();
+    syn boolean PredicateSymbol.isInEDB() = literal().isEDB();
+    syn boolean PredicateSymbol.isEDB()   = false;
+    eq EDBPredicate.isEDB()               = true;
+    syn boolean PredicateSymbol.isAtom()  = literal().isAtom();
+    syn boolean PredicateSymbol.isUse()   = literal().isRuleUse() && literal().predicate() == this;
+    syn boolean PredicateSymbol.isDef()   = literal().isRuleDef() && literal().predicate() == this;
+    syn boolean PredicateSymbol.isNeg()   = false;
+    eq NEGPredicate.isNeg()               = true;
+    
+    inh boolean PredicateSymbol.isTerm();
+    eq Literal.getChild().isTerm()        = false;
+    eq Atom.getTerms().isTerm()           = true;
+    eq EDBLiteral.getPredicate().isTerm() = true;
 }
 
 aspect Types {
@@ -75,7 +108,7 @@ aspect FormalPredicate {
     
 	coll HashSet<PredicateSymbol> Program.predicateSymbols() [new HashSet<PredicateSymbol>()] with add;
 	EDBLiteral contributes nta edbPredicate() to Program.predicateSymbols();
-    NEGLiteral contributes nta negPredicate() to Program.predicateSymbols();
+   // NEGLiteral contributes nta negPredicate() to Program.predicateSymbols();
     PredicateSymbol contributes this
         when true
         to Program.predicateSymbols();
@@ -103,5 +136,15 @@ aspect FormalPredicate {
     
     syn String FormalPredicate.predicateName() {
     	return getSTRING();
+    }
+    
+    syn FormalPredicate PredicateSymbol.formalpredicate() {
+    	Program p = literal().clause().program();
+    	for(FormalPredicate s : p.getFormalPredicates()) {
+    		if(s.predicateName().equals(getPRED_ID())) return s;
+    	}
+    	SimpleLogger.logger().log("Each Predicate should belong to a FormalPredicate", SimpleLogger.LogLevel.Level.ERROR);
+    	System.exit(0);
+    	return null; // Needed for JastAdd
     }
 }

@@ -3,11 +3,14 @@ package lang;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.Deque;
 
 import beaver.Parser.Exception;
 import lang.ast.Program;
 import lang.io.FileUtil;
 import lang.io.SimpleLogger;
+import lang.relation.Stratification;
+import lang.relation.Stratification.Stratum;
 
 /**
  * Dumps the parsed Abstract Syntax Tree of a Calc program.
@@ -29,6 +32,9 @@ public class Compiler {
 			}
 			Program program = (Program) FileUtil.parse(new File(args[0]));
 			DrAST_root_node = program; // Enable debugging with DrAST
+			
+			Deque<Stratum> order = Stratification.stratificationForceCompute(program);
+			System.out.println(order);
 		} catch (FileNotFoundException e) {
 			SimpleLogger.logger().log("File not found!", SimpleLogger.LogLevel.Level.ERROR);
 			System.exit(1);

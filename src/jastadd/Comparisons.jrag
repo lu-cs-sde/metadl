@@ -13,6 +13,13 @@ aspect Conversion {
 	public String PredicateSymbol.string() { return getPRED_ID(); }
 }
 
+aspect ToString {
+	@Override
+	public String FormalPredicate.toString() {
+		return predicateName();
+	}
+}
+
 aspect Comparison {
 	public class CompareTerm implements Comparator<Term> {
 		@Override

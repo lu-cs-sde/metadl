@@ -1,0 +1,3 @@
+EDBNAME("EDB.csv").
+EDB('EDB, x) :- EDBNAME(x).
+A(x, z) :- A(x, y), A(y, z).

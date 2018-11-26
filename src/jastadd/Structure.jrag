@@ -5,7 +5,7 @@ import lang.io.SimpleLogger;
 import java.util.Collections;
 aspect Categorization {
 	inh Program Clause.program();
-    eq Program.getClause(int index).program() = this;
+    eq Program.getChild().program() = this;
     
     inh Clause Literal.clause();
 	eq Rule.getHeads(int index).clause()  = this;
@@ -55,6 +55,16 @@ aspect Categorization {
 }
 
 aspect Predicates {
+    public interface PredicateInterface {
+    	public boolean isRef();
+    	public String getPRED_ID();
+    }
+    PredicateSymbol implements PredicateInterface;
+    PredicateRef implements PredicateInterface;
+    
+    public boolean PredicateSymbol.isRef() { return false; }
+    public boolean PredicateRef.isRef()    { return true; }
+    
 	inh boolean Literal.isFact();
     eq Clause.getChild().isFact()        = false;
     eq Fact.getHeads(int index).isFact() =  true;
@@ -76,20 +86,14 @@ aspect Predicates {
     eq Clause.getChild().isRuleUse() = false;
     eq Rule.getBody().isRuleUse()    = true;
     
-    syn boolean PredicateSymbol.isFact()  = literal().isFact();
-    syn boolean PredicateSymbol.isInEDB() = literal().isEDB();
-    syn boolean PredicateSymbol.isEDB()   = false;
-    eq EDBPredicate.isEDB()               = true;
-    syn boolean PredicateSymbol.isAtom()  = literal().isAtom();
-    syn boolean PredicateSymbol.isUse()   = literal().isRuleUse();
-    syn boolean PredicateSymbol.isDef()   = literal().isRuleDef();
-    syn boolean PredicateSymbol.isNeg()   = false;
-    eq NEGPredicate.isNeg()               = true;
-    
-    inh boolean PredicateSymbol.isTerm();
-    eq Literal.getChild().isTerm()        = false;
-    eq Atom.getTerms().isTerm()           = true;
-    eq EDBLiteral.getPredicate().isTerm() = true;
+    syn boolean PredicateInterface.isFact()  = literal().isFact();
+    syn boolean PredicateInterface.isInEDB() = literal().isEDB();
+    syn boolean PredicateInterface.isEDB()   = false;
+    eq EDBPredicate.isEDB()                  = true;
+    syn boolean PredicateInterface.isUse()   = literal().isRuleUse();
+    syn boolean PredicateInterface.isDef()   = literal().isRuleDef();
+    syn boolean PredicateInterface.isNeg()   = false;
+    eq NEGPredicate.isNeg()                  = true;
     
     syn boolean Term.isString()     = typeCompValue() == 2;
 	syn boolean Term.isInt()        = typeCompValue() == 3;
@@ -103,58 +107,122 @@ aspect Predicates {
 	eq StringConstant.typeCompValue()  = 2;
 	eq IntConstant.typeCompValue()     = 3;
 	
-	
+	eq Program.getChild().hasRecursiveEDB() {
+		FormalPredicate fp_edb = formalPredicateMap().get("EDB");
+		if(fp_edb == null) return false;
+		for(PredicateSymbol ps : fp_edb.predicates()) {
+			EDBLiteral lit = (EDBLiteral) ps.literal();
+			if(lit.getPredicate().getPRED_ID().equals("EDB")) return true;
+		}
+		return false;
+	}
 }
 
-aspect FormalPredicate {
-    syn List Program.getFormalPredicateList() {
-    	List list = new List();
-    	for(PredicateSymbol pred : uniquePredicateSymbols()) {
-    		FormalPredicate fp = new FormalPredicate(pred.getPRED_ID());
-    		list.add(fp);
-    	}
-    	return list;
-    }
-    
-	coll HashSet<PredicateSymbol> Program.predicateSymbols() [new HashSet<PredicateSymbol>()] with add;
+aspect PredicateMaps {
+	coll HashSet<PredicateInterface> Program.predicateSymbols() [new HashSet<PredicateInterface>()] with add;
 	EDBLiteral contributes nta edbPredicate() to Program.predicateSymbols();
    // NEGLiteral contributes nta negPredicate() to Program.predicateSymbols();
     PredicateSymbol contributes this
         when true
         to Program.predicateSymbols();
+       
+    PredicateRef contributes this
+        when true
+        to Program.predicateSymbols();
         
-    syn TreeSet<PredicateSymbol> Program.uniquePredicateSymbols() {
-        TreeSet<PredicateSymbol> uniquePredicateSymbols = new TreeSet<>(PredicateSymbol.predicateSymbolComparator);
+    syn TreeSet<PredicateInterface> Program.uniquePredicateSymbols() {
+        TreeSet<PredicateInterface> uniquePredicateSymbols = new TreeSet<PredicateInterface>(Program.predicateComparator);
         uniquePredicateSymbols.addAll(predicateSymbols());
         return uniquePredicateSymbols;
     }
     
-    syn HashMap<String, HashSet<PredicateSymbol>> Program.predicateMap() {
-        HashMap<String, HashSet<PredicateSymbol>> predicateMap = new HashMap<String, HashSet<PredicateSymbol>>();
-        for(PredicateSymbol pred : uniquePredicateSymbols()) {
-            predicateMap.put(pred.getPRED_ID(), new HashSet<PredicateSymbol>());
+    syn HashMap<String, HashSet<PredicateInterface>> Program.predicateMap() {
+        HashMap<String, HashSet<PredicateInterface>> predicateMap = new HashMap<String, HashSet<PredicateInterface>>();
+        for(PredicateInterface pred : uniquePredicateSymbols()) {
+            predicateMap.put(pred.getPRED_ID(), new HashSet<PredicateInterface>());
         }
-        for(PredicateSymbol pred : predicateSymbols()) {
-            HashSet<PredicateSymbol> predSet = predicateMap.get(pred.getPRED_ID());
+        for(PredicateInterface pred : predicateSymbols()) {
+            HashSet<PredicateInterface> predSet = predicateMap.get(pred.getPRED_ID());
             predSet.add(pred);
         }
         return predicateMap;
     }
     
+    public class FormalPredicateMap extends HashMap<String, FormalPredicate> {
+    	public void add(MapEntry me) {
+    		put(me.s, me.fp);
+    	}
+    }
+    
+    public class MapEntry {
+    	public String s;
+    	public FormalPredicate fp;
+    		
+    	public MapEntry(String s, FormalPredicate fp) {
+    		this.s = s;
+    		this.fp = fp;
+    	}
+    }
+    
+    /**
+     * When read in a PredicateRef from an EDB file, the newly constructed PredicateRef does not belong to the AST.
+     * Not sure if can insert, but use a map to look it up for now.
+     */
+    coll FormalPredicateMap Program.formalPredicateMap() [new FormalPredicateMap()] with add;
+    Program contributes nta getFormalPredicateList() to Program.formalPredicateMap();
+    FormalPredicate contributes new MapEntry(predicateName(), this)
+        when true
+        to Program.formalPredicateMap();
+        
+    eq Program.getChild().formalPredicateMap() = formalPredicateMap();
+}
+
+aspect FormalPredicate {
+    syn List Program.getFormalPredicateList() {
+    	List list = new List();
+    	for(PredicateInterface pred : uniquePredicateSymbols()) {
+    		if(!pred.isRef()) {
+    			FormalPredicate fp = new FormalPredicate(pred.getPRED_ID());
+    			list.add(fp);
+    		}
+    	}
+    	return list;
+    }
+    inh Program FormalPredicate.program();
+    inh boolean FormalPredicate.hasRecursiveEDB();
+    inh FormalPredicateMap FormalPredicate.formalPredicateMap();
+    
     inh HashSet<PredicateSymbol> FormalPredicate.predicates();
-    eq Program.getFormalPredicate(int index).predicates() = predicateMap().get(getFormalPredicate(index).getSTRING());
+    eq Program.getFormalPredicate(int index).predicates() {
+    	HashSet<PredicateSymbol> predicates = new HashSet<PredicateSymbol>();
+    	for(PredicateInterface pi :  predicateMap().get(getFormalPredicate(index).getSTRING())) {
+    		if(!pi.isRef())
+    			predicates.add((PredicateSymbol)pi);
+    	}
+    	return predicates;
+    }
+    
+    inh HashSet<PredicateRef> FormalPredicate.predicateRefs();
+    eq Program.getFormalPredicate(int index).predicateRefs() {
+    	HashSet<PredicateRef> predicates = new HashSet<PredicateRef>();
+    	for(PredicateInterface pi :  predicateMap().get(getFormalPredicate(index).getSTRING())) {
+    		if(pi.isRef())
+    			predicates.add((PredicateRef)pi);
+    	}
+    	return predicates;
+    }
     
     syn String FormalPredicate.predicateName() {
     	return getSTRING();
     }
-    
-    syn FormalPredicate PredicateSymbol.formalpredicate() {
-    	Program p = literal().clause().program();
-    	for(FormalPredicate s : p.getFormalPredicates()) {
-    		if(s.predicateName().equals(getPRED_ID())) return s;
+        
+    syn FormalPredicate PredicateInterface.formalpredicate() {
+    	FormalPredicate fp = literal().clause().program().formalPredicateMap().get(getPRED_ID());
+    	if(fp == null) {
+	    	SimpleLogger.logger().log("Each PredicateSymbol should belong to a FormalPredicate: " + this, SimpleLogger.LogLevel.Level.ERROR);
+	    	System.exit(0);
+	    	return null; // Needed for JastAdd
     	}
-    	SimpleLogger.logger().log("Each Predicate should belong to a FormalPredicate", SimpleLogger.LogLevel.Level.ERROR);
-    	System.exit(0);
-    	return null; // Needed for JastAdd
+    	return fp;
     }
 }

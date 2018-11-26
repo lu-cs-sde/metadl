@@ -12,11 +12,13 @@ import com.opencsv.CSVReader;
 import com.opencsv.CSVReaderBuilder;
 import com.opencsv.CSVWriter;
 
-import lang.ast.Constant;
 import lang.ast.FormalPredicate;
 import lang.ast.IntConstant;
+import lang.ast.PredicateRef;
 import lang.ast.Program;
 import lang.ast.StringConstant;
+import lang.ast.Term;
+import lang.ast.Variable;
 import lang.relation.PseudoTuple;
 import lang.relation.Relation;
 
@@ -29,27 +31,40 @@ public class CSVUtil {
 			return false;
 		}
 	}
+	
+	public static Term parseCSV(String line) {
+		if(isInteger(line)) {
+			return new IntConstant(line);
+		}
+		if(Character.isLowerCase(line.charAt(0))) {
+			return new Variable(line);
+		}
+		if(line.charAt(0) == '\'') {
+			return new PredicateRef(line.substring(1));
+		}
+		return new StringConstant(line);
+	}
 
-	public static void readFileInto(Program program, FormalPredicate sp, File f) {
+	public static void readFileInto(Program program, FormalPredicate fp, String path) {
+		SimpleLogger.logger().log("Read file " + path + " into " + fp, SimpleLogger.LogLevel.Level.DEBUG);
+		
 		CSVParser parser = new CSVParserBuilder().withSeparator(',').build();
-		try (CSVReader reader = new CSVReaderBuilder(new FileReader(f)).withCSVParser(parser).build()) {
+		try (CSVReader reader = new CSVReaderBuilder(new FileReader(new File(path))).withCSVParser(parser).build()) {
 			String[] line;
 			while ((line = reader.readNext()) != null) {
-				if (line.length != sp.realArity()) {
+				if (line.length != fp.realArity()) {
 					SimpleLogger
 							.logger().log(
-									"Predicate: " + sp.predicateName() + " has arity: " + sp.realArity() + " but got "
+									"Predicate: " + fp.predicateName() + " has arity: " + fp.realArity() + " but got "
 											+ line.length + "-sized tuple in .csv file",
 									SimpleLogger.LogLevel.Level.ERROR);
 					System.exit(0);
 				}
-				PseudoTuple ps = new PseudoTuple(sp.realArity());
+				PseudoTuple ps = new PseudoTuple(fp.realArity());
 				for (int i = 0; i != line.length; ++i) {
-					Constant o = isInteger(line[i]) ? new IntConstant(line[i]) : new StringConstant(line[i]);
-					//program.objects.add(o);
-					ps.instantiate(i, o);
+					ps.set(i, parseCSV(line[i]));
 				}
-				sp.relation.addTuple(ps);
+				fp.relation.addTuple(ps);
 			}
 		} catch (IOException e) {
 			e.printStackTrace();

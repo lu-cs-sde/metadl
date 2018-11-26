@@ -21,18 +21,25 @@ public class BottomUpNaiveIterative extends InternalEvaluation {
 	@Override
 	public void evaluate(Program program, Description descr) {
 		Deque<Stratum> order = Stratification.stratificationForceCompute(program);
-		loadEBDFacts(program, descr);
-		System.out.println(order);
+		
+		for(FormalPredicate fp : program.getFormalPredicates()) {
+			fp.relation = new Relation(fp.realArity());
+		}
+		
 		while (!order.isEmpty()) {
-			evaluateStratum(order.pollFirst());
+			evaluateStratum(program, descr, order.pollFirst());
 		}
 		dumpRelations(program, descr);
 	}
 
-	public boolean immediateConsequence(Clause c) {
+	public boolean immediateConsequence(Program program, Description descr, Clause clause) {
 		Relation body_rel = null;
-		if (c.isRule()) {
-			Iterator<Literal> itr = ((Rule) c).getBodyList().iterator();
+		
+		/**
+		 * Find Body Relation if clause is a rule
+		 */
+		if (clause.isRule()) {
+			Iterator<Literal> itr = ((Rule) clause).getBodyList().iterator();
 			while (itr.hasNext()) {
 				Literal rl_current = itr.next();
 
@@ -49,41 +56,42 @@ public class BottomUpNaiveIterative extends InternalEvaluation {
 		}
 
 		boolean changed = false;
-		for (FormalLiteral rl : c.getHeadss()) {
+		for (FormalLiteral fl : clause.getHeadss()) {
 			Relation derived;
-			if(c.isRule()) {
-				derived = body_rel.selectNamed(Binding.createBinding(rl.toTuple()));
+			if(clause.isRule()) {
+				derived = body_rel.selectNamed(Binding.createBinding(fl.toTuple()));
 			} else {
-				derived = new Relation(rl.arity());
-				derived.addTuple(rl.toTuple());
+				derived = new Relation(fl.arity());
+				derived.addTuple(fl.toTuple());
 			}
 			
-			Relation prev = rl.predicate().formalpredicate().relation;
+			Relation prev = fl.predicate().formalpredicate().relation;
 			int size = prev.size();
 			prev.addAll(derived);
+			
 			if (prev.size() != size) {
 				changed = true;
-				if (rl.isEDB()) {
-					/**
-					 * Load new tuples
-					 */
-				}
+				
+				/**
+				 * Process Potential Side-Effects Such as EDB-loading.
+				 */
+				fl.sideEffect(program, descr);
 			}
 		}
 		return changed;
 	}
 
-	public void evaluateStratum(Stratum strat) {
+	public void evaluateStratum(Program p, Description d, Stratum strat) {
 		boolean changed = true;
 		HashSet<Clause> rules = new HashSet<>();
 		for (FormalPredicate fp : strat) {
 			rules.addAll(fp.definedIn());
-			fp.relation = new Relation(fp.realArity());
 		}
+		
 		while (changed) {
 			changed = false;
 			for (Clause c : rules) {
-				boolean imm_change = immediateConsequence(c);
+				boolean imm_change = immediateConsequence(p,d,c);
 				changed = changed || imm_change;
 			}
 		}

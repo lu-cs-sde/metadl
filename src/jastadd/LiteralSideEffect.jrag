@@ -1,0 +1,50 @@
+import lang.ast.config.Description;
+import lang.io.CSVUtil;
+import java.util.HashSet;
+
+aspect LiteralSideEffect {
+	public void Literal.sideEffect(Program program, Description descr) {}
+}
+
+aspect EDBLiteralSideEffect {
+
+	/**
+	 * Currently unnecessary Reads, Should Check Deltas Later.
+	 */
+	public void EDBLiteral.sideEffect(Program program, Description descr) {
+		boolean changed = true;
+		while(changed) {
+			int size = predicate().formalpredicate().relation.size();
+			HashSet<EDBRead> reads = new HashSet<>();
+			for(PseudoTuple ps : predicate().formalpredicate().relation.tuples()) {
+				PredicateRef pr = (PredicateRef) ps.coord(0);
+				String path = ((StringConstant)ps.coord(1)).toString();
+				reads.add(new EDBRead(pr, path));
+			}
+			
+			for(EDBRead r : reads) {
+				FormalPredicate fp = program.formalPredicateMap().get(r.ref.getPRED_ID());
+				if(fp == null) {
+	    			SimpleLogger.logger().log("Each PredicateSymbol should belong to a FormalPredicate: " + r.ref.getPRED_ID(), SimpleLogger.LogLevel.Level.ERROR);
+	    			System.exit(0);
+				}
+				CSVUtil.readFileInto(program, fp, descr.factsDir() + "/" + r.path);
+			}
+			changed = predicate().formalpredicate().relation.size() != size;
+		}
+	}
+	
+	public class EDBRead {
+		public PredicateRef ref;
+		public String path;
+		
+		public EDBRead(PredicateRef ref, String path) {
+			this.ref = ref;
+			this.path = path;
+		}
+	}
+}
+
+aspect LiteralSelection {
+
+}

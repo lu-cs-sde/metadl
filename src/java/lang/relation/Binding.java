@@ -84,7 +84,7 @@ public class Binding extends TreeSet<BindTerm> {
 
 	private static int add_merge(Binding b_merged, Binding b, int index, TreeMap<BindTerm, TaggedBind> f, Direction d) {
 		for (BindTerm bt : b) {
-			if (!b_merged.contains(bt) && bt.t.isVariable()) { // Drop Constants since they matter no more
+			if (!b_merged.contains(bt) && !bt.t.isConstant()) { // Drop Constants since they matter no more
 				BindTerm bt_new = new BindTerm(bt.t);
 				bt_new.coords.add(index++);
 				b_merged.add(bt_new);
@@ -100,7 +100,7 @@ public class Binding extends TreeSet<BindTerm> {
 
 		int index = 0;
 		for (BindOverlap bo : b) {
-			if (bo.b1.t.isVariable()) { // Drop Constants since they matter no more
+			if (!bo.b1.t.isConstant()) { // Drop Constants since they matter no more
 				BindTerm bt = new BindTerm(bo.b1.t);
 				bt.coords.add(index++);
 				b_merged.add(bt);

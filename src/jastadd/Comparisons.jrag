@@ -25,17 +25,24 @@ aspect Comparison {
 		}
 	}
 	
-	public class ComparePredicateSymbol implements Comparator<PredicateSymbol> {
+	public class ComparePredicates implements Comparator<PredicateInterface> {
 		@Override
-		public int compare(PredicateSymbol t1, PredicateSymbol t2) {
+		public int compare(PredicateInterface t1, PredicateInterface t2) {
+			if(t1.isRef() != t2.isRef()) return t1.isRef() ? -1 : 1;
 			return t1.getPRED_ID().compareTo(t2.getPRED_ID());
 		}
 	}
-	public static final ComparePredicateSymbol PredicateSymbol.predicateSymbolComparator = new ComparePredicateSymbol();
+	public static final ComparePredicates Program.predicateComparator = new ComparePredicates();
 		@Override
 	public boolean PredicateSymbol.equals(Object o) {
 		if(!(o instanceof PredicateSymbol)) return false;
-		return predicateSymbolComparator.compare(this, (PredicateSymbol)o) == 0;
+		return Program.predicateComparator.compare(this, (PredicateSymbol)o) == 0;
+	}
+	
+			@Override
+	public boolean PredicateRef.equals(Object o) {
+		if(!(o instanceof PredicateRef)) return false;
+		return Program.predicateComparator.compare(this, (PredicateSymbol)o) == 0;
 	}
 
 	public static final CompareTerm Term.termComparator = new CompareTerm();

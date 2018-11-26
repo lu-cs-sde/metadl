@@ -15,8 +15,7 @@ aspect Arity {
     syn HashSet<Integer> FormalPredicate.arities() {
     	HashSet<Integer> arities = new HashSet<Integer>();
     	for(PredicateSymbol pred : predicates()) {
-            if(!pred.isTerm())
-            	arities.add(pred.arity());
+        	arities.add(pred.arity());
         }
         return arities;
     }
@@ -43,16 +42,6 @@ aspect Arity {
 
 aspect Relation {
 	public Relation FormalPredicate.relation;
-	
-	syn Relation FormalPredicate.fileRelation() {
-		Relation r = new Relation(realArity());
-		for(PredicateSymbol pred : predicates()) {
-			if(pred.isFact() && pred.isAtom()) {
-				r.addTuple(new PseudoTuple((Atom)pred.literal()));
-			}
-		}
-		return r;
-	}
 	
 	syn PseudoTuple FormalLiteral.toTuple();
 	eq Atom.toTuple() = new PseudoTuple(this);
@@ -88,37 +77,27 @@ aspect DependencyGraph {
 	syn HashSet<FormalPredicate> FormalPredicate.dependsOn() {
 		HashSet<FormalPredicate> defIn = new HashSet<FormalPredicate>();
 		for(Clause c : definedIn()) {
-			if(c.isRule()) {
-				Rule r = (Rule) c;
-				for(Literal l : r.getBodys()) {
-					if(l.predicate().isNeg()) {
-						NEGLiteral nl = (NEGLiteral) l;
-						defIn.add(nl.getFormalLiteral().predicate().formalpredicate());
-					}else {
-						defIn.add(l.predicate().formalpredicate());
-					}
+			if(!c.isRule())continue;
+			Rule r = (Rule) c;
+			for(Literal l : r.getBodys()) {
+				if(l.predicate().isNeg()) {
+					NEGLiteral nl = (NEGLiteral) l;
+					defIn.add(nl.getFormalLiteral().predicate().formalpredicate());
+				} else {
+					defIn.add(l.predicate().formalpredicate());
 				}
 			}
 		}
 		
-		for(PredicateSymbol pred : predicates()) {
-			if(pred.isInEDB() && !pred.isEDB()) {
-				defIn.add(pred.literal().predicate().formalpredicate());
-				break;
+		for(PredicateRef ref : predicateRefs()) {
+			if(ref.literal().isEDB()) {
+				defIn.add(ref.literal().predicate().formalpredicate());
 			}
+		}
+		
+		if(hasRecursiveEDB()) {
+			defIn.add(formalPredicateMap().get("EDB"));
 		}
 		return defIn;
 	}	
 }
-/*
-aspect Proof {
-	syn boolean Program.mayProve(PseudoTuple t) {
-		if(!t.isGround()) return false;
-		for(int i = 0; i != t.size; ++i) {
-			Constant c = (Constant)t.coord(i);
-			if(!objects.contains(c)) return false;
-		}
-		return true;
-	}
-}
-*/

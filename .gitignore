@@ -12,3 +12,4 @@ tests/**/*.out
 /out/
 /tests/output/
 tests/evaluation/bottomupout/*
+/facts/

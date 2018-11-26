@@ -9,19 +9,19 @@
 	}
 :};
 
-%terminals FILEPATH, SEP, INTERNAL, BOTTOMUPNAIVE, SOUFFLE, EXTERNAL, OUTDIR, FACTSDIR, SOUFFLEOUT, PRETTYPRINT;
+%terminals FILEPATH, SEP, BOTTOMUPNAIVE, SOUFFLE, OUTDIR, FACTSDIR, SOUFFLEOUT, PRETTYPRINT, EVAL;
 
 %typeof  descr                    =  "Description";
-%typeof  config                   =  "Configuration";
+%typeof  evaluation               =  "Evaluation";
 %typeof  souffle                  =  "Souffle";
-%typeof  bottomupnaive            =  "PrettyPrintInternal";
-%typeof  pretty_internal          =  "PrettyPrint";
+%typeof  bottomupnaive            =  "BottomUpNaive";
+%typeof  pretty                   =  "PrettyPrint";
+%typeof  eval                     =  "Eval";
+%typeof  task                     =  "Task";
 %typeof  file_path                =  "FilePath";
 %typeof  input_file               =  "InputFile";
 %typeof  output_dir               =  "OutputDir";
 %typeof  facts_dir                =  "FactsDir";
-%typeof  internal                 =  "Internal";
-%typeof  external                 =  "External";
 %typeof  config_param             =  "ConfigParam";
 %typeof  config_params            =  "List";
 %typeof  config_params_no_empty   =  "List";
@@ -32,22 +32,20 @@
 
 %goal descr;
 
-descr = config.conf input_file.fn {: return new Description(fn, conf); :};
+descr = task.t input_file.fn {: return new Description(t, fn); :};
 
-config =  EXTERNAL SEP external
-       |  INTERNAL SEP internal
-       ;
+task = pretty
+     | eval
+     ;
 
-external      =  souffle;
+pretty = PRETTYPRINT SEP evaluation.eval {: return new PrettyPrint(eval); :};
+eval   = EVAL        SEP evaluation.eval {: return new Eval(eval); :};
 
-internal      =  bottomupnaive
-		      |  pretty_internal
-			  ;
-			  
-pretty_internal   = PRETTYPRINT config_params.params {: return new PrettyPrintInternal(params); :};
+evaluation = bottomupnaive
+           | souffle
+           ;
 
-bottomupnaive     =  BOTTOMUPNAIVE config_params.params {: return new BottomUpNaive(params); :};
-
+bottomupnaive =  BOTTOMUPNAIVE config_params.params {: return new BottomUpNaive(params); :};
 souffle       =  SOUFFLE config_params.params souffle_params.s_params {: return new Souffle(params, s_params); :};
 
 souffle_params = souffle_params_no_empty

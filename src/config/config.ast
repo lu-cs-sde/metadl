@@ -1,19 +1,14 @@
-Description ::= Input:InputFile Configuration;
+Description ::= Task Input:InputFile;
 
-abstract Configuration ::= Params:ConfigParam *;
+abstract Evaluation ::= Params:ConfigParam *;
+abstract Task ::= Evaluation;
+PrettyPrint:Task;
+Eval:Task;
 
-abstract External:Configuration;
-abstract Internal:Configuration;
-
-
-PrettyPrintInternal:Internal;
-BottomUpNaive:Internal;
-
-//PrettyPrintSouffle:External;
-Souffle:External ::= SouffleSpecificParams:SouffleParam*;
+BottomUpNaive:Evaluation;
+Souffle:Evaluation ::= SouffleSpecificParams:SouffleParam*;
 
 abstract ConfigParam;
-
 abstract FilePath:ConfigParam ::= <Path:String>;
 InputFile:FilePath;
 OutputDir:FilePath;

@@ -2,5 +2,5 @@ A("A", "B").
 A("B", "C").
 B("C", "D").
 
-EDB('EDB, "edbs.csv").
+EDB('EDB, "EDB.csv").
 A("E", x) :- A(y, x), NOT(B("C", z)).

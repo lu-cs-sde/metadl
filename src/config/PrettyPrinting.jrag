@@ -29,7 +29,6 @@ aspect PretyPrinting {
     	out.print("\nInputFile: " + inputFile() + "\n");
     	out.print("OutputDir: " + outputDir() + "\n");
     	out.print("FactsDir: " + factsDir() + "\n");
-    	getConfiguration().prettyPrint(out);
     	out.print("\n");
     }
     

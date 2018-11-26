@@ -46,9 +46,9 @@ public class EvaluationTest {
 			"evalTest_6.in", "evalTest_7.in", "evalTest_8.in", "evalTest_9.in"})
 	void evaluationTestsBottomUpNaiveCompareSouffle(String fileName) throws Exception {
 		Description d1 = FileUtil.parseDescription(
-				"external::souffle      -OUT ./tests/evaluation/bottomupout/souffle ./tests/evaluation/" + fileName);
+				"eval::souffle      -OUT ./tests/evaluation/bottomupout/souffle ./tests/evaluation/" + fileName);
 		Description d2 = FileUtil.parseDescription(
-				"internal::bottomupnaive -OUT ./tests/evaluation/bottomupout         ./tests/evaluation/" + fileName);
+				"eval::bottomupnaive -OUT ./tests/evaluation/bottomupout         ./tests/evaluation/" + fileName);
 		doEvaluationTest(d1, d2);
 	}
 	/*

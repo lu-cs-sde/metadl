@@ -61,6 +61,6 @@ public class Compiler {
 	}
 
 	private static void printUsage() {
-		SimpleLogger.logger().log("internal::bottomupnaive|external::souffle [-OUT <OUT_DIR>] [-FACTS <FACT_DIR>] <INPUT_FILE>", SimpleLogger.LogLevel.Level.ERROR);
+		SimpleLogger.logger().log("(pretty|eval)::(bottomupnaive|souffle) [-OUT <OUT_DIR>] [-FACTS <FACT_DIR>] <INPUT_FILE>", SimpleLogger.LogLevel.Level.ERROR);
 	}
 }

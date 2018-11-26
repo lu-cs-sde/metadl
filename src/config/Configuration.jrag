@@ -85,10 +85,11 @@ aspect Evaluation {
 	
 	public lang.evaluation.Evaluation PrettyPrint.evaluationMethod() {
 		Evaluation ev = getEvaluation();
+		
 		if(ev.isSouffle()) {
 			return new lang.evaluation.Evaluation() {
 				public void evaluate(Program program, Description descr) {
-					program.prettyPrint (
+					program.soufflePrint (
 							new SoufflePrettyPrinter<Program>(new PrintStream(System.out)));
 				}
 			};

@@ -1,11 +1,15 @@
 package lang.evaluation;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.PrintStream;
 
 import lang.ast.Program;
+import lang.ast.SoufflePrettyPrinter;
 import lang.ast.config.Description;
 import lang.ast.config.Souffle;
 import lang.io.SimpleLogger;
@@ -22,8 +26,8 @@ public class SouffleEvaluation extends ExternalEvaluation {
 		try {
 			Souffle souffleDescr = (Souffle) descr.getConfiguration();
 			String soufflePath = descr.outputDir() + "/" + souffleDescr.outputFileName();
-//			program.soufflePrint(
-//					new SoufflePrettyPrinter<Program>(new PrintStream(new FileOutputStream(new File(soufflePath)))));
+			program.soufflePrint(
+					new SoufflePrettyPrinter<Program>(new PrintStream(new FileOutputStream(new File(soufflePath)))));
 
 			String cmd = "souffle -D " + descr.outputDir() + " " + soufflePath + " -F " + descr.factsDir();
 

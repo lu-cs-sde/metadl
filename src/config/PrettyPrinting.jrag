@@ -17,8 +17,8 @@ aspect PretyPrinting {
         return bytes.toString();
     }
     
-    public void TopDownBasic.prettyPrint(PrintStream out) {
-    	out.print("TOP-DOWN BASIC Evaluation");
+    public void BottomUpNaive.prettyPrint(PrintStream out) {
+    	out.print("BottomUpNaive");
     }
     
     public void Souffle.prettyPrint(PrintStream out) {

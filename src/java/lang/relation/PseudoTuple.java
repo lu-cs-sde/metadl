@@ -103,13 +103,13 @@ public class PseudoTuple implements Comparable<PseudoTuple> {
 		if (size == 0)
 			return;
 		if (size == 1) {
-			sb.append("(").append(tuple[0].string()).append(")");
+			sb.append("(").append(tuple[0].toString()).append(")");
 			return;
 		}
 		sb.append("(");
-		sb.append(tuple[0].string());
+		sb.append(tuple[0].toString());
 		for (int i = 1; i != size; ++i) {
-			sb.append(",").append(tuple[i].string());
+			sb.append(",").append(tuple[i].toString());
 		}
 		sb.append(")");
 	}
@@ -166,7 +166,7 @@ public class PseudoTuple implements Comparable<PseudoTuple> {
 	public String[] toStringArray() {
 		String[] strs = new String[size];
 		for(int i = 0; i != size; ++i) {
-			strs[i] = tuple[i].string();
+			strs[i] = tuple[i].toString();
 		}
 		return strs;
 	}

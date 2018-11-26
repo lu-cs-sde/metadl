@@ -7,17 +7,11 @@ aspect Conversion {
 	public String StringConstant.constantValue() { return getSTRING();}
 	public String IntConstant.constantValue() {return getNUMERAL();}
 	
-	public abstract String Term.string();
-	public String Constant.string() { return constantValue(); }
-	public String Variable.string() { return getVAR_ID(); }
-	public String PredicateSymbol.string() { return getPRED_ID(); }
-}
-
-aspect ToString {
-	@Override
-	public String FormalPredicate.toString() {
-		return predicateName();
-	}
+	public String Constant.toString() { return constantValue(); }
+	public String Variable.toString() { return getVAR_ID(); }
+	public String PredicateRef.toString() { return "'" + getPRED_ID(); }
+	
+	public String FormalPredicate.toString() { return "FP_" + predicateName(); }
 }
 
 aspect Comparison {
@@ -27,8 +21,21 @@ aspect Comparison {
 			int tv1 = t1.typeCompValue();
 			int tv2 = t2.typeCompValue();
 			if(tv1 != tv2) return tv1 < tv2 ? -1 : 1;
-			return t1.string().compareTo(t2.string());
+			return t1.toString().compareTo(t2.toString());
 		}
+	}
+	
+	public class ComparePredicateSymbol implements Comparator<PredicateSymbol> {
+		@Override
+		public int compare(PredicateSymbol t1, PredicateSymbol t2) {
+			return t1.getPRED_ID().compareTo(t2.getPRED_ID());
+		}
+	}
+	public static final ComparePredicateSymbol PredicateSymbol.predicateSymbolComparator = new ComparePredicateSymbol();
+		@Override
+	public boolean PredicateSymbol.equals(Object o) {
+		if(!(o instanceof PredicateSymbol)) return false;
+		return predicateSymbolComparator.compare(this, (PredicateSymbol)o) == 0;
 	}
 
 	public static final CompareTerm Term.termComparator = new CompareTerm();

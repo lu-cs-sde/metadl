@@ -1,0 +1,155 @@
+import java.io.PrintStream;
+import java.io.ByteArrayOutputStream;
+import java.util.Iterator;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+aspect PretyPrinting {
+	public void ASTNode.prettyPrint(PrettyPrinter pr) {
+		for(int i = 0; i < getNumChild(); ++i) {
+            pr.prettyPrint(getChild(i));
+        }
+	}
+
+    protected <T extends ASTNode> void ASTNode.printList(List<T> list,
+            String pre, String post, String delim, PrettyPrinter pr) {
+        if (list.getNumChild() == 0)
+            return;
+        pr.out.print(pre);
+        pr.prettyPrint(list.getChild(0));
+        if (list.getNumChild() == 1) {
+            pr.out.print(post);
+            return;
+        }
+        for (int i = 1; i != list.getNumChild(); ++i) {
+            pr.out.print(delim);
+            pr.prettyPrint(list.getChild(i));
+        }
+        pr.out.print(post);
+    }
+
+    public String ASTNode.prettyPrint() {
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+        prettyPrint(new StandardPrettyPrinter(new PrintStream(bytes)));
+        return bytes.toString();
+    }
+
+    public void ASTNode.prettyPrint(PrintStream out) {
+        prettyPrint(new StandardPrettyPrinter(out));
+    }
+
+    public void PredicateSymbol.prettyPrint(PrettyPrinter pr) {
+        pr.out.print(getPRED_ID());
+    }
+
+    public void StringConstant.prettyPrint(PrettyPrinter pr) {
+        pr.out.print("\"" + toString() + "\"");
+    }
+
+    public void Term.prettyPrint(PrettyPrinter pr) {
+        pr.out.print(toString());
+    }
+
+    public void Atom.prettyPrint(PrettyPrinter pr) {
+        pr.prettyPrint(getPredicate());
+        printList(getTermss(), "(", ")", ", ", pr);
+    }
+    
+    public void Rule.prettyPrint(PrettyPrinter pr) {
+        printList(getHeadss(), "", "", ",", pr);
+        pr.out.print(" :- ");
+        printList(getBodys(), "", ".\n", ", ", pr);
+    }
+
+    public void Fact.prettyPrint(PrettyPrinter pr) {
+        printList(getHeadss(), "", ".\n", ", ", pr);
+    }
+
+    public void EDBLiteral.prettyPrint(PrettyPrinter pr) {
+        pr.out.print("EDB(");
+        pr.prettyPrint(getPredicate());
+        pr.out.print(",");
+        pr.prettyPrint(getFileLocs());
+        pr.out.print(")");
+    }
+    
+    public void NEGLiteral.prettyPrint(PrettyPrinter pr) {
+    	pr.out.print("NOT(");
+        pr.prettyPrint(getFormalLiteral());
+        pr.out.print(")");
+    }
+}
+aspect ExtensionablePrinting {
+    public abstract class PrettyPrinter<T extends ASTNode> {
+        public final PrintStream out;
+        public abstract void prettyPrint(T node);
+
+        public PrettyPrinter(PrintStream out) {
+            this.out = out;
+        }
+    }
+
+    public class StandardPrettyPrinter<T extends ASTNode> extends PrettyPrinter<T> {
+        public void prettyPrint(T node) {
+            node.prettyPrint(this);
+        }
+        public StandardPrettyPrinter(PrintStream out) {
+            super(out);
+        }
+    }
+
+    public class SoufflePrettyPrinter<T extends ASTNode> extends PrettyPrinter<T> {
+        public void prettyPrint(T node) {
+            node.soufflePrint(this);
+        }
+        public SoufflePrettyPrinter(PrintStream out) {
+            super(out);
+        }
+    }
+}
+
+aspect SoufflePrinting {
+    public void ASTNode.soufflePrint(String path) throws IOException {
+        File file = new File(path);
+        FileOutputStream fop = new FileOutputStream(file);
+        SoufflePrettyPrinter soufflePrinter = new SoufflePrettyPrinter(new PrintStream(fop));
+        soufflePrinter.prettyPrint(this);
+        fop.close();
+    }
+
+    public String ASTNode.soufflePrint() {
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+        SoufflePrettyPrinter soufflePrinter = new SoufflePrettyPrinter(new PrintStream(bytes));
+        soufflePrinter.prettyPrint(this);
+        return bytes.toString();
+    }
+
+    public void ASTNode.soufflePrint(PrettyPrinter pr) {
+        prettyPrint(pr);
+    }
+/*
+    public void ExtensionalDB.soufflePrint(PrettyPrinter pr) {
+        pr.out.print(".input ");
+        pr.prettyPrint(getTarget());
+        pr.out.print("(filename=");
+        pr.prettyPrint(getFileLocation());
+        pr.out.print(", delimiter=\",\"");
+        pr.out.print(")\n");
+    }
+*/
+    public void FormalPredicate.soufflePrint(PrettyPrinter pr) {
+        pr.out.print(".decl " + predicateName() + "(");
+        List<PredicateSymbol> constants = new List<PredicateSymbol>();
+        for(int i = 0; i != realArity(); ++i) {
+            constants.add(new PredicateSymbol("x_" + i + ":symbol"));
+        }
+        printList(constants, "", "", ", ", pr);
+        pr.out.print(")\n");
+        pr.out.print(".output " + predicateName() + "(delimiter=\",\")");
+    }
+
+    public void Program.soufflePrint(PrettyPrinter pr) {
+        printList(getFormalPredicates(), "", "\n", "\n", pr);
+        prettyPrint(pr);
+    }
+}

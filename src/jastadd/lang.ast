@@ -15,9 +15,11 @@ abstract FormalLiteral:Literal;
 abstract PredicateLiteral:Literal;
 
 Atom:FormalLiteral       ::= Predicate:PredicateSymbol Terms:Term*;
-EDBLiteral:FormalLiteral ::= Predicate:PredicateSymbol FileLocs:Term;
+EDBLiteral:FormalLiteral ::= Predicate:PredicateRef FileLocs:Term;
 
 NEGLiteral:PredicateLiteral ::= FormalLiteral;
+
+PredicateSymbol ::= <PRED_ID>;
 
 /**
     Terms
@@ -25,7 +27,7 @@ NEGLiteral:PredicateLiteral ::= FormalLiteral;
 abstract Term;
 Variable:Term ::= <VAR_ID>;
 
-PredicateSymbol:Term ::= <PRED_ID>;
+PredicateRef:Term ::= <PRED_ID>;
 
 abstract Constant:Term;
 StringConstant:Constant ::= <STRING>;

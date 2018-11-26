@@ -19,8 +19,8 @@
 %typeof  edb_literal         =  "EDBLiteral";
 %typeof  neg_literal         =  "NEGLiteral";
 %typeof  atom                =  "Atom";
-%typeof  predicate_sym       =  "PredicateSymbol";
-%typeof  pred_ref            =  "PredicateSymbol";
+%typeof  pred_sym            =  "PredicateSymbol";
+%typeof  pred_ref            =  "PredicateRef";
 %typeof  variable            =  "Variable";
 %typeof  constant            =  "Constant";
 %typeof  int_constant        =  "IntConstant";
@@ -60,7 +60,7 @@ formal_literal = edb_literal
 pred_literal = neg_literal
              ;
 
-atom = predicate_sym.pred LPARA term_list.terms RPARA {: return new Atom(pred, terms); :};
+atom = pred_sym.pred LPARA term_list.terms RPARA {: return new Atom(pred, terms); :};
 
 edb_literal = EDB LPARA pred_ref.pred COMMA term.filelocs RPARA {: return new EDBLiteral(pred, filelocs); :};
 
@@ -73,8 +73,6 @@ lit_list = literal.lit {: return new List().add(lit); :}
 form_lit_list = formal_literal.lit {: return new List().add(lit); :}
          | form_lit_list.list COMMA formal_literal.lit {: return list.add(lit); :}
          ;
-
-predicate_sym = PRED_ID.id {: return new PredicateSymbol(id); :};
 
 term_list = term_list_no_empty
           | /* epsilon */ {: return new List(); :}
@@ -89,7 +87,8 @@ term = variable
      | pred_ref
      ;
      
-pred_ref = PRED_REF.id {: return new PredicateSymbol(id); :};
+pred_sym = PRED_ID.id {: return new PredicateSymbol(id); :};
+pred_ref = PRED_REF.id {: return new PredicateRef(id); :};
      
 variable = VAR_ID.id {: return new Variable(id); :};
 constant = int_constant

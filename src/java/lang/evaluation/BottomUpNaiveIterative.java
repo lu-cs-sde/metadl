@@ -5,7 +5,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 
 import lang.ast.Clause;
-import lang.ast.Fact;
 import lang.ast.FormalLiteral;
 import lang.ast.FormalPredicate;
 import lang.ast.Literal;
@@ -57,7 +56,6 @@ public class BottomUpNaiveIterative extends InternalEvaluation {
 			} else {
 				derived = new Relation(rl.arity());
 				derived.addTuple(rl.toTuple());
-				System.out.println(derived);
 			}
 			
 			Relation prev = rl.predicate().formalpredicate().relation;

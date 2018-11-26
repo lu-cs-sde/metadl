@@ -73,6 +73,12 @@ test {
         events "passed", "skipped", "failed"
     }
 
+    doFirst {
+        // Ensure src/gen exists before running JFlex:
+        file('tests/output').mkdirs()
+        file('tests/evaluation/bottomupout/souffle').mkdirs()
+    }
+
     reports {
         junitXml.enabled = true
     }
@@ -177,4 +183,5 @@ task cleanGeneratedJava(type: Delete) {
     delete file('src/gen')
     delete file('compiler.jar')
     delete file('tests/output')
+    delete file('tests/evaluation/bottomupout')
 }

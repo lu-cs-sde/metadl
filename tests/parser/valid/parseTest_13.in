@@ -1,11 +1,11 @@
-EDB(A, "A.in").
+EDB('A, "A.in").
 A("H", "B") :- H("B").
 
-EDB(A, "A.in").
+EDB('A, "A.in").
 A("H", "B") :- H("B").
 
-EDB(A, "A.in").
+EDB('A, "A.in").
 A("H", "B") :- H("B").
 
-EDB(C, "C.in").
+EDB('C, "C.in").
 A(x, y) :- H(y, x).

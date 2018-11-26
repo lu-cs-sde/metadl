@@ -9,14 +9,13 @@
 	}
 :};
 
-%terminals FILEPATH, SEP, INTERNAL,TOPDOWNBASIC, TOPDOWNSTRAT, BOTTOMUPNAIVE, SOUFFLE, EXTERNAL, OUTDIR, FACTSDIR, SOUFFLEOUT;
+%terminals FILEPATH, SEP, INTERNAL, BOTTOMUPNAIVE, SOUFFLE, EXTERNAL, OUTDIR, FACTSDIR, SOUFFLEOUT, PRETTYPRINT;
 
 %typeof  descr                    =  "Description";
 %typeof  config                   =  "Configuration";
 %typeof  souffle                  =  "Souffle";
-%typeof  topdownbasic             =  "TopDownBasic";
-%typeof  topdownstratified        =  "TopDownStratified";
-%typeof  bottomupnaive            =  "BottomUpNaive";
+%typeof  bottomupnaive            =  "PrettyPrintInternal";
+%typeof  pretty_internal          =  "PrettyPrint";
 %typeof  file_path                =  "FilePath";
 %typeof  input_file               =  "InputFile";
 %typeof  output_dir               =  "OutputDir";
@@ -41,13 +40,12 @@ config =  EXTERNAL SEP external
 
 external      =  souffle;
 
-internal      =  topdownbasic
-			  |  topdownstratified
-			  |  bottomupnaive
+internal      =  bottomupnaive
+		      |  pretty_internal
 			  ;
+			  
+pretty_internal   = PRETTYPRINT config_params.params {: return new PrettyPrintInternal(params); :};
 
-topdownbasic      =  TOPDOWNBASIC  config_params.params {: return new TopDownBasic(params); :};
-topdownstratified =  TOPDOWNSTRAT  config_params.params {: return new TopDownStratified(params); :};
 bottomupnaive     =  BOTTOMUPNAIVE config_params.params {: return new BottomUpNaive(params); :};
 
 souffle       =  SOUFFLE config_params.params souffle_params.s_params {: return new Souffle(params, s_params); :};

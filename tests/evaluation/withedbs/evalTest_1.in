@@ -1,2 +1,2 @@
-EDB(A, "A.csv")
+EDB('A, "A.csv").
 A(x, z) :- A(x, y), A(y, z).

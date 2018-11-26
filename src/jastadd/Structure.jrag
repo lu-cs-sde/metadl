@@ -28,6 +28,7 @@ aspect Categorization {
 	eq NEGLiteral.predicate() = negPredicate();
 	
 	inh Literal PredicateSymbol.literal();
+	inh Literal PredicateRef.literal();
 	eq  EDBLiteral.getChild().literal() = this;
 	eq  NEGLiteral.getChild().literal() = this;
 	eq  Atom.getChild().literal()       = this;
@@ -36,6 +37,7 @@ aspect Categorization {
  	eq Program.getChild().parent() = null;
  	eq NEGLiteral.getFormalLiteral().parent() = this;
 	
+	/*
 	coll TreeSet<PredicateSymbol> Literal.literalPredicates() [new TreeSet<PredicateSymbol>(Term.termComparator)] with addAll;
 	PredicateSymbol contributes Collections.singleton(this)
 		when true
@@ -49,6 +51,7 @@ aspect Categorization {
 		
 	EDBLiteral contributes nta edbPredicate() to Literal.literalPredicates();
 	NEGLiteral contributes nta negPredicate() to Literal.literalPredicates();
+	*/
 }
 
 aspect Predicates {
@@ -78,8 +81,8 @@ aspect Predicates {
     syn boolean PredicateSymbol.isEDB()   = false;
     eq EDBPredicate.isEDB()               = true;
     syn boolean PredicateSymbol.isAtom()  = literal().isAtom();
-    syn boolean PredicateSymbol.isUse()   = literal().isRuleUse() && literal().predicate() == this;
-    syn boolean PredicateSymbol.isDef()   = literal().isRuleDef() && literal().predicate() == this;
+    syn boolean PredicateSymbol.isUse()   = literal().isRuleUse();
+    syn boolean PredicateSymbol.isDef()   = literal().isRuleDef();
     syn boolean PredicateSymbol.isNeg()   = false;
     eq NEGPredicate.isNeg()               = true;
     
@@ -87,20 +90,20 @@ aspect Predicates {
     eq Literal.getChild().isTerm()        = false;
     eq Atom.getTerms().isTerm()           = true;
     eq EDBLiteral.getPredicate().isTerm() = true;
-}
-
-aspect Types {
-	syn boolean Term.isString()     = typeCompValue() == 0;
-	syn boolean Term.isInt()        = typeCompValue() == 1;
-	syn boolean Term.isPredicate()  = typeCompValue() == 2;
-	syn boolean Term.isVariable()   = typeCompValue() == 3;
-	syn boolean Term.isConstant()   = typeCompValue() == 0 || typeCompValue() == 1;
+    
+    syn boolean Term.isString()     = typeCompValue() == 2;
+	syn boolean Term.isInt()        = typeCompValue() == 3;
+	syn boolean Term.isPredicate()  = typeCompValue() == 1;
+	syn boolean Term.isVariable()   = typeCompValue() == 0;
+	syn boolean Term.isConstant()   = typeCompValue() == 2 || typeCompValue() == 3;
 	
-	syn int Term.typeCompValue();
-	eq StringConstant.typeCompValue()  = 0;
-	eq IntConstant.typeCompValue()     = 1;
-	eq PredicateSymbol.typeCompValue() = 2;
-	eq Variable.typeCompValue()        = 3;
+	syn int Term.typeCompValue()       = -1;
+	eq Variable.typeCompValue()        = 0;
+	eq PredicateRef.typeCompValue()    = 1;
+	eq StringConstant.typeCompValue()  = 2;
+	eq IntConstant.typeCompValue()     = 3;
+	
+	
 }
 
 aspect FormalPredicate {
@@ -121,7 +124,7 @@ aspect FormalPredicate {
         to Program.predicateSymbols();
         
     syn TreeSet<PredicateSymbol> Program.uniquePredicateSymbols() {
-        TreeSet<PredicateSymbol> uniquePredicateSymbols = new TreeSet<>(Term.termComparator);
+        TreeSet<PredicateSymbol> uniquePredicateSymbols = new TreeSet<>(PredicateSymbol.predicateSymbolComparator);
         uniquePredicateSymbols.addAll(predicateSymbols());
         return uniquePredicateSymbols;
     }

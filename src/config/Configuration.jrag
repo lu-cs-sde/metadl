@@ -1,7 +1,7 @@
 import lang.evaluation.*;
 import lang.ast.Program;
+import lang.ast.StandardPrettyPrinter;
 import lang.io.FileUtil;
-
 
 aspect Configuration {
 	syn String Description.inputFile() = getInput().getPath();
@@ -31,12 +31,6 @@ aspect Configuration {
 	
 	syn boolean ConfigParam.isFactsDir()   = false;
 	syn boolean FactsDir.isFactsDir()      = true;
-}
-
-aspect TopDownBasicConfiguration {
-	syn boolean Description.isTopDownBasic() = getConfiguration().isTopDownBasic();
-	syn boolean Configuration.isTopDownBasic() = false;
-	syn boolean TopDownBasic.isTopDownBasic()  = true;
 }
 
 aspect BottomUpNaiveConfiguration {
@@ -73,19 +67,20 @@ aspect Evaluation {
 	
 	public abstract Evaluation Configuration.evaluationMethod();
 	
-	public Evaluation TopDownBasic.evaluationMethod() {
-		return null;
-	}
-	
 	public Evaluation Souffle.evaluationMethod() {
 		return new SouffleEvaluation();
 	}
 	
-	public Evaluation TopDownStratified.evaluationMethod() {
-		return null;
-	}
-	
 	public Evaluation BottomUpNaive.evaluationMethod() {
 		return new BottomUpNaiveIterative();
+	}
+	
+	public Evaluation PrettyPrintInternal.evaluationMethod() {
+		return new Evaluation() {
+			public void evaluate(Program program, Description descr) {
+				program.prettyPrint (
+						new StandardPrettyPrinter<Program>(new PrintStream(System.out)));
+			}
+		};
 	}
 }

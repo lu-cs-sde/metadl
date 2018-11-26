@@ -55,16 +55,17 @@ public class Relation {
 		sb.append("}");
 	}
 
-	private Supplier<TreeSet<PseudoTuple>> supplier = () -> new TreeSet<PseudoTuple>();
-
 	/**
 	 * Selects a set of tuples based on the binding disregarding the current names of the relation columns
 	 */
 	public Relation select(Binding selectBind) {
 		Relation r = new Relation(this.arity);
 		r.binding = selectBind;
-		r.relation = relation.parallelStream().filter(t -> selectBind.satisfiedBy(t))
-				.collect(Collectors.toCollection(supplier));
+		for(PseudoTuple t : relation) {
+			if(selectBind.satisfiedBy(t)) {
+				r.relation.add(t);
+			}
+		}
 		return r;
 	}
 	

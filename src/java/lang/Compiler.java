@@ -43,12 +43,12 @@ public class Compiler {
 			Program program = (Program) FileUtil.parse(new File(descr.getInput().getPath()));
 			DrAST_root_node = program; // Enable debugging with DrAST
 			
-//			HashSet<String> serrs = program.semanticErrors();
-//			if (!serrs.isEmpty()) {
-//				SimpleLogger.logger().log("Compilation failed with the following error messages: ", SimpleLogger.LogLevel.Level.ERROR);
-//				serrs.forEach(err -> SimpleLogger.logger().log(err));
-//				System.exit(0);
-//			}
+			HashSet<String> serrs = program.semanticErrors();
+			if (!serrs.isEmpty()) {
+				SimpleLogger.logger().log("Compilation failed with the following error messages: ", SimpleLogger.LogLevel.Level.ERROR);
+				serrs.forEach(err -> SimpleLogger.logger().log(err));
+				System.exit(0);
+			}
 			descr.evaluationMethod().evaluate(program, descr);
 		} catch (FileNotFoundException e) {
 			SimpleLogger.logger().log("File not found!", SimpleLogger.LogLevel.Level.ERROR);
@@ -61,6 +61,6 @@ public class Compiler {
 	}
 
 	private static void printUsage() {
-		SimpleLogger.logger().log("internal::topdownbasic|external::souffle [-OUT <OUT_DIR>] [-FACTS <FACT_DIR>]", SimpleLogger.LogLevel.Level.ERROR);
+		SimpleLogger.logger().log("internal::bottomupnaive|external::souffle [-OUT <OUT_DIR>] [-FACTS <FACT_DIR>] <INPUT_FILE>", SimpleLogger.LogLevel.Level.ERROR);
 	}
 }

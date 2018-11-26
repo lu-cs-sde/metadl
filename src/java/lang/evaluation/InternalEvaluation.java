@@ -1,10 +1,12 @@
 package lang.evaluation;
 
 import java.io.File;
+import java.util.Deque;
 
 import lang.ast.Program;
 import lang.ast.config.Description;
 import lang.io.CSVUtil;
+import lang.relation.Stratification.Stratum;
 
 public abstract class InternalEvaluation extends Evaluation {
 

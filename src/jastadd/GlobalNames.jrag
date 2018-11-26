@@ -1,0 +1,6 @@
+aspect GlobalNames {
+	public class GlobalNames {
+		public static final String EDB_NAME      = "EDB";
+		public static final String NEGATION_NAME = "NOT";
+	}
+}

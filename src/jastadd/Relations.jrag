@@ -71,6 +71,21 @@ aspect Rules {
 		}
 		return rules;
 	}
+	
+	public static boolean FormalPredicate.hasNegativeDefUse(FormalPredicate def, FormalPredicate use) {
+		HashSet<Rule> rules_use = use.useInRules();
+		for(Clause c : def.definedIn()) {
+			if(!c.isRule()) continue;
+			Rule r = (Rule)c;
+			if(!rules_use.contains(r)) continue;
+			for(Literal lit : r.getBodys()) {
+				if(!lit.isNeg()) continue;
+				NEGLiteral nl = (NEGLiteral) lit;
+				if(nl.getFormalLiteral().predicate().getPRED_ID().equals(use.predicateName())) return true;
+			}	
+		}
+		return false;
+	}
 }
 
 aspect DependencyGraph {
@@ -80,7 +95,7 @@ aspect DependencyGraph {
 			if(!c.isRule())continue;
 			Rule r = (Rule) c;
 			for(Literal l : r.getBodys()) {
-				if(l.predicate().isNeg()) {
+				if(l.isNeg()) {
 					NEGLiteral nl = (NEGLiteral) l;
 					defIn.add(nl.getFormalLiteral().predicate().formalpredicate());
 				} else {
@@ -96,7 +111,7 @@ aspect DependencyGraph {
 		}
 		
 		if(hasRecursiveEDB()) {
-			defIn.add(formalPredicateMap().get("EDB"));
+			defIn.add(formalPredicateMap().get(GlobalNames.EDB_NAME));
 		}
 		return defIn;
 	}	

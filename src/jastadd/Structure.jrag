@@ -36,7 +36,11 @@ aspect Categorization {
  	inh Literal Literal.parent();
  	eq Program.getChild().parent() = null;
  	eq NEGLiteral.getFormalLiteral().parent() = this;
-	
+ 	
+ 	syn boolean Literal.containsTuples();
+ 	eq Literal.containsTuples() = true;
+ 	eq NEGLiteral.containsTuples() = false;
+ 	
 	/*
 	coll TreeSet<PredicateSymbol> Literal.literalPredicates() [new TreeSet<PredicateSymbol>(Term.termComparator)] with addAll;
 	PredicateSymbol contributes Collections.singleton(this)
@@ -77,6 +81,10 @@ aspect Predicates {
     eq  Literal.isAtom() = false;
     eq  Atom.isAtom()    = true;
     
+    syn boolean Literal.isNeg();
+    eq  Literal.isNeg()       = false;
+    eq  NEGLiteral.isNeg()    = true;
+    
     inh boolean Literal.isRuleDef();
     eq Clause.getChild().isRuleDef() = false;
     eq Rule.getHeads().isRuleDef()   =  true;
@@ -87,7 +95,6 @@ aspect Predicates {
     eq Rule.getBody().isRuleUse()    = true;
     
     syn boolean PredicateInterface.isFact()  = literal().isFact();
-    syn boolean PredicateInterface.isInEDB() = literal().isEDB();
     syn boolean PredicateInterface.isEDB()   = false;
     eq EDBPredicate.isEDB()                  = true;
     syn boolean PredicateInterface.isUse()   = literal().isRuleUse();
@@ -108,11 +115,11 @@ aspect Predicates {
 	eq IntConstant.typeCompValue()     = 3;
 	
 	eq Program.getChild().hasRecursiveEDB() {
-		FormalPredicate fp_edb = formalPredicateMap().get("EDB");
+		FormalPredicate fp_edb = formalPredicateMap().get(GlobalNames.EDB_NAME);
 		if(fp_edb == null) return false;
 		for(PredicateSymbol ps : fp_edb.predicates()) {
 			EDBLiteral lit = (EDBLiteral) ps.literal();
-			if(lit.getPredicate().getPRED_ID().equals("EDB")) return true;
+			if(lit.getPredicate().getPRED_ID().equals(GlobalNames.EDB_NAME)) return true;
 		}
 		return false;
 	}
@@ -121,7 +128,7 @@ aspect Predicates {
 aspect PredicateMaps {
 	coll HashSet<PredicateInterface> Program.predicateSymbols() [new HashSet<PredicateInterface>()] with add;
 	EDBLiteral contributes nta edbPredicate() to Program.predicateSymbols();
-   // NEGLiteral contributes nta negPredicate() to Program.predicateSymbols();
+    NEGLiteral contributes nta negPredicate() to Program.predicateSymbols();
     PredicateSymbol contributes this
         when true
         to Program.predicateSymbols();
@@ -215,6 +222,14 @@ aspect FormalPredicate {
     syn String FormalPredicate.predicateName() {
     	return getSTRING();
     }
+    
+    syn boolean FormalPredicate.isNegation() {
+    	return predicateName().equals(GlobalNames.NEGATION_NAME);
+    }
+    
+    syn boolean FormalPredicate.isEDB() {
+    	return predicateName().equals(GlobalNames.EDB_NAME);
+    }
         
     syn FormalPredicate PredicateInterface.formalpredicate() {
     	FormalPredicate fp = literal().clause().program().formalPredicateMap().get(getPRED_ID());
@@ -224,5 +239,9 @@ aspect FormalPredicate {
 	    	return null; // Needed for JastAdd
     	}
     	return fp;
+    }
+    
+    syn Literal FormalPredicate.literal() {
+    	return predicates().iterator().next().literal();
     }
 }

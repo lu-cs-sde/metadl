@@ -2,7 +2,6 @@ package lang.ast; // The generated scanner will belong to the package lang.ast
 
 import lang.ast.LangParser.Terminals; // The terminals are implicitly defined in the parser
 import lang.ast.LangParser.SyntaxError;
-
 %%
 
 // define the signature for the generated scanner

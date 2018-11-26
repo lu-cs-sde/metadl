@@ -7,7 +7,6 @@ aspect LiteralSideEffect {
 }
 
 aspect EDBLiteralSideEffect {
-
 	/**
 	 * Currently unnecessary Reads, Should Check Deltas Later.
 	 */
@@ -46,5 +45,4 @@ aspect EDBLiteralSideEffect {
 }
 
 aspect LiteralSelection {
-
 }

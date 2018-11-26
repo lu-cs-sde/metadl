@@ -12,3 +12,5 @@ Pre-defined Predicates for Meta-Programming
 * Edb
 * Output
 * Preds
+
+WildCards

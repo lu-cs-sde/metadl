@@ -1,6 +1,8 @@
 import lang.ast.config.Description;
 import lang.io.CSVUtil;
 import java.util.HashSet;
+import lang.relation.Relation;
+import lang.relation.Binding;
 
 aspect LiteralSideEffect {
 	public void Literal.sideEffect(Program program, Description descr) {}
@@ -45,4 +47,14 @@ aspect EDBLiteralSideEffect {
 }
 
 aspect LiteralSelection {
+	public Relation Literal.select(Binding binding, Relation body_rel) {
+		return predicate().formalpredicate().relation.select(binding);
+	}
+}
+
+aspect NEGLiteralSelection {
+	public Relation NEGLiteral.select(Binding binding, Relation body_rel) {
+		Relation positive = getFormalLiteral().predicate().formalpredicate().relation.select(binding);
+		return Relation.difference(body_rel, positive);
+	}
 }

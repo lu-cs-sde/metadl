@@ -21,6 +21,12 @@ NEGLiteral:PredicateLiteral ::= FormalLiteral;
 
 PredicateSymbol ::= <PRED_ID>;
 
+abstract FilterRule;
+abstract LogicFilterRule:FilterRule;
+abstract BinaryLogicFilterRule:LogicFilterRule ::= Left:Variable Right:Variable
+
+FilterEquals:BinaryLogicFilterRule;
+
 /**
     Terms
 **/

@@ -2,7 +2,6 @@ package lang.evaluation;
 
 import java.util.Deque;
 import java.util.HashSet;
-import java.util.Iterator;
 
 import lang.ast.Clause;
 import lang.ast.FormalLiteral;
@@ -31,6 +30,25 @@ public class BottomUpNaiveIterative extends InternalEvaluation {
 		}
 		dumpRelations(program, descr);
 	}
+	
+	private Relation immediateConsequenceHelper(HashSet<Literal> literals, Relation body_rel) {
+		for (Literal rl_current : literals) {
+			PseudoTuple t_current = rl_current.toTuple();
+			Binding b_current = Binding.createBinding(t_current);
+			
+			/**
+			 * Select based on the literal selection rule, e.g. NEGLiteral will remove from the current body_rel.
+			 */
+			Relation r_current = rl_current.select(b_current, body_rel);
+
+			if (body_rel == null) {
+				body_rel = r_current;
+			} else {
+				body_rel = Relation.join(body_rel, r_current);
+			}
+		}
+		return body_rel;
+	}
 
 	public boolean immediateConsequence(Program program, Description descr, Clause clause) {
 		Relation body_rel = null;
@@ -39,20 +57,9 @@ public class BottomUpNaiveIterative extends InternalEvaluation {
 		 * Find Body Relation if clause is a rule
 		 */
 		if (clause.isRule()) {
-			Iterator<Literal> itr = ((Rule) clause).getBodyList().iterator();
-			while (itr.hasNext()) {
-				Literal rl_current = itr.next();
-
-				PseudoTuple t_current = rl_current.toTuple();
-				Binding b_current = Binding.createBinding(t_current);
-				Relation r_current = rl_current.predicate().formalpredicate().relation.select(b_current);
-
-				if (body_rel == null) {
-					body_rel = r_current;
-				} else {
-					body_rel = Relation.join(body_rel, r_current);
-				}
-			}
+			Rule r = (Rule) clause;
+			body_rel = immediateConsequenceHelper (r.positiveBodyLiterals(), body_rel);
+			body_rel = immediateConsequenceHelper (r.negativeBodyLiterals(), body_rel);
 		}
 
 		boolean changed = false;

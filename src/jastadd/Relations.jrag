@@ -35,9 +35,9 @@ aspect Arity {
         return realArities().iterator().next();
     }
     
-   // FormalPredicate contributes ("Different Arities for predicate symbol: " + predicateName())
-   //     when !uniqueArity() && arities().size() != 1
-   //     to Program.semanticErrors();
+    FormalPredicate contributes ("Different Arities for predicate symbol: " + predicateName())
+        when !isUniqueArity() && arities().size() != 1
+        to Program.semanticErrors();
 }
 
 aspect Relation {
@@ -82,9 +82,25 @@ aspect Rules {
 				if(!lit.isNeg()) continue;
 				NEGLiteral nl = (NEGLiteral) lit;
 				if(nl.getFormalLiteral().predicate().getPRED_ID().equals(use.predicateName())) return true;
-			}	
+			}
 		}
 		return false;
+	}
+	
+	syn HashSet<Literal> Rule.positiveBodyLiterals() {
+		HashSet<Literal> literals = new HashSet<Literal>();
+		for(Literal l : getBodys()) {
+			if(!l.isNeg()) literals.add(l);
+		}
+		return literals;
+	}
+	
+	syn HashSet<Literal> Rule.negativeBodyLiterals() {
+		HashSet<Literal> literals = new HashSet<Literal>();
+		for(Literal l : getBodys()) {
+			if(l.isNeg()) literals.add(l);
+		}
+		return literals;
 	}
 }
 

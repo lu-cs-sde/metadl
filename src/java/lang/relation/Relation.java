@@ -137,6 +137,15 @@ public class Relation {
 		});
 		return r;
 	}
+	
+	public static Relation difference(Relation r1, Relation r2) {
+		Relation r = new Relation(r1.arity);
+		r1.tuples().forEach(t -> {
+			if(!r2.contains(t)) r.addTuple(new PseudoTuple(t));
+		});
+		r.binding = r1.binding;
+		return r;
+	}
 
 	public boolean contains(PseudoTuple t) {
 		return relation.contains(t);

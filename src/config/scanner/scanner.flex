@@ -44,7 +44,6 @@ FilePath = [^\s(::)]+
 "-FACTS"        {  return  sym(Terminals.FACTSDIR);      }
 "-SOUFFLEOUT"   {  return  sym(Terminals.SOUFFLEOUT);    }
 "internal"      {  return  sym(Terminals.INTERNAL);      }
-"internal"      {  return  sym(Terminals.INTERNAL);      }
 "external"      {  return  sym(Terminals.EXTERNAL);      }
 "::"            {  return  sym(Terminals.SEP);           }
 "bottomupnaive" {  return  sym(Terminals.BOTTOMUPNAIVE); }

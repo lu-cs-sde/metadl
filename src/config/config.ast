@@ -5,8 +5,11 @@ abstract Configuration ::= Params:ConfigParam *;
 abstract External:Configuration;
 abstract Internal:Configuration;
 
+
 PrettyPrintInternal:Internal;
 BottomUpNaive:Internal;
+
+//PrettyPrintSouffle:External;
 Souffle:External ::= SouffleSpecificParams:SouffleParam*;
 
 abstract ConfigParam;

@@ -1,0 +1,9 @@
+A("A").
+B("A").
+B("B").
+D("C").
+D("F").
+
+C(x) :- B(x), NOT(A(x)).
+C(x) :- D(x), B(x), NOT(D(x)), NOT(A(x)).
+B(x) :- C(y), D(x).

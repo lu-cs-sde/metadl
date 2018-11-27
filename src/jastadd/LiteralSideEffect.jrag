@@ -15,7 +15,7 @@ aspect EDBLiteralSideEffect {
 	public void EDBLiteral.sideEffect(Program program, Description descr) {
 		boolean changed = true;
 		while(changed) {
-			int size = predicate().formalpredicate().relation.size();
+			int size = getPredicateRef().formalpredicate().relation.size();
 			HashSet<EDBRead> reads = new HashSet<>();
 			for(PseudoTuple ps : predicate().formalpredicate().relation.tuples()) {
 				PredicateRef pr = (PredicateRef) ps.coord(0);
@@ -31,7 +31,7 @@ aspect EDBLiteralSideEffect {
 				}
 				CSVUtil.readFileInto(program, fp, descr.factsDir() + "/" + r.path);
 			}
-			changed = predicate().formalpredicate().relation.size() != size;
+			changed = getPredicateRef().formalpredicate().relation.size() != size;
 		}
 	}
 	
@@ -54,7 +54,7 @@ aspect LiteralSelection {
 
 aspect NEGLiteralSelection {
 	public Relation NEGLiteral.select(Binding binding, Relation body_rel) {
-		Relation positive = getFormalLiteral().predicate().formalpredicate().relation.select(binding);
+		Relation positive = getInclusiveLiteral().predicate().formalpredicate().relation.select(binding);
 		return Relation.difference(body_rel, positive);
 	}
 }

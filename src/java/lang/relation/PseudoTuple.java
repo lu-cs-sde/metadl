@@ -7,6 +7,7 @@ import java.util.TreeSet;
 import lang.ast.Atom;
 import lang.ast.Constant;
 import lang.ast.EDBLiteral;
+import lang.ast.EQLiteral;
 import lang.ast.Term;
 import lang.ast.Variable;
 
@@ -31,8 +32,13 @@ public class PseudoTuple implements Comparable<PseudoTuple> {
 	public PseudoTuple(EDBLiteral edb) {
 		this.size = 2;
 		this.tuple = new Term[size];
-		tuple[0] = edb.getPredicate();
-		tuple[1] = edb.getFileLocs();
+		tuple[0] = edb.getPredicateRef();
+		tuple[1] = edb.getFileLoc();
+	}
+	
+	public PseudoTuple(EQLiteral eq) {
+		this.size = 2;
+		this.tuple = new Term[size];
 	}
 	
 	public PseudoTuple(PseudoTuple o) {

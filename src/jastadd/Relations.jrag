@@ -7,8 +7,9 @@ import lang.relation.PseudoTuple;
 
 aspect Arity {
     syn int Literal.arity();
-    eq NEGLiteral.arity() = 1;
-    eq EDBLiteral.arity() = 2;
+    eq NEGLiteral.arity()  = 1;
+    eq EDBLiteral.arity()  = 2;
+    eq BinaryExclusiveTermLiteral.arity() = 2;
     eq Atom.arity() = getNumTerms();
     syn int PredicateSymbol.arity() = literal().arity();
     
@@ -43,12 +44,13 @@ aspect Arity {
 aspect Relation {
 	public Relation FormalPredicate.relation;
 	
-	syn PseudoTuple FormalLiteral.toTuple();
-	eq Atom.toTuple() = new PseudoTuple(this);
+	syn PseudoTuple InclusiveLiteral.toTuple();
+	eq Atom.toTuple()       = new PseudoTuple(this);
 	eq EDBLiteral.toTuple() = new PseudoTuple(this);
+	eq EQLiteral.toTuple()  = new PseudoTuple(this);
 	
 	syn PseudoTuple Literal.toTuple();
-	eq NEGLiteral.toTuple() = getFormalLiteral().toTuple();
+	eq NEGLiteral.toTuple() = getInclusiveLiteral().toTuple();
 }
 
 aspect Rules {
@@ -81,24 +83,24 @@ aspect Rules {
 			for(Literal lit : r.getBodys()) {
 				if(!lit.isNeg()) continue;
 				NEGLiteral nl = (NEGLiteral) lit;
-				if(nl.getFormalLiteral().predicate().getPRED_ID().equals(use.predicateName())) return true;
+				if(nl.getInclusiveLiteral().predicate().getPRED_ID().equals(use.predicateName())) return true;
 			}
 		}
 		return false;
 	}
 	
-	syn HashSet<Literal> Rule.positiveBodyLiterals() {
+	syn HashSet<Literal> Rule.inclusiveBodyLiterals() {
 		HashSet<Literal> literals = new HashSet<Literal>();
 		for(Literal l : getBodys()) {
-			if(!l.isNeg()) literals.add(l);
+			if(l.isInclusive()) literals.add(l);
 		}
 		return literals;
 	}
 	
-	syn HashSet<Literal> Rule.negativeBodyLiterals() {
+	syn HashSet<Literal> Rule.exclusiveBodyLiterals() {
 		HashSet<Literal> literals = new HashSet<Literal>();
 		for(Literal l : getBodys()) {
-			if(l.isNeg()) literals.add(l);
+			if(!l.isInclusive()) literals.add(l);
 		}
 		return literals;
 	}
@@ -113,7 +115,7 @@ aspect DependencyGraph {
 			for(Literal l : r.getBodys()) {
 				if(l.isNeg()) {
 					NEGLiteral nl = (NEGLiteral) l;
-					defIn.add(nl.getFormalLiteral().predicate().formalpredicate());
+					defIn.add(nl.getInclusiveLiteral().predicate().formalpredicate());
 				} else {
 					defIn.add(l.predicate().formalpredicate());
 				}
@@ -122,7 +124,7 @@ aspect DependencyGraph {
 		
 		for(PredicateRef ref : predicateRefs()) {
 			if(ref.literal().isEDB()) {
-				defIn.add(ref.literal().predicate().formalpredicate());
+				defIn.add(((EDBLiteral)ref.literal()).getPredicateRef().formalpredicate());
 			}
 		}
 		

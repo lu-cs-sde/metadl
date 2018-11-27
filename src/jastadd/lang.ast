@@ -1,48 +1,44 @@
 /**
-        ENTRYPOINT
+	Program
 **/
 Program  ::= Clause* /FormalPredicate*/; 
 
-abstract Clause ::= Heads:FormalLiteral*;
+/**
+   Clause 
+**/
+abstract Clause ::= Heads:InclusiveLiteral*;
 Rule:Clause ::=  Body:Literal*;
 Fact:Clause;
 
 /**
    Literals 
 **/
-abstract Literal;
-abstract FormalLiteral:Literal;
-abstract PredicateLiteral:Literal;
+abstract Literal ::= Predicate:PredicateSymbol;
+abstract InclusiveLiteral:Literal;
+abstract ExclusiveLiteral:Literal;
+abstract BinaryExclusiveTermLiteral:ExclusiveLiteral ::= Left:Term Right:Term;
 
-Atom:FormalLiteral       ::= Predicate:PredicateSymbol Terms:Term*;
-EDBLiteral:FormalLiteral ::= Predicate:PredicateRef FileLocs:Term;
-
-NEGLiteral:PredicateLiteral ::= FormalLiteral;
-
-PredicateSymbol ::= <PRED_ID>;
-
-abstract FilterRule;
-abstract LogicFilterRule:FilterRule;
-abstract BinaryLogicFilterRule:LogicFilterRule ::= Left:Variable Right:Variable
-
-FilterEquals:BinaryLogicFilterRule;
+Atom:InclusiveLiteral       ::= Terms:Term*;
+EDBLiteral:InclusiveLiteral ::= PredicateRef FileLoc:Term;
+NEGLiteral:ExclusiveLiteral ::= InclusiveLiteral;
+EQLiteral:BinaryExclusiveTermLiteral;
 
 /**
     Terms
 **/
 abstract Term;
-Variable:Term ::= <VAR_ID>;
-
-PredicateRef:Term ::= <PRED_ID>;
-
 abstract Constant:Term;
+
+Variable:Term           ::= <VAR_ID>;
+PredicateRef:Term       ::= <PRED_ID>;
 StringConstant:Constant ::= <STRING>;
 IntConstant:Constant    ::= <NUMERAL>;
 
 /**
-    NTA to collect various information that is common to all predicates that refer to the same relation.
+    PredicateSymbols
 **/
-FormalPredicate ::= <STRING>;
-
+FormalPredicate ::= <PRED_ID>;
+PredicateSymbol ::= <PRED_ID>;
 EDBPredicate:PredicateSymbol;
 NEGPredicate:PredicateSymbol;
+EQPredicate:PredicateSymbol;

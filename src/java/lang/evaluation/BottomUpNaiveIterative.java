@@ -4,7 +4,7 @@ import java.util.Deque;
 import java.util.HashSet;
 
 import lang.ast.Clause;
-import lang.ast.FormalLiteral;
+import lang.ast.InclusiveLiteral;
 import lang.ast.FormalPredicate;
 import lang.ast.Literal;
 import lang.ast.Program;
@@ -58,12 +58,12 @@ public class BottomUpNaiveIterative extends InternalEvaluation {
 		 */
 		if (clause.isRule()) {
 			Rule r = (Rule) clause;
-			body_rel = immediateConsequenceHelper (r.positiveBodyLiterals(), body_rel);
-			body_rel = immediateConsequenceHelper (r.negativeBodyLiterals(), body_rel);
+			body_rel = immediateConsequenceHelper (r.inclusiveBodyLiterals(), body_rel);
+			body_rel = immediateConsequenceHelper (r.exclusiveBodyLiterals(), body_rel);
 		}
 
 		boolean changed = false;
-		for (FormalLiteral fl : clause.getHeadss()) {
+		for (InclusiveLiteral fl : clause.getHeadss()) {
 			Relation derived;
 			if(clause.isRule()) {
 				derived = body_rel.selectNamed(Binding.createBinding(fl.toTuple()));

@@ -44,6 +44,7 @@ String  = \"[^\"]*\"
 ":-"       {  return  sym(Terminals.IMPLIED_BY); }
 "."        {  return  sym(Terminals.DOT);        }
 ","        {  return  sym(Terminals.COMMA);      }
+"EQ"       {  return  sym(Terminals.EQ);         }
 "EDB"      {  return  sym(Terminals.EDB);        }
 "NOT"      {  return  sym(Terminals.NOT);        }
 {Numeral}  {  return  sym(Terminals.NUMERAL);    }

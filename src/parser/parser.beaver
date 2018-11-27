@@ -9,15 +9,17 @@
 	}
 :};
 
-%terminals VAR_ID, PRED_ID, PRED_REF, LPARA, RPARA, NUMERAL, STRING, DOT, COMMA, IMPLIED_BY, EDB, NOT;
+%terminals VAR_ID, PRED_ID, PRED_REF, LPARA, RPARA, NUMERAL, STRING, DOT, COMMA, IMPLIED_BY, EDB, NOT, EQ;
 
 %typeof  program             =  "Program";
 %typeof  clause              =  "Clause";
 %typeof  literal             =  "Literal";
-%typeof  formal_literal      =  "FormalLiteral";
-%typeof  pred_literal        =  "PredicateLiteral";
+%typeof  inclusive_literal   =  "InclusiveLiteral";
+%typeof  exclusive_literal   =  "ExclusiveLiteral";
+%typeof  bin_excl_term_lit   =  "BinaryExclusiveTermLiteral";
 %typeof  edb_literal         =  "EDBLiteral";
 %typeof  neg_literal         =  "NEGLiteral";
+%typeof  eq_literal          =  "EQLiteral";
 %typeof  atom                =  "Atom";
 %typeof  pred_sym            =  "PredicateSymbol";
 %typeof  pred_ref            =  "PredicateRef";
@@ -29,7 +31,7 @@
 %typeof  term_list           =  "List";
 %typeof  term_list_no_empty  =  "List";
 %typeof  lit_list            =  "List";
-%typeof  form_lit_list       =  "List";
+%typeof  incl_lit_list       =  "List";
 %typeof  clause_list         =  "List";
 %typeof  fact                =  "Fact";
 %typeof  rule                =  "Rule";
@@ -45,33 +47,38 @@ clause = rule
        | fact
        ;
 
-rule = form_lit_list.heads IMPLIED_BY lit_list.body DOT {: return new Rule(heads, body); :};
-fact = form_lit_list.heads DOT {: return new Fact(heads); :};
+rule = incl_lit_list.heads IMPLIED_BY lit_list.body DOT {: return new Rule(heads, body); :};
+fact = incl_lit_list.heads DOT {: return new Fact(heads); :};
 
 
-literal = formal_literal
-        | pred_literal
+literal = inclusive_literal
+        | exclusive_literal
         ;
         
-formal_literal = edb_literal
-			   | atom
-			   ;
+inclusive_literal = edb_literal
+			      | atom
+			      ;
 			  
-pred_literal = neg_literal
-             ;
+exclusive_literal = neg_literal
+                  | bin_excl_term_lit
+             	  ;
+             	  
+bin_excl_term_lit = eq_literal;
+
+eq_literal = EQ LPARA term.left COMMA term.right RPARA {: return new EQLiteral(new PredicateSymbol("EQ"), left, right); :};
 
 atom = pred_sym.pred LPARA term_list.terms RPARA {: return new Atom(pred, terms); :};
 
-edb_literal = EDB LPARA pred_ref.pred COMMA term.filelocs RPARA {: return new EDBLiteral(pred, filelocs); :};
+edb_literal = EDB LPARA pred_ref.pred COMMA term.filelocs RPARA {: return new EDBLiteral(new PredicateSymbol("EDB"), pred, filelocs); :};
 
-neg_literal = NOT LPARA formal_literal.lit RPARA {: return new NEGLiteral(lit); :};
+neg_literal = NOT LPARA inclusive_literal.lit RPARA {: return new NEGLiteral(new PredicateSymbol("NOT"), lit); :};
 
 lit_list = literal.lit {: return new List().add(lit); :}
          | lit_list.list COMMA literal.c {: return list.add(c); :}
          ;
          
-form_lit_list = formal_literal.lit {: return new List().add(lit); :}
-         | form_lit_list.list COMMA formal_literal.lit {: return list.add(lit); :}
+incl_lit_list = inclusive_literal.lit {: return new List().add(lit); :}
+         | incl_lit_list.list COMMA inclusive_literal.lit {: return list.add(lit); :}
          ;
 
 term_list = term_list_no_empty
@@ -87,7 +94,7 @@ term = variable
      | pred_ref
      ;
      
-pred_sym = PRED_ID.id {: return new PredicateSymbol(id); :};
+pred_sym = PRED_ID.id  {: return new PredicateSymbol(id); :};
 pred_ref = PRED_REF.id {: return new PredicateRef(id); :};
      
 variable = VAR_ID.id {: return new Variable(id); :};

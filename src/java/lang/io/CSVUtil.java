@@ -71,17 +71,17 @@ public class CSVUtil {
 		}
 	}
 
-	public static Relation readRelationFrom(File f, FormalPredicate fp) {
+	public static Relation readRelationFrom(File f, int arity) {
 		if (!f.exists())
 			return null;
-		Relation r = new Relation(fp.realArity());
+		Relation r = new Relation(arity);
 		CSVParser parser = new CSVParserBuilder().withSeparator(',').build();
 		try (CSVReader reader = new CSVReaderBuilder(new FileReader(f)).withCSVParser(parser).build()) {
 			String[] line;
 			while ((line = reader.readNext()) != null) {
-				PseudoTuple ps = new PseudoTuple(fp.realArity());
+				PseudoTuple ps = new PseudoTuple(arity);
 				for (int i = 0; i != line.length; ++i) {
-					ps.instantiate(i, isInteger(line[i]) ? new IntConstant(line[i]) : new StringConstant(line[i]));
+					ps.set(i, parseCSV(line[i]));
 				}
 				r.addTuple(ps);
 			}

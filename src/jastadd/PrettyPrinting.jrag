@@ -4,6 +4,8 @@ import java.util.Iterator;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.Collection;
+
 aspect PretyPrinting {
 	public void ASTNode.prettyPrint(PrettyPrinter pr) {
 		for(int i = 0; i < getNumChild(); ++i) {
@@ -24,6 +26,24 @@ aspect PretyPrinting {
         for (int i = 1; i != list.getNumChild(); ++i) {
             pr.out.print(delim);
             pr.prettyPrint(list.getChild(i));
+        }
+        pr.out.print(post);
+    }
+    
+    protected <T extends ASTNode> void ASTNode.printCollection(Collection<T> collection,
+            String pre, String post, String delim, PrettyPrinter pr) {
+        Iterator<T> itr = collection.iterator();
+        if (!itr.hasNext())
+            return;
+        pr.out.print(pre);
+        pr.prettyPrint(itr.next());
+        if (!itr.hasNext()) {
+            pr.out.print(post);
+            return;
+        }
+        while(itr.hasNext()) {
+            pr.out.print(delim);
+            pr.prettyPrint(itr.next());
         }
         pr.out.print(post);
     }
@@ -66,16 +86,17 @@ aspect PretyPrinting {
     }
 
     public void EDBLiteral.prettyPrint(PrettyPrinter pr) {
-        pr.out.print("EDB(");
         pr.prettyPrint(getPredicate());
+        pr.out.print("(");
+        pr.prettyPrint(getPredicateRef());
         pr.out.print(",");
-        pr.prettyPrint(getFileLocs());
+        pr.prettyPrint(getFileLoc());
         pr.out.print(")");
     }
     
     public void NEGLiteral.prettyPrint(PrettyPrinter pr) {
     	pr.out.print("NOT(");
-        pr.prettyPrint(getFormalLiteral());
+        pr.prettyPrint(getInclusiveLiteral());
         pr.out.print(")");
     }
 }
@@ -127,25 +148,38 @@ aspect SoufflePrinting {
     public void ASTNode.soufflePrint(PrettyPrinter pr) {
         prettyPrint(pr);
     }
-/*
-    public void ExtensionalDB.soufflePrint(PrettyPrinter pr) {
-        pr.out.print(".input ");
-        pr.prettyPrint(getTarget());
-        pr.out.print("(filename=");
-        pr.prettyPrint(getFileLocation());
-        pr.out.print(", delimiter=\",\"");
-        pr.out.print(")\n");
+
+    public void EDBLiteral.soufflePrint(PrettyPrinter pr) {
+    	// A Hack to remove the DOT that is inserted after each rule.
+    	pr.out.print("// EDB");
     }
-*/
+
+    public void NEGLiteral.soufflePrint(PrettyPrinter pr) {
+    	pr.out.print("!");
+        pr.prettyPrint(getInclusiveLiteral());
+    }
+    
     public void FormalPredicate.soufflePrint(PrettyPrinter pr) {
-        pr.out.print(".decl " + predicateName() + "(");
-        List<PredicateSymbol> constants = new List<PredicateSymbol>();
-        for(int i = 0; i != realArity(); ++i) {
-            constants.add(new PredicateSymbol("x_" + i + ":symbol"));
+    	if(!literal().hasExtendedSemantics()) {
+	        pr.out.print(".decl " + predicateName() + "(");
+	        List<PredicateSymbol> constants = new List<PredicateSymbol>();
+	        for(int i = 0; i != realArity(); ++i) {
+	            constants.add(new PredicateSymbol("x_" + i + ":symbol"));
+	        }
+	        printList(constants, "", "", ", ", pr);
+	        pr.out.print(")\n");
+	        pr.out.print(".output " + predicateName() + "(delimiter=\",\")");
         }
-        printList(constants, "", "", ", ", pr);
-        pr.out.print(")\n");
-        pr.out.print(".output " + predicateName() + "(delimiter=\",\")");
+        
+        if(literal().isEDB()) {
+        	EDBLiteral edb = (EDBLiteral)literal();
+        	pr.out.print("\n.input ");
+	        pr.out.print(edb.getPredicate().getPRED_ID());
+	        pr.out.print("(filename=");
+	        pr.prettyPrint(edb.getFileLoc());
+	        pr.out.print(", delimiter=\",\"");
+	        pr.out.print(")");
+        }
     }
 
     public void Program.soufflePrint(PrettyPrinter pr) {

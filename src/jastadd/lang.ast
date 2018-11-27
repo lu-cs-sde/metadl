@@ -39,6 +39,3 @@ IntConstant:Constant    ::= <NUMERAL>;
 **/
 FormalPredicate ::= <PRED_ID>;
 PredicateSymbol ::= <PRED_ID>;
-EDBPredicate:PredicateSymbol;
-NEGPredicate:PredicateSymbol;
-EQPredicate:PredicateSymbol;

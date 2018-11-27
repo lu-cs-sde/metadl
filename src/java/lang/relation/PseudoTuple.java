@@ -5,9 +5,9 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import lang.ast.Atom;
+import lang.ast.BinaryExclusiveTermLiteral;
 import lang.ast.Constant;
 import lang.ast.EDBLiteral;
-import lang.ast.EQLiteral;
 import lang.ast.Term;
 import lang.ast.Variable;
 
@@ -36,9 +36,11 @@ public class PseudoTuple implements Comparable<PseudoTuple> {
 		tuple[1] = edb.getFileLoc();
 	}
 	
-	public PseudoTuple(EQLiteral eq) {
+	public PseudoTuple(BinaryExclusiveTermLiteral bin) {
 		this.size = 2;
 		this.tuple = new Term[size];
+		tuple[0] = bin.getLeft();
+		tuple[1] = bin.getRight();
 	}
 	
 	public PseudoTuple(PseudoTuple o) {

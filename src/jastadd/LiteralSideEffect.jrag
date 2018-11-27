@@ -47,14 +47,28 @@ aspect EDBLiteralSideEffect {
 }
 
 aspect LiteralSelection {
-	public Relation Literal.select(Binding binding, Relation body_rel) {
-		return predicate().formalpredicate().relation.select(binding);
+	public Relation Literal.select(Relation body_rel) {
+		return predicate().formalpredicate().relation.select(Binding.createBinding(toTuple()));
 	}
 }
 
 aspect NEGLiteralSelection {
-	public Relation NEGLiteral.select(Binding binding, Relation body_rel) {
-		Relation positive = getInclusiveLiteral().predicate().formalpredicate().relation.select(binding);
+	public Relation NEGLiteral.select(Relation body_rel) {
+		Relation positive = getInclusiveLiteral().predicate().formalpredicate().relation.select(Binding.createBinding(toTuple()));
 		return Relation.difference(body_rel, positive);
 	}
 }
+
+aspect BinaryExclusiveTermLiteralSelection {
+	public abstract boolean BinaryExclusiveTermLiteral.binaryTest(Term t1, Term t2);
+	public boolean EQLiteral.binaryTest(Term t1, Term t2) { return Term.termComparator.compare(t1, t2) == 0; }
+	
+	public Relation BinaryExclusiveTermLiteral.select(Relation body_rel) {
+		if(!body_rel.filter(this)) {
+	    	SimpleLogger.logger().log("Filter Failed: " + getPredicate().getPRED_ID(), SimpleLogger.LogLevel.Level.ERROR);
+	    	System.exit(0);
+		}
+		return body_rel;
+	}
+}
+

@@ -26,6 +26,12 @@ public class Binding extends TreeSet<BindTerm> {
 		return true;
 	}
 	
+	public int firstCoordOf(Term t) {
+		BindTerm bt = floor(new BindTerm(t));
+		if(bt == null || Term.termComparator.compare(bt.t, t) != 0) return -1;
+		return bt.coords.first();
+	}
+	
 	public int totalSize() {
 		int size = 0;
 		for(BindTerm bt : this) {

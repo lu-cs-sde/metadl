@@ -95,8 +95,18 @@ aspect PretyPrinting {
     }
     
     public void NEGLiteral.prettyPrint(PrettyPrinter pr) {
-    	pr.out.print("NOT(");
+    	pr.prettyPrint(getPredicate());
+        pr.out.print("(");
         pr.prettyPrint(getInclusiveLiteral());
+        pr.out.print(")");
+    }
+    
+    public void EQLiteral.prettyPrint(PrettyPrinter pr) {
+    	pr.prettyPrint(getPredicate());
+        pr.out.print("(");
+        pr.prettyPrint(getLeft());
+        pr.out.print(",");
+        pr.prettyPrint(getRight());
         pr.out.print(")");
     }
 }

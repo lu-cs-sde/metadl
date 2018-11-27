@@ -33,13 +33,10 @@ public class BottomUpNaiveIterative extends InternalEvaluation {
 	
 	private Relation immediateConsequenceHelper(HashSet<Literal> literals, Relation body_rel) {
 		for (Literal rl_current : literals) {
-			PseudoTuple t_current = rl_current.toTuple();
-			Binding b_current = Binding.createBinding(t_current);
-			
 			/**
 			 * Select based on the literal selection rule, e.g. NEGLiteral will remove from the current body_rel.
 			 */
-			Relation r_current = rl_current.select(b_current, body_rel);
+			Relation r_current = rl_current.select(body_rel);
 
 			if (body_rel == null) {
 				body_rel = r_current;

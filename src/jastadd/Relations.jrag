@@ -116,7 +116,7 @@ aspect DependencyGraph {
 				if(l.isNeg()) {
 					NEGLiteral nl = (NEGLiteral) l;
 					defIn.add(nl.getInclusiveLiteral().predicate().formalpredicate());
-				} else {
+				} else if(l.isInclusive()) {
 					defIn.add(l.predicate().formalpredicate());
 				}
 			}

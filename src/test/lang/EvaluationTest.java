@@ -68,7 +68,7 @@ public class EvaluationTest {
 
 	@DisplayName("Compare Internal Evaluation to Souffle WithEDB")
 	@ParameterizedTest(name = "Evaluation Tests Valid WithEDB")
-	@ValueSource(strings = { "evalTest_1.in" })
+	@ValueSource(strings = { "evalTest_1.in", "evalTest_2.in" })
 	void evaluationTestsBottomUpNaiveCompareSouffleWithEDBs(String fileName) throws Exception {
 		String outname = FileUtil.changeExtension(fileName, "_with_edb.dl");
 		Description d1 = FileUtil.parseDescription(
@@ -110,6 +110,7 @@ public class EvaluationTest {
 	}
 	*/
 	
+	/*
 	@DisplayName("Compare Internal Evaluation to Souffle WithBinPred")
 	@ParameterizedTest(name = "Evaluation Tests Valid")
 	@ValueSource(strings = { "evalTest_1.in", "evalTest_2.in","evalTest_3.in","evalTest_4.in","evalTest_5.in","evalTest_6.in" })
@@ -120,4 +121,5 @@ public class EvaluationTest {
 				"eval::bottomupnaive -OUT ./tests/output        ./tests/evaluation/withbinpred/" + fileName);
 		doEvaluationTest(d1, d2);
 	}
+	*/
 }

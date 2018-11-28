@@ -18,6 +18,8 @@ abstract InclusiveLiteral:Literal;
 abstract ExclusiveLiteral:Literal;
 abstract BinaryExclusiveTermLiteral:ExclusiveLiteral ::= Left:Term Right:Term;
 
+// abstract BinaryMonoidTermLiteral:ExclusiveLiteral ::= Left:Term Right:Term;
+
 Atom:InclusiveLiteral       ::= Terms:Term*;
 EDBLiteral:InclusiveLiteral ::= PredicateRef FileLoc:Term;
 NEGLiteral:ExclusiveLiteral ::= InclusiveLiteral;

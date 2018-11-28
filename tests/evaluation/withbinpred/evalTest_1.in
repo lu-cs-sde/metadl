@@ -1,6 +1,6 @@
-VARS("A").
-VARS("B").
-VARS("C").
+VARS(1).
+VARS(2).
+VARS(3).
 
 A(x, y) :- VARS(x), VARS(y).
 

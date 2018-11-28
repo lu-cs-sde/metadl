@@ -32,6 +32,7 @@ public class BottomUpNaiveIterative extends InternalEvaluation {
 	
 	private Relation immediateConsequenceHelper(HashSet<Literal> literals, Relation body_rel) {
 		for (Literal rl_current : literals) {
+			
 			/**
 			 * Select based on the literal selection rule, e.g. NEGLiteral will remove from the current body_rel.
 			 */

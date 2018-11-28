@@ -124,7 +124,7 @@ aspect DependencyGraph {
 		
 		for(PredicateRef ref : predicateRefs()) {
 			if(ref.literal().isEDB()) {
-				defIn.add(((EDBLiteral)ref.literal()).getPredicateRef().formalpredicate());
+				defIn.add(((EDBLiteral)ref.literal()).getPredicate().formalpredicate());
 			}
 		}
 		

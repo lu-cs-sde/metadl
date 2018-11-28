@@ -101,7 +101,7 @@ aspect PretyPrinting {
         pr.out.print(")");
     }
     
-    public void EQLiteral.prettyPrint(PrettyPrinter pr) {
+    public void BinaryExclusiveTermLiteral.prettyPrint(PrettyPrinter pr) {
     	pr.prettyPrint(getPredicate());
         pr.out.print("(");
         pr.prettyPrint(getLeft());
@@ -169,6 +169,22 @@ aspect SoufflePrinting {
         pr.prettyPrint(getInclusiveLiteral());
     }
     
+    public abstract String BinaryExclusiveTermLiteral.souffleOPString();
+    public String EQLiteral.souffleOPString()  { return  "="; }
+	public String NEQLiteral.souffleOPString() { return "!="; }
+	public String LTLiteral.souffleOPString()  { return "<";  }
+	public String LTELiteral.souffleOPString() { return "<="; }
+	public String GTLiteral.souffleOPString()  { return ">";  }
+	public String GTELiteral.souffleOPString() { return ">="; }
+	
+    public void BinaryExclusiveTermLiteral.soufflePrint(PrettyPrinter pr) {
+        pr.prettyPrint(getLeft());
+        pr.out.print(" ");
+        pr.out.print(souffleOPString());
+        pr.out.print(" ");
+        pr.prettyPrint(getRight());
+    }
+    
     public void FormalPredicate.soufflePrint(PrettyPrinter pr) {
     	if(!literal().hasExtendedSemantics()) {
 	        pr.out.print(".decl " + predicateName() + "(");
@@ -184,7 +200,7 @@ aspect SoufflePrinting {
         if(literal().isEDB()) {
         	EDBLiteral edb = (EDBLiteral)literal();
         	pr.out.print("\n.input ");
-	        pr.out.print(edb.getPredicate().getPRED_ID());
+	        pr.out.print(edb.getPredicateRef().getPRED_ID());
 	        pr.out.print("(filename=");
 	        pr.prettyPrint(edb.getFileLoc());
 	        pr.out.print(", delimiter=\",\"");

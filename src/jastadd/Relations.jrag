@@ -47,7 +47,7 @@ aspect Relation {
 	syn PseudoTuple InclusiveLiteral.toTuple();
 	eq Atom.toTuple()       = new PseudoTuple(this);
 	eq EDBLiteral.toTuple() = new PseudoTuple(this);
-	eq EQLiteral.toTuple()  = new PseudoTuple(this);
+	eq BinaryExclusiveTermLiteral.toTuple()  = new PseudoTuple(this);
 	
 	syn PseudoTuple Literal.toTuple();
 	eq NEGLiteral.toTuple() = getInclusiveLiteral().toTuple();

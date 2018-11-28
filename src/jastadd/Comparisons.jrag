@@ -6,12 +6,11 @@ aspect Conversion {
 	public abstract String Constant.constantValue();
 	public String StringConstant.constantValue() { return getSTRING();}
 	public String IntConstant.constantValue() {return getNUMERAL();}
-	
 	public String Constant.toString() { return constantValue(); }
 	public String Variable.toString() { return getVAR_ID(); }
 	public String PredicateRef.toString() { return "'" + getPRED_ID(); }
-	
 	public String FormalPredicate.toString() { return "FP_" + predicateName(); }
+	public String ASTNode.toString() { return prettyPrint(); }
 }
 
 aspect Comparison {

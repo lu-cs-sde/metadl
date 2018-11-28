@@ -145,6 +145,8 @@ aspect Term {
 	eq PredicateRef.typeCompValue()    = 1;
 	eq StringConstant.typeCompValue()  = 2;
 	eq IntConstant.typeCompValue()     = 3;
+	
+	public static boolean Term.sameType(Term t1, Term t2) { return t1.typeCompValue() == t2.typeCompValue(); }
 }
 
 aspect FormalPredicate {

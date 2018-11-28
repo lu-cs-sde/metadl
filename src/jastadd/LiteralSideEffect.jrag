@@ -61,11 +61,17 @@ aspect NEGLiteralSelection {
 
 aspect BinaryExclusiveTermLiteralSelection {
 	public abstract boolean BinaryExclusiveTermLiteral.binaryTest(Term t1, Term t2);
-	public boolean EQLiteral.binaryTest(Term t1, Term t2) { return Term.termComparator.compare(t1, t2) == 0; }
+	public boolean EQLiteral.binaryTest(Term t1, Term t2)  { return Term.termComparator.compare(t1, t2) == 0; }
+	public boolean NEQLiteral.binaryTest(Term t1, Term t2) { return Term.termComparator.compare(t1, t2) != 0; }
+	public boolean LTLiteral.binaryTest(Term t1, Term t2)  { return Term.termComparator.compare(t1, t2)  < 0; }
+	public boolean LTELiteral.binaryTest(Term t1, Term t2) { return Term.termComparator.compare(t1, t2) <= 0; }
+	public boolean GTLiteral.binaryTest(Term t1, Term t2)  { return Term.termComparator.compare(t1, t2)  > 0; }
+	public boolean GTELiteral.binaryTest(Term t1, Term t2) { return Term.termComparator.compare(t1, t2) >= 0; }
 	
 	public Relation BinaryExclusiveTermLiteral.select(Relation body_rel) {
 		if(!body_rel.filter(this)) {
-	    	SimpleLogger.logger().log("Filter Failed: " + getPredicate().getPRED_ID(), SimpleLogger.LogLevel.Level.ERROR);
+	    	SimpleLogger.logger().log("Filter Failed due to unbound variable in filter predicate: " + this + " in rule " + clause(), 
+	    		SimpleLogger.LogLevel.Level.ERROR);
 	    	System.exit(0);
 		}
 		return body_rel;

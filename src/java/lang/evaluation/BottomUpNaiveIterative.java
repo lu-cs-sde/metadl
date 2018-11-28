@@ -4,14 +4,13 @@ import java.util.Deque;
 import java.util.HashSet;
 
 import lang.ast.Clause;
-import lang.ast.InclusiveLiteral;
 import lang.ast.FormalPredicate;
+import lang.ast.InclusiveLiteral;
 import lang.ast.Literal;
 import lang.ast.Program;
 import lang.ast.Rule;
 import lang.ast.config.Description;
 import lang.relation.Binding;
-import lang.relation.PseudoTuple;
 import lang.relation.Relation;
 import lang.relation.Stratification;
 import lang.relation.Stratification.Stratum;
@@ -60,16 +59,16 @@ public class BottomUpNaiveIterative extends InternalEvaluation {
 		}
 
 		boolean changed = false;
-		for (InclusiveLiteral fl : clause.getHeadss()) {
+		for (InclusiveLiteral il : clause.getHeadss()) {
 			Relation derived;
 			if(clause.isRule()) {
-				derived = body_rel.selectNamed(Binding.createBinding(fl.toTuple()));
+				derived = body_rel.selectNamed(Binding.createBinding(il.toTuple()));
 			} else {
-				derived = new Relation(fl.arity());
-				derived.addTuple(fl.toTuple());
+				derived = new Relation(il.arity());
+				derived.addTuple(il.toTuple());
 			}
 			
-			Relation prev = fl.predicate().formalpredicate().relation;
+			Relation prev = il.predicate().formalpredicate().relation;
 			int size = prev.size();
 			prev.addAll(derived);
 			
@@ -79,7 +78,7 @@ public class BottomUpNaiveIterative extends InternalEvaluation {
 				/**
 				 * Process Potential Side-Effects Such as EDB-loading.
 				 */
-				fl.sideEffect(program, descr);
+				il.sideEffect(program, descr);
 			}
 		}
 		return changed;

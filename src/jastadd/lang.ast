@@ -22,7 +22,11 @@ Atom:InclusiveLiteral       ::= Terms:Term*;
 EDBLiteral:InclusiveLiteral ::= PredicateRef FileLoc:Term;
 NEGLiteral:ExclusiveLiteral ::= InclusiveLiteral;
 EQLiteral:BinaryExclusiveTermLiteral;
-
+NEQLiteral:BinaryExclusiveTermLiteral;
+LTLiteral:BinaryExclusiveTermLiteral;
+LTELiteral:BinaryExclusiveTermLiteral;
+GTLiteral:BinaryExclusiveTermLiteral;
+GTELiteral:BinaryExclusiveTermLiteral;
 /**
     Terms
 **/

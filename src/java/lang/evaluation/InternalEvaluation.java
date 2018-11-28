@@ -40,7 +40,8 @@ public abstract class InternalEvaluation extends Evaluation {
 	
 	public void dumpRelations(Program program, Description descr) {
 		program.getFormalPredicates().forEach(fp -> {
-			CSVUtil.dumpFileInto(fp, new File(descr.outputDir() + "/" + fp.predicateName() + ".csv"));
+			if(fp.literal().isInclusive())
+				CSVUtil.dumpFileInto(fp, new File(descr.outputDir() + "/" + fp.predicateName() + ".csv"));
 		});
 	}
 }

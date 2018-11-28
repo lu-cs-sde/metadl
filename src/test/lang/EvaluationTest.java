@@ -57,10 +57,12 @@ public class EvaluationTest {
 	@ValueSource(strings = { "evalTest_1.in", "evalTest_2.in", "evalTest_3.in", "evalTest_4.in", "evalTest_5.in",
 			"evalTest_6.in", "evalTest_7.in", "evalTest_8.in", "evalTest_9.in" })
 	void evaluationTestsBottomUpNaiveCompareSouffle(String fileName) throws Exception {
+		String inputFile = "./tests/evaluation/" + fileName;
+		
 		Description d1 = FileUtil.parseDescription(
-				"eval::souffle      -OUT ./tests/output/souffle ./tests/evaluation/" + fileName);
+				"eval::souffle      -OUT ./tests/output/souffle " + inputFile);
 		Description d2 = FileUtil.parseDescription(
-				"eval::bottomupnaive -OUT ./tests/output         ./tests/evaluation/" + fileName);
+				"eval::bottomupnaive -OUT ./tests/output         " + inputFile);
 		doEvaluationTest(d1, d2);
 	}
 
@@ -80,7 +82,7 @@ public class EvaluationTest {
 	
 	@DisplayName("Compare Internal Evaluation to Souffle WithNEG")
 	@ParameterizedTest(name = "Evaluation Tests Valid WithNEG")
-	@ValueSource(strings = { "evalTest_1.in", "evalTest_2.in", "evalTest_3.in" })
+	@ValueSource(strings = { "evalTest_1.in", "evalTest_2.in" })
 	void evaluationTestsBottomUpNaiveCompareSouffleWithNEGs(String fileName) throws Exception {
 		String outname = FileUtil.changeExtension(fileName, "_with_neg.dl");
 		Description d1 = FileUtil.parseDescription(
@@ -92,6 +94,7 @@ public class EvaluationTest {
 		doEvaluationTest(d1, d2);
 	}
 	
+	/*
 	@DisplayName("Compare Internal Evaluation to Souffle WithNEG")
 	@ParameterizedTest(name = "Evaluation Tests Invalid WithNEG")
 	@ValueSource(strings = { "evalTest_3.in" })
@@ -103,6 +106,18 @@ public class EvaluationTest {
 		Description d2 = FileUtil.parseDescription(
 				"eval::bottomupnaive -OUT ./tests/output         -FACTS ./tests/evaluation/withneg/ ./tests/evaluation/withneg/"
 						+ fileName);
+		doEvaluationTest(d1, d2);
+	}
+	*/
+	
+	@DisplayName("Compare Internal Evaluation to Souffle WithBinPred")
+	@ParameterizedTest(name = "Evaluation Tests Valid")
+	@ValueSource(strings = { "evalTest_1.in", "evalTest_2.in","evalTest_3.in","evalTest_4.in","evalTest_5.in","evalTest_6.in" })
+	void evaluationTestsBottomUpNaiveCompareWithBinPred(String fileName) throws Exception {
+		Description d1 = FileUtil.parseDescription(
+				"eval::souffle      -OUT ./tests/output/souffle ./tests/evaluation/withbinpred/" + fileName);
+		Description d2 = FileUtil.parseDescription(
+				"eval::bottomupnaive -OUT ./tests/output        ./tests/evaluation/withbinpred/" + fileName);
 		doEvaluationTest(d1, d2);
 	}
 }

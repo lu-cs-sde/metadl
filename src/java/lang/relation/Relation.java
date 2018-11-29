@@ -3,7 +3,6 @@ package lang.relation;
 import java.util.Set;
 import java.util.TreeSet;
 
-import lang.ast.BinaryExclusiveTermLiteral;
 import lang.ast.Term;
 import lang.relation.Binding.BindOverlap;
 import lang.relation.Binding.BindResult;
@@ -144,19 +143,6 @@ public class Relation {
 		});
 		r.binding = r1.binding;
 		return r;
-	}
-	
-	public boolean filter(BinaryExclusiveTermLiteral bet) {
-		Set<PseudoTuple> removes = new TreeSet<PseudoTuple>();
-		int coord1 = binding.firstCoordOf(bet.getLeft());
-		int coord2 = binding.firstCoordOf(bet.getRight());
-		if(coord1 == -1 || coord2 == -1) return false;
-		for(PseudoTuple t : tuples()) {
-			if(!bet.binaryTest(t.coord(coord1), t.coord(coord2))) 
-				removes.add(t);
-		}
-		relation.removeAll(removes);
-		return true;
 	}
 
 	public boolean contains(PseudoTuple t) {

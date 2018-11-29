@@ -154,7 +154,7 @@ aspect Predicate {
 
 aspect Term {
     syn boolean Term.isString()     = typeCompValue() == 2;
-	syn boolean Term.isInt()        = typeCompValue() == 3;
+	syn boolean Term.isInteger()    = typeCompValue() == 3;
 	syn boolean Term.isPredicate()  = typeCompValue() == 1;
 	syn boolean Term.isVariable()   = typeCompValue() == 0;
 	syn boolean Term.isConstant()   = typeCompValue() == 2 || typeCompValue() == 3;

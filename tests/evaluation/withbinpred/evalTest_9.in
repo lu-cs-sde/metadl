@@ -1,0 +1,5 @@
+OUTPUT(x) :- ATOM(x), NEQ('Vars, x).
+Vars(1), Vars(2), Vars(3), Vars(4), Vars(5).
+
+A(x, y) :- Vars(x), Vars(y).
+B(x, y) :- A(x, y), LT(x + y + 1 + 1, 6).

@@ -3,12 +3,13 @@ import lang.io.CSVUtil;
 import java.util.HashSet;
 import lang.relation.Relation;
 import lang.relation.Binding;
+import lang.relation.Instantiation;
+import java.util.Collections;
+import java.util.TreeSet;
 
 aspect LiteralSideEffect {
 	public void Literal.sideEffect(Program program, Description descr) {}
-}
-
-aspect EDBLiteralSideEffect {
+	
 	/**
 	 * Currently unnecessary Reads, Should Check Deltas Later.
 	 */
@@ -53,8 +54,8 @@ aspect InitialSideEffect {
 			fp.relation = new Relation(fp.realArity());
 		}
 	}
+	
 	public void PREDLiteral.initialSideEffect(Program program, Description descr) {
-		System.out.println("ADD PRED LIT");
 		predicate().formalpredicate().relation = new Relation(arity());
 		Relation r = predicate().formalpredicate().relation;
 		for(PredicateRef pr : getPredicateRefs()) {
@@ -75,16 +76,11 @@ aspect LiteralSelection {
 	public Relation Literal.select(Relation body_rel) {
 		return predicate().formalpredicate().relation.select(Binding.createBinding(toTuple()));
 	}
-}
-
-aspect NEGLiteralSelection {
 	public Relation NEGLiteral.select(Relation body_rel) {
 		Relation positive = getInclusiveLiteral().predicate().formalpredicate().relation.select(Binding.createBinding(toTuple()));
 		return Relation.difference(body_rel, positive);
 	}
-}
-
-aspect BinaryExclusiveTermLiteralSelection {
+	
 	public abstract boolean BinaryExclusiveTermLiteral.binaryTest(Term t1, Term t2);
 	public boolean EQLiteral.binaryTest(Term t1, Term t2)  { return Term.termComparator.compare(t1, t2) == 0; }
 	public boolean NEQLiteral.binaryTest(Term t1, Term t2) { return Term.termComparator.compare(t1, t2) != 0; }
@@ -93,11 +89,70 @@ aspect BinaryExclusiveTermLiteralSelection {
 	public boolean GTLiteral.binaryTest(Term t1, Term t2)  { return Term.termComparator.compare(t1, t2)  > 0; }
 	public boolean GTELiteral.binaryTest(Term t1, Term t2) { return Term.termComparator.compare(t1, t2) >= 0; }
 	
+	public abstract Term Expr.eval(Instantiation inst);
+	public abstract Term BinExpr.mappend(Term t1, Term t2);
+	syn Term AddExpr.mappend(Term t1, Term t2) {
+		if(!Term.sameType(t1, t2)) {
+			SimpleLogger.logger().log("Different Types for terms: " + t1 + ", " + t2, SimpleLogger.LogLevel.Level.ERROR);
+			System.exit(0);
+		}
+		if(t1.isInteger()) {
+			IntConstant i1 = (IntConstant) t1;
+			IntConstant i2 = (IntConstant) t2;
+			String result = "" + (i1.intValue() + i2.intValue());
+			return new IntConstant(result);
+		} else if(t1.isString()) {
+			String result = ((StringConstant)t1).getSTRING() + ((StringConstant)t2).getSTRING();
+			return new StringConstant(result);
+		}
+		
+		if(!Term.sameType(t1, t2)) {
+			SimpleLogger.logger().log("Non-supported add for: " + t1 + ", " + t2, SimpleLogger.LogLevel.Level.ERROR);
+			System.exit(0);
+		}
+		return null;
+	}
+	
+	syn Term Term.eval(Instantiation inst)     = this;
+	syn Term Variable.eval(Instantiation inst) = inst.get(this);
+	syn Term AddExpr.eval(Instantiation inst)  = mappend(getLeft().eval(inst), getRight().eval(inst));
+	
+	public abstract TreeSet<Variable> Expr.variables();
+	syn TreeSet<Variable> BinaryExclusiveTermLiteral.variables() {
+		TreeSet<Variable> vars = new TreeSet<Variable>(Term.termComparator);
+		vars.addAll(getLeft().variables());
+		vars.addAll(getRight().variables());
+		return vars;
+	}
+	
+	syn TreeSet<Variable> BinExpr.variables() {
+		TreeSet<Variable> vars = new TreeSet<Variable>(Term.termComparator);
+		vars.addAll(getLeft().variables());
+		vars.addAll(getRight().variables());
+		return vars;
+	}
+	
+	syn TreeSet<Variable> Term.variables()     = new TreeSet<Variable>(Term.termComparator);
+	syn TreeSet<Variable> Variable.variables() {
+		TreeSet<Variable> vars = new TreeSet<Variable>(Term.termComparator);
+		vars.add(this);
+		return vars;
+	}
+
 	public Relation BinaryExclusiveTermLiteral.select(Relation body_rel) {
-		if(!body_rel.filter(this)) {
-	    	SimpleLogger.logger().log("Filter Failed due to unbound variable in filter predicate: " + this + " in rule " + clause(), 
-	    		SimpleLogger.LogLevel.Level.ERROR);
-	    	System.exit(0);
+		TreeSet<Variable> variables = variables();
+		PseudoTuple name_tuple = new PseudoTuple(variables);
+		
+		Iterator<PseudoTuple> itr = body_rel.tuples().iterator();
+		while(itr.hasNext()) {
+			 PseudoTuple ps = itr.next();
+			 PseudoTuple project = new PseudoTuple(ps, body_rel.binding, name_tuple);
+			 Instantiation inst = new Instantiation(name_tuple, project);
+			 Term left = getLeft().eval(inst);
+			 Term right = getRight().eval(inst);
+			 if(!binaryTest(left, right)) {
+			 	itr.remove();
+			}
 		}
 		return body_rel;
 	}

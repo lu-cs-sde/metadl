@@ -16,7 +16,7 @@ Fact:Clause;
 abstract Literal ::= Predicate:PredicateSymbol;
 abstract InclusiveLiteral:Literal;
 abstract ExclusiveLiteral:Literal;
-abstract BinaryExclusiveTermLiteral:ExclusiveLiteral ::= Left:Term Right:Term;
+abstract BinaryExclusiveTermLiteral:ExclusiveLiteral ::= Left:Expr Right:Expr;
 
 // abstract BinaryMonoidTermLiteral:ExclusiveLiteral ::= Left:Term Right:Term;
 
@@ -27,6 +27,8 @@ PREDLiteral:ExclusiveLiteral   ::= Term /PredicateRef*/;
 ATOMLiteral:ExclusiveLiteral   ::= Term /PredicateRef*/;
 NEGLiteral:ExclusiveLiteral    ::= InclusiveLiteral;
 
+// BINDLiteral:ExclusiveLiteral ::= Left:Variable Right:BinaryExclusiveTermLiteral;
+
 EQLiteral:BinaryExclusiveTermLiteral;
 NEQLiteral:BinaryExclusiveTermLiteral;
 LTLiteral:BinaryExclusiveTermLiteral;
@@ -35,9 +37,16 @@ GTLiteral:BinaryExclusiveTermLiteral;
 GTELiteral:BinaryExclusiveTermLiteral;
 
 /**
+	Expressions
+**/
+abstract Expr;
+abstract BinExpr:Expr ::= Left:Expr Right:Expr;
+AddExpr:BinExpr;
+
+/**
     Terms
 **/
-abstract Term;
+abstract Term:Expr;
 abstract Constant:Term;
 
 Variable:Term           ::= <VAR_ID>;

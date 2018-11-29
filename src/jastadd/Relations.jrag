@@ -55,7 +55,7 @@ aspect Relation {
 	eq OUTPUTLiteral.toTuple() = new PseudoTuple(getTerm());
 	eq PREDLiteral.toTuple()   = new PseudoTuple(getTerm());
 	eq ATOMLiteral.toTuple()   = new PseudoTuple(getTerm());
-	eq BinaryExclusiveTermLiteral.toTuple()  = new PseudoTuple(getLeft(), getRight());
+	eq BinaryExclusiveTermLiteral.toTuple()  = new PseudoTuple(0);
 	
 	syn PseudoTuple Literal.toTuple();
 	eq NEGLiteral.toTuple() = getInclusiveLiteral().toTuple();

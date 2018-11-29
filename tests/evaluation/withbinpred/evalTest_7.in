@@ -1,6 +1,5 @@
-VARS("A").
-VARS("B").
-VARS("C").
+OUTPUT('A), OUTPUT('B), OUTPUT('C).
+VARS(1), VARS(2), VARS(3).
 
 A(x, y) :- VARS(x), VARS(y).
 C(x, y) :- B(x, y), EQ(x, y).

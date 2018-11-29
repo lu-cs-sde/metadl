@@ -9,7 +9,7 @@
 	}
 :};
 
-%terminals VAR_ID, PRED_ID, PRED_REF, LPARA, RPARA, NUMERAL, STRING, DOT, COMMA, IMPLIED_BY, EDB, NOT, EQ, NEQ, LT, LTE, GT, GTE;
+%terminals VAR_ID, PRED_ID, PRED_REF, LPARA, RPARA, NUMERAL, STRING, DOT, COMMA, IMPLIED_BY, EDB, OUTPUT, PRED, ATOM, NOT, EQ, NEQ, LT, LTE, GT, GTE;
 
 %typeof  program             =  "Program";
 %typeof  clause              =  "Clause";
@@ -18,6 +18,9 @@
 %typeof  exclusive_literal   =  "ExclusiveLiteral";
 %typeof  bin_excl_term_lit   =  "BinaryExclusiveTermLiteral";
 %typeof  edb_literal         =  "EDBLiteral";
+%typeof  output_literal      =  "OUTPUTLiteral";
+%typeof  pred_literal        =  "PREDLiteral";
+%typeof  atom_literal        =  "ATOMLiteral";
 %typeof  neg_literal         =  "NEGLiteral";
 %typeof  eq_literal          =  "EQLiteral";
 %typeof  neq_literal         =  "NEQLiteral";
@@ -61,13 +64,17 @@ literal = inclusive_literal
         ;
         
 inclusive_literal = edb_literal
+                  | output_literal
 			      | atom
 			      ;
 			  
 exclusive_literal = neg_literal
                   | bin_excl_term_lit
+                  | pred_literal
+                  | atom_literal
              	  ;
-             	  
+          
+neg_literal = NOT LPARA inclusive_literal.lit RPARA {: return new NEGLiteral(new PredicateSymbol("NOT"), lit); :};   	  
 bin_excl_term_lit = eq_literal
                   | neq_literal
                   | lt_literal
@@ -76,18 +83,18 @@ bin_excl_term_lit = eq_literal
                   | gte_literal
                   ;
 
-eq_literal  = EQ  LPARA term.left COMMA term.right RPARA {: return new EQLiteral(new PredicateSymbol("EQ"), left, right); :};
+eq_literal  = EQ  LPARA term.left COMMA term.right RPARA {: return new EQLiteral(new PredicateSymbol("EQ"),   left, right); :};
 neq_literal = NEQ LPARA term.left COMMA term.right RPARA {: return new NEQLiteral(new PredicateSymbol("NEQ"), left, right); :};
-lt_literal  = LT  LPARA term.left COMMA term.right RPARA {: return new LTLiteral(new PredicateSymbol("LT"), left, right); :};
+lt_literal  = LT  LPARA term.left COMMA term.right RPARA {: return new LTLiteral(new PredicateSymbol("LT"),   left, right); :};
 lte_literal = LTE LPARA term.left COMMA term.right RPARA {: return new LTELiteral(new PredicateSymbol("LTE"), left, right); :};
-gt_literal  = GT  LPARA term.left COMMA term.right RPARA {: return new GTLiteral(new PredicateSymbol("GT"), left, right); :};
+gt_literal  = GT  LPARA term.left COMMA term.right RPARA {: return new GTLiteral(new PredicateSymbol("GT"),   left, right); :};
 gte_literal = GTE LPARA term.left COMMA term.right RPARA {: return new GTELiteral(new PredicateSymbol("GTE"), left, right); :};
 
 atom = pred_sym.pred LPARA term_list.terms RPARA {: return new Atom(pred, terms); :};
-
-edb_literal = EDB LPARA pred_ref.pred COMMA term.filelocs RPARA {: return new EDBLiteral(new PredicateSymbol("EDB"), pred, filelocs); :};
-
-neg_literal = NOT LPARA inclusive_literal.lit RPARA {: return new NEGLiteral(new PredicateSymbol("NOT"), lit); :};
+edb_literal    = EDB    LPARA pred_ref.pred COMMA term.filelocs RPARA {: return new EDBLiteral(new PredicateSymbol("EDB"), pred, filelocs);  :};
+output_literal = OUTPUT LPARA term.t RPARA                            {: return new OUTPUTLiteral(new PredicateSymbol("OUTPUT"), t);         :};
+pred_literal   = PRED   LPARA term.t RPARA                            {: return new PREDLiteral(new PredicateSymbol("PRED"), t);              :};
+atom_literal   = ATOM   LPARA term.t RPARA                            {: return new ATOMLiteral(new PredicateSymbol("PRED"), t);              :};
 
 lit_list = literal.lit {: return new List().add(lit); :}
          | lit_list.list COMMA literal.c {: return list.add(c); :}

@@ -1,0 +1,7 @@
+VARS("A").
+VARS("B").
+VARS("C").
+
+A(x, y) :- VARS(x), VARS(y).
+C(x, y) :- B(x, y), EQ(x, y).
+B(x, y) :- A(x, y), C(x, y), EQ(x, y).

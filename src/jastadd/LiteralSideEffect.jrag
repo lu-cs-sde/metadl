@@ -46,6 +46,31 @@ aspect EDBLiteralSideEffect {
 	}
 }
 
+aspect InitialSideEffect {
+	public void Literal.initialSideEffect(Program program, Description descr) {
+		if(isInclusive()) {
+			FormalPredicate fp = predicate().formalpredicate();
+			fp.relation = new Relation(fp.realArity());
+		}
+	}
+	public void PREDLiteral.initialSideEffect(Program program, Description descr) {
+		System.out.println("ADD PRED LIT");
+		predicate().formalpredicate().relation = new Relation(arity());
+		Relation r = predicate().formalpredicate().relation;
+		for(PredicateRef pr : getPredicateRefs()) {
+			r.addTuple(new PseudoTuple(pr));
+		}
+	}
+	
+	public void ATOMLiteral.initialSideEffect(Program program, Description descr) {
+		predicate().formalpredicate().relation = new Relation(arity());
+		Relation r = predicate().formalpredicate().relation;
+		for(PredicateRef pr : getPredicateRefs()) {
+			r.addTuple(new PseudoTuple(pr));
+		}
+	}
+}
+
 aspect LiteralSelection {
 	public Relation Literal.select(Relation body_rel) {
 		return predicate().formalpredicate().relation.select(Binding.createBinding(toTuple()));

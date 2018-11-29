@@ -158,12 +158,12 @@ aspect SoufflePrinting {
     public void ASTNode.soufflePrint(PrettyPrinter pr) {
         prettyPrint(pr);
     }
-
-    public void EDBLiteral.soufflePrint(PrettyPrinter pr) {
-    	// A Hack to remove the DOT that is inserted after each rule.
-    	pr.out.print("// EDB");
-    }
-
+// A Hack to remove the DOT that is inserted after each rule.
+    public void EDBLiteral.soufflePrint(PrettyPrinter pr)    { pr.out.print("// EDB");    }
+    public void OUTPUTLiteral.soufflePrint(PrettyPrinter pr) { pr.out.print("// OUTPUT"); }
+    public void PREDLiteral.soufflePrint(PrettyPrinter pr)   { pr.out.print("// PRED"); }
+    public void ATOMLiteral.soufflePrint(PrettyPrinter pr)   { pr.out.print("// ATOM"); }
+    
     public void NEGLiteral.soufflePrint(PrettyPrinter pr) {
     	pr.out.print("!");
         pr.prettyPrint(getInclusiveLiteral());
@@ -190,6 +190,8 @@ aspect SoufflePrinting {
     public String PredicateRef.souffleType()   { return "NO_TYPE"; }
     public String StringConstant.souffleType() { return "symbol"; }
     public String IntConstant.souffleType()    { return "number"; }
+    
+
     
     public void FormalPredicate.soufflePrint(PrettyPrinter pr) {
     	if(!literal().hasExtendedSemantics()) {

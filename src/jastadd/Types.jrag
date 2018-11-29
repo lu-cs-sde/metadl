@@ -1,0 +1,8 @@
+aspect Types {
+	public abstract class Type {}
+	public abstract class ConcreteType extends Type {}
+	public abstract class NewTypeType extends ConcreteType {}
+	public class SumType extends Type {
+		
+	}
+}

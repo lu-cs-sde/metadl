@@ -1,2 +1,3 @@
+OUTPUT(x) :- ATOM(x).
 EDB('EDB, "EDB.csv").
 A(x, z) :- A(x, y), A(y, z).

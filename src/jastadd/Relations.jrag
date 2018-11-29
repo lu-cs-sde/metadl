@@ -7,8 +7,11 @@ import lang.relation.PseudoTuple;
 
 aspect Arity {
     syn int Literal.arity();
-    eq NEGLiteral.arity()  = 1;
-    eq EDBLiteral.arity()  = 2;
+    eq NEGLiteral.arity()    = 1;
+    eq EDBLiteral.arity()    = 2;
+    eq OUTPUTLiteral.arity() = 1;
+    eq PREDLiteral.arity()   = 1;
+    eq ATOMLiteral.arity()   = 1;
     eq BinaryExclusiveTermLiteral.arity() = 2;
     eq Atom.arity() = getNumTerms();
     syn int PredicateSymbol.arity() = literal().arity();
@@ -39,15 +42,20 @@ aspect Arity {
     FormalPredicate contributes ("Different Arities for predicate symbol: " + predicateName())
         when !isUniqueArity() && arities().size() != 1
         to Program.semanticErrors();
+        
 }
 
 aspect Relation {
-	public Relation FormalPredicate.relation;
+	public static Relation FormalPredicate.nullRelation = new Relation(0);
+	public Relation FormalPredicate.relation = FormalPredicate.nullRelation;
 	
 	syn PseudoTuple InclusiveLiteral.toTuple();
-	eq Atom.toTuple()       = new PseudoTuple(this);
-	eq EDBLiteral.toTuple() = new PseudoTuple(this);
-	eq BinaryExclusiveTermLiteral.toTuple()  = new PseudoTuple(this);
+	eq Atom.toTuple()          = new PseudoTuple(getTermss());
+	eq EDBLiteral.toTuple()    = new PseudoTuple(getPredicateRef(), getFileLoc());
+	eq OUTPUTLiteral.toTuple() = new PseudoTuple(getTerm());
+	eq PREDLiteral.toTuple()   = new PseudoTuple(getTerm());
+	eq ATOMLiteral.toTuple()   = new PseudoTuple(getTerm());
+	eq BinaryExclusiveTermLiteral.toTuple()  = new PseudoTuple(getLeft(), getRight());
 	
 	syn PseudoTuple Literal.toTuple();
 	eq NEGLiteral.toTuple() = getInclusiveLiteral().toTuple();

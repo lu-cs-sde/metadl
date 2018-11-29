@@ -4,10 +4,8 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.TreeSet;
 
-import lang.ast.Atom;
-import lang.ast.BinaryExclusiveTermLiteral;
 import lang.ast.Constant;
-import lang.ast.EDBLiteral;
+import lang.ast.List;
 import lang.ast.Term;
 import lang.ast.Variable;
 
@@ -15,32 +13,20 @@ public class PseudoTuple implements Comparable<PseudoTuple> {
 	public final int size;
 	private Term[] tuple;
 	
-	public PseudoTuple(TreeSet<Variable> vars) {
-		this.size = vars.size();
+	public PseudoTuple(List<Term> terms) {
+		this.size = terms.getNumChild();
 		this.tuple = new Term[size];
-		vars.toArray(this.tuple);
-	}
-	
-	public PseudoTuple(Atom fact) {
-		this.size = fact.getNumTerms();
-		this.tuple = new Term[size];
-		for (int i = 0; i != size; ++i) {
-			tuple[i] = fact.getTerms(i);
+		for(int i = 0; i != size; ++i) {
+			tuple[i] = terms.getChild(i);
 		}
 	}
 	
-	public PseudoTuple(EDBLiteral edb) {
-		this.size = 2;
+	public PseudoTuple(Term ... terms) {
+		this.size = terms.length;
 		this.tuple = new Term[size];
-		tuple[0] = edb.getPredicateRef();
-		tuple[1] = edb.getFileLoc();
-	}
-	
-	public PseudoTuple(BinaryExclusiveTermLiteral bin) {
-		this.size = 2;
-		this.tuple = new Term[size];
-		tuple[0] = bin.getLeft();
-		tuple[1] = bin.getRight();
+		for (int i = 0; i != size; ++i) {
+			tuple[i] = terms[i];
+		}
 	}
 	
 	public PseudoTuple(PseudoTuple o) {

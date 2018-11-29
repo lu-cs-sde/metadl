@@ -1,3 +1,4 @@
+OUTPUT(x) :- ATOM(x).
 A("A", "B").
 A("B", "C").
 A(x, z) :- A(x, y), A(y, z).

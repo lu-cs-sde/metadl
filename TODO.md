@@ -6,14 +6,15 @@ Add General Semantic Checks
 
 Add Extension-Capabilities to Evaluation.
 * Types
-* Negation
-* Aggregation
-* Predicates without object creation
+    * Negation
+* Aggregation, Horizontal, Vertical, 
+    * Predicates without object creation
+* Assignment and arithmetic
 
 Pre-defined Predicates for Meta-Programming
-* Edb
+    * Edb
 * Output
 * Preds
+* Types
 
 Introduce ability to comment file.
-Fix Souffle Pretty Printing on Meta Branch.

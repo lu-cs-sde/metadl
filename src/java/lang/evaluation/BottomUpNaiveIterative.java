@@ -5,6 +5,7 @@ import java.util.HashSet;
 
 import lang.ast.Clause;
 import lang.ast.FormalPredicate;
+import lang.ast.GlobalNames;
 import lang.ast.InclusiveLiteral;
 import lang.ast.Literal;
 import lang.ast.Program;
@@ -20,13 +21,15 @@ public class BottomUpNaiveIterative extends InternalEvaluation {
 	public void evaluate(Program program, Description descr) {
 		Deque<Stratum> order = Stratification.stratificationForceCompute(program);
 		
+		System.out.println("FP: " + program.predicateSymbols());
 		for(FormalPredicate fp : program.getFormalPredicates()) {
-			fp.relation = new Relation(fp.realArity());
+			System.out.println("FP: " + fp);
+			fp.literal().initialSideEffect(program, descr);
 		}
-		
 		while (!order.isEmpty()) {
 			evaluateStratum(program, descr, order.pollFirst());
 		}
+		
 		dumpRelations(program, descr);
 	}
 	

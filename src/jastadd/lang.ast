@@ -20,15 +20,20 @@ abstract BinaryExclusiveTermLiteral:ExclusiveLiteral ::= Left:Term Right:Term;
 
 // abstract BinaryMonoidTermLiteral:ExclusiveLiteral ::= Left:Term Right:Term;
 
-Atom:InclusiveLiteral       ::= Terms:Term*;
-EDBLiteral:InclusiveLiteral ::= PredicateRef FileLoc:Term;
-NEGLiteral:ExclusiveLiteral ::= InclusiveLiteral;
+Atom:InclusiveLiteral          ::= Terms:Term*;
+EDBLiteral:InclusiveLiteral    ::= PredicateRef FileLoc:Term;
+OUTPUTLiteral:InclusiveLiteral ::= Term;
+PREDLiteral:ExclusiveLiteral   ::= Term /PredicateRef*/;
+ATOMLiteral:ExclusiveLiteral   ::= Term /PredicateRef*/;
+NEGLiteral:ExclusiveLiteral    ::= InclusiveLiteral;
+
 EQLiteral:BinaryExclusiveTermLiteral;
 NEQLiteral:BinaryExclusiveTermLiteral;
 LTLiteral:BinaryExclusiveTermLiteral;
 LTELiteral:BinaryExclusiveTermLiteral;
 GTLiteral:BinaryExclusiveTermLiteral;
 GTELiteral:BinaryExclusiveTermLiteral;
+
 /**
     Terms
 **/

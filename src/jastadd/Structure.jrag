@@ -109,6 +109,25 @@ aspect Literal {
     inh boolean Literal.isUse();
     eq Clause.getChild().isUse() = false;
     eq Rule.getBody().isUse()    = true;
+    
+    inh Program PREDLiteral.program();
+    syn List PREDLiteral.getPredicateRefList() {
+    	List list = new List();
+    	for(FormalPredicate fp : program().getFormalPredicates()) {
+    		list.add(new PredicateRef(fp.predicateName()));
+    	}
+    	return list;
+    }
+    
+    inh Program ATOMLiteral.program();
+    syn List ATOMLiteral.getPredicateRefList() {
+    	List list = new List();
+    	for(FormalPredicate fp : program().getFormalPredicates()) {
+    		if(fp.literal().isAtom())
+    			list.add(new PredicateRef(fp.predicateName()));
+    	}
+    	return list;
+    }
 }
 
 aspect Predicate {

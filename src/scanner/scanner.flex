@@ -51,7 +51,10 @@ String  = \"[^\"]*\"
 "GT"       {  return  sym(Terminals.GT);         }
 "GTE"      {  return  sym(Terminals.GTE);        }
 "EDB"      {  return  sym(Terminals.EDB);        }
+"OUTPUT"   {  return  sym(Terminals.OUTPUT);     }
 "NOT"      {  return  sym(Terminals.NOT);        }
+"PRED"     {  return  sym(Terminals.PRED);       }
+"ATOM"     {  return  sym(Terminals.ATOM);       }
 {Numeral}  {  return  sym(Terminals.NUMERAL);    }
 {VAR_ID}   {  return  sym(Terminals.VAR_ID);     }
 {PRED_ID}  {  return  sym(Terminals.PRED_ID);    }

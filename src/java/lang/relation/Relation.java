@@ -1,5 +1,6 @@
 package lang.relation;
 
+import java.util.Iterator;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -52,6 +53,11 @@ public class Relation {
 		relation.forEach(pt -> pt.collectTuple(sb));
 		sb.append("}");
 	}
+	
+	public void expand() {
+		tuples().forEach(t -> t.expand());
+		arity = arity + 1;
+	}
 
 	/**
 	 * Selects a set of tuples based on the binding disregarding the current names of the relation columns
@@ -61,7 +67,7 @@ public class Relation {
 		r.binding = selectBind;
 		for(PseudoTuple t : relation) {
 			if(selectBind.satisfiedBy(t)) {
-				r.relation.add(t);
+				r.relation.add(new PseudoTuple(t));
 			}
 		}
 		return r;

@@ -175,5 +175,20 @@ aspect LiteralSelection {
 		}
 		return body_rel;
 	}
+	
+	public Relation BINDLiteral.select(Relation body_rel) {
+		body_rel.expand();
+		TreeSet<Variable> variables = getRight().variables();
+		PseudoTuple name_tuple = new PseudoTuple(variables);
+		
+		for(PseudoTuple ps : body_rel.tuples()) {
+			PseudoTuple project = new PseudoTuple(ps, body_rel.binding, name_tuple);
+			Instantiation inst = new Instantiation(name_tuple, project);
+			Term right = getRight().eval(inst);
+			ps.set(ps.arity() - 1, right);
+		}
+		body_rel.binding.bind(getVariable(), body_rel.arity() - 1);
+		return body_rel;
+	}
 }
 

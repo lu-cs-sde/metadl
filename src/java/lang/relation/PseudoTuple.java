@@ -10,8 +10,9 @@ import lang.ast.Term;
 import lang.ast.Variable;
 
 public class PseudoTuple implements Comparable<PseudoTuple> {
-	public final int size;
+	private int size;
 	private Term[] tuple;
+	public static final Variable uninitializedVar = new Variable("UNINITIALZIED VARIABLE"); 
 	
 	public PseudoTuple(TreeSet<Variable> vars) {
 		this.size = vars.size();
@@ -55,16 +56,29 @@ public class PseudoTuple implements Comparable<PseudoTuple> {
 		this.size = size;
 		this.tuple = new Term[size];
 		for (int i = 0; i != size; ++i) {
-			tuple[i] = new Variable("UNINITIALZIED VARIABLE");
+			tuple[i] = uninitializedVar;
 		}
 	}
 	
-	public static PseudoTuple of(Constant ... consts) {
+	public static PseudoTuple of(Term ... consts) {
 		PseudoTuple pt = new PseudoTuple(consts.length);
 		for(int i = 0; i != consts.length; ++i) {
-			pt.instantiate(i, consts[i]);
+			pt.set(i, consts[i]);
 		}
 		return pt;
+	}
+	
+	public void expand() {
+		Term[] tmp = new Term[size];
+		System.arraycopy(tuple, 0, tmp, 0, size);
+		tuple = new Term[size + 1];
+		System.arraycopy(tmp, 0, tuple, 0, size);
+		tuple[size] = uninitializedVar;
+		size = size + 1;
+	}
+	
+	public int arity() {
+		return size;
 	}
 
 	public boolean instantiatedAt(int i) {

@@ -14,7 +14,7 @@ public class Instantiation extends TreeMap<Variable, Term> {
 	 */
 	public Instantiation(PseudoTuple from, PseudoTuple pt) {
 		super(Term.termComparator);
-		for(int i = 0; i != from.size; ++i) {
+		for(int i = 0; i != from.arity(); ++i) {
 			Term t1 = from.coord(i);
 			Term t2 = pt.coord(i);
 			if(t1.isVariable()) {
@@ -24,7 +24,7 @@ public class Instantiation extends TreeMap<Variable, Term> {
 	}
 	
 	public void instantiate(PseudoTuple pt) {
-		for(int i = 0; i != pt.size; ++i) {
+		for(int i = 0; i != pt.arity(); ++i) {
 			Term t = pt.coord(i);
 			if(t.isVariable()) {
 				Term c = get((Variable) t);

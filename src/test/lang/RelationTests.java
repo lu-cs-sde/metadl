@@ -387,6 +387,25 @@ public class RelationTests {
 		assertTrue(j.binding.toString().equals("[(x -> [0]), (y -> [1]), (z -> [2])]"));
 		assertTrue(j.tuples().toString().equals("[(A,A,C), (B,B,C2), (C,C,C), (D,D,C4), (E,E,C)]"));
 	}
+	
+	@Test
+	public void testExpand() {
+		Relation r1 = Relation.of(
+				PseudoTuple.of(new StringConstant("A"), new StringConstant("A"), new StringConstant("C")),
+				PseudoTuple.of(new StringConstant("B"), new StringConstant("B"), new StringConstant("C2")),
+				PseudoTuple.of(new StringConstant("C"), new StringConstant("C"), new StringConstant("C")),
+				PseudoTuple.of(new StringConstant("D"), new StringConstant("D"), new StringConstant("C4")),
+				PseudoTuple.of(new StringConstant("E"), new StringConstant("E"), new StringConstant("C")));
+		
+		Relation expected = Relation.of(
+				PseudoTuple.of(new StringConstant("A"), new StringConstant("A"), new StringConstant("C"), PseudoTuple.uninitializedVar),
+				PseudoTuple.of(new StringConstant("B"), new StringConstant("B"), new StringConstant("C2"), PseudoTuple.uninitializedVar),
+				PseudoTuple.of(new StringConstant("C"), new StringConstant("C"), new StringConstant("C"), PseudoTuple.uninitializedVar),
+				PseudoTuple.of(new StringConstant("D"), new StringConstant("D"), new StringConstant("C4"), PseudoTuple.uninitializedVar),
+				PseudoTuple.of(new StringConstant("E"), new StringConstant("E"), new StringConstant("C"), PseudoTuple.uninitializedVar));
+		r1.expand();
+		assertTrue(r1.equals(expected));
+	}
 /*
 	@Test
 	public void testImmediateConsequence() throws IOException, beaver.Parser.Exception {

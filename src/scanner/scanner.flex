@@ -59,6 +59,7 @@ String  = \"[^\"]*\"
 "NOT"      {  return  sym(Terminals.NOT);        }
 "PRED"     {  return  sym(Terminals.PRED);       }
 "ATOM"     {  return  sym(Terminals.ATOM);       }
+"BIND"     {  return  sym(Terminals.BIND);       }
 {Numeral}  {  return  sym(Terminals.NUMERAL);    }
 {VAR_ID}   {  return  sym(Terminals.VAR_ID);     }
 {PRED_ID}  {  return  sym(Terminals.PRED_ID);    }

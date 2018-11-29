@@ -16,7 +16,7 @@ public class Binding extends TreeSet<BindTerm> {
 	public boolean satisfiedBy(PseudoTuple t) {
 		for (BindTerm b : this) {
 			PseudoTuple proj = t.project(b.coords);
-			if (proj.size == 0)
+			if (proj.arity() == 0)
 				return false;
 			if (!proj.isUniInfo())
 				return false;
@@ -39,6 +39,10 @@ public class Binding extends TreeSet<BindTerm> {
 		}
 		return size;
 	}
+	
+	public void bind(Term t, int index) {
+		bind(this, t, index);
+	}
 
 	public static void bind(Binding binding, Term t, int index) {
 		BindTerm bind = new BindTerm(t);
@@ -54,7 +58,7 @@ public class Binding extends TreeSet<BindTerm> {
 
 	public static Binding createBinding(PseudoTuple t) {
 		Binding binding = new Binding();
-		for (int i = 0; i != t.size; ++i) {
+		for (int i = 0; i != t.arity(); ++i) {
 			bind(binding, t.coord(i), i);
 		}
 		return binding;

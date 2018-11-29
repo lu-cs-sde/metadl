@@ -9,7 +9,7 @@
 	}
 :};
 
-%terminals VAR_ID, PRED_ID, PRED_REF, LPARA, RPARA, NUMERAL, STRING, DOT, COMMA, IMPLIED_BY, EDB, OUTPUT, PRED, ATOM, NOT, EQ, NEQ, LT, LTE, GT, GTE, ADD, SUB, MUL, DIV;
+%terminals VAR_ID, PRED_ID, PRED_REF, LPARA, RPARA, NUMERAL, STRING, DOT, COMMA, IMPLIED_BY, EDB, OUTPUT, PRED, ATOM, NOT, BIND, EQ, NEQ, LT, LTE, GT, GTE, ADD, SUB, MUL, DIV;
 
 %typeof  program             =  "Program";
 %typeof  clause              =  "Clause";
@@ -17,6 +17,7 @@
 %typeof  inclusive_literal   =  "InclusiveLiteral";
 %typeof  exclusive_literal   =  "ExclusiveLiteral";
 %typeof  bin_excl_term_lit   =  "BinaryExclusiveTermLiteral";
+%typeof  bind_literal        =  "BINDLiteral";
 %typeof  edb_literal         =  "EDBLiteral";
 %typeof  output_literal      =  "OUTPUTLiteral";
 %typeof  pred_literal        =  "PREDLiteral";
@@ -52,8 +53,6 @@
 %typeof  mul_expr            =  "MulExpr";
 %typeof  div_expr            =  "DivExpr";
 
-
-
 %goal program;
 
 program =  clause_list.list {: return new Program(list); :};
@@ -68,27 +67,6 @@ clause = rule
 rule = incl_lit_list.heads IMPLIED_BY lit_list.body DOT {: return new Rule(heads, body); :};
 fact = incl_lit_list.heads DOT {: return new Fact(heads); :};
 
-expr = expr_term;
-     
-expr_term   = add_expr
-            | sub_expr
-            | expr_factor
-            ;
-
-expr_factor = mul_expr
-            | div_expr 
-            | expr_unit
-            ;
-            
-expr_unit = term
-	      | LPARA expr.e RPARA {: return e; :}
-	      ;
-            
-add_expr = expr_term.e1   ADD expr_factor.e2 {: return new AddExpr(e1, e2); :};
-sub_expr = expr_term.e1   SUB expr_factor.e2 {: return new SubExpr(e1, e2); :};
-mul_expr = expr_factor.e1 MUL expr_unit.e2   {: return new MulExpr(e1, e2); :};
-div_expr = expr_factor.e1 DIV expr_unit.e2   {: return new DivExpr(e1, e2); :};
-
 literal = inclusive_literal
         | exclusive_literal
         ;
@@ -99,12 +77,15 @@ inclusive_literal = edb_literal
 			      ;
 			  
 exclusive_literal = neg_literal
+                  | bind_literal
                   | bin_excl_term_lit
                   | pred_literal
                   | atom_literal
              	  ;
           
-neg_literal = NOT LPARA inclusive_literal.lit RPARA {: return new NEGLiteral(new PredicateSymbol("NOT"), lit); :};   	  
+neg_literal = NOT LPARA inclusive_literal.lit RPARA {: return new NEGLiteral(new PredicateSymbol("NOT"), lit); :};
+
+bind_literal = BIND LPARA variable.var COMMA expr.right RPARA {: return new BINDLiteral(new PredicateSymbol("BIND"), var, right); :};
 bin_excl_term_lit = eq_literal
                   | neq_literal
                   | lt_literal
@@ -139,8 +120,29 @@ term_list = term_list_no_empty
           ;
 
 term_list_no_empty = term.t {: return new List().add(t); :}
-                   | term_list_no_empty.list COMMA term.t {: return list.add(t); :} 
+                   | term_list_no_empty.list COMMA term.t {: return list.add(t); :}
                    ;
+                   
+expr = expr_term;
+     
+expr_term   = add_expr
+            | sub_expr
+            | expr_factor
+            ;
+
+expr_factor = mul_expr
+            | div_expr 
+            | expr_unit
+            ;
+            
+expr_unit = term
+	      | LPARA expr.e RPARA {: return e; :}
+	      ;
+            
+add_expr = expr_term.e1   ADD expr_factor.e2 {: return new AddExpr(e1, e2); :};
+sub_expr = expr_term.e1   SUB expr_factor.e2 {: return new SubExpr(e1, e2); :};
+mul_expr = expr_factor.e1 MUL expr_unit.e2   {: return new MulExpr(e1, e2); :};
+div_expr = expr_factor.e1 DIV expr_unit.e2   {: return new DivExpr(e1, e2); :};
                    
 term = variable
      | constant

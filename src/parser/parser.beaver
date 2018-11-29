@@ -9,7 +9,7 @@
 	}
 :};
 
-%terminals VAR_ID, PRED_ID, PRED_REF, LPARA, RPARA, NUMERAL, STRING, DOT, COMMA, IMPLIED_BY, EDB, OUTPUT, PRED, ATOM, NOT, EQ, NEQ, LT, LTE, GT, GTE, PLUS;
+%terminals VAR_ID, PRED_ID, PRED_REF, LPARA, RPARA, NUMERAL, STRING, DOT, COMMA, IMPLIED_BY, EDB, OUTPUT, PRED, ATOM, NOT, EQ, NEQ, LT, LTE, GT, GTE, ADD, SUB, MUL, DIV;
 
 %typeof  program             =  "Program";
 %typeof  clause              =  "Clause";
@@ -44,7 +44,15 @@
 %typeof  fact                =  "Fact";
 %typeof  rule                =  "Rule";
 %typeof  expr                =  "Expr";
+%typeof  expr_factor         =  "Expr";
+%typeof  expr_term           =  "Expr";
+%typeof  expr_unit           =  "Expr";
 %typeof  add_expr            =  "AddExpr";
+%typeof  sub_expr            =  "SubExpr";
+%typeof  mul_expr            =  "MulExpr";
+%typeof  div_expr            =  "DivExpr";
+
+
 
 %goal program;
 
@@ -60,11 +68,26 @@ clause = rule
 rule = incl_lit_list.heads IMPLIED_BY lit_list.body DOT {: return new Rule(heads, body); :};
 fact = incl_lit_list.heads DOT {: return new Fact(heads); :};
 
-expr = add_expr
-     | term
-     ;
+expr = expr_term;
      
-add_expr = expr.e1 PLUS expr.e2 {: return new AddExpr(e1, e2); :};
+expr_term   = add_expr
+            | sub_expr
+            | expr_factor
+            ;
+
+expr_factor = mul_expr
+            | div_expr 
+            | expr_unit
+            ;
+            
+expr_unit = term
+	      | LPARA expr.e RPARA {: return e; :}
+	      ;
+            
+add_expr = expr_term.e1   ADD expr_factor.e2 {: return new AddExpr(e1, e2); :};
+sub_expr = expr_term.e1   SUB expr_factor.e2 {: return new SubExpr(e1, e2); :};
+mul_expr = expr_factor.e1 MUL expr_unit.e2   {: return new MulExpr(e1, e2); :};
+div_expr = expr_factor.e1 DIV expr_unit.e2   {: return new DivExpr(e1, e2); :};
 
 literal = inclusive_literal
         | exclusive_literal
@@ -100,8 +123,8 @@ gte_literal = GTE LPARA expr.left COMMA expr.right RPARA {: return new GTELitera
 atom = pred_sym.pred LPARA term_list.terms RPARA {: return new Atom(pred, terms); :};
 edb_literal    = EDB    LPARA pred_ref.pred COMMA term.filelocs RPARA {: return new EDBLiteral(new PredicateSymbol("EDB"), pred, filelocs);  :};
 output_literal = OUTPUT LPARA term.t RPARA                            {: return new OUTPUTLiteral(new PredicateSymbol("OUTPUT"), t);         :};
-pred_literal   = PRED   LPARA term.t RPARA                            {: return new PREDLiteral(new PredicateSymbol("PRED"), t);              :};
-atom_literal   = ATOM   LPARA term.t RPARA                            {: return new ATOMLiteral(new PredicateSymbol("ATOM"), t);              :};
+pred_literal   = PRED   LPARA term.t RPARA                            {: return new PREDLiteral(new PredicateSymbol("PRED"), t);             :};
+atom_literal   = ATOM   LPARA term.t RPARA                            {: return new ATOMLiteral(new PredicateSymbol("ATOM"), t);             :};
 
 lit_list = literal.lit {: return new List().add(lit); :}
          | lit_list.list COMMA literal.c {: return list.add(c); :}
@@ -132,5 +155,5 @@ constant = int_constant
          | string_constant
          ;
 
-int_constant = NUMERAL.num {: return new IntConstant(num); :};
+int_constant    = NUMERAL.num {: return new IntConstant(num); :};
 string_constant = STRING.str {: return new StringConstant(str); :};

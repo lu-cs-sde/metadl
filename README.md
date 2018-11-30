@@ -21,7 +21,41 @@ For an introduction to Datalog see e.g. [Slides EDA045F](http://fileadmin.cs.lth
 [Gradle](https://gradle.org/) is used as a build tool. There is additionally a Makefile to summarize certain common build sequences. 
 * Package: ***make jar***
 * Test: ***make test***
-* Eval: ***make eval EVAL=<Input File>
+* Eval: ***make eval EVAL=\<Input File\>***
+
+Enable Debug Printouts by exporting: export DebugMode=true
+
+## Alpha1
+Current supported Meta-Literals:
+* EDB([PredicateRef], [InputFileName]) -- What predicates to input from external database
+* OUTPUT([PredicateRef]) -- What predicates to output
+* ATOM([PredicateRef])   -- All atoms
+* PREDS([PredicateRef])  -- All predicates
+
+Additional Supported features:
+* NEG -- Negation
+* EQ, NEQ, LT, GT, ... -- Filtering
+* BIND -- Bind a variable to the result of an expression
+* Expressions for filtering
+
+The evaluation method is a naive bottom-up iterative fix-point algorithm.
+
+Extended Example: 
+```
+OUTPUT(x) :- ATOM(x), NEQ('Vars, x).        # Output all atoms except Vars
+OUTPUT('OUTPUT).                            # Also output the predicates to output
+EDB('Vars, "Vars.csv").                     # Load Var relation from Vars.csv
+
+A(x, y) :- Vars(x), Vars(y). 
+Filter(x, y) :- A(x, y),
+                LT(x, y).                   # x less than y
+B(x, y) :- A(x, y), 
+           NOT(Filter(x, y)),               # Remove all tuples in filter
+           EQ(x * 2 + y, (7 + 2) * 2 - 11). # Keep tuples that satisfy the equality
+
+C(x, y, z) :- B(x, y),
+              BIND(z, 2 * x + y).           # z <- 2 * x + y
+```
 
 ## Project Report
 Included in report/ folder as a .tex-file.

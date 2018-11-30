@@ -1,3 +1,10 @@
-OUTPUT(x) :- ATOM(x).
+# Test
+OUTPUT(x) :- ATOM(x). 
+TypeAt('A, 0, Integer). 
+TypeAt('B, 0, String).
+TypeAt('A, 1, x) :- TypeAt('B, 0, x),
+                    ATOM(x). 
+TypeAt('B, 1, x) :- TypeAt('A, 0, x).
+
 A([1 2 3], "Hello", x, 'B).
 A([1 2 3], 23, x, 'B).

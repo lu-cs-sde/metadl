@@ -26,17 +26,20 @@ import lang.ast.LangParser.SyntaxError;
 %}
 
 // macros
-WhiteSpace = [ ] | \t | \f | \n | \r | \/\/[^\n<<EOF>>]*
+LineTerminator = \r|\n|\r\n
+InputCharacter = [^\r\n<<EOF>>]
+WhiteSpace     = {LineTerminator} | [ \t\f]
+Comment        = "#" {InputCharacter}* {LineTerminator}?
 VAR_ID = [a-z][a-zA-Z0-9]*
 PRED_ID = [A-Z][a-zA-Z0-9]*
 PRED_REF = '{PRED_ID}
 Numeral = [0-9]+
 String  = \"[^\"]*\"
-
 %%
 
 // discard whitespace information
 {WhiteSpace}  { }
+{Comment}     { }
 
 // token definitions
 "("        {  return  sym(Terminals.LPARA);          }

@@ -27,7 +27,7 @@ import lang.ast.LangParser.SyntaxError;
 
 // macros
 LineTerminator = \r|\n|\r\n
-InputCharacter = [^\r\n<<EOF>>]
+InputCharacter = [^\r\n]
 WhiteSpace     = {LineTerminator} | [ \t\f]
 Comment        = "#" {InputCharacter}* {LineTerminator}?
 VAR_ID = [a-z][a-zA-Z0-9]*

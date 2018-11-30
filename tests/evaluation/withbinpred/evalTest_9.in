@@ -5,3 +5,5 @@ Vars(1), Vars(2), Vars(3), Vars(4), Vars(5).
 A(x, y) :- Vars(x), Vars(y).
 B(x, y) :- A(x, y), EQ(x * 2 + y, (7 + 2) * 2 - 11).
 C(x, y, z) :- B(x, y), BIND(z, 2 * x + y).
+D([1 2 3]).
+SomeTypes(String, Integer, x).

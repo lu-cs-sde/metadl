@@ -35,8 +35,7 @@ public class RelationTests {
 		PseudoTuple ps = new PseudoTuple(4).set(0, new Variable("x1")).set(1, new Variable("x2"))
 				.instantiate(2, new StringConstant("C")).set(3, new Variable("x1"));
 		Binding b = Binding.createBinding(ps);
-		System.out.println(b);
-		assertTrue(b.toString().equals("[(x1 -> [0, 3]), (x2 -> [1]), (C -> [2])]"));
+		assertTrue(b.toString().equals("[(C -> [2]), (x1 -> [0, 3]), (x2 -> [1])]"));
 	}
 
 	@Test
@@ -147,8 +146,9 @@ public class RelationTests {
 				.instantiate(2, new StringConstant("C")).set(3, new Variable("y")).set(4, new Variable("w"));
 		Binding b2 = Binding.createBinding(ps2);
 		TreeSet<BindOverlap> un = Binding.intersect(b1, b2);
+		
 		assertTrue(un.toString()
-				.equals("[(x -> [0, 3]) ++ (x -> [1]), (y -> [1]) ++ (y -> [0, 3]), (C -> [2]) ++ (C -> [2])]"));
+				.equals("[(C -> [2]) ++ (C -> [2]), (x -> [0, 3]) ++ (x -> [1]), (y -> [1]) ++ (y -> [0, 3])]"));
 	}
 	
 	@Test
@@ -190,7 +190,7 @@ public class RelationTests {
 		Binding b2 = Binding.createBinding(ps2);
 		TreeSet<BindOverlap> un = Binding.intersect(b1, b2);
 		assertTrue(un.toString()
-				.equals("[(x -> [0, 3]) ++ (x -> [1]), (y -> [1]) ++ (y -> [0, 3]), (C -> [2]) ++ (C -> [2])]"));
+				.equals("[(C -> [2]) ++ (C -> [2]), (x -> [0, 3]) ++ (x -> [1]), (y -> [1]) ++ (y -> [0, 3])]"));
 
 		BindResult br = Binding.merge(un, b1, b2);
 		assertTrue(br.b_merged.toString().equals("[(w -> [3]), (x -> [0]), (y -> [1]), (z -> [2])]"));

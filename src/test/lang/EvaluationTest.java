@@ -59,6 +59,7 @@ public class EvaluationTest {
 	void evaluationTestsBottomUpNaiveCompareSouffle(String fileName) throws Exception {
 		String inputFile = "./tests/evaluation/" + fileName;
 		
+		SimpleLogger.logger().log("Input: " + inputFile, SimpleLogger.LogLevel.Level.DEBUG);
 		Description d1 = FileUtil.parseDescription(
 				"eval::souffle      -OUT ./tests/output/souffle " + inputFile);
 		Description d2 = FileUtil.parseDescription(

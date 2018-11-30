@@ -42,18 +42,15 @@ aspect Program {
     }
     
     public class FormalPredicateMap extends HashMap<String, FormalPredicate> {
-    	public void add(MapEntry me) {
-    		put(me.s, me.fp);
-    	}
+    	public void add(MapEntry<String, FormalPredicate> me) { put(me.k, me.v); }
     }
-    
-    public class MapEntry {
-    	public String s;
-    	public FormalPredicate fp;
+    public class MapEntry<Key, Value> {
+    	public Key k;
+    	public Value v;
     		
-    	public MapEntry(String s, FormalPredicate fp) {
-    		this.s = s;
-    		this.fp = fp;
+    	public MapEntry(Key k, Value v) {
+    		this.k = k;
+    		this.v = v;
     	}
     }
     
@@ -153,19 +150,16 @@ aspect Predicate {
 }
 
 aspect Term {
-    syn boolean Term.isString()     = typeCompValue() == 2;
-	syn boolean Term.isInteger()    = typeCompValue() == 3;
-	syn boolean Term.isPredicate()  = typeCompValue() == 1;
-	syn boolean Term.isVariable()   = typeCompValue() == 0;
-	syn boolean Term.isConstant()   = typeCompValue() == 2 || typeCompValue() == 3;
+	inh int Term.index();
+	eq Literal.getChild().index() = 0;
+	eq Atom.getTerms(int index).index() = index;
 	
-	syn int Term.typeCompValue()       = -1;
-	eq Variable.typeCompValue()        = 0;
-	eq PredicateRef.typeCompValue()    = 1;
-	eq StringConstant.typeCompValue()  = 2;
-	eq IntConstant.typeCompValue()     = 3;
+	inh Literal Term.occuresIn();
+	eq  Literal.getChild().occuresIn() = this;
 	
-	public static boolean Term.sameType(Term t1, Term t2) { return t1.typeCompValue() == t2.typeCompValue(); }
+	inh boolean Term.isNested();
+	eq Program.getChild().isNested() = false;
+	eq TermList.getChild().isNested() = true;
 }
 
 aspect FormalPredicate {
@@ -185,6 +179,13 @@ aspect FormalPredicate {
     
     syn String FormalPredicate.predicateName() = getPRED_ID();
     syn Literal FormalPredicate.literal() = predicates().iterator().next().literal();
+    syn HashSet<Literal> FormalPredicate.literals() {
+    	HashSet<Literal> literals = new HashSet<Literal>();
+    	for(PredicateSymbol ps : predicates()) {
+    		literals.add(ps.literal());
+    	}
+    	return literals;
+    }
     
     inh HashSet<PredicateSymbol> FormalPredicate.predicates();
     eq Program.getFormalPredicate(int index).predicates() {
@@ -216,4 +217,69 @@ aspect FormalPredicate {
     	}
     	return fp;
     }
+}
+
+aspect Types {
+	public static final Type Type.typeType    = new TypeType();
+	public static final Type Type.stringType  = new StringType();
+	public static final Type Type.integerType = new IntegerType();
+	public static final Type Type.predRefType = new PredRefType();
+	public static final Type Type.varType     = new VariableType();
+	public static final Type Type.litTypeType = new ListType(typeType);
+	
+	syn Type Term.type()      =  Type.typeType;
+	eq Type.type()            =  Type.typeType;
+    eq Variable.type()        =  Type.varType;
+    eq PredicateRef.type()    =  Type.predRefType;
+    eq StringConstant.type()  =  Type.stringType;
+    eq IntConstant.type()     =  Type.integerType;
+	eq TermList.type() {
+		if(hasTerms()) return new ListType(getTerms(0).type());
+		return new ListType(Type.varType);
+	}
+	
+	syn String Type.toString()     = getClass().getSimpleName();
+	syn String ListType.toString() = "ListType_" + getType().toString();
+	
+	syn boolean Term.isString()   = Type.typeComparator.compare(Type.stringType, type())  == 0;
+	syn boolean Term.isInteger()  = Type.typeComparator.compare(Type.integerType, type()) == 0;
+	syn boolean Term.isPredRef()  = Type.typeComparator.compare(Type.predRefType, type()) == 0;
+	syn boolean Term.isVariable() = Type.typeComparator.compare(Type.varType, type())     == 0;
+	syn boolean Term.isConstant() = isString() || isInteger() || isPredRef();
+	
+	public class CompareTypes implements Comparator<Type> {
+		@Override
+		public int compare(Type t1, Type t2) {
+			return t1.toString().compareTo(t2.toString());
+		}
+	}
+	public static final CompareTypes Type.typeComparator = new CompareTypes();
+	public static boolean Term.sameType(Term t1, Term t2) { return Type.typeComparator.compare(t1.type(), t2.type()) == 0; }
+	public class CoordinateTypeMap extends HashMap<Integer, HashSet<Type>> {
+    	public void add(MapEntry<Integer, Type> me) {
+    		HashSet<Type> types = get(me.k);
+    		if(types == null) {
+    			types = new HashSet<Type>();
+    			types.add(me.v);
+    			put(me.k, types);
+    		}else {
+    			types.add(me.v);
+    		}
+    	}
+    }
+    
+    coll CoordinateTypeMap FormalPredicate.coordTypeMap() [new CoordinateTypeMap()] with add;
+	Term contributes new MapEntry(index(), type())
+        when !isNested() && occuresIn().isAtom()
+        to FormalPredicate.coordTypeMap()
+        for occuresIn().predicate().formalpredicate();
+
+	/*
+	syn Type Type.refType()   = typeType();
+	eq StringType.refType()   = stringType();
+	eq IntegerType.refType()  = integerType();
+	eq PredRefType.refType()  = predRefType();
+	eq VariableType.refType() = varType();
+	eq ListType.refType)      = 
+	*/
 }

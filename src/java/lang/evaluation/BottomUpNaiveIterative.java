@@ -24,6 +24,7 @@ public class BottomUpNaiveIterative extends InternalEvaluation {
 		SimpleLogger.logger().log("FP: " + program.predicateSymbols(), SimpleLogger.LogLevel.Level.DEBUG);
 		for(FormalPredicate fp : program.getFormalPredicates()) {
 			SimpleLogger.logger().log("FP: " + fp, SimpleLogger.LogLevel.Level.DEBUG);
+			SimpleLogger.logger().log("FP: " + fp.coordTypeMap(), SimpleLogger.LogLevel.Level.DEBUG);
 			fp.literal().initialSideEffect(program, descr);
 		}
 		while (!order.isEmpty()) {

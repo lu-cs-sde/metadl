@@ -39,30 +39,36 @@ String  = \"[^\"]*\"
 {WhiteSpace}  { }
 
 // token definitions
-"("        {  return  sym(Terminals.LPARA);      }
-")"        {  return  sym(Terminals.RPARA);      }
-":-"       {  return  sym(Terminals.IMPLIED_BY); }
-"."        {  return  sym(Terminals.DOT);        }
-","        {  return  sym(Terminals.COMMA);      }
-"+"        {  return  sym(Terminals.ADD);        }
-"-"        {  return  sym(Terminals.SUB);        }
-"*"        {  return  sym(Terminals.MUL);        }
-"/"        {  return  sym(Terminals.DIV);        }
-"EQ"       {  return  sym(Terminals.EQ);         }
-"NEQ"      {  return  sym(Terminals.NEQ);        }
-"LT"       {  return  sym(Terminals.LT);         }
-"LTE"      {  return  sym(Terminals.LTE);        }
-"GT"       {  return  sym(Terminals.GT);         }
-"GTE"      {  return  sym(Terminals.GTE);        }
-"EDB"      {  return  sym(Terminals.EDB);        }
-"OUTPUT"   {  return  sym(Terminals.OUTPUT);     }
-"NOT"      {  return  sym(Terminals.NOT);        }
-"PRED"     {  return  sym(Terminals.PRED);       }
-"ATOM"     {  return  sym(Terminals.ATOM);       }
-"BIND"     {  return  sym(Terminals.BIND);       }
-{Numeral}  {  return  sym(Terminals.NUMERAL);    }
-{VAR_ID}   {  return  sym(Terminals.VAR_ID);     }
-{PRED_ID}  {  return  sym(Terminals.PRED_ID);    }
+"("        {  return  sym(Terminals.LPARA);          }
+")"        {  return  sym(Terminals.RPARA);          }
+"["        {  return  sym(Terminals.LBRACK);         }
+"]"        {  return  sym(Terminals.RBRACK);         }
+":-"       {  return  sym(Terminals.IMPLIED_BY);     }
+"."        {  return  sym(Terminals.DOT);            }
+","        {  return  sym(Terminals.COMMA);          }
+"+"        {  return  sym(Terminals.ADD);            }
+"-"        {  return  sym(Terminals.SUB);            }
+"*"        {  return  sym(Terminals.MUL);            }
+"/"        {  return  sym(Terminals.DIV);            }
+"EQ"       {  return  sym(Terminals.EQ);             }
+"NEQ"      {  return  sym(Terminals.NEQ);            }
+"LT"       {  return  sym(Terminals.LT);             }
+"LTE"      {  return  sym(Terminals.LTE);            }
+"GT"       {  return  sym(Terminals.GT);             }
+"GTE"      {  return  sym(Terminals.GTE);            }
+"EDB"      {  return  sym(Terminals.EDB);            }
+"OUTPUT"   {  return  sym(Terminals.OUTPUT);         }
+"NOT"      {  return  sym(Terminals.NOT);            }
+"PRED"     {  return  sym(Terminals.PRED);           }
+"ATOM"     {  return  sym(Terminals.ATOM);           }
+"BIND"     {  return  sym(Terminals.BIND);           }
+"Type"     {  return  sym(Terminals.TYPE_TYPE);      }
+"String"   {  return  sym(Terminals.STRING_TYPE);    }
+"Integer"  {  return  sym(Terminals.INTEGER_TYPE);   }
+"PredRef"  {  return  sym(Terminals.PRED_REF_TYPE);  }
+{Numeral}  {  return  sym(Terminals.NUMERAL);        }
+{VAR_ID}   {  return  sym(Terminals.VAR_ID);         }
+{PRED_ID}  {  return  sym(Terminals.PRED_ID);        }
 {PRED_REF} {  
                 String text = yytext();
                 String data = text.substring(1, text.length());

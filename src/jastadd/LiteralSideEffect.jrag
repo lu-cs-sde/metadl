@@ -81,6 +81,7 @@ aspect LiteralSelection {
 		return Relation.difference(body_rel, positive);
 	}
 	
+	
 	public abstract boolean BinaryExclusiveTermLiteral.binaryTest(Term t1, Term t2);
 	public boolean EQLiteral.binaryTest(Term t1, Term t2)  { return Term.termComparator.compare(t1, t2) == 0; }
 	public boolean NEQLiteral.binaryTest(Term t1, Term t2) { return Term.termComparator.compare(t1, t2) != 0; }

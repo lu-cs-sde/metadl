@@ -8,4 +8,7 @@ jar: FORCE
 test: FORCE
 	./gradlew test
 
+eval: FORCE
+	java -jar compiler.jar eval::bottomupnaive -OUT ./out -FACTS ./facts $(EVAL)
+
 FORCE: ;

@@ -21,6 +21,7 @@ For an introduction to Datalog see e.g. [Slides EDA045F](http://fileadmin.cs.lth
 [Gradle](https://gradle.org/) is used as a build tool. There is additionally a Makefile to summarize certain common build sequences. 
 * Package: ***make jar***
 * Test: ***make test***
+* Eval: ***make eval EVAL=<Input File>
 
 ## Project Report
 Included in report/ folder as a .tex-file.

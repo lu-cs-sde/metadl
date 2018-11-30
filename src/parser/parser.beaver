@@ -9,7 +9,10 @@
 	}
 :};
 
-%terminals VAR_ID, PRED_ID, PRED_REF, LPARA, RPARA, NUMERAL, STRING, DOT, COMMA, IMPLIED_BY, EDB, OUTPUT, PRED, ATOM, NOT, BIND, EQ, NEQ, LT, LTE, GT, GTE, ADD, SUB, MUL, DIV;
+%terminals VAR_ID, PRED_ID, PRED_REF, LPARA, RPARA, LBRACK, RBRACK, 
+           NUMERAL, STRING, DOT, COMMA, IMPLIED_BY, EDB, OUTPUT, PRED,
+           ATOM, NOT, BIND, EQ, NEQ, LT, LTE, GT, GTE, ADD, SUB, MUL, DIV,
+           TYPE_TYPE, STRING_TYPE, INTEGER_TYPE, PRED_REF_TYPE;
 
 %typeof  program             =  "Program";
 %typeof  clause              =  "Clause";
@@ -39,6 +42,8 @@
 %typeof  term                =  "Term";
 %typeof  term_list           =  "List";
 %typeof  term_list_no_empty  =  "List";
+%typeof  term_list_space     =  "List";
+%typeof  term_list_space_no_empty  =  "List";
 %typeof  lit_list            =  "List";
 %typeof  incl_lit_list       =  "List";
 %typeof  clause_list         =  "List";
@@ -52,6 +57,13 @@
 %typeof  sub_expr            =  "SubExpr";
 %typeof  mul_expr            =  "MulExpr";
 %typeof  div_expr            =  "DivExpr";
+%typeof  term_list_term      =  "TermList";
+%typeof  type_term           =  "Type";
+%typeof  concrete_type       =  "ConcreteType";
+%typeof  type_type           =  "Type";
+%typeof  string_type         =  "StringType";
+%typeof  integer_type        =  "IntegerType";
+%typeof  pred_ref_type       =  "PredRefType";
 
 %goal program;
 
@@ -147,6 +159,8 @@ div_expr = expr_factor.e1 DIV expr_unit.e2   {: return new DivExpr(e1, e2); :};
 term = variable
      | constant
      | pred_ref
+     | term_list_term
+     | type_term
      ;
      
 pred_sym = PRED_ID.id  {: return new PredicateSymbol(id); :};
@@ -159,3 +173,28 @@ constant = int_constant
 
 int_constant    = NUMERAL.num {: return new IntConstant(num); :};
 string_constant = STRING.str {: return new StringConstant(str); :};
+term_list_term  = LBRACK term_list_space.tl RBRACK {: return new TermList(tl); :};
+
+term_list_space = term_list_space_no_empty
+          | /* epsilon */ {: return new List(); :}
+          ;
+
+term_list_space_no_empty = term.t {: return new List().add(t); :}
+                   | term_list_space_no_empty.list term.t {: return list.add(t); :}
+                   ;
+
+type_term = concrete_type
+          ;
+	 
+type_type = TYPE_TYPE {: return new TypeType(); :};
+
+concrete_type = integer_type
+              | string_type
+              | pred_ref_type
+              | type_type
+              ;
+              
+integer_type  = INTEGER_TYPE  {: return new IntegerType(); :};
+string_type   = STRING_TYPE   {: return new StringType();  :};
+pred_ref_type = PRED_REF_TYPE {: return new PredRefType(); :};
+

@@ -69,6 +69,10 @@ aspect PretyPrinting {
     public void Term.prettyPrint(PrettyPrinter pr) {
         pr.out.print(toString());
     }
+    
+	public void TermList.prettyPrint(PrettyPrinter pr) {
+        printList(getTermss(), "[", "]", " ", pr);
+    }
 
     public void Atom.prettyPrint(PrettyPrinter pr) {
         pr.prettyPrint(getPredicate());
@@ -185,13 +189,10 @@ aspect SoufflePrinting {
         pr.prettyPrint(getRight());
     }
     
-    public abstract String Term.souffleType();
-    public String Variable.souffleType()       { return "NO_TYPE"; }
-    public String PredicateRef.souffleType()   { return "NO_TYPE"; }
+    public String Term.souffleType()           { return "NO_TYPE"; }
     public String StringConstant.souffleType() { return "symbol"; }
     public String IntConstant.souffleType()    { return "number"; }
     
-
     
     public void FormalPredicate.soufflePrint(PrettyPrinter pr) {
     	if(!literal().hasExtendedSemantics()) {

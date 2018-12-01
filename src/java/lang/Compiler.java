@@ -49,6 +49,7 @@ public class Compiler {
 				serrs.forEach(err -> SimpleLogger.logger().log(err));
 				System.exit(0);
 			}
+			program.typeCheck();
 			descr.evaluationMethod().evaluate(program, descr);
 		} catch (FileNotFoundException e) {
 			SimpleLogger.logger().log("File not found!", SimpleLogger.LogLevel.Level.ERROR);
@@ -56,6 +57,8 @@ public class Compiler {
 		} catch (IOException e) {
 			e.printStackTrace(System.err);
 		} catch (Exception e) {
+			e.printStackTrace();
+		} catch (java.lang.Exception e) {
 			e.printStackTrace();
 		}
 	}

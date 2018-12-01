@@ -1,0 +1,152 @@
+import lang.io.FileUtil;
+import lang.evaluation.BottomUpNaiveIterative;
+aspect TypeChecking {
+	coll MapToSetOf<String, EqualityConstraint.ConstraintEntry> Rule.typeConstraintMap() [new MapToSetOf(new TreeSetConstructor(null))] with add;
+	Variable contributes new MapEntry(toString(), new EqualityConstraint.ConstraintEntry(occuresIn().predicate().formalpredicate(), index()))
+		when !isNested()
+		to Rule.typeConstraintMap()
+		for occuresIn().clause();
+		
+	coll MapToSetOf<Integer, Type> FormalPredicate.coordTypeMap() [new MapToSetOf(new HashSetConstructor())] with add;
+	Term contributes new MapEntry(index(), type())
+        when !isNested() && isConstant()
+        to FormalPredicate.coordTypeMap()
+        for occuresIn().predicate().formalpredicate();
+        
+    syn boolean FormalPredicate.hasContradictingType() {
+   		for(Integer coord : coordTypeMap().keySet()) 
+   			if(coordTypeMap().get(coord).size() > 1) return true;
+   		return false;
+    }
+   
+   Program contributes nta getFormalPredicateList() to Program.semanticErrors();
+   FormalPredicate contributes "Contradictory type for predicate: " + predicateName()
+   		when hasContradictingType()
+   		to Program.semanticErrors();
+		
+	private HashSet<Set<EqualityConstraint.ConstraintEntry>> Program.partitionConstraintEntries() {
+		HashSet<Set<EqualityConstraint.ConstraintEntry>> partition = new HashSet<Set<EqualityConstraint.ConstraintEntry>>();
+		for(Clause c : getClauseList()) {
+			if(!c.isRule()) continue;
+			Rule r = (Rule) c;
+			for(Set<EqualityConstraint.ConstraintEntry> constraint : r.typeConstraintMap().values()) {
+				HashSet<Set<EqualityConstraint.ConstraintEntry>> mergeSets = new HashSet<Set<EqualityConstraint.ConstraintEntry>>();
+				for(EqualityConstraint.ConstraintEntry ce : constraint) {
+					for(Set<EqualityConstraint.ConstraintEntry> partset : partition) {
+						if(partset.contains(ce)) mergeSets.add(partset);
+					}
+				}
+				if(mergeSets.isEmpty()) {
+					partition.add(constraint);
+					continue;
+				}
+				Set<EqualityConstraint.ConstraintEntry> target = mergeSets.iterator().next();
+				target.addAll(constraint);
+				for(Set<EqualityConstraint.ConstraintEntry> mset : mergeSets) {
+					if(mset == target) continue;
+					target.addAll(mset);
+					partition.remove(mset);
+				}
+			}
+		}
+		
+		System.out.println("PARTITION: " + partition);
+		return partition;
+	}
+	
+	private TreeSet<EqualityConstraint> Program.equalityConstraints() {
+		TreeSet<EqualityConstraint> eqcs = new TreeSet<EqualityConstraint>();
+		for(Set<EqualityConstraint.ConstraintEntry> constraints : partitionConstraintEntries()) {
+			int size = constraints.size();
+			if(size	 <= 1) continue;
+			EqualityConstraint.ConstraintEntry[] varconstraints = new EqualityConstraint.ConstraintEntry[size];
+			constraints.toArray(varconstraints);
+			
+			for(int i = 0; i != size - 1; ++i)
+				eqcs.add(new EqualityConstraint(varconstraints[i], varconstraints[i + 1]));
+			eqcs.add(new EqualityConstraint(varconstraints[size - 1], varconstraints[0]));
+		}
+		return eqcs;
+	}
+	
+	public String Program.typeCheckProgram() {
+		StringBuilder sb = new StringBuilder();
+		for(FormalPredicate fp : getFormalPredicates()) {
+			MapToSetOf<Integer, Type> factMap = fp.coordTypeMap();
+			for(Integer k : factMap.keySet()) {
+				for(Type type : factMap.get(k)) 
+					sb.append("TypeOf('" + fp.predicateName() + ", " + k + ", " + type.typeName()).append(").\n");		
+			}
+		}
+		for(EqualityConstraint ec : equalityConstraints()) 
+			sb.append(ec.toString()).append("\n");
+			
+		System.out.println("PROGRAM: \n" + sb.toString());
+		return sb.toString();
+	}
+	    
+	
+	public void Program.typeCheck() throws IOException, Exception {
+		Program typeProgram = FileUtil.parse(typeCheckProgram());
+		BottomUpNaiveIterative eval = new BottomUpNaiveIterative();
+		eval.evaluate(typeProgram, null);
+		FormalPredicate typePredicate = typeProgram.formalPredicateMap().get("TypeOf");
+		System.out.println("TypeOf: " + typePredicate.relation.tuples());
+    }
+	
+    public class EqualityConstraint implements Comparable<EqualityConstraint> {
+    	public final ConstraintEntry ce1;
+    	public final ConstraintEntry ce2;
+    	
+    	public EqualityConstraint(ConstraintEntry ce1, ConstraintEntry ce2) {
+    		this.ce1 = ce1;
+    		this.ce2 = ce2;
+    	}
+    		
+    	@Override
+    	public boolean equals(Object o) {
+    		if(!(o instanceof EqualityConstraint)) return false;
+    		return compareTo((EqualityConstraint)o) == 0;
+    	}
+    		
+    	@Override
+    	public int compareTo(EqualityConstraint ce) {
+    		int cmp = ce1.compareTo(ce.ce1);
+    		if(cmp != 0) return cmp;
+    		return ce2.compareTo(ce.ce2);
+    	}
+    	
+    	@Override
+    	public String toString() {
+    		return ce1 + " :- " + ce2 + ".";
+    	}
+    	
+    	public static class ConstraintEntry implements Comparable<ConstraintEntry> {
+    		public final FormalPredicate fp;
+    		public final int index;
+    		
+    		public ConstraintEntry(FormalPredicate fp, int index) {
+    			this.fp = fp;
+    			this.index = index;
+    		}
+    		
+    		@Override
+    		public boolean equals(Object o) {
+    			if(!(o instanceof ConstraintEntry)) return false;
+    			return compareTo((ConstraintEntry)o) == 0;
+    		}
+    		
+    		@Override
+    		public int compareTo(ConstraintEntry ce) {
+    			int cmp = fp.predicateName().compareTo(ce.fp.predicateName());
+    			if(cmp != 0) return cmp;
+    			return index < ce.index ? -1 : (index == ce.index ? 0 : 1);
+    		}
+    		
+    		@Override
+    		public String toString() {
+    			return "TypeOf('" + fp.predicateName() + "," + index + ",x)";
+    		}
+    	}
+    }
+}

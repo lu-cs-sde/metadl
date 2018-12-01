@@ -1,0 +1,11 @@
+OUTPUT('A).
+A("A", 1).
+B(x, y) :- A(y, x), A(x, x).
+C(x, y) :- B(y, x).
+D(x, x) :- E(x, y, z).
+D(y, y) :- A(x,y), C(y,y).
+F(y, y) :- A(x,y), C(y,y).
+G(y, y) :- A(x,y), C(y,y).
+H(y, y) :- A(x,y), C(y,y).
+H1(y, y) :- A(x,y), C(y,y).
+H2(y, y) :- A(x,y), C(y,y).

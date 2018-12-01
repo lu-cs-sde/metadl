@@ -35,6 +35,12 @@ public class FileUtil {
 		return dir;
 	}
 	
+	public static Program parse(String program) throws IOException, beaver.Parser.Exception {
+		LangScanner scanner = new LangScanner(new StringReader(program));
+		LangParser parser = new LangParser();
+		return (Program)parser.parse(scanner);
+	}
+	
 	public static Program parse(File file) throws IOException, beaver.Parser.Exception {
 		LangScanner scanner = new LangScanner(new FileReader(file));
 		LangParser parser = new LangParser();

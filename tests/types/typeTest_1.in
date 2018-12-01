@@ -1,10 +1,22 @@
-# Test
 OUTPUT(x) :- ATOM(x). 
-TypeAt('A, 0, Integer). 
-TypeAt('B, 0, String).
-TypeAt('A, 1, x) :- TypeAt('B, 0, x),
-                    ATOM(x). 
-TypeAt('B, 1, x) :- TypeAt('A, 0, x).
 
-A([1 2 3], "Hello", x, 'B).
-A([1 2 3], 23, x, 'B).
+# A("A", 0).
+# B(x, y) :- A(x, y), C(x)
+# C(x) :- B(x, y).
+
+# TypeAt('A, 0, String). 
+TypeAt('A, 1, Integer).
+TypeAt('B, 0, x) :- TypeAt('A, 0, x).
+TypeAt('A, 0, x) :- TypeAt('B, 0, x).
+
+TypeAt('B, 1, x) :- TypeAt('A, 1, x).
+TypeAt('A, 1, x) :- TypeAt('B, 1, x).
+
+TypeAt('B, 0, x) :- TypeAt('C, 0, x).
+TypeAt('C, 0, x) :- TypeAt('B, 0, x).
+
+TypeAt('B, 0, x) :- TypeAt('C, 0, x).
+TypeAt('C, 0, x) :- TypeAt('B, 0, x).
+
+TypeAt('A, 0, x) :- TypeAt('C, 0, x).
+TypeAt('C, 0, x) :- TypeAt('A, 0, x).

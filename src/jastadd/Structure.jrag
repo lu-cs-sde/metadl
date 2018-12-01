@@ -1,8 +1,61 @@
 import java.util.HashSet;
 import java.util.HashMap;
 import java.util.TreeSet;
+import java.util.Set;
 import lang.io.SimpleLogger;
 import java.util.Collections;
+
+aspect Utility {
+    public class MapEntry<Key, Value> {
+    	public Key k;
+    	public Value v;
+    		
+    	public MapEntry(Key k, Value v) {
+    		this.k = k;
+    		this.v = v;
+    	}
+    }
+    
+    public abstract class SetConstructor<Value, S extends Set<Value>> {
+    	public abstract S construct();
+    }
+    
+    public class TreeSetConstructor<Value> extends SetConstructor<Value, TreeSet<Value>> {
+    	private Comparator<Value> comparator;
+    	public TreeSetConstructor(Comparator<Value> comparator) {
+    		this.comparator = comparator;
+    	}
+    	public TreeSet<Value> construct() {
+    		if(comparator == null)
+    			return new TreeSet<Value>();
+			else
+				return new TreeSet<Value>(comparator);
+    	}
+    }
+    
+     public class HashSetConstructor<Value> extends SetConstructor<Value, HashSet<Value>> {
+    	public HashSet<Value> construct() {
+			return new HashSet<Value>();
+    	}
+    }
+    
+    public class MapToSetOf<Key, Value> extends HashMap<Key, Set<Value>> {
+    	private SetConstructor<Value, Set<Value>> constructor;
+    	public MapToSetOf(SetConstructor<Value, Set<Value>> constructor) {
+    		this.constructor = constructor;
+    	}
+    	public void add(MapEntry<Key, Value> me) {
+    		Set<Value> values = get(me.k);
+    		if(values == null) {
+	    		values = constructor.construct();
+	    		values.add(me.v);
+	    		put(me.k, values);
+    		}else {
+    			values.add(me.v);
+    		}
+    	}
+    }
+}
 
 aspect Program {
 	inh Program Clause.program();
@@ -32,26 +85,16 @@ aspect Program {
         return uniquePredicateSymbols;
     }
     
-    syn HashMap<String, HashSet<PredicateInterface>> Program.predicateMap() {
-        HashMap<String, HashSet<PredicateInterface>> predicateMap = new HashMap<String, HashSet<PredicateInterface>>();
-        for(PredicateInterface pred : uniquePredicateSymbols())
-            predicateMap.put(pred.getPRED_ID(), new HashSet<PredicateInterface>());
+    
+    syn MapToSetOf<String, PredicateInterface> Program.predicateMap() {
+        MapToSetOf<String, PredicateInterface> predicateMap = new MapToSetOf(new HashSetConstructor());
         for(PredicateInterface pred : predicateSymbols()) 
-            predicateMap.get(pred.getPRED_ID()).add(pred);
+            predicateMap.add(new MapEntry(pred.getPRED_ID(), pred));
         return predicateMap;
     }
     
     public class FormalPredicateMap extends HashMap<String, FormalPredicate> {
     	public void add(MapEntry<String, FormalPredicate> me) { put(me.k, me.v); }
-    }
-    public class MapEntry<Key, Value> {
-    	public Key k;
-    	public Value v;
-    		
-    	public MapEntry(Key k, Value v) {
-    		this.k = k;
-    		this.v = v;
-    	}
     }
     
     coll FormalPredicateMap Program.formalPredicateMap() [new FormalPredicateMap()] with add;
@@ -238,48 +281,21 @@ aspect Types {
 		return new ListType(Type.varType);
 	}
 	
-	syn String Type.toString()     = getClass().getSimpleName();
-	syn String ListType.toString() = "ListType_" + getType().toString();
+	syn boolean Type.isListType()             = false;
+	syn boolean ListType.isListType()         = true;
+	syn boolean Type.isStringType()           = false;
+	syn boolean StringType.isStringType()     = true;
+	syn boolean Type.isIntegerType()          = false;
+	syn boolean IntegerType.isIntegerType()   = true;
+	syn boolean Type.isPredRefType()          = false;
+	syn boolean PredRefType.isPredRefType()   = true;
+	syn boolean Type.isVariableType()         = false;
+	syn boolean VariableType.isVariableType() = true;
 	
-	syn boolean Term.isString()   = Type.typeComparator.compare(Type.stringType, type())  == 0;
-	syn boolean Term.isInteger()  = Type.typeComparator.compare(Type.integerType, type()) == 0;
-	syn boolean Term.isPredRef()  = Type.typeComparator.compare(Type.predRefType, type()) == 0;
-	syn boolean Term.isVariable() = Type.typeComparator.compare(Type.varType, type())     == 0;
-	syn boolean Term.isConstant() = isString() || isInteger() || isPredRef();
-	
-	public class CompareTypes implements Comparator<Type> {
-		@Override
-		public int compare(Type t1, Type t2) {
-			return t1.toString().compareTo(t2.toString());
-		}
-	}
-	public static final CompareTypes Type.typeComparator = new CompareTypes();
-	public static boolean Term.sameType(Term t1, Term t2) { return Type.typeComparator.compare(t1.type(), t2.type()) == 0; }
-	public class CoordinateTypeMap extends HashMap<Integer, HashSet<Type>> {
-    	public void add(MapEntry<Integer, Type> me) {
-    		HashSet<Type> types = get(me.k);
-    		if(types == null) {
-    			types = new HashSet<Type>();
-    			types.add(me.v);
-    			put(me.k, types);
-    		}else {
-    			types.add(me.v);
-    		}
-    	}
-    }
-    
-    coll CoordinateTypeMap FormalPredicate.coordTypeMap() [new CoordinateTypeMap()] with add;
-	Term contributes new MapEntry(index(), type())
-        when !isNested() && occuresIn().isAtom()
-        to FormalPredicate.coordTypeMap()
-        for occuresIn().predicate().formalpredicate();
-
-	/*
-	syn Type Type.refType()   = typeType();
-	eq StringType.refType()   = stringType();
-	eq IntegerType.refType()  = integerType();
-	eq PredRefType.refType()  = predRefType();
-	eq VariableType.refType() = varType();
-	eq ListType.refType)      = 
-	*/
+	syn boolean Term.isString()   = type().isStringType();
+	syn boolean Term.isInteger()  = type().isIntegerType();
+	syn boolean Term.isPredRef()  = type().isPredRefType();
+	syn boolean Term.isVariable() = type().isVariableType();
+	syn boolean Term.isConstant() = !isVariable();
+	syn boolean Term.isList()     = type().isListType();
 }

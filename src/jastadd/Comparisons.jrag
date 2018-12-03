@@ -3,12 +3,10 @@ import java.util.Comparator;
 
 aspect Conversion {
 	syn int IntConstant.intValue() = Integer.parseInt(getNUMERAL());
-	public abstract String Constant.constantValue();
-	public String StringConstant.constantValue() { return getSTRING(); }
-	public String IntConstant.constantValue()    { return getNUMERAL(); }
+	public String StringConstant.toString() { return getSTRING(); }
+	public String IntConstant.toString()    { return getNUMERAL(); }
 	
 	public String Term.toString()            { return "NO_IMPL_TO_STRING"; }
-	public String Constant.toString()        { return constantValue(); }
 	public String Variable.toString()        { return getVAR_ID(); }
 	public String PredicateRef.toString()    { return "'" + getPRED_ID(); }
 	public String FormalPredicate.toString() { return "FP_" + predicateName(); }
@@ -71,7 +69,8 @@ aspect Comparison {
 		}
 	}
 	public static final ComparePredicates Program.predicateComparator = new ComparePredicates();
-		@Override
+	
+	@Override
 	public boolean PredicateSymbol.equals(Object o) {
 		if(!(o instanceof PredicateSymbol)) return false;
 		return Program.predicateComparator.compare(this, (PredicateSymbol)o) == 0;
@@ -80,7 +79,7 @@ aspect Comparison {
 	@Override
 	public boolean PredicateRef.equals(Object o) {
 		if(!(o instanceof PredicateRef)) return false;
-		return Program.predicateComparator.compare(this, (PredicateSymbol)o) == 0;
+		return Program.predicateComparator.compare(this, (PredicateRef)o) == 0;
 	}
 
 	public static final CompareTerm Term.termComparator = new CompareTerm();

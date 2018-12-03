@@ -137,28 +137,28 @@ aspect LiteralSelection {
 	syn Term Variable.eval(Instantiation inst) = inst.get(this);
 	syn Term BinExpr.eval(Instantiation inst)  = mappend(getLeft().eval(inst), getRight().eval(inst));
 	
-	public abstract TreeSet<Variable> Expr.variables();
-	syn TreeSet<Variable> BinaryExclusiveTermLiteral.variables() {
-		TreeSet<Variable> vars = new TreeSet<Variable>(Term.termComparator);
-		vars.addAll(getLeft().variables());
-		vars.addAll(getRight().variables());
-		return vars;
+	
+	public Relation EQLISTLiteral.select(Relation body_rel) {
+		TreeSet<Variable> variables = getTermList().variables();
+		TreeSet<Constant> constants = getTermList().constants();
+		PseudoTuple name_tuple = new PseudoTuple(variables);
+		
+		Iterator<PseudoTuple> itr = body_rel.tuples().iterator();
+		while(itr.hasNext()) {
+			 PseudoTuple ps = itr.next();
+			 PseudoTuple project = new PseudoTuple(ps, body_rel.binding, name_tuple);
+			 
+			 if(!project.isUniInfo() || constants.size() > 1) {
+			 	itr.remove();
+			} else if (constants.size() == 1 && project.arity() > 0 && 
+							Term.termComparator.compare(constants.iterator().next(), project.coord(0)) != 0) {
+				itr.remove();
+			}
+		}
+		return body_rel;
 	}
 	
-	syn TreeSet<Variable> BinExpr.variables() {
-		TreeSet<Variable> vars = new TreeSet<Variable>(Term.termComparator);
-		vars.addAll(getLeft().variables());
-		vars.addAll(getRight().variables());
-		return vars;
-	}
 	
-	syn TreeSet<Variable> Term.variables()     = new TreeSet<Variable>(Term.termComparator);
-	syn TreeSet<Variable> Variable.variables() {
-		TreeSet<Variable> vars = new TreeSet<Variable>(Term.termComparator);
-		vars.add(this);
-		return vars;
-	}
-
 	public Relation BinaryExclusiveTermLiteral.select(Relation body_rel) {
 		TreeSet<Variable> variables = variables();
 		PseudoTuple name_tuple = new PseudoTuple(variables);

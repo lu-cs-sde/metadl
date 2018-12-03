@@ -54,6 +54,7 @@ String  = \"[^\"]*\"
 "*"        {  return  sym(Terminals.MUL);            }
 "/"        {  return  sym(Terminals.DIV);            }
 "EQ"       {  return  sym(Terminals.EQ);             }
+"EQLIST"   {  return  sym(Terminals.EQLIST);         }
 "NEQ"      {  return  sym(Terminals.NEQ);            }
 "LT"       {  return  sym(Terminals.LT);             }
 "LTE"      {  return  sym(Terminals.LTE);            }
@@ -65,6 +66,7 @@ String  = \"[^\"]*\"
 "PRED"     {  return  sym(Terminals.PRED);           }
 "ATOM"     {  return  sym(Terminals.ATOM);           }
 "BIND"     {  return  sym(Terminals.BIND);           }
+"TYPEOF"   {  return  sym(Terminals.TYPEOF);         }
 "Type"     {  return  sym(Terminals.TYPE_TYPE);      }
 "String"   {  return  sym(Terminals.STRING_TYPE);    }
 "Integer"  {  return  sym(Terminals.INTEGER_TYPE);   }

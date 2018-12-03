@@ -8,4 +8,13 @@ aspect ErrorCollection {
         for(String err : semanticErrors()) sb.append(err).append("\n");
         return sb.toString();
     }
+    
+    
+    coll HashSet<String> Program.typeCheckErrors() [new HashSet<String>()] with add;
+    syn boolean Program.hasTypeErrors() = !typeCheckErrors().isEmpty();
+    syn String Program.typeErrorReport() {
+        StringBuilder sb = new StringBuilder();
+        for(String err : typeCheckErrors()) sb.append(err).append("\n");
+        return sb.toString();
+    }
 }

@@ -1,0 +1,9 @@
+OUTPUT(x) :- ATOM(x).
+# TypeOf('C, [Integer]).
+# TypeOf('B, [Integer, String]).
+# A(x, y) :- B(x, y), C(x), EQ(x, 1).
+C(Integer).
+B(Integer, String).
+A(x, y) :- B(x, y), C(x), EQLIST([x Integer]).
+B(x, y) :- A(x, y), C(x), EQLIST([x Integer]).
+C(x)    :- A(x, y), B(x, y), EQLIST([x Integer]).

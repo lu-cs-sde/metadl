@@ -11,8 +11,8 @@
 
 %terminals VAR_ID, PRED_ID, PRED_REF, LPARA, RPARA, LBRACK, RBRACK, 
            NUMERAL, STRING, DOT, COMMA, IMPLIED_BY, EDB, OUTPUT, PRED,
-           ATOM, NOT, BIND, EQ, NEQ, LT, LTE, GT, GTE, ADD, SUB, MUL, DIV,
-           TYPE_TYPE, STRING_TYPE, INTEGER_TYPE, PRED_REF_TYPE;
+           ATOM, NOT, BIND,  EQ, EQLIST, NEQ, LT, LTE, GT, GTE, ADD, SUB, MUL, DIV,
+           TYPEOF, TYPE_TYPE, STRING_TYPE, INTEGER_TYPE, PRED_REF_TYPE;
 
 %typeof  program             =  "Program";
 %typeof  clause              =  "Clause";
@@ -21,12 +21,14 @@
 %typeof  exclusive_literal   =  "ExclusiveLiteral";
 %typeof  bin_excl_term_lit   =  "BinaryExclusiveTermLiteral";
 %typeof  bind_literal        =  "BINDLiteral";
+%typeof  typeof_literal      =  "TYPEOFLiteral";
 %typeof  edb_literal         =  "EDBLiteral";
 %typeof  output_literal      =  "OUTPUTLiteral";
 %typeof  pred_literal        =  "PREDLiteral";
 %typeof  atom_literal        =  "ATOMLiteral";
 %typeof  neg_literal         =  "NEGLiteral";
 %typeof  eq_literal          =  "EQLiteral";
+%typeof  eq_list_literal     =  "EQLISTLiteral";
 %typeof  neq_literal         =  "NEQLiteral";
 %typeof  lt_literal          =  "LTLiteral";
 %typeof  lte_literal         =  "LTELiteral";
@@ -86,11 +88,13 @@ literal = inclusive_literal
 inclusive_literal = edb_literal
                   | output_literal
 			      | atom
+			      | typeof_literal
 			      ;
 			  
 exclusive_literal = neg_literal
                   | bind_literal
                   | bin_excl_term_lit
+                  | eq_list_literal
                   | pred_literal
                   | atom_literal
              	  ;
@@ -113,11 +117,14 @@ lte_literal = LTE LPARA expr.left COMMA expr.right RPARA {: return new LTELitera
 gt_literal  = GT  LPARA expr.left COMMA expr.right RPARA {: return new GTLiteral(new PredicateSymbol("GT"),   left, right); :};
 gte_literal = GTE LPARA expr.left COMMA expr.right RPARA {: return new GTELiteral(new PredicateSymbol("GTE"), left, right); :};
 
+eq_list_literal = EQLIST LPARA term_list_term.terms RPARA {: return new EQLISTLiteral(new PredicateSymbol("EQLIST"),   terms); :};
+
 atom = pred_sym.pred LPARA term_list.terms RPARA {: return new Atom(pred, terms); :};
-edb_literal    = EDB    LPARA pred_ref.pred COMMA term.filelocs RPARA {: return new EDBLiteral(new PredicateSymbol("EDB"), pred, filelocs);  :};
-output_literal = OUTPUT LPARA term.t RPARA                            {: return new OUTPUTLiteral(new PredicateSymbol("OUTPUT"), t);         :};
-pred_literal   = PRED   LPARA term.t RPARA                            {: return new PREDLiteral(new PredicateSymbol("PRED"), t);             :};
-atom_literal   = ATOM   LPARA term.t RPARA                            {: return new ATOMLiteral(new PredicateSymbol("ATOM"), t);             :};
+edb_literal    = EDB    LPARA pred_ref.pred COMMA term.filelocs RPARA        {: return new EDBLiteral(new PredicateSymbol("EDB"), pred, filelocs);    :};
+output_literal = OUTPUT LPARA term.t RPARA                                   {: return new OUTPUTLiteral(new PredicateSymbol("OUTPUT"), t);           :};
+pred_literal   = PRED   LPARA term.t RPARA                                   {: return new PREDLiteral(new PredicateSymbol("PRED"), t);               :};
+atom_literal   = ATOM   LPARA term.t RPARA                                   {: return new ATOMLiteral(new PredicateSymbol("ATOM"), t);               :};
+typeof_literal = TYPEOF LPARA pred_ref.pred COMMA term_list_term.types RPARA {: return new TYPEOFLiteral(new PredicateSymbol("TYPEOF"), pred, types); :};
 
 lit_list = literal.lit {: return new List().add(lit); :}
          | lit_list.list COMMA literal.c {: return list.add(c); :}

@@ -1,0 +1,16 @@
+OUTPUT(x) :- ATOM(x).
+T('A, 0, Integer).
+T('A, 0, String).
+T('A, 0, t) :- T('B, 0, t).
+T('B, 0, t) :- T('A, 0, t).
+T('A, 1, t) :- T('B, 1, t).
+T('B, 1, t) :- T('A, 1, t).
+
+Sol(a0, a1, b0, b1) :-
+    T('A, 0, a0),
+    T('A, 1, a1),
+    T('B, 0, b0),
+    T('B, 1, b1),
+    EQ(a0, Integer),
+    EQ(b0, Integer),
+    EQ(a0, b1).

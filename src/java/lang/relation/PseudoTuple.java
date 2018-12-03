@@ -77,6 +77,13 @@ public class PseudoTuple implements Comparable<PseudoTuple> {
 		size = size + 1;
 	}
 	
+	public PseudoTuple toTypeTuple() {
+		PseudoTuple tt = new PseudoTuple(size);
+		for(int i = 0; i != size; ++i) 
+			tt.set(i, tuple[i].type());
+		return tt;
+	}
+	
 	public int arity() {
 		return size;
 	}

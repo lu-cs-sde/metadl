@@ -13,7 +13,9 @@ aspect Arity {
     eq PREDLiteral.arity()   = 1;
     eq ATOMLiteral.arity()   = 1;
     eq BINDLiteral.arity()   = 2;
+    eq EQLISTLiteral.arity() = 1;
     eq BinaryExclusiveTermLiteral.arity() = 2;
+    eq TYPEOFLiteral.arity() = 2;
     eq Atom.arity() = getNumTerms();
     syn int PredicateSymbol.arity() = literal().arity();
     
@@ -56,8 +58,17 @@ aspect Relation {
 	eq OUTPUTLiteral.toTuple() = new PseudoTuple(getTerm());
 	eq PREDLiteral.toTuple()   = new PseudoTuple(getTerm());
 	eq ATOMLiteral.toTuple()   = new PseudoTuple(getTerm());
+	eq EQLISTLiteral.toTuple() = new PseudoTuple(getTermList().getTermss());
 	eq BinaryExclusiveTermLiteral.toTuple()  = new PseudoTuple(0);
 	eq BINDLiteral.toTuple()  = new PseudoTuple(0);
+	eq TYPEOFLiteral.toTuple() {
+		PseudoTuple ps = new PseudoTuple(1 + getTermList().getTermss().getNumChild());
+		ps.set(0, getPredicateRef());
+		for(int i = 1; i != getTermList().getTermss().getNumChild(); ++i) {
+			ps.set(i, getTermList().getTerms(i));
+		}
+		return ps;
+	}
 	
 	syn PseudoTuple Literal.toTuple();
 	eq NEGLiteral.toTuple() = getInclusiveLiteral().toTuple();

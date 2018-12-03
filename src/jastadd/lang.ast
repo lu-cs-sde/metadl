@@ -23,11 +23,12 @@ EDBLiteral:InclusiveLiteral    ::= PredicateRef FileLoc:Term;
 OUTPUTLiteral:InclusiveLiteral ::= Term;
 PREDLiteral:InclusiveLiteral   ::= Term /PredicateRef*/;
 ATOMLiteral:InclusiveLiteral   ::= Term /PredicateRef*/;
+TYPEOFLiteral:InclusiveLiteral ::= PredicateRef TermList;
 NEGLiteral:ExclusiveLiteral    ::= InclusiveLiteral;
 
 BINDLiteral:ExclusiveLiteral ::= Variable Right:Expr;
 
-// TYPEDECLLiteral:InclusiveLiteral ::= PredicateRef TermList;
+
 
 EQLiteral:BinaryExclusiveTermLiteral;
 NEQLiteral:BinaryExclusiveTermLiteral;
@@ -35,6 +36,7 @@ LTLiteral:BinaryExclusiveTermLiteral;
 LTELiteral:BinaryExclusiveTermLiteral;
 GTLiteral:BinaryExclusiveTermLiteral;
 GTELiteral:BinaryExclusiveTermLiteral;
+EQLISTLiteral:ExclusiveLiteral ::= TermList;
 
 /**
 	Expressions
@@ -52,7 +54,7 @@ DivExpr:BinExpr;
 /**
 	Types
 **/
-abstract Type:Term;
+abstract Type:Constant;
 abstract ConcreteType:Type;
 
 StringType:ConcreteType;
@@ -62,6 +64,7 @@ PredRefType:ConcreteType;
 TypeType:ConcreteType;
 VariableType:ConcreteType;
 ListType:Type  ::= Type;
+UnknownType:Type;
 
 /**
     Terms
@@ -70,10 +73,10 @@ abstract Term:Expr;
 abstract Constant:Term;
 
 Variable:Term           ::= <VAR_ID>;
-PredicateRef:Term       ::= <PRED_ID>;
+PredicateRef:Constant   ::= <PRED_ID>;
 StringConstant:Constant ::= <STRING>;
 IntConstant:Constant    ::= <NUMERAL>;
-TermList:Term           ::= Terms:Term*;
+TermList:Constant       ::= Terms:Term*;
 
 /**
     PredicateSymbols

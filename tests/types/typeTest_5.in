@@ -5,7 +5,8 @@ TYPEOF('B, [String Integer]).
 A(x, y) :- B(y, x), C(x, y).
 E(x, y, 'B) :- B(y, x), C(x, y).
 E(x, y, z) :- C(x, f1), 
-              C(y, f2),
-              BIND(z, x + y). 
+              C(f2, y),
+              BIND(z, 'A). 
 
 F(x) :- BIND(x, 0).
+# F(x) :- ATOM(x).

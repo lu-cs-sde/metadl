@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.util.HashSet;
 
 import beaver.Parser.Exception;
+import lang.ast.FormalPredicate;
 import lang.ast.Program;
 import lang.ast.config.Description;
 import lang.io.FileUtil;
@@ -52,7 +53,17 @@ public class Compiler {
 			SimpleLogger.logger().log("PASS1TMAP: " + program.pass1TypeMap(), SimpleLogger.LogLevel.Level.DEBUG);
 			
 			program.typeCheck();
+			HashSet<String> terrs = program.typeCheckErrors();
+			if (!terrs.isEmpty()) {
+				SimpleLogger.logger().log("Compilation failed with the following error messages: ", SimpleLogger.LogLevel.Level.ERROR);
+				terrs.forEach(err -> SimpleLogger.logger().log(err));
+				System.exit(0);
+			}
 			descr.evaluationMethod().evaluate(program, descr);
+			
+			for(FormalPredicate fp : program.getFormalPredicates()) {
+				System.out.println("TYPEOF " + fp.predicateName() + ": " + fp.derivedTypes());
+			}
 			
 		} catch (FileNotFoundException e) {
 			SimpleLogger.logger().log("File not found!", SimpleLogger.LogLevel.Level.ERROR);

@@ -65,7 +65,7 @@ public class Stratification {
 				iso.put(w, scc);
 			} while (w != fp);
 
-			SimpleLogger.logger().log("Found SCC: " + scc, SimpleLogger.LogLevel.Level.DEBUG);
+			//SimpleLogger.logger().log("Found SCC: " + scc, SimpleLogger.LogLevel.Level.DEBUG);
 			checkStratum(scc);
 			strat.add(scc);
 		}

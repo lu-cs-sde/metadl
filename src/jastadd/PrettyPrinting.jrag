@@ -255,9 +255,9 @@ aspect TypePrinting {
 	 			pr.out.print(", ");
 	 		}
 	 	}
-	 	printCollection(nobind, "", ".\n", ", ", pr);
-	 	printList(getHeadss(), "", " :- ", ", ", pr);
-	 	printList(getBodys(), "", ".", ", ", pr);
+	 	printCollection(nobind, "", ".\n", ", ",  pr);
+	 	printList(getHeadss(),  "", " :- ", ", ", pr);
+	 	printList(getBodys(),   "", ".", ", ",    pr);
 	 }
 	 
 	public void Program.typePrint(PrettyPrinter pr) {

@@ -110,26 +110,14 @@ aspect LiteralSelection {
     }
 
     syn Term SubExpr.mappend(Term t1, Term t2) {
-        if(!Term.sameType(t1, t2) || !t1.isInteger()) {
-            SimpleLogger.logger().log("Disallowed terms in SUB: " + t1 + ", " + t2, SimpleLogger.LogLevel.Level.ERROR);
-            System.exit(0);
-        }
         return new IntConstant("" + (((IntConstant) t1).intValue() - ((IntConstant) t2).intValue()));
     }
 
     syn Term MulExpr.mappend(Term t1, Term t2) {
-        if(!Term.sameType(t1, t2) || !t1.isInteger()) {
-            SimpleLogger.logger().log("Disallowed terms in MUL: " + t1 + ", " + t2, SimpleLogger.LogLevel.Level.ERROR);
-            System.exit(0);
-        }
         return new IntConstant("" + (((IntConstant) t1).intValue() * ((IntConstant) t2).intValue()));
     }
 
     syn Term DivExpr.mappend(Term t1, Term t2) {
-        if(!Term.sameType(t1, t2) || !t1.isInteger()) {
-            SimpleLogger.logger().log("Disallowed terms in DIV: " + t1 + ", " + t2, SimpleLogger.LogLevel.Level.ERROR);
-            System.exit(0);
-        }
         return new IntConstant("" + (((IntConstant) t1).intValue() / ((IntConstant) t2).intValue()));
     }
 

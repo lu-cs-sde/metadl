@@ -6,7 +6,7 @@ aspect TypeChecking {
 	 public HashMap<Rule, Instantiation> Program.instantMap = new HashMap<Rule, Instantiation>();
 	 public void Program.typeCheck() throws IOException, beaver.Parser.Exception {
 	 	String typeProgSource = typePrint();
-	 	SimpleLogger.logger().log("TypeProg:\n" + typeProgSource, SimpleLogger.LogLevel.Level.DEBUG);
+	 	//SimpleLogger.logger().log("TypeProg:\n" + typeProgSource, SimpleLogger.LogLevel.Level.DEBUG);
 	 	Program typeProg = FileUtil.parse(typeProgSource);
 	 	BottomUpNaiveIterative eval = new BottomUpNaiveIterative();
 	 	eval.evaluate(typeProg, null);
@@ -36,36 +36,69 @@ aspect TypeChecking {
 	 		if(fp.predicateName().startsWith(GlobalNames.TYPE_RULE_NAME)) {
 	 			Rule r = (Rule)fp.literal().clause();
 	 			int index = Integer.parseInt(fp.predicateName().substring(GlobalNames.TYPE_RULE_NAME.length()));
-	 			System.out.println(fp.predicateName() + " -> " + index + " -> " + getClause(index));
-	 			System.out.println(r.variables());
-	 			System.out.println(fp.relation.tuples().iterator().next());
+	 			//System.out.println(fp.predicateName() + " -> " + index + " -> " + getClause(index));
+	 			//System.out.println(r.variables());
+	 			//System.out.println(fp.relation.tuples().iterator().next());
 	 			
 	 			PseudoTuple var_tuple = new PseudoTuple(r.variables());
 	 			PseudoTuple type_tuple = fp.relation.tuples().iterator().next();
 	 			Instantiation inst = new Instantiation(var_tuple, type_tuple);
-	 			System.out.println(inst);
+	 			//System.out.println(inst);
 	 			
 	 			instantMap.put((Rule)getClause(index), inst);
 	 		}
 	 	}
 	 }
 	 
-	 /*
-	coll MapToSetOf<String, ConstraintEntry> Rule.typeConstraintMap() [new MapToSetOf(new TreeSetConstructor(null))] with add;
-	Variable contributes new MapEntry(toString(), new ConstraintEntry(occuresIn().predicate().formalpredicate(), index()))
-		when !isNested() //&& occuresIn().isAtom()
-		to Rule.typeConstraintMap()
-		for occuresIn().clause();
-	*/
-	/*
-	syn Set<MapEntry<Integer, Type>> PredefinedLiteral.predefinedTypeContribution() {
-		HashSet<MapEntry<Integer, Type>> type_binding = new HashSet<MapEntry<Integer, Type>>();
-		for(int i = 0; i != type().arity(); ++i)
-			type_binding.add(new MapEntry(i, (Type)type().coord(i)));
-		return type_binding;
+	 syn PseudoTuple Literal.derivedType() {
+	 	if(!clause().isRule()) return toTuple().toTypeTuple();
+	 	Instantiation typeInst = clause().program().instantMap.get(((Rule)clause()));
+	 	PseudoTuple typeTup = toTuple();
+	 	for(int i = 0; i != typeTup.arity(); ++i) if(!typeTup.coord(i).isVariable()) typeTup.set(i, typeTup.coord(i).type());
+	 	typeInst.instantiate(typeTup);
+	 	return typeTup;
+	 }
+	 
+	 coll TreeSet<PseudoTuple> FormalPredicate.derivedTypes() [new TreeSet<PseudoTuple>()] with add;
+	 Literal contributes derivedType() to FormalPredicate.derivedTypes() for predicate().formalpredicate();
+	 
+	 Program contributes nta getFormalPredicates() to Program.typeCheckErrors();
+	 FormalPredicate contributes "Multiple types for " + predicateName() + ": " + derivedTypes() 
+		when derivedTypes().size() > 1 && literal().isInclusive()
+		to Program.typeCheckErrors();
+	 
+	 
+	 syn Type AddExpr.mappendTypes(Type t1, Type t2) {
+        if(Type.typeComparator.compare(t1, t2) != 0)  return Type.badType;
+        if(!(t1.isString() || t1.isInteger())) return Type.badType;
+        return t1;
+    }
+
+    syn Type BinExpr.mappendTypes(Type  t1, Type t2) {
+        if(Type.typeComparator.compare(t1, t2) != 0)  return Type.badType;
+        if(!t1.isInteger()) return Type.badType;
+        return t1;
+    }
+
+    abstract Type Expr.evalTypes(Instantiation inst);
+    syn Type Term.evalTypes(Instantiation inst)     = type();
+    syn Type Variable.evalTypes(Instantiation inst) = (Type) inst.get(this);
+    syn Type BinExpr.evalTypes(Instantiation inst)  = mappendTypes(getLeft().evalTypes(inst), getRight().evalTypes(inst));
+	 
+	syn boolean BinExpr.hasSupportedType() {
+        Instantiation typeInst = occuresIn().clause().program().instantMap.get(((Rule)occuresIn().clause()));
+        Type t = evalTypes(typeInst);
+        return Type.typeComparator.compare(t, Type.badType) == 0 ? false : true;
 	}
+	 
+	BinExpr contributes "Types not supported: " + this 
+		when !hasSupportedType()
+		to Program.typeCheckErrors();
 	
 	
+	/**
+		The following type errors would be caught by the main algorithm but gives nicer error messages.
+	**/	
 	syn boolean PredefinedLiteral.satisfiedType() {
 		if(type().arity() != actualType().arity()) return false;
 		for(int i = 0; i != type().arity(); ++i) {
@@ -77,57 +110,10 @@ aspect TypeChecking {
 		return true;
 	}
 	
-	syn boolean FormalPredicate.hasContradictingType() {
-   		for(Integer coord : coordTypeMap().keySet()) 
-   			if(coordTypeMap().get(coord).size() > 1) return true;
-   		return false;
-    }
-	
-   Program contributes nta getFormalPredicateList() to Program.semanticErrors();
-   FormalPredicate contributes "Contradictory type for predicate: " + predicateName()
-   		when hasContradictingType()
-   		to Program.semanticErrors();
-   		
    	syn String PredefinedLiteral.typeErrorMsg() = "Expected: " + type() + " but got: " + actualType() + " for " + predicate().getPRED_ID();
     OUTPUTLiteral contributes typeErrorMsg() when !satisfiedType() to Program.semanticErrors();
     ATOMLiteral   contributes typeErrorMsg() when !satisfiedType() to Program.semanticErrors();
     EDBLiteral    contributes typeErrorMsg() when !satisfiedType() to Program.semanticErrors();
     PREDLiteral   contributes typeErrorMsg() when !satisfiedType() to Program.semanticErrors();
     TYPEOFLiteral contributes typeErrorMsg() when !satisfiedType() to Program.semanticErrors();
-    Expr          contributes "Contradicting type in: " + this when hasContradictingType() to Program.semanticErrors();
-    TermList      contributes "Bad Type in list: "      + this when !isWellTyped() to Program.semanticErrors();
-    BinaryExclusiveTermLiteral contributes "Contradicting type in: " + this when hasContradictingType() to Program.semanticErrors();
-	
-	syn boolean BinaryExclusiveTermLiteral.hasContradictingType() {
-		TreeSet<Type> types = new TreeSet<Type>(Type.typeComparator);
-		TreeSet<Constant> constants = new TreeSet<Constant>(Term.termComparator);
-		constants.addAll(getLeft().constants());
-		constants.addAll(getRight().constants());
-		for(Constant c : constants) {
-			types.add(c.type());
-			if(types.size() > 1) return true;
-		}
-		return false;
-	}
-	
-	syn boolean Expr.hasContradictingType() {
-		TreeSet<Type> types = new TreeSet<Type>(Type.typeComparator);
-		for(Constant c : constants()) {
-			types.add(c.type());
-			if(types.size() > 1) return true;
-		}
-		return false;
-	}
-		
-	coll MapToSetOf<Integer, Type> FormalPredicate.coordTypeMap() [new MapToSetOf(new HashSetConstructor())] with addAll;
-	Term contributes Collections.singleton(new MapEntry(index(), type()))
-        when !isNested() && isConstant() && occuresIn().isAtom()
-        to FormalPredicate.coordTypeMap()
-        for occuresIn().predicate().formalpredicate();
-    
-    OUTPUTLiteral contributes predefinedTypeContribution() to FormalPredicate.coordTypeMap() for predicate().formalpredicate();
-    ATOMLiteral   contributes predefinedTypeContribution() to FormalPredicate.coordTypeMap() for predicate().formalpredicate();
-    EDBLiteral    contributes predefinedTypeContribution() to FormalPredicate.coordTypeMap() for predicate().formalpredicate();
-    PREDLiteral   contributes predefinedTypeContribution() to FormalPredicate.coordTypeMap() for predicate().formalpredicate();
-    */
 }

@@ -25,10 +25,26 @@ aspect Conversion {
 	eq VariableType.typeName()   = "Variable";
 	eq UnknownType.typeName()    = "UnknownType";
 	eq BadType.typeName()        = "BadType";
+	
+	syn int Literal.evalOrder();
+	eq EDBLiteral.evalOrder()     =  0;
+	eq Atom.evalOrder()           =  1;
+	eq ATOMLiteral.evalOrder()    =  2;
+	eq TYPEOFLiteral.evalOrder()  =  3;
+	eq PREDLiteral.evalOrder()    =  4;
+	eq OUTPUTLiteral.evalOrder()  =  5;
+	eq BINDLiteral.evalOrder()    =  6;
+	eq NEGLiteral.evalOrder()     =  7;
+	eq EQLiteral.evalOrder()      =  8;
+	eq NEQLiteral.evalOrder()     =  9;
+	eq LTLiteral.evalOrder()      =  10;
+	eq LTELiteral.evalOrder()     =  11;
+	eq GTLiteral.evalOrder()      =  12;
+	eq GTELiteral.evalOrder()     =  13;
+	eq EQLISTLiteral.evalOrder()  =  14;
 }
 
 aspect Comparison {
-
 	public class CompareTypes implements Comparator<Type> {
 		@Override
 		public int compare(Type t1, Type t2) {
@@ -108,5 +124,22 @@ aspect Comparison {
 	@Override
 	public int FormalPredicate.hashCode() {
 		return predicateName().hashCode();
+	}
+	
+	public static final CompareLiterals Literal.literalComparator = new CompareLiterals();
+	public class CompareLiterals implements Comparator<Literal> {
+		@Override
+		public int compare(Literal l1, Literal l2) {
+			int ev1 = l1.evalOrder();
+			int ev2 = l2.evalOrder();
+			if(ev1 != ev2) return ev1 < ev2 ? -1 : ev1 == ev2 ? 0 : 1;
+			return l1.hashCode() < l2.hashCode() ? -1 : l1.hashCode() == l2.hashCode() ? 0 : 1;
+		}
+	}
+	
+	@Override
+	public boolean Literal.equals(Object o) {
+		if(!(o instanceof Literal)) return false;
+		return literalComparator.compare(this, (Literal)o) == 0;
 	}
 }

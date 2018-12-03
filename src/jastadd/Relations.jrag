@@ -101,16 +101,16 @@ aspect Rules {
 		return false;
 	}
 	
-	syn HashSet<Literal> Rule.inclusiveBodyLiterals() {
-		HashSet<Literal> literals = new HashSet<Literal>();
+	syn TreeSet<Literal> Rule.inclusiveBodyLiterals() {
+		TreeSet<Literal> literals = new TreeSet<Literal>(Literal.literalComparator);
 		for(Literal l : getBodys()) {
 			if(l.isInclusive()) literals.add(l);
 		}
 		return literals;
 	}
 	
-	syn HashSet<Literal> Rule.exclusiveBodyLiterals() {
-		HashSet<Literal> literals = new HashSet<Literal>();
+	syn TreeSet<Literal> Rule.exclusiveBodyLiterals() {
+		TreeSet<Literal> literals = new TreeSet<Literal>(Literal.literalComparator);
 		for(Literal l : getBodys()) {
 			if(!l.isInclusive()) literals.add(l);
 		}

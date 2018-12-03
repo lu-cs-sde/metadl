@@ -2,6 +2,7 @@ package lang.evaluation;
 
 import java.util.Deque;
 import java.util.HashSet;
+import java.util.Set;
 
 import lang.ast.Clause;
 import lang.ast.FormalPredicate;
@@ -10,7 +11,6 @@ import lang.ast.Literal;
 import lang.ast.Program;
 import lang.ast.Rule;
 import lang.ast.config.Description;
-import lang.io.SimpleLogger;
 import lang.relation.Binding;
 import lang.relation.Relation;
 import lang.relation.Stratification;
@@ -37,7 +37,7 @@ public class BottomUpNaiveIterative extends InternalEvaluation {
 		dumpRelations(program, descr);
 	}
 	
-	private Relation immediateConsequenceHelper(HashSet<Literal> literals, Relation body_rel) {
+	private Relation immediateConsequenceHelper(Set<Literal> literals, Relation body_rel) {
 		for (Literal rl_current : literals) {
 			
 			/**
@@ -45,7 +45,7 @@ public class BottomUpNaiveIterative extends InternalEvaluation {
 			 */
 			Relation r_current = rl_current.select(body_rel);
 
-			if (body_rel == null) {
+			if (body_rel == Relation.nullRelation) {
 				body_rel = r_current;
 			} else {
 				body_rel = Relation.join(body_rel, r_current);
@@ -55,7 +55,7 @@ public class BottomUpNaiveIterative extends InternalEvaluation {
 	}
 
 	public boolean immediateConsequence(Program program, Description descr, Clause clause) {
-		Relation body_rel = null;
+		Relation body_rel = Relation.nullRelation;
 		
 		/**
 		 * Find Body Relation if clause is a rule

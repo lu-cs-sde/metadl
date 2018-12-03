@@ -1,7 +1,9 @@
 import lang.io.FileUtil;
 import lang.evaluation.BottomUpNaiveIterative;
 import java.util.Collections;
+import lang.relation.Instantiation;
 aspect TypeChecking {
+	 public HashMap<Rule, Instantiation> Program.instantMap = new HashMap<Rule, Instantiation>();
 	 public void Program.typeCheck() throws IOException, beaver.Parser.Exception {
 	 	String typeProgSource = typePrint();
 	 	SimpleLogger.logger().log("TypeProg:\n" + typeProgSource, SimpleLogger.LogLevel.Level.DEBUG);
@@ -11,7 +13,7 @@ aspect TypeChecking {
 	 	
 	 	boolean typeError = false;
 	 	for(FormalPredicate fp : typeProg.getFormalPredicates()) {
-	 		if(fp.predicateName().startsWith("Rule")) {
+	 		if(fp.predicateName().startsWith(GlobalNames.TYPE_RULE_NAME)) {
 	 			SimpleLogger.logger().log(fp.predicateName() + ": " + fp.relation, SimpleLogger.LogLevel.Level.DEBUG);
 	 			
 	 			if(fp.relation.size() == 0 || fp.relation.size() > 1) {
@@ -24,15 +26,26 @@ aspect TypeChecking {
 	 				if(fp.relation.size() == 0)
 	 					SimpleLogger.logger().log("Not enough type information at: " + affectedClauses, SimpleLogger.LogLevel.Level.ERROR);
 	 				else
-	 					SimpleLogger.logger().log("Many possible types for: " + affectedClauses, SimpleLogger.LogLevel.Level.ERROR);
+	 					SimpleLogger.logger().log("Contradictory type information at: " + affectedClauses, SimpleLogger.LogLevel.Level.ERROR);
 	 			}
 	 		}
 	 	}
 	 	
 	 	if(typeError) System.exit(0);
 	 	for(FormalPredicate fp : typeProg.getFormalPredicates()) {
-	 		if(fp.predicateName().startsWith("Rule")) {
+	 		if(fp.predicateName().startsWith(GlobalNames.TYPE_RULE_NAME)) {
+	 			Rule r = (Rule)fp.literal().clause();
+	 			int index = Integer.parseInt(fp.predicateName().substring(GlobalNames.TYPE_RULE_NAME.length()));
+	 			System.out.println(fp.predicateName() + " -> " + index + " -> " + getClause(index));
+	 			System.out.println(r.variables());
+	 			System.out.println(fp.relation.tuples().iterator().next());
 	 			
+	 			PseudoTuple var_tuple = new PseudoTuple(r.variables());
+	 			PseudoTuple type_tuple = fp.relation.tuples().iterator().next();
+	 			Instantiation inst = new Instantiation(var_tuple, type_tuple);
+	 			System.out.println(inst);
+	 			
+	 			instantMap.put((Rule)getClause(index), inst);
 	 		}
 	 	}
 	 }

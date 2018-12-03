@@ -8,188 +8,201 @@ import java.util.Collections;
 import java.util.TreeSet;
 
 aspect LiteralSideEffect {
-	public void Literal.sideEffect(Program program, Description descr) {}
-	
-	/**
-	 * Currently unnecessary Reads, Should Check Deltas Later.
-	 */
-	public void EDBLiteral.sideEffect(Program program, Description descr) {
-		boolean changed = true;
-		while(changed) {
-			int size = getPredicateRef().formalpredicate().relation.size();
-			HashSet<EDBRead> reads = new HashSet<>();
-			for(PseudoTuple ps : predicate().formalpredicate().relation.tuples()) {
-				PredicateRef pr = (PredicateRef) ps.coord(0);
-				String path = ((StringConstant)ps.coord(1)).toString();
-				reads.add(new EDBRead(pr, path));
-			}
-			
-			for(EDBRead r : reads) {
-				FormalPredicate fp = program.formalPredicateMap().get(r.ref.getPRED_ID());
-				if(fp == null) {
-	    			SimpleLogger.logger().log("Each PredicateSymbol should belong to a FormalPredicate: " + r.ref.getPRED_ID(), SimpleLogger.LogLevel.Level.ERROR);
-	    			System.exit(0);
-				}
-				CSVUtil.readFileInto(program, fp, descr.factsDir() + "/" + r.path);
-			}
-			changed = getPredicateRef().formalpredicate().relation.size() != size;
-		}
-	}
-	
-	public class EDBRead {
-		public PredicateRef ref;
-		public String path;
-		
-		public EDBRead(PredicateRef ref, String path) {
-			this.ref = ref;
-			this.path = path;
-		}
-	}
+    public void Literal.sideEffect(Program program, Description descr) {}
+
+    /**
+     * Currently unnecessary Reads, Should Check Deltas Later.
+     */
+    public void EDBLiteral.sideEffect(Program program, Description descr) {
+        boolean changed = true;
+        while(changed) {
+            int size = getPredicateRef().formalpredicate().relation.size();
+            HashSet<EDBRead> reads = new HashSet<>();
+            for(PseudoTuple ps : predicate().formalpredicate().relation.tuples()) {
+                PredicateRef pr = (PredicateRef) ps.coord(0);
+                String path = ((StringConstant)ps.coord(1)).toString();
+                reads.add(new EDBRead(pr, path));
+            }
+
+            for(EDBRead r : reads) {
+                FormalPredicate fp = program.formalPredicateMap().get(r.ref.getPRED_ID());
+                if(fp == null) {
+                    SimpleLogger.logger().log("Each PredicateSymbol should belong to a FormalPredicate: " + r.ref.getPRED_ID(), SimpleLogger.LogLevel.Level.ERROR);
+                    System.exit(0);
+                }
+                CSVUtil.readFileInto(program, fp, descr.factsDir() + "/" + r.path);
+            }
+            changed = getPredicateRef().formalpredicate().relation.size() != size;
+        }
+    }
+
+    public class EDBRead {
+        public PredicateRef ref;
+        public String path;
+
+        public EDBRead(PredicateRef ref, String path) {
+            this.ref = ref;
+            this.path = path;
+        }
+    }
 }
 
 aspect InitialSideEffect {
-	public void Literal.initialSideEffect(Program program, Description descr) {
-		if(isInclusive()) {
-			FormalPredicate fp = predicate().formalpredicate();
-			fp.relation = new Relation(fp.realArity());
-		}
-	}
-	
-	public void PREDLiteral.initialSideEffect(Program program, Description descr) {
-		predicate().formalpredicate().relation = new Relation(arity());
-		Relation r = predicate().formalpredicate().relation;
-		for(PredicateRef pr : getPredicateRefs()) {
-			r.addTuple(new PseudoTuple(pr));
-		}
-	}
-	
-	public void ATOMLiteral.initialSideEffect(Program program, Description descr) {
-		predicate().formalpredicate().relation = new Relation(arity());
-		Relation r = predicate().formalpredicate().relation;
-		for(PredicateRef pr : getPredicateRefs()) {
-			r.addTuple(new PseudoTuple(pr));
-		}
-	}
+    public void Literal.initialSideEffect(Program program, Description descr) {
+        if(isInclusive()) {
+            FormalPredicate fp = predicate().formalpredicate();
+            fp.relation = new Relation(fp.realArity());
+        }
+    }
+
+    public void PREDLiteral.initialSideEffect(Program program, Description descr) {
+        predicate().formalpredicate().relation = new Relation(arity());
+        Relation r = predicate().formalpredicate().relation;
+        for(PredicateRef pr : getPredicateRefs()) {
+            r.addTuple(new PseudoTuple(pr));
+        }
+    }
+
+    public void ATOMLiteral.initialSideEffect(Program program, Description descr) {
+        predicate().formalpredicate().relation = new Relation(arity());
+        Relation r = predicate().formalpredicate().relation;
+        for(PredicateRef pr : getPredicateRefs()) {
+            r.addTuple(new PseudoTuple(pr));
+        }
+    }
 }
 
 aspect LiteralSelection {
-	public Relation Literal.select(Relation body_rel) {
-		return predicate().formalpredicate().relation.select(Binding.createBinding(toTuple()));
-	}
-	public Relation NEGLiteral.select(Relation body_rel) {
-		Relation positive = getInclusiveLiteral().predicate().formalpredicate().relation.select(Binding.createBinding(toTuple()));
-		return Relation.difference(body_rel, positive);
-	}
-	
-	
-	public abstract boolean BinaryExclusiveTermLiteral.binaryTest(Term t1, Term t2);
-	public boolean EQLiteral.binaryTest(Term t1, Term t2)  { return Term.termComparator.compare(t1, t2) == 0; }
-	public boolean NEQLiteral.binaryTest(Term t1, Term t2) { return Term.termComparator.compare(t1, t2) != 0; }
-	public boolean LTLiteral.binaryTest(Term t1, Term t2)  { return Term.termComparator.compare(t1, t2)  < 0; }
-	public boolean LTELiteral.binaryTest(Term t1, Term t2) { return Term.termComparator.compare(t1, t2) <= 0; }
-	public boolean GTLiteral.binaryTest(Term t1, Term t2)  { return Term.termComparator.compare(t1, t2)  > 0; }
-	public boolean GTELiteral.binaryTest(Term t1, Term t2) { return Term.termComparator.compare(t1, t2) >= 0; }
-	
-	public abstract Term Expr.eval(Instantiation inst);
-	public abstract Term BinExpr.mappend(Term t1, Term t2);
-	
-	syn Term AddExpr.mappend(Term t1, Term t2) {
-		if(!Term.sameType(t1, t2)) {
-			SimpleLogger.logger().log("Different Types for terms: " + t1 + ", " + t2, SimpleLogger.LogLevel.Level.ERROR);
-			System.exit(0);
-		}
-		if(t1.isInteger()) 
-			return new IntConstant("" + (((IntConstant) t1).intValue() + ((IntConstant) t2).intValue()));
-		 else if(t1.isString()) 
-			return new StringConstant(((StringConstant)t1).getSTRING() + ((StringConstant)t2).getSTRING());
-		if(!Term.sameType(t1, t2)) {
-			SimpleLogger.logger().log("Non-supported add for: " + t1 + ", " + t2, SimpleLogger.LogLevel.Level.ERROR);
-			System.exit(0);
-		}
-		return null;
-	}
-	
-	syn Term SubExpr.mappend(Term t1, Term t2) {
-		if(!Term.sameType(t1, t2) || !t1.isInteger()) {
-			SimpleLogger.logger().log("Disallowed terms in SUB: " + t1 + ", " + t2, SimpleLogger.LogLevel.Level.ERROR);
-			System.exit(0);
-		}
-		return new IntConstant("" + (((IntConstant) t1).intValue() - ((IntConstant) t2).intValue()));
-	}
-	
-	syn Term MulExpr.mappend(Term t1, Term t2) {
-		if(!Term.sameType(t1, t2) || !t1.isInteger()) {
-			SimpleLogger.logger().log("Disallowed terms in MUL: " + t1 + ", " + t2, SimpleLogger.LogLevel.Level.ERROR);
-			System.exit(0);
-		}
-		return new IntConstant("" + (((IntConstant) t1).intValue() * ((IntConstant) t2).intValue()));
-	}
-	
-	syn Term DivExpr.mappend(Term t1, Term t2) {
-		if(!Term.sameType(t1, t2) || !t1.isInteger()) {
-			SimpleLogger.logger().log("Disallowed terms in DIV: " + t1 + ", " + t2, SimpleLogger.LogLevel.Level.ERROR);
-			System.exit(0);
-		}
-		return new IntConstant("" + (((IntConstant) t1).intValue() / ((IntConstant) t2).intValue()));
-	}
-	
-	syn Term Term.eval(Instantiation inst)     = this;
-	syn Term Variable.eval(Instantiation inst) = inst.get(this);
-	syn Term BinExpr.eval(Instantiation inst)  = mappend(getLeft().eval(inst), getRight().eval(inst));
-	
-	
-	public Relation EQLISTLiteral.select(Relation body_rel) {
-		TreeSet<Variable> variables = getTermList().variables();
-		TreeSet<Constant> constants = getTermList().constants();
-		PseudoTuple name_tuple = new PseudoTuple(variables);
-		
-		Iterator<PseudoTuple> itr = body_rel.tuples().iterator();
-		while(itr.hasNext()) {
-			 PseudoTuple ps = itr.next();
-			 PseudoTuple project = new PseudoTuple(ps, body_rel.binding, name_tuple);
-			 
-			 if(!project.isUniInfo() || constants.size() > 1) {
-			 	itr.remove();
-			} else if (constants.size() == 1 && project.arity() > 0 && 
-							Term.termComparator.compare(constants.iterator().next(), project.coord(0)) != 0) {
-				itr.remove();
-			}
-		}
-		return body_rel;
-	}
-	
-	
-	public Relation BinaryExclusiveTermLiteral.select(Relation body_rel) {
-		TreeSet<Variable> variables = variables();
-		PseudoTuple name_tuple = new PseudoTuple(variables);
-		
-		Iterator<PseudoTuple> itr = body_rel.tuples().iterator();
-		while(itr.hasNext()) {
-			 PseudoTuple ps = itr.next();
-			 PseudoTuple project = new PseudoTuple(ps, body_rel.binding, name_tuple);
-			 Instantiation inst = new Instantiation(name_tuple, project);
-			 Term left = getLeft().eval(inst);
-			 Term right = getRight().eval(inst);
-			 if(!binaryTest(left, right)) {
-			 	itr.remove();
-			}
-		}
-		return body_rel;
-	}
-	
-	public Relation BINDLiteral.select(Relation body_rel) {
-		body_rel.expand();
-		TreeSet<Variable> variables = getRight().variables();
-		PseudoTuple name_tuple = new PseudoTuple(variables);
-		
-		for(PseudoTuple ps : body_rel.tuples()) {
-			PseudoTuple project = new PseudoTuple(ps, body_rel.binding, name_tuple);
-			Instantiation inst = new Instantiation(name_tuple, project);
-			Term right = getRight().eval(inst);
-			ps.set(ps.arity() - 1, right);
-		}
-		body_rel.binding.bind(getVariable(), body_rel.arity() - 1);
-		return body_rel;
-	}
+    public Relation Literal.select(Relation body_rel) {
+        return predicate().formalpredicate().relation.select(Binding.createBinding(toTuple()));
+    }
+    public Relation NEGLiteral.select(Relation body_rel) {
+        Relation positive = getInclusiveLiteral().predicate().formalpredicate().relation.select(Binding.createBinding(toTuple()));
+        return Relation.difference(body_rel, positive);
+    }
+
+
+    public abstract boolean BinaryExclusiveTermLiteral.binaryTest(Term t1, Term t2);
+    public boolean EQLiteral.binaryTest(Term t1, Term t2)  { return Term.termComparator.compare(t1, t2) == 0; }
+    public boolean NEQLiteral.binaryTest(Term t1, Term t2) { return Term.termComparator.compare(t1, t2) != 0; }
+    public boolean LTLiteral.binaryTest(Term t1, Term t2)  { return Term.termComparator.compare(t1, t2)  < 0; }
+    public boolean LTELiteral.binaryTest(Term t1, Term t2) { return Term.termComparator.compare(t1, t2) <= 0; }
+    public boolean GTLiteral.binaryTest(Term t1, Term t2)  { return Term.termComparator.compare(t1, t2)  > 0; }
+    public boolean GTELiteral.binaryTest(Term t1, Term t2) { return Term.termComparator.compare(t1, t2) >= 0; }
+
+    public abstract Term Expr.eval(Instantiation inst);
+    public abstract Term BinExpr.mappend(Term t1, Term t2);
+
+    syn Term AddExpr.mappend(Term t1, Term t2) {
+        if(!Term.sameType(t1, t2)) {
+            SimpleLogger.logger().log("Different Types for terms: " + t1 + ", " + t2, SimpleLogger.LogLevel.Level.ERROR);
+            System.exit(0);
+        }
+        if(t1.isInteger()) 
+            return new IntConstant("" + (((IntConstant) t1).intValue() + ((IntConstant) t2).intValue()));
+        else if(t1.isString()) 
+            return new StringConstant(((StringConstant)t1).getSTRING() + ((StringConstant)t2).getSTRING());
+        if(!Term.sameType(t1, t2)) {
+            SimpleLogger.logger().log("Non-supported add for: " + t1 + ", " + t2, SimpleLogger.LogLevel.Level.ERROR);
+            System.exit(0);
+        }
+        return null;
+    }
+
+    syn Term SubExpr.mappend(Term t1, Term t2) {
+        if(!Term.sameType(t1, t2) || !t1.isInteger()) {
+            SimpleLogger.logger().log("Disallowed terms in SUB: " + t1 + ", " + t2, SimpleLogger.LogLevel.Level.ERROR);
+            System.exit(0);
+        }
+        return new IntConstant("" + (((IntConstant) t1).intValue() - ((IntConstant) t2).intValue()));
+    }
+
+    syn Term MulExpr.mappend(Term t1, Term t2) {
+        if(!Term.sameType(t1, t2) || !t1.isInteger()) {
+            SimpleLogger.logger().log("Disallowed terms in MUL: " + t1 + ", " + t2, SimpleLogger.LogLevel.Level.ERROR);
+            System.exit(0);
+        }
+        return new IntConstant("" + (((IntConstant) t1).intValue() * ((IntConstant) t2).intValue()));
+    }
+
+    syn Term DivExpr.mappend(Term t1, Term t2) {
+        if(!Term.sameType(t1, t2) || !t1.isInteger()) {
+            SimpleLogger.logger().log("Disallowed terms in DIV: " + t1 + ", " + t2, SimpleLogger.LogLevel.Level.ERROR);
+            System.exit(0);
+        }
+        return new IntConstant("" + (((IntConstant) t1).intValue() / ((IntConstant) t2).intValue()));
+    }
+
+    syn Term Term.eval(Instantiation inst)     = this;
+    syn Term Variable.eval(Instantiation inst) = inst.get(this);
+    syn Term BinExpr.eval(Instantiation inst)  = mappend(getLeft().eval(inst), getRight().eval(inst));
+
+
+    public Relation EQLISTLiteral.select(Relation body_rel) {
+        TreeSet<Variable> variables = getTermList().variables();
+        TreeSet<Constant> constants = getTermList().constants();
+        PseudoTuple name_tuple = new PseudoTuple(variables);
+
+        Iterator<PseudoTuple> itr = body_rel.tuples().iterator();
+        while(itr.hasNext()) {
+            PseudoTuple ps = itr.next();
+            PseudoTuple project = new PseudoTuple(ps, body_rel.binding, name_tuple);
+
+            if(!project.isUniInfo() || constants.size() > 1) {
+                itr.remove();
+            } else if (constants.size() == 1 && project.arity() > 0 && 
+                    Term.termComparator.compare(constants.iterator().next(), project.coord(0)) != 0) {
+                itr.remove();
+            }
+        }
+        return body_rel;
+    }
+
+
+    public Relation BinaryExclusiveTermLiteral.select(Relation body_rel) {
+        TreeSet<Variable> variables = variables();
+        PseudoTuple name_tuple = new PseudoTuple(variables);
+
+        Iterator<PseudoTuple> itr = body_rel.tuples().iterator();
+        while(itr.hasNext()) {
+            PseudoTuple ps = itr.next();
+            PseudoTuple project = new PseudoTuple(ps, body_rel.binding, name_tuple);
+            Instantiation inst = new Instantiation(name_tuple, project);
+            Term left = getLeft().eval(inst);
+            Term right = getRight().eval(inst);
+            if(!binaryTest(left, right)) {
+                itr.remove();
+            }
+        }
+        return body_rel;
+    }
+
+    public Relation BINDLiteral.select(Relation body_rel) {
+        System.out.println("BODY: " + body_rel);
+        TreeSet<Variable> variables = getRight().variables();
+        if(body_rel != Relation.nullRelation) {
+            System.out.println("Have Body: " + body_rel);
+            body_rel.expand();
+            PseudoTuple name_tuple = new PseudoTuple(variables);
+
+            for(PseudoTuple ps : body_rel.tuples()) {
+                PseudoTuple project = new PseudoTuple(ps, body_rel.binding, name_tuple);
+                Instantiation inst = new Instantiation(name_tuple, project);
+                Term right = getRight().eval(inst);
+                ps.set(ps.arity() - 1, right);
+            }
+            body_rel.binding.bind(getVariable(), body_rel.arity() - 1);
+        } else if(variables.isEmpty()) {
+            Term right = getRight().eval(null);
+            Relation r = new Relation(1);
+            r.binding = Binding.createBinding(new PseudoTuple(getVariable()));
+            r.addTuple(new PseudoTuple(right));
+
+            System.out.println("No Body: " + r + ", " + r.binding);
+            return r;
+        }
+
+        return body_rel;
+    }
 }
 

@@ -216,13 +216,22 @@ aspect TypePrinting {
     	printCollection(terms, "EQLIST([", "])", " ", pr);
     }
     
-    public void BINDLiteral.typePrint(PrettyPrinter pr) {
-    	TreeSet<Term> terms = new TreeSet<Term>(Term.termComparator);
+    public void BINDLiteral.typePrintRule(PrettyPrinter pr) {
+        TreeSet<Term> terms = new TreeSet<Term>(Term.termComparator);
     	terms.add(getVariable());
     	terms.addAll(getRight().variables());
     	for(Constant c : getRight().constants())
     		terms.add(c.type());
     	printCollection(terms, "EQLIST([", "])", " ", pr);
+    }
+    
+    public void BINDLiteral.typePrint(PrettyPrinter pr) {
+		typePrintRule(pr);
+    	if(!getRight().variables().isEmpty()) {
+    		pr.out.print(", BIND(" + getVariable() + ", " + getRight().variables().iterator().next() + ")");
+    	} else {
+    		pr.out.print(", BIND(" + getVariable() + ", " + getRight().constants().iterator().next().type() + ")");
+    	}
     }
     
     public void EQLISTLiteral.typePrint(PrettyPrinter pr) {
@@ -235,12 +244,18 @@ aspect TypePrinting {
     }
     
     public void Rule.typePrint(PrettyPrinter pr) {
-	 	pr.out.print("Rule" + index());
+	 	pr.out.print(GlobalNames.TYPE_RULE_NAME + index());
 	 	printCollection(variables(), "(", ")", ", ", pr);
 	 	pr.out.print(" :- ");
-	 	printCollection(literals(), "", ".\n", ", ", pr);
-	 	
-	 	// Limited Type Inference Right to Left
+	 	HashSet<Literal> nobind = new HashSet<Literal>();
+	 	for(Literal l : literals()) {
+	 		if(!l.isBind()) nobind.add(l);
+	 		else {
+	 			((BINDLiteral)l).typePrintRule(pr);
+	 			pr.out.print(", ");
+	 		}
+	 	}
+	 	printCollection(nobind, "", ".\n", ", ", pr);
 	 	printList(getHeadss(), "", " :- ", ", ", pr);
 	 	printList(getBodys(), "", ".", ", ", pr);
 	 }

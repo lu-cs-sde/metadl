@@ -11,6 +11,7 @@ import lang.relation.Binding.BindResult.TaggedBind;
 import lang.relation.Binding.BindTerm;
 
 public class Relation {
+	public static final Relation nullRelation = new Relation(0);
 	private Set<PseudoTuple> relation = new TreeSet<PseudoTuple>();
 	private int arity;
 	public Binding binding = Binding.anyBinding;

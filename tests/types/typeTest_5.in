@@ -1,12 +1,11 @@
 OUTPUT(x) :- ATOM(x).
+TYPEOF('C, [Integer String]).
+TYPEOF('B, [String Integer]).
 
-TYPEOF('B, [PredRef PredRef]).
-# A("A", "B").
-#B("D", "E").
-#C("C11", "C12", "C13").
-#C("C21", "C22", "C23").
+A(x, y) :- B(y, x), C(x, y).
+E(x, y, 'B) :- B(y, x), C(x, y).
+E(x, y, z) :- C(x, f1), 
+              C(y, f2),
+              BIND(z, x + y). 
 
-A(x,x)   :- C(x,f1,f2), EQ(x, f1 + f2).
-A(x,y)   :- B(y, x).
-B(x,y)   :- C(x,y,f).
-C(x,y,z) :- A(x,y), A(z,z).
+F(x) :- BIND(x, 0).

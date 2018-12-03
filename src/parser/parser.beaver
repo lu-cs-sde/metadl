@@ -12,7 +12,7 @@
 %terminals VAR_ID, PRED_ID, PRED_REF, LPARA, RPARA, LBRACK, RBRACK, 
            NUMERAL, STRING, DOT, COMMA, IMPLIED_BY, EDB, OUTPUT, PRED,
            ATOM, NOT, BIND,  EQ, EQLIST, NEQ, LT, LTE, GT, GTE, ADD, SUB, MUL, DIV,
-           TYPEOF, TYPE_TYPE, STRING_TYPE, INTEGER_TYPE, PRED_REF_TYPE;
+           TYPEOF, TYPE_TYPE, STRING_TYPE, INTEGER_TYPE, PRED_REF_TYPE, LIST_TYPE;
 
 %typeof  program             =  "Program";
 %typeof  clause              =  "Clause";
@@ -66,6 +66,7 @@
 %typeof  string_type         =  "StringType";
 %typeof  integer_type        =  "IntegerType";
 %typeof  pred_ref_type       =  "PredRefType";
+%typeof  list_type           =  "ListType";
 
 %goal program;
 
@@ -119,12 +120,12 @@ gte_literal = GTE LPARA expr.left COMMA expr.right RPARA {: return new GTELitera
 
 eq_list_literal = EQLIST LPARA term_list_term.terms RPARA {: return new EQLISTLiteral(new PredicateSymbol("EQLIST"),   terms); :};
 
-atom = pred_sym.pred LPARA term_list.terms RPARA {: return new Atom(pred, terms); :};
-edb_literal    = EDB    LPARA pred_ref.pred COMMA term.filelocs RPARA        {: return new EDBLiteral(new PredicateSymbol("EDB"), pred, filelocs);    :};
-output_literal = OUTPUT LPARA term.t RPARA                                   {: return new OUTPUTLiteral(new PredicateSymbol("OUTPUT"), t);           :};
-pred_literal   = PRED   LPARA term.t RPARA                                   {: return new PREDLiteral(new PredicateSymbol("PRED"), t);               :};
-atom_literal   = ATOM   LPARA term.t RPARA                                   {: return new ATOMLiteral(new PredicateSymbol("ATOM"), t);               :};
-typeof_literal = TYPEOF LPARA pred_ref.pred COMMA term_list_term.types RPARA {: return new TYPEOFLiteral(new PredicateSymbol("TYPEOF"), pred, types); :};
+atom = pred_sym.pred LPARA term_list.terms RPARA                      {: return new Atom(pred, terms); :};
+edb_literal    = EDB    LPARA pred_ref.pred COMMA term.filelocs RPARA {: return new EDBLiteral(new PredicateSymbol("EDB"), pred, filelocs);  :};
+output_literal = OUTPUT LPARA term.t RPARA                            {: return new OUTPUTLiteral(new PredicateSymbol("OUTPUT"), t);         :};
+pred_literal   = PRED   LPARA term.t RPARA                            {: return new PREDLiteral(new PredicateSymbol("PRED"), t);             :};
+atom_literal   = ATOM   LPARA term.t RPARA                            {: return new ATOMLiteral(new PredicateSymbol("ATOM"), t);             :};
+typeof_literal = TYPEOF LPARA pred_ref.pred COMMA term.t RPARA        {: return new TYPEOFLiteral(new PredicateSymbol("TYPEOF"), pred, t);   :};
 
 lit_list = literal.lit {: return new List().add(lit); :}
          | lit_list.list COMMA literal.c {: return list.add(c); :}
@@ -191,6 +192,7 @@ term_list_space_no_empty = term.t {: return new List().add(t); :}
                    ;
 
 type_term = concrete_type
+          | list_type
           ;
 	 
 type_type = TYPE_TYPE {: return new TypeType(); :};
@@ -204,4 +206,4 @@ concrete_type = integer_type
 integer_type  = INTEGER_TYPE  {: return new IntegerType(); :};
 string_type   = STRING_TYPE   {: return new StringType();  :};
 pred_ref_type = PRED_REF_TYPE {: return new PredRefType(); :};
-
+list_type     = LIST_TYPE LPARA concrete_type.embell RPARA {: return new ListType(embell); :};

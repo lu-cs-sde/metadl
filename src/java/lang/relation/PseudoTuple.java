@@ -68,6 +68,13 @@ public class PseudoTuple implements Comparable<PseudoTuple> {
 		return pt;
 	}
 	
+	public List<Term> toList() {
+		List<Term> list = new List<Term>();
+		for(int i = 0; i != size; ++i) 
+			list.add(tuple[i]);
+		return list;
+	}
+	
 	public void expand() {
 		Term[] tmp = new Term[size];
 		System.arraycopy(tuple, 0, tmp, 0, size);

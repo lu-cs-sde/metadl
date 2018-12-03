@@ -13,16 +13,18 @@ aspect Conversion {
 	public String TermList.toString()        { return prettyPrint(); }
 	public String ASTNode.toString()         { return prettyPrint(); }
 	
-	syn String Type.toString()        = getClass().getSimpleName();
-	syn String ListType.toString()    = "ListType_" + getType().toString();
+	syn String Type.toString()     = typeName();
+	syn String ListType.toString() = "List(" + getType().typeName() + ")";
 	
-	syn String Type.typeName()         = "Type";
-	syn String ListType.typeName()     = "List";
-	syn String StringType.typeName()   = "String";
-	syn String IntegerType.typeName()  = "Integer";
-	syn String PredRefType.typeName()  = "PredRef";
-	syn String TypeType.typeName()     = "TypeType";
-	syn String VariableType.typeName() = "Variable";
+	syn String Type.typeName();
+	eq ListType.typeName()       = "List";
+	eq StringType.typeName()     = "String";
+	eq IntegerType.typeName()    = "Integer";
+	eq PredRefType.typeName()    = "PredRef";
+	eq TypeType.typeName()       = "Type";
+	eq VariableType.typeName()   = "Variable";
+	eq UnknownType.typeName()    = "UnknownType";
+	eq BadType.typeName()        = "BadType";
 }
 
 aspect Comparison {
@@ -101,5 +103,10 @@ aspect Comparison {
 	public boolean FormalPredicate.equals(Object o) {
 		if(!(o instanceof FormalPredicate)) return false;
 		return formalPredicateComparator.compare(this, (FormalPredicate)o) == 0;
+	}
+	
+	@Override
+	public int FormalPredicate.hashCode() {
+		return predicateName().hashCode();
 	}
 }

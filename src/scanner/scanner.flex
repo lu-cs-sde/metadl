@@ -71,6 +71,7 @@ String  = \"[^\"]*\"
 "String"   {  return  sym(Terminals.STRING_TYPE);    }
 "Integer"  {  return  sym(Terminals.INTEGER_TYPE);   }
 "PredRef"  {  return  sym(Terminals.PRED_REF_TYPE);  }
+"List"     {  return  sym(Terminals.LIST_TYPE);      }
 {Numeral}  {  return  sym(Terminals.NUMERAL);        }
 {VAR_ID}   {  return  sym(Terminals.VAR_ID);         }
 {PRED_ID}  {  return  sym(Terminals.PRED_ID);        }

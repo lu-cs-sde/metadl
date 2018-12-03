@@ -160,4 +160,9 @@ public class Relation {
 			return false;
 		return relation.equals(((Relation) obj).relation);
 	}
+	
+	@Override
+	public String toString() {
+		return relation.toString();
+	}
 }

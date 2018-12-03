@@ -13,7 +13,7 @@ aspect PretyPrinting {
         }
 	}
 
-    protected <T extends ASTNode> void ASTNode.printList(List<T> list,
+    protected static <T extends ASTNode> void ASTNode.printList(List<T> list,
             String pre, String post, String delim, PrettyPrinter pr) {
         if (list.getNumChild() == 0)
             return;
@@ -30,7 +30,7 @@ aspect PretyPrinting {
         pr.out.print(post);
     }
     
-    protected <T extends ASTNode> void ASTNode.printCollection(Collection<T> collection,
+    protected static <T extends ASTNode> void ASTNode.printCollection(Collection<T> collection,
             String pre, String post, String delim, PrettyPrinter pr) {
         Iterator<T> itr = collection.iterator();
         if (!itr.hasNext())
@@ -141,6 +141,126 @@ aspect ExtensionablePrinting {
             super(out);
         }
     }
+    
+    public class TypePrettyPrinter<T extends ASTNode> extends PrettyPrinter<T> {
+    	public void prettyPrint(T node) {
+        	node.typePrint(this);
+        }
+        
+        public TypePrettyPrinter(PrintStream out) {
+            super(out);
+        }
+    }
+    
+    public class StandardStringPrettyPrinter {
+    	public static <T extends ASTNode> String print(T t) {
+    		ByteArrayOutputStream stream = new ByteArrayOutputStream();
+    		StandardPrettyPrinter spp = new StandardPrettyPrinter(new PrintStream(stream));
+    		spp.prettyPrint(t);
+    		return stream.toString();
+    	}
+    	
+    	public static <T extends ASTNode> String printList(List<T> t, String pre, String post, String delim) {
+    		ByteArrayOutputStream stream = new ByteArrayOutputStream();
+    		StandardPrettyPrinter spp = new StandardPrettyPrinter(new PrintStream(stream));
+    		ASTNode.printList(t, pre, post, delim, spp);
+    		return stream.toString();
+    	}
+    	
+    	public static <T extends ASTNode> String printCollection(Collection<T> t, String pre, String post, String delim) {
+    		ByteArrayOutputStream stream = new ByteArrayOutputStream();
+    		StandardPrettyPrinter spp = new StandardPrettyPrinter(new PrintStream(stream));
+    		ASTNode.printCollection(t, pre, post, delim, spp);
+    		return stream.toString();
+    	}
+    }
+}
+
+aspect TypePrinting {
+    public String ASTNode.typePrint() {
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+        TypePrettyPrinter typePrinter = new TypePrettyPrinter(new PrintStream(bytes));
+        typePrinter.prettyPrint(this);
+        return bytes.toString();
+    }
+
+    public void ASTNode.typePrint(PrettyPrinter pr) {
+        prettyPrint(pr);
+    }
+    
+    public static String Program.transformPredefinedName(String l) {
+    	return l.charAt(0) + l.substring(1).toLowerCase();
+    }
+    
+    public void NEGLiteral.typePrint(PrettyPrinter pr) { getInclusiveLiteral().typePrint(pr); }
+    public void InclusiveLiteral.typePrint(PrettyPrinter pr) {
+    	PseudoTuple tuple = toTuple();
+    	List types = new List();
+    	for(int i = 0; i != tuple.arity(); ++i) {
+    		Term t = tuple.coord(i);
+    		if(t.isVariable()) types.add(t);
+	 		else types.add(t.type());
+    	}
+    	if(isAtom())
+	 		pr.out.print(predicate().getPRED_ID());
+	 	else
+	 		pr.out.print(Program.transformPredefinedName(predicate().getPRED_ID()));
+	 	printList(types, "(", ")", ", ", pr);
+    }
+    
+    public void BinaryExclusiveTermLiteral.typePrint(PrettyPrinter pr) {
+    	TreeSet<Term> terms = new TreeSet<Term>(Term.termComparator);
+    	terms.addAll(variables());
+    	for(Constant c : constants())
+    		terms.add(c.type());
+    	printCollection(terms, "EQLIST([", "])", " ", pr);
+    }
+    
+    public void BINDLiteral.typePrint(PrettyPrinter pr) {
+    	TreeSet<Term> terms = new TreeSet<Term>(Term.termComparator);
+    	terms.add(getVariable());
+    	terms.addAll(getRight().variables());
+    	for(Constant c : getRight().constants())
+    		terms.add(c.type());
+    	printCollection(terms, "EQLIST([", "])", " ", pr);
+    }
+    
+    public void EQLISTLiteral.typePrint(PrettyPrinter pr) {
+    	TreeSet<Term> terms = new TreeSet<Term>(Term.termComparator);
+    	for(Term t : terms) {
+    		if(t.isVariable()) terms.add(t);
+    		else terms.add(t.type());
+    	}
+    	printCollection(terms, "EQLIST([", "])", " ", pr);
+    }
+    
+    public void Rule.typePrint(PrettyPrinter pr) {
+	 	pr.out.print("Rule" + index());
+	 	printCollection(variables(), "(", ")", ", ", pr);
+	 	pr.out.print(" :- ");
+	 	printCollection(literals(), "", ".\n", ", ", pr);
+	 	
+	 	// Limited Type Inference Right to Left
+	 	printList(getHeadss(), "", " :- ", ", ", pr);
+	 	printList(getBodys(), "", ".", ", ", pr);
+	 }
+	 
+	public void Program.typePrint(PrettyPrinter pr) {
+		MapToSetOf<FormalPredicate, PseudoTuple> initial = pass1TypeMap();
+		for(FormalPredicate fp : initial.keySet()) {
+			PseudoTuple type = initial.get(fp).iterator().next();
+			if(fp.literal().isAtom())
+				printList(type.toList(), fp.predicateName() + "(", ").\n", ", ", pr);
+			else
+				printList(type.toList(), Program.transformPredefinedName(fp.predicateName()) + "(", ").\n", ", ", pr);
+		}
+		HashSet<Rule> rules = new HashSet<Rule>();
+		for(Clause c : getClauses()) {
+			if(!c.isRule()) continue;
+			rules.add((Rule)c);
+		}
+		printCollection(rules, "", "", "\n", pr);
+	}
 }
 
 aspect SoufflePrinting {

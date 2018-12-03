@@ -2,15 +2,89 @@ import lang.io.FileUtil;
 import lang.evaluation.BottomUpNaiveIterative;
 import java.util.Collections;
 aspect TypeChecking {
-	/**
-	 * Collect Equality Constraints between the coordinates literals
-	 */ 
+	 public void Program.typeCheck() throws IOException, beaver.Parser.Exception {
+	 	String typeProgSource = typePrint();
+	 	SimpleLogger.logger().log("TypeProg:\n" + typeProgSource, SimpleLogger.LogLevel.Level.DEBUG);
+	 	Program typeProg = FileUtil.parse(typeProgSource);
+	 	BottomUpNaiveIterative eval = new BottomUpNaiveIterative();
+	 	eval.evaluate(typeProg, null);
+	 	
+	 	boolean typeError = false;
+	 	for(FormalPredicate fp : typeProg.getFormalPredicates()) {
+	 		if(fp.predicateName().startsWith("Rule")) {
+	 			SimpleLogger.logger().log(fp.predicateName() + ": " + fp.relation, SimpleLogger.LogLevel.Level.DEBUG);
+	 			
+	 			if(fp.relation.size() == 0 || fp.relation.size() > 1) {
+	 				typeError = true;
+	 				TreeSet<String> affectedClauses = new TreeSet<String>();
+	 				for(Literal l : ((Rule)fp.literal().clause()).getBodys()) {
+	 					if(l.isInclusive())
+	 						affectedClauses.add(l.predicate().getPRED_ID());
+	 				}
+	 				if(fp.relation.size() == 0)
+	 					SimpleLogger.logger().log("Not enough type information at: " + affectedClauses, SimpleLogger.LogLevel.Level.ERROR);
+	 				else
+	 					SimpleLogger.logger().log("Many possible types for: " + affectedClauses, SimpleLogger.LogLevel.Level.ERROR);
+	 			}
+	 		}
+	 	}
+	 	
+	 	if(typeError) System.exit(0);
+	 	for(FormalPredicate fp : typeProg.getFormalPredicates()) {
+	 		if(fp.predicateName().startsWith("Rule")) {
+	 			
+	 		}
+	 	}
+	 }
+	 
+	 /*
 	coll MapToSetOf<String, ConstraintEntry> Rule.typeConstraintMap() [new MapToSetOf(new TreeSetConstructor(null))] with add;
 	Variable contributes new MapEntry(toString(), new ConstraintEntry(occuresIn().predicate().formalpredicate(), index()))
 		when !isNested() //&& occuresIn().isAtom()
 		to Rule.typeConstraintMap()
 		for occuresIn().clause();
-		
+	*/
+	/*
+	syn Set<MapEntry<Integer, Type>> PredefinedLiteral.predefinedTypeContribution() {
+		HashSet<MapEntry<Integer, Type>> type_binding = new HashSet<MapEntry<Integer, Type>>();
+		for(int i = 0; i != type().arity(); ++i)
+			type_binding.add(new MapEntry(i, (Type)type().coord(i)));
+		return type_binding;
+	}
+	
+	
+	syn boolean PredefinedLiteral.satisfiedType() {
+		if(type().arity() != actualType().arity()) return false;
+		for(int i = 0; i != type().arity(); ++i) {
+			Type t1 = (Type)type().coord(i);
+			Type t2 = (Type)actualType().coord(i);
+			if(t2.isVariableType()) continue;
+			if(Type.typeComparator.compare(t1, t2) != 0) return false;
+		}
+		return true;
+	}
+	
+	syn boolean FormalPredicate.hasContradictingType() {
+   		for(Integer coord : coordTypeMap().keySet()) 
+   			if(coordTypeMap().get(coord).size() > 1) return true;
+   		return false;
+    }
+	
+   Program contributes nta getFormalPredicateList() to Program.semanticErrors();
+   FormalPredicate contributes "Contradictory type for predicate: " + predicateName()
+   		when hasContradictingType()
+   		to Program.semanticErrors();
+   		
+   	syn String PredefinedLiteral.typeErrorMsg() = "Expected: " + type() + " but got: " + actualType() + " for " + predicate().getPRED_ID();
+    OUTPUTLiteral contributes typeErrorMsg() when !satisfiedType() to Program.semanticErrors();
+    ATOMLiteral   contributes typeErrorMsg() when !satisfiedType() to Program.semanticErrors();
+    EDBLiteral    contributes typeErrorMsg() when !satisfiedType() to Program.semanticErrors();
+    PREDLiteral   contributes typeErrorMsg() when !satisfiedType() to Program.semanticErrors();
+    TYPEOFLiteral contributes typeErrorMsg() when !satisfiedType() to Program.semanticErrors();
+    Expr          contributes "Contradicting type in: " + this when hasContradictingType() to Program.semanticErrors();
+    TermList      contributes "Bad Type in list: "      + this when !isWellTyped() to Program.semanticErrors();
+    BinaryExclusiveTermLiteral contributes "Contradicting type in: " + this when hasContradictingType() to Program.semanticErrors();
+	
 	syn boolean BinaryExclusiveTermLiteral.hasContradictingType() {
 		TreeSet<Type> types = new TreeSet<Type>(Type.typeComparator);
 		TreeSet<Constant> constants = new TreeSet<Constant>(Term.termComparator);
@@ -31,16 +105,7 @@ aspect TypeChecking {
 		}
 		return false;
 	}
-	
-	syn TreeSet<ConstraintEquals> Expr.equalityConstraint() {
-		TreeSet<Variable> variables = variables();
-		TreeSet<Constant> constants = constants();
-		return null;
-	}
 		
-	/**
-		Collect Initial Type Information
-	**/	
 	coll MapToSetOf<Integer, Type> FormalPredicate.coordTypeMap() [new MapToSetOf(new HashSetConstructor())] with addAll;
 	Term contributes Collections.singleton(new MapEntry(index(), type()))
         when !isNested() && isConstant() && occuresIn().isAtom()
@@ -51,170 +116,5 @@ aspect TypeChecking {
     ATOMLiteral   contributes predefinedTypeContribution() to FormalPredicate.coordTypeMap() for predicate().formalpredicate();
     EDBLiteral    contributes predefinedTypeContribution() to FormalPredicate.coordTypeMap() for predicate().formalpredicate();
     PREDLiteral   contributes predefinedTypeContribution() to FormalPredicate.coordTypeMap() for predicate().formalpredicate();
-        
-    syn boolean FormalPredicate.hasContradictingType() {
-   		for(Integer coord : coordTypeMap().keySet()) 
-   			if(coordTypeMap().get(coord).size() > 1) return true;
-   		return false;
-    }
-   
-   Program contributes nta getFormalPredicateList() to Program.semanticErrors();
-   FormalPredicate contributes "Contradictory type for predicate: " + predicateName()
-   		when hasContradictingType()
-   		to Program.semanticErrors();
-   		
-    OUTPUTLiteral contributes typeErrorMsg() when !satisfiedType() to Program.semanticErrors();
-    ATOMLiteral   contributes typeErrorMsg() when !satisfiedType() to Program.semanticErrors();
-    EDBLiteral    contributes typeErrorMsg() when !satisfiedType() to Program.semanticErrors();
-    PREDLiteral   contributes typeErrorMsg() when !satisfiedType() to Program.semanticErrors();
-    TYPEOFLiteral contributes typeErrorMsg() when !satisfiedType() to Program.semanticErrors();
-    Expr          contributes "Contradicting type in: " + this when hasContradictingType() to Program.semanticErrors();
-    TermList      contributes "Bad Type in list: " + this when !isWellTyped() to Program.semanticErrors();
-    BinaryExclusiveTermLiteral contributes "Contradicting type in: " + this when hasContradictingType() to Program.semanticErrors();
-    
-   		
-	private HashSet<Set<ConstraintEntry>> Program.partitionConstraintEntries() {
-		HashSet<Set<ConstraintEntry>> partition = new HashSet<Set<ConstraintEntry>>();
-		for(Clause c : getClauseList()) {
-			if(!c.isRule()) continue;
-			Rule r = (Rule) c;
-			for(Set<ConstraintEntry> constraint : r.typeConstraintMap().values()) {
-				HashSet<Set<ConstraintEntry>> mergeSets = new HashSet<Set<ConstraintEntry>>();
-				System.out.println("CONSTRAINT: " + constraint);
-				
-				for(ConstraintEntry ce : constraint) {
-					for(Set<ConstraintEntry> partset : partition) {
-						if(partset.contains(ce)) mergeSets.add(partset);
-					}
-				}
-				if(mergeSets.isEmpty()) {
-					partition.add(constraint);
-					continue;
-				}
-				
-				System.out.println("MERGE: " + mergeSets);
-				Set<ConstraintEntry> target = mergeSets.iterator().next();
-				System.out.println("TARGET: " + target);
-				target.addAll(constraint);
-				for(Set<ConstraintEntry> mset : mergeSets) {
-					if(mset == target) continue;
-					target.addAll(mset);
-					System.out.println("BEFORE REMOVE: " + partition);
-					partition.remove(mset);
-					System.out.println("AFTER REMOVE: " + partition);
-				}
-				System.out.println("AFTER MERGE: " + partition);
-			}
-		}
-		return partition;
-	}
-	
-	private Set<ConstraintEntry> Program.findPartitionEntry(HashSet<Set<ConstraintEntry>> partition, ConstraintEntry ce) {
-		for(Set<ConstraintEntry> set : partition) {
-			if(set.contains(ce)) return set;
-		}
-		SimpleLogger.logger().log("No entry in partition for" + ce, SimpleLogger.LogLevel.Level.DEBUG);
-		return null;
-	}
-	
-	public void Program.typeCheck() throws IOException, Exception {
-	    HashSet<Set<ConstraintEntry>> partition = partitionConstraintEntries();
-	    System.out.println("PARTITION: " + partition);
-	    System.out.println("Number Partitions: " + partition.size());
-	    
-	    HashMap<Set<ConstraintEntry>, Type> partitionType = new HashMap<Set<ConstraintEntry>, Type>();
-
-		boolean failed = false;
-	    for(FormalPredicate fp : getFormalPredicates()) {
-	    	MapToSetOf<Integer, Type> initialConstraints = fp.coordTypeMap();
-	    	for(Integer index : initialConstraints.keySet()) {
-	    		for(Type type : initialConstraints.get(index)) {
-	    			Set<ConstraintEntry> partitionEntry = findPartitionEntry(partition, new ConstraintEntry(fp, index));
-	    			if(partitionEntry == null) continue;
-	    			Type t = partitionType.get(partitionEntry);
-	    			if(t == null) partitionType.put(partitionEntry, type);
-	    			else if (Type.typeComparator.compare(t, type) != 0) {
-	    				SimpleLogger.logger().log("PREV: " + t + ", new " + type + ", for " + partitionEntry, SimpleLogger.LogLevel.Level.DEBUG);
-	    			 	failed = true;
-	    			 	break;
-	    			}
-	    		}
-	    		if(failed) break;
-	    	}
-	    	if(failed) break;
-		}
-		
-		SimpleLogger.logger().log("TYPES: " + partition, SimpleLogger.LogLevel.Level.DEBUG);
-		for(Set<ConstraintEntry> set : partition) {
-			SimpleLogger.logger().log(set + " -> " + partitionType.get(set), SimpleLogger.LogLevel.Level.DEBUG);
-		}
-		
-		if(failed) {
-			SimpleLogger.logger().log("Inconsistent Type Information", SimpleLogger.LogLevel.Level.ERROR);
-			System.exit(0);
-		} else {
-			for(Set<ConstraintEntry> set : partition) {
-				if(partitionType.get(set) == null) {
-					SimpleLogger.logger().log("Insufficient Type Information: " + partition, SimpleLogger.LogLevel.Level.ERROR);
-					System.exit(0);
-				}
-			}
-		}
-    }
-    
-    public class ConstraintEquals implements Comparable<ConstraintEquals> {
-    	public final Term t1;
-    	public final Term t2;
-    	
-    	public ConstraintEquals(Term t1, Term t2) {
-            this.t1 = t1;
-            this.t2 = t2;
-        }
-        
-        @Override
-        public boolean equals(Object o) {
-            if(!(o instanceof ConstraintEquals)) return false;
-            return compareTo((ConstraintEquals)o) == 0;
-        }
-        
-        @Override
-        public int compareTo(ConstraintEquals ce) {
-            int cmp = Term.termComparator.compare(t1, ce.t1);
-            if(cmp != 0) return cmp;
-            return Term.termComparator.compare(t2, ce.t2);
-        }
-        
-        @Override
-        public String toString() {
-            return t1 + " = " + t2;
-        }
-    }
-    
-    public class ConstraintEntry implements Comparable<ConstraintEntry> {
-        public final FormalPredicate fp;
-        public final int index;
-        
-        public ConstraintEntry(FormalPredicate fp, int index) {
-            this.fp = fp;
-            this.index = index;
-        }
-        
-        @Override
-        public boolean equals(Object o) {
-            if(!(o instanceof ConstraintEntry)) return false;
-            return compareTo((ConstraintEntry)o) == 0;
-        }
-        
-        @Override
-        public int compareTo(ConstraintEntry ce) {
-            int cmp = fp.predicateName().compareTo(ce.fp.predicateName());
-            if(cmp != 0) return cmp;
-            return index < ce.index ? -1 : (index == ce.index ? 0 : 1);
-        }
-        
-        @Override
-        public String toString() {
-            return fp.predicateName() + "<" + index + ">";
-        }
-    }
+    */
 }

@@ -49,8 +49,11 @@ public class Compiler {
 				serrs.forEach(err -> SimpleLogger.logger().log(err));
 				System.exit(0);
 			}
+			SimpleLogger.logger().log("PASS1TMAP: " + program.pass1TypeMap(), SimpleLogger.LogLevel.Level.DEBUG);
+			
 			program.typeCheck();
 			descr.evaluationMethod().evaluate(program, descr);
+			
 		} catch (FileNotFoundException e) {
 			SimpleLogger.logger().log("File not found!", SimpleLogger.LogLevel.Level.ERROR);
 			System.exit(1);

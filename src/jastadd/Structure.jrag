@@ -95,7 +95,6 @@ aspect Program {
         return uniquePredicateSymbols;
     }
     
-    
     syn MapToSetOf<String, PredicateInterface> Program.predicateMap() {
         MapToSetOf<String, PredicateInterface> predicateMap = new MapToSetOf(new HashSetConstructor());
         for(PredicateInterface pred : predicateSymbols()) 
@@ -122,6 +121,38 @@ aspect Clause {
     syn boolean Clause.isRule();
     eq Rule.isRule() = true;
     eq Fact.isRule() = false;
+    
+    inh int Clause.index();
+    eq Program.getClause(int index).index() = index;
+    
+    syn HashSet<Literal> Rule.literals() {
+    	HashSet<Literal> literals = new HashSet<Literal>();
+    	for(Literal l : getHeadss()) literals.add(l);
+    	for(Literal l : getBodys())  literals.add(l);
+    	return literals;
+    }
+    
+    syn HashSet<Literal> Rule.inclusiveLiterals() {
+    	HashSet<Literal> literals = new HashSet<Literal>();
+    	for(Literal l : literals())
+    		if(l.isInclusive())
+    			literals.add(l);
+    	return literals;
+    }
+    
+    syn HashSet<Literal> Rule.exclusiveLiterals() {
+    	HashSet<Literal> literals = new HashSet<Literal>();
+    	for(Literal l : literals())
+    		if(!l.isInclusive())
+    			literals.add(l);
+    	return literals;
+    }
+    
+    syn TreeSet<Variable> Rule.variables() {
+    	TreeSet<Variable> variables = new TreeSet<Variable>(Term.termComparator);
+    	for(Literal l : literals()) variables.addAll(l.variables());
+    	return variables;
+    }
 }
 
 aspect Literal {
@@ -160,6 +191,7 @@ aspect Literal {
     eq Clause.getChild().isUse() = false;
     eq Rule.getBody().isUse()    = true;
     
+    
     inh Program PREDLiteral.program();
     syn List PREDLiteral.getPredicateRefList() {
     	List list = new List();
@@ -179,12 +211,58 @@ aspect Literal {
     	return list;
     }
     
+    syn boolean Literal.isGround() = variables().isEmpty();
+    
     public interface PredefinedLiteral {}
     ATOMLiteral   implements PredefinedLiteral;
     EDBLiteral    implements PredefinedLiteral;
     PREDLiteral   implements PredefinedLiteral;
     OUTPUTLiteral implements PredefinedLiteral;
     TYPEOFLiteral implements PredefinedLiteral;
+    
+    syn TreeSet<Variable> Literal.variables();
+    eq Atom.variables() {
+    	TreeSet<Variable> vars = new TreeSet<Variable>(Term.termComparator);
+    	for(Term t : getTermss()) if(t.isVariable()) vars.add((Variable) t);
+    	return vars;
+    }
+    public TreeSet<Variable> Literal.toVarSet(Term t) {
+    	TreeSet<Variable> vars = new TreeSet<Variable>(Term.termComparator);
+    	if(t.isVariable()) vars.add((Variable)t);
+    	return vars;
+    }
+    
+    eq EDBLiteral.variables()    = toVarSet(getFileLoc());
+    eq OUTPUTLiteral.variables() = toVarSet(getTerm());
+    eq ATOMLiteral.variables()   = toVarSet(getTerm());
+    eq PREDLiteral.variables()   = toVarSet(getTerm());
+    eq TYPEOFLiteral.variables() = toVarSet(getTerm());
+    eq NEGLiteral.variables()    = getInclusiveLiteral().variables();
+    eq EQLISTLiteral.variables() {
+    	if(getTermList().isVariable()) return toVarSet(getTermList());
+    	return getTermList().variables();
+    }
+    
+    eq BINDLiteral.variables()  {
+    	TreeSet<Variable> vars = new TreeSet<Variable>(Term.termComparator);
+		vars.add(getVariable());
+		vars.addAll(getRight().variables());
+		return vars;
+    }
+    
+    eq BinaryExclusiveTermLiteral.variables() {
+		TreeSet<Variable> vars = new TreeSet<Variable>(Term.termComparator);
+		vars.addAll(getLeft().variables());
+		vars.addAll(getRight().variables());
+		return vars;
+	}
+    
+    syn TreeSet<Constant> BinaryExclusiveTermLiteral.constants() {
+		TreeSet<Constant> constants = new TreeSet<Constant>(Term.termComparator);
+		constants.addAll(getLeft().constants());
+		constants.addAll(getRight().constants());
+		return constants;
+	}
 }
 
 aspect Predicate {
@@ -241,8 +319,38 @@ aspect Term {
 	}
 }
 
-aspect Expr {
+aspect Expression {
 	inh Literal Expr.occuresIn();
+	public abstract TreeSet<Variable> Expr.variables();
+		
+	syn TreeSet<Variable> BinExpr.variables() {
+		TreeSet<Variable> vars = new TreeSet<Variable>(Term.termComparator);
+		vars.addAll(getLeft().variables());
+		vars.addAll(getRight().variables());
+		return vars;
+	}
+	
+	syn TreeSet<Variable> Term.variables()     = new TreeSet<Variable>(Term.termComparator);
+	syn TreeSet<Variable> Variable.variables() {
+		TreeSet<Variable> vars = new TreeSet<Variable>(Term.termComparator);
+		vars.add(this);
+		return vars;
+	}
+	
+	public abstract TreeSet<Constant> Expr.constants();
+	syn TreeSet<Constant> BinExpr.constants() {
+		TreeSet<Constant> constants = new TreeSet<Constant>(Term.termComparator);
+		constants.addAll(getLeft().constants());
+		constants.addAll(getRight().constants());
+		return constants;
+	}
+	
+	syn TreeSet<Constant> Term.constants()     = new TreeSet<Constant>(Term.termComparator);
+	syn TreeSet<Constant> Constant.constants() {
+		TreeSet<Constant> constants = new TreeSet<Constant>(Term.termComparator);
+		constants.add(this);
+		return constants;
+	}
 }
 
 aspect FormalPredicate {
@@ -302,55 +410,22 @@ aspect FormalPredicate {
     }
 }
 
-aspect Expression {
-	public abstract TreeSet<Variable> Expr.variables();
-	syn TreeSet<Variable> BinaryExclusiveTermLiteral.variables() {
-		TreeSet<Variable> vars = new TreeSet<Variable>(Term.termComparator);
-		vars.addAll(getLeft().variables());
-		vars.addAll(getRight().variables());
-		return vars;
-	}
-	
-	syn TreeSet<Variable> BinExpr.variables() {
-		TreeSet<Variable> vars = new TreeSet<Variable>(Term.termComparator);
-		vars.addAll(getLeft().variables());
-		vars.addAll(getRight().variables());
-		return vars;
-	}
-	
-	syn TreeSet<Variable> Term.variables()     = new TreeSet<Variable>(Term.termComparator);
-	syn TreeSet<Variable> Variable.variables() {
-		TreeSet<Variable> vars = new TreeSet<Variable>(Term.termComparator);
-		vars.add(this);
-		return vars;
-	}
-	
-	
-	public abstract TreeSet<Constant> Expr.constants();
-	syn TreeSet<Constant> BinaryExclusiveTermLiteral.constants() {
-		TreeSet<Constant> constants = new TreeSet<Constant>(Term.termComparator);
-		constants.addAll(getLeft().constants());
-		constants.addAll(getRight().constants());
-		return constants;
-	}
-	
-	syn TreeSet<Constant> BinExpr.constants() {
-		TreeSet<Constant> constants = new TreeSet<Constant>(Term.termComparator);
-		constants.addAll(getLeft().constants());
-		constants.addAll(getRight().constants());
-		return constants;
-	}
-	
-	syn TreeSet<Constant> Term.constants()     = new TreeSet<Constant>(Term.termComparator);
-	syn TreeSet<Constant> Constant.constants() {
-		TreeSet<Constant> constants = new TreeSet<Constant>(Term.termComparator);
-		constants.add(this);
-		return constants;
-	}
-}
-
 aspect Types {
 	public TreeMap<FormalPredicate, PseudoTuple> Program.typeMap = new TreeMap<FormalPredicate, PseudoTuple>(FormalPredicate.formalPredicateComparator);
+    coll MapToSetOf<FormalPredicate, PseudoTuple> Program.pass1TypeMap() [new MapToSetOf(new TreeSetConstructor(null))] with add;
+    
+    TYPEOFLiteral contributes new MapEntry<FormalPredicate, PseudoTuple>(getPredicateRef().formalpredicate(), refType()) 
+    	when isGround()
+    	to Program.pass1TypeMap();
+    	
+    OUTPUTLiteral contributes new MapEntry<FormalPredicate, PseudoTuple>(predicate().formalpredicate(), type()) to Program.pass1TypeMap();
+    ATOMLiteral   contributes new MapEntry<FormalPredicate, PseudoTuple>(predicate().formalpredicate(), type()) to Program.pass1TypeMap();
+    EDBLiteral    contributes new MapEntry<FormalPredicate, PseudoTuple>(predicate().formalpredicate(), type()) to Program.pass1TypeMap();
+    PREDLiteral   contributes new MapEntry<FormalPredicate, PseudoTuple>(predicate().formalpredicate(), type()) to Program.pass1TypeMap();
+    TYPEOFLiteral contributes new MapEntry<FormalPredicate, PseudoTuple>(predicate().formalpredicate(), type()) to Program.pass1TypeMap();
+    Literal       contributes new MapEntry<FormalPredicate, PseudoTuple>(predicate().formalpredicate(), toTuple().toTypeTuple())
+    	when isGround()
+    	to Program.pass1TypeMap();
 
 	public static final Type Type.typeType    = new TypeType();
 	public static final Type Type.stringType  = new StringType();
@@ -359,6 +434,7 @@ aspect Types {
 	public static final Type Type.varType     = new VariableType();
 	public static final Type Type.litTypeType = new ListType(typeType);
 	public static final Type Type.unknownType = new UnknownType();
+	public static final Type Type.badType     = new BadType();
 	
 	syn Type Term.type()      =  Type.typeType;
 	eq UnknownType.type()     =  Type.unknownType;
@@ -368,10 +444,11 @@ aspect Types {
     eq StringConstant.type()  =  Type.stringType;
     eq IntConstant.type()     =  Type.integerType;
 	eq TermList.type() {
-		if(hasTerms()) {
+		if(isWellTyped() && hasTerms()) {
 			return new ListType(getTerms(0).type());
 		}
-		return new ListType(Type.varType);
+		if(!hasTerms()) return new ListType(Type.unknownType);
+		return Type.badType;
 	}
 	
 	syn boolean TermList.isWellTyped() = toTuple().toTypeTuple().isUniInfo();
@@ -402,7 +479,7 @@ aspect Types {
 	eq  OUTPUTLiteral.actualType() = new PseudoTuple(new List(getTerm().type()));
 	eq  PREDLiteral.actualType()   = new PseudoTuple(new List(getTerm().type()));
 	eq  EDBLiteral.actualType()    = new PseudoTuple(new List(Type.predRefType, getFileLoc().type()));
-	eq  TYPEOFLiteral.actualType() = new PseudoTuple(new List(Type.predRefType, getTermList().type()));
+	eq  TYPEOFLiteral.actualType() = new PseudoTuple(new List(Type.predRefType, getTerm().type()));
 	
 	syn PseudoTuple PredefinedLiteral.type();
 	eq  ATOMLiteral.type()   = new PseudoTuple(new List(Type.predRefType));
@@ -411,22 +488,5 @@ aspect Types {
 	eq  EDBLiteral.type()    = new PseudoTuple(new List(Type.predRefType, Type.stringType));
 	eq  TYPEOFLiteral.type() = new PseudoTuple(new List(Type.predRefType, Type.litTypeType));
 	
-	syn Set<MapEntry<Integer, Type>> PredefinedLiteral.predefinedTypeContribution() {
-		HashSet<MapEntry<Integer, Type>> type_binding = new HashSet<MapEntry<Integer, Type>>();
-		for(int i = 0; i != type().arity(); ++i)
-			type_binding.add(new MapEntry(i, (Type)type().coord(i)));
-		return type_binding;
-	}
-	
-	syn String PredefinedLiteral.typeErrorMsg() = "Expected: " + type() + " but got: " + actualType() + " for " + predicate().getPRED_ID();
-	syn boolean PredefinedLiteral.satisfiedType() {
-		if(type().arity() != actualType().arity()) return false;
-		for(int i = 0; i != type().arity(); ++i) {
-			Type t1 = (Type)type().coord(i);
-			Type t2 = (Type)actualType().coord(i);
-			if(t2.isVariableType()) continue;
-			if(Type.typeComparator.compare(t1, t2) != 0) return false;
-		}
-		return true;
-	}
+	syn PseudoTuple TYPEOFLiteral.refType() = ((TermList)getTerm()).toTuple();
 }

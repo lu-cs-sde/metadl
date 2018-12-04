@@ -20,11 +20,11 @@ public class EvaluationTest {
 	 * Compare one evaluation scheme against another.
 	 */
 	public void doEvaluationTest(Description d1, Description d2) throws Exception {
-		Program program1 = (Program) FileUtil.parse(new File(d1.getInput().getPath()));
-		d1.evaluationMethod().evaluate(program1, d1);
+		//Program program1 = (Program) FileUtil.parse(new File(d1.getInput().getPath()));
+		Program program1 = d1.getTask().perform();
 
-		Program program2 = (Program) FileUtil.parse(new File(d2.getInput().getPath()));
-		d2.evaluationMethod().evaluate(program2, d2);
+		//Program program2 = (Program) FileUtil.parse(new File(d2.getInput().getPath()));
+		d2.getTask().perform();
 
 		program1.getFormalPredicates().forEach(fp -> {
 			if(!fp.literal().hasExtendedSemantics()) {

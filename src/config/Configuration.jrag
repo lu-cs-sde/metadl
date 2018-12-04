@@ -71,14 +71,15 @@ aspect Task {
         return program;
     }
 
-	public abstract void Task.perform() throws Exception;
-    public void EvalBottomUpNaive.perform()  throws Exception {
+	public abstract Program Task.perform() throws Exception;
+    public Program EvalBottomUpNaive.perform()  throws Exception {
         Program program = getProgramWithChecks();
         BottomUpNaiveIterative bit = new BottomUpNaiveIterative();
         bit.evaluate(program, description());
+        return program;
     }
 
-    public void EvalSouffle.perform()  throws Exception {
+    public Program EvalSouffle.perform()  throws Exception {
         Program program = getProgramWithChecks();
 
         String soufflePath = outputDir() + "/" + outputFileName();
@@ -98,23 +99,26 @@ aspect Task {
             SimpleLogger.logger().log(":SOUFFLE-ERROR " + brerr.readLine(), SimpleLogger.LogLevel.Level.ERROR);
         br.close();
         brerr.close();
+        return program;
     }
 
-    public void PrettyBottomUpNaive.perform()  throws Exception {
+    public Program PrettyBottomUpNaive.perform()  throws Exception {
         Program program = (Program) FileUtil.parse(new File(description().getInput().getPath()));
         Compiler.DrAST_root_node = program; // Enable debugging with DrAST
         StandardPrettyPrinter spp = new StandardPrettyPrinter<Program>(new PrintStream(System.out));
         spp.prettyPrint(program);
+        return program;
     }
 
-    public void PrettySouffle.perform()  throws Exception{
+    public Program PrettySouffle.perform()  throws Exception{
         Program program = (Program) FileUtil.parse(new File(description().getInput().getPath()));
         Compiler.DrAST_root_node = program; // Enable debugging with DrAST
         program.soufflePrint(
                 new SoufflePrettyPrinter<Program>(new PrintStream(System.out)));
+        return program;
     }
 
-    public void TypeProg.perform()  throws Exception{
+    public Program TypeProg.perform()  throws Exception{
         Program program = (Program) FileUtil.parse(new File(description().getInput().getPath()));
         new SemanticCheck(getParamss()).perform(program, description());
 		String typeProgSource = program.typePrint();
@@ -146,17 +150,20 @@ aspect Task {
                 System.out.println(fp.predicateName() + ": " + fp.derivedTypes());
         }
         System.out.println("------------------------------------------------");
+        return program;
     }
 
-    public void TypeCheck.perform()  throws Exception{
+    public Program TypeCheck.perform()  throws Exception{
         Program program = (Program) FileUtil.parse(new File(description().getInput().getPath()));
         Compiler.DrAST_root_node = program; // Enable debugging with DrAST
         perform(program, description());
+        return program;
     }
-    public void SemanticCheck.perform()  throws Exception{
+    public Program SemanticCheck.perform()  throws Exception{
         Program program = (Program) FileUtil.parse(new File(description().getInput().getPath()));
         Compiler.DrAST_root_node = program; // Enable debugging with DrAST
         perform(program, description());
+        return program;
     }
 
     public interface SubTask {

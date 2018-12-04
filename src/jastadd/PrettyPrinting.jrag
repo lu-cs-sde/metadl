@@ -164,7 +164,20 @@ aspect PretyPrinting {
         pr.out.print(" = ");
     	pr.prettyPrint(getRight());
     }
+
+    public void NEGLiteral.prettyPrint(PrettyPrinter pr) {
+    	pr.out.print("NOT(");
+        pr.prettyPrint(getInclusiveLiteral());
+        pr.out.print(")");
+    }
+
+    public void EQLISTLiteral.prettyPrint(PrettyPrinter pr) {
+    	pr.out.print("EQLIST(");
+        pr.prettyPrint(getTermList());
+    	pr.out.print(")");
+    }
 }
+
 aspect ExtensionablePrinting {
     public abstract class PrettyPrinter<T extends ASTNode> {
         public final PrintStream out;
@@ -203,16 +216,6 @@ aspect ExtensionablePrinting {
         }
     }
 
-    public class SoufflePreProcessPrinter<T extends ASTNode> extends PrettyPrinter<T> {
-    	public void prettyPrint(T node) {
-        	node.soufflePrePrint(this);
-        }
-        
-        public SoufflePreProcessPrinter(PrintStream out) {
-            super(out);
-        }
-    }
-    
     public class StandardStringPrettyPrinter {
     	public static <T extends ASTNode> String print(T t) {
     		ByteArrayOutputStream stream = new ByteArrayOutputStream();
@@ -339,34 +342,6 @@ aspect TypePrinting {
 	}
 }
 
-aspect SoufflePreProcessPrinting {
-	public void ASTNode.soufflePrePrint(String path) throws IOException {
-        File file = new File(path);
-        FileOutputStream fop = new FileOutputStream(file);
-        SoufflePreProcessPrinter soufflePrinter = new SoufflePreProcessPrinter(new PrintStream(fop));
-        soufflePrinter.prettyPrint(this);
-        fop.close();
-    }
-
-    public String ASTNode.soufflePrePrint() {
-        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
-        SoufflePreProcessPrinter soufflePrinter = new SoufflePreProcessPrinter(new PrintStream(bytes));
-        soufflePrinter.prettyPrint(this);
-        return bytes.toString();
-    }
-
-    public void ASTNode.soufflePrePrint(PrettyPrinter pr) {
-        prettyPrint(pr);
-    }
-
-    public void Program.soufflePrePrint(PrettyPrinter pr) {
-        for(Literal l : predefinedLiterals()) {
-            pr.out.print("OUTPUT('" + l.predicate().getPRED_ID() + ").\n");
-        }
-        prettyPrint(pr);
-    }
-}
-
 aspect SoufflePrinting {
     public void ASTNode.soufflePrint(String path) throws IOException {
         File file = new File(path);
@@ -386,11 +361,6 @@ aspect SoufflePrinting {
     public void ASTNode.soufflePrint(PrettyPrinter pr) {
         prettyPrint(pr);
     }
-// A Hack to remove the DOT that is inserted after each rule.
-    /* public void EDBLiteral.soufflePrint(PrettyPrinter pr)     {  pr.out.print("// EDB");    } */
-    /* public void PREDLiteral.soufflePrint(PrettyPrinter pr)    {  pr.out.print("// PRED"); } */
-    /* public void ATOMLiteral.soufflePrint(PrettyPrinter pr)    {  pr.out.print("// ATOM"); } */
-    /* public void OUTPUTLiteral.soufflePrint(PrettyPrinter pr)  {  pr.out.print("// OUTPUT"); } */
     
     public void NEGLiteral.soufflePrint(PrettyPrinter pr) {
     	pr.out.print("!");
@@ -423,7 +393,7 @@ aspect SoufflePrinting {
 
     public void TermList.soufflePrint(PrettyPrinter pr) {
         pr.out.print("\"");
-        prettyPrint(pr);
+        prettyPrint(new StandardPrettyPrinter(pr.out)); // Souffle does not allow nested quotations.
         pr.out.print("\"");
     }
 
@@ -440,6 +410,12 @@ aspect SoufflePrinting {
         printList(getHeadss(), "", " :- true.\n", ", ", pr);
     }
 
+    public void Type.soufflePrint(PrettyPrinter pr) {
+        pr.out.print("\"");
+        prettyPrint(pr);
+        pr.out.print("\"");
+    }
+
     public void FormalPredicate.soufflePrint(PrettyPrinter pr) {
         if(!literal().isInclusive()) return;
         pr.out.print(".decl " + predicateName() + "(");
@@ -451,7 +427,6 @@ aspect SoufflePrinting {
         printList(constants, "", "", ", ", pr);
         pr.out.print(")");
     }
-
 
     private void Program.soufflePrintEDBDecl(PrettyPrinter pr) {
         FormalPredicate fp = formalPredicateMap().get(GlobalNames.EDB_NAME);

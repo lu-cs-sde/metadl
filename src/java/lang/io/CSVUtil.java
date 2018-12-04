@@ -95,6 +95,8 @@ public class CSVUtil {
 		try (CSVWriter writer = new CSVWriter(new OutputStreamWriter(new FileOutputStream(f)),
 				CSVWriter.DEFAULT_SEPARATOR, CSVWriter.NO_QUOTE_CHARACTER, CSVWriter.DEFAULT_ESCAPE_CHARACTER,
 				CSVWriter.RFC4180_LINE_END)) {
+
+            SimpleLogger.logger().log("Write Relation: " + f.getPath(), SimpleLogger.LogLevel.Level.DEBUG);
 			sp.relation.tuples().forEach(t -> {
 				writer.writeNext(t.toStringArray());
 			});

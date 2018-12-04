@@ -1,0 +1,2 @@
+OUTPUT(x) :- ATOM(x).
+A(x) :- BIND(x, Integer).

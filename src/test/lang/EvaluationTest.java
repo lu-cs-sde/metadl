@@ -24,16 +24,16 @@ public class EvaluationTest {
 	 * Compare one evaluation scheme against another.
 	 */
 	public void doEvaluationTest(Description d1, Description d2) throws Exception {
-		//Program program1 = (Program) FileUtil.parse(new File(d1.getInput().getPath()));
 		Program program1 = d1.getTask().perform();
+		Program program2 = d2.getTask().perform();
 
-		//Program program2 = (Program) FileUtil.parse(new File(d2.getInput().getPath()));
-		d2.getTask().perform();
+        FormalPredicate fpOut1 = program1.formalPredicateMap().get(GlobalNames.OUTPUT_NAME);
+        FormalPredicate fpOut2 = program1.formalPredicateMap().get(GlobalNames.OUTPUT_NAME);
+        if(fpOut1 == null || fpOut2 == null) assertTrue(false);
 
-        FormalPredicate fpOut = program1.formalPredicateMap().get(GlobalNames.OUTPUT_NAME);
-        if(fpOut == null) return;
+        assertTrue(fpOut1.relation.equals(fpOut2.relation));
 
-        for(PseudoTuple ps : fpOut.relation.tuples()) {
+        for(PseudoTuple ps : fpOut1.relation.tuples()) {
             PredicateRef pr = (PredicateRef) ps.coord(0);
             FormalPredicate fp = pr.formalpredicate();
 
@@ -58,12 +58,6 @@ public class EvaluationTest {
             SimpleLogger.logger().log("r2: " + r2.tuples(), SimpleLogger.LogLevel.Level.DEBUG);
             assertTrue(r1.equals(r2));
         }
-
-		program1.getFormalPredicates().forEach(fp -> {
-			if(!fp.literal().hasExtendedSemantics()) {
-
-			}
-		});
 	}
 
 	@DisplayName("Compare Internal Evaluation to Souffle")
@@ -119,4 +113,16 @@ public class EvaluationTest {
 				"eval::bottomupnaive -OUT ./tests/output        -FACTS ./tests/evaluation/withbinpred/ ./tests/evaluation/withbinpred/" + fileName);
 		doEvaluationTest(d1, d2);
 	}
+
+    @DisplayName("Compare Internal Evaluation to Souffle WithMeta")
+    @ParameterizedTest(name = "Evaluation Tests Valid")
+    @ValueSource(strings = { "evalTest_1.in", "evalTest_2.in" })
+    void evaluationTestsBottomUpNaiveCompareWithMeta(String fileName) throws Exception {
+        Description d1 = FileUtil.parseDescription(
+                "eval::souffle      -OUT ./tests/output/souffle -FACTS ./tests/evaluation/withmeta/facts ./tests/evaluation/withmeta/" + fileName);
+        Description d2 = FileUtil.parseDescription(
+                "eval::bottomupnaive -OUT ./tests/output        -FACTS ./tests/evaluation/withmeta/facts ./tests/evaluation/withmeta/" + fileName);
+        doEvaluationTest(d1, d2);
+    }
+	
 }

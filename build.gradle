@@ -187,5 +187,4 @@ task cleanGeneratedJava(type: Delete) {
     delete file('tests/output')
     delete file('./out')
     delete file('./tmp')
-    delete file('./facts')
 }

@@ -62,13 +62,13 @@ aspect TypeChecking {
 	 
 	 syn Type AddExpr.mappendTypes(Type t1, Type t2) {
         if(Type.typeComparator.compare(t1, t2) != 0)  return Type.badType;
-        if(!(t1.isString() || t1.isInteger())) return Type.badType;
+        if(!(t1.isStringType() || t1.isIntegerType())) return Type.badType;
         return t1;
     }
 
-    syn Type BinExpr.mappendTypes(Type  t1, Type t2) {
+    syn Type BinExpr.mappendTypes(Type t1, Type t2) {
         if(Type.typeComparator.compare(t1, t2) != 0)  return Type.badType;
-        if(!t1.isInteger()) return Type.badType;
+        if(!t1.isIntegerType()) return Type.badType;
         return t1;
     }
 

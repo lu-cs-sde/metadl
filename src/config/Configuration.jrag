@@ -1,16 +1,21 @@
 import lang.ast.Program;
 import lang.ast.StandardPrettyPrinter;
 import lang.ast.SoufflePrettyPrinter;
+import lang.ast.SoufflePreProcessPrinter;
 import lang.ast.FormalPredicate;
+import lang.ast.Literal;
 import lang.io.FileUtil;
+import lang.io.CSVUtil;
 import lang.io.SimpleLogger;
 import lang.Compiler;
 import lang.evaluation.BottomUpNaiveIterative;
-import lang.evaluation.SouffleEvaluation;
-import lang.evaluation.TypeProgEvaluation;
+import java.util.Set;
 import java.util.HashSet;
 import java.io.InputStreamReader;
 import java.io.BufferedReader;
+import java.io.FileReader;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 
 aspect Configuration {
 	syn String Description.inputFile() = getInput().getPath();
@@ -60,6 +65,7 @@ aspect SouffleConfiguration {
 }
 
 aspect Task {
+	public abstract Program Task.perform() throws Exception;
     inh Description Task.description();
     eq Description.getChild().description() = this;
 
@@ -70,35 +76,13 @@ aspect Task {
         new TypeCheck(getParamss()).perform(program, description());
         return program;
     }
+}
 
-	public abstract Program Task.perform() throws Exception;
+aspect Internal {
     public Program EvalBottomUpNaive.perform()  throws Exception {
         Program program = getProgramWithChecks();
         BottomUpNaiveIterative bit = new BottomUpNaiveIterative();
         bit.evaluate(program, description());
-        return program;
-    }
-
-    public Program EvalSouffle.perform()  throws Exception {
-        Program program = getProgramWithChecks();
-
-        String soufflePath = outputDir() + "/" + outputFileName();
-        program.soufflePrint(new SoufflePrettyPrinter<Program>(new PrintStream(new FileOutputStream(new File(soufflePath)))));
-        String cmd = "souffle -D " + outputDir() + " " + soufflePath + " -F " + factsDir();
-
-        SimpleLogger.logger().log("Run souffle with: " + cmd, SimpleLogger.LogLevel.Level.DEBUG);
-
-        Process p = Runtime.getRuntime().exec(cmd);
-        p.waitFor();
-
-        BufferedReader br = new BufferedReader(new InputStreamReader(p.getInputStream()));
-        while (br.ready()) 
-            SimpleLogger.logger().log(":SOUFFLE-OUTPUT " + br.readLine(), SimpleLogger.LogLevel.Level.DEBUG);
-        BufferedReader brerr = new BufferedReader(new InputStreamReader(p.getErrorStream()));
-        while (brerr.ready()) 
-            SimpleLogger.logger().log(":SOUFFLE-ERROR " + brerr.readLine(), SimpleLogger.LogLevel.Level.ERROR);
-        br.close();
-        brerr.close();
         return program;
     }
 
@@ -109,19 +93,95 @@ aspect Task {
         spp.prettyPrint(program);
         return program;
     }
+}
 
-    public Program PrettySouffle.perform()  throws Exception{
-        Program program = (Program) FileUtil.parse(new File(description().getInput().getPath()));
-        Compiler.DrAST_root_node = program; // Enable debugging with DrAST
-        program.soufflePrint(
-                new SoufflePrettyPrinter<Program>(new PrintStream(System.out)));
+aspect Souffle {
+    protected Program SouffleTask.preEvaluate(HashSet<File> copied, HashSet<File> moved) throws Exception {
+        File tmp_dir_1 = new File("tmp/tmp1");
+        File tmp_dir_2 = new File("tmp/tmp2");
+        tmp_dir_1.mkdirs();
+        tmp_dir_2.mkdirs();
+        String source_eval = "eval::bottomupnaive -OUT " + tmp_dir_1.getPath() + " -FACTS " + factsDir() + " " + description().inputFile();
+        Description evalDescr = FileUtil.parseDescription(source_eval);
+        Program program = evalDescr.getTask().perform();
+
+        for(Literal l : program.predefinedLiterals()) {
+            FormalPredicate fp = l.predicate().formalpredicate();
+            File output_fp = new File(factsDir() + "/" + fp.predicateName() + ".csv");
+            if(output_fp.exists()) {
+                SimpleLogger.logger().log("Move: " + output_fp.getName() + " from  " + factsDir() + " to " + tmp_dir_2.getPath(),
+                    SimpleLogger.LogLevel.Level.DEBUG);
+                File mv_file = new File(tmp_dir_2.getPath() + "/" + output_fp.getName());
+                Files.move(output_fp.toPath(), mv_file.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                moved.add(mv_file);
+            } else 
+                copied.add(output_fp);
+            CSVUtil.dumpFileInto(fp, output_fp);
+        }
         return program;
     }
 
+    protected void SouffleTask.postEvaluate(HashSet<File> copied, HashSet<File> moved) throws Exception { 
+        for(File fp : copied) {
+            SimpleLogger.logger().log("Delete: " + fp.getName(), SimpleLogger.LogLevel.Level.DEBUG);
+            fp.delete();
+        }
+
+        for(File fp : moved) {
+            SimpleLogger.logger().log("Move Back: " + fp.getName(), SimpleLogger.LogLevel.Level.DEBUG);
+            Files.move(fp.toPath(), new File(factsDir() + "/" + fp.getName()).toPath(), StandardCopyOption.REPLACE_EXISTING);
+        }
+    }
+
+    
+    public Program EvalSouffle.perform()  throws Exception {
+        HashSet<File> copied = new HashSet<File>();
+        HashSet<File> moved  = new HashSet<File>();
+        Program program;
+        try {
+            program = preEvaluate(copied, moved);
+            String soufflePath = outputDir() + "/" + outputFileName();
+            program.soufflePrint(new SoufflePrettyPrinter<Program>(new PrintStream(new FileOutputStream(new File(soufflePath)))));
+
+            String cmd = "souffle -D " + outputDir() + " " + soufflePath + " -F " + factsDir();
+            SimpleLogger.logger().log("Run souffle with: " + cmd, SimpleLogger.LogLevel.Level.DEBUG);
+            Process p = Runtime.getRuntime().exec(cmd);
+            p.waitFor();
+
+            BufferedReader br = new BufferedReader(new InputStreamReader(p.getInputStream()));
+            while (br.ready())
+                SimpleLogger.logger().log(":SOUFFLE-OUTPUT " + br.readLine(), SimpleLogger.LogLevel.Level.DEBUG);
+            BufferedReader brerr = new BufferedReader(new InputStreamReader(p.getErrorStream()));
+            while (brerr.ready())
+                SimpleLogger.logger().log(":SOUFFLE-ERROR " + brerr.readLine(), SimpleLogger.LogLevel.Level.ERROR);
+
+            br.close();
+            brerr.close();
+        } finally {
+            postEvaluate(copied, moved);
+        }
+        return program;
+    }
+
+    public Program PrettySouffle.perform()  throws Exception{
+        HashSet<File> copied = new HashSet<File>();
+        HashSet<File> moved  = new HashSet<File>();
+        Program program;
+        try {
+            program = preEvaluate(copied, moved);
+            program.soufflePrint(new SoufflePrettyPrinter<Program>(new PrintStream(System.out)));
+        } finally {
+            postEvaluate(copied, moved);
+        }
+        return program;
+    }
+}
+
+aspect TypeProg {
     public Program TypeProg.perform()  throws Exception{
         Program program = (Program) FileUtil.parse(new File(description().getInput().getPath()));
         new SemanticCheck(getParamss()).perform(program, description());
-		String typeProgSource = program.typePrint();
+        String typeProgSource = program.typePrint();
         System.out.println("------------------------------------------------");
         System.out.println("\t\t\t TYPESOURCE");
         System.out.println("------------------------------------------------");
@@ -152,14 +212,16 @@ aspect Task {
         System.out.println("------------------------------------------------");
         return program;
     }
+}
 
-    public Program TypeCheck.perform()  throws Exception{
+aspect SubTask {
+    public Program TypeCheck.perform()  throws Exception {
         Program program = (Program) FileUtil.parse(new File(description().getInput().getPath()));
         Compiler.DrAST_root_node = program; // Enable debugging with DrAST
         perform(program, description());
         return program;
     }
-    public Program SemanticCheck.perform()  throws Exception{
+    public Program SemanticCheck.perform()  throws Exception {
         Program program = (Program) FileUtil.parse(new File(description().getInput().getPath()));
         Compiler.DrAST_root_node = program; // Enable debugging with DrAST
         perform(program, description());
@@ -170,11 +232,11 @@ aspect Task {
         void perform(Program program, Description descr) throws Exception;
     }
 
-    TypeCheck     implements SubTask;
-    SemanticCheck implements SubTask;
+    TypeCheck       implements SubTask;
+    SemanticCheck   implements SubTask;
     public void TypeCheck.perform(Program program, Description descr) throws Exception {
         program.typeCheck();
-        HashSet<String> terrs = program.typeCheckErrors();
+        Set<String> terrs = program.typeCheckErrors();
         if (!terrs.isEmpty()) {
             SimpleLogger.logger().log("Compilation failed with the following error messages: ", SimpleLogger.LogLevel.Level.ERROR);
             for(String err : terrs)  SimpleLogger.logger().log(err);
@@ -183,7 +245,7 @@ aspect Task {
     }
 
     public void SemanticCheck.perform(Program program, Description descr) throws Exception {
-        HashSet<String> serrs = program.semanticErrors();
+        Set<String> serrs = program.semanticErrors();
         if (!serrs.isEmpty()) {
             SimpleLogger.logger().log("Compilation failed with the following error messages: ", SimpleLogger.LogLevel.Level.ERROR);
             for(String err : serrs)  SimpleLogger.logger().log(err);

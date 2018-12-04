@@ -113,7 +113,7 @@ aspect Program {
     eq Program.getChild().formalPredicateMap() = formalPredicateMap();
 
     coll TreeSet<Literal> Program.predefinedLiterals() [new TreeSet<Literal>(Literal.literalComparator)] with add;
-    Literal contributes this when isPredefined() to Program.predefinedLiterals() ;
+    Literal contributes this when isPredefined() to Program.predefinedLiterals();
 }
 
 aspect Clause {
@@ -167,7 +167,15 @@ aspect Literal {
    	syn boolean Literal.isEDB();
     eq  Literal.isEDB()    = false;
     eq  EDBLiteral.isEDB() = true;
-    
+
+   	syn boolean Literal.isATOM();
+    eq  Literal.isATOM()    = false;
+    eq  ATOMLiteral.isATOM() = true;
+
+   	syn boolean Literal.isOUTPUT();
+    eq  Literal.isOUTPUT()       = false;
+    eq  OUTPUTLiteral.isOUTPUT() = true;
+
     syn boolean Literal.isAtom();
     eq  Literal.isAtom() = false;
     eq  Atom.isAtom()    = true;

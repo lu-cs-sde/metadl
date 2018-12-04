@@ -1,12 +1,13 @@
-OUTPUT(x) :- ATOM(x), NEQ('Vars, x).        # Output all Atoms except Vars
-OUTPUT('OUTPUT).                            # Also output the predicates to output
-EDB('Vars, "Vars.csv").                     #Load Var relation from Vars.csv
+OUTPUT(x) :- ATOM(x), NEQ('Vars, x).
+OUTPUT('OUTPUT).
+EDB('Vars, "Vars.csv").
+TYPEOF('Vars, [Integer]).
 
-A(x, y) :- Vars(x), Vars(y). 
-Filter(x, y) :- A(x, y), LT(x, y).          # x less than y
-B(x, y) :- A(x, y), 
-           NOT(Filter(x, y)),               # Remove all tuples in Filter
-           EQ(x * 2 + y, (7 + 2) * 2 - 11). # Keep tuples that satisfy the equality
+A(x, y) :- Vars(x), Vars(y).
+Filter(x, y) :- A(x, y), LT(x, y).
+B(x, y) :- A(x, y),
+           NOT(Filter(x, y)),
+           EQ(x * 2 + y, (7 + 2) * 2 - 11).
 
 C(x, y, z) :- B(x, y),
-              BIND(z, 2 * x + y).           # z <- 2 * x + y
+              BIND(z, 2 * x + y).

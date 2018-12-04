@@ -1,7 +1,7 @@
-import java.util.HashSet;
+import java.util.TreeSet;
 
 aspect ErrorCollection {
-    coll HashSet<String> Program.semanticErrors() [new HashSet<String>()] with add;
+    coll TreeSet<String> Program.semanticErrors() [new TreeSet<String>()] with add;
     syn boolean Program.hasSemanticErrors() = !semanticErrors().isEmpty();
     syn String Program.errorReport() {
         StringBuilder sb = new StringBuilder();
@@ -10,7 +10,7 @@ aspect ErrorCollection {
     }
     
     
-    coll HashSet<String> Program.typeCheckErrors() [new HashSet<String>()] with add;
+    coll TreeSet<String> Program.typeCheckErrors() [new TreeSet<String>()] with add;
     syn boolean Program.hasTypeErrors() = !typeCheckErrors().isEmpty();
     syn String Program.typeErrorReport() {
         StringBuilder sb = new StringBuilder();

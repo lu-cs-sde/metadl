@@ -55,9 +55,9 @@ eval_task = BOTTOMUPNAIVE config_params.params {: return new EvalBottomUpNaive(p
           | SOUFFLE config_params.params souffle_params.s_params {: return new EvalSouffle(params, s_params); :}
           ;
             
-type_prog       =  TYPE_PROG config_params.params {: return new TypeProg(params); :};
-semantic_check  =  SEMANTIC_CHECK config_params.params {: return new SemanticCheck(params); :};
-type_check      =  TYPE_CHECK config_params.params {: return new TypeCheck(params); :};
+type_prog          =  TYPE_PROG config_params.params {: return new TypeProg(params); :};
+semantic_check     =  SEMANTIC_CHECK config_params.params {: return new SemanticCheck(params); :};
+type_check         =  TYPE_CHECK config_params.params {: return new TypeCheck(params); :};
 
 souffle_params = souffle_params_no_empty
           | /* epsilon */ {: return new List(); :}

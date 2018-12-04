@@ -40,19 +40,19 @@ FilePath = [^\s(::)]+
 
 // token definitions
 
-"-OUT"          {  return  sym(Terminals.OUTDIR);        }
-"-FACTS"        {  return  sym(Terminals.FACTSDIR);      }
-"-SOUFFLEOUT"   {  return  sym(Terminals.SOUFFLEOUT);    }
-"pretty"        {  return  sym(Terminals.PRETTYPRINT); }
-"eval"          {  return  sym(Terminals.EVAL); }
-"typeprog"      {  return  sym(Terminals.TYPE_PROG); }
-"semanticcheck" {  return  sym(Terminals.SEMANTIC_CHECK); }
-"typecheck"     {  return  sym(Terminals.TYPE_CHECK); }
-"::"            {  return  sym(Terminals.SEP);           }
-"bottomupnaive" {  return  sym(Terminals.BOTTOMUPNAIVE); }
-"souffle"       {  return  sym(Terminals.SOUFFLE);       }
-{FilePath}      {  return  sym(Terminals.FILEPATH);      }
-<<EOF>>         {  return  sym(Terminals.EOF);           }
+"-OUT"             {  return  sym(Terminals.OUTDIR);             }
+"-FACTS"           {  return  sym(Terminals.FACTSDIR);           }
+"-SOUFFLEOUT"      {  return  sym(Terminals.SOUFFLEOUT);         }
+"pretty"           {  return  sym(Terminals.PRETTYPRINT);        }
+"eval"             {  return  sym(Terminals.EVAL);               }
+"typeprog"         {  return  sym(Terminals.TYPE_PROG);          }
+"semanticcheck"    {  return  sym(Terminals.SEMANTIC_CHECK);     }
+"typecheck"        {  return  sym(Terminals.TYPE_CHECK);         }
+"::"               {  return  sym(Terminals.SEP);                }
+"bottomupnaive"    {  return  sym(Terminals.BOTTOMUPNAIVE);      }
+"souffle"          {  return  sym(Terminals.SOUFFLE);            }
+{FilePath}         {  return  sym(Terminals.FILEPATH);           }
+<<EOF>>            {  return  sym(Terminals.EOF);                }
 
 /* error fallback */
 [^]           { throw new SyntaxError("Illegal character <"+yytext()+">"); }

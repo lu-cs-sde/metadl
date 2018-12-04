@@ -1,6 +1,6 @@
 package lang;
 
-public class TypeTests {
+public class TypeErrorTests {
 	
 	/*
 	@Test

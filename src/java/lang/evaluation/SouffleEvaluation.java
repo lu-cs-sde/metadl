@@ -24,7 +24,7 @@ public class SouffleEvaluation extends ExternalEvaluation {
 			System.exit(0);
 		}
 		try {
-			Souffle souffleDescr = (Souffle) descr.evaluation();
+			Souffle souffleDescr = (Souffle) descr.evalParams();
 			String soufflePath = descr.outputDir() + "/" + souffleDescr.outputFileName();
 			program.soufflePrint(
 					new SoufflePrettyPrinter<Program>(new PrintStream(new FileOutputStream(new File(soufflePath)))));

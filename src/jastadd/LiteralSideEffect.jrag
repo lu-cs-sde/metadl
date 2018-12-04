@@ -166,10 +166,8 @@ aspect LiteralSelection {
     }
 
     public Relation BINDLiteral.select(Relation body_rel) {
-        System.out.println("BODY: " + body_rel);
         TreeSet<Variable> variables = getRight().variables();
         if(body_rel != Relation.nullRelation) {
-            System.out.println("Have Body: " + body_rel);
             body_rel.expand();
             PseudoTuple name_tuple = new PseudoTuple(variables);
 
@@ -185,11 +183,8 @@ aspect LiteralSelection {
             Relation r = new Relation(1);
             r.binding = Binding.createBinding(new PseudoTuple(getVariable()));
             r.addTuple(new PseudoTuple(right));
-
-            System.out.println("No Body: " + r + ", " + r.binding);
             return r;
         }
-
         return body_rel;
     }
 }

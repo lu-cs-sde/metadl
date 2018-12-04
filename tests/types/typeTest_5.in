@@ -10,3 +10,4 @@ E(x, y, z) :- C(x, f1),
 
 F(x) :- BIND(x, 0).
 # F(x) :- ATOM(x).
+G(x) :- A(1, x).

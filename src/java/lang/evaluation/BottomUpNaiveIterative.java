@@ -20,20 +20,12 @@ public class BottomUpNaiveIterative extends InternalEvaluation {
 	@Override
 	public void evaluate(Program program, Description descr) {
 		Deque<Stratum> order = Stratification.stratificationForceCompute(program);
-		//System.out.println(program.typeCheckProgram());
-		
-		System.out.println("BEGIN EVAL");
-		
-		//SimpleLogger.logger().log("FP: " + program.predicateSymbols(), SimpleLogger.LogLevel.Level.DEBUG);
 		for(FormalPredicate fp : program.getFormalPredicates()) {
-			//SimpleLogger.logger().log("FP: " + fp, SimpleLogger.LogLevel.Level.DEBUG);
-			//SimpleLogger.logger().log("FP: " + fp.coordTypeMap(), SimpleLogger.LogLevel.Level.DEBUG);
 			fp.literal().initialSideEffect(program, descr);
 		}
 		while (!order.isEmpty()) {
 			evaluateStratum(program, descr, order.pollFirst());
 		}
-		System.out.println("END EVAL");
 		dumpRelations(program, descr);
 	}
 	

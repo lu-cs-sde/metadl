@@ -45,6 +45,7 @@ FilePath = [^\s(::)]+
 "-SOUFFLEOUT"   {  return  sym(Terminals.SOUFFLEOUT);    }
 "pretty"        {  return  sym(Terminals.PRETTYPRINT); }
 "eval"          {  return  sym(Terminals.EVAL); }
+"typeprog"      {  return  sym(Terminals.TYPE_PROG); }
 "::"            {  return  sym(Terminals.SEP);           }
 "bottomupnaive" {  return  sym(Terminals.BOTTOMUPNAIVE); }
 "souffle"       {  return  sym(Terminals.SOUFFLE);       }

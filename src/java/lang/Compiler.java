@@ -43,6 +43,11 @@ public class Compiler {
 			SimpleLogger.logger().log(descr.debugInfo());
 			Program program = (Program) FileUtil.parse(new File(descr.getInput().getPath()));
 			DrAST_root_node = program; // Enable debugging with DrAST
+
+            if(descr.isTypeProg()) {
+                descr.evaluationMethod().evaluate(program, descr);
+                System.exit(0);
+            }
 			
 			HashSet<String> serrs = program.semanticErrors();
 			if (!serrs.isEmpty()) {
@@ -50,8 +55,6 @@ public class Compiler {
 				serrs.forEach(err -> SimpleLogger.logger().log(err));
 				System.exit(0);
 			}
-			SimpleLogger.logger().log("PASS1TMAP: " + program.pass1TypeMap(), SimpleLogger.LogLevel.Level.DEBUG);
-			
 			program.typeCheck();
 			HashSet<String> terrs = program.typeCheckErrors();
 			if (!terrs.isEmpty()) {
@@ -60,11 +63,6 @@ public class Compiler {
 				System.exit(0);
 			}
 			descr.evaluationMethod().evaluate(program, descr);
-			
-			for(FormalPredicate fp : program.getFormalPredicates()) {
-				System.out.println("TYPEOF " + fp.predicateName() + ": " + fp.derivedTypes());
-			}
-			
 		} catch (FileNotFoundException e) {
 			SimpleLogger.logger().log("File not found!", SimpleLogger.LogLevel.Level.ERROR);
 			System.exit(1);

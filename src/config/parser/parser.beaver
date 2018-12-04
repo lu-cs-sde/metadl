@@ -9,13 +9,14 @@
 	}
 :};
 
-%terminals FILEPATH, SEP, BOTTOMUPNAIVE, SOUFFLE, OUTDIR, FACTSDIR, SOUFFLEOUT, PRETTYPRINT, EVAL;
+%terminals FILEPATH, SEP, BOTTOMUPNAIVE, SOUFFLE, OUTDIR, FACTSDIR, SOUFFLEOUT, PRETTYPRINT, EVAL, TYPE_PROG;
 
 %typeof  descr                    =  "Description";
 %typeof  evaluation               =  "Evaluation";
 %typeof  souffle                  =  "Souffle";
 %typeof  bottomupnaive            =  "BottomUpNaive";
 %typeof  pretty                   =  "PrettyPrint";
+%typeof type_prog                 =  "TypeProg";
 %typeof  eval                     =  "Eval";
 %typeof  task                     =  "Task";
 %typeof  file_path                =  "FilePath";
@@ -38,15 +39,17 @@ task = pretty
      | eval
      ;
 
-pretty = PRETTYPRINT SEP evaluation.eval {: return new PrettyPrint(eval); :};
-eval   = EVAL        SEP evaluation.eval {: return new Eval(eval); :};
+pretty     =  PRETTYPRINT SEP evaluation.eval {: return new PrettyPrint(eval); :};
+eval       =  EVAL        SEP evaluation.eval {: return new Eval(eval); :};
 
 evaluation = bottomupnaive
            | souffle
+           | type_prog
            ;
 
 bottomupnaive =  BOTTOMUPNAIVE config_params.params {: return new BottomUpNaive(params); :};
 souffle       =  SOUFFLE config_params.params souffle_params.s_params {: return new Souffle(params, s_params); :};
+type_prog     =  TYPE_PROG config_params.params {: return new TypeProg(); :};
 
 souffle_params = souffle_params_no_empty
           | /* epsilon */ {: return new List(); :}

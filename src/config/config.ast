@@ -5,6 +5,7 @@ abstract Task ::= Evaluation;
 PrettyPrint:Task;
 Eval:Task;
 
+TypeProg:Evaluation;
 BottomUpNaive:Evaluation;
 Souffle:Evaluation ::= SouffleSpecificParams:SouffleParam*;
 

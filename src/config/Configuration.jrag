@@ -4,6 +4,7 @@ import lang.ast.SoufflePrettyPrinter;
 import lang.io.FileUtil;
 import lang.evaluation.BottomUpNaiveIterative;
 import lang.evaluation.SouffleEvaluation;
+import lang.evaluation.TypeProgEvaluation;
 
 aspect Configuration {
 	syn String Description.inputFile() = getInput().getPath();
@@ -11,11 +12,10 @@ aspect Configuration {
 	syn String Description.inputFileName() {
 		return FileUtil.fileName(inputFile());
 	}
-	
-	syn Evaluation Description.evaluation() = getTask().getEvaluation();
+	syn Evaluation Description.evalParams() = getTask().getEvaluation();
 	
 	syn String Description.outputDir() {
-		for(ConfigParam param : evaluation().getParamss()) {
+		for(ConfigParam param : evalParams().getParamss()) {
 			if(param.isOutputDir())
 				return FileUtil.normalize(((OutputDir) param).getPath());
 		}
@@ -23,7 +23,7 @@ aspect Configuration {
 	}
 	
 	syn String Description.factsDir() {
-		for(ConfigParam param : evaluation().getParamss()) {
+		for(ConfigParam param : evalParams().getParamss()) {
 			if(param.isFactsDir())
 				return FileUtil.normalize(((FactsDir) param).getPath());
 		}
@@ -38,15 +38,21 @@ aspect Configuration {
 }
 
 aspect BottomUpNaiveConfiguration {
-	syn boolean Description.isBottomUpNaive() = evaluation().isBottomUpNaive();
-	syn boolean Evaluation.isBottomUpNaive() = false;
-	syn boolean BottomUpNaive.isBottomUpNaive()  = true;
+	syn boolean Description.isBottomUpNaive()    =  evalParams().isBottomUpNaive();
+	syn boolean Evaluation.isBottomUpNaive()     =  false;
+	syn boolean BottomUpNaive.isBottomUpNaive()  =  true;
+}
+
+aspect TypeProgConfiguration {
+	syn boolean Description.isTypeProg()  =  evalParams().isTypeProg();
+	syn boolean Evaluation.isTypeProg()   =  false;
+	syn boolean TypeProg.isTypeProg()     =  true;
 }
 
 aspect SouffleConfiguration {
-	syn boolean Description.isSouffle() = evaluation().isSouffle();
-	syn boolean Evaluation.isSouffle() = false;
-	syn boolean Souffle.isSouffle()     = true;
+	syn boolean Description.isSouffle()  =  evalParams().isSouffle();
+	syn boolean Evaluation.isSouffle()   =  false;
+	syn boolean Souffle.isSouffle()      =  true;
 	
 	syn boolean SouffleParam.isOutputFileName()   = false;
 	syn boolean OutputFileName.isOutputFileName() = true;
@@ -67,42 +73,31 @@ aspect Evaluation {
 	public lang.evaluation.Evaluation Description.evaluationMethod() {
 		return getTask().evaluationMethod();
 	}
-	
 	public abstract lang.evaluation.Evaluation Task.evaluationMethod();
-	
-	public lang.evaluation.Evaluation Eval.evaluationMethod() {
-		Evaluation ev = getEvaluation();
-		if(ev.isSouffle()) 
-			return new SouffleEvaluation();
-		if(ev.isBottomUpNaive()) 
-			return new BottomUpNaiveIterative();
-		return null;
-	}
-	
-	public lang.evaluation.Evaluation BottomUpNaive.evaluationMethod() {
-		return new BottomUpNaiveIterative();
-	}
-	
-	public lang.evaluation.Evaluation PrettyPrint.evaluationMethod() {
-		Evaluation ev = getEvaluation();
-		
-		if(ev.isSouffle()) {
-			return new lang.evaluation.Evaluation() {
-				public void evaluate(Program program, Description descr) {
-					program.soufflePrint (
-							new SoufflePrettyPrinter<Program>(new PrintStream(System.out)));
-				}
-			};
-		
-		}
-		if(ev.isBottomUpNaive()){		
-			return new lang.evaluation.Evaluation() {
-				public void evaluate(Program program, Description descr) {
-					program.prettyPrint (
-							new StandardPrettyPrinter<Program>(new PrintStream(System.out)));
-				}
-			};
-		}
-		return null;
-	}
+	syn lang.evaluation.Evaluation PrettyPrint.evaluationMethod()  =  getEvaluation().pretty();
+	syn lang.evaluation.Evaluation Eval.evaluationMethod()         =  getEvaluation().eval();
+
+    syn lang.evaluation.Evaluation Evaluation.eval();
+    eq BottomUpNaive.eval()  =  new BottomUpNaiveIterative();
+    eq Souffle.eval()        =  new SouffleEvaluation();
+    eq TypeProg.eval()       =  new TypeProgEvaluation();
+
+    syn lang.evaluation.Evaluation Evaluation.pretty();
+    eq BottomUpNaive.pretty() {
+        return new lang.evaluation.Evaluation() {
+            public void evaluate(Program program, Description descr) {
+                program.prettyPrint (
+                    new StandardPrettyPrinter<Program>(new PrintStream(System.out)));
+            }
+        };
+    }
+    eq Souffle.pretty() {
+        return new lang.evaluation.Evaluation() {
+            public void evaluate(Program program, Description descr) {
+                program.soufflePrint (
+                        new SoufflePrettyPrinter<Program>(new PrintStream(System.out)));
+            }
+        };
+    }
+    eq TypeProg.pretty() = eval();
 }

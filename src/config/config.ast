@@ -1,13 +1,15 @@
 Description ::= Task Input:InputFile;
 
-abstract Evaluation ::= Params:ConfigParam *;
-abstract Task ::= Evaluation;
-PrettyPrint:Task;
-Eval:Task;
+abstract Task ::= Params:ConfigParam *;
+SemanticCheck:Task;
+TypeCheck:Task;
+TypeProg:Task;
+EvalBottomUpNaive:Task;
+PrettyBottomUpNaive:Task;
 
-TypeProg:Evaluation;
-BottomUpNaive:Evaluation;
-Souffle:Evaluation ::= SouffleSpecificParams:SouffleParam*;
+abstract SouffleTask:Task ::= SouffleSpecificParams:SouffleParam*;
+EvalSouffle:SouffleTask;
+PrettySouffle:SouffleTask;
 
 abstract ConfigParam;
 abstract FilePath:ConfigParam ::= <Path:String>;

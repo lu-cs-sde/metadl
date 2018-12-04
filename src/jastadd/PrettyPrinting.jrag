@@ -151,6 +151,16 @@ aspect ExtensionablePrinting {
             super(out);
         }
     }
+
+    public class SoufflePreProcessPrinter<T extends ASTNode> extends PrettyPrinter<T> {
+    	public void prettyPrint(T node) {
+        	node.soufflePrePrint(this);
+        }
+        
+        public SoufflePreProcessPrinter(PrintStream out) {
+            super(out);
+        }
+    }
     
     public class StandardStringPrettyPrinter {
     	public static <T extends ASTNode> String print(T t) {
@@ -278,6 +288,34 @@ aspect TypePrinting {
 	}
 }
 
+aspect SoufflePreProcessPrinting {
+	public void ASTNode.soufflePrePrint(String path) throws IOException {
+        File file = new File(path);
+        FileOutputStream fop = new FileOutputStream(file);
+        SoufflePreProcessPrinter soufflePrinter = new SoufflePreProcessPrinter(new PrintStream(fop));
+        soufflePrinter.prettyPrint(this);
+        fop.close();
+    }
+
+    public String ASTNode.soufflePrePrint() {
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+        SoufflePreProcessPrinter soufflePrinter = new SoufflePreProcessPrinter(new PrintStream(bytes));
+        soufflePrinter.prettyPrint(this);
+        return bytes.toString();
+    }
+
+    public void ASTNode.soufflePrePrint(PrettyPrinter pr) {
+        prettyPrint(pr);
+    }
+
+    public void Program.soufflePrePrint(PrettyPrinter pr) {
+        for(Literal l : predefinedLiterals()) {
+            pr.out.print("OUTPUT('" + l.predicate().getPRED_ID() + ")");
+        }
+        prettyPrint(pr);
+    }
+}
+
 aspect SoufflePrinting {
     public void ASTNode.soufflePrint(String path) throws IOException {
         File file = new File(path);
@@ -298,10 +336,10 @@ aspect SoufflePrinting {
         prettyPrint(pr);
     }
 // A Hack to remove the DOT that is inserted after each rule.
-    public void EDBLiteral.soufflePrint(PrettyPrinter pr)    { pr.out.print("// EDB");    }
-    public void OUTPUTLiteral.soufflePrint(PrettyPrinter pr) { pr.out.print("// OUTPUT"); }
-    public void PREDLiteral.soufflePrint(PrettyPrinter pr)   { pr.out.print("// PRED"); }
-    public void ATOMLiteral.soufflePrint(PrettyPrinter pr)   { pr.out.print("// ATOM"); }
+    public void EDBLiteral.soufflePrint(PrettyPrinter pr)     {  pr.out.print("// EDB");    }
+    public void PREDLiteral.soufflePrint(PrettyPrinter pr)    {  pr.out.print("// PRED"); }
+    public void ATOMLiteral.soufflePrint(PrettyPrinter pr)    {  pr.out.print("// ATOM"); }
+    public void OUTPUTLiteral.soufflePrint(PrettyPrinter pr)  {  pr.out.print("// OUTPUT"); }
     
     public void NEGLiteral.soufflePrint(PrettyPrinter pr) {
     	pr.out.print("!");
@@ -328,7 +366,6 @@ aspect SoufflePrinting {
     public String StringConstant.souffleType() { return "symbol"; }
     public String IntConstant.souffleType()    { return "number"; }
     
-    
     public void FormalPredicate.soufflePrint(PrettyPrinter pr) {
     	if(!literal().hasExtendedSemantics()) {
 	        pr.out.print(".decl " + predicateName() + "(");
@@ -351,7 +388,7 @@ aspect SoufflePrinting {
 	        pr.out.print(")");
         }
     }
-
+    
     public void Program.soufflePrint(PrettyPrinter pr) {
         printList(getFormalPredicates(), "", "\n", "\n", pr);
         prettyPrint(pr);

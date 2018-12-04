@@ -1,29 +1,35 @@
 import lang.ast.Program;
 import lang.ast.StandardPrettyPrinter;
 import lang.ast.SoufflePrettyPrinter;
+import lang.ast.FormalPredicate;
 import lang.io.FileUtil;
+import lang.io.SimpleLogger;
+import lang.Compiler;
 import lang.evaluation.BottomUpNaiveIterative;
 import lang.evaluation.SouffleEvaluation;
 import lang.evaluation.TypeProgEvaluation;
+import java.util.HashSet;
+import java.io.InputStreamReader;
+import java.io.BufferedReader;
 
 aspect Configuration {
 	syn String Description.inputFile() = getInput().getPath();
-	
 	syn String Description.inputFileName() {
 		return FileUtil.fileName(inputFile());
 	}
-	syn Evaluation Description.evalParams() = getTask().getEvaluation();
-	
-	syn String Description.outputDir() {
-		for(ConfigParam param : evalParams().getParamss()) {
+    syn String Description.outputDir() = getTask().outputDir();
+    syn String Description.factsDir() = getTask().factsDir();
+
+	syn String Task.outputDir() {
+		for(ConfigParam param : getParamss()) {
 			if(param.isOutputDir())
 				return FileUtil.normalize(((OutputDir) param).getPath());
 		}
 		return System.getProperty("user.dir");
 	}
 	
-	syn String Description.factsDir() {
-		for(ConfigParam param : evalParams().getParamss()) {
+	syn String Task.factsDir() {
+		for(ConfigParam param : getParamss()) {
 			if(param.isFactsDir())
 				return FileUtil.normalize(((FactsDir) param).getPath());
 		}
@@ -37,30 +43,14 @@ aspect Configuration {
 	syn boolean FactsDir.isFactsDir()      = true;
 }
 
-aspect BottomUpNaiveConfiguration {
-	syn boolean Description.isBottomUpNaive()    =  evalParams().isBottomUpNaive();
-	syn boolean Evaluation.isBottomUpNaive()     =  false;
-	syn boolean BottomUpNaive.isBottomUpNaive()  =  true;
-}
-
-aspect TypeProgConfiguration {
-	syn boolean Description.isTypeProg()  =  evalParams().isTypeProg();
-	syn boolean Evaluation.isTypeProg()   =  false;
-	syn boolean TypeProg.isTypeProg()     =  true;
-}
-
 aspect SouffleConfiguration {
-	syn boolean Description.isSouffle()  =  evalParams().isSouffle();
-	syn boolean Evaluation.isSouffle()   =  false;
-	syn boolean Souffle.isSouffle()      =  true;
-	
 	syn boolean SouffleParam.isOutputFileName()   = false;
 	syn boolean OutputFileName.isOutputFileName() = true;
 	
-	inh String Souffle.inputFileName();
+	inh String SouffleTask.inputFileName();
 	eq Description.getChild().inputFileName() = inputFileName();
 	
-	syn String Souffle.outputFileName() {
+	syn String SouffleTask.outputFileName() {
 		for(SouffleParam param : getSouffleSpecificParamss()) {
 			if(param.isOutputFileName())
 				return ((OutputFileName) param).getName();
@@ -69,35 +59,128 @@ aspect SouffleConfiguration {
 	}
 }
 
-aspect Evaluation {
-	public lang.evaluation.Evaluation Description.evaluationMethod() {
-		return getTask().evaluationMethod();
-	}
-	public abstract lang.evaluation.Evaluation Task.evaluationMethod();
-	syn lang.evaluation.Evaluation PrettyPrint.evaluationMethod()  =  getEvaluation().pretty();
-	syn lang.evaluation.Evaluation Eval.evaluationMethod()         =  getEvaluation().eval();
+aspect Task {
+    inh Description Task.description();
+    eq Description.getChild().description() = this;
 
-    syn lang.evaluation.Evaluation Evaluation.eval();
-    eq BottomUpNaive.eval()  =  new BottomUpNaiveIterative();
-    eq Souffle.eval()        =  new SouffleEvaluation();
-    eq TypeProg.eval()       =  new TypeProgEvaluation();
+    public Program Task.getProgramWithChecks() throws Exception {
+        Program program = (Program) FileUtil.parse(new File(description().getInput().getPath()));
+        Compiler.DrAST_root_node = program; // Enable debugging with DrAST
+        new SemanticCheck(getParamss()).perform(program, description());
+        new TypeCheck(getParamss()).perform(program, description());
+        return program;
+    }
 
-    syn lang.evaluation.Evaluation Evaluation.pretty();
-    eq BottomUpNaive.pretty() {
-        return new lang.evaluation.Evaluation() {
-            public void evaluate(Program program, Description descr) {
-                program.prettyPrint (
-                    new StandardPrettyPrinter<Program>(new PrintStream(System.out)));
-            }
-        };
+	public abstract void Task.perform() throws Exception;
+    public void EvalBottomUpNaive.perform()  throws Exception {
+        Program program = getProgramWithChecks();
+        BottomUpNaiveIterative bit = new BottomUpNaiveIterative();
+        bit.evaluate(program, description());
     }
-    eq Souffle.pretty() {
-        return new lang.evaluation.Evaluation() {
-            public void evaluate(Program program, Description descr) {
-                program.soufflePrint (
-                        new SoufflePrettyPrinter<Program>(new PrintStream(System.out)));
-            }
-        };
+
+    public void EvalSouffle.perform()  throws Exception {
+        Program program = getProgramWithChecks();
+
+        String soufflePath = outputDir() + "/" + outputFileName();
+        program.soufflePrint(new SoufflePrettyPrinter<Program>(new PrintStream(new FileOutputStream(new File(soufflePath)))));
+        String cmd = "souffle -D " + outputDir() + " " + soufflePath + " -F " + factsDir();
+
+        SimpleLogger.logger().log("Run souffle with: " + cmd, SimpleLogger.LogLevel.Level.DEBUG);
+
+        Process p = Runtime.getRuntime().exec(cmd);
+        p.waitFor();
+
+        BufferedReader br = new BufferedReader(new InputStreamReader(p.getInputStream()));
+        while (br.ready()) 
+            SimpleLogger.logger().log(":SOUFFLE-OUTPUT " + br.readLine(), SimpleLogger.LogLevel.Level.DEBUG);
+        BufferedReader brerr = new BufferedReader(new InputStreamReader(p.getErrorStream()));
+        while (brerr.ready()) 
+            SimpleLogger.logger().log(":SOUFFLE-ERROR " + brerr.readLine(), SimpleLogger.LogLevel.Level.ERROR);
+        br.close();
+        brerr.close();
     }
-    eq TypeProg.pretty() = eval();
+
+    public void PrettyBottomUpNaive.perform()  throws Exception {
+        Program program = (Program) FileUtil.parse(new File(description().getInput().getPath()));
+        Compiler.DrAST_root_node = program; // Enable debugging with DrAST
+        StandardPrettyPrinter spp = new StandardPrettyPrinter<Program>(new PrintStream(System.out));
+        spp.prettyPrint(program);
+    }
+
+    public void PrettySouffle.perform()  throws Exception{
+        Program program = (Program) FileUtil.parse(new File(description().getInput().getPath()));
+        Compiler.DrAST_root_node = program; // Enable debugging with DrAST
+        program.soufflePrint(
+                new SoufflePrettyPrinter<Program>(new PrintStream(System.out)));
+    }
+
+    public void TypeProg.perform()  throws Exception{
+        Program program = (Program) FileUtil.parse(new File(description().getInput().getPath()));
+        new SemanticCheck(getParamss()).perform(program, description());
+		String typeProgSource = program.typePrint();
+        System.out.println("------------------------------------------------");
+        System.out.println("\t\t\t TYPESOURCE");
+        System.out.println("------------------------------------------------");
+        System.out.println(typeProgSource);
+        System.out.println("------------------------------------------------");
+
+        Program typeProg = FileUtil.parse(typeProgSource);
+        BottomUpNaiveIterative eval = new BottomUpNaiveIterative();
+        eval.evaluate(typeProg, null);
+
+        System.out.println("------------------------------------------------");
+        System.out.println("\t\t\t EVAL RESULT");
+        System.out.println("------------------------------------------------");
+        for(FormalPredicate fp : typeProg.getFormalPredicates()) {
+            System.out.println(fp.predicateName() + ": " + fp.relation);
+        }
+
+        System.out.println("------------------------------------------------");
+        new TypeCheck(getParamss()).perform(program, description());
+
+        System.out.println("------------------------------------------------");
+        System.out.println("\t\t\t TYPEINFERENCE RESULT");
+        System.out.println("------------------------------------------------");
+        for(FormalPredicate fp : program.getFormalPredicates()) {
+            if(fp.literal().isInclusive())
+                System.out.println(fp.predicateName() + ": " + fp.derivedTypes());
+        }
+        System.out.println("------------------------------------------------");
+    }
+
+    public void TypeCheck.perform()  throws Exception{
+        Program program = (Program) FileUtil.parse(new File(description().getInput().getPath()));
+        Compiler.DrAST_root_node = program; // Enable debugging with DrAST
+        perform(program, description());
+    }
+    public void SemanticCheck.perform()  throws Exception{
+        Program program = (Program) FileUtil.parse(new File(description().getInput().getPath()));
+        Compiler.DrAST_root_node = program; // Enable debugging with DrAST
+        perform(program, description());
+    }
+
+    public interface SubTask {
+        void perform(Program program, Description descr) throws Exception;
+    }
+
+    TypeCheck     implements SubTask;
+    SemanticCheck implements SubTask;
+    public void TypeCheck.perform(Program program, Description descr) throws Exception {
+        program.typeCheck();
+        HashSet<String> terrs = program.typeCheckErrors();
+        if (!terrs.isEmpty()) {
+            SimpleLogger.logger().log("Compilation failed with the following error messages: ", SimpleLogger.LogLevel.Level.ERROR);
+            for(String err : terrs)  SimpleLogger.logger().log(err);
+            System.exit(0);
+        }
+    }
+
+    public void SemanticCheck.perform(Program program, Description descr) throws Exception {
+        HashSet<String> serrs = program.semanticErrors();
+        if (!serrs.isEmpty()) {
+            SimpleLogger.logger().log("Compilation failed with the following error messages: ", SimpleLogger.LogLevel.Level.ERROR);
+            for(String err : serrs)  SimpleLogger.logger().log(err);
+            System.exit(0);
+        }
+    }
 }

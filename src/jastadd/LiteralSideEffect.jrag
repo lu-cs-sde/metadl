@@ -146,7 +146,6 @@ aspect LiteralSelection {
         return body_rel;
     }
 
-
     public Relation BinaryExclusiveTermLiteral.select(Relation body_rel) {
         TreeSet<Variable> variables = variables();
         PseudoTuple name_tuple = new PseudoTuple(variables);
@@ -188,4 +187,3 @@ aspect LiteralSelection {
         return body_rel;
     }
 }
-

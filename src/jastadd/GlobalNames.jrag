@@ -1,9 +1,11 @@
 aspect GlobalNames {
 	public class GlobalNames {
-		public static final String EDB_NAME       = "EDB";
-		public static final String NEGATION_NAME  = "NOT";
-		public static final String OUTPUT_NAME    = "OUTPUT";
-		public static final String PRED_NAME      = "PRED";
-		public static final String TYPE_RULE_NAME = "RuleTypeName";
+		public static final String EDB_NAME        =  "EDB";
+		public static final String NEGATION_NAME   =  "NOT";
+		public static final String OUTPUT_NAME     =  "OUTPUT";
+		public static final String PRED_NAME       =  "PRED";
+		public static final String ATOM_NAME       =  "ATOM";
+		public static final String TYPEOF_NAME     =  "TYPEOF";
+		public static final String TYPE_RULE_NAME  =  "RuleTypeName";
 	}
 }

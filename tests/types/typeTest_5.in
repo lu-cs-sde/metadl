@@ -1,6 +1,5 @@
 OUTPUT(x) :- ATOM(x).
 TYPEOF('C, [Integer String]).
-TYPEOF('B, [String Integer]).
 
 A(x, y) :- B(y, x), C(x, y).
 E(x, y, 'B) :- B(y, x), C(x, y).

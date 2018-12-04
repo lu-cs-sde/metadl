@@ -86,8 +86,8 @@ aspect Program {
 	}
 	
 	coll HashSet<PredicateInterface> Program.predicateSymbols() [new HashSet<PredicateInterface>()] with add;
-    PredicateSymbol contributes this when true to Program.predicateSymbols();
-    PredicateRef    contributes this when true to Program.predicateSymbols();
+    PredicateSymbol contributes this to Program.predicateSymbols();
+    PredicateRef    contributes this to Program.predicateSymbols();
         
     syn TreeSet<PredicateInterface> Program.uniquePredicateSymbols() {
         TreeSet<PredicateInterface> uniquePredicateSymbols = new TreeSet<PredicateInterface>(Program.predicateComparator);
@@ -105,15 +105,17 @@ aspect Program {
     public class FormalPredicateMap extends HashMap<String, FormalPredicate> {
     	public void add(MapEntry<String, FormalPredicate> me) { put(me.k, me.v); }
     }
-    
+   
+    syn boolean Program.haveFormalPredicate(String name) = formalPredicateMap().get(name) != null;
     coll FormalPredicateMap Program.formalPredicateMap() [new FormalPredicateMap()] with add;
     Program contributes nta getFormalPredicateList() to Program.formalPredicateMap();
-    FormalPredicate contributes new MapEntry(predicateName(), this)
-        when true
-        to Program.formalPredicateMap();
-        
+    FormalPredicate contributes new MapEntry(predicateName(), this) to Program.formalPredicateMap();
     eq Program.getChild().formalPredicateMap() = formalPredicateMap();
+
+    coll TreeSet<Literal> Program.predefinedLiterals() [new TreeSet<Literal>(Literal.literalComparator)] with add;
+    Literal contributes this when isPredefined() to Program.predefinedLiterals() ;
 }
+
 aspect Clause {
     inh Clause Literal.clause();
     eq Clause.getChild().clause() = this;
@@ -196,7 +198,6 @@ aspect Literal {
     eq Rule.getBody().isUse()    = true;
     
     
-    
     inh Program PREDLiteral.program();
     syn List PREDLiteral.getPredicateRefList() {
     	List list = new List();
@@ -224,6 +225,9 @@ aspect Literal {
     PREDLiteral   implements PredefinedLiteral;
     OUTPUTLiteral implements PredefinedLiteral;
     TYPEOFLiteral implements PredefinedLiteral;
+
+    syn boolean Literal.isPredefined()           = false;
+    syn boolean PredefinedLiteral.isPredefined() = true;
     
     syn TreeSet<Variable> Literal.variables();
     eq Atom.variables() {
@@ -480,6 +484,8 @@ aspect Types {
 	syn boolean VariableType.isVariableType() = true;
 	syn boolean Type.isUnknownType()          = false;
 	syn boolean UnknownType.isUnknownType()   = true;
+	syn boolean Type.isTypeType()             = false;
+	syn boolean TypeType.isTypeType()         = true;
 	
 	syn boolean Term.isString()   = type().isStringType();
 	syn boolean Term.isInteger()  = type().isIntegerType();
@@ -502,6 +508,11 @@ aspect Types {
 	eq  PREDLiteral.type()   = new PseudoTuple(new List(getTerm().type()));
 	eq  EDBLiteral.type()    = new PseudoTuple(new List(Type.predRefType, Type.stringType));
 	eq  TYPEOFLiteral.type() = new PseudoTuple(new List(Type.predRefType, Type.litTypeType));
-	
-	syn PseudoTuple TYPEOFLiteral.refType() = ((TermList)getTerm()).toTuple();
+
+	syn PseudoTuple TYPEOFLiteral.refType() {
+		if(!getTerm().type().isListType()) return new PseudoTuple(Type.badType);
+		TermList tl = (TermList)getTerm();
+		if(!((ListType)tl.type()).getType().isTypeType()) return new PseudoTuple(Type.badType);
+		return ((TermList)getTerm()).toTuple();
+	}
 }

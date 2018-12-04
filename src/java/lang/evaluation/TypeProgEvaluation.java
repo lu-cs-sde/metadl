@@ -1,16 +1,22 @@
 package lang.evaluation;
 
+import java.util.HashSet;
+
+import lang.ast.FormalPredicate;
 import lang.ast.Program;
 import lang.ast.config.Description;
 import lang.io.FileUtil;
 import lang.io.SimpleLogger;
-import lang.ast.GlobalNames;
-import lang.ast.FormalPredicate;
-import java.util.HashSet;
 
 public class TypeProgEvaluation extends InternalEvaluation {
     public void evaluate(Program program, Description descr) {
-        String typeProgSource = program.typePrint();
+		HashSet<String> serrs = program.semanticErrors();
+		if (!serrs.isEmpty()) {
+			SimpleLogger.logger().log("Compilation failed with the following error messages: ", SimpleLogger.LogLevel.Level.ERROR);
+			serrs.forEach(err -> SimpleLogger.logger().log(err));
+			System.exit(0);
+		}
+		String typeProgSource = program.typePrint();
         System.out.println("------------------------------------------------");
         System.out.println("\t\t\t TYPESOURCE");
         System.out.println("------------------------------------------------");
@@ -43,7 +49,7 @@ public class TypeProgEvaluation extends InternalEvaluation {
 			}
             System.out.println("------------------------------------------------");
         } catch(Exception e) {
-
+        	e.printStackTrace();
         }
     }
 }

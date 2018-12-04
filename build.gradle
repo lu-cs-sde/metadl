@@ -172,6 +172,8 @@ task generateParserConfig(type: JavaExec) {
         // Ensure src/gen exists before running Beaver:
         file('src/gen').mkdirs()
         file('out').mkdirs()
+        file('facts').mkdirs()
+        file('tmp').mkdirs()
     }
 }
 
@@ -184,4 +186,6 @@ task cleanGeneratedJava(type: Delete) {
     delete file('compiler.jar')
     delete file('tests/output')
     delete file('./out')
+    delete file('./tmp')
+    delete file('./facts')
 }

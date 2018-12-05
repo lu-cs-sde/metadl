@@ -1,0 +1,31 @@
+The current query evaluation mechanism is a bottom-up naive (BUN) \cite{Green:2013:DRQ:2688167.2688168} evaluation. It is based on the fixpoint-theoretic semantics. The implementation is best introduced through an example.
+\begin{align*}
+&Order(1, 2),\; Order(2, 3). \quad\quad\quad\quad\quad\quad\quad\quad\quad[r_1]\\
+&Order(x, z) \coloneqtwo Order(x, y),\; Order(y, z). \;\quad\quad\quad[r_2]
+\end{align*}
+\noindent
+Rule $[r_1]$ states that the orders $1, 2$ and $2, 3$ holds. Rule $[r_2]$ states that the binary $Order$ relation is transitive. The BUN evaluation proceeds as follows. For each rule that is evaluated, an artificial body-relation $B$ is introduced. The body-relation will be incrementally populated and extended through the evaluation of the atoms in the body. 
+
+Initially, the relation associated with each atom is unnamed, i.e. the columns of the relation have no name-restrictions. Given a rule $r$, we order the atoms from the body of the rule as $A_1, \ldots, A_n$. We will consider each atom in turn and use the body relation $B$ as an accumulator. The equations describing the rule-evaluation process is as follows (the notation is explained below)
+\begin{align*}
+B^{0} &\leftarrow \top \\
+B^{i + 1} &\leftarrow B^{i} \bowtie \sigma_{Term(A_i)}\;(A_i), \; i = 0, \ldots, n - 1\\
+H & \leftarrow \Pi_{Term(H)}(B_n)
+\end{align*}
+\noindent
+The body relation is initially assigned to $\top$ denoting an unknown relation: $\top \bowtie R = R \bowtie \top = R$. A selection is then done for the atom. The selection operator is denoted $\sigma$ as is usual in relational algebra (CITE). The selection result is \textit{joined}(CITE) with the current body relation $B^{i}$ to form the next body relation $B^{i + 1}$. The join-operator is denoted $\bowtie$. The $Term$ function gives the terms in the given atom. The project function $\Pi$ projects the corresponding columns into a new relation. In our example (assuming that $r_1$ has been evaluated) we get:
+\begin{align*}
+B^{1} &\leftarrow \sigma_{x, y}\;(Order) = \{(1, 2), (2, 3)\}_{x, y}\\
+B^{2} &\leftarrow B^{1} \bowtie (\sigma_{y, z}\;(Order) = \{(1, 2), (2, 3)\}_{y, z})\\
+      &= \{(1, 2), (2, 3)\}_{x, y} \bowtie \{(1, 2), (2, 3)\}_{y, z}\\
+      &= \{(1,2,3)\}_{x,y,z}
+\end{align*}
+\noindent
+Finally we project the final result of the body relation into the head of the rule:
+\begin{align*}
+Order & \leftarrow \Pi_{x,z}(\{(1,2,3)\}_{x,y,z}) = \{(1,3)\}
+\end{align*}
+\noindent
+The process is iterated until a fix-point is found, i.e. until no new tuples can be derived from the set of rules. In our example, iterating $[r_2]$ again gives no new tuples and so the $Order$ relation has been computed as: $\{(1,2), (1,3), (2,3) \}$.
+
+\subsection{Mutual Dependencies and Predicate Ordering}

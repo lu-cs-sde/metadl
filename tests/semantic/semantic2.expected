@@ -1,0 +1,2 @@
+Unbound variable(s): [y] in A(x, y) :- B(x).
+

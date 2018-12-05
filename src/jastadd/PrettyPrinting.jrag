@@ -160,9 +160,11 @@ aspect PretyPrinting {
     }
 
     public void BINDLiteral.prettyPrint(PrettyPrinter pr) {
+        pr.out.print("BIND(");
     	pr.prettyPrint(getVariable());
-        pr.out.print(" = ");
+        pr.out.print(", ");
     	pr.prettyPrint(getRight());
+        pr.out.print(")");
     }
 
     public void NEGLiteral.prettyPrint(PrettyPrinter pr) {
@@ -404,6 +406,12 @@ aspect SoufflePrinting {
         pr.out.print("\"" + predicate().getPRED_ID() + ".csv" + "\"");
         pr.out.print(", delimiter=\",\"");
         pr.out.print(")\n");
+    }
+
+    public void BINDLiteral.soufflePrint(PrettyPrinter pr) {
+    	pr.prettyPrint(getVariable());
+        pr.out.print(" = ");
+    	pr.prettyPrint(getRight());
     }
 
     public void Fact.soufflePrint(PrettyPrinter pr) {

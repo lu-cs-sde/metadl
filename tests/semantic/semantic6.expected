@@ -1,0 +1,2 @@
+Free variable(s) [y] in (x)+(y) in rule A(x) :- B(x), BIND(z, (x)+(y)).
+

@@ -1,0 +1,2 @@
+Free variable(s) [x] in NOT(A(x)) in rule B(x) :- NOT(A(x)).
+

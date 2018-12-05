@@ -41,7 +41,7 @@ aspect Arity {
         if(!isUniqueArity() || realArities().size() == 0) return 0;
         return realArities().iterator().next();
     }
-    
+    Program contributes nta getFormalPredicates() to Program.semanticErrors();
     FormalPredicate contributes ("Different Arities for predicate symbol: " + predicateName())
         when !isUniqueArity() && arities().size() != 1
         to Program.semanticErrors();

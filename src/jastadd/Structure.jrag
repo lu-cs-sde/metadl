@@ -155,6 +155,34 @@ aspect Clause {
     	for(Literal l : literals()) variables.addAll(l.variables());
     	return variables;
     }
+
+    syn TreeSet<Variable> Rule.headVariables() {
+    	TreeSet<Variable> variables = new TreeSet<Variable>(Term.termComparator);
+    	for(Literal l : getHeadss()) variables.addAll(l.variables());
+    	return variables;
+    }
+
+    syn TreeSet<Variable> Rule.bodyVariables() {
+    	TreeSet<Variable> variables = new TreeSet<Variable>(Term.termComparator);
+    	for(Literal l : getBodys()) variables.addAll(l.variables());
+    	return variables;
+    }
+
+    syn TreeSet<Variable> Rule.unboundVariables() {
+    	TreeSet<Variable> variables = new TreeSet<Variable>(Term.termComparator);
+    	for(Variable v : headVariables())
+            if(!bodyVariables().contains(v)) variables.add(v);
+        return variables;
+    }
+
+    syn TreeSet<Variable> Rule.inclusiveBodyVariables() {
+     	TreeSet<Variable> variables = new TreeSet<Variable>(Term.termComparator);
+    	for(Literal l : getBodys()) {
+            if(l.isInclusive())
+                variables.addAll(l.variables());
+        }
+    	return variables;       
+    }
 }
 
 aspect Literal {
@@ -280,6 +308,18 @@ aspect Literal {
 		constants.addAll(getRight().constants());
 		return constants;
 	}
+
+    syn TreeSet<Variable> NEGLiteral.freeVars() {
+        TreeSet<Variable> negvars  = getInclusiveLiteral().variables();
+        TreeSet<Variable> inclbodyvars = ((Rule)clause()).inclusiveBodyVariables();
+        TreeSet<Variable> free = new TreeSet<Variable>(Term.termComparator);
+
+        for(Variable v : negvars) {
+            if(!inclbodyvars.contains(v))
+                free.add(v);
+        }
+        return free;
+    }
 }
 
 aspect Predicate {
@@ -346,6 +386,17 @@ aspect Expression {
 		vars.addAll(getRight().variables());
 		return vars;
 	}
+
+    syn TreeSet<Variable> BinExpr.freeVars() {
+        TreeSet<Variable> inclbodyvars = ((Rule)occuresIn().clause()).inclusiveBodyVariables();
+        TreeSet<Variable> free = new TreeSet<Variable>(Term.termComparator);
+
+        for(Variable v : variables()) {
+            if(!inclbodyvars.contains(v))
+                free.add(v);
+        }
+        return free;
+    }
 	
 	syn TreeSet<Variable> Term.variables()     = new TreeSet<Variable>(Term.termComparator);
 	syn TreeSet<Variable> Variable.variables() {

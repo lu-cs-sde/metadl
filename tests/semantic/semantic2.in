@@ -1,0 +1,3 @@
+TYPEOF('A, [String String]).
+TYPEOF('B, [String]).
+A(x, y) :- B(x).

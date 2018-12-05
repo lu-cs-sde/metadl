@@ -8,8 +8,7 @@ aspect ErrorCollection {
         for(String err : semanticErrors()) sb.append(err).append("\n");
         return sb.toString();
     }
-    
-    
+
     coll TreeSet<String> Program.typeCheckErrors() [new TreeSet<String>()] with add;
     syn boolean Program.hasTypeErrors() = !typeCheckErrors().isEmpty();
     syn String Program.typeErrorReport() {
@@ -17,4 +16,27 @@ aspect ErrorCollection {
         for(String err : typeCheckErrors()) sb.append(err).append("\n");
         return sb.toString();
     }
+
+    Literal contributes "Non-ground fact: " + this
+        when !isGround() && isFact()
+        to Program.semanticErrors();
+
+    Rule contributes "Unbound variable(s): " + unboundVariables() + " in " + this
+        when !unboundVariables().isEmpty()
+        to Program.semanticErrors();
+
+    TYPEOFLiteral contributes "Wrong number of arguments in: " + this + ", expected: " + getPredicateRef().formalpredicate().realArity()
+        when getTerm().isList() && 
+             getPredicateRef().formalpredicate().isUniqueArity() &&
+             ((TermList)getTerm()).getNumTerms() != 
+             getPredicateRef().formalpredicate().realArity()
+        to Program.semanticErrors();
+
+    NEGLiteral contributes "Free variable(s) " + freeVars() + " in " + this + " in rule " + clause()
+        when !freeVars().isEmpty()
+        to Program.semanticErrors();
+
+    BinExpr contributes "Free variable(s) " + freeVars() + " in " + this + " in rule " + occuresIn().clause()
+        when !freeVars().isEmpty()
+        to Program.semanticErrors(); 
 }

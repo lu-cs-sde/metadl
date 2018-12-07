@@ -36,9 +36,6 @@ public class CSVUtil {
 		if(isInteger(line)) {
 			return new IntConstant(line);
 		}
-		if(Character.isLowerCase(line.charAt(0))) {
-			return new Variable(line);
-		}
 		if(line.charAt(0) == '\'') {
 			return new PredicateRef(line.substring(1));
 		}

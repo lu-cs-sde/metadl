@@ -1,0 +1,138 @@
+A number of language features have been added in addition to the core Datalog features. Those extensions are listed and briefly described in the following subsections.
+\subsection{Negation}
+A common datalog extension is to allow negation of atoms. The negation of atom $A$ is denoted $\neg A$. There are however some theoretical problems in introducing negation. Consider the following example:
+
+\NL
+{\centering
+	$A(x) \coloneqtwo \neg B(x).\qquad\qquad[r_1]$ \NL
+	$B(x) \coloneqtwo \neg A(x).\qquad\qquad[r_2]$\par
+}
+
+\NL
+There are two problems with the above. First, no unique minimal model exists: if $r_1$ is evaluated first then we get $A = \Omega, B = \emptyset$, and if $r_2$ is evaluated first $A = \emptyset, B = \Omega$. Second, even if there is a unique minimal model there is no guaranteed termination since negation removes monotonicity (adding tuples to one relation may remove tuples from another). The first issue is addressed by ensuring that all variable terms used in a negated atom are also used in a non-negated (\textit{positive}) atom. Second, we require that each stratum retains the monotonic property, in particular this means that mutual recursive dependencies may only be positive.
+
+With the above restrictions, negation acts like a filtering rule; an occurrence of a negated atom within a rule has already been fully evaluated when we consider that rule in a stratum.
+\subsection{Built-in Predicates and Expressions}
+Most Datalog systems include various built-in predicates for discarding certain results based on some criteria. The current implementation includes the usual binary predicates $=, \neq, \leq, \ldots$ They can be used with expressions over the usual binary operators $+,-,*,/$. To continue with the order example, a relation that picks ordered tuples with elements at least two units apart is shown below:
+
+\NL
+{\centering
+	$TwoGapOrder(x, y) \coloneqtwo Order(x, y), x \leq y - 2.$ \NL
+}
+\subsection{Object Creation}
+A special bind predicate was introduced to allow the creation of new objects. Combined with \textit{aggregates} such as counting the number of elements in a relation this is a useful way to let datalog reason about properties of the currently evaluating program. It does however lead to object creation which in turn may lead to non-termination as the following example shows:
+
+\begin{minted}{yaml}
+Nat(0).
+Nat(y) :- Nat(x), BIND(y, x + 1).
+\end{minted}
+\noindent
+As the example shows, the new expressive power allows the generation of infinite sets. 
+
+\subsection{Type System}
+The language includes a simple type system. The basic types are:
+\begin{align*}
+	String : * \quad Integer : *, \quad PredRef : * 
+\end{align*}
+\noindent
+The types themselves are terms and the star means the type of a type. The $PredRef$ type is used to reference predicates within a relation. In addition there is a List \textit{type-constructor}, i.e. it is a function from a term of type $*$ that gives another term of type $*$:
+\begin{align*}
+	List : * \rightarrow *
+\end{align*}
+\noindent
+The types are introduced through a special type predicate:
+\begin{align*}
+	TYPEOF : PredRef \times List(*)
+\end{align*}
+In this way, $TYPEOF$ relates the referenced predicate with a list of types. For example:
+\begin{align*}
+	TYPEOF('A, [Integer\;\;String]). \implies A : Integer \times String
+\end{align*}
+
+\subsubsection{Type Checking and Type Inference}
+Type-checking and left-to-right type inference of a Datalog program $P$ is done through the generation of another datalog program $P_T$. The type checking is performed in three passes. First $P_T$ is generated from $P$. Second, the evaluation of $P_T$ gives the local type information for the terms in each rule. Third, global consistency is checked over the local result. The process is perhaps best illustrated with an example. Consider the source program $P$ in figure \ref{figure:sourceP}. The transformed type program $P_T$ is shown in figure \ref{figure:sourcePT}.
+\begin{figure}[!ht]
+\begin{minted}{yaml}
+TYPEOF('A, [String Integer]).
+B(1, 2).
+C(x, y, z) :- A(x, y), B(z, z).
+D(x, y, z) :- B(x, y), A(z, y).
+\end{minted}
+\caption{The source program $P$.}
+\label{figure:sourceP}
+\end{figure}
+
+\begin{figure}[!ht]
+\begin{minted}{yaml}
+A(String, Integer), B(Integer, Integer).
+Typeof(PredRef, List(Type)).
+C(x, y, z)     :- A(x, y), B(z, z).
+D(x, y, z)     :- B(x, y), A(z, y).
+Rule0(x, y, z) :- C(x, y, z), A(x, y), B(z, z).
+Rule1(x, y, z) :- D(x, y, z), B(x, y), A(z, y).
+\end{minted}
+\caption{The transformed type program $P_T$.}
+\label{figure:sourcePT}
+\end{figure}
+\noindent
+A new rule predicate $r^{'}_i$ is added to $P_T$ for each rule $r_i$ in $P$. The head of $r^{'}_i$ is given a unique name and has as terms all the variables occurring in $r_i$. The body of $r^{'}_i$ consists of all the atoms from $r_i$. Additionally, the initial type facts are added. In addition, the rules in $P$ are added to $P_T$. This gives right-to-left type inference for free. In the example, this allows the derivation of the types for $C$, $D$. 
+The example has a single solution for the rule types:
+\begin{align*}
+Rule0 : String  \times Integer \times Integer\\
+Rule1 : Integer \times Integer \times String
+\end{align*}
+The rule-type solution gives the \textit{type-environment} $\Gamma$ in which the rule is executed: $\Gamma : Variable \rightarrow *$. Using $\Gamma$, a global pass can trivially check that the type of each atom is unique across all rules.
+
+\subsection{Meta-Predicates}
+The language needs a way for the user to communicate certain properties about the datalog-program $P$ to the interpreter $I$.
+An example of such a property is what relations to load as EDBs.
+In turn, $I$ makes certain information available to $P$ which allows $P$ to make inference on properties of itself.
+The information passing is done through a collection of pre-defined atoms. The currently supported such meta-predicates are listed in figure \ref{figure:metaatoms}. As is shown in the table, $EDB$ and $OUTPUT$ pass information from $P$ to $I$, $ATOM$, and $PRED$ pass inromation from $I$ to $P$. $TYPEOF$ is special in that it initially provides $I$ with information about the given types. After successful type-inference, $I$ makes the result available back to $P$ through $TYPEOF$. In this way, $TYPEOF$ is a bi-directional predicate. Figures \ref{figure:outputatom}, \ref{figure:edb} show two examples of possible usages for the meta-predicates.
+
+\begin{figure}[!ht]
+\begin{minted}{yaml}
+OUTPUT('OUTPUT).
+OUTPUT(x) :- ATOM(x). 
+\end{minted}
+\caption{Printout all user defined-atoms as well as the $OUTPUT$-relation.}
+\label{figure:outputatom}
+\end{figure}
+
+\begin{figure}[!ht]
+\begin{minted}{yaml}
+EDB('EDB, "EDB.csv"). 
+\end{minted}
+\caption{Load the relations to load as EDB files from the external database file EDB.csv}
+\label{figure:edb}
+\end{figure}
+
+\begin{figure}
+	\begin{adjustwidth}{-0.5cm}{}
+\begin{tabular}{ | c | c | c | }
+	\hline
+    \textbf{Predicate}  & \textbf{ Type } & \textbf{Semantics}\\
+	\hline
+    \multicolumn{3}{|c|}{\textbf{Datalog Program $\rightarrow$ Interpreter}}\\
+    % \multicolumn{3}{|c|}{}\\
+	\hline
+	$EDB$  & $PredRef \times String$ & \makecell{$('A, s) \in EDB$ \\ Tuples in file $s$ loaded into $A$} \\
+	\hline
+	$OUTPUT$ & $PredRef$ & \makecell{$('A) \in OUTPUT$ \\ Tuples in $A$ printed to ''$A$.csv''} \\
+	\hline
+    \multicolumn{3}{|c|}{\textbf{Datalog Program $\leftarrow$ Interpreter}}\\
+    % \multicolumn{3}{|c|}{}\\
+	\hline 
+	$ATOM$ & $PredRef$ & \makecell{$('A) \in ATOM$\\ $A$ is a user-defined atom.} \\
+	\hline
+	$PRED$ & $PredRef$ & \makecell{$('A) \in PRED$\\ $A$ is any occurring atom.} \\
+	\hline 
+    \multicolumn{3}{|c|}{\textbf{Datalog Program $\leftrightarrow$ Interpreter}}\\
+    % \multicolumn{3}{|c|}{}\\
+	\hline 
+    $TYPEOF$ & $PredRef \times List(*)$ & \makecell{$('A, [t_1,\ldots, t_n]) \in TYPEOF$\\ $A : t_1 \times \ldots \times t_n$.} \\
+	\hline
+\end{tabular}
+\end{adjustwidth}
+\caption{A list of supported meta-predicates. The semantics column shows an if-and-only-if relation between the upper and lower statements.}
+\label{figure:metaatoms}
+\end{figure}

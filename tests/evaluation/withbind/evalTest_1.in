@@ -1,0 +1,5 @@
+OUTPUT('Nat).
+Nat(0).
+Nat(y) :- Nat(x),
+          BIND(y, x + 1),
+          LTE(y, 100).

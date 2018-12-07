@@ -21,6 +21,9 @@
 \bibliographystyle{ACM-Reference-Format}
 \usepackage{forest}
 \usepackage{proof}
+\usepackage{minted}
+\usepackage{makecell}
+\usepackage{changepage}
 \newcommand{\NL}[0]{ \hfill\\\noindent }
 \newcommand{\coloneqtwo}{\mathbin{:\hspace{-0.5ex}\textsf{-}}}
 \begin{document}
@@ -41,32 +44,25 @@
   \institution{C13, Lund University, Sweden}            %% \institution is required
 }
 \email{dat12hba@student.lu.se}          %% \email is recommended
-
-
 \begin{abstract}
 Text of abstract \ldots.
 \end{abstract}
-
-
 \maketitle
 \section{Introduction}
-\input{introduction}
+\input{introduction.tex}
 \section{Core Language Implementation}
-\input{corelanguageimpl}
+\input{corelanguageimpl.tex}
 \section{Language Extensions}
-\subsection{Type System}
-\subsection{Negation}
-\subsection{Object Creation}
-\subsection{Built-in Predicates}
+\input{languageextensions.tex}
+%\vspace*{-\baselineskip}
 \section{Evaluation}
-
-\textit{I want to use the following evaluation criteria}
-\begin{itemize}
-\item Front-end extensibility
-\item Front-end source-to-source coverage
-\item Back-end implementations performance evaluation
-\end{itemize}
-
+\input{evaluation.tex}
+% \textit{I want to use the following evaluation criteria}
+% \begin{itemize}
+% \item Front-end extensibility
+% \item Front-end source-to-source coverage
+% \item Back-end implementations performance evaluation
+% \end{itemize}
 \section{Related work}
 \subsection{LogicBlox}
 \subsection{Iris}

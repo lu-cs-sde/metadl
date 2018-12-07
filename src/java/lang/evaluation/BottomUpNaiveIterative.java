@@ -36,7 +36,6 @@ public class BottomUpNaiveIterative extends InternalEvaluation {
 			 * Select based on the literal selection rule, e.g. NEGLiteral will remove from the current body_rel.
 			 */
 			Relation r_current = rl_current.select(body_rel);
-
 			if (body_rel == Relation.nullRelation) {
 				body_rel = r_current;
 			} else {

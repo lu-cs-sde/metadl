@@ -1,0 +1,27 @@
+# Input Sequence
+EDB('Inputs, "Inputs.csv"),         # Input Sequence
+EDB('Transition, "Transition.csv"). # Finite State Automaton Schema
+
+# Output all 
+OUTPUT(x) :- ATOM(x).
+
+# Declare Types
+TYPEOF('Inputs, [Integer # Time of Input
+                 String  # Input
+                ]).
+
+TYPEOF('Transition, [String # Tail State
+                     String # Input
+                     String # Output
+                     String # Head State
+                    ]).
+
+# Start State
+State(0, "s1").
+
+# Transition Rule
+State(t, s1),
+State(t2, s2),
+Outputs(t, out) :- Transition(s1, in, out, s2),
+                   Inputs(t, in),
+                   BIND(t2, t + 1).

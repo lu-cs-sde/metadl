@@ -2,7 +2,7 @@ Datalog Implementation for Project in Computer Science at LTH (EDAN70)
 ========
 
 ## Datalog
-[Datalog](https://en.wikipedia.org/wiki/Datalog) is a declarative query language. It enables the derivation of relations expressed as Horn-Clauses.
+[Datalog](https://en.wikipedia.org/wiki/Datalog) is a declarative query language. It enables the derivation of relations with derivation rules expressed as Horn-Clauses.
 For an introduction to Datalog see e.g. [Slides EDA045F](http://fileadmin.cs.lth.se/cs/Education/EDA045F/2018/web/slides-06.pdf), or the project report (listed below).
 
 ## JFlex
@@ -55,6 +55,37 @@ B(x, y) :- A(x, y),
 
 C(x, y, z) :- B(x, y),
               BIND(z, 2 * x + y).           # z <- 2 * x + y
+```
+
+Finite Automaton Example:
+```
+# Input Sequence
+EDB('Inputs, "Inputs.csv"),         # Input Sequence
+EDB('Transition, "Transition.csv"). # Finite State Automaton Schema
+
+# Output all 
+OUTPUT(x) :- ATOM(x).
+
+# Declare Types
+TYPEOF('Inputs, [Integer # Time of Input
+                 String  # Input
+                ]).
+
+TYPEOF('Transition, [String # Tail State
+                     String # Input
+                     String # Output
+                     String # Head State
+                    ]).
+
+# Start State
+State(0, "s1").
+
+# Transition Rule
+State(t, s1),
+State(t2, s2),
+Outputs(t, out) :- Transition(s1, in, out, s2),
+                   Inputs(t, in),
+                   BIND(t2, t + 1).
 ```
 
 ## Project Report

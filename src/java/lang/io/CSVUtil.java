@@ -41,6 +41,31 @@ public class CSVUtil {
 		}
 		return new StringConstant(line);
 	}
+	
+	public static void readFileInto(Program program, Relation r, String path) {
+		SimpleLogger.logger().log("Read file " + path, SimpleLogger.LogLevel.Level.DEBUG);
+		
+		CSVParser parser = new CSVParserBuilder().withSeparator(',').build();
+		try (CSVReader reader = new CSVReaderBuilder(new FileReader(new File(path))).withCSVParser(parser).build()) {
+			String[] line;
+			while ((line = reader.readNext()) != null) {
+				if (line.length != r.arity()) {
+					SimpleLogger
+							.logger().log(
+									"Expected arity: " + r.arity() + " but got "
+											+ line.length + "-sized tuple in .csv file",
+									SimpleLogger.LogLevel.Level.ERROR);
+					System.exit(0);
+				}
+				PseudoTuple ps = new PseudoTuple(r.arity());
+				for (int i = 0; i != line.length; ++i)
+					ps.set(i, parseCSV(line[i]));
+				r.addTuple(ps);
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
 
 	public static void readFileInto(Program program, FormalPredicate fp, String path) {
 		SimpleLogger.logger().log("Read file " + path + " into " + fp, SimpleLogger.LogLevel.Level.DEBUG);

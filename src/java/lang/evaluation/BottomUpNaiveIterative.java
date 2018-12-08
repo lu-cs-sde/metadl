@@ -5,6 +5,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import lang.ast.Clause;
+import lang.ast.Fact;
 import lang.ast.FormalPredicate;
 import lang.ast.InclusiveLiteral;
 import lang.ast.Literal;
@@ -35,49 +36,34 @@ public class BottomUpNaiveIterative extends InternalEvaluation {
 			/**
 			 * Select based on the literal selection rule, e.g. NEGLiteral will remove from the current body_rel.
 			 */
-			Relation r_current = rl_current.select(body_rel);
-			if (body_rel == Relation.nullRelation) {
-				body_rel = r_current;
-			} else {
-				body_rel = Relation.join(body_rel, r_current);
-			}
+			body_rel = rl_current.accumBody(body_rel);
 		}
 		return body_rel;
 	}
 
-	public boolean immediateConsequence(Program program, Description descr, Clause clause) {
+	public boolean immediateConsequence(Program program, Description descr, Rule r) {
 		Relation body_rel = Relation.nullRelation;
 		
 		/**
 		 * Find Body Relation if clause is a rule
 		 */
-		if (clause.isRule()) {
-			Rule r = (Rule) clause;
-			body_rel = immediateConsequenceHelper (r.inclusiveBodyLiterals(), body_rel);
-			body_rel = immediateConsequenceHelper (r.exclusiveBodyLiterals(), body_rel);
-		}
+		body_rel = immediateConsequenceHelper (r.inclusiveBodyLiterals(), body_rel);
+		body_rel = immediateConsequenceHelper (r.exclusiveBodyLiterals(), body_rel);
 
 		boolean changed = false;
-		for (InclusiveLiteral il : clause.getHeadss()) {
-			Relation derived;
-			if(clause.isRule()) {
-				derived = body_rel.selectNamed(Binding.createBinding(il.toTuple()));
-			} else {
-				derived = new Relation(il.arity());
-				derived.addTuple(il.toTuple());
-			}
-			
+		for (InclusiveLiteral il : r.getHeadss()) {
+			Relation derived = body_rel.selectNamed(Binding.createBinding(il.toTuple()));
 			Relation prev = il.predicate().formalpredicate().relation;
-			int size = prev.size();
-			prev.addAll(derived);
+			Relation delta = Relation.difference(derived, prev);
+			prev.addAll(delta);
 			
-			if (prev.size() != size) {
+			if (delta.size() != 0) {
 				changed = true;
 				
 				/**
 				 * Process Potential Side-Effects Such as EDB-loading.
 				 */
-				il.sideEffect(program, descr);
+				il.sideEffect(program, descr, delta);
 			}
 		}
 		return changed;
@@ -85,15 +71,36 @@ public class BottomUpNaiveIterative extends InternalEvaluation {
 
 	public void evaluateStratum(Program p, Description d, Stratum strat) {
 		boolean changed = true;
-		HashSet<Clause> rules = new HashSet<>();
+		HashSet<Rule> rules = new HashSet<Rule>();
+		
+		/**
+		 * Collect rules for stratum and load facts.
+		 */
 		for (FormalPredicate fp : strat) {
-			rules.addAll(fp.definedIn());
+			for(Clause c : fp.definedIn()) {
+				if(c.isRule()) {
+					rules.add((Rule)c);
+				} else {
+					Fact f = (Fact) c;
+					for(InclusiveLiteral il : f.getHeadss()) {
+						Relation derived = new Relation(il.arity());
+						derived.addTuple(il.toTuple());
+						Relation delta = Relation.difference(derived, il.predicate().formalpredicate().relation);
+						il.predicate().formalpredicate().relation.addAll(delta);
+						
+						/**
+						 * Process Potential Side-Effects Such as EDB-loading.
+						 */
+						il.sideEffect(p, d, delta);
+					}
+				}
+			}
 		}
 		
 		while (changed) {
 			changed = false;
-			for (Clause c : rules) {
-				boolean imm_change = immediateConsequence(p,d,c);
+			for (Rule r : rules) {
+				boolean imm_change = immediateConsequence(p,d,r);
 				changed = changed || imm_change;
 			}
 		}

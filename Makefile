@@ -14,6 +14,9 @@ eval: FORCE
 souffle: FORCE
 	java -jar compiler.jar eval::souffle -OUT ./out -FACTS ./facts $(EVAL)
 
+profilesouffle: FORCE
+	java -jar compiler.jar eval::souffle -OUT ./out -FACTS ./facts $(EVAL)
+
 prettyinternal: FORCE
 	java -jar compiler.jar pretty::bottomupnaive -OUT ./out -FACTS ./facts $(EVAL)
 

@@ -1,5 +1,5 @@
 # Input Sequence
-EDB('Inputs, "Inputs.csv"),         # Input Sequence
+EDB('Inputs, "InputsLarge.csv"),         # Input Sequence
 EDB('Transition, "Transition.csv"). # Finite State Automaton Schema
 
 # Output all 
@@ -20,8 +20,8 @@ TYPEOF('Transition, [String # Tail State
 State(0, "s1").
 
 # Transition Rule
-State(t, s1),
 State(t2, s2),
-Outputs(t, out) :- Transition(s1, in, out, s2),
-                   Inputs(t, in),
-                   BIND(t2, t + 1).
+Outputs(t1, out) :- State(t1, s1),
+                    Transition(s1, in, out, s2),
+                    Inputs(t1, in),
+                    BIND(t2, t1 + 1).

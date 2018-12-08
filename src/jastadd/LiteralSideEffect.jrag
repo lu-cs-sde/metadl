@@ -8,20 +8,27 @@ import java.util.Collections;
 import java.util.TreeSet;
 
 aspect LiteralSideEffect {
-    public void Literal.sideEffect(Program program, Description descr) {}
-
+    public void Literal.sideEffect(Program program, Description descr, Relation delta) {}
+    public HashSet<String> Program.loadedEDB = new HashSet<String>();
     /**
      * Currently unnecessary Reads, Should Check Deltas Later.
      */
-    public void EDBLiteral.sideEffect(Program program, Description descr) {
+    public void EDBLiteral.sideEffect(Program program, Description descr, Relation delta) {
         boolean changed = true;
+        SimpleLogger.logger().log("EDB Load: " + delta, SimpleLogger.LogLevel.Level.DEBUG);
+        
         while(changed) {
+        	changed = false;
             int size = getPredicateRef().formalpredicate().relation.size();
             HashSet<EDBRead> reads = new HashSet<>();
-            for(PseudoTuple ps : predicate().formalpredicate().relation.tuples()) {
+            for(PseudoTuple ps : delta.tuples()) {
                 PredicateRef pr = (PredicateRef) ps.coord(0);
                 String path = ((StringConstant)ps.coord(1)).toString();
-                reads.add(new EDBRead(pr, path));
+                String id = pr.getPRED_ID() + path;
+                if(!program.loadedEDB.contains(id)) {
+                	reads.add(new EDBRead(pr, path));
+                	program.loadedEDB.add(id);
+                }
             }
 
             for(EDBRead r : reads) {
@@ -30,9 +37,16 @@ aspect LiteralSideEffect {
                     SimpleLogger.logger().log("Each PredicateSymbol should belong to a FormalPredicate: " + r.ref.getPRED_ID(), SimpleLogger.LogLevel.Level.ERROR);
                     System.exit(0);
                 }
-                CSVUtil.readFileInto(program, fp, descr.factsDir() + "/" + r.path);
+                
+                if(fp.literal().isEDB()) {
+                	Relation delta2 = new Relation(fp.realArity());
+                	CSVUtil.readFileInto(program, delta2, descr.factsDir() + "/" + r.path);
+                	fp.relation.tuples().addAll(delta2.tuples());
+                	delta = delta2;
+                	changed = true;
+                } else 
+                	CSVUtil.readFileInto(program, fp, descr.factsDir() + "/" + r.path);
             }
-            changed = getPredicateRef().formalpredicate().relation.size() != size;
         }
     }
 
@@ -73,15 +87,15 @@ aspect InitialSideEffect {
 }
 
 aspect LiteralSelection {
-    public Relation Literal.select(Relation body_rel) {
-        return predicate().formalpredicate().relation.select(Binding.createBinding(toTuple()));
+    public Relation Literal.accumBody(Relation body_rel) {
+    	Relation r_current = predicate().formalpredicate().relation.select(Binding.createBinding(toTuple()));
+		return Relation.join(body_rel, r_current);
     }
-    public Relation NEGLiteral.select(Relation body_rel) {
+    public Relation NEGLiteral.accumBody(Relation body_rel) {
         Relation positive = getInclusiveLiteral().predicate().formalpredicate().relation.select(Binding.createBinding(toTuple()));
         return Relation.difference(body_rel, positive);
     }
-
-
+    
     public abstract boolean BinaryExclusiveTermLiteral.binaryTest(Term t1, Term t2);
     public boolean EQLiteral.binaryTest(Term t1, Term t2)  { return Term.termComparator.compare(t1, t2) == 0; }
     public boolean NEQLiteral.binaryTest(Term t1, Term t2) { return Term.termComparator.compare(t1, t2) != 0; }
@@ -126,7 +140,7 @@ aspect LiteralSelection {
     syn Term BinExpr.eval(Instantiation inst)  = mappend(getLeft().eval(inst), getRight().eval(inst));
 
 
-    public Relation EQLISTLiteral.select(Relation body_rel) {
+    public Relation EQLISTLiteral.accumBody(Relation body_rel) {
         TreeSet<Variable> variables = getTermList().variables();
         TreeSet<Constant> constants = getTermList().constants();
         PseudoTuple name_tuple = new PseudoTuple(variables);
@@ -146,7 +160,7 @@ aspect LiteralSelection {
         return body_rel;
     }
 
-    public Relation BinaryExclusiveTermLiteral.select(Relation body_rel) {
+    public Relation BinaryExclusiveTermLiteral.accumBody(Relation body_rel) {
         TreeSet<Variable> variables = variables();
         PseudoTuple name_tuple = new PseudoTuple(variables);
 
@@ -164,7 +178,7 @@ aspect LiteralSelection {
         return body_rel;
     }
 
-    public Relation BINDLiteral.select(Relation body_rel) {
+    public Relation BINDLiteral.accumBody(Relation body_rel) {
         TreeSet<Variable> variables = getRight().variables();
         if(body_rel != Relation.nullRelation) {
             body_rel.expand();

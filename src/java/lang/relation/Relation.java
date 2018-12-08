@@ -127,6 +127,9 @@ public class Relation {
 	}
 
 	public static Relation join(Relation r1, Relation r2) {
+		if(r1 == nullRelation) return r2;
+		if(r2 == nullRelation) return r1;
+		
 		TreeSet<BindOverlap> intersect = Binding.intersect(r1.binding, r2.binding);
 		BindResult br = Binding.merge(intersect, r1.binding, r2.binding);
 		Relation r = new Relation(br.b_merged.size());

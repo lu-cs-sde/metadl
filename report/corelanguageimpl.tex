@@ -1,4 +1,5 @@
-The current query evaluation mechanism is a bottom-up naive (BUN) \cite{Green:2013:DRQ:2688167.2688168} evaluation. It is based on the fixpoint-theoretic semantics. The implementation is best introduced through an example.
+\newcommand{\sigmatwo}{\overline{\sigma}}
+This section describes the implementation of the core part of $Datalog^{M}$. The current query evaluation mechanism is a bottom-up naive (BUN) \cite{Green:2013:DRQ:2688167.2688168} evaluation. It is based on the fixpoint-theoretic semantics that derives tuples from rules until no new tuples can be derived. This subsection describes the process for evaluating a single rule. The implementation and the description is based on relational algebra (see e.g. \cite{Abiteboul:1995:FDL:551350}). It is introduced through an example:
 \begin{align*}
 &Order(1, 2),\; Order(2, 3). \quad\quad\quad\quad\quad\quad\quad\quad\quad[r_1]\\
 &Order(x, z) \coloneqtwo Order(x, y),\; Order(y, z). \;\quad\quad\quad[r_2]
@@ -6,29 +7,36 @@ The current query evaluation mechanism is a bottom-up naive (BUN) \cite{Green:20
 \noindent
 Rule $[r_1]$ states that the orders $1, 2$ and $2, 3$ holds. Rule $[r_2]$ states that the binary $Order$ relation is transitive. The BUN evaluation proceeds as follows. For each rule that is evaluated, an artificial body-relation $B$ is introduced. The body-relation will be incrementally populated and extended through the evaluation of the atoms in the body. 
 
-Initially, the relation associated with each atom is unnamed, i.e. the columns of the relation have no name-restrictions. Given a rule $r$, we order the atoms from the body of the rule as $A_1, \ldots, A_n$. We will consider each atom in turn and use the body relation $B$ as an accumulator. The equations describing the rule-evaluation process is as follows (the notation is explained below)
+Initially, the relation associated with each atom is unnamed, i.e. the columns of the relation have no name-restrictions. Given a rule $r$, we order the atoms from the body of the rule as $A_1, \ldots, A_n$. We will consider each atom in turn and use the body relation $B$ as an accumulator. The equations describing the rule-evaluation process is as follows (the notation is explained below):
 \begin{align*}
 B^{0} &\leftarrow \top \\
-B^{i + 1} &\leftarrow B^{i} \bowtie \sigma_{Term(A_i)}\;(A_i), \; i = 0, \ldots, n - 1\\
-H & \leftarrow \Pi_{Term(H)}(B^n)
+B^{i + 1} &\leftarrow B^{i} \bowtie \sigmatwo_{Term(A_{i + 1})}\;(A_{i + 1}), \; i = 0, \ldots, n - 1\\
+H & \leftarrow H \cup \Pi_{Term(H)}(B^n)
 \end{align*}
 \noindent
-The body relation is initially assigned to $\top$ denoting an unknown relation: $\top \bowtie R = R \bowtie \top = R$. A selection is then done for the atom. The selection operator is denoted $\sigma$ as is usual in relational algebra (CITE). The selection result is \textit{joined}(CITE) with the current body relation $B^{i}$ to form the next body relation $B^{i + 1}$. The join-operator is denoted $\bowtie$. The $Term$ function gives the terms in the given atom. The project function $\Pi$ projects the corresponding columns into a new relation. In our example (assuming that $r_1$ has been evaluated) we get:
+The body relation is initially assigned to $\top$ denoting an unknown relation: $\top \bowtie R = R \bowtie \top = R$. The $Term$ function gives the terms in the given atom. A selection is then done for the atom. The special selection operator is denoted $\sigmatwo$. Informally it selects a set of tuples from the relation associated with the atom that satisfies the constraints imposed by the terms of the atom. As a more formal example:
 \begin{align*}
-B^{1} &\leftarrow \sigma_{x, y}\;(Order) = \{(1, 2), (2, 3)\}_{x, y}\\
-B^{2} &\leftarrow B^{1} \bowtie (\sigma_{y, z}\;(Order) = \{(1, 2), (2, 3)\}_{y, z})\\
+\sigmatwo_{x,x,y,c} = \rho_{x/x_1, y/y_1} \circ \Pi_{x_1, y_1} \circ \sigma_{x_1 = x_2, C_1 = c} \circ \rho_{x_1/N_0, x_2/N_1, y_1/N_2, C_1/N_3}
+\end{align*}
+
+The selection is for three variables $x, x, y$ and a constant $c$. First the rename operator $\rho$ is used to rename the columns of the relation ($N_i$ is an artificial initial name for column $i$). Then the ordinary $\sigma$ operator selects all tuples such that the corresponding variables and constants match under the given naming. The result of the selection is then projected (discarding duplicates and constants) using the projection operator $\Pi$, and finally the inverse renaming is performed.
+
+The selection result is joined ($\bowtie$) with the current body relation $B^{i}$ to form the next body relation $B^{i + 1}$. In our example (assuming that $r_1$ has been evaluated) we get:
+\begin{align*}
+B^{1} &\leftarrow \sigmatwo_{x, y}\;(Order) = \{(1, 2), (2, 3)\}_{x, y}\\
+B^{2} &\leftarrow B^{1} \bowtie (\sigmatwo_{y, z}\;(Order) = \{(1, 2), (2, 3)\}_{y, z})\\
       &= \{(1, 2), (2, 3)\}_{x, y} \bowtie \{(1, 2), (2, 3)\}_{y, z}\\
       &= \{(1,2,3)\}_{x,y,z}
 \end{align*}
 \noindent
-Finally we project the final result of the body relation into the head of the rule:
+Finally we project the result of $B^n$ and add the new tuples to the head relation:
 \begin{align*}
-Order & \leftarrow \Pi_{x,z}(\{(1,2,3)\}_{x,y,z}) = \{(1,3)\}
+Order & \leftarrow Order \cup (\Pi_{x,z}(\{(1,2,3)\}_{x,y,z}) = \{(1,3)\})
 \end{align*}
 \noindent
 The process is iterated until a fix-point is found, i.e. until no new tuples can be derived from the set of rules. In our example, iterating $[r_2]$ again gives no new tuples and so the $Order$ relation has been computed as: $\{(1,2), (1,3), (2,3) \}$.
 
 \subsection{Mutual Dependencies and Predicate Ordering}
-With multiple rules and potentially many mutual dependencies between the predicates, there is a need to find an order in which to apply the rules. Indeed, for mutually dependent predicates, all rules that may derive new facts for those predicates need to be iterated together. \textit{Stratification} (CITE) is the process of clustering the predicates that need to be computed together into so called \textit{strata} as well as to find an optimal order between the strata. The iterative fix-point algorithm is then run over each \textit{stratum} following the computed order. The process is formalized below.
+With multiple rules and potentially many mutual dependencies between the predicates, there is a need to find an order in which to apply the rules. Indeed, for mutually dependent predicates, all rules that may derive new facts for those predicates need to be iterated together. \textit{Stratification}\cite{Green:2013:DRQ:2688167.2688168} is the process of clustering the predicates that need to be computed together into so called \textit{strata} as well as to find an optimal order between the strata. The iterative fix-point algorithm is then run over each \textit{stratum} following the computed order. The process is formalized below.
 
-A predicate $P_i$ directly depends on predicate $P_j$ iff there exists a rule for which $P_i$ is in the head and $P_j$ is in the body. Let $Dep(P_i)$ be the set of predicates which $P_i$ directly depends on. The dependency graph $G_{DEP}$ has the set of predicate symbols as vertices and there is an edge from $P_i$ to $P_j$ iff $P_j \in DEP(P_i)$. A strongly connected component in $G_{DEP}$ then contains the predicates which are mutually recursive. Such a connected component can be found e.g. using Tarjan's algorithm (CITE) and is called a stratum. By merging the vertices of $G_{DEP}$ into such strata we get a graph $G_{STRAT}$ with vertices being the strata of $G_{DEP}$ and edges the collapsed multi-edges from $G_{DEP}$. By construction there exists a total order on $G_{STRAT}$ with $S_1 < S_2$ iff $(S_1, S_2) \in Edge(G_{STRAT})$. The order is trivially found by a reverse post-order search of $G_{STRAT}$.
+A predicate $P_i$ directly depends on predicate $P_j$ iff there exists a rule for which $P_i$ is in the head and $P_j$ is in the body. Let $Dep(P_i)$ be the set of predicates which $P_i$ directly depends on. The dependency graph $G_{DEP}$ has the set of predicate symbols as vertices and there is an edge from $P_i$ to $P_j$ iff $P_j \in DEP(P_i)$. A strongly connected component in $G_{DEP}$ then contains the predicates which are mutually recursive. Such a connected component can be found e.g. using Tarjan's algorithm \cite{Tarjan72depthfirst} and is called a stratum. By merging the vertices of $G_{DEP}$ into such strata we get a graph $G_{STRAT}$ with vertices being the strata of $G_{DEP}$ and edges the collapsed multi-edges from $G_{DEP}$. By construction there exists a total order on $G_{STRAT}$ with $S_1 < S_2$ iff $(S_1, S_2) \in Edge(G_{STRAT})$. The desired order is found by a reverse post-order search of $G_{STRAT}$.

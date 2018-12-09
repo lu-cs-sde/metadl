@@ -4,6 +4,10 @@ import lang.ast.SoufflePrettyPrinter;
 import lang.ast.SoufflePrePrinter;
 import lang.ast.FormalPredicate;
 import lang.ast.Literal;
+import lang.ast.PredicateRef;
+import lang.ast.GlobalNames;
+import lang.relation.PseudoTuple;
+import lang.relation.Relation;
 import lang.io.FileUtil;
 import lang.io.CSVUtil;
 import lang.io.SimpleLogger;
@@ -70,7 +74,11 @@ aspect Task {
     eq Description.getChild().description() = this;
 
     public Program Task.getProgramWithChecks() throws Exception {
-        Program program = (Program) FileUtil.parse(new File(description().getInput().getPath()));
+        return getProgramWithChecks(description().getInput().getPath());
+    }
+    
+    public Program Task.getProgramWithChecks(String path) throws Exception {
+        Program program = (Program) FileUtil.parse(new File(path));
         Compiler.DrAST_root_node = program; // Enable debugging with DrAST
         new SemanticCheck(getParamss()).perform(program, description());
         new TypeCheck(getParamss()).perform(program, description());
@@ -100,73 +108,106 @@ aspect Souffle {
 	public Program PrePrint.perform()  throws Exception {
 		Program program =  (Program) FileUtil.parse(new File(description().getInput().getPath()));
 		program.prePrint(new SoufflePrePrinter<Program>(new PrintStream(System.out)));
-		preProcess(program, description());
+		//preProcess(program, description());
 		return program;
 	}
 	
 
 	
-    protected Program SouffleTask.preEvaluate(HashSet<File> copied, HashSet<File> moved) throws Exception {
+    protected Program SouffleTask.preEvaluate(HashSet<File> moved) throws Exception {
         SimpleLogger.logger().log(description().debugInfo(), SimpleLogger.LogLevel.Level.DEBUG);
         File tmp_dir_1 = new File("tmp/tmp1");
         File tmp_dir_2 = new File("tmp/tmp2");
         tmp_dir_1.mkdirs();
         tmp_dir_2.mkdirs();
-        String source_eval = "eval::bottomupnaive -OUT " + tmp_dir_1.getPath() + " -FACTS " + factsDir() + " " + description().inputFile();
+        
+        /**
+         *  Get Target Program and PrePrint it
+         */ 
+        Program initial = getProgramWithChecks();
+        String pre_out = tmp_dir_1.getPath() + "/" + description().inputFileName();
+        initial.prePrint(pre_out);
+        
+         /**
+         *  Evaluate pre-printed program (evaluates only the predefined literals)
+         */ 
+        String source_eval = "eval::bottomupnaive -OUT " + tmp_dir_1.getPath() + " -FACTS " + factsDir() + " " + pre_out;
         Description evalDescr = FileUtil.parseDescription(source_eval);
         Program program = evalDescr.getTask().perform();
-
-        HashSet<String> visited = new HashSet<String>();
-        for(Literal l : program.predefinedLiterals()) {
-            FormalPredicate fp = l.predicate().formalpredicate();
-            if(visited.contains(fp.predicateName())) continue;
-            visited.add(fp.predicateName());
-            File output_fp = new File(factsDir() + "/" + fp.predicateName() + ".csv");
-            if(output_fp.exists() && !output_fp.isDirectory()) {
-                SimpleLogger.logger().log("Move: " + output_fp.getPath() + " from  " + factsDir() + " to " + tmp_dir_2.getPath(),
+        
+        /**
+         *  OUTPUT_PRE_PROC_NAME in pre-print is the OUTPUTLiteral of Target Program
+         */ 
+        FormalPredicate meta_output = program.formalPredicateMap().get(GlobalNames.OUTPUT_PRE_PROC_NAME);
+        if(meta_output == null) return initial;
+        
+        PseudoTuple ps_meta_output = PseudoTuple.of(new PredicateRef(GlobalNames.OUTPUT_PRE_PROC_NAME));
+        /**
+         * Dump relations and move to temporary location if clash.
+         */ 
+        HashSet<FormalPredicate> visited = new HashSet<FormalPredicate>();
+        for(Literal pre : program.predefinedLiterals()) {
+        	FormalPredicate fp = pre.predicate().formalpredicate();
+        	
+        	/**
+        	 * Remove the meta output from any usage (ATOM / OUTPUT/ ...)
+        	 */ 
+        	fp.relation.tuples().remove(ps_meta_output);
+			if(visited.contains(fp) || fp.predicateName().equals(GlobalNames.OUTPUT_NAME)) continue;
+			visited.add(fp);
+        	
+        	File output_fp = new File(factsDir() + "/" + fp.predicateName() + ".csv");
+        	if(output_fp.exists() && !output_fp.isDirectory()) {
+                SimpleLogger.logger().log("Move: " + output_fp.getName() + " from  " + factsDir() + " to " + tmp_dir_2.getPath(),
                         SimpleLogger.LogLevel.Level.DEBUG);
                 File mv_file = new File(tmp_dir_2.getPath() + "/" + output_fp.getName());
                 Files.move(output_fp.toPath(), mv_file.toPath(), StandardCopyOption.REPLACE_EXISTING);
                 moved.add(mv_file);
-            } else 
-                copied.add(output_fp);
+            }
             CSVUtil.dumpFileInto(fp, output_fp);
         }
-        return program;
+        
+         /**
+         * Remove OUTPUT_PRE_PROC_NAME from self, dump OUTPUT_PRE_PROC_NAME into OUTPUT_NAME
+         */ 
+        File output_fp = new File(factsDir() + "/" + GlobalNames.OUTPUT_NAME + ".csv");
+        meta_output.relation.tuples().remove(ps_meta_output); 
+        CSVUtil.dumpFileInto(meta_output, output_fp);
+        
+        /**
+        * Add OUTPUT and EDB for .ouput and .input decls in souffle
+        **/
+        FormalPredicate initial_output = initial.formalPredicateMap().get(GlobalNames.OUTPUT_NAME);
+        if(initial_output != null) {
+        	initial_output.relation = new Relation(initial_output.realArity());
+        	for(PseudoTuple ps : meta_output.relation.tuples()) {
+        		initial_output.relation.addTuple(ps);
+        	}
+        }
+        
+        FormalPredicate meta_edb    = program.formalPredicateMap().get(GlobalNames.EDB_NAME);
+        FormalPredicate initial_edb = initial.formalPredicateMap().get(GlobalNames.EDB_NAME);
+        if(initial_edb != null && meta_edb != null) {
+        	initial_edb.relation = new Relation(initial_output.realArity());
+        	for(PseudoTuple ps : meta_edb.relation.tuples()) {
+        		initial_edb.relation.addTuple(ps);
+        	}
+        }
+        return initial;
     }
 
-    protected void SouffleTask.postEvaluate(HashSet<File> copied, HashSet<File> moved) throws Exception { 
-        for(File fp : copied) {
-            SimpleLogger.logger().log("Delete: " + fp.getName(), SimpleLogger.LogLevel.Level.DEBUG);
-            fp.delete();
-        }
-	
+    protected void SouffleTask.postEvaluate(HashSet<File> moved) throws Exception { 
         for(File fp : moved) {
             SimpleLogger.logger().log("Move Back: " + fp.getName(), SimpleLogger.LogLevel.Level.DEBUG);
             Files.move(fp.toPath(), new File(factsDir() + "/" + fp.getName()).toPath(), StandardCopyOption.REPLACE_EXISTING);
         }
     }
     
-    protected String SouffleTask.preProcess(Program program, Description descr) throws Exception {
-    	File tmp_dir_1 = new File("tmp/tmp1");
-        File tmp_dir_2 = new File("tmp/tmp2");
-        tmp_dir_1.mkdirs();
-        tmp_dir_2.mkdirs();
-        String pre_out = tmp_dir_1.getPath() + "/" + descr.inputFileName();
-        program.prePrint(pre_out);
-        String pre_eval = "eval::bottomupnaive -OUT " + tmp_dir_1.getPath() + " -FACTS " + factsDir() + " " + pre_out;
-        Description pre_descr = FileUtil.parseDescription(pre_eval);
-        pre_descr.getTask().perform();
-        
-        return pre_out;
-	}
-
     public Program EvalSouffle.perform()  throws Exception {
-        HashSet<File> copied = new HashSet<File>();
         HashSet<File> moved  = new HashSet<File>();
         Program program;
         try {
-            program = preEvaluate(copied, moved);
+            program = preEvaluate(moved);
             String soufflePath = outputDir() + "/" + outputFileName();
             SimpleLogger.logger().log("PrettyPrint to: " + soufflePath, SimpleLogger.LogLevel.Level.DEBUG);
             program.soufflePrint(new SoufflePrettyPrinter<Program>(new PrintStream(new FileOutputStream(new File(soufflePath)))));
@@ -191,20 +232,19 @@ aspect Souffle {
             br.close();
             brerr.close();
         } finally {
-            postEvaluate(copied, moved);
+            postEvaluate(moved);
         }
         return program;
     }
 
     public Program PrettySouffle.perform()  throws Exception{
-        HashSet<File> copied = new HashSet<File>();
         HashSet<File> moved  = new HashSet<File>();
         Program program;
         try {
-            program = preEvaluate(copied, moved);
+            program = preEvaluate(moved);
             program.soufflePrint(new SoufflePrettyPrinter<Program>(new PrintStream(System.out)));
         } finally {
-            postEvaluate(copied, moved);
+            postEvaluate(moved);
         }
         return program;
     }

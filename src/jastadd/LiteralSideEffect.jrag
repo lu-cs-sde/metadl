@@ -65,6 +65,7 @@ aspect InitialSideEffect {
     public void Literal.initialSideEffect(Program program, Description descr) {
         if(isInclusive()) {
             FormalPredicate fp = predicate().formalpredicate();
+            if(fp.relation == FormalPredicate.nullRelation)
             fp.relation = new Relation(fp.realArity());
         }
     }

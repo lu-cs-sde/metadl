@@ -3,7 +3,6 @@ package lang.evaluation;
 import java.util.Deque;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.TreeSet;
 
 import lang.ast.Clause;
 import lang.ast.Fact;

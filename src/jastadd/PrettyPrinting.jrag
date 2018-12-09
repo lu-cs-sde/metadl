@@ -226,6 +226,13 @@ aspect ExtensionablePrinting {
             super(out);
         }
     }
+    
+}
+
+aspect MetaPrinting {
+    public static String Program.transformPredefinedName(String l) {
+    	return l + "METAPREDICATE0000011111";
+    }
 }
 
 aspect TypePrinting {
@@ -238,10 +245,6 @@ aspect TypePrinting {
 
     public void ASTNode.typePrint(PrettyPrinter pr) {
         prettyPrint(pr);
-    }
-    
-    public static String Program.transformPredefinedName(String l) {
-    	return l.charAt(0) + l.substring(1).toLowerCase();
     }
     
     public void NEGLiteral.typePrint(PrettyPrinter pr) { getInclusiveLiteral().typePrint(pr); }

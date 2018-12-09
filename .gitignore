@@ -14,3 +14,4 @@ tests/evaluation/bottomupout/*
 /out/
 /facts/
 /tmp/
+*.*~

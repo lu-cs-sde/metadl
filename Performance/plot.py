@@ -13,7 +13,6 @@ f = list(map(lambda x: 2 * x - 13.45 + math.log(x, 2), x_log))
 y_mean_log = list(map(lambda x: math.log(x, 2), y_mean))
 y_log = list(map(lambda l: list(map(lambda y: math.log(y, 2), l)), y_vals))
 
-
 plt.plot(x_log, y_mean_log)
 plt.plot(x_log, f)
 plt.show()

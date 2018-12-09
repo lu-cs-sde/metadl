@@ -12,10 +12,9 @@ import lang.ast.Program;
 import lang.io.SimpleLogger;
 
 public class Stratification {
-	private static boolean isComputed = false;
-	private static HashSet<Stratum> strat = new HashSet<Stratum>();
-	private static Deque<Stratum> order = new LinkedList<>();
-	private static HashMap<FormalPredicate, Stratum> iso = new HashMap<>();
+	public static HashSet<Stratum> strat = new HashSet<Stratum>();
+	public static Deque<Stratum> order = new LinkedList<>();
+	public static HashMap<FormalPredicate, Stratum> iso = new HashMap<>();
 	private static int dfnum;
 
 	/**
@@ -93,8 +92,23 @@ public class Stratification {
 		}
 		order.offerLast(s);
 	}
+	
+	public static Deque<Stratum> reversePostOrder(HashSet<Stratum> output_strata) {
+		Deque<Stratum> order = new LinkedList<>();
+		for (Stratum s : output_strata) {
+			if (!s.visited) {
+				reversePostOrder(s, order);
+			}
+		}
+		return order;
+	}
+	
+	public static Deque<Stratum> order() {
+		return reversePostOrder(strat);
+	}
+	
 
-	private static Deque<Stratum> stratificationHelper(Program p) {
+	private static void stratificationHelper(Program p) {
 		dfnum = 0;
 		HashMap<FormalPredicate, NodeInfo> infoMap = new HashMap<>();
 		Stack<FormalPredicate> stack = new Stack<>();
@@ -104,36 +118,14 @@ public class Stratification {
 			}
 		}
 		buildStratificationGraph();
-		for (Stratum s : strat) {
-			if (!s.visited) {
-				reversePostOrder(s, order);
-			}
-		}
-		Deque<Stratum> orderCpy = new LinkedList<>();
-		order.forEach(s -> orderCpy.offerLast(s));
-		isComputed = true;
-		return orderCpy;
 	}
 
-	public static Deque<Stratum> stratification(Program p) {
-		if (isComputed) {
-			Deque<Stratum> orderCpy = new LinkedList<>();
-			order.forEach(s -> orderCpy.offerLast(s));
-			return orderCpy;
-		}
-		Deque<Stratum> strat = stratificationHelper(p);
-		SimpleLogger.logger().log("Order: " + strat, SimpleLogger.LogLevel.Level.DEBUG);
-		return strat;
-	}
-
-	public static Deque<Stratum> stratificationForceCompute(Program p) {
+	public static void stratification(Program p) {
 		dfnum = 0;
 		order = new LinkedList<>();
 		strat = new HashSet<Stratum>();
 		iso = new HashMap<>();
-		Deque<Stratum> strat = stratificationHelper(p);
-		SimpleLogger.logger().log("Order: " + strat, SimpleLogger.LogLevel.Level.DEBUG);
-		return strat;
+		stratificationHelper(p);
 	}
 
 	@SuppressWarnings("serial")

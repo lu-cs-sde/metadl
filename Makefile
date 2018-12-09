@@ -23,6 +23,9 @@ prettyinternal: FORCE
 prettysouffle: FORCE
 	java -jar compiler.jar pretty::souffle -OUT ./out -FACTS ./facts $(EVAL)
 
+preprint: FORCE
+	java -jar compiler.jar preprint -OUT ./out -FACTS ./facts $(EVAL)
+
 typeprog: FORCE
 	java -jar compiler.jar typeprog $(EVAL)
 

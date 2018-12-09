@@ -9,6 +9,7 @@ PrettyBottomUpNaive:Task;
 
 abstract SouffleTask:Task ::= SouffleSpecificParams:SouffleParam*;
 EvalSouffle:SouffleTask;
+PrePrint:SouffleTask;
 PrettySouffle:SouffleTask;
 
 abstract ConfigParam;

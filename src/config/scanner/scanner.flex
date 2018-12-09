@@ -48,6 +48,7 @@ FilePath = [^\s(::)]+
 "typeprog"         {  return  sym(Terminals.TYPE_PROG);          }
 "semanticcheck"    {  return  sym(Terminals.SEMANTIC_CHECK);     }
 "typecheck"        {  return  sym(Terminals.TYPE_CHECK);         }
+"preprint"         {  return  sym(Terminals.PRE_PRINT);          }
 "::"               {  return  sym(Terminals.SEP);                }
 "bottomupnaive"    {  return  sym(Terminals.BOTTOMUPNAIVE);      }
 "souffle"          {  return  sym(Terminals.SOUFFLE);            }

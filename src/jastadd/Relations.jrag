@@ -134,6 +134,14 @@ aspect DependencyGraph {
 			}
 		}
 		
+		/**
+			First compute what to output.
+		**/
+		FormalPredicate output = program().formalPredicateMap().get(GlobalNames.OUTPUT_NAME);
+		if(output != null) {
+			defIn.add(output);
+		}
+		
 		for(PredicateRef ref : predicateRefs()) {
 			if(ref.literal().isEDB()) {
 				defIn.add(((EDBLiteral)ref.literal()).getPredicate().formalpredicate());

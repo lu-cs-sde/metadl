@@ -28,11 +28,11 @@ aspect Conversion {
 	
 	syn int Literal.evalOrder();
 	eq EDBLiteral.evalOrder()     =  0;
-	eq Atom.evalOrder()           =  1;
-	eq ATOMLiteral.evalOrder()    =  2;
-	eq TYPEOFLiteral.evalOrder()  =  3;
-	eq PREDLiteral.evalOrder()    =  4;
-	eq OUTPUTLiteral.evalOrder()  =  5;
+	eq ATOMLiteral.evalOrder()    =  1;
+	eq TYPEOFLiteral.evalOrder()  =  2;
+	eq PREDLiteral.evalOrder()    =  3;
+	eq OUTPUTLiteral.evalOrder()  =  4;
+	eq Atom.evalOrder()           =  5;
 	eq BINDLiteral.evalOrder()    =  6;
 	eq NEGLiteral.evalOrder()     =  7;
 	eq EQLiteral.evalOrder()      =  8;
@@ -134,6 +134,14 @@ aspect Comparison {
 			int ev2 = l2.evalOrder();
 			if(ev1 != ev2) return ev1 < ev2 ? -1 : ev1 == ev2 ? 0 : 1;
 			return l1.hashCode() < l2.hashCode() ? -1 : l1.hashCode() == l2.hashCode() ? 0 : 1;
+		}
+	}
+	
+	public static final CompareFPLiterals FormalPredicate.fpLiteralComparator = new CompareFPLiterals();
+	public class CompareFPLiterals implements Comparator<FormalPredicate> {
+		@Override
+		public int compare(FormalPredicate fp1, FormalPredicate fp2) {
+			return Literal.literalComparator.compare(fp1.literal(), fp2.literal());
 		}
 	}
 	

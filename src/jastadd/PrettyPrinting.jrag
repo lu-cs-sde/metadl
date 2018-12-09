@@ -217,28 +217,14 @@ aspect ExtensionablePrinting {
             super(out);
         }
     }
-
-    public class StandardStringPrettyPrinter {
-    	public static <T extends ASTNode> String print(T t) {
-    		ByteArrayOutputStream stream = new ByteArrayOutputStream();
-    		StandardPrettyPrinter spp = new StandardPrettyPrinter(new PrintStream(stream));
-    		spp.prettyPrint(t);
-    		return stream.toString();
-    	}
-    	
-    	public static <T extends ASTNode> String printList(List<T> t, String pre, String post, String delim) {
-    		ByteArrayOutputStream stream = new ByteArrayOutputStream();
-    		StandardPrettyPrinter spp = new StandardPrettyPrinter(new PrintStream(stream));
-    		ASTNode.printList(t, pre, post, delim, spp);
-    		return stream.toString();
-    	}
-    	
-    	public static <T extends ASTNode> String printCollection(Collection<T> t, String pre, String post, String delim) {
-    		ByteArrayOutputStream stream = new ByteArrayOutputStream();
-    		StandardPrettyPrinter spp = new StandardPrettyPrinter(new PrintStream(stream));
-    		ASTNode.printCollection(t, pre, post, delim, spp);
-    		return stream.toString();
-    	}
+    
+    public class SoufflePrePrinter<T extends ASTNode> extends PrettyPrinter<T> {
+        public void prettyPrint(T node) {
+            node.prePrint(this);
+        }
+        public SoufflePrePrinter(PrintStream out) {
+            super(out);
+        }
     }
 }
 
@@ -345,6 +331,50 @@ aspect TypePrinting {
 		}
 		printCollection(rules, "", "", "\n", pr);
 	}
+}
+
+/**
+	Compute the Pre-Defined Literals to input as facts to Souffle
+**/
+
+aspect SoufflePreProcess {
+	public void ASTNode.prePrint(String path) throws IOException {
+        File file = new File(path);
+        FileOutputStream fop = new FileOutputStream(file);
+        SoufflePrePrinter soufflePrinter = new SoufflePrePrinter(new PrintStream(fop));
+        soufflePrinter.prettyPrint(this);
+        fop.flush();
+        fop.close();
+    }
+
+    public String ASTNode.prePrint() {
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+        SoufflePrePrinter soufflePrinter = new SoufflePrePrinter(new PrintStream(bytes));
+        soufflePrinter.prettyPrint(this);
+        return bytes.toString();
+    }
+    
+    public void PredicateSymbol.prePrint(PrettyPrinter pr) {
+    	if(!literal().isOUTPUT())
+	 		pr.out.print(getPRED_ID());
+	 	else
+	 		pr.out.print(GlobalNames.OUTPUT_PRE_PROC_NAME);
+    }
+
+    public void ASTNode.prePrint(PrettyPrinter pr) {
+        prettyPrint(pr);
+    }
+    
+    public void Program.prePrint(PrettyPrinter pr) {
+    	HashSet<String> printed = new HashSet<String>();
+        for(Literal l : predefinedLiterals()) {
+            String pred_id = l.predicate().prePrint();
+            if(printed.contains(pred_id)) continue;
+            printed.add(pred_id);
+        	pr.out.print("OUTPUT('" + pred_id + ").\n");
+        }
+        prettyPrint(pr);
+    }
 }
 
 aspect SoufflePrinting {

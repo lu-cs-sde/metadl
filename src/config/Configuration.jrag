@@ -1,6 +1,7 @@
 import lang.ast.Program;
 import lang.ast.StandardPrettyPrinter;
 import lang.ast.SoufflePrettyPrinter;
+import lang.ast.SoufflePrePrinter;
 import lang.ast.FormalPredicate;
 import lang.ast.Literal;
 import lang.io.FileUtil;
@@ -96,6 +97,15 @@ aspect Internal {
 }
 
 aspect Souffle {
+	public Program PrePrint.perform()  throws Exception {
+		Program program =  (Program) FileUtil.parse(new File(description().getInput().getPath()));
+		program.prePrint(new SoufflePrePrinter<Program>(new PrintStream(System.out)));
+		preProcess(program, description());
+		return program;
+	}
+	
+
+	
     protected Program SouffleTask.preEvaluate(HashSet<File> copied, HashSet<File> moved) throws Exception {
         SimpleLogger.logger().log(description().debugInfo(), SimpleLogger.LogLevel.Level.DEBUG);
         File tmp_dir_1 = new File("tmp/tmp1");
@@ -130,12 +140,26 @@ aspect Souffle {
             SimpleLogger.logger().log("Delete: " + fp.getName(), SimpleLogger.LogLevel.Level.DEBUG);
             fp.delete();
         }
-
+	
         for(File fp : moved) {
             SimpleLogger.logger().log("Move Back: " + fp.getName(), SimpleLogger.LogLevel.Level.DEBUG);
             Files.move(fp.toPath(), new File(factsDir() + "/" + fp.getName()).toPath(), StandardCopyOption.REPLACE_EXISTING);
         }
     }
+    
+    protected String SouffleTask.preProcess(Program program, Description descr) throws Exception {
+    	File tmp_dir_1 = new File("tmp/tmp1");
+        File tmp_dir_2 = new File("tmp/tmp2");
+        tmp_dir_1.mkdirs();
+        tmp_dir_2.mkdirs();
+        String pre_out = tmp_dir_1.getPath() + "/" + descr.inputFileName();
+        program.prePrint(pre_out);
+        String pre_eval = "eval::bottomupnaive -OUT " + tmp_dir_1.getPath() + " -FACTS " + factsDir() + " " + pre_out;
+        Description pre_descr = FileUtil.parseDescription(pre_eval);
+        pre_descr.getTask().perform();
+        
+        return pre_out;
+	}
 
     public Program EvalSouffle.perform()  throws Exception {
         HashSet<File> copied = new HashSet<File>();

@@ -23,7 +23,6 @@ import lang.relation.Stratification;
 import lang.relation.Stratification.Stratum;
 
 public class BottomUpNaiveIterative extends InternalEvaluation {
-	
 	@Override
 	public void evaluate(Program program, Description descr) {
 		//long start = System.nanoTime();
@@ -32,32 +31,29 @@ public class BottomUpNaiveIterative extends InternalEvaluation {
 			SimpleLogger.logger().log("Nothing to output ... ", SimpleLogger.LogLevel.Level.DEBUG);
 			return;
 		}
+		for(FormalPredicate fp : program.getFormalPredicates())  fp.literal().initialSideEffect(program, descr);
+		Stratification.stratification(program);
+		Stratum outStrat = Stratification.iso.get(output);
 		
-		Deque<Stratum> order = Stratification.stratificationForceCompute(program);
-		for(FormalPredicate fp : program.getFormalPredicates()) {
-			fp.literal().initialSideEffect(program, descr);
+		/**
+		 * Evaluate OUTPUT
+		 */
+		evaluateStratum(program, descr, outStrat);
+		
+		HashSet<Stratum> output_strata = new HashSet<Stratum>();
+		for(PseudoTuple ps : output.relation.tuples()) {
+			PredicateRef ref = (PredicateRef)ps.coord(0);
+			Stratum ref_strat = Stratification.iso.get(ref.formalpredicate());
+			output_strata.add(ref_strat);
 		}
 		
-		TreeSet<FormalPredicate> computedPredicates = new TreeSet<FormalPredicate>(FormalPredicate.formalPredicateComparator);
-		boolean isDone = false;
-		while (!order.isEmpty() && !isDone) {
+		Deque<Stratum> order = Stratification.reversePostOrder(output_strata);
+		
+		while (!order.isEmpty()) {
 			Stratum nextStrat = order.pollFirst();
+			if(nextStrat == outStrat) continue;
 			evaluateStratum(program, descr, nextStrat);
-			nextStrat.forEach(fp -> computedPredicates.add(fp));
-			
-			if(!computedPredicates.contains(output)) continue;
-			isDone = true;
-			for(PseudoTuple pt : output.relation.tuples()) {
-				if(!computedPredicates.contains(((PredicateRef)pt.coord(0)).formalpredicate())) {
-					isDone = false;
-					break;
-				}
-			}
 		}
-		
-		//long end = System.nanoTime();
-		//double elapsed = (end - start) / 1000000;
-//		System.out.print(elapsed);
 		dumpRelations(program, descr);
 	}
 	

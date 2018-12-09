@@ -53,7 +53,7 @@ public abstract class InternalEvaluation extends Evaluation {
 		output.relation.tuples().forEach(ps -> {
 			PredicateRef ref = (PredicateRef) ps.coord(0);
 			FormalPredicate fp = ref.formalpredicate();
-			if(fp.relation != null)
+			if(fp.relation != null && descr != null) 
 				CSVUtil.dumpFileInto(fp, new File(descr.outputDir() + "/" + fp.predicateName() + ".csv"));
 		});
 	}

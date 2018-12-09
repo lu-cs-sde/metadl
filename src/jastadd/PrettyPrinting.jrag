@@ -310,7 +310,10 @@ aspect TypePrinting {
     }
     
     public void Rule.typePrint(PrettyPrinter pr) {
-	 	pr.out.print(GlobalNames.TYPE_RULE_NAME + index());
+    	String ruleName = GlobalNames.TYPE_RULE_NAME + index();
+    	pr.out.print("OUTPUT('" + ruleName + ").\n");
+    
+	 	pr.out.print(ruleName);
 	 	printCollection(variables(), "(", ")", ", ", pr);
 	 	pr.out.print(" :- ");
 	 	HashSet<Literal> nobind = new HashSet<Literal>();

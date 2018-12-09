@@ -3,30 +3,61 @@ package lang.evaluation;
 import java.util.Deque;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.TreeSet;
 
 import lang.ast.Clause;
 import lang.ast.Fact;
 import lang.ast.FormalPredicate;
+import lang.ast.GlobalNames;
 import lang.ast.InclusiveLiteral;
 import lang.ast.Literal;
+import lang.ast.PredicateRef;
 import lang.ast.Program;
 import lang.ast.Rule;
 import lang.ast.config.Description;
+import lang.io.SimpleLogger;
 import lang.relation.Binding;
+import lang.relation.PseudoTuple;
 import lang.relation.Relation;
 import lang.relation.Stratification;
 import lang.relation.Stratification.Stratum;
 
 public class BottomUpNaiveIterative extends InternalEvaluation {
+	
 	@Override
 	public void evaluate(Program program, Description descr) {
+		//long start = System.nanoTime();
+		FormalPredicate output = program.formalPredicateMap().get(GlobalNames.OUTPUT_NAME);
+		if(output == null) {
+			SimpleLogger.logger().log("Nothing to output ... ", SimpleLogger.LogLevel.Level.DEBUG);
+			return;
+		}
+		
 		Deque<Stratum> order = Stratification.stratificationForceCompute(program);
 		for(FormalPredicate fp : program.getFormalPredicates()) {
 			fp.literal().initialSideEffect(program, descr);
 		}
-		while (!order.isEmpty()) {
-			evaluateStratum(program, descr, order.pollFirst());
+		
+		TreeSet<FormalPredicate> computedPredicates = new TreeSet<FormalPredicate>(FormalPredicate.formalPredicateComparator);
+		boolean isDone = false;
+		while (!order.isEmpty() && !isDone) {
+			Stratum nextStrat = order.pollFirst();
+			evaluateStratum(program, descr, nextStrat);
+			nextStrat.forEach(fp -> computedPredicates.add(fp));
+			
+			if(!computedPredicates.contains(output)) continue;
+			isDone = true;
+			for(PseudoTuple pt : output.relation.tuples()) {
+				if(!computedPredicates.contains(((PredicateRef)pt.coord(0)).formalpredicate())) {
+					isDone = false;
+					break;
+				}
+			}
 		}
+		
+		//long end = System.nanoTime();
+		//double elapsed = (end - start) / 1000000;
+//		System.out.print(elapsed);
 		dumpRelations(program, descr);
 	}
 	

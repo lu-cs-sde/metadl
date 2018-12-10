@@ -9,10 +9,29 @@ y_vals = [[121.0,142.0,112.0,139.0,116.0,115.0,113.0,116.0,127.0,113.0],[274.0,2
 
 y_mean = list(map(lambda l: np.mean(l), y_vals))
 x_log = list(map(lambda x: math.log(x, 2), x_vals))
-f = list(map(lambda x: 2 * x - 13.45 + math.log(x, 2), x_log))
+f = list(map(lambda x: 2 * x - 13.35 + math.log(x, 2), x_log))
 y_mean_log = list(map(lambda x: math.log(x, 2), y_mean))
 y_log = list(map(lambda l: list(map(lambda y: math.log(y, 2), l)), y_vals))
 
-plt.plot(x_log, y_mean_log)
-plt.plot(x_log, f)
+handle_y_mean_log, = plt.plot(x_log, y_mean_log)
+handle_f, =plt.plot(x_log, f)
+plt.legend([handle_y_mean_log, handle_f], ['Internal (Naive) Mean', 'O(N^2log(N))'])
+plt.xlabel('log(N)', fontsize=18)
+plt.ylabel('log(t [ms])', fontsize=16)
+
+x_souffle = [4096,8192,16384,32768,65536,131072,262144,524288,1048576,2097152,4194304,8388608,16777216,33554432,67108864,134217728,268435456,536870912]
+
+y_souffle = [[12.0,12.0,11.0,16.0,13.0,11.0,12.0,12.0,12.0,12.0],[16.0,15.0,18.0,15.0,15.0,15.0,22.0,16.0,15.0,22.0],[22.0,23.0,24.0,36.0,23.0,22.0,23.0,23.0,22.0,26.0],[36.0,35.0,36.0,37.0,36.0,37.0,38.0,35.0,37.0,35.0],[64.0,67.0,75.0,72.0,65.0,64.0,64.0,65.0,64.0,64.0],[133.0,122.0,118.0,122.0,122.0,122.0,119.0,119.0,120.0,125.0],[234.0,248.0,233.0,233.0,228.0,242.0,237.0,232.0,230.0,235.0],[492.0,471.0,462.0,458.0,461.0,471.0,459.0,462.0,459.0,451.0],[959.0,917.0,912.0,920.0,1000.0,915.0,924.0,931.0,925.0,916.0],[1898.0,1842.0,1837.0,1858.0,1818.0,1827.0,1883.0,1835.0,1826.0,1828.0],[3711.0,3793.0,3680.0,3685.0,3711.0,3745.0,3698.0,3675.0,3649.0,3656.0],[7384.0,7365.0,7387.0,7417.0,7379.0,7268.0,7290.0,7355.0,7356.0,7331.0],[14705.0,14798.0,15099.0,14923.0,15362.0,15526.0,14601.0,14708.0,14787.0,14910.0],[29633.0,29726.0,29637.0,30751.0,29665.0,29748.0,30303.0,29737.0,29586.0,29969.0],[59545.0,60165.0,60737.0,59897.0,60021.0,59980.0,59827.0,60263.0,59763.0,59865.0],[120221.0,122110.0,121705.0,121292.0,122638.0,120535.0,120870.0,122246.0,125100.0,122424.0],[248762.0,244341.0,241234.0,242829.0,247550.0,243267.0,242872.0,241516.0,243735.0,241550.0],[531338.0,398288.0,475812.0,386799.0,528896.0,388645.0,467581.0,434275.0,448459.0,472116.0]]
+x_souffle_log = list(map(lambda x: math.log(x, 2), x_souffle))
+y_souffle_mean = list(map(lambda l: np.mean(l), y_souffle))
+y_souffle_mean_log = list(map(lambda x: math.log(x, 2), y_souffle_mean))
+g = list(map(lambda x: x - 10, x_souffle_log))
+h = list(map(lambda x: x - 14.45 + math.log(x, 2), x_souffle_log))
+plt.figure()
+handle_y_souffle_mean_log, = plt.plot(x_souffle_log, y_souffle_mean_log)
+handle_g, = plt.plot(x_souffle_log, g)
+handle_h, = plt.plot(x_souffle_log, h)
+plt.legend([handle_y_souffle_mean_log, handle_g, handle_h], ['Souffle Mean', 'O(N)', 'O(Nlog(N))'])
+plt.xlabel('log(N)', fontsize=18)
+plt.ylabel('log(t [ms])', fontsize=16)
 plt.show()

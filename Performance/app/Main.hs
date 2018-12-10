@@ -47,10 +47,12 @@ programs t rm = (flip replaceValues t) <$> replacements (replacePartition rm)
 runProgram :: FilePath -> Program -> IO [String]
 runProgram fp program = do
   readCreateProcess (shell cmd_write_prog) ""
-  forM [1..10] (const $ readCreateProcess (shell cmd_run_prog) "") 
+  strs <- forM [1..10] (const $ readCreateProcess (shell cmd_run_prog) "" >>= \s -> putStr (s ++ " ") >> return s)
+  putStrLn ""
+  return strs 
   where
     cmd_write_prog = "cd ..; echo \"" ++ program ++ "\" > " ++ "./examples/" ++ takeFileName fp
-    cmd_run_prog   = "cd ..; java -jar compiler.jar eval::bottomupnaive -OUT ./out -FACTS ./facts ./examples/" ++ takeFileName fp
+    cmd_run_prog   = "cd ..; java -jar compiler.jar eval::souffle -OUT ./out -FACTS ./facts ./examples/" ++ takeFileName fp
 
 collectSample :: Template -> ReplaceMap -> FilePath -> IO [[Double]]
 collectSample template replMap infile = do

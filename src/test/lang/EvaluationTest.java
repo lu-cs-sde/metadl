@@ -69,9 +69,9 @@ public class EvaluationTest {
 		
 		SimpleLogger.logger().log("Input: " + inputFile, SimpleLogger.LogLevel.Level.DEBUG);
 		Description d1 = FileUtil.parseDescription(
-				"eval::souffle      -OUT ./tests/output/souffle " + inputFile);
+				"eval::souffle      -OUT ./tests/output/souffle -FACTS ./facts " + inputFile);
 		Description d2 = FileUtil.parseDescription(
-				"eval::bottomupnaive -OUT ./tests/output         " + inputFile);
+				"eval::bottomupnaive -OUT ./tests/output       -FACTS ./facts  " + inputFile);
 		doEvaluationTest(d1, d2);
 	}
 

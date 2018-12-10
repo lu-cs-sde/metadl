@@ -13,8 +13,8 @@ replacements replacements34,35
 replacePartition replacePartition40,41
 programs programs43,44
 runProgram runProgram46,47
-collectSample collectSample54,55
-main main59,60
+collectSample collectSample56,57
+main main61,62
 
 ./src/Parser.hs,338
 module Parser Parser0,1

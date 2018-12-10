@@ -21,21 +21,35 @@
 \end{center}
 %Content goes here
 \end{frame}
+
+
+\begin{frame}
+\frametitle{Basic Idea}
+\begin{itemize}
+\item Datalog uses first-order logic to express relations.
+\end{itemize}
+\begin{align*}
+&Parent(\strconst{"Eddard"}, \strconst{"Arya"}).\\
+&Parent(\strconst{"Lyarra"}, \strconst{"Eddard"}).\\
+&Ancestor(p, c) \coloneqtwo Parent(p, c).\\
+&Ancestor(a, c) \coloneqtwo Parent(p, c), Ancestor(a, p).\\
+\end{align*}
+\end{frame}
 \begin{frame}
 \frametitle{The core Datalog language}
 %\framesubtitle{A bit more information about this}
-A program is a set of \textit{Horn Clauses}.\NL
-\begin{align*}
-Ancestor(a, c) \coloneqtwo Parent(p, c), Ancestor(a, p).
-\end{align*}
+A Datalog program is a set of rules.\NL
 \begin{itemize}
-\item<2-> \fbox{$Ancestor(a, c) \coloneqtwo Parent(p, c), Ancestor(a, p).$} \hfill Horn Clause
-\item<3-> $\fbox{Ancestor(a, c)} \coloneqtwo \fbox{Parent(p, c), Ancestor(a, p)}.$ \hfill Head, Body
-\item<4-> \fbox{$Ancestor(a, c)$} \hfill Atom
-\item<5-> \fbox{$Ancestor$}(\fbox{$a, c$}) \hfill Predicate, List of Terms
+\item<1-> \fbox{$Ancestor(a, c) \coloneqtwo Parent(p, c), Ancestor(a, p).$} \hfill Rule
+\item<2-> $\fbox{Ancestor(a, c)} \coloneqtwo \fbox{Parent(p, c), Ancestor(a, p)}.$ \hfill Head, Body
+\item<3-> \fbox{$Ancestor(a, c)$} \hfill Atom
+\item<4-> \fbox{$Ancestor$}(\fbox{$a, c$}) \hfill Predicate, List of Terms
+\item<5-> A term is a variable or a constant.
+\item<6->Semantics (implication from body to head): \\
+	$\forall Constants\;(\strconst{p},\strconst{c},\strconst{a}).$\\ 
+	\hspace*{15 pt} 
+	$Parent(\strconst{p}, \strconst{c}) \land Ancestor(\strconst{a}, \strconst{p}) \implies Ancestor(\strconst{a},\strconst{c})$
 \end{itemize}
-\NL
-\uncover<6->{Semantics: $Body \implies Head$ \quad}
 %More content goes here
 \end{frame}
 
@@ -46,8 +60,8 @@ Ancestor(a, c) \coloneqtwo Parent(p, c), Ancestor(a, p).
 \item<4-> \textbf{IDB: } Intensional database, implicitly defines predicates through rules (Horn Clauses) showing intent.
 \end{itemize}
 \NL
-\uncover<3,6>{$Parent("Eddard", "Arya").$}\NL
-\uncover<3,6>{$Parent("Lyarra", "Eddard").$}\NL
+\uncover<3,6>{$Parent(\strconst{"Eddard"}, \strconst{"Arya"}).$}\NL
+\uncover<3,6>{$Parent(\strconst{"Lyarra"}, \strconst{"Eddard"}).$}\NL
 \NL
 \uncover<5-6>{$Ancestor(p, c) \coloneqtwo Parent(p, c).$}\NL
 \uncover<5-6>{$Ancestor(a, c) \coloneqtwo Parent(p, c), Ancestor(a, p).$}
@@ -57,11 +71,8 @@ Ancestor(a, c) \coloneqtwo Parent(p, c), Ancestor(a, p).
 \frametitle{Fix-point Iteration}
 \begin{itemize}
 	\item<2-> Begin with the EDB facts: $I^0$.
-	\item<3-> Use rules to derive IDB facts. 
-	\item<4-> In iteration $i$ the set of new facts derived from current facts $I^i$ are $\Delta_i$
-	\item<5->  $I^{i + 1} = I^{i} \cup \Delta_i$
-	\item<6->  Iterate until $I^{n+1} = I^n$
-	\item<7->  Guaranteed termination with finite EDBs!
+	\item<3-> Iterate rules until no new tuples can be derived, $I^0, I^1, \ldots, I^n = I^{n + 1}$
+	\item<4-> Guaranteed termination with finite EDBs (and without object creation)!
 \end{itemize}
 %	\item<7->  \textbf{Naive evaluation}: use $I^{i + 1}$ as input to each iteration.
 %\item<7->  \textbf{Semi-Naive evaluation}: use $\Delta_i$ as input to each iteration.
@@ -256,12 +267,16 @@ Database $I^0$:\NL\NL
 Extend the expressive power of core Datalog.
 \begin{itemize}
 \item<2-> Negation: \\
-$NOT(ATOM(t_1, \ldots, t_n))$
-\item<3-> Expressions and filtering: \\
-$A(x, y) \coloneqtwo B(x), C(y), x \leq \intconst{2} * y$
-\item<4-> Object Generation with BIND predicate:\\$Person(p), Parent(p, c) \coloneqtwo Person(c), BIND(p, \strconst{"P("} + c + \strconst{")"})$ 
+$LivingPerson(p) \coloneqtwo Person(p), NOT(Dead(p)).$
+
+\item<3-> Object Generation with BIND:\\
+$Nat(0).$\\
+$Nat(y) \coloneqtwo Nat(x), BIND(y, x + \intconst{1}).$
+
+\item<4-> Filtering: \\
+$Nat(y) \coloneqtwo Nat(x), BIND(y, x + \intconst{1}), y \leq \intconst{1000}$
 \item<5-> Predicate References: \\
-$A('Parent).$
+$OUTPUT(\predconst{'Parent}).$
 \item<6-> Types: \\
 TYPEOF(\predconst{'Parent}, \listconst{[\typeconst{String} \typeconst{String}]})
 \end{itemize}
@@ -270,23 +285,23 @@ TYPEOF(\predconst{'Parent}, \listconst{[\typeconst{String} \typeconst{String}]})
 \begin{frame}
 \frametitle{Language Extensions}
 \framesubtitle{Predicate References}
-\uncover<2->{ \fbox{$EDB : PredRef \times String$} }
+\uncover<1->{ \fbox{$EDB : PredRef \times String$} }
 \begin{itemize}
-\item<3->Determine what predicates to load from external resource.
-\item<4->Example: $EDB(\predconst{'Parent}, \strconst{"Parent.csv"}).$
-\item<5->Example: $EDB(\predconst{'EDB}, \strconst{"EDB.csv"}).$
+\item<2->Determine what predicates to load from external resource.
+\item<3->Example: $EDB(\predconst{'Parent}, \strconst{"Parent.csv"}).$
+\item<4->Example: $EDB(\predconst{'EDB}, \strconst{"EDB.csv"}).$
 \end{itemize}
 
-\uncover<6->{\fbox{$OUTPUT : PredRef$} }
+\uncover<5->{\fbox{$OUTPUT : PredRef$} }
 \begin{itemize}
-\item<7->Determine what predicates to compute and output. 
-\item<8->Example: $OUTPUT(\predconst{'Person}). $
+\item<6->Determine what predicates to compute and output. 
+\item<7->Example: $OUTPUT(\predconst{'Person}). $
 \end{itemize}
 
-\uncover<9->{\fbox{$ATOM : PredRef$} }
+\uncover<8->{\fbox{$ATOM : PredRef$} }
 \begin{itemize}
-\item<10->Interpreter populates the ATOM predicate with a predicate reference for each atom in the Datalog program.
-\item<11->Example: $OUTPUT(x) \coloneqtwo ATOM(x).$
+\item<9->Interpreter populates the ATOM predicate with a predicate reference for each atom in the Datalog program.
+\item<10->Example: $OUTPUT(x) \coloneqtwo ATOM(x).$
 \end{itemize}
 %\uncover<3->{Interpreter populates the ATOM predicate with a predicate reference for each atom in the Datalog program.}
 %\begin{itemize}
@@ -302,17 +317,30 @@ TYPEOF(\predconst{'Parent}, \listconst{[\typeconst{String} \typeconst{String}]})
 \begin{itemize}
 \item<2-> Semantics:  $TYPEOF('A, [t_1  \ldots  t_n]) \implies A : t_1 \times \ldots \times t_n$
 \item<3-> The types are themselves constant terms with type \textit{Type}.
-\item<4-> Base Types: $String : Type, Integer : Type, PredRef : Type, Type : Type$
-\item<5-> List is a type constructor: $List : Type \rightarrow Type$.
-\item<6-> For example,  $List(Integer)$ is the type of a list of integers.
-\item<7-> This enables typing of the TYPEOF predicate: $TYPEOF: PredRef \times List(Type)$.
+\item<4-> $String : Type, \; Integer : Type, \; PredRef : Type, \; Type : Type$
+\item<5-> List is a type constructor: $List : Type \rightarrow Type$.\\
+\uncover<5->{For example,  $List(Integer)$ is the type of a list of integers.}
+\item<6-> This enables typing of the TYPEOF predicate: $TYPEOF: PredRef \times List(Type)$.
 \end{itemize}
 %\end{itemize}
 \end{frame}
 
 \begin{frame}
 \frametitle{Pretty Printing}
-Pretty-printing is used to transform 
+\begin{itemize}
+\item<1-> Souffle (\includegraphics[width=20pt]{souffle.png}) is an Open Source Datalog implementation by Oracle Labs.
+\item<2-> Souffle pretty-printing for comparison with Souffle.
+\item<3-> Pre-processing of meta-predicates $(EDB, OUTPUT, ATOM, TYPEOF, ...)$ for Souffle in Datalog.
+\item<4-> Type Checking and Type Inference in Datalog (generate new Datalog program).
+\item<5-> JastAdd enables convenient extension of pretty-printers to re-use and combine previous printers.
+\item<6-> A long-term goal: Allow a Datalog program to generate an arbitrary Datalog program.
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+
+\centering \Huge Questions?
+
 \end{frame}
 % etc
 \end{document}

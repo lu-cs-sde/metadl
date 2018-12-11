@@ -12,6 +12,5 @@ tests/**/*.out
 /tests/output/
 tests/evaluation/bottomupout/*
 /out/
-/facts/
 /tmp/
 *.*~

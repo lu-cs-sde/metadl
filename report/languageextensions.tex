@@ -84,7 +84,7 @@ The example has a single solution for the rule types:
 Rule0 : String  \times Integer \times Integer\\
 Rule1 : Integer \times Integer \times String
 \end{align*}
-The rule-type solution gives the \textit{type-environment} $\Gamma$ in which the rule is executed: $\Gamma : Variable \rightarrow *$. Using $\Gamma$, a global pass can trivially check that the type of each atom is unique across all rules.
+The rule-type solution gives the \textit{type-environment} $\Gamma$ in which the rule is executed: $\Gamma : Rule \rightarrow Variable \rightarrow *$. Using $\Gamma$, a global pass can trivially check that the type of each atom is unique across all rules.
 
 \subsection{Meta-Predicates}
 The language needs a way for the user to communicate certain properties about the datalog-program $P$ to the interpreter $I$.

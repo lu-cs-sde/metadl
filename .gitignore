@@ -9,6 +9,9 @@ compiler.jar
 DrAST-1.2.2.jar
 DrAST.cfg
 tests/**/*.out
-/out/
 /tests/output/
 tests/evaluation/bottomupout/*
+/out/
+/facts/
+/tmp/
+*.*~

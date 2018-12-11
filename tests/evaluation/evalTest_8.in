@@ -1,9 +1,11 @@
+OUTPUT(x) :- ATOM(x).
+
 A("A", "B").
 B("D", "E").
 C("C11", "C12", "C13").
 C("C21", "C22", "C23").
 
-A(x,x) :- C(x,f1,f2).
-A(x, y) :- B(y, x).
-B(x, y) :- C(x,y,f).
+A(x,x)   :- C(x,f1,f2).
+A(x, y)  :- B(y, x).
+B(x, y)  :- C(x,y,f).
 C(x,y,z) :- A(x,y), A(z,z).

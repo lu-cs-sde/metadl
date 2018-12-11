@@ -5,35 +5,26 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 aspect PretyPrinting {
-	public void ASTNode.prettyPrint(PrintStream out) {
-		for(int i = 0; i < getNumChild(); ++i) {
+    public void ASTNode.prettyPrint(PrintStream out) {
+        for(int i = 0; i < getNumChild(); ++i) {
             getChild(i).prettyPrint(out);
         }
-	}
+    }
 
     public String ASTNode.prettyPrint() {
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
         prettyPrint(new PrintStream(bytes));
         return bytes.toString();
     }
-    
-    public void TopDownBasic.prettyPrint(PrintStream out) {
-    	out.print("TOP-DOWN BASIC Evaluation");
-    }
-    
-    public void Souffle.prettyPrint(PrintStream out) {
-    	out.print("OutputFile: " + outputFileName());
-    }
-    
+
     public void Description.prettyPrint(PrintStream out) {
-    	out.print("\nInputFile: " + inputFile() + "\n");
-    	out.print("OutputDir: " + outputDir() + "\n");
-    	out.print("FactsDir: " + factsDir() + "\n");
-    	getConfiguration().prettyPrint(out);
-    	out.print("\n");
+        out.print("\nInputFile: " + inputFile() + "\n");
+        out.print("OutputDir: " + outputDir() + "\n");
+        out.print("FactsDir: " + factsDir() + "\n");
+        out.print("\n");
     }
-    
+
     public String Description.debugInfo() {
-    	return prettyPrint();
+        return prettyPrint();
     }
 }

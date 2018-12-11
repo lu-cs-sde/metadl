@@ -2,8 +2,6 @@ package lang.relation;
 
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 import lang.ast.Term;
 import lang.relation.Binding.BindOverlap;
@@ -13,6 +11,7 @@ import lang.relation.Binding.BindResult.TaggedBind;
 import lang.relation.Binding.BindTerm;
 
 public class Relation {
+	public static final Relation nullRelation = new Relation(0);
 	private Set<PseudoTuple> relation = new TreeSet<PseudoTuple>();
 	private int arity;
 	public Binding binding = Binding.anyBinding;
@@ -54,8 +53,11 @@ public class Relation {
 		relation.forEach(pt -> pt.collectTuple(sb));
 		sb.append("}");
 	}
-
-	private Supplier<TreeSet<PseudoTuple>> supplier = () -> new TreeSet<PseudoTuple>();
+	
+	public void expand() {
+		tuples().forEach(t -> t.expand());
+		arity = arity + 1;
+	}
 
 	/**
 	 * Selects a set of tuples based on the binding disregarding the current names of the relation columns
@@ -63,8 +65,11 @@ public class Relation {
 	public Relation select(Binding selectBind) {
 		Relation r = new Relation(this.arity);
 		r.binding = selectBind;
-		r.relation = relation.parallelStream().filter(t -> selectBind.satisfiedBy(t))
-				.collect(Collectors.toCollection(supplier));
+		for(PseudoTuple t : relation) {
+			if(selectBind.satisfiedBy(t)) {
+				r.relation.add(new PseudoTuple(t));
+			}
+		}
 		return r;
 	}
 	
@@ -122,6 +127,9 @@ public class Relation {
 	}
 
 	public static Relation join(Relation r1, Relation r2) {
+		if(r1 == nullRelation) return r2;
+		if(r2 == nullRelation) return r1;
+		
 		TreeSet<BindOverlap> intersect = Binding.intersect(r1.binding, r2.binding);
 		BindResult br = Binding.merge(intersect, r1.binding, r2.binding);
 		Relation r = new Relation(br.b_merged.size());
@@ -136,6 +144,15 @@ public class Relation {
 		});
 		return r;
 	}
+	
+	public static Relation difference(Relation r1, Relation r2) {
+		Relation r = new Relation(r1.arity);
+		r1.tuples().forEach(t -> {
+			if(!r2.contains(t)) r.addTuple(new PseudoTuple(t));
+		});
+		r.binding = r1.binding;
+		return r;
+	}
 
 	public boolean contains(PseudoTuple t) {
 		return relation.contains(t);
@@ -146,5 +163,10 @@ public class Relation {
 		if (!(obj instanceof Relation))
 			return false;
 		return relation.equals(((Relation) obj).relation);
+	}
+	
+	@Override
+	public String toString() {
+		return relation.toString();
 	}
 }

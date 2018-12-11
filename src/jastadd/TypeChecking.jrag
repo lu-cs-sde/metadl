@@ -1,0 +1,110 @@
+import lang.io.FileUtil;
+import lang.evaluation.BottomUpNaiveIterative;
+import java.util.Collections;
+import lang.relation.Instantiation;
+aspect TypeChecking {
+	 public HashMap<Rule, Instantiation> Program.instantMap = new HashMap<Rule, Instantiation>();
+	 public void Program.typeCheck() throws IOException, beaver.Parser.Exception {
+	 	String typeProgSource = typePrint();
+	 	Program typeProg = FileUtil.parse(typeProgSource);
+	 	BottomUpNaiveIterative eval = new BottomUpNaiveIterative();
+	 	eval.evaluate(typeProg, null);
+	 	
+	 	boolean typeError = false;
+	 	for(FormalPredicate fp : typeProg.getFormalPredicates()) {
+	 		if(fp.predicateName().startsWith(GlobalNames.TYPE_RULE_NAME)) {
+	 			SimpleLogger.logger().log(fp.predicateName() + ": " + fp.relation, SimpleLogger.LogLevel.Level.DEBUG);
+	 			
+	 			if(fp.relation.size() == 0 || fp.relation.size() > 1) {
+	 				typeError = true;
+	 				TreeSet<String> affectedClauses = new TreeSet<String>();
+	 				for(Literal l : ((Rule)fp.literal().clause()).getBodys()) {
+	 					if(l.isInclusive())
+	 						affectedClauses.add(l.predicate().getPRED_ID());
+	 				}
+	 				if(fp.relation.size() == 0)
+	 					SimpleLogger.logger().log("Not enough type information at: " + affectedClauses, SimpleLogger.LogLevel.Level.ERROR);
+	 				else
+	 					SimpleLogger.logger().log("Contradictory type information at: " + affectedClauses, SimpleLogger.LogLevel.Level.ERROR);
+	 			}
+	 		}
+	 	}
+	 	
+	 	if(typeError) System.exit(0);
+	 	for(FormalPredicate fp : typeProg.getFormalPredicates()) {
+	 		if(fp.predicateName().startsWith(GlobalNames.TYPE_RULE_NAME)) {
+	 			Rule r = (Rule)fp.literal().clause();
+	 			int index = Integer.parseInt(fp.predicateName().substring(GlobalNames.TYPE_RULE_NAME.length()));
+	 			PseudoTuple var_tuple = new PseudoTuple(r.variables());
+	 			PseudoTuple type_tuple = fp.relation.tuples().iterator().next();
+	 			Instantiation inst = new Instantiation(var_tuple, type_tuple);
+	 			instantMap.put((Rule)getClause(index), inst);
+	 		}
+	 	}
+	 }
+	 
+	 syn PseudoTuple Literal.derivedType() {
+	 	if(!clause().isRule()) return toTuple().toTypeTuple();
+	 	Instantiation typeInst = clause().program().instantMap.get(((Rule)clause()));
+	 	PseudoTuple typeTup = toTuple();
+	 	for(int i = 0; i != typeTup.arity(); ++i) if(!typeTup.coord(i).isVariable()) typeTup.set(i, typeTup.coord(i).type());
+	 	typeInst.instantiate(typeTup);
+	 	return typeTup;
+	 }
+	 
+	 coll TreeSet<PseudoTuple> FormalPredicate.derivedTypes() [new TreeSet<PseudoTuple>()] with add;
+	 Literal contributes derivedType() to FormalPredicate.derivedTypes() for predicate().formalpredicate();
+	 
+	 Program contributes nta getFormalPredicates() to Program.typeCheckErrors();
+	 FormalPredicate contributes "Multiple types for " + predicateName() + ": " + derivedTypes() 
+		when derivedTypes().size() > 1 && literal().isInclusive()
+		to Program.typeCheckErrors();
+	 
+	 syn Type AddExpr.mappendTypes(Type t1, Type t2) {
+        if(Type.typeComparator.compare(t1, t2) != 0)  return Type.badType;
+        if(!(t1.isStringType() || t1.isIntegerType())) return Type.badType;
+        return t1;
+    }
+
+    syn Type BinExpr.mappendTypes(Type t1, Type t2) {
+        if(Type.typeComparator.compare(t1, t2) != 0)  return Type.badType;
+        if(!t1.isIntegerType()) return Type.badType;
+        return t1;
+    }
+
+    abstract Type Expr.evalTypes(Instantiation inst);
+    syn Type Term.evalTypes(Instantiation inst)     = type();
+    syn Type Variable.evalTypes(Instantiation inst) = (Type) inst.get(this);
+    syn Type BinExpr.evalTypes(Instantiation inst)  = mappendTypes(getLeft().evalTypes(inst), getRight().evalTypes(inst));
+	 
+	syn boolean BinExpr.hasSupportedType() {
+        Instantiation typeInst = occuresIn().clause().program().instantMap.get(((Rule)occuresIn().clause()));
+        Type t = evalTypes(typeInst);
+        return Type.typeComparator.compare(t, Type.badType) == 0 ? false : true;
+	}
+	 
+	BinExpr contributes "Types not supported: " + this 
+		when !hasSupportedType()
+		to Program.typeCheckErrors();
+	
+	/**
+		The following type errors would be caught by the main algorithm but gives nicer error messages.
+	**/	
+	syn boolean PredefinedLiteral.satisfiedType() {
+		if(type().arity() != actualType().arity()) return false;
+		for(int i = 0; i != type().arity(); ++i) {
+			Type t1 = (Type)type().coord(i);
+			Type t2 = (Type)actualType().coord(i);
+			if(t2.isVariableType()) continue;
+			if(Type.typeComparator.compare(t1, t2) != 0) return false;
+		}
+		return true;
+	}
+	
+   	syn String PredefinedLiteral.typeErrorMsg() = "Expected: " + type() + " but got: " + actualType() + " for " + predicate().getPRED_ID();
+    OUTPUTLiteral contributes typeErrorMsg() when !satisfiedType() to Program.semanticErrors();
+    ATOMLiteral   contributes typeErrorMsg() when !satisfiedType() to Program.semanticErrors();
+    EDBLiteral    contributes typeErrorMsg() when !satisfiedType() to Program.semanticErrors();
+    PREDLiteral   contributes typeErrorMsg() when !satisfiedType() to Program.semanticErrors();
+    TYPEOFLiteral contributes typeErrorMsg() when !satisfiedType() to Program.semanticErrors();
+}

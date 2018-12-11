@@ -15,7 +15,6 @@ public class ParseTests {
 	private static final File TEST_DIRECTORY_INVALID = new File("tests/parser/invalid");
     private static final String[] VALID_TESTS = {
          "parseTest_1.in"
-        ,"parseTest_2.in"
         ,"parseTest_3.in"
         ,"parseTest_4.in"
         ,"parseTest_5.in"
@@ -27,6 +26,8 @@ public class ParseTests {
         ,"parseTest_11.in"
         ,"parseTest_12.in"
         ,"parseTest_13.in"
+        ,"parseTest_14.in"
+        ,"parseTest_15.in"
     };
     private static final String[] INVALID_TESTS = {
          "parseTest_1.in"

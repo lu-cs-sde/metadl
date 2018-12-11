@@ -1,0 +1,7 @@
+OUTPUT('A), OUTPUT('B).
+VARS(1), VARS(2), VARS(3).
+
+
+A(x, y) :- VARS(x), VARS(y).
+
+B(x, y) :- A(x, y), NEQ(x, y).

@@ -1,0 +1,13 @@
+OUTPUT(x) :- ATOM(x), NEQ('Vars, x).
+OUTPUT('OUTPUT).
+EDB('Vars, "Vars.csv").
+TYPEOF('Vars, [Integer]).
+
+A(x, y) :- Vars(x), Vars(y).
+Filter(x, y) :- A(x, y), LT(x, y).
+B(x, y) :- A(x, y),
+           NOT(Filter(x, y)),
+           EQ(x * 2 + y, (7 + 2) * 2 - 11).
+
+C(x, y, z) :- B(x, y),
+              BIND(z, 2 * x + y).

@@ -23,6 +23,13 @@ public class FileUtil {
 			return filename + newExtension;
 		}
 	}
+
+    public static String fileNameNoExtension(String path) {
+        String fn = fileName(path);
+        int index = fn.lastIndexOf('.');
+        if(index == -1) return fn;
+        return fn.substring(0, index);
+    }
 	
 	public static String fileName(String path) {
 		Path p = Paths.get(path);
@@ -33,6 +40,12 @@ public class FileUtil {
 		if(dir.length() == 0) return dir;
 		if(dir.charAt(dir.length() - 1) == '/') return dir.substring(0, dir.length() - 1);
 		return dir;
+	}
+	
+	public static Program parse(String program) throws IOException, beaver.Parser.Exception {
+		LangScanner scanner = new LangScanner(new StringReader(program));
+		LangParser parser = new LangParser();
+		return (Program)parser.parse(scanner);
 	}
 	
 	public static Program parse(File file) throws IOException, beaver.Parser.Exception {

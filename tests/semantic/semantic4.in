@@ -1,0 +1,2 @@
+TYPEOF('A, [Integer String]).
+B(x) :- A(x).

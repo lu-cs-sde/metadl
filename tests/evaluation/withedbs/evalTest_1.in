@@ -1,2 +1,4 @@
-EDB(A, "A.csv")
+OUTPUT(x) :- ATOM(x).
+TYPEOF('A, [String String]).
+EDB('A, "A.csv").
 A(x, z) :- A(x, y), A(y, z).

@@ -25,9 +25,10 @@ public class StratificationTest {
 	@ParameterizedTest
 	@MethodSource("testStratProvider")
 	public void testStrat(String fn, String expected) throws IOException, Exception {
-		Description d1 = FileUtil.parseDescription("internal::topdownstrat ./tests/stratification/" + fn);
+		Description d1 = FileUtil.parseDescription("eval::bottomupnaive ./tests/stratification/" + fn);
 		Program program1 = (Program) FileUtil.parse(new File(d1.getInput().getPath()));
-		Deque<Stratum> order = Stratification.stratificationForceCompute(program1);
+		Stratification.stratification(program1);
+		Deque<Stratum> order = Stratification.order();
 		SimpleLogger.logger().log("EXPECTED: " + expected, SimpleLogger.LogLevel.Level.DEBUG).log(order.toString());
 		assertTrue(expected.equals(order.toString()));
 	}
@@ -39,12 +40,13 @@ public class StratificationTest {
 
 	@Test
 	public void testStratTwice() throws IOException, beaver.Parser.Exception {
-		Description d1 = FileUtil.parseDescription("internal::topdownstrat ./tests/stratification/strat_1.in");
+		Description d1 = FileUtil.parseDescription("eval::bottomupnaive ./tests/stratification/strat_1.in");
 		Program program1 = (Program) FileUtil.parse(new File(d1.getInput().getPath()));
-		Deque<Stratum> order = Stratification.stratification(program1);
-
+		Stratification.stratification(program1);
+		Deque<Stratum> order = Stratification.order();
 		String string_order_1 = order.toString();
-		order = Stratification.stratification(program1);
+		Stratification.stratification(program1);
+		order = Stratification.order();
 		assertTrue(string_order_1.equals(order.toString()));
 	}
 }

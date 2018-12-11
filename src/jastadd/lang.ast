@@ -1,39 +1,84 @@
 /**
-        ENTRYPOINT
+	Program
 **/
-Program  ::= Stmt* /FormalPredicate*/; 
+Program  ::= Clause* /FormalPredicate*/; 
 
-abstract Stmt;
-
-abstract Clause:Stmt;
-Rule:Clause ::= Heads:RealLiteral* Body:RealLiteral*;
-Fact:Clause ::= Heads:RealLiteral*;
-
-ExtensionalDB:Stmt ::= Target:MetaLiteral FileLocation;
-FileLocation ::= <STRING>;
+/**
+   Clause 
+**/
+abstract Clause ::= Heads:InclusiveLiteral*;
+Rule:Clause ::=  Body:Literal*;
+Fact:Clause;
 
 /**
    Literals 
 **/
-abstract Literal;
-MetaLiteral:Literal ::= Predicate:PredicateSymbol;
-RealLiteral:Literal ::= Predicate:PredicateSymbol Terms:Term*;
+abstract Literal ::= Predicate:PredicateSymbol;
+abstract InclusiveLiteral:Literal;
+abstract ExclusiveLiteral:Literal;
+abstract BinaryExclusiveTermLiteral:ExclusiveLiteral ::= Left:Expr Right:Expr;
 
-PredicateSymbol ::= <ID>;
+Atom:InclusiveLiteral          ::= Terms:Term*;
+EDBLiteral:InclusiveLiteral    ::= PredicateRef FileLoc:Term;
+OUTPUTLiteral:InclusiveLiteral ::= Term;
+PREDLiteral:InclusiveLiteral   ::= Term /PredicateRef*/;
+ATOMLiteral:InclusiveLiteral   ::= Term /PredicateRef*/;
+TYPEOFLiteral:InclusiveLiteral ::= PredicateRef Term;
+NEGLiteral:ExclusiveLiteral    ::= InclusiveLiteral;
+
+BINDLiteral:ExclusiveLiteral ::= Variable Right:Expr;
+
+EQLiteral:BinaryExclusiveTermLiteral;
+NEQLiteral:BinaryExclusiveTermLiteral;
+LTLiteral:BinaryExclusiveTermLiteral;
+LTELiteral:BinaryExclusiveTermLiteral;
+GTLiteral:BinaryExclusiveTermLiteral;
+GTELiteral:BinaryExclusiveTermLiteral;
+EQLISTLiteral:ExclusiveLiteral ::= TermList;
+
+/**
+	Expressions
+**/
+abstract Expr;
+//abstract AggregateExpr:Expr;
+//CountExpr:AggregateExpr ::= InclusiveLiteral;
+
+abstract BinExpr:Expr ::= Left:Expr Right:Expr;
+AddExpr:BinExpr;
+SubExpr:BinExpr;
+MulExpr:BinExpr;
+DivExpr:BinExpr;
+
+/**
+	Types
+**/
+abstract Type:Constant;
+abstract ConcreteType:Type;
+
+StringType:ConcreteType;
+IntegerType:ConcreteType;
+PredRefType:ConcreteType;
+
+TypeType:ConcreteType;
+VariableType:ConcreteType;
+ListType:Type  ::= Type;
+UnknownType:Type;
+BadType:Type;
 
 /**
     Terms
 **/
-abstract Term;
-Variable:Term ::= <ID>;
-
+abstract Term:Expr;
 abstract Constant:Term;
+
+Variable:Term           ::= <VAR_ID>;
+PredicateRef:Constant   ::= <PRED_ID>;
 StringConstant:Constant ::= <STRING>;
 IntConstant:Constant    ::= <NUMERAL>;
-
-
+TermList:Constant       ::= Terms:Term*;
 
 /**
-    NTA to collect various information that is common to all predicates that refer to the same relation.
+    PredicateSymbols
 **/
-FormalPredicate ::= <STRING>;
+FormalPredicate ::= <PRED_ID>;
+PredicateSymbol ::= <PRED_ID>;

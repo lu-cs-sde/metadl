@@ -1,91 +1,328 @@
-import lang.evaluation.*;
 import lang.ast.Program;
+import lang.ast.StandardPrettyPrinter;
+import lang.ast.SoufflePrettyPrinter;
+import lang.ast.SoufflePrePrinter;
+import lang.ast.FormalPredicate;
+import lang.ast.Literal;
+import lang.ast.PredicateRef;
+import lang.ast.GlobalNames;
+import lang.relation.PseudoTuple;
+import lang.relation.Relation;
 import lang.io.FileUtil;
-
+import lang.io.CSVUtil;
+import lang.io.SimpleLogger;
+import lang.Compiler;
+import lang.evaluation.BottomUpNaiveIterative;
+import java.util.Set;
+import java.util.HashSet;
+import java.io.InputStreamReader;
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 
 aspect Configuration {
-	syn String Description.inputFile() = getInput().getPath();
-	
-	syn String Description.inputFileName() {
-		return FileUtil.fileName(inputFile());
-	}
-	
-	syn String Description.outputDir() {
-		for(ConfigParam param : getConfiguration().getParamss()) {
-			if(param.isOutputDir())
-				return FileUtil.normalize(((OutputDir) param).getPath());
-		}
-		return System.getProperty("user.dir");
-	}
-	
-	syn String Description.factsDir() {
-		for(ConfigParam param : getConfiguration().getParamss()) {
-			if(param.isFactsDir())
-				return FileUtil.normalize(((FactsDir) param).getPath());
-		}
-		return System.getProperty("user.dir");
-	}
-	
-	syn boolean ConfigParam.isOutputDir()  = false;
-	syn boolean OutputDir.isOutputDir()    = true;
-	
-	syn boolean ConfigParam.isFactsDir()   = false;
-	syn boolean FactsDir.isFactsDir()      = true;
-}
+    syn String Description.inputFile() = getInput().getPath();
+    syn String Description.inputFileName() {
+        return FileUtil.fileName(inputFile());
+    }
+    syn String Description.outputDir() = getTask().outputDir();
+    syn String Description.factsDir() = getTask().factsDir();
 
-aspect TopDownBasicConfiguration {
-	syn boolean Description.isTopDownBasic() = getConfiguration().isTopDownBasic();
-	syn boolean Configuration.isTopDownBasic() = false;
-	syn boolean TopDownBasic.isTopDownBasic()  = true;
-}
+    syn String Task.outputDir() {
+        for(ConfigParam param : getParamss()) {
+            if(param.isOutputDir())
+                return FileUtil.normalize(((OutputDir) param).getPath());
+        }
+        return System.getProperty("user.dir");
+    }
 
-aspect BottomUpNaiveConfiguration {
-	syn boolean Description.isBottomUpNaive() = getConfiguration().isBottomUpNaive();
-	syn boolean Configuration.isBottomUpNaive() = false;
-	syn boolean BottomUpNaive.isBottomUpNaive()  = true;
+    syn String Task.factsDir() {
+        for(ConfigParam param : getParamss()) {
+            if(param.isFactsDir())
+                return FileUtil.normalize(((FactsDir) param).getPath());
+        }
+        return System.getProperty("user.dir");
+    }
+
+    syn boolean ConfigParam.isOutputDir()  = false;
+    syn boolean OutputDir.isOutputDir()    = true;
+
+    syn boolean ConfigParam.isFactsDir()   = false;
+    syn boolean FactsDir.isFactsDir()      = true;
 }
 
 aspect SouffleConfiguration {
-	syn boolean Description.isSouffle() = getConfiguration().isSouffle();
-	syn boolean Configuration.isSouffle() = false;
-	syn boolean Souffle.isSouffle()       = true;
-	
-	syn boolean SouffleParam.isOutputFileName()   = false;
-	syn boolean OutputFileName.isOutputFileName() = true;
-	
-	inh String Souffle.inputFileName();
-	eq Description.getChild().inputFileName() = inputFileName();
-	
-	
-	syn String Souffle.outputFileName() {
-		for(SouffleParam param : getSouffleSpecificParamss()) {
-			if(param.isOutputFileName())
-				return ((OutputFileName) param).getName();
-		}
-		return FileUtil.changeExtension(inputFileName(), ".dl");
-	}
+    syn boolean SouffleParam.isOutputFileName()   = false;
+    syn boolean OutputFileName.isOutputFileName() = true;
+
+    inh String SouffleTask.inputFileName();
+    eq Description.getChild().inputFileName() = inputFileName();
+
+    syn String SouffleTask.outputFileName() {
+        for(SouffleParam param : getSouffleSpecificParamss()) {
+            if(param.isOutputFileName())
+                return ((OutputFileName) param).getName();
+        }
+        return FileUtil.changeExtension(inputFileName(), ".dl");
+    }
 }
 
-aspect Evaluation {
-	public Evaluation Description.evaluationMethod() {
-		return getConfiguration().evaluationMethod();
+aspect Task {
+    public abstract Program Task.perform() throws Exception;
+    inh Description Task.description();
+    eq Description.getChild().description() = this;
+
+    public Program Task.getProgramWithChecks() throws Exception {
+        return getProgramWithChecks(description().getInput().getPath());
+    }
+    
+    public Program Task.getProgramWithChecks(String path) throws Exception {
+        Program program = (Program) FileUtil.parse(new File(path));
+        Compiler.DrAST_root_node = program; // Enable debugging with DrAST
+        new SemanticCheck(getParamss()).perform(program, description());
+        new TypeCheck(getParamss()).perform(program, description());
+        return program;
+    }
+}
+
+aspect Internal {
+    public Program EvalBottomUpNaive.perform()  throws Exception {
+        SimpleLogger.logger().log(description().debugInfo(), SimpleLogger.LogLevel.Level.DEBUG);
+        Program program = getProgramWithChecks();
+        BottomUpNaiveIterative bit = new BottomUpNaiveIterative();
+        bit.evaluate(program, description());
+        return program;
+    }
+
+    public Program PrettyBottomUpNaive.perform()  throws Exception {
+        Program program = (Program) FileUtil.parse(new File(description().getInput().getPath()));
+        Compiler.DrAST_root_node = program; // Enable debugging with DrAST
+        StandardPrettyPrinter spp = new StandardPrettyPrinter<Program>(new PrintStream(System.out));
+        spp.prettyPrint(program);
+        return program;
+    }
+}
+
+aspect Souffle {
+	public Program PrePrint.perform()  throws Exception {
+		Program program =  (Program) FileUtil.parse(new File(description().getInput().getPath()));
+		program.prePrint(new SoufflePrePrinter<Program>(new PrintStream(System.out)));
+		//preProcess(program, description());
+		return program;
 	}
 	
-	public abstract Evaluation Configuration.evaluationMethod();
+
 	
-	public Evaluation TopDownBasic.evaluationMethod() {
-		return new TopDownBasicRecursive();
-	}
-	
-	public Evaluation Souffle.evaluationMethod() {
-		return new SouffleEvaluation();
-	}
-	
-	public Evaluation TopDownStratified.evaluationMethod() {
-		return new TopDownStratifiedRecursive();
-	}
-	
-	public Evaluation BottomUpNaive.evaluationMethod() {
-		return new BottomUpNaiveIterative();
-	}
+    protected Program SouffleTask.preEvaluate(HashSet<File> moved) throws Exception {
+        SimpleLogger.logger().log(description().debugInfo(), SimpleLogger.LogLevel.Level.DEBUG);
+        File tmp_dir_1 = new File("tmp/tmp1");
+        File tmp_dir_2 = new File("tmp/tmp2");
+        tmp_dir_1.mkdirs();
+        tmp_dir_2.mkdirs();
+        
+        /**
+         *  Get Target Program and PrePrint it
+         */ 
+        Program initial = getProgramWithChecks();
+        String pre_out = tmp_dir_1.getPath() + "/" + description().inputFileName();
+        initial.prePrint(pre_out);
+        
+         /**
+         *  Evaluate pre-printed program (evaluates only the predefined literals)
+         */ 
+        String source_eval = "eval::bottomupnaive -OUT " + tmp_dir_1.getPath() + " -FACTS " + factsDir() + " " + pre_out;
+        Description evalDescr = FileUtil.parseDescription(source_eval);
+        Program program = evalDescr.getTask().perform();
+        
+        /**
+         *  OUTPUT_PRE_PROC_NAME in pre-print is the OUTPUTLiteral of Target Program
+         */ 
+        FormalPredicate meta_output = program.formalPredicateMap().get(GlobalNames.OUTPUT_PRE_PROC_NAME);
+        if(meta_output == null) return initial;
+        
+        PseudoTuple ps_meta_output = PseudoTuple.of(new PredicateRef(GlobalNames.OUTPUT_PRE_PROC_NAME));
+        /**
+         * Dump relations and move to temporary location if clash.
+         */ 
+        HashSet<FormalPredicate> visited = new HashSet<FormalPredicate>();
+        for(Literal pre : program.predefinedLiterals()) {
+        	FormalPredicate fp = pre.predicate().formalpredicate();
+        	
+        	/**
+        	 * Remove the meta output from any usage (ATOM / OUTPUT/ ...)
+        	 */ 
+        	fp.relation.tuples().remove(ps_meta_output);
+			if(visited.contains(fp) || fp.predicateName().equals(GlobalNames.OUTPUT_NAME)) continue;
+			visited.add(fp);
+        	
+        	File output_fp = new File(factsDir() + "/" + fp.predicateName() + ".csv");
+        	if(output_fp.exists() && !output_fp.isDirectory()) {
+                SimpleLogger.logger().log("Move: " + output_fp.getName() + " from  " + factsDir() + " to " + tmp_dir_2.getPath(),
+                        SimpleLogger.LogLevel.Level.DEBUG);
+                File mv_file = new File(tmp_dir_2.getPath() + "/" + output_fp.getName());
+                Files.move(output_fp.toPath(), mv_file.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                moved.add(mv_file);
+            }
+            CSVUtil.dumpFileInto(fp, output_fp);
+        }
+        
+         /**
+         * Remove OUTPUT_PRE_PROC_NAME from self, dump OUTPUT_PRE_PROC_NAME into OUTPUT_NAME
+         */ 
+        File output_fp = new File(factsDir() + "/" + GlobalNames.OUTPUT_NAME + ".csv");
+        meta_output.relation.tuples().remove(ps_meta_output); 
+        CSVUtil.dumpFileInto(meta_output, output_fp);
+        
+        /**
+        * Add OUTPUT and EDB for .ouput and .input decls in souffle
+        **/
+        FormalPredicate initial_output = initial.formalPredicateMap().get(GlobalNames.OUTPUT_NAME);
+        if(initial_output != null) {
+        	initial_output.relation = new Relation(initial_output.realArity());
+        	for(PseudoTuple ps : meta_output.relation.tuples()) {
+        		initial_output.relation.addTuple(ps);
+        	}
+        }
+        
+        FormalPredicate meta_edb    = program.formalPredicateMap().get(GlobalNames.EDB_NAME);
+        FormalPredicate initial_edb = initial.formalPredicateMap().get(GlobalNames.EDB_NAME);
+        if(initial_edb != null && meta_edb != null) {
+        	initial_edb.relation = new Relation(initial_output.realArity());
+        	for(PseudoTuple ps : meta_edb.relation.tuples()) {
+        		initial_edb.relation.addTuple(ps);
+        	}
+        }
+        return initial;
+    }
+
+    protected void SouffleTask.postEvaluate(HashSet<File> moved) throws Exception { 
+        for(File fp : moved) {
+            SimpleLogger.logger().log("Move Back: " + fp.getName(), SimpleLogger.LogLevel.Level.DEBUG);
+            Files.move(fp.toPath(), new File(factsDir() + "/" + fp.getName()).toPath(), StandardCopyOption.REPLACE_EXISTING);
+        }
+    }
+    
+    public Program EvalSouffle.perform()  throws Exception {
+        HashSet<File> moved  = new HashSet<File>();
+        Program program;
+        try {
+            program = preEvaluate(moved);
+            String soufflePath = outputDir() + "/" + outputFileName();
+            SimpleLogger.logger().log("PrettyPrint to: " + soufflePath, SimpleLogger.LogLevel.Level.DEBUG);
+            program.soufflePrint(new SoufflePrettyPrinter<Program>(new PrintStream(new FileOutputStream(new File(soufflePath)))));
+
+            String cmd = "souffle -D " + outputDir() + " " + soufflePath + " -F " + factsDir();
+            SimpleLogger.logger().log("Run souffle with: " + cmd, SimpleLogger.LogLevel.Level.DEBUG);
+
+			long start = System.nanoTime();
+            Process p = Runtime.getRuntime().exec(cmd);
+            p.waitFor();
+            long end = System.nanoTime();
+		    double elapsed = (end - start) / 1000000;
+		    System.out.print(elapsed);
+
+            BufferedReader br = new BufferedReader(new InputStreamReader(p.getInputStream()));
+            while (br.ready())
+                SimpleLogger.logger().log(":SOUFFLE-OUTPUT " + br.readLine(), SimpleLogger.LogLevel.Level.DEBUG);
+            BufferedReader brerr = new BufferedReader(new InputStreamReader(p.getErrorStream()));
+            while (brerr.ready())
+                SimpleLogger.logger().log(":SOUFFLE-ERROR " + brerr.readLine(), SimpleLogger.LogLevel.Level.ERROR);
+
+            br.close();
+            brerr.close();
+        } finally {
+            postEvaluate(moved);
+        }
+        return program;
+    }
+
+    public Program PrettySouffle.perform()  throws Exception{
+        HashSet<File> moved  = new HashSet<File>();
+        Program program;
+        try {
+            program = preEvaluate(moved);
+            program.soufflePrint(new SoufflePrettyPrinter<Program>(new PrintStream(System.out)));
+        } finally {
+            postEvaluate(moved);
+        }
+        return program;
+    }
+}
+
+aspect TypeProg {
+    public Program TypeProg.perform()  throws Exception{
+        Program program = (Program) FileUtil.parse(new File(description().getInput().getPath()));
+        new SemanticCheck(getParamss()).perform(program, description());
+        String typeProgSource = program.typePrint();
+        System.out.println("------------------------------------------------");
+        System.out.println("\t\t\t TYPESOURCE");
+        System.out.println("------------------------------------------------");
+        System.out.println(typeProgSource);
+        System.out.println("------------------------------------------------");
+
+        Program typeProg = FileUtil.parse(typeProgSource);
+        BottomUpNaiveIterative eval = new BottomUpNaiveIterative();
+        eval.evaluate(typeProg, null);
+
+        System.out.println("------------------------------------------------");
+        System.out.println("\t\t\t EVAL RESULT");
+        System.out.println("------------------------------------------------");
+        for(FormalPredicate fp : typeProg.getFormalPredicates()) {
+            System.out.println(fp.predicateName() + ": " + fp.relation);
+        }
+
+        System.out.println("------------------------------------------------");
+        new TypeCheck(getParamss()).perform(program, description());
+
+        System.out.println("------------------------------------------------");
+        System.out.println("\t\t\t TYPEINFERENCE RESULT");
+        System.out.println("------------------------------------------------");
+        for(FormalPredicate fp : program.getFormalPredicates()) {
+            if(fp.literal().isInclusive())
+                System.out.println(fp.predicateName() + ": " + fp.derivedTypes());
+        }
+        System.out.println("------------------------------------------------");
+        return program;
+    }
+}
+
+aspect SubTask {
+    public Program TypeCheck.perform()  throws Exception {
+        Program program = (Program) FileUtil.parse(new File(description().getInput().getPath()));
+        Compiler.DrAST_root_node = program; // Enable debugging with DrAST
+        perform(program, description());
+        return program;
+    }
+    public Program SemanticCheck.perform()  throws Exception {
+        Program program = (Program) FileUtil.parse(new File(description().getInput().getPath()));
+        Compiler.DrAST_root_node = program; // Enable debugging with DrAST
+        perform(program, description());
+        return program;
+    }
+
+    public interface SubTask {
+        void perform(Program program, Description descr) throws Exception;
+    }
+
+    TypeCheck       implements SubTask;
+    SemanticCheck   implements SubTask;
+    public void TypeCheck.perform(Program program, Description descr) throws Exception {
+        program.typeCheck();
+        Set<String> terrs = program.typeCheckErrors();
+        if (!terrs.isEmpty()) {
+            SimpleLogger.logger().log("Compilation failed with the following error messages: ", SimpleLogger.LogLevel.Level.ERROR);
+            for(String err : terrs)  SimpleLogger.logger().log(err);
+            System.exit(0);
+        }
+    }
+
+    public void SemanticCheck.perform(Program program, Description descr) throws Exception {
+        Set<String> serrs = program.semanticErrors();
+        if (!serrs.isEmpty()) {
+            SimpleLogger.logger().log("Compilation failed with the following error messages: ", SimpleLogger.LogLevel.Level.ERROR);
+            for(String err : serrs)  SimpleLogger.logger().log(err);
+            System.exit(0);
+        }
+    }
 }

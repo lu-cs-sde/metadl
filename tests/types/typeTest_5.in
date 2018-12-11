@@ -1,0 +1,12 @@
+OUTPUT(x) :- ATOM(x).
+TYPEOF('C, [Integer String]).
+
+A(x, y) :- B(y, x), C(x, y).
+E(x, y, 'B) :- B(y, x), C(x, y).
+E(x, y, z) :- C(x, f1), 
+              C(f2, y),
+              BIND(z, 'A). 
+
+F(x) :- BIND(x, 0).
+# F(x) :- ATOM(x).
+G(x) :- A(1, x).

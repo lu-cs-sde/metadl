@@ -1,0 +1,22 @@
+OUTPUT(x) :- ATOM(x). 
+
+# A("A", 0).
+# B(x, y) :- A(x, y), C(x)
+# C(x) :- B(x, y).
+
+# TypeAt('A, 0, String). 
+TypeAt('A, 1, Integer).
+TypeAt('B, 0, x) :- TypeAt('A, 0, x).
+TypeAt('A, 0, x) :- TypeAt('B, 0, x).
+
+TypeAt('B, 1, x) :- TypeAt('A, 1, x).
+TypeAt('A, 1, x) :- TypeAt('B, 1, x).
+
+TypeAt('B, 0, x) :- TypeAt('C, 0, x).
+TypeAt('C, 0, x) :- TypeAt('B, 0, x).
+
+TypeAt('B, 0, x) :- TypeAt('C, 0, x).
+TypeAt('C, 0, x) :- TypeAt('B, 0, x).
+
+TypeAt('A, 0, x) :- TypeAt('C, 0, x).
+TypeAt('C, 0, x) :- TypeAt('A, 0, x).

@@ -5,65 +5,25 @@ import java.util.Comparator;
 import lang.relation.Relation;
 import lang.relation.PseudoTuple;
 
-aspect ModelObjectsAndPredicates {
-    syn Constant Variable.Instantiation() = null;
-
-	/**
-	 * Collect All Objects available in the File.
-	 */ 
-    coll HashSet<Constant> Program.modelObjects() [new HashSet<Constant>()] with add;
-    Constant contributes this
-        when true
-        to Program.modelObjects();
-
-    syn TreeSet<Constant> Program.uniqueFileObjects() {
-        TreeSet<Constant> uniqueFileObjects = new TreeSet<>(Constant.constantComparator);
-        uniqueFileObjects.addAll(modelObjects());
-        return uniqueFileObjects;
-    }
-    
-    public TreeSet<Constant> Program.objects = new TreeSet<Constant>(Constant.constantComparator);
-
-	/**
-	 * Collect Predicates
-	 */ 
-    coll HashSet<PredicateSymbol> Program.predicateSymbols() [new HashSet<PredicateSymbol>()] with add;
-    PredicateSymbol contributes this
-        when true
-        to Program.predicateSymbols();
-        
-    syn TreeSet<PredicateSymbol> Program.uniquePredicateSymbols() {
-        TreeSet<PredicateSymbol> uniquePredicateSymbols = new TreeSet<>(PredicateSymbol.predicateSymbolComparator);
-        uniquePredicateSymbols.addAll(predicateSymbols());
-        return uniquePredicateSymbols;
-    }
-
-	/**
-	 * Construct Map from a Predicate Name to all Occurrences of the Predicate
-	 */ 
-    syn HashMap<String, HashSet<PredicateSymbol>> Program.predicateMap() {
-        HashMap<String, HashSet<PredicateSymbol>> predicateMap = new HashMap<String, HashSet<PredicateSymbol>>();
-        for(PredicateSymbol pred : uniquePredicateSymbols()) {
-            predicateMap.put(pred.getID(), new HashSet<PredicateSymbol>());
-        }
-        for(PredicateSymbol pred : predicateSymbols()) {
-            HashSet<PredicateSymbol> predSet = predicateMap.get(pred.getID());
-            predSet.add(pred);
-        }
-        return predicateMap;
-    }
-}
-
 aspect Arity {
     syn int Literal.arity();
-    eq MetaLiteral.arity() = -1;
-    eq RealLiteral.arity() = getNumTerms();
+    eq NEGLiteral.arity()    = 1;
+    eq EDBLiteral.arity()    = 2;
+    eq OUTPUTLiteral.arity() = 1;
+    eq PREDLiteral.arity()   = 1;
+    eq ATOMLiteral.arity()   = 1;
+    eq BINDLiteral.arity()   = 2;
+    eq EQLISTLiteral.arity() = 1;
+    eq BinaryExclusiveTermLiteral.arity() = 2;
+    eq TYPEOFLiteral.arity() = 2;
+    eq Atom.arity() = getNumTerms();
     syn int PredicateSymbol.arity() = literal().arity();
     
     syn HashSet<Integer> FormalPredicate.arities() {
     	HashSet<Integer> arities = new HashSet<Integer>();
-    	for(PredicateSymbol pred : predicates())
-            arities.add(pred.arity());
+    	for(PredicateSymbol pred : predicates()) {
+        	arities.add(pred.arity());
+        }
         return arities;
     }
     
@@ -73,32 +33,36 @@ aspect Arity {
         return realArities;
     }
     
-    syn boolean FormalPredicate.uniqueArity() {
-        return realArities().size() == 1;
+    syn boolean FormalPredicate.isUniqueArity() {
+        return realArities().size() <= 1;
     }
 
     syn int FormalPredicate.realArity() {
-        if(!uniqueArity()) return 0;
+        if(!isUniqueArity() || realArities().size() == 0) return 0;
         return realArities().iterator().next();
     }
-    
+    Program contributes nta getFormalPredicates() to Program.semanticErrors();
     FormalPredicate contributes ("Different Arities for predicate symbol: " + predicateName())
-        when !uniqueArity() && arities().size() != 1
+        when !isUniqueArity() && arities().size() != 1
         to Program.semanticErrors();
+        
 }
 
 aspect Relation {
-	public Relation FormalPredicate.relation;
+	public static Relation FormalPredicate.nullRelation = new Relation(0);
+	public Relation FormalPredicate.relation = FormalPredicate.nullRelation;
 	
-	syn Relation FormalPredicate.fileRelation() {
-		Relation r = new Relation(realArity());
-		for(PredicateSymbol pred : predicates()) {
-			if(pred.isFileFact()) {
-				r.addTuple(new PseudoTuple((RealLiteral)pred.literal()));
-			}
-		}
-		return r;
-	}
+	syn PseudoTuple Literal.toTuple();
+	eq Atom.toTuple()          = new PseudoTuple(getTermss());
+	eq EDBLiteral.toTuple()    = new PseudoTuple(getPredicateRef(), getFileLoc());
+	eq OUTPUTLiteral.toTuple() = new PseudoTuple(getTerm());
+	eq PREDLiteral.toTuple()   = new PseudoTuple(getTerm());
+	eq ATOMLiteral.toTuple()   = new PseudoTuple(getTerm());
+	eq EQLISTLiteral.toTuple() = new PseudoTuple(getTermList().getTermss());
+	eq BinaryExclusiveTermLiteral.toTuple()  = new PseudoTuple(0);
+	eq BINDLiteral.toTuple()   = new PseudoTuple(0);
+	eq TYPEOFLiteral.toTuple() = new PseudoTuple(getPredicateRef(), getTerm());
+	eq NEGLiteral.toTuple() = getInclusiveLiteral().toTuple();
 }
 
 aspect Rules {
@@ -106,69 +70,87 @@ aspect Rules {
 		HashSet<Rule> rules = new HashSet<Rule>();
 		for(PredicateSymbol pred : predicates()) {
 			if(pred.isUse()) {
-				rules.add((Rule)pred.literal().stmt());
+				rules.add((Rule)pred.literal().clause());
 			}
 		}
 		return rules;
 	}
-	
-	syn HashSet<Rule> FormalPredicate.definedInRules() {
-		HashSet<Rule> rules = new HashSet<Rule>();
+
+	syn HashSet<Clause> FormalPredicate.definedIn() {
+		HashSet<Clause> rules = new HashSet<Clause>();
 		for(PredicateSymbol pred : predicates()) {
 			if(pred.isDef()) {
-				rules.add((Rule)pred.literal().stmt());
+				rules.add(pred.literal().clause());
 			}
 		}
 		return rules;
 	}
 	
-	syn RealLiteral FormalPredicate.findRuleHead(Rule rule) {
-		for(RealLiteral rl : rule.getHeadss()) {
-			if(rl.getPredicate().getID().equals(predicateName())) return rl;
+	public static boolean FormalPredicate.hasNegativeDefUse(FormalPredicate def, FormalPredicate use) {
+		HashSet<Rule> rules_use = use.useInRules();
+		for(Clause c : def.definedIn()) {
+			if(!c.isRule()) continue;
+			Rule r = (Rule)c;
+			if(!rules_use.contains(r)) continue;
+			for(Literal lit : r.getBodys()) {
+				if(!lit.isNeg()) continue;
+				NEGLiteral nl = (NEGLiteral) lit;
+				if(nl.getInclusiveLiteral().predicate().getPRED_ID().equals(use.predicateName())) return true;
+			}
 		}
-		return null;
+		return false;
 	}
 	
-	coll HashSet<Variable> Rule.variablesBody() [new HashSet<Variable>()] with add;
-	Variable contributes this
-        when containedIn().isRuleUse()
-        to Rule.variablesBody()
-        for (Rule)containedIn().stmt();
-        
-    syn TreeSet<Variable> Rule.uniqueVariablesBody() {
-    	TreeSet<Variable> vars = new TreeSet<Variable>(Term.termComparator);
-    	vars.addAll(variablesBody());
-    	return vars;
-    }
-    
-    syn PseudoTuple RealLiteral.toTuple() = new PseudoTuple(this);
-    
-    coll HashSet<PseudoTuple> Rule.bodyTuples() [new HashSet<PseudoTuple>()] with add;
-    RealLiteral contributes toTuple()
-    	when isRuleUse()
-    	to Rule.bodyTuples()
-    	for (Rule)stmt();
+	syn TreeSet<Literal> Rule.inclusiveBodyLiterals() {
+		TreeSet<Literal> literals = new TreeSet<Literal>(Literal.literalComparator);
+		for(Literal l : getBodys()) {
+			if(l.isInclusive()) literals.add(l);
+		}
+		return literals;
+	}
+	
+	syn TreeSet<Literal> Rule.exclusiveBodyLiterals() {
+		TreeSet<Literal> literals = new TreeSet<Literal>(Literal.literalComparator);
+		for(Literal l : getBodys()) {
+			if(!l.isInclusive()) literals.add(l);
+		}
+		return literals;
+	}
 }
 
 aspect DependencyGraph {
 	syn HashSet<FormalPredicate> FormalPredicate.dependsOn() {
-		HashSet<FormalPredicate> rules = new HashSet<FormalPredicate>();
-		for(Rule r : definedInRules()) {
-			for(RealLiteral rl : r.getBodys()) {
-				rules.add(rl.getPredicate().formalpredicate());
+		HashSet<FormalPredicate> defIn = new HashSet<FormalPredicate>();
+		for(Clause c : definedIn()) {
+			if(!c.isRule())continue;
+			Rule r = (Rule) c;
+			for(Literal l : r.getBodys()) {
+				if(l.isNeg()) {
+					NEGLiteral nl = (NEGLiteral) l;
+					defIn.add(nl.getInclusiveLiteral().predicate().formalpredicate());
+				} else if(l.isInclusive()) {
+					defIn.add(l.predicate().formalpredicate());
+				}
 			}
 		}
-		return rules;
-	}	
-}
-
-aspect Proof {
-	syn boolean Program.mayProve(PseudoTuple t) {
-		if(!t.isGround()) return false;
-		for(int i = 0; i != t.size; ++i) {
-			Constant c = (Constant)t.coord(i);
-			if(!objects.contains(c)) return false;
+		
+		/**
+			First compute what to output.
+		**/
+		FormalPredicate output = program().formalPredicateMap().get(GlobalNames.OUTPUT_NAME);
+		if(output != null) {
+			defIn.add(output);
 		}
-		return true;
-	}
+		
+		for(PredicateRef ref : predicateRefs()) {
+			if(ref.literal().isEDB()) {
+				defIn.add(((EDBLiteral)ref.literal()).getPredicate().formalpredicate());
+			}
+		}
+		
+		if(hasRecursiveEDB()) {
+			defIn.add(formalPredicateMap().get(GlobalNames.EDB_NAME));
+		}
+		return defIn;
+	}	
 }

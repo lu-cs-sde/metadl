@@ -1,62 +1,103 @@
-aspect Types {
-	syn boolean Constant.isString();
-	syn boolean Constant.isInt();
-	eq StringConstant.isString()  =  true;
-	eq StringConstant.isInt()     =  false;
-	eq IntConstant.isString()     =  false;
-	eq IntConstant.isInt()        =  true;
-	
-	syn boolean Term.isVariable();
-	eq Constant.isVariable() = false;
-	eq Variable.isVariable() = true;
-}
+
+import java.util.Comparator;
 
 aspect Conversion {
 	syn int IntConstant.intValue() = Integer.parseInt(getNUMERAL());
-	public abstract String Constant.constantValue();
-	public String StringConstant.constantValue() {
-		return getSTRING();
-	}
-	public String IntConstant.constantValue() {
-		return getNUMERAL();
-	}
+	public String StringConstant.toString() { return getSTRING(); }
+	public String IntConstant.toString()    { return getNUMERAL(); }
 	
-	public abstract String Term.string();
-	public String Constant.string() { return constantValue(); }
-	public String Variable.string() { return getID(); }
+	public String Term.toString()            { return "NO_IMPL_TO_STRING"; }
+	public String Variable.toString()        { return getVAR_ID(); }
+	public String PredicateRef.toString()    { return "'" + getPRED_ID(); }
+	public String FormalPredicate.toString() { return "FP_" + predicateName(); }
+	public String TermList.toString()        { return prettyPrint(); }
+	public String ASTNode.toString()         { return prettyPrint(); }
+	
+	syn String Type.toString()     = typeName();
+	syn String ListType.toString() = "List(" + getType().typeName() + ")";
+	
+	syn String Type.typeName();
+	eq ListType.typeName()       = "List";
+	eq StringType.typeName()     = "String";
+	eq IntegerType.typeName()    = "Integer";
+	eq PredRefType.typeName()    = "PredRef";
+	eq TypeType.typeName()       = "Type";
+	eq VariableType.typeName()   = "Variable";
+	eq UnknownType.typeName()    = "UnknownType";
+	eq BadType.typeName()        = "BadType";
+	
+	syn int Literal.evalOrder();
+	eq EDBLiteral.evalOrder()     =  0;
+	eq ATOMLiteral.evalOrder()    =  1;
+	eq TYPEOFLiteral.evalOrder()  =  2;
+	eq PREDLiteral.evalOrder()    =  3;
+	eq OUTPUTLiteral.evalOrder()  =  4;
+	eq Atom.evalOrder()           =  5;
+	eq BINDLiteral.evalOrder()    =  6;
+	eq NEGLiteral.evalOrder()     =  7;
+	eq EQLiteral.evalOrder()      =  8;
+	eq NEQLiteral.evalOrder()     =  9;
+	eq LTLiteral.evalOrder()      =  10;
+	eq LTELiteral.evalOrder()     =  11;
+	eq GTLiteral.evalOrder()      =  12;
+	eq GTELiteral.evalOrder()     =  13;
+	eq EQLISTLiteral.evalOrder()  =  14;
 }
 
 aspect Comparison {
-	public class CompareConstant implements Comparator<Constant> {
+	public class CompareTypes implements Comparator<Type> {
 		@Override
-		public int compare(Constant c1, Constant c2) {
-			if(c1.isInt() && c2.isInt()) {
-				int i1 = ((IntConstant)c1).intValue();
-				int i2 = ((IntConstant)c2).intValue();
-				return i1 < i2 ? -1 : i1 == i2 ? 0 : 1;
-			}
-			if(c1.isString() && c2.isString()) 
-                return ((StringConstant)c1).getSTRING().compareTo(((StringConstant)c2).getSTRING());
-			return c1.isInt() ? -1 : 1;
+		public int compare(Type t1, Type t2) {
+			return t1.toString().compareTo(t2.toString());
 		}
 	}
-	public static final CompareConstant Constant.constantComparator = new CompareConstant();
-	
-	@Override
-	public boolean Constant.equals(Object o) {
-		if(!(o instanceof Constant)) return false;
-		return constantComparator.compare(this, (Constant)o) == 0;
-	}
-	
+	public static final CompareTypes Type.typeComparator = new CompareTypes();
+	public static boolean Term.sameType(Term t1, Term t2) { return Type.typeComparator.compare(t1.type(), t2.type()) == 0; }
+    
 	public class CompareTerm implements Comparator<Term> {
 		@Override
 		public int compare(Term t1, Term t2) {
-			if(t1.isVariable() && t2.isVariable())
-				return ((Variable)t1).getID().compareTo(((Variable)t2).getID());
-			if(!t1.isVariable() && !t2.isVariable()) 
-				return Constant.constantComparator.compare((Constant)t1, (Constant)t2);
-			return t1.isVariable() ? -1 : 1;
+			int typeComp = Type.typeComparator.compare(t1.type(), t2.type());
+			if(typeComp != 0) return typeComp;
+			if(t1.isInteger()) {
+				int i1 = ((IntConstant) t1).intValue();
+				int i2 = ((IntConstant) t2).intValue();
+				return i1 < i2 ? -1 : (i1 == i2 ? 0 : 1);
+			}
+			if(t1.isList()) {
+				TermList tl1 = (TermList) t1;
+				TermList tl2 = (TermList) t2;
+				int size1 = tl1.getNumTerms();
+				int size2 = tl2.getNumTerms();
+				for(int i = 0; i != (int)Math.min(size1, size2); ++i) {
+					int cmp = compare(tl1.getTerms(i), tl2.getTerms(i));
+					if(cmp != 0) return cmp;
+				}
+				return size1 < size2 ? -1 : (size1 == size2 ? 0 : 1);
+			}
+			return t1.toString().compareTo(t2.toString());
 		}
+	}
+	
+	public class ComparePredicates implements Comparator<PredicateInterface> {
+		@Override
+		public int compare(PredicateInterface t1, PredicateInterface t2) {
+			if(t1.isRef() != t2.isRef()) return t1.isRef() ? -1 : 1;
+			return t1.getPRED_ID().compareTo(t2.getPRED_ID());
+		}
+	}
+	public static final ComparePredicates Program.predicateComparator = new ComparePredicates();
+	
+	@Override
+	public boolean PredicateSymbol.equals(Object o) {
+		if(!(o instanceof PredicateSymbol)) return false;
+		return Program.predicateComparator.compare(this, (PredicateSymbol)o) == 0;
+	}
+	
+	@Override
+	public boolean PredicateRef.equals(Object o) {
+		if(!(o instanceof PredicateRef)) return false;
+		return Program.predicateComparator.compare(this, (PredicateRef)o) == 0;
 	}
 
 	public static final CompareTerm Term.termComparator = new CompareTerm();
@@ -64,20 +105,6 @@ aspect Comparison {
 	public boolean Term.equals(Object o) {
 		if(!(o instanceof Term)) return false;
 		return termComparator.compare(this, (Term)o) == 0;
-	}
-	
-	public class ComparePredicateSymbol implements Comparator<PredicateSymbol> {
-		@Override
-		public int compare(PredicateSymbol p1, PredicateSymbol p2) {
-			return p1.getID().compareTo(p2.getID());
-		}
-	}
-	
-	public static final ComparePredicateSymbol PredicateSymbol.predicateSymbolComparator = new ComparePredicateSymbol();
-	@Override
-	public boolean PredicateSymbol.equals(Object o) {
-		if(!(o instanceof PredicateSymbol)) return false;
-		return predicateSymbolComparator.compare(this, (PredicateSymbol)o) == 0;
 	}
 	
 	public class CompareFormalPredicate implements Comparator<FormalPredicate> {
@@ -92,5 +119,35 @@ aspect Comparison {
 	public boolean FormalPredicate.equals(Object o) {
 		if(!(o instanceof FormalPredicate)) return false;
 		return formalPredicateComparator.compare(this, (FormalPredicate)o) == 0;
+	}
+	
+	@Override
+	public int FormalPredicate.hashCode() {
+		return predicateName().hashCode();
+	}
+	
+	public static final CompareLiterals Literal.literalComparator = new CompareLiterals();
+	public class CompareLiterals implements Comparator<Literal> {
+		@Override
+		public int compare(Literal l1, Literal l2) {
+			int ev1 = l1.evalOrder();
+			int ev2 = l2.evalOrder();
+			if(ev1 != ev2) return ev1 < ev2 ? -1 : ev1 == ev2 ? 0 : 1;
+			return l1.hashCode() < l2.hashCode() ? -1 : l1.hashCode() == l2.hashCode() ? 0 : 1;
+		}
+	}
+	
+	public static final CompareFPLiterals FormalPredicate.fpLiteralComparator = new CompareFPLiterals();
+	public class CompareFPLiterals implements Comparator<FormalPredicate> {
+		@Override
+		public int compare(FormalPredicate fp1, FormalPredicate fp2) {
+			return Literal.literalComparator.compare(fp1.literal(), fp2.literal());
+		}
+	}
+	
+	@Override
+	public boolean Literal.equals(Object o) {
+		if(!(o instanceof Literal)) return false;
+		return literalComparator.compare(this, (Literal)o) == 0;
 	}
 }

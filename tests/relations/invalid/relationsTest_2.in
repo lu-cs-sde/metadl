@@ -1,4 +1,0 @@
-EDB(A, "A.csv")
-EDB(B, "B.csv")
-
-D(x, y) :- A(x, y).

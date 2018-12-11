@@ -4,6 +4,10 @@ import java.util.Iterator;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.Collection;
+import java.util.HashSet;
+import lang.relation.PseudoTuple;
+
 aspect PretyPrinting {
 	public void ASTNode.prettyPrint(PrettyPrinter pr) {
 		for(int i = 0; i < getNumChild(); ++i) {
@@ -11,7 +15,7 @@ aspect PretyPrinting {
         }
 	}
 
-    protected <T extends ASTNode> void ASTNode.printList(List<T> list,
+    protected static <T extends ASTNode> void ASTNode.printList(List<T> list,
             String pre, String post, String delim, PrettyPrinter pr) {
         if (list.getNumChild() == 0)
             return;
@@ -27,6 +31,24 @@ aspect PretyPrinting {
         }
         pr.out.print(post);
     }
+    
+    protected static <T extends ASTNode> void ASTNode.printCollection(Collection<T> collection,
+            String pre, String post, String delim, PrettyPrinter pr) {
+        Iterator<T> itr = collection.iterator();
+        if (!itr.hasNext())
+            return;
+        pr.out.print(pre);
+        pr.prettyPrint(itr.next());
+        if (!itr.hasNext()) {
+            pr.out.print(post);
+            return;
+        }
+        while(itr.hasNext()) {
+            pr.out.print(delim);
+            pr.prettyPrint(itr.next());
+        }
+        pr.out.print(post);
+    }
 
     public String ASTNode.prettyPrint() {
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
@@ -39,22 +61,30 @@ aspect PretyPrinting {
     }
 
     public void PredicateSymbol.prettyPrint(PrettyPrinter pr) {
-        pr.out.print(getID());
+        pr.out.print(getPRED_ID());
+    }
+
+    public void PredicateRef.prettyPrint(PrettyPrinter pr) {
+        pr.out.print("'" + getPRED_ID());
     }
 
     public void StringConstant.prettyPrint(PrettyPrinter pr) {
-        pr.out.print("\"" + string() + "\"");
+        pr.out.print("\"" + toString() + "\"");
     }
 
     public void Term.prettyPrint(PrettyPrinter pr) {
-        pr.out.print(string());
+        pr.out.print(toString());
+    }
+    
+	public void TermList.prettyPrint(PrettyPrinter pr) {
+        printList(getTermss(), "[", "]", " ", pr);
     }
 
-    public void RealLiteral.prettyPrint(PrettyPrinter pr) {
+    public void Atom.prettyPrint(PrettyPrinter pr) {
         pr.prettyPrint(getPredicate());
         printList(getTermss(), "(", ")", ", ", pr);
     }
-
+    
     public void Rule.prettyPrint(PrettyPrinter pr) {
         printList(getHeadss(), "", "", ",", pr);
         pr.out.print(" :- ");
@@ -65,22 +95,91 @@ aspect PretyPrinting {
         printList(getHeadss(), "", ".\n", ", ", pr);
     }
 
-    public void MetaLiteral.prettyPrint(PrettyPrinter pr) {
+    public void EDBLiteral.prettyPrint(PrettyPrinter pr) {
         pr.prettyPrint(getPredicate());
-    }
-
-    public void ExtensionalDB.prettyPrint(PrettyPrinter pr) {
-        pr.out.print("EDB(");
-        pr.prettyPrint(getTarget());
+        pr.out.print("(");
+        pr.prettyPrint(getPredicateRef());
         pr.out.print(",");
-        pr.prettyPrint(getFileLocation());
-        pr.out.print(")\n");
+        pr.prettyPrint(getFileLoc());
+        pr.out.print(")");
     }
 
-    public void FileLocation.prettyPrint(PrettyPrinter pr) {
-        pr.out.print("\"" + getSTRING() + "\"");
+    public void OUTPUTLiteral.prettyPrint(PrettyPrinter pr) {
+        pr.prettyPrint(getPredicate());
+        pr.out.print("(");
+        pr.prettyPrint(getTerm());
+        pr.out.print(")");
+    }
+
+    public void ATOMLiteral.prettyPrint(PrettyPrinter pr) {
+        pr.prettyPrint(getPredicate());
+        pr.out.print("(");
+        pr.prettyPrint(getTerm());
+        pr.out.print(")");
+    }
+
+    public void PREDLiteral.prettyPrint(PrettyPrinter pr) {
+        pr.prettyPrint(getPredicate());
+        pr.out.print("(");
+        pr.prettyPrint(getTerm());
+        pr.out.print(")");
+    }
+
+    public void TYPEOFLiteral.prettyPrint(PrettyPrinter pr) {
+        pr.prettyPrint(getPredicate());
+        pr.out.print("(");
+        pr.prettyPrint(getPredicateRef());
+        pr.out.print(",");
+        pr.prettyPrint(getTerm());
+        pr.out.print(")");
+    }
+
+    syn String BinExpr.opSymbol();
+    eq AddExpr.opSymbol() = "+";
+    eq SubExpr.opSymbol() = "-";
+    eq MulExpr.opSymbol() = "*";
+    eq DivExpr.opSymbol() = "/";
+
+    public void BinExpr.prettyPrint(PrettyPrinter pr) {
+        pr.out.print("(");
+        pr.prettyPrint(getLeft());
+        pr.out.print(")");
+        pr.out.print(opSymbol());
+        pr.out.print("(");
+        pr.prettyPrint(getRight());
+        pr.out.print(")");
+    }
+    
+    public void BinaryExclusiveTermLiteral.prettyPrint(PrettyPrinter pr) {
+    	pr.prettyPrint(getPredicate());
+        pr.out.print("(");
+        pr.prettyPrint(getLeft());
+        pr.out.print(",");
+        pr.prettyPrint(getRight());
+        pr.out.print(")");
+    }
+
+    public void BINDLiteral.prettyPrint(PrettyPrinter pr) {
+        pr.out.print("BIND(");
+    	pr.prettyPrint(getVariable());
+        pr.out.print(", ");
+    	pr.prettyPrint(getRight());
+        pr.out.print(")");
+    }
+
+    public void NEGLiteral.prettyPrint(PrettyPrinter pr) {
+    	pr.out.print("NOT(");
+        pr.prettyPrint(getInclusiveLiteral());
+        pr.out.print(")");
+    }
+
+    public void EQLISTLiteral.prettyPrint(PrettyPrinter pr) {
+    	pr.out.print("EQLIST(");
+        pr.prettyPrint(getTermList());
+    	pr.out.print(")");
     }
 }
+
 aspect ExtensionablePrinting {
     public abstract class PrettyPrinter<T extends ASTNode> {
         public final PrintStream out;
@@ -108,6 +207,177 @@ aspect ExtensionablePrinting {
             super(out);
         }
     }
+    
+    public class TypePrettyPrinter<T extends ASTNode> extends PrettyPrinter<T> {
+    	public void prettyPrint(T node) {
+        	node.typePrint(this);
+        }
+        
+        public TypePrettyPrinter(PrintStream out) {
+            super(out);
+        }
+    }
+    
+    public class SoufflePrePrinter<T extends ASTNode> extends PrettyPrinter<T> {
+        public void prettyPrint(T node) {
+            node.prePrint(this);
+        }
+        public SoufflePrePrinter(PrintStream out) {
+            super(out);
+        }
+    }
+    
+}
+
+aspect MetaPrinting {
+    public static String Program.transformPredefinedName(String l) {
+    	return l + "METAPREDICATE0000011111";
+    }
+}
+
+aspect TypePrinting {
+    public String ASTNode.typePrint() {
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+        TypePrettyPrinter typePrinter = new TypePrettyPrinter(new PrintStream(bytes));
+        typePrinter.prettyPrint(this);
+        return bytes.toString();
+    }
+
+    public void ASTNode.typePrint(PrettyPrinter pr) {
+        prettyPrint(pr);
+    }
+    
+    public void NEGLiteral.typePrint(PrettyPrinter pr) { getInclusiveLiteral().typePrint(pr); }
+    public void InclusiveLiteral.typePrint(PrettyPrinter pr) {
+    	PseudoTuple tuple = toTuple();
+    	List types = new List();
+    	for(int i = 0; i != tuple.arity(); ++i) {
+    		Term t = tuple.coord(i);
+    		if(t.isVariable()) types.add(t);
+	 		else types.add(t.type());
+    	}
+    	if(isAtom())
+	 		pr.out.print(predicate().getPRED_ID());
+	 	else
+	 		pr.out.print(Program.transformPredefinedName(predicate().getPRED_ID()));
+	 	printList(types, "(", ")", ", ", pr);
+    }
+    
+    public void BinaryExclusiveTermLiteral.typePrint(PrettyPrinter pr) {
+    	TreeSet<Term> terms = new TreeSet<Term>(Term.termComparator);
+    	terms.addAll(variables());
+    	for(Constant c : constants())
+    		terms.add(c.type());
+    	printCollection(terms, "EQLIST([", "])", " ", pr);
+    }
+    
+    public void BINDLiteral.typePrintRule(PrettyPrinter pr) {
+        TreeSet<Term> terms = new TreeSet<Term>(Term.termComparator);
+    	terms.add(getVariable());
+    	terms.addAll(getRight().variables());
+    	for(Constant c : getRight().constants())
+    		terms.add(c.type());
+    	printCollection(terms, "EQLIST([", "])", " ", pr);
+    }
+    
+    public void BINDLiteral.typePrint(PrettyPrinter pr) {
+		typePrintRule(pr);
+    	if(!getRight().variables().isEmpty()) {
+    		pr.out.print(", BIND(" + getVariable() + ", " + getRight().variables().iterator().next() + ")");
+    	} else {
+    		pr.out.print(", BIND(" + getVariable() + ", " + getRight().constants().iterator().next().type() + ")");
+    	}
+    }
+    
+    public void EQLISTLiteral.typePrint(PrettyPrinter pr) {
+    	TreeSet<Term> terms = new TreeSet<Term>(Term.termComparator);
+    	for(Term t : terms) {
+    		if(t.isVariable()) terms.add(t);
+    		else terms.add(t.type());
+    	}
+    	printCollection(terms, "EQLIST([", "])", " ", pr);
+    }
+    
+    public void Rule.typePrint(PrettyPrinter pr) {
+    	String ruleName = GlobalNames.TYPE_RULE_NAME + index();
+    	pr.out.print("OUTPUT('" + ruleName + ").\n");
+    
+	 	pr.out.print(ruleName);
+	 	printCollection(variables(), "(", ")", ", ", pr);
+	 	pr.out.print(" :- ");
+	 	HashSet<Literal> nobind = new HashSet<Literal>();
+	 	for(Literal l : literals()) {
+	 		if(!l.isBind()) nobind.add(l);
+	 		else {
+	 			((BINDLiteral)l).typePrintRule(pr);
+	 			pr.out.print(", ");
+	 		}
+	 	}
+	 	printCollection(nobind, "", ".\n", ", ",  pr);
+	 	printList(getHeadss(),  "", " :- ", ", ", pr);
+	 	printList(getBodys(),   "", ".", ", ",    pr);
+	 }
+	 
+	public void Program.typePrint(PrettyPrinter pr) {
+		MapToSetOf<FormalPredicate, PseudoTuple> initial = pass1TypeMap();
+		for(FormalPredicate fp : initial.keySet()) {
+			PseudoTuple type = initial.get(fp).iterator().next();
+			if(fp.literal().isAtom())
+				printList(type.toList(), fp.predicateName() + "(", ").\n", ", ", pr);
+			else
+				printList(type.toList(), Program.transformPredefinedName(fp.predicateName()) + "(", ").\n", ", ", pr);
+		}
+		HashSet<Rule> rules = new HashSet<Rule>();
+		for(Clause c : getClauses()) {
+			if(!c.isRule()) continue;
+			rules.add((Rule)c);
+		}
+		printCollection(rules, "", "", "\n", pr);
+	}
+}
+
+/**
+	Compute the Pre-Defined Literals to input as facts to Souffle
+**/
+
+aspect SoufflePreProcess {
+	public void ASTNode.prePrint(String path) throws IOException {
+        File file = new File(path);
+        FileOutputStream fop = new FileOutputStream(file);
+        SoufflePrePrinter soufflePrinter = new SoufflePrePrinter(new PrintStream(fop));
+        soufflePrinter.prettyPrint(this);
+        fop.flush();
+        fop.close();
+    }
+
+    public String ASTNode.prePrint() {
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+        SoufflePrePrinter soufflePrinter = new SoufflePrePrinter(new PrintStream(bytes));
+        soufflePrinter.prettyPrint(this);
+        return bytes.toString();
+    }
+    
+    public void PredicateSymbol.prePrint(PrettyPrinter pr) {
+    	if(!literal().isOUTPUT())
+	 		pr.out.print(getPRED_ID());
+	 	else
+	 		pr.out.print(GlobalNames.OUTPUT_PRE_PROC_NAME);
+    }
+
+    public void ASTNode.prePrint(PrettyPrinter pr) {
+        prettyPrint(pr);
+    }
+    
+    public void Program.prePrint(PrettyPrinter pr) {
+    	HashSet<String> printed = new HashSet<String>();
+        for(Literal l : predefinedLiterals()) {
+            String pred_id = l.predicate().prePrint();
+            if(printed.contains(pred_id)) continue;
+            printed.add(pred_id);
+        	pr.out.print("OUTPUT('" + pred_id + ").\n");
+        }
+        prettyPrint(pr);
+    }
 }
 
 aspect SoufflePrinting {
@@ -129,29 +399,119 @@ aspect SoufflePrinting {
     public void ASTNode.soufflePrint(PrettyPrinter pr) {
         prettyPrint(pr);
     }
+    
+    public void NEGLiteral.soufflePrint(PrettyPrinter pr) {
+    	pr.out.print("!");
+        pr.prettyPrint(getInclusiveLiteral());
+    }
+    
+    public abstract String BinaryExclusiveTermLiteral.souffleOPString();
+    public String EQLiteral.souffleOPString()  { return  "="; }
+	public String NEQLiteral.souffleOPString() { return "!="; }
+	public String LTLiteral.souffleOPString()  { return "<";  }
+	public String LTELiteral.souffleOPString() { return "<="; }
+	public String GTLiteral.souffleOPString()  { return ">";  }
+	public String GTELiteral.souffleOPString() { return ">="; }
+	
+    public void BinaryExclusiveTermLiteral.soufflePrint(PrettyPrinter pr) {
+        pr.prettyPrint(getLeft());
+        pr.out.print(" ");
+        pr.out.print(souffleOPString());
+        pr.out.print(" ");
+        pr.prettyPrint(getRight());
+    }
+    syn String Type.souffleType() = "symbol";
+    eq  IntegerType.souffleType() = "number";
 
-    public void ExtensionalDB.soufflePrint(PrettyPrinter pr) {
+    public void PredicateRef.soufflePrint(PrettyPrinter pr) {
+        pr.out.print("\"");
+        prettyPrint(pr);
+        pr.out.print("\"");
+    }
+
+    public void TermList.soufflePrint(PrettyPrinter pr) {
+        pr.out.print("\"");
+        prettyPrint(new StandardPrettyPrinter(pr.out)); // Souffle does not allow nested quotations.
+        pr.out.print("\"");
+    }
+
+    public void Literal.artificalInput(PrettyPrinter pr) {
         pr.out.print(".input ");
-        pr.prettyPrint(getTarget());
+        pr.out.print(predicate().getPRED_ID());
         pr.out.print("(filename=");
-        pr.prettyPrint(getFileLocation());
+        pr.out.print("\"" + predicate().getPRED_ID() + ".csv" + "\"");
         pr.out.print(", delimiter=\",\"");
         pr.out.print(")\n");
     }
 
+    public void BINDLiteral.soufflePrint(PrettyPrinter pr) {
+    	pr.prettyPrint(getVariable());
+        pr.out.print(" = ");
+    	pr.prettyPrint(getRight());
+    }
+
+    public void Fact.soufflePrint(PrettyPrinter pr) {
+        printList(getHeadss(), "", " :- true.\n", ", ", pr);
+    }
+
+    public void Type.soufflePrint(PrettyPrinter pr) {
+        pr.out.print("\"");
+        prettyPrint(pr);
+        pr.out.print("\"");
+    }
+
     public void FormalPredicate.soufflePrint(PrettyPrinter pr) {
+        if(!literal().isInclusive()) return;
         pr.out.print(".decl " + predicateName() + "(");
         List<PredicateSymbol> constants = new List<PredicateSymbol>();
         for(int i = 0; i != realArity(); ++i) {
-            constants.add(new PredicateSymbol("x_" + i + ":symbol"));
+            PseudoTuple ps = literal().derivedType();
+            constants.add(new PredicateSymbol("x_" + i + ":" + ((Type)ps.coord(i)).souffleType()));
         }
         printList(constants, "", "", ", ", pr);
-        pr.out.print(")\n");
-        pr.out.print(".output " + predicateName() + "(delimiter=\",\")");
+        pr.out.print(")");
     }
 
+    private void Program.soufflePrintEDBDecl(PrettyPrinter pr) {
+        FormalPredicate fp = formalPredicateMap().get(GlobalNames.EDB_NAME);
+        if(fp == null) return;
+        EDBLiteral edb = (EDBLiteral) fp.literal();
+        for(PseudoTuple ps : fp.relation.tuples()) {
+            PredicateRef predref = (PredicateRef)ps.coord(0);
+            StringConstant fileloc = (StringConstant)ps.coord(1);
+
+            if(fp.program().formalPredicateMap().get(predref.getPRED_ID()).literal().isPredefined()) continue;
+
+            pr.out.print(".input ");
+            pr.out.print(predref.getPRED_ID());
+            pr.out.print("(filename=");
+            pr.prettyPrint(fileloc);
+            pr.out.print(", delimiter=\",\"");
+            pr.out.print(")\n");
+        }
+    }
+
+    private void Program.soufflePrintOUTPUTDecl(PrettyPrinter pr) {
+        FormalPredicate fp = formalPredicateMap().get(GlobalNames.OUTPUT_NAME);
+        if(fp == null) return;
+        OUTPUTLiteral output = (OUTPUTLiteral) fp.literal();
+        for(PseudoTuple ps : fp.relation.tuples()) {
+            PredicateRef predref = (PredicateRef)ps.coord(0);
+            pr.out.print(".output " + predref.getPRED_ID() + "(delimiter=\",\")\n");
+        }
+    }
+    
     public void Program.soufflePrint(PrettyPrinter pr) {
         printList(getFormalPredicates(), "", "\n", "\n", pr);
+        HashSet<String> visited = new HashSet<String>();
+        for(Literal l : predefinedLiterals()) {
+            if(!visited.contains(l.predicate().getPRED_ID())) {
+                l.artificalInput(pr);
+                visited.add(l.predicate().getPRED_ID());
+            }
+        }
+        soufflePrintEDBDecl(pr);
+        soufflePrintOUTPUTDecl(pr);
         prettyPrint(pr);
     }
 }

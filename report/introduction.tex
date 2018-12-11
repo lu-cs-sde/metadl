@@ -1,39 +1,39 @@
-Datalog is a syntactically simple declarative language that allows the expression and evaluation of certain first-order logic propositions. From its' inception in the nineteen-eighties it received substantial interest from the academic community into the early nineteen-nineties\cite{Green:2013:DRQ:2688167.2688168}. The efforts primary drive were to enable knowledge based systems that allowed the generation of new facts based on rules stated using the logic programming paradigm. At the time, this had applications in both artificial intelligence as well as a complement to the traditional relational database querying systems such as SQL\cite{Ceri:1989:YAW:627272.627357}\cite{Bancilhon:1986:AIR:16894.16859}.
+Datalog is a syntactically simple declarative language that allows the expression and evaluation of certain first-order logic propositions. From its inception in the nineteen-eighties it saw substantial interest from the academic community into the early nineteen-nineties\cite{Green:2013:DRQ:2688167.2688168}. The effort's primary drive were to enable knowledge based systems that allowed the generation of new facts based on rules stated using the logic programming paradigm. At the time, this had applications in both artificial intelligence as well as a complement to the traditional relational database querying systems such as SQL\cite{Ceri:1989:YAW:627272.627357}\cite{Bancilhon:1986:AIR:16894.16859}.
 
 After a time of cooling interest, Datalog has emerged again as an attractive way to express complex inter-dependencies\cite{Green:2013:DRQ:2688167.2688168}. A notable example is from Program Analysis where frameworks such as Doop\cite{Smaragdakis:2010:UDF:2185923.2185939} make use of Datalog to derive e.g. call-graph and points-to information, both of which typically have mutually recursive dependencies in languages using dynamic dispatch. 
 
-There are currently many Datalog implementations, some of which include Souffle\cite{Scholz:2016:FLP:2892208.2892226}, LogiQL\cite{Aref:2015:DIL:2723372.2742796}, Iris\cite{Bishop_iris-integrated}, and BDDBDDB\cite{Whaley:2005:UDB:2099708.2099719}. The implementations provide different evaluation methods and different extensions to the core Datalog language. This paper describes a common front-end that allows for source-to-source compilation. A common front-end enables a convenient way to compare the performance and expressive power of different Datalog implementations. An additional goal is to provide a library that can be used to implement and evaluate new inference schemes.
+There are currently many Datalog implementations, including Souffle\cite{Scholz:2016:FLP:2892208.2892226}, LogiQL\cite{Aref:2015:DIL:2723372.2742796}, Iris\cite{Bishop_iris-integrated}, and BDDBDDB\cite{Whaley:2005:UDB:2099708.2099719}. The implementations provide different evaluation methods and different extensions to the core Datalog language. 
 
-JastAdd \cite{Ekman:2007:JEJ:1297105.1297029} is a meta-compilation system that enables the expression of arbitrary graphs on top of an abstract syntax tree (AST). Information is propagated through the AST using so called Reference Attribute Grammars. JastAdd also supports aspects which allow the weaving of methods and class fields from different source locations into a single generated class. This enables easy extension of the generated AST classes with additional properties. In particular, it nicely permits the incremental addition of support for source-to-source compilation to different Datalog implementations. 
+This paper describes a common front-end for Datalog cross-compilation which we will call $Datalog^M$. $Datalog^M$ aims to provide meta-rules which facilitate a compact Datalog description language that may be internally evaluated or cross-compiled to another Datalog implementation. The current implementation supports cross-compilation to Souffle as well as internal interpretation. The list of supported meta-predicates is far from complete, but some progress is made through the inclusion of so called predicate references which allows predicate terms to reference other predicates (do not worry if these notions are unfamiliar, they will shortly be explained).
+
+$Datalog^M$ is implemented using JastAdd\cite{Ekman:2007:JEJ:1297105.1297029}. JastAdd is a meta-compilation system that enables the expression of arbitrary graphs on top of an abstract syntax tree (AST). Information is propagated through the AST using so-called Reference Attribute Grammars\cite{Ekman:2007:JEJ:1297105.1297029}. JastAdd also supports aspects, which allow the weaving of methods and class fields from different source locations into a single generated class. This enables straightforward extension of the generated AST classes with additional properties. In particular, it conveniently permits the incremental addition of support for source-to-source compilation to different Datalog implementations. 
+
+This paper assumes no previous exposure to Datalog. The next subsection describes the core language and gives a brief theoretical background. Section two describes the core Datalog implementation. The following section describes some common Datalog extensions that have been implemented and also introduces some meta-predicates. Next, cross-compilation is briefly covered. After that follows an evaluation of the implementation and finally some concluding remarks are given.
 
 \subsection{Core Language}
-There are many flavors of the Datalog language but they all build on a common core. 
-
-%A \textit{program} $P$ consists of a set of \textit{Horn clauses} $H_1, \ldots H_n$. A horn clause has a \textit{head} and a \textit{body}. The head is a single \textit{atom} and the body is a sequence of atoms. A atom is identified by a \textit{predicate symbol} and a sequence of g\textit{terms}. An example of a propositional rule (without terms) is shown below:
+There are many flavors of the Datalog language but they all build on a common core. A \textit{program} $P$ consists of a set of \textit{Horn clauses} $H_1, \ldots H_n$. A horn clause has a \textit{head} and a \textit{body}. The head is a single \textit{atom} and the body is a sequence of atoms. An atom is identified by a \textit{predicate symbol} and a sequence of \textit{terms}. An example of a propositional rule (i.e. a rule with atoms that have no terms, such a term-less atom thus represents a relation of arity zero) is shown below:
 \begin{align*}
-A :- \;B_1, B_2, \ldots B_m
+A \coloneqtwo \;B_1, B_2, \ldots B_m
 \end{align*}
 \noindent
 Above we have a single horn clause (hereafter called a \textit{rule}). It has head $A$ and body $B_1, B_2, \ldots B_m$. The intuitive meaning of the above rule is that if the conjunction of all the atoms in the body are true then we conclude $A$.
 
-Datalog deals not only with propositional rules, but allows a restricted range of first-order propositions where each atom is associated with a sequence of terms. A term is either \textit{variable} or \textit{constant}. An atom that contain only constant terms is called a \textit{ground atom}. We further partition the predicates into extensional (EDB) and intensional (IDB). The EDB's are all predicates that are taken as input from an external database. The IDB's are the predicates that are not EDB and are intensionally defined through rules. The EDB's introduce \textit{facts}, i.e. ground atoms. One may additionally introduce facts by declaring a rule with a ground atom head that has an empty body. 
+Datalog deals not only with propositional rules, but allows a restricted range of first-order propositions where each atom is associated with a sequence of terms. A term is either \textit{variable} or \textit{constant}. An atom that contain only constant terms is called a \textit{ground atom}. We further partition the predicates into extensional (EDB) and intensional (IDB). The EDBs are all predicates that are taken as input from an external database. The IDBs are the predicates that are not EDB and are intensionally defined through rules. The EDBs introduce \textit{facts}, i.e. ground atoms. One may additionally introduce facts by declaring a rule with a ground atom head that has an empty body. 
 
 \begin{itemize}
 \item The set of all constants in all facts is called the \textit{domain} and is denoted $\Omega$.
 \item The set of all facts is called the \textit{active database instance} and is denoted $I$.
 \end{itemize}
  
-There are three main semantic interpretations of Datalog: model-, fixpoint-, and proof-theoretic semantics. \cite{Green:2013:DRQ:2688167.2688168}. A brief overview is given below.
+There are three main semantic interpretations of Datalog: model-, fixpoint-, and proof-theoretic semantics. \cite{Green:2013:DRQ:2688167.2688168}. The model theoretic semantics gives meaning to the clauses but does not directly yield an algorithmic approach to derive all tuples. Both fixpoint- and proof-theoretic semantics yields straight forward algorithms. The implementation described in the next section is based on the fix-point approach and so it is outlined below. Proof-theoretic semantics is not described further.
 
 \paragraph{Model-theoretic Semantics}\NL
-A \textit{model} of a Datalog program $P$ is a consistent (satisfying all rules of $P$) extension of the initial EDB facts. Each rule is interpreted as a universally quantified rule. For example, below is given a rule and its' corresponding semantic interpretation. In the example $B(c_1, "C")$ is written as $(c_1, "C") \in B$ to emphasize the practical correspondence between predicates and relations.
+A \textit{model} of a Datalog program $P$ is a consistent (satisfying all rules of $P$) extension of the initial EDB facts. Each rule is interpreted as a universally quantified rule. For example, below is given a rule and its corresponding semantic interpretation. 
 \begin{align*}
-A(x, y, "C") :- \;B_1(x, "C"), B_2("C", y), B_3(x, y)
+A(x, y, "C") \coloneqtwo \;B_1(x, "C"), B_2(x, y)
 \end{align*}
 \begin{align*}
-\infer{(c_1, c_2, "C") \in A}{%
-	\forall c_1 \in \Omega.\;\forall c_2 \in \Omega. \;\; (c_1, "C") \in B_1, ("C", c_2) \in B_2, (c_1,c_2) \in B_3
-}
+\forall c_1 \in \Omega.\;\forall c_2 \in \Omega.\;\; B_1(c_1, "C"), B_2(c_1,c_2) \implies  A(c_1, c_2, "C")
 \end{align*}
 An inference algorithm attempts to find the \textit{minimal model}, i.e. a model $m$ of $P$ such that for any other model $m'$ of $P$, all facts of $m$ are in $m'$. In practice this means that an inference algorithm should only add a fact if it is required by the semantics of a rule (even if adding the fact may lead to an extended model of $P$). 
 
@@ -43,46 +43,7 @@ Begin with the set of all facts in the active database instance $I^0$. The set o
 &I^0 = \{ \text{EDB Facts in } P \}\\
 &I^{i + 1} = I^i \cup \Delta_i 
 \end{align*}
-It can be shown(CITE) that the minimal model is computed as $I^{n}$ for $n$ such that $I^{n}$ = $I^{n + 1}$. Since $I^i \subseteq I^{i + 1}$ (monotonically increasing) and with the practical assumption of a finite domain, the fix-point algorithm is guaranteed to terminate.
+It can be shown\cite{Green:2013:DRQ:2688167.2688168} that the minimal model is computed as $I^{n}$ for $n$ such that $I^{n}$ = $I^{n + 1}$. Since $I^i \subseteq I^{i + 1}$ (monotonically increasing) and with the practical assumption of a finite domain, the fix-point algorithm is guaranteed to terminate.
 
-\paragraph{Proof-theoretic Semantics}\NL
-Consider a ground atom $A(C_1, \ldots, C_n)$. A query for the ground atom asks for a proof that $A(C_1, \ldots, C_n)$ is in the minimal model of a program $P$. A proof can be visualized as an \textit{and-or tree} $T$. $T$ has the proposition (ground atom) to prove as the root. At an OR-node, all possible rules are tested. If any of them succeed then the proposition has been proven. At an AND-node, all the child propositions need to be proven for the node to become true. An example is shown in figure \ref{figure:andOrTree}.
-\begin{align*}
-r_1: A :- \;B, C\\
-r_2: A :- \;B, D
-\end{align*}
-\begin{figure}[ht!]
-  \centering
-
-\begin{forest}
-for tree={circle, draw, l sep=1pt}
-[A,blue 
-	[$\lor$  
-		[$\land$, edge label={node[midway,left] {$r_1$}}
-			[B] 
-			[C] 
-		]
-		[$\land$, edge label={node[midway,right] {$r_2$}}
-			[B]
-			[D]
-		]
-	]
-]
-\end{forest}
-\caption{An and-or tree for rules $r_1: A :- \;B, C$, $r_2: A :- \;B, D$}
-\label{figure:andOrTree}
-\end{figure}
-\noindent
-When traversing the tree the model is updated with new facts that are needed to prove the root proposition. Those facts then become part of the extended model. 
-
-\subsection{Security Features and Time Complexity}
-Above a fact was stated to be a ground atom that is true in a given model. An axiomatic fact can be declared as a rule with no body: $A(t_1, \ldots, t_n)$. Datalog disallows axiomatic facts that contain variables. This is implied by the following more general rule: all variables occurring in the head of a rule must also occur in the body of the rule. This is called the \textit{range restriction property} \cite{Green:2013:DRQ:2688167.2688168}.
-
-\subsection{Query Evaluation}
-
-
-
-% Expression Problem
-% (Knuth attribute Grammars)
-% Parser / Lexer
-% (How much is interesting to write here?)
+%\subsection{Security Features}
+%Above a fact was stated to be a ground atom that is true in a given model. An axiomatic fact can be declared as a rule with no body: $A(t_1, \ldots, t_n)$. Datalog disallows axiomatic facts that contain variables. This is implied by the following more general rule: all variables occurring in the head of a rule must also occur in the body of the rule. This is called the \textit{range restriction property} \cite{Green:2013:DRQ:2688167.2688168}.

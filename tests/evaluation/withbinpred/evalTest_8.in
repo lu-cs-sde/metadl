@@ -1,0 +1,5 @@
+OUTPUT(x) :- ATOM(x), NEQ('Vars, x).
+Vars(1), Vars(2), Vars(3).
+
+A(x, y) :- Vars(x), Vars(y).
+B(x, y) :- A(x, y), GTE(x, y).

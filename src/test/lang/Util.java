@@ -1,6 +1,5 @@
 package lang;
 
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -22,8 +21,6 @@ public final class Util {
 
 	private Util() { }
 
-
-
 	/**
 	 * Check that the string matches the contents of the given file.
 	 * Also writes the actual output to file.
@@ -34,6 +31,7 @@ public final class Util {
 	public static void compareOutput(String actual, File out, File expected) {
 		try {
 			Files.write(out.toPath(), actual.getBytes());
+            if(!expected.exists()) fail("");
 			assertEquals(readFileToString(expected),
 				normalizeText(actual),"Output differs");
 		} catch (IOException e) {
@@ -106,9 +104,6 @@ public final class Util {
 		}
 	}
 	
-
-
-
 	@SuppressWarnings("javadoc")
 	public static Iterable<Object[]> getTestParameters(File testDirectory, String extension) {
 		Collection<Object[]> tests = new LinkedList<Object[]>();

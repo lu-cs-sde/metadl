@@ -9,20 +9,23 @@
 	}
 :};
 
-%terminals FILEPATH, SEP, INTERNAL,TOPDOWNBASIC, TOPDOWNSTRAT, BOTTOMUPNAIVE, SOUFFLE, EXTERNAL, OUTDIR, FACTSDIR, SOUFFLEOUT;
+%terminals FILEPATH, SEP, BOTTOMUPNAIVE, SOUFFLE, OUTDIR, FACTSDIR, SOUFFLEOUT,
+           PRETTYPRINT, EVAL, TYPE_PROG, SEMANTIC_CHECK, TYPE_CHECK, PRE_PRINT;
 
 %typeof  descr                    =  "Description";
-%typeof  config                   =  "Configuration";
-%typeof  souffle                  =  "Souffle";
-%typeof  topdownbasic             =  "TopDownBasic";
-%typeof  topdownstratified        =  "TopDownStratified";
-%typeof  bottomupnaive            =  "BottomUpNaive";
+%typeof  pretty                   =  "Task";
+%typeof  task                     =  "Task";
+%typeof  eval                     =  "Task";
+%typeof  type_prog                =  "Task";
+%typeof  pretty_task              =  "Task";
+%typeof  eval_task                =  "Task";
+%typeof  semantic_check           =  "Task";
+%typeof  type_check               =  "Task";
+%typeof  pre_print                =  "Task";
 %typeof  file_path                =  "FilePath";
 %typeof  input_file               =  "InputFile";
 %typeof  output_dir               =  "OutputDir";
 %typeof  facts_dir                =  "FactsDir";
-%typeof  internal                 =  "Internal";
-%typeof  external                 =  "External";
 %typeof  config_param             =  "ConfigParam";
 %typeof  config_params            =  "List";
 %typeof  config_params_no_empty   =  "List";
@@ -33,25 +36,31 @@
 
 %goal descr;
 
-descr = config.conf input_file.fn {: return new Description(fn, conf); :};
+descr = task.t input_file.fn {: return new Description(t, fn); :};
 
-config =  EXTERNAL SEP external
-       |  INTERNAL SEP internal
-       ;
+task = pretty
+     | eval
+     | type_prog
+     | semantic_check
+     | type_check
+     | pre_print
+     ;
 
-external      =  souffle;
+pretty     =  PRETTYPRINT SEP pretty_task;
+eval       =  EVAL        SEP eval_task;
 
-internal      =  topdownbasic
-			  |  topdownstratified
-			  |  bottomupnaive
-			  ;
+pretty_task = BOTTOMUPNAIVE config_params.params {: return new PrettyBottomUpNaive(params); :}
+            | SOUFFLE config_params.params souffle_params.s_params {: return new PrettySouffle(params, s_params); :}
+            ;
 
-topdownbasic      =  TOPDOWNBASIC  config_params.params {: return new TopDownBasic(params); :};
-topdownstratified =  TOPDOWNSTRAT  config_params.params {: return new TopDownStratified(params); :};
-bottomupnaive     =  BOTTOMUPNAIVE config_params.params {: return new BottomUpNaive(params); :};
-
-souffle       =  SOUFFLE config_params.params souffle_params.s_params {: return new Souffle(params, s_params); :};
-
+eval_task = BOTTOMUPNAIVE config_params.params {: return new EvalBottomUpNaive(params); :}
+          | SOUFFLE config_params.params souffle_params.s_params {: return new EvalSouffle(params, s_params); :}
+          ;
+            
+type_prog          =  TYPE_PROG config_params.params {: return new TypeProg(params); :};
+semantic_check     =  SEMANTIC_CHECK config_params.params {: return new SemanticCheck(params); :};
+type_check         =  TYPE_CHECK config_params.params {: return new TypeCheck(params); :};
+pre_print          =  PRE_PRINT config_params.params  souffle_params.s_params{: return new PrePrint(params, s_params); :};
 souffle_params = souffle_params_no_empty
           | /* epsilon */ {: return new List(); :}
           ;

@@ -16,7 +16,7 @@ public class Binding extends TreeSet<BindTerm> {
 	public boolean satisfiedBy(PseudoTuple t) {
 		for (BindTerm b : this) {
 			PseudoTuple proj = t.project(b.coords);
-			if (proj.size == 0)
+			if (proj.arity() == 0)
 				return false;
 			if (!proj.isUniInfo())
 				return false;
@@ -26,12 +26,22 @@ public class Binding extends TreeSet<BindTerm> {
 		return true;
 	}
 	
+	public int firstCoordOf(Term t) {
+		BindTerm bt = floor(new BindTerm(t));
+		if(bt == null || Term.termComparator.compare(bt.t, t) != 0) return -1;
+		return bt.coords.first();
+	}
+	
 	public int totalSize() {
 		int size = 0;
 		for(BindTerm bt : this) {
 			size += bt.coords.size();
 		}
 		return size;
+	}
+	
+	public void bind(Term t, int index) {
+		bind(this, t, index);
 	}
 
 	public static void bind(Binding binding, Term t, int index) {
@@ -48,7 +58,7 @@ public class Binding extends TreeSet<BindTerm> {
 
 	public static Binding createBinding(PseudoTuple t) {
 		Binding binding = new Binding();
-		for (int i = 0; i != t.size; ++i) {
+		for (int i = 0; i != t.arity(); ++i) {
 			bind(binding, t.coord(i), i);
 		}
 		return binding;
@@ -84,7 +94,7 @@ public class Binding extends TreeSet<BindTerm> {
 
 	private static int add_merge(Binding b_merged, Binding b, int index, TreeMap<BindTerm, TaggedBind> f, Direction d) {
 		for (BindTerm bt : b) {
-			if (!b_merged.contains(bt) && bt.t.isVariable()) { // Drop Constants since they matter no more
+			if (!b_merged.contains(bt) && !bt.t.isConstant()) { // Drop Constants since they matter no more
 				BindTerm bt_new = new BindTerm(bt.t);
 				bt_new.coords.add(index++);
 				b_merged.add(bt_new);
@@ -100,7 +110,7 @@ public class Binding extends TreeSet<BindTerm> {
 
 		int index = 0;
 		for (BindOverlap bo : b) {
-			if (bo.b1.t.isVariable()) { // Drop Constants since they matter no more
+			if (!bo.b1.t.isConstant()) { // Drop Constants since they matter no more
 				BindTerm bt = new BindTerm(bo.b1.t);
 				bt.coords.add(index++);
 				b_merged.add(bt);

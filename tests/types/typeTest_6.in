@@ -1,0 +1,4 @@
+TYPEOF('A, [String Integer]).
+B(1, 2).
+C(x, y, z) :- A(x, y), B(z, z).
+D(x, y, z) :- B(x, y), A(z, y).

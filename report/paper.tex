@@ -21,11 +21,15 @@
 \bibliographystyle{ACM-Reference-Format}
 \usepackage{forest}
 \usepackage{proof}
+\usepackage{minted}
+\usepackage{makecell}
+\usepackage{changepage}
 \newcommand{\NL}[0]{ \hfill\\\noindent }
+\newcommand{\coloneqtwo}{\mathbin{:\hspace{-0.5ex}\textsf{-}}}
 \begin{document}
 
 %% Title information5
-\title[Short Title]{Datalog Implementation in JastAdd (OUTLINE)}         %% [Short Title] is optional;
+\title[Short Title]{Datalog Implementation in JastAdd (Version 2)}         %% [Short Title] is optional;
                                         %% when present, will be used in
                                         %% header instead of Full Title.
 %\subtitle{Subtitle}                     %% \subtitle is optional
@@ -40,41 +44,35 @@
   \institution{C13, Lund University, Sweden}            %% \institution is required
 }
 \email{dat12hba@student.lu.se}          %% \email is recommended
-
-
 \begin{abstract}
-Text of abstract \ldots.
+\textit{To be Written ... }
 \end{abstract}
-
-
 \maketitle
 \section{Introduction}
-\input{introduction}
+\input{introduction.tex}
 \section{Core Language Implementation}
-\textit{Describe the most important implemented features and how they provide extensibility}
+\input{corelanguageimpl.tex}
 \section{Language Extensions}
-\subsection{Type System}
-\subsection{Negation}
-\subsection{Object Creation}
-\subsection{Built-in Predicates}
+\input{languageextensions.tex}
+\vspace*{-\baselineskip}
+\newpage
+\section{Cross Compilation}
+\input{crosscompilation.tex}
+%\vspace*{-\baselineskip}
 \section{Evaluation}
-
-\textit{I want to use the following evaluation criteria}
-\begin{itemize}
-\item Front-end extensibility
-\item Front-end source-to-source coverage
-\item Back-end implementations performance evaluation
-\end{itemize}
-
+\input{evaluation.tex}
+% \textit{I want to use the following evaluation criteria}
+% \begin{itemize}
+% \item Front-end extensibility
+% \item Front-end source-to-source coverage
+% \item Back-end implementations performance evaluation
+% \end{itemize}
 \section{Related work}
-\subsection{LogicBlox}
-\subsection{Iris}
-\subsection{Souffle}
-\subsection{BDDBDDB}
+\input{relatedwork.tex}
 \section{Conclusion}
-%% Acknowledgments
+\textit{To be Written ... }
 \begin{acks}
-Text of acknowledgments \ldots.
+\textit{To be Written ... }
 \end{acks}
 
 

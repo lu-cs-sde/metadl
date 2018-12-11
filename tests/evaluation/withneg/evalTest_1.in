@@ -1,0 +1,9 @@
+OUTPUT('A).
+OUTPUT('B).
+OUTPUT('C).
+
+A("A").
+B("A").
+B("B").
+
+C(x) :- B(x), NOT(A(x)).

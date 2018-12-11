@@ -1,0 +1,4 @@
+TYPEOF('A, [String String]).
+TYPEOF('B, [String]).
+A(x, y) :- B(x), B(y).
+A(x, y, z) :- B(x, y, z).

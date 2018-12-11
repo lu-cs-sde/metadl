@@ -9,13 +9,34 @@
 	}
 :};
 
-%terminals ID, LPARA, RPARA, NUMERAL, STRING, DOT, COMMA, IMPLIED_BY, EDB;
+%terminals VAR_ID, PRED_ID, PRED_REF, LPARA, RPARA, LBRACK, RBRACK, 
+           NUMERAL, STRING, DOT, COMMA, IMPLIED_BY, EDB, OUTPUT, PRED,
+           ATOM, NOT, BIND,  EQ, EQLIST, NEQ, LT, LTE, GT, GTE, ADD, SUB, MUL, DIV,
+           TYPEOF, TYPE_TYPE, STRING_TYPE, INTEGER_TYPE, PRED_REF_TYPE, LIST_TYPE;
 
 %typeof  program             =  "Program";
 %typeof  clause              =  "Clause";
-%typeof  meta_literal        =  "MetaLiteral";
-%typeof  real_literal        =  "RealLiteral";
-%typeof  predicate_sym       =  "PredicateSymbol";
+%typeof  literal             =  "Literal";
+%typeof  inclusive_literal   =  "InclusiveLiteral";
+%typeof  exclusive_literal   =  "ExclusiveLiteral";
+%typeof  bin_excl_term_lit   =  "BinaryExclusiveTermLiteral";
+%typeof  bind_literal        =  "BINDLiteral";
+%typeof  typeof_literal      =  "TYPEOFLiteral";
+%typeof  edb_literal         =  "EDBLiteral";
+%typeof  output_literal      =  "OUTPUTLiteral";
+%typeof  pred_literal        =  "PREDLiteral";
+%typeof  atom_literal        =  "ATOMLiteral";
+%typeof  neg_literal         =  "NEGLiteral";
+%typeof  eq_literal          =  "EQLiteral";
+%typeof  eq_list_literal     =  "EQLISTLiteral";
+%typeof  neq_literal         =  "NEQLiteral";
+%typeof  lt_literal          =  "LTLiteral";
+%typeof  lte_literal         =  "LTELiteral";
+%typeof  gt_literal          =  "GTLiteral";
+%typeof  gte_literal         =  "GTELiteral";
+%typeof  atom                =  "Atom";
+%typeof  pred_sym            =  "PredicateSymbol";
+%typeof  pred_ref            =  "PredicateRef";
 %typeof  variable            =  "Variable";
 %typeof  constant            =  "Constant";
 %typeof  int_constant        =  "IntConstant";
@@ -23,61 +44,166 @@
 %typeof  term                =  "Term";
 %typeof  term_list           =  "List";
 %typeof  term_list_no_empty  =  "List";
+%typeof  term_list_space     =  "List";
+%typeof  term_list_space_no_empty  =  "List";
 %typeof  lit_list            =  "List";
-%typeof  extensional_db      =  "ExtensionalDB";
-%typeof  stmt                =  "Stmt";
-%typeof  stmt_list           =  "List";
+%typeof  incl_lit_list       =  "List";
+%typeof  clause_list         =  "List";
 %typeof  fact                =  "Fact";
 %typeof  rule                =  "Rule";
-%typeof  file_location       =  "FileLocation";
+%typeof  expr                =  "Expr";
+%typeof  expr_factor         =  "Expr";
+%typeof  expr_term           =  "Expr";
+%typeof  expr_unit           =  "Expr";
+%typeof  add_expr            =  "AddExpr";
+%typeof  sub_expr            =  "SubExpr";
+%typeof  mul_expr            =  "MulExpr";
+%typeof  div_expr            =  "DivExpr";
+%typeof  term_list_term      =  "TermList";
+%typeof  type_term           =  "Type";
+%typeof  concrete_type       =  "ConcreteType";
+%typeof  type_type           =  "Type";
+%typeof  string_type         =  "StringType";
+%typeof  integer_type        =  "IntegerType";
+%typeof  pred_ref_type       =  "PredRefType";
+%typeof  list_type           =  "ListType";
 
 %goal program;
 
-program =  stmt_list.list {: return new Program(list); :};
-stmt_list = stmt.s {: return new List().add(s); :}
-            | stmt_list.list stmt.s {: return list.add(s); :}
+program =  clause_list.list {: return new Program(list); :};
+clause_list = clause.c {: return new List().add(c); :}
+            | clause_list.list clause.c {: return list.add(c); :}
             ;
-
-stmt = clause
-     | extensional_db
-     ;
 
 clause = rule
        | fact
        ;
 
-rule = lit_list.heads IMPLIED_BY lit_list.body DOT {: return new Rule(heads, body); :};
-fact = lit_list.heads DOT {: return new Fact(heads); :};
+rule = incl_lit_list.heads IMPLIED_BY lit_list.body DOT {: return new Rule(heads, body); :};
+fact = incl_lit_list.heads DOT {: return new Fact(heads); :};
 
-extensional_db = EDB LPARA meta_literal.target COMMA file_location.fn RPARA {: return new ExtensionalDB(target, fn); :};
-file_location = STRING.fn {: return new FileLocation(fn); :};
+literal = inclusive_literal
+        | exclusive_literal
+        ;
+        
+inclusive_literal = edb_literal
+                  | output_literal
+			      | atom
+			      | typeof_literal
+			      ;
+			  
+exclusive_literal = neg_literal
+                  | bind_literal
+                  | bin_excl_term_lit
+                  | eq_list_literal
+                  | pred_literal
+                  | atom_literal
+             	  ;
+          
+neg_literal = NOT LPARA inclusive_literal.lit RPARA {: return new NEGLiteral(new PredicateSymbol("NOT"), lit); :};
 
-real_literal = predicate_sym.pred LPARA term_list.terms RPARA {: return new RealLiteral(pred, terms); :};
+bind_literal = BIND LPARA variable.var COMMA expr.right RPARA {: return new BINDLiteral(new PredicateSymbol("BIND"), var, right); :};
+bin_excl_term_lit = eq_literal
+                  | neq_literal
+                  | lt_literal
+                  | lte_literal
+                  | gt_literal
+                  | gte_literal
+                  ;
 
-meta_literal = predicate_sym.pred {: return new MetaLiteral(pred); :};
+eq_literal  = EQ  LPARA expr.left COMMA expr.right RPARA {: return new EQLiteral(new PredicateSymbol("EQ"),   left, right); :};
+neq_literal = NEQ LPARA expr.left COMMA expr.right RPARA {: return new NEQLiteral(new PredicateSymbol("NEQ"), left, right); :};
+lt_literal  = LT  LPARA expr.left COMMA expr.right RPARA {: return new LTLiteral(new PredicateSymbol("LT"),   left, right); :};
+lte_literal = LTE LPARA expr.left COMMA expr.right RPARA {: return new LTELiteral(new PredicateSymbol("LTE"), left, right); :};
+gt_literal  = GT  LPARA expr.left COMMA expr.right RPARA {: return new GTLiteral(new PredicateSymbol("GT"),   left, right); :};
+gte_literal = GTE LPARA expr.left COMMA expr.right RPARA {: return new GTELiteral(new PredicateSymbol("GTE"), left, right); :};
 
-lit_list = real_literal.lit {: return new List().add(lit); :}
-         | lit_list.list COMMA real_literal.c {: return list.add(c); :}
+eq_list_literal = EQLIST LPARA term_list_term.terms RPARA {: return new EQLISTLiteral(new PredicateSymbol("EQLIST"),   terms); :};
+
+atom = pred_sym.pred LPARA term_list.terms RPARA                      {: return new Atom(pred, terms); :};
+edb_literal    = EDB    LPARA pred_ref.pred COMMA term.filelocs RPARA {: return new EDBLiteral(new PredicateSymbol("EDB"), pred, filelocs);  :};
+output_literal = OUTPUT LPARA term.t RPARA                            {: return new OUTPUTLiteral(new PredicateSymbol("OUTPUT"), t);         :};
+pred_literal   = PRED   LPARA term.t RPARA                            {: return new PREDLiteral(new PredicateSymbol("PRED"), t);             :};
+atom_literal   = ATOM   LPARA term.t RPARA                            {: return new ATOMLiteral(new PredicateSymbol("ATOM"), t);             :};
+typeof_literal = TYPEOF LPARA pred_ref.pred COMMA term.t RPARA        {: return new TYPEOFLiteral(new PredicateSymbol("TYPEOF"), pred, t);   :};
+
+lit_list = literal.lit {: return new List().add(lit); :}
+         | lit_list.list COMMA literal.c {: return list.add(c); :}
          ;
-
-predicate_sym = ID.id {: return new PredicateSymbol(id); :};
+         
+incl_lit_list = inclusive_literal.lit {: return new List().add(lit); :}
+         | incl_lit_list.list COMMA inclusive_literal.lit {: return list.add(lit); :}
+         ;
 
 term_list = term_list_no_empty
           | /* epsilon */ {: return new List(); :}
           ;
 
 term_list_no_empty = term.t {: return new List().add(t); :}
-                   | term_list_no_empty.list COMMA term.t {: return list.add(t); :} 
+                   | term_list_no_empty.list COMMA term.t {: return list.add(t); :}
                    ;
+                   
+expr = expr_term;
+     
+expr_term   = add_expr
+            | sub_expr
+            | expr_factor
+            ;
 
-term = variable 
+expr_factor = mul_expr
+            | div_expr 
+            | expr_unit
+            ;
+            
+expr_unit = term
+	      | LPARA expr.e RPARA {: return e; :}
+	      ;
+            
+add_expr = expr_term.e1   ADD expr_factor.e2 {: return new AddExpr(e1, e2); :};
+sub_expr = expr_term.e1   SUB expr_factor.e2 {: return new SubExpr(e1, e2); :};
+mul_expr = expr_factor.e1 MUL expr_unit.e2   {: return new MulExpr(e1, e2); :};
+div_expr = expr_factor.e1 DIV expr_unit.e2   {: return new DivExpr(e1, e2); :};
+                   
+term = variable
      | constant
+     | pred_ref
+     | term_list_term
+     | type_term
      ;
-
-variable = ID.id {: return new Variable(id); :};
+     
+pred_sym = PRED_ID.id  {: return new PredicateSymbol(id); :};
+pred_ref = PRED_REF.id {: return new PredicateRef(id); :};
+     
+variable = VAR_ID.id {: return new Variable(id); :};
 constant = int_constant
          | string_constant
          ;
 
-int_constant = NUMERAL.num {: return new IntConstant(num); :};
+int_constant    = NUMERAL.num {: return new IntConstant(num); :};
 string_constant = STRING.str {: return new StringConstant(str); :};
+term_list_term  = LBRACK term_list_space.tl RBRACK {: return new TermList(tl); :};
+
+term_list_space = term_list_space_no_empty
+          | /* epsilon */ {: return new List(); :}
+          ;
+
+term_list_space_no_empty = term.t {: return new List().add(t); :}
+                   | term_list_space_no_empty.list term.t {: return list.add(t); :}
+                   ;
+
+type_term = concrete_type
+          | list_type
+          ;
+	 
+type_type = TYPE_TYPE {: return new TypeType(); :};
+
+concrete_type = integer_type
+              | string_type
+              | pred_ref_type
+              | type_type
+              ;
+              
+integer_type  = INTEGER_TYPE  {: return new IntegerType(); :};
+string_type   = STRING_TYPE   {: return new StringType();  :};
+pred_ref_type = PRED_REF_TYPE {: return new PredRefType(); :};
+list_type     = LIST_TYPE LPARA concrete_type.embell RPARA {: return new ListType(embell); :};

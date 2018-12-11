@@ -1,0 +1,7 @@
+OUTPUT(x) :- ATOM(x).
+
+A("A", "B").
+A("B", "C").
+B("C", "D").
+EDB('A, "A.csv").
+A("E", x) :- A(y, x), B("C", z).

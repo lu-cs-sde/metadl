@@ -5,13 +5,14 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import lang.ast.Constant;
-import lang.ast.RealLiteral;
+import lang.ast.List;
 import lang.ast.Term;
 import lang.ast.Variable;
 
 public class PseudoTuple implements Comparable<PseudoTuple> {
-	public final int size;
+	private int size;
 	private Term[] tuple;
+	public static final Variable uninitializedVar = new Variable("UNINITIALZIED VARIABLE"); 
 	
 	public PseudoTuple(TreeSet<Variable> vars) {
 		this.size = vars.size();
@@ -19,11 +20,27 @@ public class PseudoTuple implements Comparable<PseudoTuple> {
 		vars.toArray(this.tuple);
 	}
 	
-	public PseudoTuple(RealLiteral fact) {
-		this.size = fact.getNumTerms();
+	public PseudoTuple(PseudoTuple ground, Binding from, PseudoTuple vars) {
+		this.size = vars.size;
+		this.tuple = new Term[size];
+		for(int i = 0; i != size; ++i) {
+			tuple[i] = ground.coord(from.firstCoordOf(vars.tuple[i]));
+		}
+	}
+	
+	public PseudoTuple(List<Term> terms) {
+		this.size = terms.getNumChild();
+		this.tuple = new Term[size];
+		for(int i = 0; i != size; ++i) {
+			tuple[i] = terms.getChild(i);
+		}
+	}
+	
+	public PseudoTuple(Term ... terms) {
+		this.size = terms.length;
 		this.tuple = new Term[size];
 		for (int i = 0; i != size; ++i) {
-			tuple[i] = fact.getTerms(i);
+			tuple[i] = terms[i];
 		}
 	}
 	
@@ -39,16 +56,43 @@ public class PseudoTuple implements Comparable<PseudoTuple> {
 		this.size = size;
 		this.tuple = new Term[size];
 		for (int i = 0; i != size; ++i) {
-			tuple[i] = new Variable("UNINITIALZIED VARIABLE");
+			tuple[i] = uninitializedVar;
 		}
 	}
 	
-	public static PseudoTuple of(Constant ... consts) {
+	public static PseudoTuple of(Term ... consts) {
 		PseudoTuple pt = new PseudoTuple(consts.length);
 		for(int i = 0; i != consts.length; ++i) {
-			pt.instantiate(i, consts[i]);
+			pt.set(i, consts[i]);
 		}
 		return pt;
+	}
+	
+	public List<Term> toList() {
+		List<Term> list = new List<Term>();
+		for(int i = 0; i != size; ++i) 
+			list.add(tuple[i]);
+		return list;
+	}
+	
+	public void expand() {
+		Term[] tmp = new Term[size];
+		System.arraycopy(tuple, 0, tmp, 0, size);
+		tuple = new Term[size + 1];
+		System.arraycopy(tmp, 0, tuple, 0, size);
+		tuple[size] = uninitializedVar;
+		size = size + 1;
+	}
+	
+	public PseudoTuple toTypeTuple() {
+		PseudoTuple tt = new PseudoTuple(size);
+		for(int i = 0; i != size; ++i) 
+			tt.set(i, tuple[i].type());
+		return tt;
+	}
+	
+	public int arity() {
+		return size;
 	}
 
 	public boolean instantiatedAt(int i) {
@@ -95,13 +139,13 @@ public class PseudoTuple implements Comparable<PseudoTuple> {
 		if (size == 0)
 			return;
 		if (size == 1) {
-			sb.append("(").append(tuple[0].string()).append(")");
+			sb.append("(").append(tuple[0].toString()).append(")");
 			return;
 		}
 		sb.append("(");
-		sb.append(tuple[0].string());
+		sb.append(tuple[0].toString());
 		for (int i = 1; i != size; ++i) {
-			sb.append(",").append(tuple[i].string());
+			sb.append(",").append(tuple[i].toString());
 		}
 		sb.append(")");
 	}
@@ -158,7 +202,7 @@ public class PseudoTuple implements Comparable<PseudoTuple> {
 	public String[] toStringArray() {
 		String[] strs = new String[size];
 		for(int i = 0; i != size; ++i) {
-			strs[i] = tuple[i].string();
+			strs[i] = tuple[i].toString();
 		}
 		return strs;
 	}

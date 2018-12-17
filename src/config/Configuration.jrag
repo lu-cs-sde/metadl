@@ -212,7 +212,7 @@ aspect Souffle {
             SimpleLogger.logger().log("PrettyPrint to: " + soufflePath, SimpleLogger.LogLevel.Level.DEBUG);
             program.soufflePrint(new SoufflePrettyPrinter<Program>(new PrintStream(new FileOutputStream(new File(soufflePath)))));
 
-            String cmd = "souffle -D " + outputDir() + " " + soufflePath + " -F " + factsDir();
+            String cmd = "souffle -j1 -D " + outputDir() + " " + soufflePath + " -F " + factsDir();
             SimpleLogger.logger().log("Run souffle with: " + cmd, SimpleLogger.LogLevel.Level.DEBUG);
 
 			long start = System.nanoTime();

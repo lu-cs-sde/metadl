@@ -47,12 +47,15 @@ public class BottomUpNaiveIterative extends InternalEvaluation {
 		}
 		
 		Deque<Stratum> order = Stratification.reversePostOrder(output_strata);
-		
+		long start = System.nanoTime();
 		while (!order.isEmpty()) {
 			Stratum nextStrat = order.pollFirst();
 			if(nextStrat == outStrat) continue;
 			evaluateStratum(program, descr, nextStrat);
 		}
+        long end = System.nanoTime();
+	    double elapsed = (end - start) / 1000000;
+	    System.out.print(elapsed + " ");
 		dumpRelations(program, descr);
 	}
 	

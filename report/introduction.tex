@@ -25,15 +25,15 @@ Datalog deals not only with propositional rules, but allows a restricted range o
 \item The set of all facts is called the \textit{active database instance} and is denoted $I$.
 \end{itemize}
  
-There are three main semantic interpretations of Datalog: model-, fixpoint-, and proof-theoretic semantics. \cite{Green:2013:DRQ:2688167.2688168}. The model theoretic semantics gives meaning to the clauses but does not directly yield an algorithmic approach to derive all tuples. Both fixpoint- and proof-theoretic semantics yields straight forward algorithms. The implementation described in the next section is based on the fix-point approach and so it is outlined below. Proof-theoretic semantics is not described further.
+There are three main semantic interpretations of Datalog: model-, fixpoint-, and proof-theoretic semantics. \cite{Green:2013:DRQ:2688167.2688168}. The model theoretic semantics gives meaning to the clauses but does not directly yield an algorithmic approach to derive all tuples. Both fixpoint- and proof-theoretic semantics yield straight forward algorithms. The implementation described in the next section is based on the fix-point approach and so it is outlined below. Proof-theoretic semantics is not described further.
 
 \paragraph{Model-theoretic Semantics}\NL
-A \textit{model} of a Datalog program $P$ is a consistent (satisfying all rules of $P$) extension of the initial EDB facts. Each rule is interpreted as a universally quantified rule. For example, below is given a rule and its corresponding semantic interpretation. 
+A \textit{model} of a Datalog program $P$ is a consistent (satisfying all rules of $P$) extension of the initial EDB facts. Each rule is interpreted as a universally quantified first-order statement. For example, below is given a rule and its corresponding semantic interpretation. 
 \begin{align*}
 A(x, y, "C") \coloneqtwo \;B_1(x, "C"), B_2(x, y)
 \end{align*}
 \begin{align*}
-\forall c_1 \in \Omega.\;\forall c_2 \in \Omega.\;\; B_1(c_1, "C"), B_2(c_1,c_2) \implies  A(c_1, c_2, "C")
+\forall c_1 \in \Omega.\;\forall c_2 \in \Omega.\;\; B_1(c_1, "C") \land B_2(c_1,c_2) \implies  A(c_1, c_2, "C")
 \end{align*}
 An inference algorithm attempts to find the \textit{minimal model}, i.e. a model $m$ of $P$ such that for any other model $m'$ of $P$, all facts of $m$ are in $m'$. In practice this means that an inference algorithm should only add a fact if it is required by the semantics of a rule (even if adding the fact may lead to an extended model of $P$). 
 

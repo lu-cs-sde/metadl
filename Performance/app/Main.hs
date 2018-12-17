@@ -7,12 +7,14 @@ import System.FilePath
 import System.IO
 import Control.Monad
 
+
 import qualified Data.List as List
 import qualified Data.List.Split as Split
 import qualified Data.Char as Char
 
 import Debug.Trace
 import Parser
+import GenData
 
 type ReplaceSingle = (String, String)
 type ReplaceEntry  = (String, [String])
@@ -46,16 +48,17 @@ programs t rm = (flip replaceValues t) <$> replacements (replacePartition rm)
 
 runProgram :: FilePath -> Program -> IO [String]
 runProgram fp program = do
-  readCreateProcess (shell cmd_write_prog) ""
+  writeFile ("../examples/" ++ takeFileName fp) program
   strs <- forM [1..10] (const $ readCreateProcess (shell cmd_run_prog) "" >>= \s -> putStr (s ++ " ") >> return s)
   putStrLn ""
   return strs 
   where
-    cmd_write_prog = "cd ..; echo \"" ++ program ++ "\" > " ++ "./examples/" ++ takeFileName fp
     cmd_run_prog   = "cd ..; java -jar compiler.jar eval::souffle -OUT ./out -FACTS ./facts ./examples/" ++ takeFileName fp
+    {- cmd_run_prog   = "cd ..; java -jar compiler.jar eval::bottomupnaive -OUT ./out -FACTS ./facts ./examples/" ++ takeFileName fp -}
 
 collectSample :: Template -> ReplaceMap -> FilePath -> IO [[Double]]
 collectSample template replMap infile = do
+  {- forM_ (programs template replMap) (putStrLn . show) -}
   samples <- traverse (runProgram infile) (programs template replMap)
   return $ ((read :: (String -> Double)) <$> ) <$> samples
       
@@ -65,6 +68,7 @@ main = do args <- Env.getArgs
               replfile = args !! 1
           template <- readFile infile
           replace <- readFile replfile
+          writePDataExpo 1 1000000 2
 
           let replMap = replaceMap $ lines replace
           -- putStrLn template 

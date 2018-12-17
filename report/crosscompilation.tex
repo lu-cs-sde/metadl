@@ -3,7 +3,7 @@ Aspects enable the addition of methods to a generated AST-class. An overview of 
 
 % as well as for the type checking and inference program described in the previous section
 
-\begin{figure}
+\begin{figure}[!ht]
 \begin{minted}{yaml}
 void ASTNode.pretty(PrettyPrinter pr)  { ... }
 void ASTNode.souffle(PrettyPrinter pr) { ... }
@@ -23,6 +23,12 @@ class SoufflePrettyPrinter  extends PrettyPrinter
 \caption{The basis for pretty-printing and re-use through mutual recursion.}
 \label{figure:pretty}
 \end{figure}
+
+\begin{figure*}[!ht]
+	\includegraphics{img/souffleEval.pdf}
+	\caption{Souffle Printing Pipeline. \textbf{Yellow}: A Datalog Program. \textbf{Blue}: An evaluation mechanism. \textbf{Green}: A compiler stage. }
+	\label{figure:soufflePipeline}
+\end{figure*}
 \noindent
 \subsection{Souffle Evaluation}
 Souffle does not support meta-predicates and so naturally it does not recognize the meta-semantics introduced in the previous section. In particular the presence of meta-predicates that the interpreter provides to the Datalog program will fail if a straight forward pretty-printing is performed. The obvious solution then is to first evaluate the Datalog program up to the point that all such predicates are known in a pre-processing step. All the derived special predicates can then be provided to Souffle as additional facts by printing them in the pretty-printing step.

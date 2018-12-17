@@ -451,7 +451,13 @@ aspect SoufflePrinting {
     }
 
     public void Fact.soufflePrint(PrettyPrinter pr) {
-        printList(getHeadss(), "", " :- true.\n", ", ", pr);
+    	HashSet<Literal> nonIncl = new HashSet<Literal>();
+    	for(InclusiveLiteral il : getHeadss()) {
+    		if(!il.isPredefined()) {
+    			nonIncl.add(il);
+    		}
+    	}
+        printCollection(nonIncl, "", " :- true.\n", ", ", pr);
     }
 
     public void Type.soufflePrint(PrettyPrinter pr) {

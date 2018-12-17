@@ -9,17 +9,22 @@ Nat(0).
 Nat(y) :- Nat(x), BIND(y, x + 1), y <= N.
 \end{minted}
 \noindent
-To evaluate using naive evaluation, in each step with $k$ unary tuples in $Nat$, the evaluation must Select all tuples from Nat, calculate y for each x, filter all calculated y with the less than rule, project the $y$ component into the new Nat relation, and take the union between the old and the new Nat relation. With the current implementation, union has time complexity $O(k \cdot log(k))$ (using an ordered set for the relations) and the remaining operations are $O(k)$. The expected time-complexity for the NAT-example is thus in the order of:
+To evaluate using naive evaluation, in each step with $k$ unary tuples in $Nat$, the evaluation must Select all tuples from Nat, calculate y for each x, filter all calculated y with the less than rule, project the $y$ component into the new Nat relation, and take the union between the old and the new Nat relation. With the current implementation, union has time complexity $\mathcal{O}(k \cdot log(k))$ (using an ordered set for the relations) and the remaining operations are $\mathcal{O}(k)$. The expected time-complexity for the NAT-example is thus in the order of:
 \begin{align*}
-\sum_{k = 1}^{N} 4 k + k \cdot log (k) \leq 4 N^2 + N^2 log(N) = O(N^2 log(N))
+\sum_{k = 1}^{N} 4 k + k \cdot log (k) \leq 4 N^2 + N^2 log(N) = \mathcal{O}(N^2 log(N))
 \end{align*}
 For semi-naive evaluation, each iteration gives a single new element to consider. The corresponding time complexity thus reduces to the order of:
 \begin{align*}
-	\sum_{k = 1}^{N} 4 + log (k) \leq 4N + N log(N) = O(N log(N))
+	\sum_{k = 1}^{N} 4 + log (k) \leq 4N + N log(N) = \mathcal{O}(N log(N))
+\end{align*}
+
+A canonical Datalog example is that of the \textit{Ancestor} and \textit{Parent} relation (see Appendix X.). With linear Parent EDB data: $Parent(P_1, P_2), Parent(P_2, P_3), \ldots, Parent(P_{N-1}, P_N)$, at the $k:th$ iteration of rule $r_2$, the \textit{Ancestor} relation contains $\sum_{l = 1}^{k} (N - l)$ elements. The parent relation is constant with $N$ elements. The dominating \textit{join}-operation thus has accumulated time complexity:
+\begin{align*}
+\sum_{k = 1}^{N - 1} \Big (N \cdot \sum_{l = 1}^{k} (N - l)\Big) = \mathcal{O}(N^4)
 \end{align*}
 
 \subsubsection{Experimental Results}
-The NAT example was measured for for inputs in range 100 to 10000 for the internal naive evaluation and for 4096 to 536870912 for souffle that uses semi-naive evaluation. For the naive evaluation, the theoretical results was confirmed as $O(N^2 log(N))$ (see figure \ref{figure:internalloglog}). For souffle semi-naive, the experimental results (see figure \ref{figure:souffleloglog}) show $O(N)$ behavior; souffle uses an index based relation data structure as opposed to an ordered set.
+The NAT example was measured for for inputs in range 100 to 10000 for the internal naive evaluation and for 4096 to 536870912 for souffle that uses semi-naive evaluation. For the naive evaluation, the theoretical results was confirmed as $O(N^2 log(N))$ (see figure \ref{figure:internalloglog}). For souffle semi-naive, the experimental results (see figure \ref{figure:souffleloglog}) show $\mathcal{O}(N)$ behavior; souffle uses an index based relation data structure as opposed to an ordered set.
 
 \begin{figure}[!ht]
 \includegraphics[width=.9\linewidth, height=12\baselineskip]{img/internalloglog.png}

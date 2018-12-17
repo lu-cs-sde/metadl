@@ -1,4 +1,4 @@
 OUTPUT('Nat).
 Nat(0).
-Nat(x) :- Nat(y), BIND(x, y + 1), LT(x, 536870912).
+Nat(x) :- Nat(y), BIND(x, y + 1), LT(x, 1048576).
 

@@ -1,0 +1,14 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{o}{.}\PYG{n}{decl} \PYG{k+kt}{Ancestor}\PYG{p}{(}\PYG{n}{x\PYGZus{}0}\PYG{k+kt}{:}\PYG{n}{symbol}\PYG{p}{,} \PYG{n}{x\PYGZus{}1}\PYG{k+kt}{:}\PYG{n}{symbol}\PYG{p}{)}
+\PYG{o}{.}\PYG{n}{decl} \PYG{k+kt}{Parent}\PYG{p}{(}\PYG{n}{x\PYGZus{}0}\PYG{k+kt}{:}\PYG{n}{symbol}\PYG{p}{,} \PYG{n}{x\PYGZus{}1}\PYG{k+kt}{:}\PYG{n}{symbol}\PYG{p}{)}
+\PYG{o}{.}\PYG{n}{decl} \PYG{k+kt}{EDB}\PYG{p}{(}\PYG{n}{x\PYGZus{}0}\PYG{k+kt}{:}\PYG{n}{symbol}\PYG{p}{,} \PYG{n}{x\PYGZus{}1}\PYG{k+kt}{:}\PYG{n}{symbol}\PYG{p}{)}
+\PYG{o}{.}\PYG{n}{decl} \PYG{k+kt}{OUTPUT}\PYG{p}{(}\PYG{n}{x\PYGZus{}0}\PYG{k+kt}{:}\PYG{n}{symbol}\PYG{p}{)}
+\PYG{o}{.}\PYG{n}{decl} \PYG{k+kt}{TYPEOF}\PYG{p}{(}\PYG{n}{x\PYGZus{}0}\PYG{k+kt}{:}\PYG{n}{symbol}\PYG{p}{,} \PYG{n}{x\PYGZus{}1}\PYG{k+kt}{:}\PYG{n}{symbol}\PYG{p}{)}
+\PYG{o}{.}\PYG{n}{input} \PYG{k+kt}{Parent}\PYG{p}{(}\PYG{n}{filename}\PYG{o+ow}{=}\PYG{l+s}{\PYGZdq{}Parent.csv\PYGZdq{}}\PYG{p}{,} \PYG{n}{delimiter}\PYG{o+ow}{=}\PYG{l+s}{\PYGZdq{},\PYGZdq{}}\PYG{p}{)}
+\PYG{o}{.}\PYG{n}{input} \PYG{k+kt}{EDB}\PYG{p}{(}\PYG{n}{filename}\PYG{o+ow}{=}\PYG{l+s}{\PYGZdq{}EDB.csv\PYGZdq{}}\PYG{p}{,} \PYG{n}{delimiter}\PYG{o+ow}{=}\PYG{l+s}{\PYGZdq{},\PYGZdq{}}\PYG{p}{)}
+\PYG{o}{.}\PYG{n}{input} \PYG{k+kt}{TYPEOF}\PYG{p}{(}\PYG{n}{filename}\PYG{o+ow}{=}\PYG{l+s}{\PYGZdq{}TYPEOF.csv\PYGZdq{}}\PYG{p}{,} \PYG{n}{delimiter}\PYG{o+ow}{=}\PYG{l+s}{\PYGZdq{},\PYGZdq{}}\PYG{p}{)}
+\PYG{o}{.}\PYG{n}{input} \PYG{k+kt}{OUTPUT}\PYG{p}{(}\PYG{n}{filename}\PYG{o+ow}{=}\PYG{l+s}{\PYGZdq{}OUTPUT.csv\PYGZdq{}}\PYG{p}{,} \PYG{n}{delimiter}\PYG{o+ow}{=}\PYG{l+s}{\PYGZdq{},\PYGZdq{}}\PYG{p}{)}
+\PYG{o}{.}\PYG{n}{output} \PYG{k+kt}{Ancestor}\PYG{p}{(}\PYG{n}{delimiter}\PYG{o+ow}{=}\PYG{l+s}{\PYGZdq{},\PYGZdq{}}\PYG{p}{)}
+\PYG{k+kt}{Ancestor}\PYG{p}{(}\PYG{n}{p}\PYG{p}{,} \PYG{n}{c}\PYG{p}{)} \PYG{k+kt}{:\PYGZhy{}} \PYG{k+kt}{Parent}\PYG{p}{(}\PYG{n}{p}\PYG{p}{,} \PYG{n}{c}\PYG{p}{)}\PYG{o}{.}
+\PYG{k+kt}{Ancestor}\PYG{p}{(}\PYG{n}{a}\PYG{p}{,} \PYG{n}{c}\PYG{p}{)} \PYG{k+kt}{:\PYGZhy{}} \PYG{k+kt}{Parent}\PYG{p}{(}\PYG{n}{p}\PYG{p}{,} \PYG{n}{c}\PYG{p}{),} \PYG{k+kt}{Ancestor}\PYG{p}{(}\PYG{n}{a}\PYG{p}{,} \PYG{n}{p}\PYG{p}{)}\PYG{o}{.}
+\end{Verbatim}

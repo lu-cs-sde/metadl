@@ -1,41 +1,0 @@
-
-./app/Main.hs,457
-module Main Main0,1
-type ReplaceSingle ReplaceSingle16,17
-type ReplaceEntry ReplaceEntry17,18
-type ReplaceMap ReplaceMap18,19
-type Template Template19,20
-type Program Program20,21
-replaceDelim replaceDelim23,24
-replaceMap replaceMap25,26
-program program30,31
-replacements replacements34,35
-replacePartition replacePartition40,41
-programs programs43,44
-runProgram runProgram46,47
-collectSample collectSample56,57
-main main61,62
-
-./src/Parser.hs,338
-module Parser Parser0,1
-type ParseVal ParseVal14,15
-number number18,19
-genvals genvals21,22
-genvalsexpo genvalsexpo24,25
-parseTRIPPLE parseTRIPPLE27,28
-parseRANGE parseRANGE38,39
-parseEXPO parseEXPO43,44
-parseVals parseVals48,49
-doParse doParse51,52
-replaceValues replaceValues55,56
-replaceValue replaceValue58,59
-
-./src/Lib.hs,42
-module LibLib0,1
-someFunc someFunc4,5
-
-./test/Spec.hs,15
-main main0,1
-
-./Setup.hs,15
-main main1,2

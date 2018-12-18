@@ -357,10 +357,17 @@ TYPEOF(\predconst{'Parent}, \listconst{[\typeconst{String} \typeconst{String}]})
 \fbox{$TYPEOF : PredRef \times List(Type)$ }
 \begin{itemize}
 \item<2-> Semantics:  $TYPEOF('A, [t_1  \ldots  t_n]) \implies A : t_1 \times \ldots \times t_n$
-\item<3-> The types are themselves constant terms with type \textit{Type}.
+\uncover<2-> \footnotesize $TYPEOF(\predconst{'Parent}, \listconst{[\typeconst{String} \typeconst{String}]}) \implies Parent : String \times String$
 \item<4-> $String : Type, \; Integer : Type, \; PredRef : Type, \; Type : Type$
 \item<5-> List is a type constructor: $List : Type \rightarrow Type$.\\
 \uncover<5->{For example,  $List(Integer)$ is the type of a list of integers.}
+\item<5-> The types are themselves constant terms with type \textit{Type}. 
+\uncover<6->{Allows ''lifting'' of a Datalog program into a corresponding Type program for type checking:}\\
+\uncover<6-> {
+	\vspace*{0.5cm}
+	\hspace*{0.2cm}
+	$Parent(\strconst{"Eddard"}, \strconst{"Arya"}) \mapsto Parent(\typeconst{String}, \typeconst{String})$
+}
 \end{itemize}
 %\end{itemize}
 \end{frame}
@@ -386,7 +393,7 @@ Ancestor(a, c) :- Parent(p, c), Ancestor(a, p).
 \onslide<2->
 \vspace*{-0.7cm}
 \begin{center}
-	\fbox{Transformed to type program (slightly simplified)}
+	\fbox{Lifted to type program (slightly simplified)}
 \end{center}
 \vspace*{-0.5cm}
 \begin{overprint}
@@ -396,13 +403,13 @@ frame=lines,
 framesep=2mm,
 bgcolor=bg,
 ]{haskell}
-OUTPUT('Rule0), OUTPUT('Rule1).
-Parent(String, String).
+EDB_T(PredRef, String),TYPEOF_T(PredRef, List(Type)), 
+OUTPUT_T(PredRef), Parent(String, String).
+OUTPUT('R0), OUTPUT('R1).
 
 
-Rule0(c, p) :- Ancestor(p, c), Parent(p, c).
-Rule1(a, c, p) :- Ancestor(a, p), Ancestor(a, c), 
-                  Parent(p, c).
+R0(c,p) :- Ancestor(p,c),Parent(p,c).
+R1(a,c,p) :- Ancestor(a,p),Ancestor(a,c),Parent(p,c).
 \end{minted}
 \onslide<3>
 \begin{minted}[
@@ -410,13 +417,13 @@ frame=lines,
 framesep=2mm,
 bgcolor=bg,
 ]{haskell}
-OUTPUT('Rule0), OUTPUT('Rule1).
-Parent(String, String).
+EDB_T(PredRef, String),TYPEOF_T(PredRef, List(Type)), 
+OUTPUT_T(PredRef), Parent(String, String).
+OUTPUT('R0), OUTPUT('R1).
 Ancestor(p, c) :- Parent(p, c).
 Ancestor(a, c) :- Parent(p, c), Ancestor(a, p).
-Rule0(c, p) :- Ancestor(p, c), Parent(p, c).
-Rule1(a, c, p) :- Ancestor(a, p), Ancestor(a, c), 
-                  Parent(p, c).
+R0(c,p) :- Ancestor(p,c),Parent(p,c).
+R1(a,c,p) :- Ancestor(a,p),Ancestor(a,c),Parent(p,c).
 \end{minted}
 \end{overprint}
 %Ancestor(p, c) :- Parent(p, c).

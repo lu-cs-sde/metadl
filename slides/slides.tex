@@ -358,12 +358,12 @@ TYPEOF(\predconst{'Parent}, \listconst{[\typeconst{String} \typeconst{String}]})
 \begin{itemize}
 \item<2-> Semantics:  $TYPEOF('A, [t_1  \ldots  t_n]) \implies A : t_1 \times \ldots \times t_n$
 \uncover<2-> \footnotesize $TYPEOF(\predconst{'Parent}, \listconst{[\typeconst{String} \typeconst{String}]}) \implies Parent : String \times String$
-\item<4-> $String : Type, \; Integer : Type, \; PredRef : Type, \; Type : Type$
-\item<5-> List is a type constructor: $List : Type \rightarrow Type$.\\
-\uncover<5->{For example,  $List(Integer)$ is the type of a list of integers.}
+\item<3-> $String : Type, \; Integer : Type, \; PredRef : Type, \; Type : Type$
+\item<4-> List is a type constructor: $List : Type \rightarrow Type$.\\
+\uncover<4->{For example,  $List(Integer)$ is the type of a list of integers.}
 \item<5-> The types are themselves constant terms with type \textit{Type}. 
-\uncover<6->{Allows ''lifting'' of a Datalog program into a corresponding Type program for type checking:}\\
-\uncover<6-> {
+\uncover<5->{Allows ''lifting'' of a Datalog program into a corresponding Type program for type checking:}\\
+\uncover<5-> {
 	\vspace*{0.5cm}
 	\hspace*{0.2cm}
 	$Parent(\strconst{"Eddard"}, \strconst{"Arya"}) \mapsto Parent(\typeconst{String}, \typeconst{String})$

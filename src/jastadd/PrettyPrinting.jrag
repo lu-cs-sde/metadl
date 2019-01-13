@@ -473,10 +473,9 @@ aspect SoufflePrinting {
         if(!literal().isInclusive()) return;
         pr.out.print(".decl " + predicateName() + "(");
         List<PredicateSymbol> constants = new List<PredicateSymbol>();
-        
+        TermList tl = program().derivedTypeMap.get(this);
         for(int i = 0; i != realArity(); ++i) {
-            PseudoTuple ps = literal().derivedType();
-            constants.add(new PredicateSymbol("x_" + i + ":" + ((Type)ps.coord(i)).souffleType()));
+            constants.add(new PredicateSymbol("x_" + i + ":" + ((Type)tl.getTerms(i)).souffleType()));
         }
         printList(constants, "", "", ", ", pr);
         pr.out.print(")");

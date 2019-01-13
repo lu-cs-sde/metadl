@@ -102,7 +102,7 @@ A rule with two atoms using the same variable name gives a \textit{type constrai
 \infer{A[Pos(x, A)] = B[Pos(x, B)]}{\exists Rule\;R.\;\;\ldots, A( \ldots, x, \ldots), \ldots, B(\ldots, x, \ldots), \ldots \in R}
 \end{align*}
 \noindent
-An Atom $A$ is said to have type-inconsistent usages if have type-constraints $A[m] = B[n_1], A[m] = C[n_2], B[n_1] \neq C[n_2]$. We now show that the type algorithm detects all type-inconsistent usages.
+An Atom $A$ is said to have type-inconsistent usages if have type-constraints $A[m] = B[n_1], A[m] = C[n_2], B[n_1] \neq C[n_2]$. We now sketch a proof that the type algorithm detects all type-inconsistent usages.
 
 \paragraph{Proposition: } \textit{A type-inconsistent usage is reported by the type-checking Algorithm}\NL
 There exists some atom $A$ with a type-inconsistent usage: $\exists B, C. A[m] = B[n_1], A[m] = C[n_2], B[n_1] \neq C[n_2]$. Assume by contradiction that the algorithm does not report a type error. Then by construction, after the algorithm terminates the algorithm reports that $(3)$ holds. By assumption, $A, B$ and $A, C$ must be related in some rule(s). 
@@ -118,6 +118,28 @@ The language needs a way for the user to communicate certain properties about th
 An example of such a property is what relations to load as EDBs.
 In turn, $I$ makes certain information available to $P$ which allows $P$ to make inference on properties about itself.
 The information passing is done through a collection of pre-defined atoms. The currently supported meta-predicates is listed in figure \ref{figure:metaatoms}: $EDB$ and $OUTPUT$ pass information from $P$ to $I$, $ATOM$, and $PRED$ pass information from $I$ to $P$. $TYPEOF$ initially provides $I$ with information about the given types. After successful type-checks and possibly type-inference, $I$ makes the result available to $P$, again through $TYPEOF$. In this way, $TYPEOF$ is a bi-directional predicate. Figures \ref{figure:outputatom}, \ref{figure:edb} show two examples of possible usages for the meta-predicates.
+
+Figure \ref{figure:TYPEOF} shows a valid usage of the $TYPEOF$ predicate. The type of $B$ is inferred from the type of the $TYPEOF$ predicate, and the output of $B$ is as shown in figure \ref{figure:TYPEOFOUTPUT}.
+\begin{figure}[!ht]
+	\begin{minipage}[b]{.5\textwidth}
+		\caption{A valid program that uses the $TYPEOF$ information}
+		\begin{minted}{text}
+		OUTPUT('B).
+		B(x, y) :- TYPEOF(x, y).
+		\end{minted}
+		\label{figure:TYPEOF}
+	\end{minipage}
+	\begin{minipage}[b]{.5\textwidth}
+		\caption{Output ("B.csv") of program in figure \ref{figure:TYPEOF}.}
+		\begin{minted}{text}
+		'B,[PredRef List(Type)]
+		'OUTPUT,[PredRef]
+		'TYPEOF,[PredRef List(Type)]
+		\end{minted}
+		
+		\label{figure:TYPEOFOUTPUT}
+	\end{minipage}
+\end{figure}
 
 \begin{figure}[!ht]
 	\begin{adjustwidth}{-0.5cm}{}

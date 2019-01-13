@@ -278,7 +278,7 @@ aspect TypeProg {
 
         System.out.println("------------------------------------------------");
         new TypeCheck(getParamss()).perform(program, description());
-
+/*
         System.out.println("------------------------------------------------");
         System.out.println("\t\t\t TYPEINFERENCE RESULT");
         System.out.println("------------------------------------------------");
@@ -287,6 +287,7 @@ aspect TypeProg {
                 System.out.println(fp.predicateName() + ": " + fp.derivedTypes());
         }
         System.out.println("------------------------------------------------");
+*/
         return program;
     }
 }

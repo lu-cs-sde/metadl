@@ -1,2 +1,2 @@
 OUTPUT('B).
-B(x, y) :- TYPEOF(x, y), EQ(x, x + y).
+B(x, y) :- TYPEOF(x, y).

@@ -80,6 +80,7 @@ aspect Task {
     public Program Task.getProgramWithChecks(String path) throws Exception {
         Program program = (Program) FileUtil.parse(new File(path));
         Compiler.DrAST_root_node = program; // Enable debugging with DrAST
+        new InitialTypeCheck(getParamss()).perform(program, description());
         new SemanticCheck(getParamss()).perform(program, description());
         new TypeCheck(getParamss()).perform(program, description());
         return program;
@@ -251,6 +252,9 @@ aspect Souffle {
 }
 
 aspect TypeProg {
+    /**
+    	Used for Debugging Only
+    **/
     public Program TypeProg.perform()  throws Exception{
         Program program = (Program) FileUtil.parse(new File(description().getInput().getPath()));
         new SemanticCheck(getParamss()).perform(program, description());
@@ -288,7 +292,7 @@ aspect TypeProg {
 }
 
 aspect SubTask {
-    public Program TypeCheck.perform()  throws Exception {
+    public Program InitialTypeCheck.perform()  throws Exception {
         Program program = (Program) FileUtil.parse(new File(description().getInput().getPath()));
         Compiler.DrAST_root_node = program; // Enable debugging with DrAST
         perform(program, description());
@@ -300,29 +304,37 @@ aspect SubTask {
         perform(program, description());
         return program;
     }
+    
+    public Program TypeCheck.perform() throws Exception {
+        Program program = (Program) FileUtil.parse(new File(description().getInput().getPath()));
+        Compiler.DrAST_root_node = program; // Enable debugging with DrAST
+        perform(program, description());
+        return program;
+    }
 
     public interface SubTask {
         void perform(Program program, Description descr) throws Exception;
     }
-
-    TypeCheck       implements SubTask;
-    SemanticCheck   implements SubTask;
+    InitialTypeCheck implements SubTask;
+    TypeCheck        implements SubTask;
+    SemanticCheck    implements SubTask;
+    
+    public void InitialTypeCheck.perform(Program program, Description descr) throws Exception {
+        if(!program.hasInitialTypeErrors()) return;
+        SimpleLogger.logger().log("Compilation failed with initial type error: \n" + program.initialTypeErrorReport(), SimpleLogger.LogLevel.Level.ERROR);
+        System.exit(0);
+    }
+    
     public void TypeCheck.perform(Program program, Description descr) throws Exception {
         program.typeCheck();
-        Set<String> terrs = program.typeCheckErrors();
-        if (!terrs.isEmpty()) {
-            SimpleLogger.logger().log("Compilation failed with the following error messages: ", SimpleLogger.LogLevel.Level.ERROR);
-            for(String err : terrs)  SimpleLogger.logger().log(err);
-            System.exit(0);
-        }
+        if(!program.hasTypeErrors()) return;
+        SimpleLogger.logger().log("Compilation failed with type error: \n" + program.typeErrorReport(), SimpleLogger.LogLevel.Level.ERROR);
+        System.exit(0);
     }
 
     public void SemanticCheck.perform(Program program, Description descr) throws Exception {
-        Set<String> serrs = program.semanticErrors();
-        if (!serrs.isEmpty()) {
-            SimpleLogger.logger().log("Compilation failed with the following error messages: ", SimpleLogger.LogLevel.Level.ERROR);
-            for(String err : serrs)  SimpleLogger.logger().log(err);
-            System.exit(0);
-        }
+        if(!program.hasSemanticErrors()) return;
+        SimpleLogger.logger().log("Compilation failed with semantic error: \n" + program.errorReport(), SimpleLogger.LogLevel.Level.ERROR);
+        System.exit(0);
     }
 }

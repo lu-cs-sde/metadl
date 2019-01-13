@@ -1,0 +1,4 @@
+EDB('A, "A.csv").
+OUTPUT('A).
+TYPEOF('A, [Integer]).
+B(x) :- A(x).

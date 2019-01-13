@@ -253,6 +253,8 @@ aspect Literal {
     	return list;
     }
     
+    syn PredicateRef TYPEOFLiteral.predicateRef() = (PredicateRef) getPredicateRef();
+    
     syn boolean Literal.isGround() = variables().isEmpty();
     
     public interface PredefinedLiteral {}
@@ -281,7 +283,11 @@ aspect Literal {
     eq OUTPUTLiteral.variables() = toVarSet(getTerm());
     eq ATOMLiteral.variables()   = toVarSet(getTerm());
     eq PREDLiteral.variables()   = toVarSet(getTerm());
-    eq TYPEOFLiteral.variables() = toVarSet(getTerm());
+    eq TYPEOFLiteral.variables() { 
+    	TreeSet<Variable> s = toVarSet(getTerm());
+    	if(getPredicateRef().isVariable()) s.add((Variable)getPredicateRef());
+    	return s;
+    }
     eq NEGLiteral.variables()    = getInclusiveLiteral().variables();
     eq EQLISTLiteral.variables() {
     	if(getTermList().isVariable()) return toVarSet(getTermList());
@@ -492,7 +498,7 @@ aspect Types {
 	public TreeMap<FormalPredicate, PseudoTuple> Program.typeMap = new TreeMap<FormalPredicate, PseudoTuple>(FormalPredicate.formalPredicateComparator);
     coll MapToSetOf<FormalPredicate, PseudoTuple> Program.pass1TypeMap() [new MapToSetOf(new TreeSetConstructor(null))] with add;
     
-    TYPEOFLiteral contributes new MapEntry<FormalPredicate, PseudoTuple>(getPredicateRef().formalpredicate(), refType()) 
+    TYPEOFLiteral contributes new MapEntry<FormalPredicate, PseudoTuple>(predicateRef().formalpredicate(), refType()) 
     	when isGround()
     	to Program.pass1TypeMap();
     	
@@ -510,7 +516,7 @@ aspect Types {
 	public static final Type Type.integerType = new IntegerType();
 	public static final Type Type.predRefType = new PredRefType();
 	public static final Type Type.varType     = new VariableType();
-	public static final Type Type.litTypeType = new ListType(typeType);
+	public static final Type Type.listOfTypeType = new ListType(typeType);
 	public static final Type Type.unknownType = new UnknownType();
 	public static final Type Type.badType     = new BadType();
 	
@@ -559,14 +565,14 @@ aspect Types {
 	eq  OUTPUTLiteral.actualType() = new PseudoTuple(new List(getTerm().type()));
 	eq  PREDLiteral.actualType()   = new PseudoTuple(new List(getTerm().type()));
 	eq  EDBLiteral.actualType()    = new PseudoTuple(new List(Type.predRefType, getFileLoc().type()));
-	eq  TYPEOFLiteral.actualType() = new PseudoTuple(new List(Type.predRefType, getTerm().type()));
+	eq  TYPEOFLiteral.actualType() = new PseudoTuple(new List(getPredicateRef().type(), getTerm().type()));
 	
 	syn PseudoTuple PredefinedLiteral.type();
 	eq  ATOMLiteral.type()   = new PseudoTuple(new List(Type.predRefType));
 	eq  OUTPUTLiteral.type() = new PseudoTuple(new List(Type.predRefType));
-	eq  PREDLiteral.type()   = new PseudoTuple(new List(getTerm().type()));
+	eq  PREDLiteral.type()   = new PseudoTuple(new List(Type.predRefType));
 	eq  EDBLiteral.type()    = new PseudoTuple(new List(Type.predRefType, Type.stringType));
-	eq  TYPEOFLiteral.type() = new PseudoTuple(new List(Type.predRefType, Type.litTypeType));
+	eq  TYPEOFLiteral.type() = new PseudoTuple(new List(Type.predRefType, Type.listOfTypeType));
 
 	syn PseudoTuple TYPEOFLiteral.refType() {
 		if(!getTerm().type().isListType()) return new PseudoTuple(Type.badType);

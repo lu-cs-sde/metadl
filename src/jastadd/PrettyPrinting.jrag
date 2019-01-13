@@ -322,10 +322,14 @@ aspect TypePrinting {
 		MapToSetOf<FormalPredicate, PseudoTuple> initial = pass1TypeMap();
 		for(FormalPredicate fp : initial.keySet()) {
 			PseudoTuple type = initial.get(fp).iterator().next();
-			if(fp.literal().isAtom())
+			if(fp.literal().isAtom()) {
 				printList(type.toList(), fp.predicateName() + "(", ").\n", ", ", pr);
-			else
-				printList(type.toList(), Program.transformPredefinedName(fp.predicateName()) + "(", ").\n", ", ", pr);
+				pr.out.print("OUTPUT('" + fp.predicateName() + ").\n");
+			} else {
+			    String preName = Program.transformPredefinedName(fp.predicateName());
+				printList(type.toList(), preName + "(", ").\n", ", ", pr);
+				pr.out.print("OUTPUT('" + preName + ").\n");
+			}
 		}
 		HashSet<Rule> rules = new HashSet<Rule>();
 		for(Clause c : getClauses()) {
@@ -339,7 +343,6 @@ aspect TypePrinting {
 /**
 	Compute the Pre-Defined Literals to input as facts to Souffle
 **/
-
 aspect SoufflePreProcess {
 	public void ASTNode.prePrint(String path) throws IOException {
         File file = new File(path);
@@ -470,6 +473,7 @@ aspect SoufflePrinting {
         if(!literal().isInclusive()) return;
         pr.out.print(".decl " + predicateName() + "(");
         List<PredicateSymbol> constants = new List<PredicateSymbol>();
+        
         for(int i = 0; i != realArity(); ++i) {
             PseudoTuple ps = literal().derivedType();
             constants.add(new PredicateSymbol("x_" + i + ":" + ((Type)ps.coord(i)).souffleType()));

@@ -24,12 +24,14 @@
 \usepackage{minted}
 \usepackage{makecell}
 \usepackage{changepage}
+\usepackage{mathtools}
 \newcommand{\NL}[0]{ \hfill\\\noindent }
 \newcommand{\coloneqtwo}{\mathbin{:\hspace{-0.5ex}\textsf{-}}}
+\newcommand{\datalogM}{$\textit{Datalog}^M$}
 \begin{document}
 
 %% Title information5
-\title[Short Title]{Datalog Implementation in JastAdd (Version 2)}         %% [Short Title] is optional;
+\title[Short Title]{Datalog Implementation in JastAdd}         %% [Short Title] is optional;
                                         %% when present, will be used in
                                         %% header instead of Full Title.
 %\subtitle{Subtitle}                     %% \subtitle is optional
@@ -45,7 +47,7 @@
 }
 \email{dat12hba@student.lu.se}          %% \email is recommended
 \begin{abstract}
-\textit{To be Written ... }
+This paper presents the implementation of a new programming language belonging to the Datalog language family. A short background on Datalog, its theoretical foundations, and applicability for practical problems is given. The most novel contribution of the paper is to allow predicates to be used as terms in atoms. As will be shown, this permits compact descriptions of various meta properties such as describing what tables to output, or to give static types to predicates.
 \end{abstract}
 \maketitle
 \section{Introduction}
@@ -54,8 +56,6 @@
 \input{corelanguageimpl.tex}
 \section{Language Extensions}
 \input{languageextensions.tex}
-\vspace*{-\baselineskip}
-\newpage
 \section{Cross Compilation}
 \input{crosscompilation.tex}
 %\vspace*{-\baselineskip}
@@ -70,14 +70,15 @@
 \section{Related work}
 \input{relatedwork.tex}
 \section{Conclusion}
-\textit{To be Written ... }
+\input{conclusion.tex}
 \begin{acks}
-\textit{To be Written ... }
+Thank you to Christoph Reichenbach for his many insights and helpful guidance throughout this project.
 \end{acks}
-
+\bibliography{bibl}
+\newpage
+\input{appendix.tex}
 
 %% Bibliography
-\bibliography{bibl}
 
 
 

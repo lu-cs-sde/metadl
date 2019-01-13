@@ -25,18 +25,21 @@ A canonical Datalog example is that of the \textit{Ancestor} and \textit{Parent}
 
 \subsubsection{Experimental Results}
 The NAT example was measured for for inputs in range 100 to 10000 for the internal naive evaluation and for 4096 to 536870912 for souffle that uses semi-naive evaluation. For the naive evaluation, the theoretical results was confirmed as $O(N^2 log(N))$ (see figure \ref{figure:internalloglog}). For souffle semi-naive, the experimental results (see figure \ref{figure:souffleloglog}) show $\mathcal{O}(N)$ behavior; souffle uses an index based relation data structure as opposed to an ordered set.
+\begin{figure*}%[!ht]
+	\begin{minipage}[b]{.5\textwidth}
+		\includegraphics[width=\textwidth]{img/internalloglog.png}
+		\caption{Log-log plot: Naive evaluation method for the NAT example.}
+		\label{figure:internalloglog}
+	\end{minipage}%
+     \hspace*{10pt}
+	\begin{minipage}[b]{.5\textwidth}
+		\includegraphics[width=\textwidth]{img/souffleloglog.png}
+		\caption{Log-log plot: Souffle semi-naive evaluation for the NAT example.}
+		\label{figure:souffleloglog}
+	\end{minipage}
+\end{figure*}
 
-\begin{figure}[!ht]
-\includegraphics[width=.9\linewidth, height=12\baselineskip]{img/internalloglog.png}
-\caption{Log-log plot for the naive evaluation method of the NAT example.}
-\label{figure:internalloglog}
-\end{figure}
 
-\begin{figure}[!ht]
-	\includegraphics[width=.9\linewidth, height=12\baselineskip]{img/souffleloglog.png}
-	\caption{Log-log plot for the souffle semi-naive evaluation method of the NAT example.}
-	\label{figure:souffleloglog}
-\end{figure}
 
 \subsection{Expressive Power}
 \textit{To be Written ... }

@@ -116,7 +116,7 @@ public class EvaluationTest {
 
     @DisplayName("Compare Internal Evaluation to Souffle WithMeta")
     @ParameterizedTest(name = "Evaluation Tests Valid")
-    @ValueSource(strings = { "evalTest_1.in", "evalTest_2.in" })
+    @ValueSource(strings = { "evalTest_1.in", "evalTest_2.in", "evalTest_3.in" })
     void evaluationTestsBottomUpNaiveCompareWithMeta(String fileName) throws Exception {
         Description d1 = FileUtil.parseDescription(
                 "eval::souffle      -OUT ./tests/output/souffle -FACTS ./tests/evaluation/withmeta/facts ./tests/evaluation/withmeta/" + fileName);

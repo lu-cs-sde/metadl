@@ -23,7 +23,7 @@ EDBLiteral:InclusiveLiteral    ::= PredicateRef FileLoc:Term;
 OUTPUTLiteral:InclusiveLiteral ::= Term;
 PREDLiteral:InclusiveLiteral   ::= Term /PredicateRef*/;
 ATOMLiteral:InclusiveLiteral   ::= Term /PredicateRef*/;
-TYPEOFLiteral:InclusiveLiteral ::= PredicateRef Term;
+TYPEOFLiteral:InclusiveLiteral ::= PredicateRef:Term Term;
 NEGLiteral:ExclusiveLiteral    ::= InclusiveLiteral;
 
 BINDLiteral:ExclusiveLiteral ::= Variable Right:Expr;

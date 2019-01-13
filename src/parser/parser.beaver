@@ -125,7 +125,7 @@ edb_literal    = EDB    LPARA pred_ref.pred COMMA term.filelocs RPARA {: return 
 output_literal = OUTPUT LPARA term.t RPARA                            {: return new OUTPUTLiteral(new PredicateSymbol("OUTPUT"), t);         :};
 pred_literal   = PRED   LPARA term.t RPARA                            {: return new PREDLiteral(new PredicateSymbol("PRED"), t);             :};
 atom_literal   = ATOM   LPARA term.t RPARA                            {: return new ATOMLiteral(new PredicateSymbol("ATOM"), t);             :};
-typeof_literal = TYPEOF LPARA pred_ref.pred COMMA term.t RPARA        {: return new TYPEOFLiteral(new PredicateSymbol("TYPEOF"), pred, t);   :};
+typeof_literal = TYPEOF LPARA term.pred COMMA term.t RPARA            {: return new TYPEOFLiteral(new PredicateSymbol("TYPEOF"), pred, t);   :};
 
 lit_list = literal.lit {: return new List().add(lit); :}
          | lit_list.list COMMA literal.c {: return list.add(c); :}

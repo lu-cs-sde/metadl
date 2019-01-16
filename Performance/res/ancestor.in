@@ -1,5 +1,0 @@
-EDB('Parent, "${CSVPARENT}").
-TYPEOF('Parent, [String String]).
-OUTPUT('Ancestor).
-Ancestor(p, c) :- Parent(p, c).
-Ancestor(a, c) :- Parent(p, c), Ancestor(a, p).

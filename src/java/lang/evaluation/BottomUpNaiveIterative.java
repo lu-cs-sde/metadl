@@ -38,18 +38,14 @@ public class BottomUpNaiveIterative extends InternalEvaluation {
 		 * Evaluate OUTPUT
 		 */
 		evaluateStratum(program, descr, outStrat);
-		SimpleLogger.logger().log("Begin Get OUTPUT Strata", SimpleLogger.LogLevel.Level.DEBUG);
 		HashSet<Stratum> output_strata = new HashSet<Stratum>();
 		for(PseudoTuple ps : output.relation.tuples()) {
 			PredicateRef ref = (PredicateRef)ps.coord(0);
-			SimpleLogger.logger().log("REF: " + ref, SimpleLogger.LogLevel.Level.DEBUG);
 			Stratum ref_strat = Stratification.iso.get(program.formalPredicateMap().get(ref.getPRED_ID()));
 			output_strata.add(ref_strat);
 		}
 		
-		SimpleLogger.logger().log("End Get OUTPUT Strata", SimpleLogger.LogLevel.Level.DEBUG);
 		Deque<Stratum> order = Stratification.reversePostOrder(output_strata);
-		SimpleLogger.logger().log("End Get OUTPUT Strata", SimpleLogger.LogLevel.Level.DEBUG);
 
 		while (!order.isEmpty()) {
 			Stratum nextStrat = order.pollFirst();
@@ -72,7 +68,6 @@ public class BottomUpNaiveIterative extends InternalEvaluation {
 
 	public boolean immediateConsequence(Program program, Description descr, Rule r) {
 		Relation body_rel = Relation.nullRelation;
-		SimpleLogger.logger().log("Begin Eval Rule: " + r, SimpleLogger.LogLevel.Level.DEBUG);
 		
 		/**
 		 * Find Body Relation if clause is a rule
@@ -96,7 +91,6 @@ public class BottomUpNaiveIterative extends InternalEvaluation {
 				il.sideEffect(program, descr, delta);
 			}
 		}
-		SimpleLogger.logger().log("End Eval Rule: " + r, SimpleLogger.LogLevel.Level.DEBUG);
 		return changed;
 	}
 
@@ -107,7 +101,6 @@ public class BottomUpNaiveIterative extends InternalEvaluation {
 		/**
 		 * Collect rules for stratum and load facts.
 		 */
-		SimpleLogger.logger().log("Begin Load Facts: " + strat, SimpleLogger.LogLevel.Level.DEBUG);
 		for (FormalPredicate fp : strat) {
 			for(Clause c : fp.definedIn()) {
 				if(c.isRule()) {
@@ -128,7 +121,6 @@ public class BottomUpNaiveIterative extends InternalEvaluation {
 				}
 			}
 		}
-		SimpleLogger.logger().log("End Load Facts: " + strat, SimpleLogger.LogLevel.Level.DEBUG);
 		while (changed) {
 			changed = false;
 			for (Rule r : rules) {

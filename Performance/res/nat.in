@@ -1,3 +1,0 @@
-OUTPUT('Nat).
-Nat(0).
-Nat(x) :- Nat(y), BIND(x, y + 1), LT(x, ${UPPER_BOUND}).

@@ -22,21 +22,25 @@ For an introduction to Datalog see e.g. [Slides EDA045F](http://fileadmin.cs.lth
 * Package: ***make jar***
 * Test: ***make test***
 * Eval: ***make eval EVAL=\<Input File\>***
+* Cross-compile to Souffle: ***make souffle EVAL=\<Input File\>***
 
 Enable Debug Printouts by exporting: export DebugMode=true
 
-## Alpha1
+## Final Release
 Current supported Meta-Literals:
-* EDB([PredicateRef], [InputFileName]) -- What predicates to input from external database
-* OUTPUT([PredicateRef]) -- What predicates to output
-* ATOM([PredicateRef])   -- All atoms
-* PREDS([PredicateRef])  -- All predicates
+* EDB : PredRef x String -- What predicates to input from external database
+* OUTPUT : PredRef -- What predicates to output
+* ATOM : PredRef   -- All atoms
+* PREDS : PredRef  -- All predicates
+* TYPEOF : PrefRef x List(Type) -- Declare Types
 
 Additional Supported features:
-* NEG -- Negation
+* NEG -- Stratified Negation
 * EQ, NEQ, LT, GT, ... -- Filtering
-* BIND -- Bind a variable to the result of an expression
+* BIND -- Bind a variable to the result of an expression (Object Creation)
 * Expressions for filtering
+* Static type system: Integer, String, PredRef, List
+* Left-to-Right Type Inference
 
 The evaluation method is a naive bottom-up iterative fix-point algorithm.
 

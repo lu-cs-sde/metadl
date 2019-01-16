@@ -1,4 +1,4 @@
+# Compute the first 100 Natural Numbers
 OUTPUT('Nat).
 Nat(0).
-Nat(x) :- Nat(y), BIND(x, y + 1), LT(x, 1048576).
-
+Nat(x) :- Nat(y), BIND(x, y + 1), LT(x, 100).

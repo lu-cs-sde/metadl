@@ -1,4 +1,4 @@
-EDB('Parent, "parent16.csv").
+EDB('Parent, "Parent.csv").
 TYPEOF('Parent, [String String]).
 OUTPUT('Ancestor).
 Ancestor(p, c) :- Parent(p, c).

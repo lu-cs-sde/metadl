@@ -113,8 +113,6 @@ aspect Souffle {
 		return program;
 	}
 	
-
-	
     protected Program SouffleTask.preEvaluate(HashSet<File> moved) throws Exception {
         SimpleLogger.logger().log(description().debugInfo(), SimpleLogger.LogLevel.Level.DEBUG);
         File tmp_dir_1 = new File("tmp/tmp1");
@@ -154,7 +152,7 @@ aspect Souffle {
         	 * Remove the meta output from any usage (ATOM / OUTPUT/ ...)
         	 */ 
         	fp.relation.tuples().remove(ps_meta_output);
-			if(visited.contains(fp) || fp.predicateName().equals(GlobalNames.OUTPUT_NAME)) continue;
+			if(visited.contains(fp)) continue;
 			visited.add(fp);
         	
         	File output_fp = new File(factsDir() + "/" + fp.predicateName() + ".csv");
@@ -216,13 +214,8 @@ aspect Souffle {
             String cmd = "souffle -j1 -D " + outputDir() + " " + soufflePath + " -F " + factsDir();
             SimpleLogger.logger().log("Run souffle with: " + cmd, SimpleLogger.LogLevel.Level.DEBUG);
 
-			long start = System.nanoTime();
             Process p = Runtime.getRuntime().exec(cmd);
             p.waitFor();
-            long end = System.nanoTime();
-		    double elapsed = (end - start) / 1000000;
-		    System.out.print(elapsed);
-
             BufferedReader br = new BufferedReader(new InputStreamReader(p.getInputStream()));
             while (br.ready())
                 SimpleLogger.logger().log(":SOUFFLE-OUTPUT " + br.readLine(), SimpleLogger.LogLevel.Level.DEBUG);

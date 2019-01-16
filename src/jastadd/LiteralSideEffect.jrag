@@ -15,7 +15,7 @@ aspect LiteralSideEffect {
      */
     public void EDBLiteral.sideEffect(Program program, Description descr, Relation delta) {
         boolean changed = true;
-        SimpleLogger.logger().log("EDB Load: " + delta, SimpleLogger.LogLevel.Level.DEBUG);
+        SimpleLogger.logger().log("Begin EDB Load: " + delta, SimpleLogger.LogLevel.Level.DEBUG);
         
         while(changed) {
         	changed = false;
@@ -37,7 +37,6 @@ aspect LiteralSideEffect {
                     SimpleLogger.logger().log("Each PredicateSymbol should belong to a FormalPredicate: " + r.ref.getPRED_ID(), SimpleLogger.LogLevel.Level.ERROR);
                     System.exit(0);
                 }
-                
                 if(fp.literal().isEDB()) {
                 	Relation delta2 = new Relation(fp.realArity());
                 	CSVUtil.readFileInto(program, delta2, descr.factsDir() + "/" + r.path);
@@ -48,6 +47,8 @@ aspect LiteralSideEffect {
                 	CSVUtil.readFileInto(program, fp, descr.factsDir() + "/" + r.path);
             }
         }
+        
+        SimpleLogger.logger().log("End EDB Load: " + delta, SimpleLogger.LogLevel.Level.DEBUG);
     }
 
     public class EDBRead {

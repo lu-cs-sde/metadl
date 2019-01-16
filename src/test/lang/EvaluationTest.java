@@ -38,7 +38,7 @@ public class EvaluationTest {
             FormalPredicate fp = pr.formalpredicate();
 
             File in1 = new File(d1.outputDir() + "/" + fp.predicateName() + ".csv");
-            Relation r1 = CSVUtil.readRelationFrom(in1, fp.realArity());
+            Relation r1 = CSVUtil.readRelationFrom(program1, in1, fp.realArity());
             
             SimpleLogger.logger().log("Read r1 from: " + in1.getPath(), SimpleLogger.LogLevel.Level.DEBUG);
             if (r1 == null) {
@@ -48,7 +48,7 @@ public class EvaluationTest {
 
             File in2 = new File(d2.outputDir() + "/" + fp.predicateName() + ".csv");
             SimpleLogger.logger().log("Read r2 from: " + in2.getPath(), SimpleLogger.LogLevel.Level.DEBUG);
-            Relation r2 = CSVUtil.readRelationFrom(in2, fp.realArity());
+            Relation r2 = CSVUtil.readRelationFrom(program2, in2, fp.realArity());
             if (r2 == null) {
                 SimpleLogger.logger().log("r2 is null: " + in2.getPath(), SimpleLogger.LogLevel.Level.ERROR);
                 assertTrue(false);
@@ -77,7 +77,7 @@ public class EvaluationTest {
 
 	@DisplayName("Compare Internal Evaluation to Souffle WithEDB")
 	@ParameterizedTest(name = "Evaluation Tests Valid WithEDB")
-	@ValueSource(strings = { "evalTest_1.in", "evalTest_2.in" })
+	@ValueSource(strings = { "evalTest_1.in", "evalTest_2.in", "evalTest_3.in", "evalTest_4.in" })
 	void evaluationTestsBottomUpNaiveCompareSouffleWithEDBs(String fileName) throws Exception {
 		String outname = FileUtil.changeExtension(fileName, "_with_edb.dl");
 		Description d1 = FileUtil.parseDescription(
@@ -116,7 +116,7 @@ public class EvaluationTest {
 
     @DisplayName("Compare Internal Evaluation to Souffle WithMeta")
     @ParameterizedTest(name = "Evaluation Tests Valid")
-    @ValueSource(strings = { "evalTest_1.in", "evalTest_2.in", "evalTest_3.in" })
+    @ValueSource(strings = { "evalTest_1.in", "evalTest_2.in", "evalTest_3.in", "evalTest_4.in", "evalTest_5.in" })
     void evaluationTestsBottomUpNaiveCompareWithMeta(String fileName) throws Exception {
         Description d1 = FileUtil.parseDescription(
                 "eval::souffle      -OUT ./tests/output/souffle -FACTS ./tests/evaluation/withmeta/facts ./tests/evaluation/withmeta/" + fileName);

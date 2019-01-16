@@ -1,6 +1,5 @@
-EDB('Parent, "parent4096.csv").
-EDB('Parent, "parent4096.csv").
+EDB('Parent, "parent16.csv").
 TYPEOF('Parent, [String String]).
-OUTPUT(x) :- ATOM(x).
+OUTPUT('Ancestor).
 Ancestor(p, c) :- Parent(p, c).
 Ancestor(a, c) :- Parent(p, c), Ancestor(a, p).

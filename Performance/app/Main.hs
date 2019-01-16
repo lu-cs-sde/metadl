@@ -22,7 +22,6 @@ type ReplaceMap    = [ReplaceEntry]
 type Template      = String
 type Program       = String
 
-
 replaceDelim = ":"
 
 replaceMap :: [String] -> ReplaceMap

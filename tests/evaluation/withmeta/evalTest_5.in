@@ -1,2 +1,2 @@
-OUTPUT(x) :- A(x).
-A("x").
+EDB('OUTPUT, "OUTPUT.csv").
+A(x) :- OUTPUT(x).

@@ -1,3 +1,4 @@
 OUTPUT(x) :- ATOM(x).
 EDB('EDB, "EDB.csv").
+TYPEOF('A, [String String]).
 A(x, z) :- A(x, y), A(y, z).

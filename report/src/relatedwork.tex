@@ -1,0 +1,8 @@
+\subsection{Souffle}
+Souffle implements a semi-naive evaluation\cite{Green:2013:DRQ:2688167.2688168} and performs a range of different optimizations before emitting highly templated C++ code\cite{Scholz:2016:FLP:2892208.2892226}. It focuses on performance and is for example used in program analysis\cite{Smaragdakis:2010:UDF:2185923.2185939}. It does not provide meta-predicates but instead uses special directives to declare what files should be used as EDBs, what relations should be printed, and what the type of a predicate is. It does however provide a number of built-in functions and aggregates that are not supported by $Datalog^M$\cite{SouffleHome}.
+
+\vspace*{-8pt}
+\subsection{Other}
+IRIS \cite{Bishop_iris-integrated}\cite{IrisGithub} is an Open Source Datalog implementation written in Java. IRIS supports bottom-up evaluation strategies (both naive and semi-naive), as well as top-down (proof-theoretic semantics) strategies\cite{IrisGithub}. It was developed primarily as a research-tool for Semantic Web-related technologies and supports XML Schema data types.\cite{XMLDataType}.
+
+BDDBDDB\cite{Whaley:2005:UDB:2099708.2099719} was developed at Stanford in the early 2000s and used the then novel technique to store relations as so called binary-decision diagrams (BDDs). BDDs encode relations as binary functions represented as directed acyclic graphs. The encoding allows compression of the relations and can be very memory efficient. Memory efficiency is important in e.g. program analysis, which is the main use-case that the project targeted\cite{Whaley:2005:UDB:2099708.2099719}.

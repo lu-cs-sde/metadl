@@ -40,9 +40,6 @@ EQLISTLiteral:ExclusiveLiteral ::= TermList;
 	Expressions
 **/
 abstract Expr;
-//abstract AggregateExpr:Expr;
-//CountExpr:AggregateExpr ::= InclusiveLiteral;
-
 abstract BinExpr:Expr ::= Left:Expr Right:Expr;
 AddExpr:BinExpr;
 SubExpr:BinExpr;

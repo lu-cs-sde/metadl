@@ -1,0 +1,200 @@
+A number of language features have been added in addition to the core Datalog features. Those extensions are listed and briefly described in the following subsections.
+\vspace*{-5 pt}
+\subsection{Negation}
+A common Datalog extension is to allow negation ($\neg$) of atoms. However, unrestricted negation introduces semantic issues as the following example illustrates:
+
+\NL
+{\centering
+	$A(x) \coloneqtwo \neg B(x).\qquad\qquad[r_1]$ \NL
+	$B(x) \coloneqtwo \neg A(x).\qquad\qquad[r_2]$\par
+}
+\vspace*{-10pt}
+\NL
+There are two issues with the above example. First, no unique minimal model exists: if $r_1$ is evaluated first then $A = \Omega, B = \emptyset$, and if $r_2$ is evaluated first then $A = \emptyset, B = \Omega$. Second, even if a unique minimal model exists, guaranteed termination is lost since negation removes monotonicity (adding tuples to one relation may remove tuples from another). The first issue is addressed by ensuring that all variable terms used in a negated atom are also used in a non-negated (\textit{positive}) atom. Second, we require that each stratum retains the monotonic property, in particular this means that mutual recursive dependencies must be positive.
+
+With the above restrictions, negation becomes a filtering rule; an occurrence of a negated atom within a rule has already been fully evaluated when that rule is considered in a stratum.
+\vspace*{-5pt}
+\subsection{Object Creation}
+A special bind predicate was introduced to enable creation of new objects. Object creation extends the expressive power of the language. For example, given two numbers $x$ and $y$, it is now expressible that $x + y \in \Omega$. However, the additional expressive power may lead to non-terminating programs as the following example for generating the natural numbers shows. 
+
+\begin{minted}{text}
+	Nat(0).
+	Nat(y) :- Nat(x), BIND(y, x + 1).
+\end{minted}
+\noindent
+\subsection{Built-in Predicates and Expressions}
+Most (if not all) Datalog systems include various built-in predicates for discarding certain results based on some criteria. The current implementation includes the usual binary predicates $=, \neq, \leq, \ldots$. They can be used with expressions over the usual binary operators $+,-,*,/$. To continue with the Nat example, a relation that describes the first 1000 natural numbers is shown below:
+
+\begin{minted}{text}
+	Nat(0).
+	Nat(y) :- Nat(x), BIND(y, x + 1), x <= 1000.
+\end{minted}
+
+% \vspace*{-\baselineskip}
+
+\subsection{Type System}
+The language includes a simple type system. The basic types are:
+\vspace*{-10pt}
+\begin{align*}
+	String : * \quad Integer : *, \quad PredRef : * 
+\end{align*}
+\noindent
+The types are themselves terms and the star indicates the type of a type (-term). The $PredRef$ type is used to reference predicates and forms the basis for meta-predicates (meta-predicates are introduced in greater detail in section 3.5). A term of type $PredRef$ is introduced by putting a single quote before a predicate name, e.g. $'Nat$ references the Nat relation. The type system also includes a List \textit{type-constructor}, i.e. $List$ is a function from a term of type $*$ to another term of type $*$:
+\vspace*{-15pt}
+\begin{align*}
+	List : * \rightarrow *
+\end{align*}
+\noindent
+The types are introduced through a special typing (meta-) predicate:
+\vspace*{-5pt}
+\begin{align*}
+	TYPEOF : PredRef \times List(*)
+\end{align*}
+In this way, $TYPEOF$ relates the referenced predicate with a list of types:
+\begin{align*}
+TYPEOF('A, [t_1, \ldots, t_n]). &\implies A : t_1 \times \ldots \times t_n\\
+\end{align*}
+\vspace*{-\baselineskip}\vspace*{-\baselineskip}\vspace*{-10pt}
+\subsubsection{Type Checking and Type Inference}
+Type-checking and left-to-right type inference of a Datalog program $P$ is achieved through the generation of another Datalog program $P_T$. For each \textit{clause} (rule or fact) in $P$ with head $H$ and body $B$, a corresponding rule is added to $P_T$ with head $R_i$ (with fresh index $i$) and body $H, B$. In addition, all facts are \textit{lifted} to the type level and similarly all initial $TYPEOF$-facts are added as facts to $P_T$. Lifting of terms to type-terms is especially easy since the language already recognizes type-terms. For example, a fact [Age(``Deckard Cain'', 83)] in program $P$ gets added as a corresponding type fact [Age(String, Integer)] in the type-program $P_T$. To support left to right type-inference, the original rules are also added without modification to $P_T$ (with potential constants again lifted to the type-level). An example is shown in figures \ref{figure:sourceP} (original program $P$), and \ref{figure:sourcePT} (transformed type program $P_T$). The program type-checks if and only if the solution for every relation in $P_T$ contains exactly one tuple (i.e. has a unique type). The correctness for the type algorithm is more formally argued for in Appendix B.
+\vspace*{-15pt}
+\begin{figure}[!ht]
+\begin{minipage}[b]{.5\textwidth}
+\caption{The source program $P$.}
+\begin{minted}{text}
+TYPEOF('A, [String Integer]).
+B(1, 2).
+C(x, y, z) :- A("Deckard Cain", y), B(z, z).
+D(x, y, z) :- B(x, y), A(z, y).
+\end{minted}
+\label{figure:sourceP}
+\end{minipage}
+\begin{minipage}[b]{.5\textwidth}
+\caption{The transformed type program $P_T$.}
+\begin{minted}{text}
+A(String, Integer), B(Integer, Integer).
+Typeof(PredRef, List(Type)).
+C(x, y, z)     :- A(String, y), B(z, z).
+D(x, y, z)     :- B(x, y), A(z, y).
+Rule0(x, y, z) :- C(x, y, z), A(String, y), B(z, z).
+Rule1(x, y, z) :- D(x, y, z), B(x, y), A(z, y).
+\end{minted}
+\label{figure:sourcePT}
+\end{minipage}
+\end{figure}
+\vspace*{-10pt}
+
+\subsection{Meta-Predicates}
+The language needs a way for the user to communicate certain properties about the Datalog-program $P$ to the interpreter $I$.
+An example of such a property is what relations to load as EDBs.
+In turn, $I$ makes certain information available to $P$ which allows $P$ to make inference on properties of itself.
+The information passing is realized through a collection of pre-defined atoms. The currently supported meta-predicates together with their semantics is listed in figure \ref{figure:metaatoms}. $EDB$ and $OUTPUT$ pass information from $P$ to $I$. $ATOM$ and $PRED$ pass information from $I$ to $P$. $ATOM$ contains a predicate reference for each user-defined atom. $PRED$ contains a predicate-reference for each occuring predicate. $TYPEOF$ initially provides $I$ with information about the given types. After successful type-checks and possibly type-inference, $I$ makes the result available to $P$, again through $TYPEOF$. In this way, $TYPEOF$ is a bi-directional predicate. Figures \ref{figure:outputatom}, \ref{figure:edb} show two examples of possible usages for the meta-predicates. Figure \ref{figure:TYPEOF} shows a valid usage of the $TYPEOF$ predicate. The type of $B$ is inferred from the type of the $TYPEOF$ predicate, and the output of $B$ is as shown in figure \ref{figure:TYPEOFOUTPUT}.
+%\vspace*{-20pt}
+\begin{figure}[!ht]
+	\begin{minipage}[b]{.5\textwidth}
+\caption{A valid program that uses the $TYPEOF$ information}
+	\begin{minted}{text}
+	OUTPUT('B).
+	B(x, y) :- TYPEOF(x, y).
+	\end{minted}
+	\label{figure:TYPEOF}
+	\end{minipage}
+\begin{minipage}[b]{.5\textwidth}
+\caption{Output ("B.csv") of program in figure \ref{figure:TYPEOF}.}
+	\begin{minted}{text}
+	'B,[PredRef List(Type)]
+	'OUTPUT,[PredRef]
+	'TYPEOF,[PredRef List(Type)]
+	\end{minted}
+
+\label{figure:TYPEOFOUTPUT}
+\end{minipage}
+\end{figure}
+
+\begin{figure}[!ht]
+	\begin{adjustwidth}{-0.5cm}{}
+\begin{tabular}{ | c | c | c | }
+	\hline
+    \textbf{Predicate}  & \textbf{ Type } & \textbf{Semantics}\\
+	\hline
+    \multicolumn{3}{|c|}{\textbf{Datalog Program $\rightarrow$ Interpreter}}\\
+    % \multicolumn{3}{|c|}{}\\
+	\hline
+	$EDB$  & $PredRef \times String$ & \makecell{$('A, s) \in EDB$ \\ Tuples in file $s$ loaded into $A$} \\
+	\hline
+	$OUTPUT$ & $PredRef$ & \makecell{$('A) \in OUTPUT$ \\ Tuples in $A$ printed to ''$A$.csv''} \\
+	\hline
+    \multicolumn{3}{|c|}{\textbf{Datalog Program $\leftarrow$ Interpreter}}\\
+    % \multicolumn{3}{|c|}{}\\
+	\hline 
+	$ATOM$ & $PredRef$ & \makecell{$('A) \in ATOM$\\ $A$ is a user-defined atom.} \\
+	\hline
+	$PRED$ & $PredRef$ & \makecell{$('A) \in PRED$\\ $A$ is any occurring atom.} \\
+	\hline 
+    \multicolumn{3}{|c|}{\textbf{Datalog Program $\leftrightarrow$ Interpreter}}\\
+    % \multicolumn{3}{|c|}{}\\
+	\hline 
+    $TYPEOF$ & $PredRef \times List(*)$ & \makecell{$('A, [t_1,\ldots, t_n]) \in TYPEOF$\\ $A : t_1 \times \ldots \times t_n$.} \\
+	\hline
+\end{tabular}
+\end{adjustwidth}
+\caption{A list of supported meta-predicates. The semantics column shows an if-and-only-if relation between the upper and lower statements.}
+\label{figure:metaatoms}
+\end{figure}
+
+\begin{figure}[!ht]
+\begin{minipage}{4cm}
+\begin{minted}{yaml}
+OUTPUT('OUTPUT).
+OUTPUT(x) :- ATOM(x). 
+\end{minted}
+\end{minipage}
+\vspace*{-10pt}
+\caption{Printout all user defined-atoms as well as the $OUTPUT$-relation.}
+\label{figure:outputatom}
+\end{figure}
+
+\vspace*{-\baselineskip}
+\begin{figure}[!ht]
+\begin{minipage}{4cm}
+\begin{minted}{yaml}
+EDB('EDB, "EDB.csv"). 
+\end{minted}
+\end{minipage}
+\vspace*{-10pt}
+\caption{Load the tuples that describe what to load as EDB files from the external database file EDB.csv}
+\label{figure:edb}
+\end{figure}
+\vspace*{-7pt}
+\subsubsection{Interaction with Stratification}
+The $OUTPUT$-predicate determines what predicates to compute and output. Thus every predicate \textit{directly depends} on $OUTPUT$ (see section 2.1). To evaluate a \datalogM program, the relations are first partitioned into strata. The stratum containing the $OUTPUT$-predicate is evaluated first (using the fix-point algorithm) to compute the objects in the $OUTPUT$-relation. The semantics (see figure \ref{figure:metaatoms}) forces each such object to be evaluated and subsequently printed. 
+
+By rooting the reverse post-order search in the strata corresponding to the predicate references in the $OUTPUT$-relation, the resulting order (i.e. sequence of stratum) will contain stratum $S$ if and only if there exists some predicate reference $p$ in the $OUTPUT$-relation such that the stratum of $p$ transitively depends on the $S$:
+\begin{align*}
+S \text{ is evaluated } \iff \exists\;p \in OUTPUT.\;Strat\;p \xrightarrow{*} S
+\end{align*}
+
+The $EDB$-predicate too needs special attention regarding dependencies since it has the side-effect of populating predicates with objects loaded from external data base files. The following two dependency rules exist:
+\begin{align*}
+&EDB('P,\;\; \_) \implies P \xrightarrow{} EDB\\
+&EDB('EDB,\;\; \_) \implies \forall P \in PRED. \;\;P \xrightarrow{} EDB
+\end{align*}
+
+The first rule states that if a predicate is referenced in the $EDB$-relation, then that predicate directly depends on $EDB$. The second rule states that if the $EDB$-relation is self-referential, then all predicates directly depend on the $EDB$-\hfill
+relation. The current implementation does not support querying the EDB relation or updating it with a variable, i.e. the following is disallowed:
+\begin{align*}
+EDB(x,\;\; \_) \;\coloneqtwo\; A(x).
+\end{align*}
+\noindent
+$EDB$ and $OUTPUT$ may depend on each other. Consider the example in figure \ref{figure:edboutput}. If the file "OUTPUT.csv" contains the single entry $'A$, then the output of the program in figure 9 is a file "A.csv" containing the single entry $'A$.
+\begin{figure}[!ht]
+\begin{minipage}{4cm}
+\begin{minted}{yaml}
+EDB('OUTPUT, "OUTPUT.csv").
+A(x) :- OUTPUT(x).
+\end{minted}
+\end{minipage}
+\vspace*{-10pt}
+\caption{ Implicit mutual dependency between EDB and OUTPUT. }
+\label{figure:edboutput}
+\end{figure}

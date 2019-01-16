@@ -1,13 +1,5 @@
 \documentclass[sigplan,10pt]{acmart}
-
-% review option: For printing line numbers:
-%\documentclass[sigplan,10pt,review]{acmart} 
-
 \settopmatter{printfolios=true,printccs=false,printacmref=false}
-%printfolios=true, means print page numbers
-%printccs=false, means don't show CCS categories
-%printacmref=false, means don't show acm reference
-
 
 \acmConference[Course paper, EDAN70]{Project in computer science}{Lund University}{Sweden}
 \acmYear{\today}
@@ -25,6 +17,13 @@
 \usepackage{makecell}
 \usepackage{changepage}
 \usepackage{mathtools}
+\usepackage{float}
+\usepackage[section]{placeins}
+\usepackage{caption}
+\usepackage{graphicx}
+\usepackage{subcaption}
+
+
 \newcommand{\NL}[0]{ \hfill\\\noindent }
 \newcommand{\coloneqtwo}{\mathbin{:\hspace{-0.5ex}\textsf{-}}}
 \newcommand{\datalogM}{$\textit{Datalog}^M$}
@@ -47,39 +46,29 @@
 }
 \email{dat12hba@student.lu.se}          %% \email is recommended
 \begin{abstract}
-This paper presents the implementation of a new programming language belonging to the Datalog language family. A short background on Datalog, its theoretical foundations, and applicability for practical problems is given. The most novel contribution of the paper is to allow predicates to be used as terms in atoms. As will be shown, this permits compact descriptions of various meta properties such as describing what tables to output, or to give static types to predicates.
+This paper presents the implementation of a new programming language belonging to the Datalog family.
+A short background on Datalog, its theoretical foundations, and its applicability for practical problems is introduced.
+A number of extensions to the core Datalog language are presented, the most novel of which is to allow predicates to be used as terms in atoms. As will be shown, this enables a compact description of various meta properties such as encoding what tables to output, or to give static types to predicates. 
 \end{abstract}
 \maketitle
 \section{Introduction}
-\input{introduction.tex}
+\input{src/introduction.tex}
 \section{Core Language Implementation}
-\input{corelanguageimpl.tex}
+\input{src/corelanguageimpl.tex}
 \section{Language Extensions}
-\input{languageextensions.tex}
-\section{Cross Compilation}
-\input{crosscompilation.tex}
-%\vspace*{-\baselineskip}
+\input{src/languageextensions.tex}
+\vspace*{-15pt}
 \section{Evaluation}
-\input{evaluation.tex}
-% \textit{I want to use the following evaluation criteria}
-% \begin{itemize}
-% \item Front-end extensibility
-% \item Front-end source-to-source coverage
-% \item Back-end implementations performance evaluation
-% \end{itemize}
+\input{src/evaluation.tex}
+\vspace*{-5pt}
 \section{Related work}
-\input{relatedwork.tex}
+\input{src/relatedwork.tex}
 \section{Conclusion}
-\input{conclusion.tex}
+\input{src/conclusion.tex}
 \begin{acks}
-Thank you to Christoph Reichenbach for his many insights and helpful guidance throughout this project.
+Thank you Christoph Reichenbach for your many insights and helpful guidance throughout this project.
 \end{acks}
 \bibliography{bibl}
-\newpage
-\input{appendix.tex}
-
-%% Bibliography
-
-
-
+\clearpage
+\input{src/appendix.tex}
 \end{document}

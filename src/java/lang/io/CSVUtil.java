@@ -32,11 +32,20 @@ public class CSVUtil {
 		}
 	}
 	
-	public static Term parseCSV(String line) {
+	public static Term parseCSV(Program program, String line) {
 		if(isInteger(line)) {
 			return new IntConstant(line);
 		}
 		if(line.charAt(0) == '\'') {
+			if(program.formalPredicateMap().get(line.substring(1)) == null) {
+				SimpleLogger.logger().log("Must only reference exisiting predicates: " + line, SimpleLogger.LogLevel.Level.ERROR);
+				System.exit(0);
+			}
+			
+			/**
+			 * Need to be careful here: The PredicateRef will NOT belong to the AST and so cannot use e.g. literal().
+			 * For future development should really make this explicit through the type-system ... 
+			 */
 			return new PredicateRef(line.substring(1));
 		}
 		return new StringConstant(line);
@@ -59,7 +68,7 @@ public class CSVUtil {
 				}
 				PseudoTuple ps = new PseudoTuple(r.arity());
 				for (int i = 0; i != line.length; ++i)
-					ps.set(i, parseCSV(line[i]));
+					ps.set(i, parseCSV(program, line[i]));
 				r.addTuple(ps);
 			}
 		} catch (IOException e) {
@@ -68,7 +77,7 @@ public class CSVUtil {
 	}
 
 	public static void readFileInto(Program program, FormalPredicate fp, String path) {
-		SimpleLogger.logger().log("Read file " + path + " into " + fp, SimpleLogger.LogLevel.Level.DEBUG);
+		SimpleLogger.logger().log("Begin Read file " + path + " into " + fp, SimpleLogger.LogLevel.Level.DEBUG);
 		
 		CSVParser parser = new CSVParserBuilder().withSeparator(',').build();
 		try (CSVReader reader = new CSVReaderBuilder(new FileReader(new File(path))).withCSVParser(parser).build()) {
@@ -84,16 +93,18 @@ public class CSVUtil {
 				}
 				PseudoTuple ps = new PseudoTuple(fp.realArity());
 				for (int i = 0; i != line.length; ++i) {
-					ps.set(i, parseCSV(line[i]));
+					ps.set(i, parseCSV(program, line[i]));
 				}
 				fp.relation.addTuple(ps);
 			}
+			
+			SimpleLogger.logger().log("End Read file " + path + " into " + fp, SimpleLogger.LogLevel.Level.DEBUG);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 	}
 
-	public static Relation readRelationFrom(File f, int arity) {
+	public static Relation readRelationFrom(Program program, File f, int arity) {
 		if (!f.exists())
 			return null;
 		Relation r = new Relation(arity);
@@ -103,7 +114,7 @@ public class CSVUtil {
 			while ((line = reader.readNext()) != null) {
 				PseudoTuple ps = new PseudoTuple(arity);
 				for (int i = 0; i != line.length; ++i) {
-					ps.set(i, parseCSV(line[i]));
+					ps.set(i, parseCSV(program, line[i]));
 				}
 				r.addTuple(ps);
 			}

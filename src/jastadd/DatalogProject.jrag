@@ -1,0 +1,70 @@
+import lang.relation.Relation;
+import lang.relation.PseudoTuple;
+import java.util.ArrayList;
+
+
+aspect DatalogProject {
+	public String ASTNode.getRelation() {
+		return this.getClass().getName();
+	}
+
+	public int ASTNode.UID = 0;
+	public static int ASTNode.RunningId = 0;
+
+	public synchronized int ASTNode.getNodeId() {
+		if (UID == 0) {
+			UID = ++ASTNode.RunningId;
+		}
+		return UID;
+	}
+
+	public class TupleWrapper {
+		public String relation;
+		public ArrayList<PseudoTuple> tuples;
+
+		TupleWrapper(String relation) {
+			this.relation = relation;
+			this.tuples = new ArrayList<PseudoTuple>();
+		}
+
+		public void addTuple(PseudoTuple tpl) {
+			tuples.add(tpl);
+		}
+	}
+
+	public class RelationMap {
+		public HashMap<String, Relation> nameToRelMap;
+		public void add(TupleWrapper tplw) {
+			if (tplw.tuples.isEmpty())
+				return;
+			Relation r;
+			r = nameToRelMap.get(tplw.relation);
+			if (r == null) {
+				r = new Relation(tplw.tuples.get(0).arity());
+				nameToRelMap.put(tplw.relation, r);
+			}
+			for (PseudoTuple tpl : tplw.tuples)
+				r.addTuple(tpl);
+		}
+	}
+
+	coll RelationMap Program.datalogProjection() with add;
+
+	public TupleWrapper ASTNode.buildTupleWrapper() {
+		String relName = getRelation();
+		TupleWrapper ret = new TupleWrapper(relName);
+
+		for (int i = 0; i < getNumChild(); ++i) {
+			ASTNode child = getChild(i);
+
+			IntConstant ChildId = new IntConstant("" + child.getNodeId());
+			IntConstant CurrentNodeId = new IntConstant("" + getNodeId());
+			IntConstant ChildIdx = new IntConstant("" + i);
+
+			ret.addTuple(new PseudoTuple(CurrentNodeId, ChildIdx, ChildId));
+		}
+		return ret;
+	}
+
+	ASTNode contributes buildTupleWrapper() to Program.datalogProjection();
+}

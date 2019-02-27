@@ -33,7 +33,7 @@ public class BottomUpNaiveIterative extends InternalEvaluation {
 		for(FormalPredicate fp : program.getFormalPredicates())  fp.literal().initialSideEffect(program, descr);
 		Stratification.stratification(program);
 		Stratum outStrat = Stratification.iso.get(output);
-		
+
 		/**
 		 * Evaluate OUTPUT
 		 */
@@ -44,7 +44,7 @@ public class BottomUpNaiveIterative extends InternalEvaluation {
 			Stratum ref_strat = Stratification.iso.get(program.formalPredicateMap().get(ref.getPRED_ID()));
 			output_strata.add(ref_strat);
 		}
-		
+
 		Deque<Stratum> order = Stratification.reversePostOrder(output_strata);
 
 		while (!order.isEmpty()) {
@@ -54,10 +54,10 @@ public class BottomUpNaiveIterative extends InternalEvaluation {
 		}
 		dumpRelations(program, descr);
 	}
-	
+
 	private Relation immediateConsequenceHelper(Set<Literal> literals, Relation body_rel) {
 		for (Literal rl_current : literals) {
-			
+
 			/**
 			 * Select based on the literal selection rule, e.g. NEGLiteral will remove from the current body_rel.
 			 */
@@ -68,7 +68,7 @@ public class BottomUpNaiveIterative extends InternalEvaluation {
 
 	public boolean immediateConsequence(Program program, Description descr, Rule r) {
 		Relation body_rel = Relation.nullRelation;
-		
+
 		/**
 		 * Find Body Relation if clause is a rule
 		 */
@@ -81,10 +81,10 @@ public class BottomUpNaiveIterative extends InternalEvaluation {
 			Relation prev = il.predicate().formalpredicate().relation;
 			Relation delta = Relation.difference(derived, prev);
 			prev.addAll(delta);
-			
+
 			if (delta.size() != 0) {
 				changed = true;
-				
+
 				/**
 				 * Process Potential Side-Effects Such as EDB-loading.
 				 */
@@ -97,7 +97,7 @@ public class BottomUpNaiveIterative extends InternalEvaluation {
 	public void evaluateStratum(Program p, Description d, Stratum strat) {
 		boolean changed = true;
 		HashSet<Rule> rules = new HashSet<Rule>();
-		
+
 		/**
 		 * Collect rules for stratum and load facts.
 		 */
@@ -112,11 +112,13 @@ public class BottomUpNaiveIterative extends InternalEvaluation {
 						derived.addTuple(il.toTuple());
 						Relation delta = Relation.difference(derived, il.predicate().formalpredicate().relation);
 						il.predicate().formalpredicate().relation.addAll(delta);
-						
+
 						/**
 						 * Process Potential Side-Effects Such as EDB-loading.
 						 */
 						il.sideEffect(p, d, delta);
+						// Process program load
+						il.loadProgram(delta);
 					}
 				}
 			}

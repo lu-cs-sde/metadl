@@ -2,7 +2,6 @@ import lang.relation.Relation;
 import lang.relation.PseudoTuple;
 import java.util.ArrayList;
 
-
 aspect DatalogProject {
 	public String ASTNode.getRelation() {
 		return this.getClass().getName();
@@ -67,4 +66,14 @@ aspect DatalogProject {
 	}
 
 	ASTNode contributes buildTupleWrapper() to Program.datalogProjection();
+
+	public HashSet<String> Program.loadedPrograms = new HashSet<String>();
+
+	public void Literal.loadProgram(Relation r) { /* do nothing */}
+
+	public void IMPORTLiteral.loadProgram(Relation r) {
+		for (PseudoTuple t : r.tuples()) {
+			System.out.println("Loading program " + t.coord(0));
+		}
+	}
 }

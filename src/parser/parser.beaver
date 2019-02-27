@@ -90,6 +90,7 @@ inclusive_literal = edb_literal
                   | output_literal
 			      | atom
 			      | typeof_literal
+				  | import_literal
 			      ;
 
 exclusive_literal = neg_literal
@@ -98,7 +99,6 @@ exclusive_literal = neg_literal
                   | eq_list_literal
                   | pred_literal
                   | atom_literal
-				  | import_literal
              	  ;
 
 neg_literal = NOT LPARA inclusive_literal.lit RPARA {: return new NEGLiteral(new PredicateSymbol("NOT"), lit); :};
@@ -127,7 +127,7 @@ output_literal = OUTPUT LPARA term.t RPARA                            {: return 
 pred_literal   = PRED   LPARA term.t RPARA                            {: return new PREDLiteral(new PredicateSymbol("PRED"), t);             :};
 atom_literal   = ATOM   LPARA term.t RPARA                            {: return new ATOMLiteral(new PredicateSymbol("ATOM"), t);             :};
 typeof_literal = TYPEOF LPARA term.pred COMMA term.t RPARA            {: return new TYPEOFLiteral(new PredicateSymbol("TYPEOF"), pred, t);   :};
-import_literal = IMPORT LPARA pred_ref.clauses COMMA pred_ref.heads COMMA pred_ref.body RPARA {: return new IMPORTLiteral(new PredicateSymbol("IMPORT"), clauses, heads, body); :};
+import_literal = IMPORT LPARA term.file COMMA pred_ref.clauses COMMA pred_ref.heads COMMA pred_ref.body RPARA {: return new IMPORTLiteral(new PredicateSymbol("IMPORT"), file, clauses, heads, body); :};
 
 lit_list = literal.lit {: return new List().add(lit); :}
          | lit_list.list COMMA literal.c {: return list.add(c); :}
@@ -144,38 +144,38 @@ term_list = term_list_no_empty
 term_list_no_empty = term.t {: return new List().add(t); :}
                    | term_list_no_empty.list COMMA term.t {: return list.add(t); :}
                    ;
-                   
+
 expr = expr_term;
-     
+
 expr_term   = add_expr
             | sub_expr
             | expr_factor
             ;
 
 expr_factor = mul_expr
-            | div_expr 
+            | div_expr
             | expr_unit
             ;
-            
+
 expr_unit = term
 	      | LPARA expr.e RPARA {: return e; :}
 	      ;
-            
+
 add_expr = expr_term.e1   ADD expr_factor.e2 {: return new AddExpr(e1, e2); :};
 sub_expr = expr_term.e1   SUB expr_factor.e2 {: return new SubExpr(e1, e2); :};
 mul_expr = expr_factor.e1 MUL expr_unit.e2   {: return new MulExpr(e1, e2); :};
 div_expr = expr_factor.e1 DIV expr_unit.e2   {: return new DivExpr(e1, e2); :};
-                   
+
 term = variable
      | constant
      | pred_ref
      | term_list_term
      | type_term
      ;
-     
+
 pred_sym = PRED_ID.id  {: return new PredicateSymbol(id); :};
 pred_ref = PRED_REF.id {: return new PredicateRef(id); :};
-     
+
 variable = VAR_ID.id {: return new Variable(id); :};
 constant = int_constant
          | string_constant
@@ -196,7 +196,7 @@ term_list_space_no_empty = term.t {: return new List().add(t); :}
 type_term = concrete_type
           | list_type
           ;
-	 
+
 type_type = TYPE_TYPE {: return new TypeType(); :};
 
 concrete_type = integer_type
@@ -204,7 +204,7 @@ concrete_type = integer_type
               | pred_ref_type
               | type_type
               ;
-              
+
 integer_type  = INTEGER_TYPE  {: return new IntegerType(); :};
 string_type   = STRING_TYPE   {: return new StringType();  :};
 pred_ref_type = PRED_REF_TYPE {: return new PredRefType(); :};

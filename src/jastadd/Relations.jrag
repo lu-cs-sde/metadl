@@ -16,10 +16,9 @@ aspect Arity {
     eq EQLISTLiteral.arity() = 1;
     eq BinaryExclusiveTermLiteral.arity() = 2;
     eq TYPEOFLiteral.arity() = 2;
+	eq IMPORTLiteral.arity() = 4;
     eq Atom.arity() = getNumTerms();
     syn int PredicateSymbol.arity() = literal().arity();
-
-	eq IMPORTLiteral.arity() = 3;
 
     syn HashSet<Integer> FormalPredicate.arities() {
     	HashSet<Integer> arities = new HashSet<Integer>();
@@ -28,13 +27,13 @@ aspect Arity {
         }
         return arities;
     }
-    
+
     syn HashSet<Integer> FormalPredicate.realArities() {
         HashSet<Integer> realArities = new HashSet<Integer>(arities());
         realArities.remove(-1);
         return realArities;
     }
-    
+
     syn boolean FormalPredicate.isUniqueArity() {
         return realArities().size() <= 1;
     }
@@ -47,13 +46,13 @@ aspect Arity {
     FormalPredicate contributes ("Different Arities for predicate symbol: " + predicateName())
         when !isUniqueArity() && arities().size() != 1
         to Program.semanticErrors();
-        
+
 }
 
 aspect Relation {
 	public static Relation FormalPredicate.nullRelation = new Relation(0);
 	public Relation FormalPredicate.relation = FormalPredicate.nullRelation;
-	
+
 	syn PseudoTuple Literal.toTuple();
 	eq Atom.toTuple()          = new PseudoTuple(getTermss());
 	eq EDBLiteral.toTuple()    = new PseudoTuple(getPredicateRef(), getFileLoc());
@@ -65,7 +64,7 @@ aspect Relation {
 	eq BINDLiteral.toTuple()   = new PseudoTuple(0);
 	eq TYPEOFLiteral.toTuple() = new PseudoTuple(getPredicateRef(), getTerm());
 	eq NEGLiteral.toTuple() = getInclusiveLiteral().toTuple();
-	eq IMPORTLiteral.toTuple() = new PseudoTuple(getClauses(), getHeads(), getBody());
+	eq IMPORTLiteral.toTuple() = new PseudoTuple(getFile(), getClauses(), getHeads(), getBody());
 }
 
 aspect Rules {
@@ -88,7 +87,7 @@ aspect Rules {
 		}
 		return rules;
 	}
-	
+
 	public static boolean FormalPredicate.hasNegativeDefUse(FormalPredicate def, FormalPredicate use) {
 		HashSet<Rule> rules_use = use.useInRules();
 		for(Clause c : def.definedIn()) {
@@ -103,7 +102,7 @@ aspect Rules {
 		}
 		return false;
 	}
-	
+
 	syn TreeSet<Literal> Rule.inclusiveBodyLiterals() {
 		TreeSet<Literal> literals = new TreeSet<Literal>(Literal.literalComparator);
 		for(Literal l : getBodys()) {
@@ -111,7 +110,7 @@ aspect Rules {
 		}
 		return literals;
 	}
-	
+
 	syn TreeSet<Literal> Rule.exclusiveBodyLiterals() {
 		TreeSet<Literal> literals = new TreeSet<Literal>(Literal.literalComparator);
 		for(Literal l : getBodys()) {
@@ -136,7 +135,7 @@ aspect DependencyGraph {
 				}
 			}
 		}
-		
+
 		/**
 			First compute what to output.
 		**/
@@ -144,16 +143,16 @@ aspect DependencyGraph {
 		if(output != null) {
 			defIn.add(output);
 		}
-		
+
 		for(PredicateRef ref : predicateRefs()) {
 			if(ref.literal().isEDB()) {
 				defIn.add(((EDBLiteral)ref.literal()).getPredicate().formalpredicate());
 			}
 		}
-		
+
 		if(hasRecursiveEDB()) {
 			defIn.add(formalPredicateMap().get(GlobalNames.EDB_NAME));
 		}
 		return defIn;
-	}	
+	}
 }

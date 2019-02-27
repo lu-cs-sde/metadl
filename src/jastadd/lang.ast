@@ -1,19 +1,20 @@
 /**
 	Program
 **/
-Program  ::= Clause* /FormalPredicate*/; 
+Program  ::= Clause* /FormalPredicate*/;
 
 /**
-   Clause 
+   Clause
 **/
 abstract Clause ::= Heads:InclusiveLiteral*;
 Rule:Clause ::=  Body:Literal*;
 Fact:Clause;
 
 /**
-   Literals 
+   Literals
 **/
 abstract Literal ::= Predicate:PredicateSymbol;
+/* Exclusive literals cannot appear in the head of a clause */
 abstract InclusiveLiteral:Literal;
 abstract ExclusiveLiteral:Literal;
 abstract BinaryExclusiveTermLiteral:ExclusiveLiteral ::= Left:Expr Right:Expr;
@@ -27,7 +28,7 @@ TYPEOFLiteral:InclusiveLiteral ::= PredicateRef:Term Term;
 NEGLiteral:ExclusiveLiteral    ::= InclusiveLiteral;
 
 BINDLiteral:ExclusiveLiteral ::= Variable Right:Expr;
-IMPORTLiteral:ExclusiveLiteral ::= Clauses:PredicateRef Heads:PredicateRef Body:PredicateRef;
+IMPORTLiteral:InclusiveLiteral ::= File:Term Clauses:PredicateRef Heads:PredicateRef Body:PredicateRef;
 
 EQLiteral:BinaryExclusiveTermLiteral;
 NEQLiteral:BinaryExclusiveTermLiteral;

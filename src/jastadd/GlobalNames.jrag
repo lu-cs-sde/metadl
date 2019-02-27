@@ -7,6 +7,7 @@ aspect GlobalNames {
 		public static final String PRED_NAME       =  "PRED";
 		public static final String ATOM_NAME       =  "ATOM";
 		public static final String TYPEOF_NAME     =  "TYPEOF";
+		public static final String IMPORT_NAME     =  "IMPORT";
 		public static final String TYPE_RULE_NAME  =  "RuleTypeName000000000000000001231231xxxx";
 	}
 }

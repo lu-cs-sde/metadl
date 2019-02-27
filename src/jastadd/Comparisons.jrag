@@ -25,23 +25,25 @@ aspect Conversion {
 	eq VariableType.typeName()   = "Variable";
 	eq UnknownType.typeName()    = "UnknownType";
 	eq BadType.typeName()        = "BadType";
-	
+
 	syn int Literal.evalOrder();
-	eq EDBLiteral.evalOrder()     =  0;
-	eq ATOMLiteral.evalOrder()    =  1;
-	eq TYPEOFLiteral.evalOrder()  =  2;
-	eq PREDLiteral.evalOrder()    =  3;
-	eq OUTPUTLiteral.evalOrder()  =  4;
-	eq Atom.evalOrder()           =  5;
-	eq BINDLiteral.evalOrder()    =  6;
-	eq NEGLiteral.evalOrder()     =  7;
-	eq EQLiteral.evalOrder()      =  8;
-	eq NEQLiteral.evalOrder()     =  9;
-	eq LTLiteral.evalOrder()      =  10;
-	eq LTELiteral.evalOrder()     =  11;
-	eq GTLiteral.evalOrder()      =  12;
-	eq GTELiteral.evalOrder()     =  13;
-	eq EQLISTLiteral.evalOrder()  =  14;
+
+	eq IMPORTLiteral.evalOrder()  = 0;
+	eq EDBLiteral.evalOrder()     = 1;
+	eq ATOMLiteral.evalOrder()    =  2;
+	eq TYPEOFLiteral.evalOrder()  =  3;
+	eq PREDLiteral.evalOrder()    =  4;
+	eq OUTPUTLiteral.evalOrder()  =  5;
+	eq Atom.evalOrder()           =  6;
+	eq BINDLiteral.evalOrder()    =  7;
+	eq NEGLiteral.evalOrder()     =  8;
+	eq EQLiteral.evalOrder()      =  9;
+	eq NEQLiteral.evalOrder()     =  10;
+	eq LTLiteral.evalOrder()      =  11;
+	eq LTELiteral.evalOrder()     =  12;
+	eq GTLiteral.evalOrder()      =  13;
+	eq GTELiteral.evalOrder()     =  14;
+	eq EQLISTLiteral.evalOrder()  =  15;
 }
 
 aspect Comparison {

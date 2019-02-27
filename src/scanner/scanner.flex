@@ -67,6 +67,7 @@ String  = \"[^\"]*\"
 "ATOM"     {  return  sym(Terminals.ATOM);           }
 "BIND"     {  return  sym(Terminals.BIND);           }
 "TYPEOF"   {  return  sym(Terminals.TYPEOF);         }
+"IMPORT"   {  return  sym(Terminals.IMPORT);         }
 "Type"     {  return  sym(Terminals.TYPE_TYPE);      }
 "String"   {  return  sym(Terminals.STRING_TYPE);    }
 "Integer"  {  return  sym(Terminals.INTEGER_TYPE);   }

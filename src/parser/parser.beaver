@@ -9,8 +9,8 @@
 	}
 :};
 
-%terminals VAR_ID, PRED_ID, PRED_REF, LPARA, RPARA, LBRACK, RBRACK, 
-           NUMERAL, STRING, DOT, COMMA, IMPLIED_BY, EDB, OUTPUT, PRED,
+%terminals VAR_ID, PRED_ID, PRED_REF, LPARA, RPARA, LBRACK, RBRACK,
+           NUMERAL, STRING, DOT, COMMA, IMPLIED_BY, EDB, OUTPUT, IMPORT, PRED,
            ATOM, NOT, BIND,  EQ, EQLIST, NEQ, LT, LTE, GT, GTE, ADD, SUB, MUL, DIV,
            TYPEOF, TYPE_TYPE, STRING_TYPE, INTEGER_TYPE, PRED_REF_TYPE, LIST_TYPE;
 
@@ -85,21 +85,22 @@ fact = incl_lit_list.heads DOT {: return new Fact(heads); :};
 literal = inclusive_literal
         | exclusive_literal
         ;
-        
+
 inclusive_literal = edb_literal
                   | output_literal
 			      | atom
 			      | typeof_literal
 			      ;
-			  
+
 exclusive_literal = neg_literal
                   | bind_literal
                   | bin_excl_term_lit
                   | eq_list_literal
                   | pred_literal
                   | atom_literal
+				  | import_literal
              	  ;
-          
+
 neg_literal = NOT LPARA inclusive_literal.lit RPARA {: return new NEGLiteral(new PredicateSymbol("NOT"), lit); :};
 
 bind_literal = BIND LPARA variable.var COMMA expr.right RPARA {: return new BINDLiteral(new PredicateSymbol("BIND"), var, right); :};
@@ -126,11 +127,12 @@ output_literal = OUTPUT LPARA term.t RPARA                            {: return 
 pred_literal   = PRED   LPARA term.t RPARA                            {: return new PREDLiteral(new PredicateSymbol("PRED"), t);             :};
 atom_literal   = ATOM   LPARA term.t RPARA                            {: return new ATOMLiteral(new PredicateSymbol("ATOM"), t);             :};
 typeof_literal = TYPEOF LPARA term.pred COMMA term.t RPARA            {: return new TYPEOFLiteral(new PredicateSymbol("TYPEOF"), pred, t);   :};
+import_literal = IMPORT LPARA pred_ref.clauses COMMA pred_ref.heads COMMA pred_ref.body RPARA {: return new IMPORTLiteral(new PredicateSymbol("IMPORT"), clauses, heads, body); :};
 
 lit_list = literal.lit {: return new List().add(lit); :}
          | lit_list.list COMMA literal.c {: return list.add(c); :}
          ;
-         
+
 incl_lit_list = inclusive_literal.lit {: return new List().add(lit); :}
          | incl_lit_list.list COMMA inclusive_literal.lit {: return list.add(lit); :}
          ;

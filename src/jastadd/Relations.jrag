@@ -18,7 +18,9 @@ aspect Arity {
     eq TYPEOFLiteral.arity() = 2;
     eq Atom.arity() = getNumTerms();
     syn int PredicateSymbol.arity() = literal().arity();
-    
+
+	eq IMPORTLiteral.arity() = 3;
+
     syn HashSet<Integer> FormalPredicate.arities() {
     	HashSet<Integer> arities = new HashSet<Integer>();
     	for(PredicateSymbol pred : predicates()) {
@@ -63,6 +65,7 @@ aspect Relation {
 	eq BINDLiteral.toTuple()   = new PseudoTuple(0);
 	eq TYPEOFLiteral.toTuple() = new PseudoTuple(getPredicateRef(), getTerm());
 	eq NEGLiteral.toTuple() = getInclusiveLiteral().toTuple();
+	eq IMPORTLiteral.toTuple() = new PseudoTuple(getClauses(), getHeads(), getBody());
 }
 
 aspect Rules {

@@ -293,21 +293,25 @@ aspect Literal {
     	if(getTermList().isVariable()) return toVarSet(getTermList());
     	return getTermList().variables();
     }
-    
+
     eq BINDLiteral.variables()  {
     	TreeSet<Variable> vars = new TreeSet<Variable>(Term.termComparator);
 		vars.add(getVariable());
 		vars.addAll(getRight().variables());
 		return vars;
     }
-    
+
+	eq IMPORTLiteral.variables() {
+		throw new Error("Not implemented");
+	}
+
     eq BinaryExclusiveTermLiteral.variables() {
 		TreeSet<Variable> vars = new TreeSet<Variable>(Term.termComparator);
 		vars.addAll(getLeft().variables());
 		vars.addAll(getRight().variables());
 		return vars;
 	}
-    
+
     syn TreeSet<Constant> BinaryExclusiveTermLiteral.constants() {
 		TreeSet<Constant> constants = new TreeSet<Constant>(Term.termComparator);
 		constants.addAll(getLeft().constants());

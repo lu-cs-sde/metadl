@@ -27,6 +27,7 @@ TYPEOFLiteral:InclusiveLiteral ::= PredicateRef:Term Term;
 NEGLiteral:ExclusiveLiteral    ::= InclusiveLiteral;
 
 BINDLiteral:ExclusiveLiteral ::= Variable Right:Expr;
+IMPORTLiteral:ExclusiveLiteral ::= Clauses:PredicateRef Heads:PredicateRef Body:PredicateRef;
 
 EQLiteral:BinaryExclusiveTermLiteral;
 NEQLiteral:BinaryExclusiveTermLiteral;

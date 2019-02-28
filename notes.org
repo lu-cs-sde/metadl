@@ -1,0 +1,10 @@
+* Changes
+** Non-referenceable built-in predicates: e.g. INPUT, OUTPUT, IMPORT, EXPORT, TYPEOF
+- Disallow at grammar level.
+
+* Questions
+** Do we really need types?
+- Can we replace types with strings?
+- Update the TYPEOF predicate such that it does not use lists
+
+** Can we write a datalog program that typechecks itself?

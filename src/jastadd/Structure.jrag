@@ -216,6 +216,10 @@ aspect Literal {
     eq  Literal.isBind()       = false;
     eq  BINDLiteral.isBind()   = true;
 
+	syn boolean Literal.isIMPORT();
+	eq  Literal.isIMPORT() = false;
+	eq  IMPORTLiteral.isIMPORT() = true;
+
     syn boolean Literal.isInclusive();
     eq Literal.isInclusive() = false;
     eq InclusiveLiteral.isInclusive() = true;
@@ -263,6 +267,7 @@ aspect Literal {
     PREDLiteral   implements PredefinedLiteral;
     OUTPUTLiteral implements PredefinedLiteral;
     TYPEOFLiteral implements PredefinedLiteral;
+    IMPORTLiteral implements PredefinedLiteral;
 
     syn boolean Literal.isPredefined()           = false;
     syn boolean PredefinedLiteral.isPredefined() = true;
@@ -571,6 +576,7 @@ aspect Types {
 	eq  PREDLiteral.actualType()   = new PseudoTuple(new List(getTerm().type()));
 	eq  EDBLiteral.actualType()    = new PseudoTuple(new List(Type.predRefType, getFileLoc().type()));
 	eq  TYPEOFLiteral.actualType() = new PseudoTuple(new List(getPredicateRef().type(), getTerm().type()));
+	eq  IMPORTLiteral.actualType() = new PseudoTuple(new List(getFile().type(), Type.predRefType, Type.predRefType, Type.predRefType));
 
 	syn PseudoTuple PredefinedLiteral.type();
 	eq  ATOMLiteral.type()   = new PseudoTuple(new List(Type.predRefType));
@@ -578,6 +584,7 @@ aspect Types {
 	eq  PREDLiteral.type()   = new PseudoTuple(new List(Type.predRefType));
 	eq  EDBLiteral.type()    = new PseudoTuple(new List(Type.predRefType, Type.stringType));
 	eq  TYPEOFLiteral.type() = new PseudoTuple(new List(Type.predRefType, Type.listOfTypeType));
+	eq  IMPORTLiteral.type() = new PseudoTuple(new List(Type.stringType, Type.predRefType, Type.predRefType, Type.predRefType));
 
 	syn PseudoTuple TYPEOFLiteral.refType() {
 		if(!getTerm().type().isListType()) return new PseudoTuple(Type.badType);

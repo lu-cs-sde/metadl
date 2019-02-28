@@ -147,7 +147,10 @@ aspect DependencyGraph {
 		for(PredicateRef ref : predicateRefs()) {
 			if(ref.literal().isEDB()) {
 				defIn.add(((EDBLiteral)ref.literal()).getPredicate().formalpredicate());
+			} else if (ref.literal().isIMPORT()) {
+				defIn.add(((IMPORTLiteral)ref.literal()).getPredicate().formalpredicate());
 			}
+
 		}
 
 		if(hasRecursiveEDB()) {

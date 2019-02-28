@@ -1,6 +1,8 @@
 import lang.relation.Relation;
 import lang.relation.PseudoTuple;
 import java.util.ArrayList;
+import java.lang.reflect.ParameterizedType;
+
 
 aspect DatalogProject {
 	public String ASTNode.getRelation() {
@@ -32,7 +34,8 @@ aspect DatalogProject {
 	}
 
 	public class RelationMap {
-		public HashMap<String, Relation> nameToRelMap;
+		public HashMap<String, Relation> nameToRelMap = new HashMap<>();
+
 		public void add(TupleWrapper tplw) {
 			if (tplw.tuples.isEmpty())
 				return;
@@ -50,30 +53,83 @@ aspect DatalogProject {
 	coll RelationMap Program.datalogProjection() with add;
 
 	public TupleWrapper ASTNode.buildTupleWrapper() {
+		if (getNumChild() == 0) {
+			// this is a terminal node, record it to terminals relation
+			TupleWrapper ret = new TupleWrapper("Terminal");
+			ret.addTuple(new PseudoTuple(new IntConstant("" + getNodeId())));
+			return ret;
+		}
+
 		String relName = getRelation();
 		TupleWrapper ret = new TupleWrapper(relName);
 
+		int childIndex = 0;
+
 		for (int i = 0; i < getNumChild(); ++i) {
 			ASTNode child = getChild(i);
-
-			IntConstant ChildId = new IntConstant("" + child.getNodeId());
-			IntConstant CurrentNodeId = new IntConstant("" + getNodeId());
-			IntConstant ChildIdx = new IntConstant("" + i);
-
-			ret.addTuple(new PseudoTuple(CurrentNodeId, ChildIdx, ChildId));
+			if (child instanceof List) {
+				List<ASTNode> childrenList = (List<ASTNode>) child;
+				for (ASTNode c : childrenList) {
+					IntConstant ChildId = new IntConstant("" + c.getNodeId());
+					IntConstant CurrentNodeId = new IntConstant("" + getNodeId());
+					IntConstant ChildIdx = new IntConstant("" + childIndex++);
+					ret.addTuple(new PseudoTuple(CurrentNodeId, ChildIdx, ChildId));
+				}
+			} else {
+				IntConstant ChildId = new IntConstant("" + child.getNodeId());
+				IntConstant CurrentNodeId = new IntConstant("" + getNodeId());
+				IntConstant ChildIdx = new IntConstant("" + childIndex++);
+				ret.addTuple(new PseudoTuple(CurrentNodeId, ChildIdx, ChildId));
+			}
 		}
 		return ret;
 	}
 
-	ASTNode contributes buildTupleWrapper() to Program.datalogProjection();
+	public TupleWrapper List.buildTupleWrapper() {
+		// AST nodes that have variadic number of children
+		// use a List as a child node. Ignore them.
+		return new TupleWrapper(null);
+	}
+
+	public static TupleWrapper Constant.constantNodeHelper(Constant c, String relName) {
+		TupleWrapper ret = new TupleWrapper(relName);
+		IntConstant nodeId = new IntConstant("" + c.getNodeId());
+		ret.addTuple(new PseudoTuple(nodeId, c));
+		return ret;
+	}
+
+	public TupleWrapper IntConstant.buildTupleWrapper() {
+		return constantNodeHelper(this, "IntConstant");
+	}
+
+	public TupleWrapper StringConstant.buildTupleWrapper() {
+		return constantNodeHelper(this, "StringConstant");
+	}
+
+	public TupleWrapper PredicateRef.buildTupleWrapper() {
+		return constantNodeHelper(this, "PredicateRef");
+	}
+
+	public TupleWrapper Variable.buildTupleWrapper() {
+		TupleWrapper ret = new TupleWrapper("Variable");
+		IntConstant nodeId = new IntConstant("" + getNodeId());
+		StringConstant varName = new StringConstant(getVAR_ID());
+
+		ret.addTuple(new PseudoTuple(nodeId, varName));
+		return ret;
+	}
+
+	public TupleWrapper PredicateSymbol.buildTupleWrapper() {
+		TupleWrapper ret = new TupleWrapper("PredicateSymbol");
+		IntConstant nodeId = new IntConstant("" + getNodeId());
+		StringConstant varName = new StringConstant(getPRED_ID());
+
+		ret.addTuple(new PseudoTuple(nodeId, varName));
+		return ret;
+	}
+
+
+	ASTNode contributes buildTupleWrapper() to Program.datalogProjection() ;
 
 	public HashSet<String> Program.loadedPrograms = new HashSet<String>();
-
-	public void Literal.loadProgram(Relation r) { /* do nothing */}
-
-	public void IMPORTLiteral.loadProgram(Relation r) {
-		for (PseudoTuple t : r.tuples()) {
-			System.out.println("Loading program " + t.coord(0));
-		}
-	}
 }

@@ -117,8 +117,6 @@ public class BottomUpNaiveIterative extends InternalEvaluation {
 						 * Process Potential Side-Effects Such as EDB-loading.
 						 */
 						il.sideEffect(p, d, delta);
-						// Process program load
-						il.loadProgram(delta);
 					}
 				}
 			}

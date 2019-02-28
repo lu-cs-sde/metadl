@@ -6,6 +6,9 @@ import lang.relation.Binding;
 import lang.relation.Instantiation;
 import java.util.Collections;
 import java.util.TreeSet;
+import java.util.HashMap;
+import java.util.Map;
+
 
 aspect LiteralSideEffect {
     public void Literal.sideEffect(Program program, Description descr, Relation delta) {}
@@ -16,7 +19,7 @@ aspect LiteralSideEffect {
     public void EDBLiteral.sideEffect(Program program, Description descr, Relation delta) {
         boolean changed = true;
         SimpleLogger.logger().log("Begin EDB Load: " + delta, SimpleLogger.LogLevel.Level.DEBUG);
-        
+
         while(changed) {
         	changed = false;
             int size = getPredicateRef().formalpredicate().relation.size();
@@ -38,18 +41,45 @@ aspect LiteralSideEffect {
                     System.exit(0);
                 }
                 if(fp.literal().isEDB()) {
+					// This is for supporting EDB('EDB, "EDB.csv"). TBD if this is useful.
                 	Relation delta2 = new Relation(fp.realArity());
                 	CSVUtil.readFileInto(program, delta2, descr.factsDir() + "/" + r.path);
                 	fp.relation.tuples().addAll(delta2.tuples());
                 	delta = delta2;
                 	changed = true;
-                } else 
+                } else {
+					// An ordinary EDB read
                 	CSVUtil.readFileInto(program, fp, descr.factsDir() + "/" + r.path);
+				}
             }
         }
-        
         SimpleLogger.logger().log("End EDB Load: " + delta, SimpleLogger.LogLevel.Level.DEBUG);
     }
+
+	public void IMPORTLiteral.sideEffect(Program program, Description descr, Relation delta) {
+		System.out.println("Computing side effects of loading program...");
+
+		for (PseudoTuple t : delta.tuples()) {
+			System.out.println("Loading program " + t.coord(0));
+			Program importedProgram = null;
+			try {
+				importedProgram = (Program) FileUtil.parse(new File(t.coord(0).toString()));
+			} catch(Exception e) {
+				SimpleLogger.logger().log("Could not open file for IMPORT: " + t.coord(0).toString(), SimpleLogger.LogLevel.Level.ERROR);
+				System.exit(1);
+			}
+
+			// new InitialTypeCheck(getParams()).perform(importedProgram, description());
+			// new SemanticCheck(getParams()).perform(importedProgram, description());
+
+			HashMap<String, Relation> nameToRelMap = importedProgram.datalogProjection().nameToRelMap;
+
+			for (Map.Entry<String, Relation> kv : nameToRelMap.entrySet()) {
+				System.out.println("Relation " + kv.getKey());
+				System.out.println(kv.getValue().toString());
+			}
+		}
+	}
 
     public class EDBRead {
         public PredicateRef ref;
@@ -67,7 +97,7 @@ aspect InitialSideEffect {
         if(isInclusive()) {
             FormalPredicate fp = predicate().formalpredicate();
             if(fp.relation == FormalPredicate.nullRelation)
-            fp.relation = new Relation(fp.realArity());
+				fp.relation = new Relation(fp.realArity());
         }
     }
 
@@ -86,7 +116,7 @@ aspect InitialSideEffect {
             r.addTuple(new PseudoTuple(pr));
         }
     }
-    
+
     public void TYPEOFLiteral.initialSideEffect(Program program, Description descr) {
     	predicate().formalpredicate().relation = new Relation(arity());
     	Relation r = predicate().formalpredicate().relation;
@@ -108,7 +138,7 @@ aspect LiteralSelection {
         Relation positive = getInclusiveLiteral().predicate().formalpredicate().relation.select(Binding.createBinding(toTuple()));
         return Relation.difference(body_rel, positive);
     }
-    
+
     public abstract boolean BinaryExclusiveTermLiteral.binaryTest(Term t1, Term t2);
     public boolean EQLiteral.binaryTest(Term t1, Term t2)  { return Term.termComparator.compare(t1, t2) == 0; }
     public boolean NEQLiteral.binaryTest(Term t1, Term t2) { return Term.termComparator.compare(t1, t2) != 0; }
@@ -125,9 +155,9 @@ aspect LiteralSelection {
             SimpleLogger.logger().log("Different Types for terms: " + t1 + ", " + t2, SimpleLogger.LogLevel.Level.ERROR);
             System.exit(0);
         }
-        if(t1.isInteger()) 
+        if(t1.isInteger())
             return new IntConstant("" + (((IntConstant) t1).intValue() + ((IntConstant) t2).intValue()));
-        else if(t1.isString()) 
+        else if(t1.isString())
             return new StringConstant(((StringConstant)t1).getSTRING() + ((StringConstant)t2).getSTRING());
         if(!Term.sameType(t1, t2)) {
             SimpleLogger.logger().log("Non-supported add for: " + t1 + ", " + t2, SimpleLogger.LogLevel.Level.ERROR);
@@ -165,7 +195,7 @@ aspect LiteralSelection {
 
             if(!project.isUniInfo() || constants.size() > 1) {
                 itr.remove();
-            } else if (constants.size() == 1 && project.arity() > 0 && 
+            } else if (constants.size() == 1 && project.arity() > 0 &&
                     Term.termComparator.compare(constants.iterator().next(), project.coord(0)) != 0) {
                 itr.remove();
             }

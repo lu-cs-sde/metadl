@@ -76,13 +76,14 @@ aspect Task {
     public Program Task.getProgramWithChecks() throws Exception {
         return getProgramWithChecks(description().getInput().getPath());
     }
-    
+
     public Program Task.getProgramWithChecks(String path) throws Exception {
         Program program = (Program) FileUtil.parse(new File(path));
         Compiler.DrAST_root_node = program; // Enable debugging with DrAST
         new InitialTypeCheck(getParamss()).perform(program, description());
         new SemanticCheck(getParamss()).perform(program, description());
-        new TypeCheck(getParamss()).perform(program, description());
+		// Disable type checking for now.
+        // new TypeCheck(getParamss()).perform(program, description());
         return program;
     }
 }
@@ -112,49 +113,49 @@ aspect Souffle {
 		//preProcess(program, description());
 		return program;
 	}
-	
+
     protected Program SouffleTask.preEvaluate(HashSet<File> moved) throws Exception {
         SimpleLogger.logger().log(description().debugInfo(), SimpleLogger.LogLevel.Level.DEBUG);
         File tmp_dir_1 = new File("tmp/tmp1");
         File tmp_dir_2 = new File("tmp/tmp2");
         tmp_dir_1.mkdirs();
         tmp_dir_2.mkdirs();
-        
+
         /**
          *  Get Target Program and PrePrint it
-         */ 
+         */
         Program initial = getProgramWithChecks();
         String pre_out = tmp_dir_1.getPath() + "/" + description().inputFileName();
         initial.prePrint(pre_out);
-        
+
          /**
          *  Evaluate pre-printed program (evaluates only the predefined literals)
-         */ 
+         */
         String source_eval = "eval::bottomupnaive -OUT " + tmp_dir_1.getPath() + " -FACTS " + factsDir() + " " + pre_out;
         Description evalDescr = FileUtil.parseDescription(source_eval);
         Program program = evalDescr.getTask().perform();
-        
+
         /**
          *  OUTPUT_PRE_PROC_NAME in pre-print is the OUTPUTLiteral of Target Program
-         */ 
+         */
         FormalPredicate meta_output = program.formalPredicateMap().get(GlobalNames.OUTPUT_PRE_PROC_NAME);
         if(meta_output == null) return initial;
-        
+
         PseudoTuple ps_meta_output = PseudoTuple.of(new PredicateRef(GlobalNames.OUTPUT_PRE_PROC_NAME));
         /**
          * Dump relations and move to temporary location if clash.
-         */ 
+         */
         HashSet<FormalPredicate> visited = new HashSet<FormalPredicate>();
         for(Literal pre : program.predefinedLiterals()) {
         	FormalPredicate fp = pre.predicate().formalpredicate();
-        	
+
         	/**
         	 * Remove the meta output from any usage (ATOM / OUTPUT/ ...)
-        	 */ 
+        	 */
         	fp.relation.tuples().remove(ps_meta_output);
 			if(visited.contains(fp)) continue;
 			visited.add(fp);
-        	
+
         	File output_fp = new File(factsDir() + "/" + fp.predicateName() + ".csv");
         	if(output_fp.exists() && !output_fp.isDirectory()) {
                 SimpleLogger.logger().log("Move: " + output_fp.getName() + " from  " + factsDir() + " to " + tmp_dir_2.getPath(),
@@ -165,14 +166,14 @@ aspect Souffle {
             }
             CSVUtil.dumpFileInto(fp, output_fp);
         }
-        
+
          /**
          * Remove OUTPUT_PRE_PROC_NAME from self, dump OUTPUT_PRE_PROC_NAME into OUTPUT_NAME
-         */ 
+         */
         File output_fp = new File(factsDir() + "/" + GlobalNames.OUTPUT_NAME + ".csv");
-        meta_output.relation.tuples().remove(ps_meta_output); 
+        meta_output.relation.tuples().remove(ps_meta_output);
         CSVUtil.dumpFileInto(meta_output, output_fp);
-        
+
         /**
         * Add OUTPUT and EDB for .ouput and .input decls in souffle
         **/
@@ -183,7 +184,7 @@ aspect Souffle {
         		initial_output.relation.addTuple(ps);
         	}
         }
-        
+
         FormalPredicate meta_edb    = program.formalPredicateMap().get(GlobalNames.EDB_NAME);
         FormalPredicate initial_edb = initial.formalPredicateMap().get(GlobalNames.EDB_NAME);
         if(initial_edb != null && meta_edb != null) {
@@ -195,13 +196,13 @@ aspect Souffle {
         return initial;
     }
 
-    protected void SouffleTask.postEvaluate(HashSet<File> moved) throws Exception { 
+    protected void SouffleTask.postEvaluate(HashSet<File> moved) throws Exception {
         for(File fp : moved) {
             SimpleLogger.logger().log("Move Back: " + fp.getName(), SimpleLogger.LogLevel.Level.DEBUG);
             Files.move(fp.toPath(), new File(factsDir() + "/" + fp.getName()).toPath(), StandardCopyOption.REPLACE_EXISTING);
         }
     }
-    
+
     public Program EvalSouffle.perform()  throws Exception {
         HashSet<File> moved  = new HashSet<File>();
         Program program;
@@ -298,7 +299,7 @@ aspect SubTask {
         perform(program, description());
         return program;
     }
-    
+
     public Program TypeCheck.perform() throws Exception {
         Program program = (Program) FileUtil.parse(new File(description().getInput().getPath()));
         Compiler.DrAST_root_node = program; // Enable debugging with DrAST
@@ -312,13 +313,13 @@ aspect SubTask {
     InitialTypeCheck implements SubTask;
     TypeCheck        implements SubTask;
     SemanticCheck    implements SubTask;
-    
+
     public void InitialTypeCheck.perform(Program program, Description descr) throws Exception {
         if(!program.hasInitialTypeErrors()) return;
         SimpleLogger.logger().log("Compilation failed with initial type error: \n" + program.initialTypeErrorReport(), SimpleLogger.LogLevel.Level.ERROR);
         System.exit(0);
     }
-    
+
     public void TypeCheck.perform(Program program, Description descr) throws Exception {
         program.typeCheck();
         if(!program.hasTypeErrors()) return;

@@ -148,6 +148,27 @@ aspect DatalogProject {
 		return ret;
 	}
 
+	public TupleWrapper Rule.buildTupleWrapper() {
+		TupleWrapper ret = new TupleWrapper();
+		List<InclusiveLiteral> heads = getHeadss();
+		List<Literal> bodys = getBodys();
+
+		IntConstant CurrentNodeId = new IntConstant("" + getNodeId());
+		int childIndex = 0;
+		for (ASTNode h : heads) {
+			IntConstant ChildId = new IntConstant("" + h.getNodeId());
+			IntConstant ChildIdx = new IntConstant("" + childIndex++);
+			ret.addTuple("Head", new PseudoTuple(CurrentNodeId, ChildIdx, ChildId));
+		}
+		childIndex = 0;
+		for (ASTNode b : bodys) {
+			IntConstant ChildId = new IntConstant("" + b.getNodeId());
+			IntConstant ChildIdx = new IntConstant("" + childIndex++);
+			ret.addTuple("Body", new PseudoTuple(CurrentNodeId, ChildIdx, ChildId));
+		}
+		return ret;
+	}
+
 	ASTNode contributes buildTupleWrapper() to Program.datalogProjection() ;
 
 	public HashSet<String> Program.loadedPrograms = new HashSet<String>();

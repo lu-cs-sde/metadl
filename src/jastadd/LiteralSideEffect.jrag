@@ -56,6 +56,16 @@ aspect LiteralSideEffect {
         SimpleLogger.logger().log("End EDB Load: " + delta, SimpleLogger.LogLevel.Level.DEBUG);
     }
 
+    public class EDBRead {
+        public PredicateRef ref;
+        public String path;
+
+        public EDBRead(PredicateRef ref, String path) {
+            this.ref = ref;
+            this.path = path;
+        }
+    }
+
 	public void IMPORTLiteral.sideEffect(Program program, Description descr, Relation delta) {
 		System.out.println("Computing side effects of loading program...");
 
@@ -69,9 +79,6 @@ aspect LiteralSideEffect {
 				System.exit(1);
 			}
 
-			// new InitialTypeCheck(getParams()).perform(importedProgram, description());
-			// new SemanticCheck(getParams()).perform(importedProgram, description());
-
 			HashMap<String, Relation> nameToRelMap = importedProgram.datalogProjection().nameToRelMap;
 
 			for (Map.Entry<String, Relation> kv : nameToRelMap.entrySet()) {
@@ -81,15 +88,6 @@ aspect LiteralSideEffect {
 		}
 	}
 
-    public class EDBRead {
-        public PredicateRef ref;
-        public String path;
-
-        public EDBRead(PredicateRef ref, String path) {
-            this.ref = ref;
-            this.path = path;
-        }
-    }
 }
 
 aspect InitialSideEffect {

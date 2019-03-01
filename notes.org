@@ -1,5 +1,18 @@
-* Changes
-** Non-referenceable built-in predicates: e.g. INPUT, OUTPUT, IMPORT, EXPORT, TYPEOF
+* To do
+** DONE Populate relations present in the import statement
+   CLOSED: [2019-03-01 Fri 18:07]
+Add to the relations that are referred by the parameters. The other approach is to erase the content of the existing relations. However, this latter approach is not monotonic and requires care during stratification.
+
+Using different IDs for AST nodes from different programs to allow concatenation of programs without mixing AST nodes.
+** DONE Pretty print the program
+   CLOSED: [2019-03-01 Fri 18:17]
+Add a pretty print implementation for the IMPORTLiteral AST node.
+
+** TODO Implement a typechecker in DatalogM
+The DatalogM engine typechecker is now disabled, so a new type checker written in Datalog is needed. The "!=" literal might be needed, which means that the signature of the IMPORT statement must be expanded to bring in representation of the logical and arithmetic expressions.
+
+* Future changes
+** TODO Non-referenceable built-in predicates: e.g. INPUT, OUTPUT, IMPORT, EXPORT, TYPEOF
 - Disallow at grammar level.
 
 * Questions

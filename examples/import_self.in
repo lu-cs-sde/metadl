@@ -1,0 +1,35 @@
+# This program imports itself and produces a Tree
+# relation representing its AST.
+
+IMPORT("just_import.mdl",
+       'Program,
+	   'Head,
+	   'Body,
+	   'Fact,
+	   'Atom,
+	   'PredicateSymbol,
+	   'IntConstant,
+	   'StringConstant,
+	   'PredicateRef,
+	   'Variable,
+	   'IMPORTLiteral,
+	   'EDBLiteral,
+	   'OUTPUTLiteral).
+
+Tree(x, y, z) :- Program(x, y, z).
+Tree(x, y, z) :- Head(x, y, z).
+Tree(x, y, z) :- Body(x, y, z).
+Tree(x, y, z) :- Fact(x, y, z).
+Tree(x, y, z) :- Atom(x, y, z).
+Tree(x, y, z) :- IMPORTLiteral(x, y, z).
+Tree(x, y, z) :- EDBLiteral(x, y, z).
+Tree(x, y, z) :- OUTPUTLiteral(x, y, z).
+Constant(x, y) :- IntConstant(x, y).
+Constant(x, y) :- StringConstant(x, y).
+Constant(x, y) :- PredicateRef(x, y).
+Names(y) :- Variable(x, y).
+Names(y) :- PredicateSymbol(x, y).
+
+OUTPUT('Tree).
+OUTPUT('Constant).
+OUTPUT('Names).

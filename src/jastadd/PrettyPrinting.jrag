@@ -31,7 +31,7 @@ aspect PretyPrinting {
         }
         pr.out.print(post);
     }
-    
+
     protected static <T extends ASTNode> void ASTNode.printCollection(Collection<T> collection,
             String pre, String post, String delim, PrettyPrinter pr) {
         Iterator<T> itr = collection.iterator();
@@ -75,7 +75,7 @@ aspect PretyPrinting {
     public void Term.prettyPrint(PrettyPrinter pr) {
         pr.out.print(toString());
     }
-    
+
 	public void TermList.prettyPrint(PrettyPrinter pr) {
         printList(getTermss(), "[", "]", " ", pr);
     }
@@ -84,7 +84,7 @@ aspect PretyPrinting {
         pr.prettyPrint(getPredicate());
         printList(getTermss(), "(", ")", ", ", pr);
     }
-    
+
     public void Rule.prettyPrint(PrettyPrinter pr) {
         printList(getHeadss(), "", "", ",", pr);
         pr.out.print(" :- ");
@@ -103,6 +103,18 @@ aspect PretyPrinting {
         pr.prettyPrint(getFileLoc());
         pr.out.print(")");
     }
+
+    public void IMPORTLiteral.prettyPrint(PrettyPrinter pr) {
+		pr.prettyPrint(getPredicate());
+		pr.out.print("(");
+		pr.prettyPrint(getFileLoc());
+		for (int i = 2; i < getNumChild(); ++i) {
+			pr.out.print(",");
+			pr.prettyPrint(getChild(i));
+		}
+		pr.out.print(")");
+	}
+
 
     public void OUTPUTLiteral.prettyPrint(PrettyPrinter pr) {
         pr.prettyPrint(getPredicate());
@@ -149,7 +161,7 @@ aspect PretyPrinting {
         pr.prettyPrint(getRight());
         pr.out.print(")");
     }
-    
+
     public void BinaryExclusiveTermLiteral.prettyPrint(PrettyPrinter pr) {
     	pr.prettyPrint(getPredicate());
         pr.out.print("(");
@@ -207,17 +219,17 @@ aspect ExtensionablePrinting {
             super(out);
         }
     }
-    
+
     public class TypePrettyPrinter<T extends ASTNode> extends PrettyPrinter<T> {
     	public void prettyPrint(T node) {
         	node.typePrint(this);
         }
-        
+
         public TypePrettyPrinter(PrintStream out) {
             super(out);
         }
     }
-    
+
     public class SoufflePrePrinter<T extends ASTNode> extends PrettyPrinter<T> {
         public void prettyPrint(T node) {
             node.prePrint(this);
@@ -226,7 +238,7 @@ aspect ExtensionablePrinting {
             super(out);
         }
     }
-    
+
 }
 
 aspect MetaPrinting {
@@ -246,7 +258,7 @@ aspect TypePrinting {
     public void ASTNode.typePrint(PrettyPrinter pr) {
         prettyPrint(pr);
     }
-    
+
     public void NEGLiteral.typePrint(PrettyPrinter pr) { getInclusiveLiteral().typePrint(pr); }
     public void InclusiveLiteral.typePrint(PrettyPrinter pr) {
     	PseudoTuple tuple = toTuple();
@@ -262,7 +274,7 @@ aspect TypePrinting {
 	 		pr.out.print(Program.transformPredefinedName(predicate().getPRED_ID()));
 	 	printList(types, "(", ")", ", ", pr);
     }
-    
+
     public void BinaryExclusiveTermLiteral.typePrint(PrettyPrinter pr) {
     	TreeSet<Term> terms = new TreeSet<Term>(Term.termComparator);
     	terms.addAll(variables());
@@ -270,7 +282,7 @@ aspect TypePrinting {
     		terms.add(c.type());
     	printCollection(terms, "EQLIST([", "])", " ", pr);
     }
-    
+
     public void BINDLiteral.typePrintRule(PrettyPrinter pr) {
         TreeSet<Term> terms = new TreeSet<Term>(Term.termComparator);
     	terms.add(getVariable());
@@ -279,7 +291,7 @@ aspect TypePrinting {
     		terms.add(c.type());
     	printCollection(terms, "EQLIST([", "])", " ", pr);
     }
-    
+
     public void BINDLiteral.typePrint(PrettyPrinter pr) {
 		typePrintRule(pr);
     	if(!getRight().variables().isEmpty()) {
@@ -288,7 +300,7 @@ aspect TypePrinting {
     		pr.out.print(", BIND(" + getVariable() + ", " + getRight().constants().iterator().next().type() + ")");
     	}
     }
-    
+
     public void EQLISTLiteral.typePrint(PrettyPrinter pr) {
     	TreeSet<Term> terms = new TreeSet<Term>(Term.termComparator);
     	for(Term t : terms) {
@@ -297,11 +309,11 @@ aspect TypePrinting {
     	}
     	printCollection(terms, "EQLIST([", "])", " ", pr);
     }
-    
+
     public void Rule.typePrint(PrettyPrinter pr) {
     	String ruleName = GlobalNames.TYPE_RULE_NAME + index();
     	pr.out.print("OUTPUT('" + ruleName + ").\n");
-    
+
 	 	pr.out.print(ruleName);
 	 	printCollection(variables(), "(", ")", ", ", pr);
 	 	pr.out.print(" :- ");
@@ -317,7 +329,7 @@ aspect TypePrinting {
 	 	printList(getHeadss(),  "", " :- ", ", ", pr);
 	 	printList(getBodys(),   "", ".", ", ",    pr);
 	 }
-	 
+
 	public void Program.typePrint(PrettyPrinter pr) {
 		MapToSetOf<FormalPredicate, PseudoTuple> initial = pass1TypeMap();
 		for(FormalPredicate fp : initial.keySet()) {
@@ -359,7 +371,7 @@ aspect SoufflePreProcess {
         soufflePrinter.prettyPrint(this);
         return bytes.toString();
     }
-    
+
     public void PredicateSymbol.prePrint(PrettyPrinter pr) {
     	if(!literal().isOUTPUT())
 	 		pr.out.print(getPRED_ID());
@@ -370,7 +382,7 @@ aspect SoufflePreProcess {
     public void ASTNode.prePrint(PrettyPrinter pr) {
         prettyPrint(pr);
     }
-    
+
     public void Program.prePrint(PrettyPrinter pr) {
     	HashSet<String> printed = new HashSet<String>();
         for(Literal l : predefinedLiterals()) {
@@ -402,12 +414,12 @@ aspect SoufflePrinting {
     public void ASTNode.soufflePrint(PrettyPrinter pr) {
         prettyPrint(pr);
     }
-    
+
     public void NEGLiteral.soufflePrint(PrettyPrinter pr) {
     	pr.out.print("!");
         pr.prettyPrint(getInclusiveLiteral());
     }
-    
+
     public abstract String BinaryExclusiveTermLiteral.souffleOPString();
     public String EQLiteral.souffleOPString()  { return  "="; }
 	public String NEQLiteral.souffleOPString() { return "!="; }
@@ -415,7 +427,7 @@ aspect SoufflePrinting {
 	public String LTELiteral.souffleOPString() { return "<="; }
 	public String GTLiteral.souffleOPString()  { return ">";  }
 	public String GTELiteral.souffleOPString() { return ">="; }
-	
+
     public void BinaryExclusiveTermLiteral.soufflePrint(PrettyPrinter pr) {
         pr.prettyPrint(getLeft());
         pr.out.print(" ");
@@ -509,7 +521,7 @@ aspect SoufflePrinting {
             pr.out.print(".output " + predref.getPRED_ID() + "(delimiter=\",\")\n");
         }
     }
-    
+
     public void Program.soufflePrint(PrettyPrinter pr) {
         printList(getFormalPredicates(), "", "\n", "\n", pr);
         HashSet<String> visited = new HashSet<String>();

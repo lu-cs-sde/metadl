@@ -66,12 +66,49 @@ aspect LiteralSideEffect {
         }
     }
 
+	private PredicateRef IMPORTLiteral.getPredicateRefForRelation(String relName) {
+		switch (relName) {
+		case "Program":
+			return getProgramRef();
+		case "Head":
+			return getHeadRef();
+		case "Body":
+			return getBodyRef();
+		case "Fact":
+			return getFactRef();
+		case "Atom":
+			return getAtomRef();
+		case "PredicateSymbol":
+			return getPredicateSymbolRef();
+		case "IntConstant":
+			return getIntConstantRef();
+		case "StringConstant":
+			return getStringConstantRef();
+		case "PredicateRef":
+			return getPredicateRefRef();
+		case "Variable":
+			return getVariableRef();
+		case "IMPORTLiteral":
+			return getIMPORTLiteralRef();
+		case "EDBLiteral":
+			return getEDBLiteralRef();
+		case "OUTPUTLiteral":
+			return getOUTPUTLiteralRef();
+		default:
+			return null;
+		}
+	}
+
+
 	public void IMPORTLiteral.sideEffect(Program program, Description descr, Relation delta) {
 		System.out.println("Computing side effects of loading program...");
+
+
 
 		for (PseudoTuple t : delta.tuples()) {
 			System.out.println("Loading program " + t.coord(0));
 			Program importedProgram = null;
+
 			try {
 				importedProgram = (Program) FileUtil.parse(new File(t.coord(0).toString()));
 			} catch(Exception e) {
@@ -82,8 +119,16 @@ aspect LiteralSideEffect {
 			HashMap<String, Relation> nameToRelMap = importedProgram.datalogProjection().nameToRelMap;
 
 			for (Map.Entry<String, Relation> kv : nameToRelMap.entrySet()) {
-				System.out.println("Relation " + kv.getKey());
-				System.out.println(kv.getValue().toString());
+				PredicateRef ref = getPredicateRefForRelation(kv.getKey());
+
+				FormalPredicate fp = program.formalPredicateMap().get(ref.getPRED_ID());
+				if (fp == null) {
+                    SimpleLogger.logger().log("Each PredicateSymbol should belong to a FormalPredicate: " + ref.getPRED_ID(),
+											  SimpleLogger.LogLevel.Level.ERROR);
+					System.exit(0);
+                }
+
+				fp.relation.addAll(kv.getValue());
 			}
 		}
 	}

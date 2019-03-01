@@ -87,7 +87,6 @@ aspect LiteralSideEffect {
 			}
 		}
 	}
-
 }
 
 aspect InitialSideEffect {

@@ -28,7 +28,19 @@ TYPEOFLiteral:InclusiveLiteral ::= PredicateRef:Term Term;
 NEGLiteral:ExclusiveLiteral    ::= InclusiveLiteral;
 
 BINDLiteral:ExclusiveLiteral ::= Variable Right:Expr;
-IMPORTLiteral:InclusiveLiteral ::= File:Term Clauses:PredicateRef Heads:PredicateRef Body:PredicateRef;
+IMPORTLiteral:InclusiveLiteral ::= FileLoc:Term ProgramRef:PredicateRef
+                                             HeadRef:PredicateRef
+                                             BodyRef:PredicateRef
+                                             FactRef:PredicateRef
+                                             AtomRef:PredicateRef
+                                             PredicateSymbolRef:PredicateRef
+                                             IntConstantRef:PredicateRef
+                                             StringConstantRef:PredicateRef
+                                             PredicateRefRef:PredicateRef
+                                             VariableRef:PredicateRef
+                                             IMPORTLiteralRef:PredicateRef
+                                             EDBLiteralRef:PredicateRef
+                                             OUTPUTLiteralRef:PredicateRef;
 
 EQLiteral:BinaryExclusiveTermLiteral;
 NEQLiteral:BinaryExclusiveTermLiteral;

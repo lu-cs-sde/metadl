@@ -127,7 +127,25 @@ output_literal = OUTPUT LPARA term.t RPARA                            {: return 
 pred_literal   = PRED   LPARA term.t RPARA                            {: return new PREDLiteral(new PredicateSymbol("PRED"), t);             :};
 atom_literal   = ATOM   LPARA term.t RPARA                            {: return new ATOMLiteral(new PredicateSymbol("ATOM"), t);             :};
 typeof_literal = TYPEOF LPARA term.pred COMMA term.t RPARA            {: return new TYPEOFLiteral(new PredicateSymbol("TYPEOF"), pred, t);   :};
-import_literal = IMPORT LPARA term.file COMMA pred_ref.clauses COMMA pred_ref.heads COMMA pred_ref.body RPARA {: return new IMPORTLiteral(new PredicateSymbol("IMPORT"), file, clauses, heads, body); :};
+import_literal = IMPORT LPARA term.file_loc
+                        COMMA pred_ref.program_ref
+                        COMMA pred_ref.head_ref
+                        COMMA pred_ref.body_ref
+                        COMMA pred_ref.fact_ref
+                        COMMA pred_ref.atom_ref
+                        COMMA pred_ref.predicate_symbol_ref
+                        COMMA pred_ref.int_constant_ref
+                        COMMA pred_ref.string_constant_ref
+                        COMMA pred_ref.predicate_ref_ref
+                        COMMA pred_ref.variable_ref
+                        COMMA pred_ref.import_literal_ref
+                        COMMA pred_ref.edb_literal_ref
+                        COMMA pred_ref.output_literal_ref
+                        RPARA
+     {: return new IMPORTLiteral(new PredicateSymbol("IMPORT"), file_loc, program_ref, head_ref, body_ref, fact_ref, atom_ref, predicate_symbol_ref,
+                       int_constant_ref, string_constant_ref, predicate_ref_ref, variable_ref,
+                       import_literal_ref, edb_literal_ref, output_literal_ref); :};
+
 
 lit_list = literal.lit {: return new List().add(lit); :}
          | lit_list.list COMMA literal.c {: return list.add(c); :}

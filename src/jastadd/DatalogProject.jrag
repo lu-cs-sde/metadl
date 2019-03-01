@@ -6,7 +6,9 @@ import java.lang.reflect.ParameterizedType;
 
 aspect DatalogProject {
 	public String ASTNode.getRelation() {
-		return this.getClass().getName();
+		String nodeName = this.getClass().getName();
+		String[] splitNodeName = nodeName.split("\\.");
+		return splitNodeName[splitNodeName.length - 1];
 	}
 
 	public int ASTNode.UID = 0;
@@ -20,33 +22,51 @@ aspect DatalogProject {
 	}
 
 	public class TupleWrapper {
-		public String relation;
-		public ArrayList<PseudoTuple> tuples;
+		public class RelationTuple {
+			String relation;
+			PseudoTuple tuple;
+			public RelationTuple(String relation, PseudoTuple tuple) {
+				this.relation = relation;
+				this.tuple = tuple;
+			}
+		}
 
-		TupleWrapper(String relation) {
-			this.relation = relation;
-			this.tuples = new ArrayList<PseudoTuple>();
+		public ArrayList<RelationTuple> tuples = new ArrayList<>();
+		public String defaultRel;
+
+		TupleWrapper() {}
+
+		TupleWrapper(String defaultRel) {
+			this.defaultRel = defaultRel;
 		}
 
 		public void addTuple(PseudoTuple tpl) {
-			tuples.add(tpl);
+			assert defaultRel != null;
+			tuples.add(new RelationTuple(defaultRel, tpl));
+		}
+
+		public void addTuple(String relation, PseudoTuple tpl) {
+			tuples.add(new RelationTuple(relation, tpl));
+		}
+
+		public Iterable<RelationTuple> getTuples() {
+			return tuples;
 		}
 	}
 
 	public class RelationMap {
 		public HashMap<String, Relation> nameToRelMap = new HashMap<>();
-
 		public void add(TupleWrapper tplw) {
-			if (tplw.tuples.isEmpty())
-				return;
-			Relation r;
-			r = nameToRelMap.get(tplw.relation);
-			if (r == null) {
-				r = new Relation(tplw.tuples.get(0).arity());
-				nameToRelMap.put(tplw.relation, r);
+			for (TupleWrapper.RelationTuple tpl : tplw.getTuples()) {
+				Relation r;
+				r = nameToRelMap.get(tpl.relation);
+				if (r == null) {
+					// Create a relation if it does not exist
+					r = new Relation(tpl.tuple.arity());
+					nameToRelMap.put(tpl.relation, r);
+				}
+				r.addTuple(tpl.tuple);
 			}
-			for (PseudoTuple tpl : tplw.tuples)
-				r.addTuple(tpl);
 		}
 	}
 
@@ -127,7 +147,6 @@ aspect DatalogProject {
 		ret.addTuple(new PseudoTuple(nodeId, varName));
 		return ret;
 	}
-
 
 	ASTNode contributes buildTupleWrapper() to Program.datalogProjection() ;
 

@@ -141,10 +141,12 @@ import_literal = IMPORT LPARA term.file_loc
                         COMMA pred_ref.import_literal_ref
                         COMMA pred_ref.edb_literal_ref
                         COMMA pred_ref.output_literal_ref
+			COMMA pred_ref.neg_literal_ref
+			COMMA pred_ref.neq_literal_ref
                         RPARA
      {: return new IMPORTLiteral(new PredicateSymbol("IMPORT"), file_loc, program_ref, head_ref, body_ref, fact_ref, atom_ref, predicate_symbol_ref,
                        int_constant_ref, string_constant_ref, predicate_ref_ref, variable_ref,
-                       import_literal_ref, edb_literal_ref, output_literal_ref); :};
+                       import_literal_ref, edb_literal_ref, output_literal_ref, neg_literal_ref, neq_literal_ref); :};
 
 
 lit_list = literal.lit {: return new List().add(lit); :}

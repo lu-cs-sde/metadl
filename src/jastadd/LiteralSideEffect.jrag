@@ -94,6 +94,10 @@ aspect LiteralSideEffect {
 			return getEDBLiteralRef();
 		case "OUTPUTLiteral":
 			return getOUTPUTLiteralRef();
+		case "NEGLiteral":
+		    return getNEGLiteralRef();
+		case "NEQLiteral":
+		    return getNEQLiteralRef();
 		default:
 			return null;
 		}

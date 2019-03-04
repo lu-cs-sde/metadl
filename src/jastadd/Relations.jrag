@@ -16,7 +16,7 @@ aspect Arity {
     eq EQLISTLiteral.arity() = 1;
     eq BinaryExclusiveTermLiteral.arity() = 2;
     eq TYPEOFLiteral.arity() = 2;
-	eq IMPORTLiteral.arity() = 4;
+    eq IMPORTLiteral.arity() = 16;
     eq Atom.arity() = getNumTerms();
     syn int PredicateSymbol.arity() = literal().arity();
 

@@ -99,11 +99,17 @@ aspect LiteralSideEffect {
 		}
 	}
 
+	private void IMPORTLiteral.dumpAllRelations(Map<String, Relation> nameToRelMap)
+	{
+		for (Map.Entry<String, Relation> kv : nameToRelMap.entrySet()) {
+			System.out.println(kv.getKey());
+			System.out.println(kv.getValue());
+		}
+	}
+
 
 	public void IMPORTLiteral.sideEffect(Program program, Description descr, Relation delta) {
 		System.out.println("Computing side effects of loading program...");
-
-
 
 		for (PseudoTuple t : delta.tuples()) {
 			System.out.println("Loading program " + t.coord(0));
@@ -120,6 +126,13 @@ aspect LiteralSideEffect {
 
 			for (Map.Entry<String, Relation> kv : nameToRelMap.entrySet()) {
 				PredicateRef ref = getPredicateRefForRelation(kv.getKey());
+
+				if (ref == null) {
+					SimpleLogger.logger().log("The relation " + kv.getKey() + " cannot be imported using the IMPORT statement.",
+											  SimpleLogger.LogLevel.Level.ERROR);
+					dumpAllRelations(nameToRelMap);
+					continue;
+				}
 
 				FormalPredicate fp = program.formalPredicateMap().get(ref.getPRED_ID());
 				if (fp == null) {

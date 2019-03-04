@@ -20,7 +20,11 @@ aspect TypeChecking {
 
 	 public void Program.typeCheck() throws IOException, beaver.Parser.Exception {
 	 	String typeProgSource = typePrint();
+
+		System.out.println(typeProgSource);
+
 	 	Program typeProg = FileUtil.parse(typeProgSource);
+
 	 	BottomUpNaiveIterative eval = new BottomUpNaiveIterative();
 	 	eval.evaluate(typeProg, null);
 

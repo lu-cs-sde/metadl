@@ -31,8 +31,8 @@ public class BottomUpNaiveIterative extends InternalEvaluation {
 			return;
 		}
 		for(FormalPredicate fp : program.getFormalPredicates())  fp.literal().initialSideEffect(program, descr);
-		Stratification.stratification(program);
-		Stratum outStrat = Stratification.iso.get(output);
+		Stratification stratification = new Stratification(program);
+		Stratum outStrat = stratification.iso.get(output);
 
 		/**
 		 * Evaluate OUTPUT
@@ -41,7 +41,7 @@ public class BottomUpNaiveIterative extends InternalEvaluation {
 		HashSet<Stratum> output_strata = new HashSet<Stratum>();
 		for(PseudoTuple ps : output.relation.tuples()) {
 			PredicateRef ref = (PredicateRef)ps.coord(0);
-			Stratum ref_strat = Stratification.iso.get(program.formalPredicateMap().get(ref.getPRED_ID()));
+			Stratum ref_strat = stratification.iso.get(program.formalPredicateMap().get(ref.getPRED_ID()));
 			output_strata.add(ref_strat);
 		}
 

@@ -11,8 +11,8 @@ import lang.ast.LangParser.SyntaxError;
 %extends beaver.Scanner
 
 // the interface between the scanner and the parser is the nextToken() method
-%type beaver.Symbol 
-%function nextToken 
+%type beaver.Symbol
+%function nextToken
 
 // store line and column information in the tokens
 %line
@@ -30,7 +30,7 @@ LineTerminator = \r|\n|\r\n
 InputCharacter = [^\r\n]
 WhiteSpace     = {LineTerminator} | [ \t\f]
 Comment        = "#" {InputCharacter}* {LineTerminator}?
-VAR_ID = [a-z][a-zA-Z0-9]*
+VAR_ID = [a-z][a-zA-Z0-9_]*
 PRED_ID = [A-Z][a-zA-Z0-9]*
 PRED_REF = '{PRED_ID}
 Numeral = [0-9]+
@@ -76,16 +76,16 @@ String  = \"[^\"]*\"
 {Numeral}  {  return  sym(Terminals.NUMERAL);        }
 {VAR_ID}   {  return  sym(Terminals.VAR_ID);         }
 {PRED_ID}  {  return  sym(Terminals.PRED_ID);        }
-{PRED_REF} {  
+{PRED_REF} {
                 String text = yytext();
                 String data = text.substring(1, text.length());
-                return new beaver.Symbol(Terminals.PRED_REF, yyline + 1, yycolumn + 1, yylength() - 1, data); 
+                return new beaver.Symbol(Terminals.PRED_REF, yyline + 1, yycolumn + 1, yylength() - 1, data);
 		   }
 {String}   {
                 // Remove Quotes from Matched String.
                 String text = yytext();
                 String data = text.substring(1, text.length() - 1);
-                return new beaver.Symbol(Terminals.STRING, yyline + 1, yycolumn + 1, yylength() - 2, data); 
+                return new beaver.Symbol(Terminals.STRING, yyline + 1, yycolumn + 1, yylength() - 2, data);
            }
 <<EOF>>    {  return  sym(Terminals.EOF);        }
 

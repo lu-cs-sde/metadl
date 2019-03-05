@@ -261,18 +261,18 @@ aspect TypePrinting {
 
     public void NEGLiteral.typePrint(PrettyPrinter pr) { getInclusiveLiteral().typePrint(pr); }
     public void InclusiveLiteral.typePrint(PrettyPrinter pr) {
-    	PseudoTuple tuple = toTuple();
-    	List types = new List();
-    	for(int i = 0; i != tuple.arity(); ++i) {
-    		Term t = tuple.coord(i);
-    		if(t.isVariable()) types.add(t);
-	 		else types.add(t.type());
-    	}
-    	if(isAtom())
-	 		pr.out.print(predicate().getPRED_ID());
-	 	else
-	 		pr.out.print(Program.transformPredefinedName(predicate().getPRED_ID()));
-	 	printList(types, "(", ")", ", ", pr);
+	PseudoTuple tuple = toTuple();
+	List types = new List();
+	for(int i = 0; i != tuple.arity(); ++i) {
+		Term t = tuple.coord(i);
+		if(t.isVariable()) types.add(t);
+		else types.add(t.type());
+	}
+	if(isAtom())
+	    pr.out.print(predicate().getPRED_ID());
+	else
+	    pr.out.print(Program.transformPredefinedName(predicate().getPRED_ID()));
+	printList(types, "(", ")", ", ", pr);
     }
 
     public void BinaryExclusiveTermLiteral.typePrint(PrettyPrinter pr) {
@@ -311,24 +311,27 @@ aspect TypePrinting {
     }
 
     public void Rule.typePrint(PrettyPrinter pr) {
-    	String ruleName = GlobalNames.TYPE_RULE_NAME + index();
-    	pr.out.print("OUTPUT('" + ruleName + ").\n");
+	if (variables().isEmpty())
+	    return;
 
-	 	pr.out.print(ruleName);
-	 	printCollection(variables(), "(", ")", ", ", pr);
-	 	pr.out.print(" :- ");
-	 	HashSet<Literal> nobind = new HashSet<Literal>();
-	 	for(Literal l : literals()) {
-	 		if(!l.isBind()) nobind.add(l);
-	 		else {
-	 			((BINDLiteral)l).typePrintRule(pr);
-	 			pr.out.print(", ");
-	 		}
-	 	}
-	 	printCollection(nobind, "", ".\n", ", ",  pr);
-	 	printList(getHeadss(),  "", " :- ", ", ", pr);
-	 	printList(getBodys(),   "", ".", ", ",    pr);
-	 }
+	String ruleName = GlobalNames.TYPE_RULE_NAME + index();
+	pr.out.print("OUTPUT('" + ruleName + ").\n");
+
+	pr.out.print(ruleName);
+	printCollection(variables(), "(", ")", ", ", pr);
+	pr.out.print(" :- ");
+	HashSet<Literal> nobind = new HashSet<Literal>();
+	for(Literal l : literals()) {
+	    if(!l.isBind()) nobind.add(l);
+	    else {
+		((BINDLiteral)l).typePrintRule(pr);
+		pr.out.print(", ");
+	    }
+	}
+	printCollection(nobind, "", ".\n", ", ",  pr);
+	printList(getHeadss(),  "", " :- ", ", ", pr);
+	printList(getBodys(),   "", ".", ", ",    pr);
+    }
 
 	public void Program.typePrint(PrettyPrinter pr) {
 		MapToSetOf<FormalPredicate, PseudoTuple> initial = pass1TypeMap();

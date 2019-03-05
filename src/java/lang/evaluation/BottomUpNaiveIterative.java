@@ -42,7 +42,8 @@ public class BottomUpNaiveIterative extends InternalEvaluation {
 		for(PseudoTuple ps : output.relation.tuples()) {
 			PredicateRef ref = (PredicateRef)ps.coord(0);
 			Stratum ref_strat = stratification.iso.get(program.formalPredicateMap().get(ref.getPRED_ID()));
-			output_strata.add(ref_strat);
+			if (ref_strat != null)
+				output_strata.add(ref_strat);
 		}
 
 		Deque<Stratum> order = Stratification.reversePostOrder(output_strata);

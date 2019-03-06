@@ -66,7 +66,7 @@ aspect LiteralSideEffect {
         }
     }
 
-	private PredicateRef IMPORTLiteral.getPredicateRefForRelation(String relName) {
+	public PredicateRef IMPORTLiteral.getPredicateRefForRelation(String relName) {
 		switch (relName) {
 		case "Program":
 			return getProgramRef();

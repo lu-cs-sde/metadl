@@ -192,6 +192,17 @@ aspect Souffle {
         		initial_edb.relation.addTuple(ps);
         	}
         }
+
+	// Add IMPORT to the formal predicate map. The facts produced by the IMPORT statement
+	// will be exported in the generated souffle file.
+	FormalPredicate meta_import = program.formalPredicateMap().get(GlobalNames.IMPORT_NAME);
+	FormalPredicate initial_import = initial.formalPredicateMap().get(GlobalNames.IMPORT_NAME);
+	if (initial_import != null && meta_import != null) {
+	    initial_import.relation = new Relation(initial_import.realArity());
+	    for (PseudoTuple ps : meta_import.relation.tuples())
+		initial_import.relation.addTuple(ps);
+	}
+
         return initial;
     }
 

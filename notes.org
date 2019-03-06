@@ -8,8 +8,17 @@ Using different IDs for AST nodes from different programs to allow concatenation
    CLOSED: [2019-03-01 Fri 18:17]
 Add a pretty print implementation for the IMPORTLiteral AST node.
 
-** TODO Implement a typechecker in DatalogM
+** DONE Implement a typechecker in DatalogM
+   CLOSED: [2019-03-04 Mon 12:00]
 The DatalogM engine typechecker is now disabled, so a new type checker written in Datalog is needed. The "!=" literal might be needed, which means that the signature of the IMPORT statement must be expanded to bring in representation of the logical and arithmetic expressions.
+
+** TODO Use souffle for evaluation
+** TODO Replace the datachecker in the DatalogM interpreted with the new one
+** TODO Remove the TYPEOF special literal
+** TODO Remove type constants
+
+** TODO Introduce non-binding variable (i.e. _)
+Allow the non-binding variable in negated atoms.
 
 * Future changes
 ** TODO Non-referenceable built-in predicates: e.g. INPUT, OUTPUT, IMPORT, EXPORT, TYPEOF

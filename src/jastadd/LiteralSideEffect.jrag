@@ -113,10 +113,9 @@ aspect LiteralSideEffect {
 
 
 	public void IMPORTLiteral.sideEffect(Program program, Description descr, Relation delta) {
-		System.out.println("Computing side effects of loading program...");
-
+		SimpleLogger.logger().log("Computing side effects of loading program...", SimpleLogger.LogLevel.Level.DEBUG);
 		for (PseudoTuple t : delta.tuples()) {
-			System.out.println("Loading program " + t.coord(0));
+			SimpleLogger.logger().log("Loading program " + t.coord(0), SimpleLogger.LogLevel.Level.DEBUG);
 			Program importedProgram = null;
 
 			try {

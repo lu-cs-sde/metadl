@@ -34,7 +34,7 @@ OUTPUTLiteral(0, 0, 0),
 NEGLiteral(0, 0, 0),
 NEQLiteral(0, 0, 0) :- NEQ(0, 0).
 
-PredicateRef(0, 'PredicateRef), PredicateRef(x, 'PredicateRef) :- NEQ(0, 0), NEQ(x, x).
+PredicateRef(0, 'PredicateRef) :- NEQ(0, 0).
 
 Constant(x) :- IntConstant(x, y).
 Constant(x) :- StringConstant(x, y).

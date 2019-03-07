@@ -12,8 +12,10 @@ Add a pretty print implementation for the IMPORTLiteral AST node.
    CLOSED: [2019-03-04 Mon 12:00]
 The DatalogM engine typechecker is now disabled, so a new type checker written in Datalog is needed. The "!=" literal might be needed, which means that the signature of the IMPORT statement must be expanded to bring in representation of the logical and arithmetic expressions.
 
-** TODO Use souffle for evaluation
-** TODO Replace the datachecker in the DatalogM interpreted with the new one
+** DONE Use souffle for evaluation
+   CLOSED: [2019-03-06 Wed 18:00]
+
+** TODO Replace the typechecker in the DatalogM interpreted with the new one
 ** TODO Remove the TYPEOF special literal
 ** TODO Remove type constants
 
@@ -30,3 +32,45 @@ Allow the non-binding variable in negated atoms.
 - Update the TYPEOF predicate such that it does not use lists
 
 ** Can we write a datalog program that typechecks itself?
+Yes. See [[examples/typecheck.in]].
+
+** Add metavariables to improve the capability of Datalog to analyze itself
+#+BEGIN_SRC prolog
+IMPORT("file_path.mdl", 'Program).
+
+analyze (Program) {
+
+IsVarInPred($p, $x) :- [$p(...,$x,...)].
+
+IsFact($p) :- [...,$p(...),... .].
+
+IsNotGround($p) :- [$p(...,$x,...)],NEG(IsConstant($x)].
+
+}
+
+#+END_SRC
+
+*** Analyze blocks ~analyze P { }~
+The only blocks that are allowed to contain patterns, metavariables and gaps
+- these blocks are desugared to plain Datalog relations
+- all the patterns refer to the analyzed program ~P~
+
+*** Patterns ~[$p(x, 1) :- ...,$q, ... .]~
+- allows for matching rules, facts, predicates
+
+*** Gaps: ~...~
+Where do we need gaps?
+In all variadic AST nodes. That are:
+- literals: $p(...,$x,...)
+- heads and bodies : [...,$p(a, b),... :- ...,$q(b, c),...],[... :- $p(a, b) ]
+
+*** Metavariables: ~$x~, ~$p~
+- terms: p($x, $y)
+- predicates: $p(x, y)
+- arithmetic expressions: $x + y
+- literals: p(x, y) :- $l1, $l2,...
+- enforce an order between metavariables:
+  [$p(...,$x,...,$y,...)] implies that the term to which $x is bound comes before the term to which $y is bound.
+
+*** Open questions:
+- how do we attach an index to a metavariable: ~[$p(...,$i:$x,...,$j:$y,...,)]~

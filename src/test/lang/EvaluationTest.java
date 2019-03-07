@@ -2,6 +2,7 @@ package lang;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.File;
 import java.util.HashMap;
@@ -31,7 +32,7 @@ public class EvaluationTest {
 		FormalPredicate fpOut1 = program1.formalPredicateMap().get(GlobalNames.OUTPUT_NAME);
 
 		if (fpOut1 == null)
-			assertTrue(false);
+			fail();
 
 		HashMap<String, Relation> nameToRel = new HashMap<>();
 		for (PseudoTuple ps : fpOut1.relation.tuples()) {
@@ -48,47 +49,23 @@ public class EvaluationTest {
 				assertTrue(false);
 			}
 			nameToRel.put(fp.predicateName(), r1);
-
 		}
 		return nameToRel;
 	}
 
 	public void doEvaluationTest(Description d1, Description d2) throws Exception {
-		Program program1 = d1.getTask().perform();
-		Program program2 = d2.getTask().perform();
+		Map<String, Relation> rels1 = doSingleEvaluation(d1);
+		Map<String, Relation> rels2 = doSingleEvaluation(d2);
 
-		FormalPredicate fpOut1 = program1.formalPredicateMap().get(GlobalNames.OUTPUT_NAME);
-		FormalPredicate fpOut2 = program1.formalPredicateMap().get(GlobalNames.OUTPUT_NAME);
-		if (fpOut1 == null || fpOut2 == null)
-			assertTrue(false);
-
-		assertTrue(fpOut1.relation.equals(fpOut2.relation));
-
-		for (PseudoTuple ps : fpOut1.relation.tuples()) {
-			PredicateRef pr = (PredicateRef) ps.coord(0);
-			FormalPredicate fp = pr.formalpredicate();
-
-			File in1 = new File(d1.outputDir() + "/" + fp.predicateName() + ".csv");
-			Relation r1 = CSVUtil.readRelationFrom(program1, in1, fp.realArity());
-
-			SimpleLogger.logger().log("Read r1 from: " + in1.getPath(), SimpleLogger.LogLevel.Level.DEBUG);
-			if (r1 == null) {
-				SimpleLogger.logger().log("r1 is null: " + in1.getPath(), SimpleLogger.LogLevel.Level.ERROR);
-				assertTrue(false);
-			}
-
-			File in2 = new File(d2.outputDir() + "/" + fp.predicateName() + ".csv");
-			SimpleLogger.logger().log("Read r2 from: " + in2.getPath(), SimpleLogger.LogLevel.Level.DEBUG);
-			Relation r2 = CSVUtil.readRelationFrom(program2, in2, fp.realArity());
-			if (r2 == null) {
-				SimpleLogger.logger().log("r2 is null: " + in2.getPath(), SimpleLogger.LogLevel.Level.ERROR);
-				assertTrue(false);
-			}
-
-			SimpleLogger.logger().log("r1: " + r1.tuples(), SimpleLogger.LogLevel.Level.DEBUG);
-			SimpleLogger.logger().log("r2: " + r2.tuples(), SimpleLogger.LogLevel.Level.DEBUG);
-			assertTrue(r1.equals(r2));
+		for (Map.Entry<String, Relation> sr : rels1.entrySet()) {
+			Relation rel1 = sr.getValue();
+			Relation rel2 = rels2.get(sr.getKey());
+			assertTrue(rel2 != null);
+			assertEquals(rel1, rel2);
 		}
+
+		// so far we proved rels1 is include in rels2, check their sizes are equal
+		assertEquals(rels1.size(), rels2.size());
 	}
 
 	@DisplayName("Compare Internal Evaluation to Souffle")
@@ -147,7 +124,8 @@ public class EvaluationTest {
 
     @DisplayName("Compare Internal Evaluation to Souffle WithMeta")
     @ParameterizedTest(name = "Evaluation Tests Valid")
-    @ValueSource(strings = { "evalTest_1.in", "evalTest_2.in", "evalTest_3.in", "evalTest_4.in", "evalTest_5.in" })
+	@ValueSource(strings = { "evalTest_1.in", "evalTest_2.in", "evalTest_3.in",
+			"evalTest_4.in"/* , "evalTest_5.in" */ })
     void evaluationTestsBottomUpNaiveCompareWithMeta(String fileName) throws Exception {
         Description d1 = FileUtil.parseDescription(
                 "eval::souffle      -OUT ./tests/output/souffle -FACTS ./tests/evaluation/withmeta/facts ./tests/evaluation/withmeta/" + fileName);

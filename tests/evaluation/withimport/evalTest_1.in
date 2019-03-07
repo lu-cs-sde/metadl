@@ -1,0 +1,121 @@
+# An incomplete type check/inference  for DatalogM
+
+IMPORT("tests/evaluation/withimport/evalTest_1.in",
+       'Program,
+	   'Head,
+	   'Body,
+	   'Fact,
+	   'Atom,
+	   'PredicateSymbol,
+	   'IntConstant,
+	   'StringConstant,
+	   'PredicateRef,
+	   'Variable,
+	   'IMPORTLiteral,
+	   'EDBLiteral,
+	   'OUTPUTLiteral,
+	   'NEGLiteral,
+	   'BinaryExclusiveTermLiteralRef,
+	   'BinExprRef).
+
+
+# For the purpose of type inference, provide a clauses that contain ground instances of all the predicates.
+Program(0, 0, 0),
+Head(0, 0, 0),
+Body(0, 0, 0),
+Fact(0, 0, 0),
+Atom(0, 0, 0),
+PredicateSymbol(0, ""),
+IntConstant(0, 0),
+StringConstant(0, ""),
+Variable(0, ""),
+IMPORTLiteral(0, 0, 0),
+EDBLiteral(0, 0, 0),
+OUTPUTLiteral(0, 0, 0),
+NEGLiteral(0, 0, 0),
+BinaryExclusiveTermLiteralRef(0, "", 0, 0),
+BinExprRef(0, "", 0, 0) :- NEQ(0, 0).
+
+PredicateRef(0, 'PredicateRef) :- NEQ(0, 0).
+
+Constant(x) :- IntConstant(x, y).
+Constant(x) :- StringConstant(x, y).
+Constant(x) :- PredicateRef(x, y).
+
+
+SameVar(v1, v2) :-
+			Body(rule_id, x, atom_id1),
+			Body(rule_id, y, atom_id2),
+			Atom(atom_id1, idx1, v1),
+			Atom(atom_id2, idx2, v2),
+			Variable(v1, name),Variable(v2, name).
+
+SameVar(v1, v2) :-
+			Head(rule_id, x, atom_id1),Atom(atom_id1, idx1, v1),
+			Body(rule_id, y, atom_id2),Atom(atom_id2, idx2, v2),
+			Variable(v1, name),Variable(v2, name).
+
+SameVar(v1, v2) :-
+			Head(rule_id, x, atom_id1),Atom(atom_id1, idx1, v1),
+			Head(rule_id, y, atom_id2),Atom(atom_id2, idx2, v2),
+			Variable(v1, name),Variable(v2, name).
+
+# Transitivity
+SameVar(v1, v3) :- SameVar(v1, v2), SameVar(v2, v3).
+# Symmetry
+SameVar(v1, v2) :- SameVar(v2, v1).
+# Reflexivity
+SameVar(v1, v1) :- Variable(v1, x).
+
+SamePred(p1, p2) :- PredicateSymbol(p1, name), PredicateSymbol(p2, name).
+
+# PredType(pred_id, term_index, term_type)
+# Infer types from constants
+PredType(p, idx, t) :- Atom(a, 0, p), Atom(a, idx, node_id), CType(node_id, t).
+# Infer types from variables
+PredType(p, idx1, t) :-
+			SameVar(v1, v2),
+			Atom(atom_id1, idx1, v1),
+			Atom(atom_id2, idx2, v2),
+			Atom(atom_id2, 0, q),
+			PredType(q, idx2, t),
+			Atom(atom_id1, 0, p).
+
+PredType(p, idx, t) :- PredType(q, idx, t), SamePred(p, q).
+
+PredTypeName(pname, idx, t) :- PredType(p, idx, t),PredicateSymbol(p, pname).
+
+# The indices of all the terms in a predicate
+TermIndex(p, idx) :-
+			 Atom(a, 0, p),
+			 Atom(a, idx, q),
+			 PredicateSymbol(p, y),
+			 Variable(q, x).
+
+TermIndex(p, idx) :-
+			 Atom(a, 0, p),
+			 Atom(a, idx, q),
+			 PredicateSymbol(p, y),
+			 Constant(q).
+
+IsType("String").
+IsType("Int").
+IsType("PredicateRef").
+
+FullTyped(p, idx) :- PredType(p, idx, x).
+NotFullyTyped(p, idx) :- TermIndex(p, idx), NOT(FullTyped(p, idx)).
+InconsistentTyped(p, idx, t1, t2) :- PredType(p, idx, t1), PredType(p, idx, t2), NEQ(t1, t2).
+
+NotFullyTypedName(pname, idx) :- NotFullyTyped(p, idx), PredicateSymbol(p, pname).
+InconsistentTypedName(pname, idx, tname1, tname2) :- InconsistentTyped(p, idx, tname1, tname2), PredicateSymbol(p, pname).
+
+# Types for constants
+CType(node_id, "String") :- StringConstant(node_id, x).
+CType(node_id, "Int") :- IntConstant(node_id, x).
+CType(node_id, "PredicateRef") :- PredicateRef(node_id, x).
+
+# TODO: type check NEQ and NOT
+
+# For a well-typed program, these relations should be empty
+OUTPUT('NotFullyTypedName).
+OUTPUT('InconsistentTypedName).

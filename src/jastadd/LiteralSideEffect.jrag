@@ -96,8 +96,10 @@ aspect LiteralSideEffect {
 			return getOUTPUTLiteralRef();
 		case "NEGLiteral":
 		    return getNEGLiteralRef();
-		case "NEQLiteral":
-		    return getNEQLiteralRef();
+		case "BinaryExclusiveTermLiteral":
+		    return getBinaryExclusiveTermLiteralRef();
+		case "BinExpr":
+		    return getBinExprRef();
 		default:
 			return null;
 		}

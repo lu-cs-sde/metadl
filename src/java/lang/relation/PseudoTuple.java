@@ -8,18 +8,19 @@ import lang.ast.Constant;
 import lang.ast.List;
 import lang.ast.Term;
 import lang.ast.Variable;
+import lang.ast.ConcreteVariable;
 
 public class PseudoTuple implements Comparable<PseudoTuple> {
 	private int size;
 	private Term[] tuple;
-	public static final Variable uninitializedVar = new Variable("UNINITIALZIED VARIABLE"); 
-	
+	public static final Variable uninitializedVar = new ConcreteVariable("UNINITIALZIED VARIABLE");
+
 	public PseudoTuple(TreeSet<Variable> vars) {
 		this.size = vars.size();
 		this.tuple = new Term[size];
 		vars.toArray(this.tuple);
 	}
-	
+
 	public PseudoTuple(PseudoTuple ground, Binding from, PseudoTuple vars) {
 		this.size = vars.size;
 		this.tuple = new Term[size];
@@ -27,7 +28,7 @@ public class PseudoTuple implements Comparable<PseudoTuple> {
 			tuple[i] = ground.coord(from.firstCoordOf(vars.tuple[i]));
 		}
 	}
-	
+
 	public PseudoTuple(List<Term> terms) {
 		this.size = terms.getNumChild();
 		this.tuple = new Term[size];
@@ -35,7 +36,7 @@ public class PseudoTuple implements Comparable<PseudoTuple> {
 			tuple[i] = terms.getChild(i);
 		}
 	}
-	
+
 	public PseudoTuple(Term ... terms) {
 		this.size = terms.length;
 		this.tuple = new Term[size];
@@ -43,7 +44,7 @@ public class PseudoTuple implements Comparable<PseudoTuple> {
 			tuple[i] = terms[i];
 		}
 	}
-	
+
 	public PseudoTuple(PseudoTuple o) {
 		this.size = o.size;
 		this.tuple = new Term[size];
@@ -51,7 +52,7 @@ public class PseudoTuple implements Comparable<PseudoTuple> {
 			tuple[i] = o.tuple[i];
 		}
 	}
-	
+
 	public PseudoTuple(int size) {
 		this.size = size;
 		this.tuple = new Term[size];
@@ -59,7 +60,7 @@ public class PseudoTuple implements Comparable<PseudoTuple> {
 			tuple[i] = uninitializedVar;
 		}
 	}
-	
+
 	public static PseudoTuple of(Term ... consts) {
 		PseudoTuple pt = new PseudoTuple(consts.length);
 		for(int i = 0; i != consts.length; ++i) {
@@ -67,14 +68,14 @@ public class PseudoTuple implements Comparable<PseudoTuple> {
 		}
 		return pt;
 	}
-	
+
 	public List<Term> toList() {
 		List<Term> list = new List<Term>();
-		for(int i = 0; i != size; ++i) 
+		for(int i = 0; i != size; ++i)
 			list.add(tuple[i]);
 		return list;
 	}
-	
+
 	public void expand() {
 		Term[] tmp = new Term[size];
 		System.arraycopy(tuple, 0, tmp, 0, size);
@@ -83,14 +84,14 @@ public class PseudoTuple implements Comparable<PseudoTuple> {
 		tuple[size] = uninitializedVar;
 		size = size + 1;
 	}
-	
+
 	public PseudoTuple toTypeTuple() {
 		PseudoTuple tt = new PseudoTuple(size);
-		for(int i = 0; i != size; ++i) 
+		for(int i = 0; i != size; ++i)
 			tt.set(i, tuple[i].type());
 		return tt;
 	}
-	
+
 	public int arity() {
 		return size;
 	}
@@ -107,16 +108,16 @@ public class PseudoTuple implements Comparable<PseudoTuple> {
 		tuple[i] = c;
 		return this;
 	}
-	
+
 	public PseudoTuple set(int i, Term t) {
 		tuple[i] = t;
 		return this;
 	}
-	
+
 	public void instantiateAll(Set<Integer> positions, Constant c) {
 		positions.forEach(i -> tuple[i] = c);
 	}
-	
+
 	public PseudoTuple project(Set<Integer> positions) {
 		PseudoTuple t = new PseudoTuple(positions.size());
 		int i = 0;
@@ -125,7 +126,7 @@ public class PseudoTuple implements Comparable<PseudoTuple> {
 		}
 		return t;
 	}
-	
+
 	public boolean isUniInfo() {
 		if(tuple.length <= 1) return true;
 		Term first = tuple[0];
@@ -156,7 +157,7 @@ public class PseudoTuple implements Comparable<PseudoTuple> {
 				return false;
 		return true;
 	}
-	
+
 	public Set<Integer> unboundPositions() {
 		Set<Integer> unbound = new HashSet<Integer>();
 		for (int i = 0; i != size; ++i) {
@@ -164,7 +165,7 @@ public class PseudoTuple implements Comparable<PseudoTuple> {
 		}
 		return unbound;
 	}
-	
+
 	public TreeSet<Variable> freeVariables() {
 		TreeSet<Variable> freeVars = new TreeSet<Variable>(Term.termComparator);
 		for(int i = 0; i != size; ++i) {
@@ -175,7 +176,7 @@ public class PseudoTuple implements Comparable<PseudoTuple> {
 		}
 		return freeVars;
 	}
-	
+
 	@Override
 	public int compareTo(PseudoTuple arg0) {
 		for (int i = 0; i != size; ++i) {
@@ -185,20 +186,20 @@ public class PseudoTuple implements Comparable<PseudoTuple> {
 		}
 		return 0;
 	}
-	
+
 	@Override
 	public boolean equals(Object obj) {
 		if(!(obj instanceof PseudoTuple)) return false;
 		return compareTo((PseudoTuple) obj) == 0;
 	}
-	
+
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		collectTuple(sb);
 		return sb.toString();
 	}
-	
+
 	public String[] toStringArray() {
 		String[] strs = new String[size];
 		for(int i = 0; i != size; ++i) {

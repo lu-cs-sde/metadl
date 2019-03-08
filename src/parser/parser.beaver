@@ -9,13 +9,14 @@
 	}
 :};
 
-%terminals VAR_ID, PRED_ID, PRED_REF, LPARA, RPARA, LBRACK, RBRACK,
+%terminals VAR_ID, METAVAR_ID, PRED_ID, PRED_REF, LPARA, RPARA, LBRACK, RBRACK, LBRACE, RBRACE, ELLIPSIS,
            NUMERAL, STRING, DOT, COMMA, IMPLIED_BY, EDB, OUTPUT, IMPORT, PRED,
            ATOM, NOT, BIND,  EQ, EQLIST, NEQ, LT, LTE, GT, GTE, ADD, SUB, MUL, DIV,
-           TYPEOF, TYPE_TYPE, STRING_TYPE, INTEGER_TYPE, PRED_REF_TYPE, LIST_TYPE;
+           TYPEOF, TYPE_TYPE, STRING_TYPE, INTEGER_TYPE, PRED_REF_TYPE, LIST_TYPE, ANALYZE;
 
 %typeof  program             =  "Program";
 %typeof  clause              =  "Clause";
+%typeof  inner_clause        =  "Clause";
 %typeof  literal             =  "Literal";
 %typeof  inclusive_literal   =  "InclusiveLiteral";
 %typeof  exclusive_literal   =  "ExclusiveLiteral";
@@ -37,7 +38,8 @@
 %typeof  atom                =  "Atom";
 %typeof  pred_sym            =  "PredicateSymbol";
 %typeof  pred_ref            =  "PredicateRef";
-%typeof  variable            =  "Variable";
+%typeof  concrete_variable   =  "ConcreteVariable";
+%typeof  meta_variable       =  "MetaVariable";
 %typeof  constant            =  "Constant";
 %typeof  int_constant        =  "IntConstant";
 %typeof  string_constant     =  "StringConstant";
@@ -49,6 +51,7 @@
 %typeof  lit_list            =  "List";
 %typeof  incl_lit_list       =  "List";
 %typeof  clause_list         =  "List";
+%typeof  inner_clause_list   =  "List";
 %typeof  fact                =  "Fact";
 %typeof  rule                =  "Rule";
 %typeof  expr                =  "Expr";
@@ -67,31 +70,47 @@
 %typeof  integer_type        =  "IntegerType";
 %typeof  pred_ref_type       =  "PredRefType";
 %typeof  list_type           =  "ListType";
+%typeof  analyze_block       =  "AnalyzeBlock";
+
+
 
 %goal program;
 
 program =  clause_list.list {: return new Program(list); :};
+
+inner_clause_list = inner_clause.c {: return new List().add(c); :}
+                  | inner_clause_list.list inner_clause.c {: return list.add(c); :}
+                  ;
+
+inner_clause = rule
+             | fact
+             ;
+
+clause = inner_clause
+       | analyze_block
+       ;
+
 clause_list = clause.c {: return new List().add(c); :}
             | clause_list.list clause.c {: return list.add(c); :}
             ;
 
-clause = rule
-       | fact
-       ;
+analyze_block = ANALYZE LPARA pred_ref.prog_ref RPARA LBRACE inner_clause_list.list RBRACE {: return new AnalyzeBlock(prog_ref, list); :};
 
 rule = incl_lit_list.heads IMPLIED_BY lit_list.body DOT {: return new Rule(heads, body); :};
 fact = incl_lit_list.heads DOT {: return new Fact(heads); :};
 
 literal = inclusive_literal
         | exclusive_literal
+        | gap_literal
+        | meta_atom
         ;
 
 inclusive_literal = edb_literal
                   | output_literal
-			      | atom
-			      | typeof_literal
-				  | import_literal
-			      ;
+                  | atom
+                  | typeof_literal
+                  | import_literal
+                  ;
 
 exclusive_literal = neg_literal
                   | bind_literal
@@ -99,11 +118,17 @@ exclusive_literal = neg_literal
                   | eq_list_literal
                   | pred_literal
                   | atom_literal
-             	  ;
+                  | clause_pattern
+                  ;
+
+meta_atom = meta_variable.mv LPARA term_list.terms RPARA {: return new MetaAtom(mv, terms); :};
+gap_literal = ELLIPSIS {: return new LiteralGap(); :};
+
+clause_pattern = LBRACK clause.c RBRACK {: return new ClausePattern(c); :};
 
 neg_literal = NOT LPARA inclusive_literal.lit RPARA {: return new NEGLiteral(new PredicateSymbol("NOT"), lit); :};
 
-bind_literal = BIND LPARA variable.var COMMA expr.right RPARA {: return new BINDLiteral(new PredicateSymbol("BIND"), var, right); :};
+bind_literal = BIND LPARA concrete_variable.var COMMA expr.right RPARA {: return new BINDLiteral(new PredicateSymbol("BIND"), var, right); :};
 bin_excl_term_lit = eq_literal
                   | neq_literal
                   | lt_literal
@@ -189,17 +214,20 @@ sub_expr = expr_term.e1   SUB expr_factor.e2 {: return new SubExpr(e1, e2); :};
 mul_expr = expr_factor.e1 MUL expr_unit.e2   {: return new MulExpr(e1, e2); :};
 div_expr = expr_factor.e1 DIV expr_unit.e2   {: return new DivExpr(e1, e2); :};
 
-term = variable
+term = concrete_variable
+     | meta_variable
      | constant
      | pred_ref
      | term_list_term
      | type_term
+     | term_gap
      ;
 
 pred_sym = PRED_ID.id  {: return new PredicateSymbol(id); :};
 pred_ref = PRED_REF.id {: return new PredicateRef(id); :};
 
-variable = VAR_ID.id {: return new Variable(id); :};
+meta_variable = METAVAR_ID.id {: return new MetaVariable(id); :};
+concrete_variable = VAR_ID.id {: return new ConcreteVariable(id); :};
 constant = int_constant
          | string_constant
          ;
@@ -232,3 +260,5 @@ integer_type  = INTEGER_TYPE  {: return new IntegerType(); :};
 string_type   = STRING_TYPE   {: return new StringType();  :};
 pred_ref_type = PRED_REF_TYPE {: return new PredRefType(); :};
 list_type     = LIST_TYPE LPARA concrete_type.embell RPARA {: return new ListType(embell); :};
+
+term_gap = ELLIPSIS {: return new TermGap(); :};

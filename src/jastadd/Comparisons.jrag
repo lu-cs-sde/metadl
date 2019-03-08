@@ -5,17 +5,17 @@ aspect Conversion {
 	syn int IntConstant.intValue() = Integer.parseInt(getNUMERAL());
 	public String StringConstant.toString() { return getSTRING(); }
 	public String IntConstant.toString()    { return getNUMERAL(); }
-	
+
 	public String Term.toString()            { return "NO_IMPL_TO_STRING"; }
 	public String Variable.toString()        { return getVAR_ID(); }
 	public String PredicateRef.toString()    { return "'" + getPRED_ID(); }
 	public String FormalPredicate.toString() { return "FP_" + predicateName(); }
 	public String TermList.toString()        { return prettyPrint(); }
 	public String ASTNode.toString()         { return prettyPrint(); }
-	
+
 	syn String Type.toString()     = typeName();
 	syn String ListType.toString() = "List(" + getType().typeName() + ")";
-	
+
 	syn String Type.typeName();
 	eq ListType.typeName()       = "List";
 	eq StringType.typeName()     = "String";
@@ -35,6 +35,7 @@ aspect Conversion {
 	eq PREDLiteral.evalOrder()    =  4;
 	eq OUTPUTLiteral.evalOrder()  =  5;
 	eq Atom.evalOrder()           =  6;
+	eq MetaPattern.evalOrder()    =  6; // same order as Atom
 	eq BINDLiteral.evalOrder()    =  7;
 	eq NEGLiteral.evalOrder()     =  8;
 	eq EQLiteral.evalOrder()      =  9;
@@ -44,6 +45,8 @@ aspect Conversion {
 	eq GTLiteral.evalOrder()      =  13;
 	eq GTELiteral.evalOrder()     =  14;
 	eq EQLISTLiteral.evalOrder()  =  15;
+	eq MetaAtom.evalOrder()       =  16; // MetaAtom:s are never evaluated
+	eq LiteralGap.evalOrder()     =  16; // LiteralGap:s are never evaluated
 }
 
 aspect Comparison {
@@ -55,7 +58,7 @@ aspect Comparison {
 	}
 	public static final CompareTypes Type.typeComparator = new CompareTypes();
 	public static boolean Term.sameType(Term t1, Term t2) { return Type.typeComparator.compare(t1.type(), t2.type()) == 0; }
-    
+
 	public class CompareTerm implements Comparator<Term> {
 		@Override
 		public int compare(Term t1, Term t2) {
@@ -80,7 +83,7 @@ aspect Comparison {
 			return t1.toString().compareTo(t2.toString());
 		}
 	}
-	
+
 	public class ComparePredicates implements Comparator<PredicateInterface> {
 		@Override
 		public int compare(PredicateInterface t1, PredicateInterface t2) {
@@ -89,13 +92,13 @@ aspect Comparison {
 		}
 	}
 	public static final ComparePredicates Program.predicateComparator = new ComparePredicates();
-	
+
 	@Override
 	public boolean PredicateSymbol.equals(Object o) {
 		if(!(o instanceof PredicateSymbol)) return false;
 		return Program.predicateComparator.compare(this, (PredicateSymbol)o) == 0;
 	}
-	
+
 	@Override
 	public boolean PredicateRef.equals(Object o) {
 		if(!(o instanceof PredicateRef)) return false;
@@ -108,26 +111,26 @@ aspect Comparison {
 		if(!(o instanceof Term)) return false;
 		return termComparator.compare(this, (Term)o) == 0;
 	}
-	
+
 	public class CompareFormalPredicate implements Comparator<FormalPredicate> {
 		@Override
 		public int compare(FormalPredicate p1, FormalPredicate p2) {
 			return p1.predicateName().compareTo(p2.predicateName());
 		}
 	}
-	
+
 	public static final CompareFormalPredicate FormalPredicate.formalPredicateComparator = new CompareFormalPredicate();
 	@Override
 	public boolean FormalPredicate.equals(Object o) {
 		if(!(o instanceof FormalPredicate)) return false;
 		return formalPredicateComparator.compare(this, (FormalPredicate)o) == 0;
 	}
-	
+
 	@Override
 	public int FormalPredicate.hashCode() {
 		return predicateName().hashCode();
 	}
-	
+
 	public static final CompareLiterals Literal.literalComparator = new CompareLiterals();
 	public class CompareLiterals implements Comparator<Literal> {
 		@Override
@@ -138,7 +141,7 @@ aspect Comparison {
 			return l1.hashCode() < l2.hashCode() ? -1 : l1.hashCode() == l2.hashCode() ? 0 : 1;
 		}
 	}
-	
+
 	public static final CompareFPLiterals FormalPredicate.fpLiteralComparator = new CompareFPLiterals();
 	public class CompareFPLiterals implements Comparator<FormalPredicate> {
 		@Override
@@ -146,7 +149,7 @@ aspect Comparison {
 			return Literal.literalComparator.compare(fp1.literal(), fp2.literal());
 		}
 	}
-	
+
 	@Override
 	public boolean Literal.equals(Object o) {
 		if(!(o instanceof Literal)) return false;

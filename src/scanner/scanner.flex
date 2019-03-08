@@ -31,6 +31,7 @@ InputCharacter = [^\r\n]
 WhiteSpace     = {LineTerminator} | [ \t\f]
 Comment        = "#" {InputCharacter}* {LineTerminator}?
 VAR_ID = [a-z][a-zA-Z0-9_]*
+METAVAR_ID = "$"VAR_ID
 PRED_ID = [A-Z][a-zA-Z0-9]*
 PRED_REF = '{PRED_ID}
 Numeral = [0-9]+
@@ -46,7 +47,10 @@ String  = \"[^\"]*\"
 ")"        {  return  sym(Terminals.RPARA);          }
 "["        {  return  sym(Terminals.LBRACK);         }
 "]"        {  return  sym(Terminals.RBRACK);         }
+"{"        {  return  sym(Terminals.LBRACE);         }
+"}"        {  return  sym(Terminals.RBRACE);         }
 ":-"       {  return  sym(Terminals.IMPLIED_BY);     }
+"..."      {  return  sym(Terminals.ELLIPSIS);       }
 "."        {  return  sym(Terminals.DOT);            }
 ","        {  return  sym(Terminals.COMMA);          }
 "+"        {  return  sym(Terminals.ADD);            }
@@ -73,7 +77,9 @@ String  = \"[^\"]*\"
 "Integer"  {  return  sym(Terminals.INTEGER_TYPE);   }
 "PredRef"  {  return  sym(Terminals.PRED_REF_TYPE);  }
 "List"     {  return  sym(Terminals.LIST_TYPE);      }
+"analyze"  {  return  sym(Terminals.ANALYZE);        }
 {Numeral}  {  return  sym(Terminals.NUMERAL);        }
+{METAVAR_ID} { return  sym(Terminals.METAVAR_ID);     }
 {VAR_ID}   {  return  sym(Terminals.VAR_ID);         }
 {PRED_ID}  {  return  sym(Terminals.PRED_ID);        }
 {PRED_REF} {

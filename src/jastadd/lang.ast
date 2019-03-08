@@ -9,15 +9,20 @@ Program  ::= Clause* /FormalPredicate*/;
 abstract Clause ::= Heads:InclusiveLiteral*;
 Rule:Clause ::=  Body:Literal*;
 Fact:Clause;
+AnalyzeBlock:Clause ::= ProgramRef:PredicateRef Clause*;
 
 /**
    Literals
 **/
-abstract Literal ::= Predicate:PredicateSymbol;
+abstract Literal;
+MetaAtom:Literal ::= Predicate:MetaVariable Term*;
+abstract ConcreteLiteral:Literal ::= Predicate:PredicateSymbol;
 /* Exclusive literals cannot appear in the head of a clause */
-abstract InclusiveLiteral:Literal;
-abstract ExclusiveLiteral:Literal;
+abstract InclusiveLiteral:ConcreteLiteral;
+abstract ExclusiveLiteral:ConcreteLiteral;
 abstract BinaryExclusiveTermLiteral:ExclusiveLiteral ::= Left:Expr Right:Expr;
+
+
 
 Atom:InclusiveLiteral          ::= Terms:Term*;
 EDBLiteral:InclusiveLiteral    ::= PredicateRef FileLoc:Term;
@@ -27,7 +32,7 @@ ATOMLiteral:InclusiveLiteral   ::= Term /PredicateRef*/;
 TYPEOFLiteral:InclusiveLiteral ::= PredicateRef:Term Term;
 NEGLiteral:ExclusiveLiteral    ::= InclusiveLiteral;
 
-BINDLiteral:ExclusiveLiteral ::= Variable Right:Expr;
+BINDLiteral:ExclusiveLiteral ::= ConcreteVariable Right:Expr;
 IMPORTLiteral:InclusiveLiteral ::= FileLoc:Term ProgramRef:PredicateRef
                                              HeadRef:PredicateRef
                                              BodyRef:PredicateRef
@@ -54,6 +59,8 @@ LTELiteral:BinaryExclusiveTermLiteral;
 GTLiteral:BinaryExclusiveTermLiteral;
 GTELiteral:BinaryExclusiveTermLiteral;
 EQLISTLiteral:ExclusiveLiteral ::= TermList;
+
+LiteralGap:Literal;
 
 /**
 	Expressions
@@ -85,9 +92,12 @@ BadType:Type;
     Terms
 **/
 abstract Term:Expr;
+abstract TermGap:Term;
 abstract Constant:Term;
+abstract Variable:Term;
 
-Variable:Term           ::= <VAR_ID>;
+MetaVariable:Term ::= <VAR_ID>;
+ConcreteVariable:Term ::= <VAR_ID>;
 PredicateRef:Constant   ::= <PRED_ID>;
 StringConstant:Constant ::= <STRING>;
 IntConstant:Constant    ::= <NUMERAL>;
@@ -98,3 +108,12 @@ TermList:Constant       ::= Terms:Term*;
 **/
 FormalPredicate ::= <PRED_ID>;
 PredicateSymbol ::= <PRED_ID>;
+
+/**
+   Patterns
+**/
+abstract MetaPattern : ExclusiveLiteral;
+
+ClausePattern : MetaPattern ::= Clause;
+LiteralPattern : MetaPattern ::= Literal;
+ExprPattern : MetaPattern ::= Expr;

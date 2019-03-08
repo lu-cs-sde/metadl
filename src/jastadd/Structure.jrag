@@ -123,6 +123,7 @@ aspect Clause {
     syn boolean Clause.isRule();
     eq Rule.isRule() = true;
     eq Fact.isRule() = false;
+    eq AnalyzeBlock.isRule() = false;
 
     inh int Clause.index();
     eq Program.getClause(int index).index() = index;
@@ -300,13 +301,13 @@ aspect Literal {
     }
 
     eq BINDLiteral.variables()  {
-    	TreeSet<Variable> vars = new TreeSet<Variable>(Term.termComparator);
+	TreeSet<Variable> vars = new TreeSet<Variable>(Term.termComparator);
 		vars.add(getVariable());
 		vars.addAll(getRight().variables());
 		return vars;
     }
 
-	eq IMPORTLiteral.variables() {
+    eq IMPORTLiteral.variables() {
 		TreeSet<Variable> vars = toVarSet(getFileLoc());
 		return vars;
 	}
@@ -317,6 +318,13 @@ aspect Literal {
 		vars.addAll(getRight().variables());
 		return vars;
 	}
+
+    eq LiteralGap.variables() = new TreeSet<Variable>();
+    eq MetaAtom.variables() = new TreeSet<Variable>();
+
+    eq ClausePattern.variables() = getClause().getMetaVariables();
+    eq LiteralPattern.variables() = getClause().getMetaVariables();
+    eq ExprPattern.variables() = getClause().getMetaVariables();
 
     syn TreeSet<Constant> BinaryExclusiveTermLiteral.constants() {
 		TreeSet<Constant> constants = new TreeSet<Constant>(Term.termComparator);

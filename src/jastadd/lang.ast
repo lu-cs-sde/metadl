@@ -42,6 +42,7 @@ IMPORTLiteral:InclusiveLiteral ::= FileLoc:Term ProgramRef:PredicateRef
                                              EDBLiteralRef:PredicateRef
                                              OUTPUTLiteralRef:PredicateRef
 					     NEGLiteralRef:PredicateRef
+					     BINDLiteralRef:PredicateRef
 					     BinaryExclusiveTermLiteralRef:PredicateRef
 					     BinExprRef:PredicateRef
 					     ;

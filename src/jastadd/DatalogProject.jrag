@@ -152,8 +152,8 @@ aspect DatalogProject {
 		TupleWrapper ret = new TupleWrapper("BinaryExclusiveTermLiteral");
 		IntConstant nodeId = new IntConstant("" + getNodeId());
 		StringConstant compOp = new StringConstant("" + getPredicate().getPRED_ID());
-		IntConstant lhs = new IntConstant("" + getRight().getNodeId());
-		IntConstant rhs = new IntConstant("" + getLeft().getNodeId());
+		IntConstant lhs = new IntConstant("" + getLeft().getNodeId());
+		IntConstant rhs = new IntConstant("" + getRight().getNodeId());
 		ret.addTuple(new PseudoTuple(nodeId, compOp, lhs, rhs));
 		return ret;
 	}
@@ -162,9 +162,18 @@ aspect DatalogProject {
 		TupleWrapper ret = new TupleWrapper("BinExpr");
 		IntConstant nodeId = new IntConstant("" + getNodeId());
 		StringConstant compOp = new StringConstant(op);
-		IntConstant lhs = new IntConstant("" + getRight().getNodeId());
-		IntConstant rhs = new IntConstant("" + getLeft().getNodeId());
+		IntConstant lhs = new IntConstant("" + getLeft().getNodeId());
+		IntConstant rhs = new IntConstant("" + getRight().getNodeId());
 		ret.addTuple(new PseudoTuple(nodeId, compOp, lhs, rhs));
+		return ret;
+	}
+
+	public TupleWrapper BINDLiteral.buildTupleWrapper(String op) {
+		TupleWrapper ret = new TupleWrapper("BINDLiteral");
+		IntConstant nodeId = new IntConstant("" + getNodeId());
+		IntConstant lhs = new IntConstant("" + getVariable().getNodeId());
+		IntConstant rhs = new IntConstant("" + getRight().getNodeId());
+		ret.addTuple(new PseudoTuple(nodeId, lhs, rhs));
 		return ret;
 	}
 

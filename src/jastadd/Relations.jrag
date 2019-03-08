@@ -79,6 +79,7 @@ aspect Relation {
 						     getEDBLiteralRef(),
 						     getOUTPUTLiteralRef(),
 						     getNEGLiteralRef(),
+						     getBINDLiteralRef(),
 						     getBinaryExclusiveTermLiteralRef(),
 						     getBinExprRef()
 						     );

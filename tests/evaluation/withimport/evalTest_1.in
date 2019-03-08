@@ -15,6 +15,7 @@ IMPORT("tests/evaluation/withimport/evalTest_1.in",
 	   'EDBLiteral,
 	   'OUTPUTLiteral,
 	   'NEGLiteral,
+	   'BINDLiteral,
 	   'BinaryExclusiveTermLiteralRef,
 	   'BinExprRef).
 
@@ -33,6 +34,7 @@ IMPORTLiteral(0, 0, 0),
 EDBLiteral(0, 0, 0),
 OUTPUTLiteral(0, 0, 0),
 NEGLiteral(0, 0, 0),
+BINDLiteral(0, 0, 0),
 BinaryExclusiveTermLiteralRef(0, "", 0, 0),
 BinExprRef(0, "", 0, 0) :- NEQ(0, 0).
 

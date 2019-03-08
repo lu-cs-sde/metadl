@@ -593,9 +593,9 @@ aspect Types {
 								  getEDBLiteralRef().type(),
 								  getOUTPUTLiteralRef().type(),
 								  getNEGLiteralRef().type(),
+								  getBINDLiteralRef().type(),
 								  getBinaryExclusiveTermLiteralRef().type(),
 								  getBinExprRef().type()));
-
 
 	syn PseudoTuple PredefinedLiteral.type();
 	eq  ATOMLiteral.type()   = new PseudoTuple(new List(Type.predRefType));
@@ -604,6 +604,7 @@ aspect Types {
 	eq  EDBLiteral.type()    = new PseudoTuple(new List(Type.predRefType, Type.stringType));
 	eq  TYPEOFLiteral.type() = new PseudoTuple(new List(Type.predRefType, Type.listOfTypeType));
 	eq  IMPORTLiteral.type() = new PseudoTuple(new List(Type.stringType,
+							    Type.predRefType,
 							    Type.predRefType,
 							    Type.predRefType,
 							    Type.predRefType,

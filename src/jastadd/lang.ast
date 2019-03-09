@@ -1,15 +1,16 @@
 /**
 	Program
 **/
-Program  ::= Clause* /FormalPredicate*/;
+Program  ::= CommonClause* /FormalPredicate*/;
 
 /**
    Clause
 **/
-abstract Clause ::= Heads:InclusiveLiteral*;
+abstract CommonClause;
+abstract Clause : CommonClause ::= Heads:InclusiveLiteral*;
 Rule:Clause ::=  Body:Literal*;
 Fact:Clause;
-AnalyzeBlock:Clause ::= ProgramRef:PredicateRef Clause*;
+AnalyzeBlock:CommonClause ::= ProgramRef:PredicateRef Clause*;
 
 /**
    Literals
@@ -32,7 +33,7 @@ ATOMLiteral:InclusiveLiteral   ::= Term /PredicateRef*/;
 TYPEOFLiteral:InclusiveLiteral ::= PredicateRef:Term Term;
 NEGLiteral:ExclusiveLiteral    ::= InclusiveLiteral;
 
-BINDLiteral:ExclusiveLiteral ::= ConcreteVariable Right:Expr;
+BINDLiteral:ExclusiveLiteral ::= Variable Right:Expr;
 IMPORTLiteral:InclusiveLiteral ::= FileLoc:Term ProgramRef:PredicateRef
                                              HeadRef:PredicateRef
                                              BodyRef:PredicateRef
@@ -94,10 +95,10 @@ BadType:Type;
 abstract Term:Expr;
 abstract TermGap:Term;
 abstract Constant:Term;
-abstract Variable:Term;
+abstract CommonVariable:Term ::= <VAR_ID>;
 
-MetaVariable:Term ::= <VAR_ID>;
-ConcreteVariable:Term ::= <VAR_ID>;
+MetaVariable:CommonVariable;
+Variable:CommonVariable;
 PredicateRef:Constant   ::= <PRED_ID>;
 StringConstant:Constant ::= <STRING>;
 IntConstant:Constant    ::= <NUMERAL>;

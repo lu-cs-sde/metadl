@@ -227,7 +227,7 @@ pred_sym = PRED_ID.id  {: return new PredicateSymbol(id); :};
 pred_ref = PRED_REF.id {: return new PredicateRef(id); :};
 
 meta_variable = METAVAR_ID.id {: return new MetaVariable(id); :};
-concrete_variable = VAR_ID.id {: return new ConcreteVariable(id); :};
+concrete_variable = VAR_ID.id {: return new Variable(id); :};
 constant = int_constant
          | string_constant
          ;

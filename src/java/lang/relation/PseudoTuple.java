@@ -8,12 +8,11 @@ import lang.ast.Constant;
 import lang.ast.List;
 import lang.ast.Term;
 import lang.ast.Variable;
-import lang.ast.ConcreteVariable;
 
 public class PseudoTuple implements Comparable<PseudoTuple> {
 	private int size;
 	private Term[] tuple;
-	public static final Variable uninitializedVar = new ConcreteVariable("UNINITIALZIED VARIABLE");
+	public static final Variable uninitializedVar = new Variable("UNINITIALZIED VARIABLE");
 
 	public PseudoTuple(TreeSet<Variable> vars) {
 		this.size = vars.size();

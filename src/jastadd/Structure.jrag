@@ -123,10 +123,9 @@ aspect Clause {
     syn boolean Clause.isRule();
     eq Rule.isRule() = true;
     eq Fact.isRule() = false;
-    eq AnalyzeBlock.isRule() = false;
 
-    inh int Clause.index();
-    eq Program.getClause(int index).index() = index;
+	//    inh int Clause.index();
+    // eq Program.getClause(int index).index() = index;
 
     syn HashSet<Literal> Rule.literals() {
     	HashSet<Literal> literals = new HashSet<Literal>();

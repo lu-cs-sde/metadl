@@ -33,7 +33,7 @@ aspect TypeChecking {
 	 	    typeError = true;
 	 	    if(fp.predicateName().startsWith(GlobalNames.TYPE_RULE_NAME)) { // A Rule
 	 	    	TreeSet<String> affectedClauses = new TreeSet<String>();
-	 			for(Literal l : ((Rule)fp.literal().clause()).getBodys())
+	 			for(CommonLiteral l : ((Rule)fp.literal().clause()).getBodys())
 	 				if(l.isInclusive())
 	 					affectedClauses.add(l.predicate().getPRED_ID());
 

@@ -314,7 +314,7 @@ aspect TypePrinting {
 	if (variables().isEmpty())
 	    return;
 
-	String ruleName = GlobalNames.TYPE_RULE_NAME + index();
+	String ruleName = GlobalNames.TYPE_RULE_NAME + getNodeId();
 	pr.out.print("OUTPUT('" + ruleName + ").\n");
 
 	pr.out.print(ruleName);
@@ -347,7 +347,7 @@ aspect TypePrinting {
 			}
 		}
 		HashSet<Rule> rules = new HashSet<Rule>();
-		for(Clause c : getClauses()) {
+		for(CommonClause c : getCommonClauses()) {
 			if(!c.isRule()) continue;
 			rules.add((Rule)c);
 		}

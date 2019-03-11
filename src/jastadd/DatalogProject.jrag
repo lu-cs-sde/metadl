@@ -196,7 +196,7 @@ aspect DatalogProject {
 	public TupleWrapper Rule.buildTupleWrapper() {
 		TupleWrapper ret = new TupleWrapper();
 		List<InclusiveLiteral> heads = getHeadss();
-		List<Literal> bodys = getBodys();
+		List<CommonLiteral> bodys = getBodys();
 
 		IntConstant CurrentNodeId = new IntConstant("" + getNodeId());
 		int childIndex = 0;

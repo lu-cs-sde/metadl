@@ -8,19 +8,19 @@ Program  ::= CommonClause* /FormalPredicate*/;
 **/
 abstract CommonClause;
 abstract Clause : CommonClause ::= Heads:InclusiveLiteral*;
-Rule:Clause ::=  Body:Literal*;
+Rule:Clause ::= Body:CommonLiteral*;
 Fact:Clause;
 AnalyzeBlock:CommonClause ::= ProgramRef:PredicateRef Clause*;
 
 /**
    Literals
 **/
-abstract Literal;
-MetaAtom:Literal ::= Predicate:MetaVariable Term*;
-abstract ConcreteLiteral:Literal ::= Predicate:PredicateSymbol;
+abstract CommonLiteral;
+MetaAtom:CommonLiteral ::= Predicate:MetaVariable Term*;
+abstract Literal:CommonLiteral ::= Predicate:PredicateSymbol;
 /* Exclusive literals cannot appear in the head of a clause */
-abstract InclusiveLiteral:ConcreteLiteral;
-abstract ExclusiveLiteral:ConcreteLiteral;
+abstract InclusiveLiteral:Literal;
+abstract ExclusiveLiteral:Literal;
 abstract BinaryExclusiveTermLiteral:ExclusiveLiteral ::= Left:Expr Right:Expr;
 
 
@@ -93,7 +93,6 @@ BadType:Type;
     Terms
 **/
 abstract Term:Expr;
-abstract TermGap:Term;
 abstract Constant:Term;
 abstract CommonVariable:Term ::= <VAR_ID>;
 
@@ -103,6 +102,7 @@ PredicateRef:Constant   ::= <PRED_ID>;
 StringConstant:Constant ::= <STRING>;
 IntConstant:Constant    ::= <NUMERAL>;
 TermList:Constant       ::= Terms:Term*;
+TermGap:Term;
 
 /**
     PredicateSymbols
@@ -113,8 +113,6 @@ PredicateSymbol ::= <PRED_ID>;
 /**
    Patterns
 **/
-abstract MetaPattern : ExclusiveLiteral;
+abstract MetaPattern : CommonLiteral;
 
 ClausePattern : MetaPattern ::= Clause;
-LiteralPattern : MetaPattern ::= Literal;
-ExprPattern : MetaPattern ::= Expr;

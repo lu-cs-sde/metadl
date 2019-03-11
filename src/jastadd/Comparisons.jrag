@@ -35,7 +35,6 @@ aspect Conversion {
 	eq PREDLiteral.evalOrder()    =  4;
 	eq OUTPUTLiteral.evalOrder()  =  5;
 	eq Atom.evalOrder()           =  6;
-	eq MetaPattern.evalOrder()    =  6; // same order as Atom
 	eq BINDLiteral.evalOrder()    =  7;
 	eq NEGLiteral.evalOrder()     =  8;
 	eq EQLiteral.evalOrder()      =  9;
@@ -45,7 +44,6 @@ aspect Conversion {
 	eq GTLiteral.evalOrder()      =  13;
 	eq GTELiteral.evalOrder()     =  14;
 	eq EQLISTLiteral.evalOrder()  =  15;
-	eq MetaAtom.evalOrder()       =  16; // MetaAtom:s are never evaluated
 	eq LiteralGap.evalOrder()     =  16; // LiteralGap:s are never evaluated
 }
 

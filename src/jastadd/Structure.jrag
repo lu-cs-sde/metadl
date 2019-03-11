@@ -120,9 +120,10 @@ aspect Clause {
     inh Clause Literal.clause();
     eq Clause.getChild().clause() = this;
 
-    syn boolean Clause.isRule();
+    syn boolean CommonClause.isRule();
     eq Rule.isRule() = true;
     eq Fact.isRule() = false;
+	eq AnalyzeBlock.isRule() = false;
 
 	//    inh int Clause.index();
     // eq Program.getClause(int index).index() = index;
@@ -130,7 +131,7 @@ aspect Clause {
     syn HashSet<Literal> Rule.literals() {
     	HashSet<Literal> literals = new HashSet<Literal>();
     	for(Literal l : getHeadss()) literals.add(l);
-    	for(Literal l : getBodys())  literals.add(l);
+    	for(CommonLiteral l : getBodys())  literals.add((Literal)l);
     	return literals;
     }
 
@@ -152,7 +153,7 @@ aspect Clause {
 
     syn TreeSet<Variable> Rule.variables() {
     	TreeSet<Variable> variables = new TreeSet<Variable>(Term.termComparator);
-    	for(Literal l : literals()) variables.addAll(l.variables());
+    	for(CommonLiteral l : literals()) variables.addAll(l.variables());
     	return variables;
     }
 
@@ -164,7 +165,7 @@ aspect Clause {
 
     syn TreeSet<Variable> Rule.bodyVariables() {
     	TreeSet<Variable> variables = new TreeSet<Variable>(Term.termComparator);
-    	for(Literal l : getBodys()) variables.addAll(l.variables());
+    	for(CommonLiteral l : getBodys()) variables.addAll(l.variables());
     	return variables;
     }
 
@@ -177,7 +178,7 @@ aspect Clause {
 
     syn TreeSet<Variable> Rule.inclusiveBodyVariables() {
      	TreeSet<Variable> variables = new TreeSet<Variable>(Term.termComparator);
-    	for(Literal l : getBodys()) {
+    	for(CommonLiteral l : getBodys()) {
             if(l.isInclusive())
                 variables.addAll(l.variables());
         }
@@ -186,7 +187,11 @@ aspect Clause {
 }
 
 aspect Literal {
-    syn PredicateSymbol Literal.predicate() = getPredicate();
+	syn PredicateSymbol CommonLiteral.predicate();
+	eq MetaAtom.predicate() = null;
+	eq ClausePattern.predicate() = null;
+
+	eq Literal.predicate() = getPredicate();
 
  	inh boolean Literal.isFact();
     eq Clause.getChild().isFact()        = false;
@@ -208,8 +213,7 @@ aspect Literal {
     eq  Literal.isAtom() = false;
     eq  Atom.isAtom()    = true;
 
-    syn boolean Literal.isNeg();
-    eq  Literal.isNeg()       = false;
+    syn boolean CommonLiteral.isNeg() = false;
     eq  NEGLiteral.isNeg()    = true;
 
 	syn boolean Literal.isBind();
@@ -220,8 +224,8 @@ aspect Literal {
 	eq  Literal.isIMPORT() = false;
 	eq  IMPORTLiteral.isIMPORT() = true;
 
-    syn boolean Literal.isInclusive();
-    eq Literal.isInclusive() = false;
+    syn boolean CommonLiteral.isInclusive();
+    eq CommonLiteral.isInclusive() = false;
     eq InclusiveLiteral.isInclusive() = true;
 
     syn boolean Literal.hasExtendedSemantics();
@@ -272,7 +276,7 @@ aspect Literal {
     syn boolean Literal.isPredefined()           = false;
     syn boolean PredefinedLiteral.isPredefined() = true;
 
-    syn TreeSet<Variable> Literal.variables();
+    syn TreeSet<Variable> CommonLiteral.variables();
     eq Atom.variables() {
     	TreeSet<Variable> vars = new TreeSet<Variable>(Term.termComparator);
     	for(Term t : getTermss()) if(t.isVariable()) vars.add((Variable) t);
@@ -319,11 +323,8 @@ aspect Literal {
 	}
 
     eq LiteralGap.variables() = new TreeSet<Variable>();
-    eq MetaAtom.variables() = new TreeSet<Variable>();
-
-    eq ClausePattern.variables() = getClause().getMetaVariables();
-    eq LiteralPattern.variables() = getClause().getMetaVariables();
-    eq ExprPattern.variables() = getClause().getMetaVariables();
+    eq ClausePattern.variables() = new TreeSet<Variable>();
+	eq MetaAtom.variables() = new TreeSet<Variable>();
 
     syn TreeSet<Constant> BinaryExclusiveTermLiteral.constants() {
 		TreeSet<Constant> constants = new TreeSet<Constant>(Term.termComparator);

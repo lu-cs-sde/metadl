@@ -38,7 +38,7 @@
 %typeof  atom                =  "Atom";
 %typeof  pred_sym            =  "PredicateSymbol";
 %typeof  pred_ref            =  "PredicateRef";
-%typeof  concrete_variable   =  "ConcreteVariable";
+%typeof  variable            =  "Variable";
 %typeof  meta_variable       =  "MetaVariable";
 %typeof  constant            =  "Constant";
 %typeof  int_constant        =  "IntConstant";
@@ -71,6 +71,7 @@
 %typeof  pred_ref_type       =  "PredRefType";
 %typeof  list_type           =  "ListType";
 %typeof  analyze_block       =  "AnalyzeBlock";
+%typeof  clause_pattern      =  "ClausePattern";
 
 
 
@@ -128,7 +129,7 @@ clause_pattern = LBRACK clause.c RBRACK {: return new ClausePattern(c); :};
 
 neg_literal = NOT LPARA inclusive_literal.lit RPARA {: return new NEGLiteral(new PredicateSymbol("NOT"), lit); :};
 
-bind_literal = BIND LPARA concrete_variable.var COMMA expr.right RPARA {: return new BINDLiteral(new PredicateSymbol("BIND"), var, right); :};
+bind_literal = BIND LPARA variable.var COMMA expr.right RPARA {: return new BINDLiteral(new PredicateSymbol("BIND"), var, right); :};
 bin_excl_term_lit = eq_literal
                   | neq_literal
                   | lt_literal
@@ -214,7 +215,7 @@ sub_expr = expr_term.e1   SUB expr_factor.e2 {: return new SubExpr(e1, e2); :};
 mul_expr = expr_factor.e1 MUL expr_unit.e2   {: return new MulExpr(e1, e2); :};
 div_expr = expr_factor.e1 DIV expr_unit.e2   {: return new DivExpr(e1, e2); :};
 
-term = concrete_variable
+term = variable
      | meta_variable
      | constant
      | pred_ref
@@ -227,7 +228,7 @@ pred_sym = PRED_ID.id  {: return new PredicateSymbol(id); :};
 pred_ref = PRED_REF.id {: return new PredicateRef(id); :};
 
 meta_variable = METAVAR_ID.id {: return new MetaVariable(id); :};
-concrete_variable = VAR_ID.id {: return new Variable(id); :};
+variable = VAR_ID.id {: return new Variable(id); :};
 constant = int_constant
          | string_constant
          ;

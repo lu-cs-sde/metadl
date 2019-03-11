@@ -51,6 +51,7 @@ String  = \"[^\"]*\"
 "}"        {  return  sym(Terminals.RBRACE);         }
 ":-"       {  return  sym(Terminals.IMPLIED_BY);     }
 "..."      {  return  sym(Terminals.ELLIPSIS);       }
+":"        {  return  sym(Terminals.COLON);          }
 "."        {  return  sym(Terminals.DOT);            }
 ","        {  return  sym(Terminals.COMMA);          }
 "+"        {  return  sym(Terminals.ADD);            }

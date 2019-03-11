@@ -9,7 +9,7 @@
 	}
 :};
 
-%terminals VAR_ID, METAVAR_ID, PRED_ID, PRED_REF, LPARA, RPARA, LBRACK, RBRACK, LBRACE, RBRACE, ELLIPSIS,
+%terminals VAR_ID, METAVAR_ID, PRED_ID, PRED_REF, LPARA, RPARA, LBRACK, RBRACK, LBRACE, RBRACE, ELLIPSIS, COLON,
            NUMERAL, STRING, DOT, COMMA, IMPLIED_BY, EDB, OUTPUT, IMPORT, PRED,
            ATOM, NOT, BIND,  EQ, EQLIST, NEQ, LT, LTE, GT, GTE, ADD, SUB, MUL, DIV,
            TYPEOF, TYPE_TYPE, STRING_TYPE, INTEGER_TYPE, PRED_REF_TYPE, LIST_TYPE, ANALYZE;
@@ -40,6 +40,7 @@
 %typeof  pred_ref            =  "PredicateRef";
 %typeof  variable            =  "Variable";
 %typeof  meta_variable       =  "MetaVariable";
+%typeof  meta_variable_plain =  "MetaVariablePlain";
 %typeof  constant            =  "Constant";
 %typeof  int_constant        =  "IntConstant";
 %typeof  string_constant     =  "StringConstant";
@@ -72,6 +73,7 @@
 %typeof  list_type           =  "ListType";
 %typeof  analyze_block       =  "AnalyzeBlock";
 %typeof  clause_pattern      =  "ClausePattern";
+%typeof  meta_atom           =  "MetaAtom";
 
 
 
@@ -167,15 +169,15 @@ import_literal = IMPORT LPARA term.file_loc
                         COMMA pred_ref.import_literal_ref
                         COMMA pred_ref.edb_literal_ref
                         COMMA pred_ref.output_literal_ref
-			COMMA pred_ref.neg_literal_ref
-			COMMA pred_ref.bind_literal_ref
-			COMMA pred_ref.binary_exclusive_term_literal_ref
-			COMMA pred_ref.bin_expr_ref
+                        COMMA pred_ref.neg_literal_ref
+                        COMMA pred_ref.bind_literal_ref
+                        COMMA pred_ref.binary_exclusive_term_literal_ref
+                        COMMA pred_ref.bin_expr_ref
                         RPARA
      {: return new IMPORTLiteral(new PredicateSymbol("IMPORT"), file_loc, program_ref, head_ref, body_ref, fact_ref, atom_ref, predicate_symbol_ref,
                        int_constant_ref, string_constant_ref, predicate_ref_ref, variable_ref,
                        import_literal_ref, edb_literal_ref, output_literal_ref, neg_literal_ref,
-		       bind_literal_ref, binary_exclusive_term_literal_ref, bin_expr_ref); :};
+                       bind_literal_ref, binary_exclusive_term_literal_ref, bin_expr_ref); :};
 
 
 lit_list = literal.lit {: return new List().add(lit); :}
@@ -207,8 +209,8 @@ expr_factor = mul_expr
             ;
 
 expr_unit = term
-	      | LPARA expr.e RPARA {: return e; :}
-	      ;
+              | LPARA expr.e RPARA {: return e; :}
+              ;
 
 add_expr = expr_term.e1   ADD expr_factor.e2 {: return new AddExpr(e1, e2); :};
 sub_expr = expr_term.e1   SUB expr_factor.e2 {: return new SubExpr(e1, e2); :};
@@ -227,7 +229,12 @@ term = variable
 pred_sym = PRED_ID.id  {: return new PredicateSymbol(id); :};
 pred_ref = PRED_REF.id {: return new PredicateRef(id); :};
 
-meta_variable = METAVAR_ID.id {: return new MetaVariable(id); :};
+meta_variable = meta_variable_plain
+              | meta_variable_index
+              ;
+
+meta_variable_plain = METAVAR_ID.id {: return new MetaVariablePlain(id); :};
+meta_variable_index = meta_variable_plain.index COLON meta_variable_plain.var {: return new MetaVariableIndex(index, var); :};
 variable = VAR_ID.id {: return new Variable(id); :};
 constant = int_constant
          | string_constant

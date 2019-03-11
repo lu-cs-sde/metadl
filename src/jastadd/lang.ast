@@ -94,10 +94,14 @@ BadType:Type;
 **/
 abstract Term:Expr;
 abstract Constant:Term;
-abstract CommonVariable:Term ::= <VAR_ID>;
+abstract CommonVariable:Term;
 
-MetaVariable:CommonVariable;
-Variable:CommonVariable;
+abstract MetaVariable:CommonVariable;
+MetaVariablePlain : MetaVariable ::= <METAVAR_ID>;
+MetaVariableIndex : MetaVariable ::= Index:MetaVariablePlain Var:MetaVariablePlain;
+
+
+Variable:CommonVariable ::= <VAR_ID>;
 PredicateRef:Constant   ::= <PRED_ID>;
 StringConstant:Constant ::= <STRING>;
 IntConstant:Constant    ::= <NUMERAL>;

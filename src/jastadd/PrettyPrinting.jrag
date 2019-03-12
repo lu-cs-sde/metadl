@@ -85,6 +85,21 @@ aspect PretyPrinting {
         printList(getTermss(), "(", ")", ", ", pr);
     }
 
+    public void MetaAtom.prettyPrint(PrettyPrinter pr) {
+        pr.prettyPrint(getPredicate());
+        printList(getTerms(), "(", ")", ", ", pr);
+    }
+
+	public void MetaVariablePlain.prettyPrint(PrettyPrinter pr) {
+		pr.out.print(getMETAVAR_ID());
+	}
+
+	public void MetaVariableIndex.prettyPrint(PrettyPrinter pr) {
+		pr.prettyPrint(getIndex());
+		pr.out.print(":");
+		pr.prettyPrint(getVar());
+	}
+
     public void Rule.prettyPrint(PrettyPrinter pr) {
         printList(getHeadss(), "", "", ",", pr);
         pr.out.print(" :- ");
@@ -190,6 +205,12 @@ aspect PretyPrinting {
         pr.prettyPrint(getTermList());
     	pr.out.print(")");
     }
+
+	public void ClausePattern.prettyPrint(PrettyPrinter pr) {
+		pr.out.print("[");
+		pr.prettyPrint(getClause());
+		pr.out.print("]");
+	}
 }
 
 aspect ExtensionablePrinting {

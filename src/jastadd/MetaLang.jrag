@@ -1,3 +1,11 @@
 aspect MetaLang {
+	/**
+	  enclosingPattern - return the enclosing pattern if it exists, otherwise null
+	 */
+	inh ClausePattern CommonClause.enclosingPattern();
+	inh ClausePattern ClausePattern.enclosingPattern();
+	eq ClausePattern.getClause().enclosingPattern() = this;
+	eq Program.getCommonClause().enclosingPattern() = null;
+
 
 }

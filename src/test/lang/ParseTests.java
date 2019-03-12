@@ -28,6 +28,7 @@ public class ParseTests {
         ,"parseTest_13.in"
         ,"parseTest_14.in"
         ,"parseTest_15.in"
+        ,"parseTest_16.in"
     };
     private static final String[] INVALID_TESTS = {
          "parseTest_1.in"
@@ -46,12 +47,12 @@ public class ParseTests {
         ,"parseTest_14.in"
         ,"parseTest_15.in"
     };
-    
+
     private void doTest_Valid(String testName) {
     	System.out.println(TEST_DIRECTORY_VALID + "/" + testName);
     	Util.testValidSyntax(TEST_DIRECTORY_VALID, testName);
     }
-    
+
 	@TestFactory public Collection<DynamicTest> ParseTests_Valid() {
         Collection<DynamicTest> dynamicTests = new ArrayList<>();
         Arrays.asList(VALID_TESTS).forEach(fn -> dynamicTests.add(DynamicTest.dynamicTest(fn, () -> doTest_Valid(fn))));
@@ -62,7 +63,7 @@ public class ParseTests {
     	System.out.println(TEST_DIRECTORY_INVALID + "/" + testName);
     	Util.testSyntaxError(TEST_DIRECTORY_INVALID, testName);
     }
-    
+
 	@TestFactory public Collection<DynamicTest> ParseTests_InValid() {
         Collection<DynamicTest> dynamicTests = new ArrayList<>();
         Arrays.asList(INVALID_TESTS).forEach(fn -> dynamicTests.add(DynamicTest.dynamicTest(fn, () -> doTest_Invalid(fn))));

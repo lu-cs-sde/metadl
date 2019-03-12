@@ -130,7 +130,7 @@ aspect Clause {
 
     syn HashSet<Literal> Rule.literals() {
     	HashSet<Literal> literals = new HashSet<Literal>();
-    	for(Literal l : getHeadss()) literals.add(l);
+    	for(CommonLiteral l : getHeadss()) literals.add((Literal)l);
     	for(CommonLiteral l : getBodys())  literals.add((Literal)l);
     	return literals;
     }
@@ -159,7 +159,7 @@ aspect Clause {
 
     syn TreeSet<Variable> Rule.headVariables() {
     	TreeSet<Variable> variables = new TreeSet<Variable>(Term.termComparator);
-    	for(Literal l : getHeadss()) variables.addAll(l.variables());
+    	for(CommonLiteral l : getHeadss()) variables.addAll(l.variables());
     	return variables;
     }
 
@@ -226,7 +226,13 @@ aspect Literal {
 
     syn boolean CommonLiteral.isInclusive();
     eq CommonLiteral.isInclusive() = false;
-    eq InclusiveLiteral.isInclusive() = true;
+	eq Atom.isInclusive() = true;
+	eq EDBLiteral.isInclusive() = true;
+	eq OUTPUTLiteral.isInclusive() = true;
+	eq PREDLiteral.isInclusive() = true;
+	eq ATOMLiteral.isInclusive() = true;
+	eq TYPEOFLiteral.isInclusive() = true;
+	eq IMPORTLiteral.isInclusive() = true;
 
     syn boolean Literal.hasExtendedSemantics();
     eq Literal.hasExtendedSemantics() = true;
@@ -273,7 +279,7 @@ aspect Literal {
     TYPEOFLiteral implements PredefinedLiteral;
     IMPORTLiteral implements PredefinedLiteral;
 
-    syn boolean Literal.isPredefined()           = false;
+    syn boolean CommonLiteral.isPredefined() = false;
     syn boolean PredefinedLiteral.isPredefined() = true;
 
     syn TreeSet<Variable> CommonLiteral.variables();
@@ -297,7 +303,7 @@ aspect Literal {
     	if(getPredicateRef().isVariable()) s.add((Variable)getPredicateRef());
     	return s;
     }
-    eq NEGLiteral.variables()    = getInclusiveLiteral().variables();
+    eq NEGLiteral.variables()    = getLiteral().variables();
     eq EQLISTLiteral.variables() {
     	if(getTermList().isVariable()) return toVarSet(getTermList());
     	return getTermList().variables();
@@ -334,7 +340,7 @@ aspect Literal {
 	}
 
     syn TreeSet<Variable> NEGLiteral.freeVars() {
-        TreeSet<Variable> negvars  = getInclusiveLiteral().variables();
+        TreeSet<Variable> negvars  = getLiteral().variables();
         TreeSet<Variable> inclbodyvars = ((Rule)clause()).inclusiveBodyVariables();
         TreeSet<Variable> free = new TreeSet<Variable>(Term.termComparator);
 

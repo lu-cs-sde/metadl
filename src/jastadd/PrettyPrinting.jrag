@@ -181,7 +181,7 @@ aspect PretyPrinting {
 
     public void NEGLiteral.prettyPrint(PrettyPrinter pr) {
     	pr.out.print("NOT(");
-        pr.prettyPrint(getInclusiveLiteral());
+        pr.prettyPrint(getLiteral());
         pr.out.print(")");
     }
 
@@ -259,8 +259,8 @@ aspect TypePrinting {
         prettyPrint(pr);
     }
 
-    public void NEGLiteral.typePrint(PrettyPrinter pr) { getInclusiveLiteral().typePrint(pr); }
-    public void InclusiveLiteral.typePrint(PrettyPrinter pr) {
+    public void NEGLiteral.typePrint(PrettyPrinter pr) { getLiteral().typePrint(pr); }
+    public void Literal.typePrint(PrettyPrinter pr) {
 	PseudoTuple tuple = toTuple();
 	List types = new List();
 	for(int i = 0; i != tuple.arity(); ++i) {
@@ -420,7 +420,7 @@ aspect SoufflePrinting {
 
     public void NEGLiteral.soufflePrint(PrettyPrinter pr) {
     	pr.out.print("!");
-        pr.prettyPrint(getInclusiveLiteral());
+        pr.prettyPrint(getLiteral());
     }
 
     public abstract String BinaryExclusiveTermLiteral.souffleOPString();
@@ -470,9 +470,9 @@ aspect SoufflePrinting {
 
     public void Fact.soufflePrint(PrettyPrinter pr) {
     	HashSet<Literal> nonIncl = new HashSet<Literal>();
-    	for(InclusiveLiteral il : getHeadss()) {
+    	for(CommonLiteral il : getHeadss()) {
     		if(!il.isPredefined()) {
-    			nonIncl.add(il);
+    			nonIncl.add((Literal)il);
     		}
     	}
         printCollection(nonIncl, "", " :- true.\n", ", ", pr);

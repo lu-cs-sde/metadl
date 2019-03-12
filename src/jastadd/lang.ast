@@ -7,7 +7,7 @@ Program  ::= CommonClause* /FormalPredicate*/;
    Clause
 **/
 abstract CommonClause;
-abstract Clause : CommonClause ::= Heads:InclusiveLiteral*;
+abstract Clause : CommonClause ::= Heads:CommonLiteral*;
 Rule:Clause ::= Body:CommonLiteral*;
 Fact:Clause;
 AnalyzeBlock:CommonClause ::= ProgramRef:PredicateRef Clause*;
@@ -18,23 +18,21 @@ AnalyzeBlock:CommonClause ::= ProgramRef:PredicateRef Clause*;
 abstract CommonLiteral;
 MetaAtom:CommonLiteral ::= Predicate:MetaVariable Term*;
 abstract Literal:CommonLiteral ::= Predicate:PredicateSymbol;
-/* Exclusive literals cannot appear in the head of a clause */
-abstract InclusiveLiteral:Literal;
-abstract ExclusiveLiteral:Literal;
-abstract BinaryExclusiveTermLiteral:ExclusiveLiteral ::= Left:Expr Right:Expr;
+
+abstract BinaryExclusiveTermLiteral:Literal ::= Left:Expr Right:Expr;
 
 
 
-Atom:InclusiveLiteral          ::= Terms:Term*;
-EDBLiteral:InclusiveLiteral    ::= PredicateRef FileLoc:Term;
-OUTPUTLiteral:InclusiveLiteral ::= Term;
-PREDLiteral:InclusiveLiteral   ::= Term /PredicateRef*/;
-ATOMLiteral:InclusiveLiteral   ::= Term /PredicateRef*/;
-TYPEOFLiteral:InclusiveLiteral ::= PredicateRef:Term Term;
-NEGLiteral:ExclusiveLiteral    ::= InclusiveLiteral;
+Atom:Literal          ::= Terms:Term*;
+EDBLiteral:Literal    ::= PredicateRef FileLoc:Term;
+OUTPUTLiteral:Literal ::= Term;
+PREDLiteral:Literal   ::= Term /PredicateRef*/;
+ATOMLiteral:Literal   ::= Term /PredicateRef*/;
+TYPEOFLiteral:Literal ::= PredicateRef:Term Term;
+NEGLiteral:Literal    ::= Literal;
 
-BINDLiteral:ExclusiveLiteral ::= Variable Right:Expr;
-IMPORTLiteral:InclusiveLiteral ::= FileLoc:Term ProgramRef:PredicateRef
+BINDLiteral:Literal ::= Variable Right:Expr;
+IMPORTLiteral:Literal ::= FileLoc:Term ProgramRef:PredicateRef
                                              HeadRef:PredicateRef
                                              BodyRef:PredicateRef
                                              FactRef:PredicateRef
@@ -59,7 +57,7 @@ LTLiteral:BinaryExclusiveTermLiteral;
 LTELiteral:BinaryExclusiveTermLiteral;
 GTLiteral:BinaryExclusiveTermLiteral;
 GTELiteral:BinaryExclusiveTermLiteral;
-EQLISTLiteral:ExclusiveLiteral ::= TermList;
+EQLISTLiteral:Literal ::= TermList;
 
 LiteralGap:Literal;
 

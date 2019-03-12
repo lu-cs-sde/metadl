@@ -15,11 +15,10 @@
            TYPEOF, TYPE_TYPE, STRING_TYPE, INTEGER_TYPE, PRED_REF_TYPE, LIST_TYPE, ANALYZE;
 
 %typeof  program             =  "Program";
-%typeof  clause              =  "Clause";
+%typeof  clause              =  "CommonClause";
 %typeof  inner_clause        =  "Clause";
+%typeof  common_literal      =  "CommonLiteral";
 %typeof  literal             =  "Literal";
-%typeof  inclusive_literal   =  "InclusiveLiteral";
-%typeof  exclusive_literal   =  "ExclusiveLiteral";
 %typeof  bin_excl_term_lit   =  "BinaryExclusiveTermLiteral";
 %typeof  bind_literal        =  "BINDLiteral";
 %typeof  typeof_literal      =  "TYPEOFLiteral";
@@ -50,7 +49,6 @@
 %typeof  term_list_space     =  "List";
 %typeof  term_list_space_no_empty  =  "List";
 %typeof  lit_list            =  "List";
-%typeof  incl_lit_list       =  "List";
 %typeof  clause_list         =  "List";
 %typeof  inner_clause_list   =  "List";
 %typeof  fact                =  "Fact";
@@ -99,37 +97,34 @@ clause_list = clause.c {: return new List().add(c); :}
 
 analyze_block = ANALYZE LPARA pred_ref.prog_ref RPARA LBRACE inner_clause_list.list RBRACE {: return new AnalyzeBlock(prog_ref, list); :};
 
-rule = incl_lit_list.heads IMPLIED_BY lit_list.body DOT {: return new Rule(heads, body); :};
-fact = incl_lit_list.heads DOT {: return new Fact(heads); :};
+rule = lit_list.heads IMPLIED_BY lit_list.body DOT {: return new Rule(heads, body); :};
+fact = lit_list.heads DOT {: return new Fact(heads); :};
 
-literal = inclusive_literal
-        | exclusive_literal
-        | gap_literal
-        | meta_atom
+common_literal = literal
+               | meta_atom
+               | clause_pattern
+               ;
+
+literal = gap_literal
+        | edb_literal
+        | output_literal
+        | atom
+        | typeof_literal
+        | import_literal
+        | neg_literal
+        | bind_literal
+        | bin_excl_term_lit
+        | eq_list_literal
+        | pred_literal
+        | atom_literal
         ;
-
-inclusive_literal = edb_literal
-                  | output_literal
-                  | atom
-                  | typeof_literal
-                  | import_literal
-                  ;
-
-exclusive_literal = neg_literal
-                  | bind_literal
-                  | bin_excl_term_lit
-                  | eq_list_literal
-                  | pred_literal
-                  | atom_literal
-                  | clause_pattern
-                  ;
 
 meta_atom = meta_variable.mv LPARA term_list.terms RPARA {: return new MetaAtom(mv, terms); :};
 gap_literal = ELLIPSIS {: return new LiteralGap(); :};
 
-clause_pattern = LBRACK clause.c RBRACK {: return new ClausePattern(c); :};
+clause_pattern = LBRACK inner_clause.c RBRACK {: return new ClausePattern(c); :};
 
-neg_literal = NOT LPARA inclusive_literal.lit RPARA {: return new NEGLiteral(new PredicateSymbol("NOT"), lit); :};
+neg_literal = NOT LPARA literal.lit RPARA {: return new NEGLiteral(new PredicateSymbol("NOT"), lit); :};
 
 bind_literal = BIND LPARA variable.var COMMA expr.right RPARA {: return new BINDLiteral(new PredicateSymbol("BIND"), var, right); :};
 bin_excl_term_lit = eq_literal
@@ -180,12 +175,8 @@ import_literal = IMPORT LPARA term.file_loc
                        bind_literal_ref, binary_exclusive_term_literal_ref, bin_expr_ref); :};
 
 
-lit_list = literal.lit {: return new List().add(lit); :}
-         | lit_list.list COMMA literal.c {: return list.add(c); :}
-         ;
-
-incl_lit_list = inclusive_literal.lit {: return new List().add(lit); :}
-         | incl_lit_list.list COMMA inclusive_literal.lit {: return list.add(lit); :}
+lit_list = common_literal.lit {: return new List().add(lit); :}
+         | lit_list.list COMMA common_literal.c {: return list.add(c); :}
          ;
 
 term_list = term_list_no_empty

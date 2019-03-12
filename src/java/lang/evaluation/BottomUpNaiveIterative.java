@@ -5,10 +5,10 @@ import java.util.HashSet;
 import java.util.Set;
 
 import lang.ast.Clause;
+import lang.ast.CommonLiteral;
 import lang.ast.Fact;
 import lang.ast.FormalPredicate;
 import lang.ast.GlobalNames;
-import lang.ast.InclusiveLiteral;
 import lang.ast.Literal;
 import lang.ast.PredicateRef;
 import lang.ast.Program;
@@ -77,7 +77,8 @@ public class BottomUpNaiveIterative extends InternalEvaluation {
 		body_rel = immediateConsequenceHelper (r.exclusiveBodyLiterals(), body_rel);
 
 		boolean changed = false;
-		for (InclusiveLiteral il : r.getHeadss()) {
+		for (CommonLiteral cil : r.getHeadss()) {
+			Literal il = (Literal) cil;
 			Relation derived = body_rel.selectNamed(Binding.createBinding(il.toTuple()));
 			Relation prev = il.predicate().formalpredicate().relation;
 			Relation delta = Relation.difference(derived, prev);
@@ -108,7 +109,8 @@ public class BottomUpNaiveIterative extends InternalEvaluation {
 					rules.add((Rule)c);
 				} else {
 					Fact f = (Fact) c;
-					for(InclusiveLiteral il : f.getHeadss()) {
+					for(CommonLiteral cl : f.getHeadss()) {
+						Literal il = (Literal) cl;
 						Relation derived = new Relation(il.arity());
 						derived.addTuple(il.toTuple());
 						Relation delta = Relation.difference(derived, il.predicate().formalpredicate().relation);

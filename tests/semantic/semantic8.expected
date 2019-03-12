@@ -1,0 +1,3 @@
+Gap terms '...' are not allowed outside patterns
+Patterns are not allowed outside the 'analyze' blocks [R(1) :- $q(..., $i:$x, ...).
+]

@@ -100,6 +100,14 @@ aspect PretyPrinting {
 		pr.prettyPrint(getVar());
 	}
 
+	public void TermGap.prettyPrint(PrettyPrinter pr) {
+		pr.out.print("...");
+	}
+
+	public void LiteralGap.prettyPrint(PrettyPrinter pr) {
+		pr.out.print("...");
+	}
+
     public void Rule.prettyPrint(PrettyPrinter pr) {
         printList(getHeadss(), "", "", ",", pr);
         pr.out.print(" :- ");

@@ -54,4 +54,16 @@ aspect ErrorCollection {
     ClausePattern contributes "Nested patterns are not allowed in " + enclosingPattern()
         when enclosingPattern() != null
         to Program.semanticErrors();
+
+	ClausePattern contributes "Patterns are not allowed outside the 'analyze' blocks " + this
+		when enclosingAnalyzeBlock() == null
+		to Program.semanticErrors();
+
+	TermGap contributes "Gap terms '...' are not allowed outside patterns"
+		when enclosingPattern() == null
+		to Program.semanticErrors();
+
+	LiteralGap contributes "Gap literals '...' are not allowed outside patterns"
+		when enclosingPattern() == null
+		to Program.semanticErrors();
 }

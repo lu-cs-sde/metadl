@@ -4,8 +4,17 @@ aspect MetaLang {
 	 */
 	inh ClausePattern CommonClause.enclosingPattern();
 	inh ClausePattern ClausePattern.enclosingPattern();
+	inh ClausePattern TermGap.enclosingPattern();
+	inh ClausePattern LiteralGap.enclosingPattern();
+
 	eq ClausePattern.getClause().enclosingPattern() = this;
 	eq Program.getCommonClause().enclosingPattern() = null;
 
-
+	/**
+	   enclosingAnalyzeBlock - the enclosing analyze block if it exists
+	 */
+	inh AnalyzeBlock CommonClause.enclosingAnalyzeBlock();
+	inh AnalyzeBlock ClausePattern.enclosingAnalyzeBlock();
+	eq AnalyzeBlock.getClause().enclosingAnalyzeBlock() = this;
+	eq Program.getCommonClause().enclosingAnalyzeBlock() = null;
 }

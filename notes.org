@@ -50,13 +50,19 @@ IsNotGround($p) :- [$p(...,$x,...)],NEG(IsConstant($x)].
 
 #+END_SRC
 
+** Can we write a Datalog evaluator into Datalog itself???
+- I think this boils down to "Can we write a DL program to compute SCCs?"
+
 *** Analyze blocks ~analyze P { }~
 The only blocks that are allowed to contain patterns, metavariables and gaps
 - these blocks are desugared to plain Datalog relations
 - all the patterns refer to the analyzed program ~P~
 
 *** Patterns ~[$p(x, 1) :- ...,$q, ... .]~
-- allows for matching rules, facts, predicates
+- allows for matching rules and facts
+- patterns in the head of a rule means adding those rules to the program
+- how rules are removed: use false in the consequent:
+   ~false :- p(q, y), [$q(...)]~
 
 *** Gaps: ~...~
 Where do we need gaps?
@@ -74,3 +80,19 @@ In all variadic AST nodes. That are:
 
 *** Open questions:
 - how do we attach an index to a metavariable: ~[$p(...,$i:$x,...,$j:$y,...,)]~
+
+
+* Observations
+** JastAdd
+It is very difficult to extend an AST with meta AST nodes. The new meta AST nodes do not have the same attributes as the proper AST nodes so it is practically impossible to mix them without adding dummy equations for the inherited attributes.
+
+What I want to do is to allow for a superset of the Datalog grammar inside the ~analyze 'Program {}~ blocks, but with different semantics. As I understand it, JastAdd creates a strong coupling between semantics and the AST which is not desirable in this case. To solve this problem, I am creating a new abstract grammar for the meta-langauge and bring elements from the object-language by aggregation.
+E.g. to use ~Constant~ in the meta grammar:
+#+BEGIN_SRC
+abstract MetaExpr;
+abstract MetaTerm : MetaExpr;
+abstract LangConstant : MetaTerm ::= Constant;
+#+END_SRC
+
+** Parsing
+Because beaver is a bottom-up parser, it cannot distinguish between the same construction in a metacontext or in a normal context. This forces me to have the same AST node kinds for the metalanguage as for the object language.

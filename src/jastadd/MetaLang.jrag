@@ -105,8 +105,8 @@ aspect MetaLang {
 	}
 
 	eq MetaAtom.asLiterals() {
-		Variable pred = getPredicate().asVariable().fullCopy();
-		String atomRelName = new PredicateSymbol().getRelation();
+		Variable pred = new Variable(getPredicate().varName());
+		String atomRelName = new Atom().getRelation();
 		// Atom(atom_id, 0, pred_id)
 		List<Literal> literals = new List<>();
 		List<Term> terms = new List<>();
@@ -115,6 +115,13 @@ aspect MetaLang {
 		terms.add(pred);
 		PredicateSymbol predAtom = new PredicateSymbol(atomRelName);
 		literals.add(new Atom(predAtom, terms));
+		for (int i = 0; i < getNumTerm(); ++i) {
+			terms = new List<>();
+			terms.add(new Variable(varName()));
+			terms.add(new IntConstant("" + (i + 1)));
+			terms.add(new Variable(getTerm(i).varName()));
+			literals.add(new Atom(predAtom, terms));
+		}
 		return literals;
 	}
 
@@ -126,25 +133,28 @@ aspect MetaLang {
 		return new List<>();
 	}
 
-	syn Variable MetaVariable.asVariable();
-	eq MetaVariablePlain.asVariable() {
-		return new Variable("mv_" + getMETAVAR_ID());
-	}
-
-	eq MetaVariableIndex.asVariable() {
-		return getVar().asVariable();
-	}
+	eq MetaVariablePlain.varName() = "mv_" + getMETAVAR_ID();
+	eq MetaVariableIndex.varName() = getVar().varName();
 
 	// Collect all the literals resulting from a ClausePattern
 	ASTNode contributes asLiterals() to ClausePattern.literals();
 	coll List<CommonLiteral> ClausePattern.literals() with addAll root ClausePattern;
 	// Collect all the variables resulting from a ClausePattern
-	MetaVariable contributes asVariable() to ClausePattern.metaVariables();
-	coll List<Term> ClausePattern.metaVariables() root ClausePattern;
+	MetaVariable contributes varName() to ClausePattern.metaVariables();
+	coll ArrayList<String> ClausePattern.metaVariables() root ClausePattern;
 
 	syn Clause ClausePattern.asClause() {
 		String predicateName = "CP_" + getNodeId();
-		Atom headAtom = new Atom(new PredicateSymbol(predicateName), metaVariables());
+		List<Term> vars = new List<>();
+
+		ArrayList<String> metaVars = new ArrayList<>(metaVariables());
+		metaVars.sort(null);
+
+		for (String vname : metaVars) {
+			vars.add(new Variable(vname));
+		}
+
+		Atom headAtom = new Atom(new PredicateSymbol(predicateName), vars);
 		return new Rule(new List(headAtom),
 						literals());
 	}

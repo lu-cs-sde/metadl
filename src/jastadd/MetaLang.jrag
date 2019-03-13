@@ -17,4 +17,147 @@ aspect MetaLang {
 	inh AnalyzeBlock ClausePattern.enclosingAnalyzeBlock();
 	eq AnalyzeBlock.getClause().enclosingAnalyzeBlock() = this;
 	eq Program.getCommonClause().enclosingAnalyzeBlock() = null;
+
+	syn String ASTNode.varName() {
+		String nodeNameFull = this.getClass().getName();
+		String[] splitNodeName = nodeNameFull.split("\\.");
+		String nodeName = splitNodeName[splitNodeName.length - 1];
+		return "v_" + getNodeId() + "_" + nodeName;
+	}
+
+	/**
+	   The asLiterals() equations are isomorphic to buildTupleWrapper()
+	   equtions in the DatalogProject aspect. The common parts should be
+	   factored out to ensure that the relational
+	   representation of a program matches the code generated for a pattern.
+	 */
+	syn List<Literal> ASTNode.asLiterals();
+
+	eq ASTNode.asLiterals() {
+		List<Literal> literals = new List<>();
+
+		int childIndex = 0;
+
+		for (int i = 0; i < getNumChild(); ++i) {
+			ASTNode child = getChild(i);
+			if (child instanceof List) {
+				List<ASTNode> childrenList  = (List<ASTNode>) child;
+				for (ASTNode c : childrenList) {
+					List<Term> terms = new List<>();
+					terms.add(new Variable(varName()));
+					terms.add(new IntConstant("" + childIndex++));
+					terms.add(new Variable(c.varName()));
+					literals.add(new Atom(new PredicateSymbol(getRelation()), terms));
+				}
+			} else {
+				List<Term> terms = new List<>();
+				terms.add(new Variable(varName()));
+				terms.add(new IntConstant("" + childIndex++));
+				terms.add(new Variable(getChild(i).varName()));
+				literals.add(new Atom(new PredicateSymbol(getRelation()), terms));
+			}
+		}
+		return literals;
+	}
+
+	eq Rule.asLiterals() {
+		List<CommonLiteral> heads = getHeadss();
+		List<CommonLiteral> bodys = getBodys();
+
+		List<Literal> literals = new List<>();
+		int childIndex = 0;
+		for (ASTNode h : heads) {
+			List<Term> terms = new List();
+			terms.add(new Variable(varName()));
+			terms.add(new IntConstant("" + childIndex++));
+			terms.add(new Variable(h.varName()));
+			literals.add(new Atom(new PredicateSymbol("Head"), terms));
+		}
+		childIndex = 0;
+		for (ASTNode b : bodys) {
+			List<Term> terms = new List();
+			terms.add(new Variable(varName()));
+			terms.add(new IntConstant("" + childIndex++));
+			terms.add(new Variable(b.varName()));
+			literals.add(new Atom(new PredicateSymbol("Body"), terms));
+		}
+		return literals;
+	}
+
+	eq Constant.asLiterals() {
+		PredicateSymbol pred = new PredicateSymbol(getRelation());
+		List<Literal> literals = new List<>();
+		List<Term> terms = new List<>();
+		terms.add(new Variable(varName()));
+		terms.add(this.fullCopy());
+		literals.add(new Atom(pred, terms));
+		return literals;
+	}
+
+	eq Variable.asLiterals() {
+		PredicateSymbol pred = new PredicateSymbol(getRelation());
+		List<Literal> literals = new List<>();
+		List<Term> terms = new List<>();
+		terms.add(new Variable(varName()));
+		terms.add(new StringConstant(this.getVAR_ID()));
+		literals.add(new Atom(pred, terms));
+		return literals;
+	}
+
+	eq MetaAtom.asLiterals() {
+		Variable pred = getPredicate().asVariable().fullCopy();
+		String atomRelName = new PredicateSymbol().getRelation();
+		// Atom(atom_id, 0, pred_id)
+		List<Literal> literals = new List<>();
+		List<Term> terms = new List<>();
+		terms.add(new Variable(varName()));
+		terms.add(new IntConstant("0"));
+		terms.add(pred);
+		PredicateSymbol predAtom = new PredicateSymbol(atomRelName);
+		literals.add(new Atom(predAtom, terms));
+		return literals;
+	}
+
+	eq MetaVariable.asLiterals() {
+		return new List<>();
+	}
+
+	eq List.asLiterals() {
+		return new List<>();
+	}
+
+	syn Variable MetaVariable.asVariable();
+	eq MetaVariablePlain.asVariable() {
+		return new Variable("mv_" + getMETAVAR_ID());
+	}
+
+	eq MetaVariableIndex.asVariable() {
+		return getVar().asVariable();
+	}
+
+	// Collect all the literals resulting from a ClausePattern
+	ASTNode contributes asLiterals() to ClausePattern.literals();
+	coll List<CommonLiteral> ClausePattern.literals() with addAll root ClausePattern;
+	// Collect all the variables resulting from a ClausePattern
+	MetaVariable contributes asVariable() to ClausePattern.metaVariables();
+	coll List<Term> ClausePattern.metaVariables() root ClausePattern;
+
+	syn Clause ClausePattern.asClause() {
+		String predicateName = "CP_" + getNodeId();
+		Atom headAtom = new Atom(new PredicateSymbol(predicateName), metaVariables());
+		return new Rule(new List(headAtom),
+						literals());
+	}
+
+	syn List<Literal> Fact.toDatalog() {
+		return null;
+	}
+
+	syn List<Literal> Rule.toDatalog() {
+		return null;
+	}
+
+
+
+
 }

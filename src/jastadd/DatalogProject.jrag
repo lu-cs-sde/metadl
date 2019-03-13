@@ -5,15 +5,21 @@ import java.lang.reflect.ParameterizedType;
 
 
 aspect DatalogProject {
+	/**
+	   Build the name of the relation from the dynamic type of the
+	   node.
+	 */
 	public String ASTNode.getRelation() {
 		String nodeName = this.getClass().getName();
 		String[] splitNodeName = nodeName.split("\\.");
 		return splitNodeName[splitNodeName.length - 1];
 	}
 
+	/**
+	   Assign a unique ID to every node in the AST
+	 */
 	public int ASTNode.UID = 0;
 	public static int ASTNode.RunningId = 0;
-
 	public synchronized int ASTNode.getNodeId() {
 		if (UID == 0) {
 			UID = ++ASTNode.RunningId;

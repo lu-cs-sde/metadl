@@ -80,7 +80,12 @@ String  = \"[^\"]*\"
 "List"     {  return  sym(Terminals.LIST_TYPE);      }
 "analyze"  {  return  sym(Terminals.ANALYZE);        }
 {Numeral}  {  return  sym(Terminals.NUMERAL);        }
-{METAVAR_ID} { return  sym(Terminals.METAVAR_ID);     }
+{METAVAR_ID} {
+               // Remove the initial $
+               String text = yytext();
+               String data = text.substring(1, text.length());
+               return new beaver.Symbol(Terminals.METAVAR_ID, yyline + 1, yycolumn + 1, yylength() - 1, data);
+             }
 {VAR_ID}   {  return  sym(Terminals.VAR_ID);         }
 {PRED_ID}  {  return  sym(Terminals.PRED_ID);        }
 {PRED_REF} {

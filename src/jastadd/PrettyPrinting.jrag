@@ -91,7 +91,7 @@ aspect PretyPrinting {
     }
 
 	public void MetaVariablePlain.prettyPrint(PrettyPrinter pr) {
-		pr.out.print(getMETAVAR_ID());
+		pr.out.print("$" + getMETAVAR_ID());
 	}
 
 	public void MetaVariableIndex.prettyPrint(PrettyPrinter pr) {
@@ -217,7 +217,8 @@ aspect PretyPrinting {
 	public void ClausePattern.prettyPrint(PrettyPrinter pr) {
 		pr.out.print("[");
 		pr.prettyPrint(getClause());
-		pr.out.print("]");
+		pr.out.print("] #");
+		pr.prettyPrint(asClause());
 	}
 }
 
@@ -583,47 +584,46 @@ aspect SoufflePrinting {
     }
 
 
-
     private void Program.soufflePrintIMPORTFacts(PrettyPrinter pr) {
-	FormalPredicate fp = formalPredicateMap().get(GlobalNames.IMPORT_NAME);
-	if (fp == null) return;
-	IMPORTLiteral importLiteral = (IMPORTLiteral) fp.literal();
+		FormalPredicate fp = formalPredicateMap().get(GlobalNames.IMPORT_NAME);
+		if (fp == null) return;
+		IMPORTLiteral importLiteral = (IMPORTLiteral) fp.literal();
 
-	for (PseudoTuple ps : fp.relation.tuples()) {
-	    String progFileLoc = ((StringConstant)ps.coord(0)).getSTRING();
-	    Program importedProgram = null;
+		for (PseudoTuple ps : fp.relation.tuples()) {
+			String progFileLoc = ((StringConstant)ps.coord(0)).getSTRING();
+			Program importedProgram = null;
 
-	    try {
-		importedProgram = (Program) FileUtil.parse(new File(progFileLoc));
-	    } catch(Exception e) {
-		SimpleLogger.logger().log("Could not open file for IMPORT: " + ps.coord(0).toString(), SimpleLogger.LogLevel.Level.ERROR);
-		System.exit(1);
-	    }
+			try {
+				importedProgram = (Program) FileUtil.parse(new File(progFileLoc));
+			} catch(Exception e) {
+				SimpleLogger.logger().log("Could not open file for IMPORT: " + ps.coord(0).toString(), SimpleLogger.LogLevel.Level.ERROR);
+				System.exit(1);
+			}
 
-	    HashMap<String, Relation> nameToRelMap = importedProgram.datalogProjection().nameToRelMap;
+			HashMap<String, Relation> nameToRelMap = importedProgram.datalogProjection().nameToRelMap;
 
-	    for (Map.Entry<String, Relation> kv : nameToRelMap.entrySet()) {
-		int idx = importLiteral.getCoordIndexForRel(kv.getKey());
-		if (idx < 0) {
-		    SimpleLogger.logger().log("Error when translating the IMPORT statement", SimpleLogger.LogLevel.Level.ERROR);
-		    System.exit(1);
+			for (Map.Entry<String, Relation> kv : nameToRelMap.entrySet()) {
+				int idx = importLiteral.getCoordIndexForRel(kv.getKey());
+				if (idx < 0) {
+					SimpleLogger.logger().log("Error when translating the IMPORT statement", SimpleLogger.LogLevel.Level.ERROR);
+					System.exit(1);
+				}
+				PredicateRef predref = (PredicateRef)(ps.coord(idx));
+				String predName = predref.getPRED_ID();
+
+				for (PseudoTuple fact : kv.getValue().tuples()) {
+					pr.out.print(predName + "(");
+					pr.out.print(souffleConstantToString((Constant)fact.coord(0)));
+
+					for (int i = 1; i < fact.arity(); ++i) {
+						pr.out.print(", ");
+						pr.out.print(souffleConstantToString((Constant)fact.coord(i)));
+					}
+
+					pr.out.print(").\n");
+				}
+			}
 		}
-		PredicateRef predref = (PredicateRef)(ps.coord(idx));
-		String predName = predref.getPRED_ID();
-
-		for (PseudoTuple fact : kv.getValue().tuples()) {
-		    pr.out.print(predName + "(");
-		    pr.out.print(souffleConstantToString((Constant)fact.coord(0)));
-
-		    for (int i = 1; i < fact.arity(); ++i) {
-			pr.out.print(", ");
-			pr.out.print(souffleConstantToString((Constant)fact.coord(i)));
-		    }
-
-		    pr.out.print(").\n");
-		}
-	    }
-	}
     }
 
 

@@ -72,7 +72,22 @@ aspect PretyPrinting {
         pr.out.print("\"" + toString() + "\"");
     }
 
+	public void Term.printIndex(PrettyPrinter pr) {
+		if (hasIndex()) {
+			pr.prettyPrint(getIndex());
+			pr.out.print(":");
+		}
+	}
+
+	public void CommonLiteral.printIndex(PrettyPrinter pr) {
+		if (hasIndex()) {
+			pr.prettyPrint(getIndex());
+			pr.out.print(":");
+		}
+	}
+
     public void Term.prettyPrint(PrettyPrinter pr) {
+		printIndex(pr);
         pr.out.print(toString());
     }
 
@@ -81,23 +96,20 @@ aspect PretyPrinting {
     }
 
     public void Atom.prettyPrint(PrettyPrinter pr) {
+		printIndex(pr);
         pr.prettyPrint(getPredicate());
         printList(getTermss(), "(", ")", ", ", pr);
     }
 
     public void MetaAtom.prettyPrint(PrettyPrinter pr) {
+		printIndex(pr);
         pr.prettyPrint(getPredicate());
         printList(getTerms(), "(", ")", ", ", pr);
     }
 
-	public void MetaVariablePlain.prettyPrint(PrettyPrinter pr) {
+	public void MetaVariable.prettyPrint(PrettyPrinter pr) {
+		printIndex(pr);
 		pr.out.print("$" + getMETAVAR_ID());
-	}
-
-	public void MetaVariableIndex.prettyPrint(PrettyPrinter pr) {
-		pr.prettyPrint(getIndex());
-		pr.out.print(":");
-		pr.prettyPrint(getVar());
 	}
 
 	public void TermGap.prettyPrint(PrettyPrinter pr) {
@@ -131,7 +143,7 @@ aspect PretyPrinting {
 		pr.prettyPrint(getPredicate());
 		pr.out.print("(");
 		pr.prettyPrint(getFileLoc());
-		for (int i = 2; i < getNumChild(); ++i) {
+		for (int i = 3; i < getNumChild(); ++i) {
 			pr.out.print(",");
 			pr.prettyPrint(getChild(i));
 		}
@@ -217,7 +229,7 @@ aspect PretyPrinting {
 	public void ClausePattern.prettyPrint(PrettyPrinter pr) {
 		pr.out.print("[");
 		pr.prettyPrint(getClause());
-		pr.out.print("] #");
+		pr.out.print("]");
 		pr.prettyPrint(asClause());
 	}
 }
@@ -565,7 +577,7 @@ aspect SoufflePrinting {
 	    if (getChild(i) == child) {
 		// The first child is the PredicateSymbol and
 		// this is not a present in the tuples of the relation, so skip it.
-		return i - 1;
+		return i - 2;
 	    }
 
 	}

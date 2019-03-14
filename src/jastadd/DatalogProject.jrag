@@ -93,6 +93,8 @@ aspect DatalogProject {
 
 		for (int i = 0; i < getNumChild(); ++i) {
 			ASTNode child = getChild(i);
+			if (child instanceof Opt)
+				continue;
 			if (child instanceof List) {
 				List<ASTNode> childrenList = (List<ASTNode>) child;
 				for (ASTNode c : childrenList) {
@@ -114,6 +116,10 @@ aspect DatalogProject {
 	public TupleWrapper List.buildTupleWrapper() {
 		// AST nodes that have variadic number of children
 		// use a List as a child node. Ignore them.
+		return new TupleWrapper(null);
+	}
+
+	public TupleWrapper Opt.buildTupleWrapper() {
 		return new TupleWrapper(null);
 	}
 

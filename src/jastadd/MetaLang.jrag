@@ -40,6 +40,8 @@ aspect MetaLang {
 
 		for (int i = 0; i < getNumChild(); ++i) {
 			ASTNode child = getChild(i);
+			if (child instanceof Opt)
+				continue;
 			if (child instanceof List) {
 				List<ASTNode> childrenList  = (List<ASTNode>) child;
 				for (ASTNode c : childrenList) {
@@ -125,32 +127,55 @@ aspect MetaLang {
 		return literals;
 	}
 
+	syn nta MetaVariable CommonLiteral.indexVar() {
+		if (hasIndex())
+			return getIndex().fullCopy();
+		else
+			return new MetaVariable("i_" + getNodeId());
+	}
+
+	inh boolean Term.parentIsMetaVar();
+	eq Term.getChild().parentIsMetaVar() = false;
+	eq MetaVariable.getIndex().parentIsMetaVar() = true;
+
+	syn nta MetaVariable Term.indexVar() {
+		// Avoid creating infinite chains of MetaVariables
+		// with MetaVariable indices...
+		if (parentIsMetaVar())
+			return null;
+		if (hasIndex())
+			return getIndex().fullCopy();
+		else
+			return new MetaVariable("i_" + getNodeId());
+	}
+
+	syn boolean ASTNode.isGap() = false;
+	eq LiteralGap.isGap() = true;
+	eq TermGap.isGap() = true;
+
 	eq MetaVariable.asLiterals() {
 		return new List<>();
 	}
 
-	eq List.asLiterals() {
-		return new List<>();
-	}
+	eq List.asLiterals() = new List<>();
+	eq Opt.asLiterals() = new List<>();
 
-	eq MetaVariablePlain.varName() = "mv_" + getMETAVAR_ID();
-	eq MetaVariableIndex.varName() = getVar().varName();
+	eq ClausePattern.asLiterals() = new List<>();
+	eq MetaVariable.varName() = "mv_" + getMETAVAR_ID();
 
 	// Collect all the literals resulting from a ClausePattern
 	ASTNode contributes asLiterals() to ClausePattern.literals();
 	coll List<CommonLiteral> ClausePattern.literals() with addAll root ClausePattern;
 	// Collect all the variables resulting from a ClausePattern
 	MetaVariable contributes varName() to ClausePattern.metaVariables();
-	coll ArrayList<String> ClausePattern.metaVariables() root ClausePattern;
+	Term contributes nta indexVar() to ClausePattern.metaVariables();
+	CommonLiteral contributes nta indexVar() to ClausePattern.metaVariables();
+	coll TreeSet<String> ClausePattern.metaVariables() root ClausePattern;
 
 	syn Clause ClausePattern.asClause() {
 		String predicateName = "CP_" + getNodeId();
 		List<Term> vars = new List<>();
-
-		ArrayList<String> metaVars = new ArrayList<>(metaVariables());
-		metaVars.sort(null);
-
-		for (String vname : metaVars) {
+		for (String vname : metaVariables()) {
 			vars.add(new Variable(vname));
 		}
 
@@ -166,8 +191,6 @@ aspect MetaLang {
 	syn List<Literal> Rule.toDatalog() {
 		return null;
 	}
-
-
 
 
 }

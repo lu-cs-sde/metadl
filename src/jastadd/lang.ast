@@ -15,7 +15,7 @@ AnalyzeBlock:CommonClause ::= ProgramRef:PredicateRef Clause*;
 /**
    Literals
 **/
-abstract CommonLiteral;
+abstract CommonLiteral ::= [Index:MetaVariable];
 MetaAtom:CommonLiteral ::= Predicate:MetaVariable Term*;
 abstract Literal:CommonLiteral ::= Predicate:PredicateSymbol;
 
@@ -90,14 +90,11 @@ BadType:Type;
 /**
     Terms
 **/
-abstract Term:Expr;
+abstract Term:Expr ::= [Index:MetaVariable];
 abstract Constant:Term;
 abstract CommonVariable:Term;
 
-abstract MetaVariable:CommonVariable;
-MetaVariablePlain : MetaVariable ::= <METAVAR_ID>;
-MetaVariableIndex : MetaVariable ::= Index:MetaVariablePlain Var:MetaVariablePlain;
-
+MetaVariable : CommonVariable ::= <METAVAR_ID>;
 
 Variable:CommonVariable ::= <VAR_ID>;
 PredicateRef:Constant   ::= <PRED_ID>;

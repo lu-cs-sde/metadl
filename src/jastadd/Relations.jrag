@@ -69,8 +69,8 @@ aspect Relation {
 	eq NEGLiteral.toTuple() = getLiteral().toTuple();
 	eq IMPORTLiteral.toTuple() = new PseudoTuple(getFileLoc(),
 						     getProgramRef(),
-						     getHeadRef(),
-						     getBodyRef(),
+						     getListRef(),
+						     getRuleRef(),
 						     getFactRef(),
 						     getAtomRef(),
 						     getPredicateSymbolRef(),

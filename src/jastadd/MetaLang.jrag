@@ -42,22 +42,11 @@ aspect MetaLang {
 			ASTNode child = getChild(i);
 			if (child instanceof Opt)
 				continue;
-			if (child instanceof List) {
-				List<ASTNode> childrenList  = (List<ASTNode>) child;
-				for (ASTNode c : childrenList) {
-					List<Term> terms = new List<>();
-					terms.add(new Variable(varName()));
-					terms.add(new IntConstant("" + childIndex++));
-					terms.add(new Variable(c.varName()));
-					literals.add(new Atom(new PredicateSymbol(getRelation()), terms));
-				}
-			} else {
-				List<Term> terms = new List<>();
-				terms.add(new Variable(varName()));
-				terms.add(new IntConstant("" + childIndex++));
-				terms.add(new Variable(getChild(i).varName()));
-				literals.add(new Atom(new PredicateSymbol(getRelation()), terms));
-			}
+			List<Term> terms = new List<>();
+			terms.add(new Variable(varName()));
+			terms.add(new IntConstant("" + childIndex++));
+			terms.add(new Variable(getChild(i).varName()));
+			literals.add(new Atom(new PredicateSymbol(getRelation()), terms));
 		}
 		return literals;
 	}
@@ -157,7 +146,6 @@ aspect MetaLang {
 		return new List<>();
 	}
 
-	eq List.asLiterals() = new List<>();
 	eq Opt.asLiterals() = new List<>();
 
 	eq ClausePattern.asLiterals() = new List<>();

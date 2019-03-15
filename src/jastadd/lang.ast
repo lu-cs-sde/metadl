@@ -33,8 +33,8 @@ NEGLiteral:Literal    ::= Literal;
 
 BINDLiteral:Literal ::= Variable Right:Expr;
 IMPORTLiteral:Literal ::= FileLoc:Term ProgramRef:PredicateRef
-                                             HeadRef:PredicateRef
-                                             BodyRef:PredicateRef
+					     ListRef:PredicateRef
+                                             RuleRef:PredicateRef
                                              FactRef:PredicateRef
                                              AtomRef:PredicateRef
                                              PredicateSymbolRef:PredicateRef

@@ -142,7 +142,7 @@ public class EvaluationTest {
 				"eval::souffle -OUT ./tests/output/souffle -FACTS ./tests/evaluation/withimport/facts ./tests/evaluation/withimport/"
 						+ fileName);
 		Map<String, Relation> outRelations = doSingleEvaluation(d1);
-		assertEquals(outRelations.get("NotFullyTypedName").size(), 0);
-		assertEquals(outRelations.get("InconsistentTypedName").size(), 0);
+		assertEquals(0, outRelations.get("NotFullyTypedName").size());
+		assertEquals(0, outRelations.get("InconsistentTypedName").size());
     }
 }

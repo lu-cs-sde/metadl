@@ -230,7 +230,7 @@ aspect PretyPrinting {
 		pr.out.print("[");
 		pr.prettyPrint(getClause());
 		pr.out.print("]");
-		pr.prettyPrint(asClause());
+		//pr.prettyPrint(asClause());
 	}
 }
 

@@ -90,33 +90,16 @@ aspect DatalogProject {
 		TupleWrapper ret = new TupleWrapper(relName);
 
 		int childIndex = 0;
-
 		for (int i = 0; i < getNumChild(); ++i) {
 			ASTNode child = getChild(i);
 			if (child instanceof Opt)
 				continue;
-			if (child instanceof List) {
-				List<ASTNode> childrenList = (List<ASTNode>) child;
-				for (ASTNode c : childrenList) {
-					IntConstant ChildId = new IntConstant("" + c.getNodeId());
-					IntConstant CurrentNodeId = new IntConstant("" + getNodeId());
-					IntConstant ChildIdx = new IntConstant("" + childIndex++);
-					ret.addTuple(new PseudoTuple(CurrentNodeId, ChildIdx, ChildId));
-				}
-			} else {
-				IntConstant ChildId = new IntConstant("" + child.getNodeId());
-				IntConstant CurrentNodeId = new IntConstant("" + getNodeId());
-				IntConstant ChildIdx = new IntConstant("" + childIndex++);
-				ret.addTuple(new PseudoTuple(CurrentNodeId, ChildIdx, ChildId));
-			}
+			IntConstant ChildId = new IntConstant("" + child.getNodeId());
+			IntConstant CurrentNodeId = new IntConstant("" + getNodeId());
+			IntConstant ChildIdx = new IntConstant("" + childIndex++);
+			ret.addTuple(new PseudoTuple(CurrentNodeId, ChildIdx, ChildId));
 		}
 		return ret;
-	}
-
-	public TupleWrapper List.buildTupleWrapper() {
-		// AST nodes that have variadic number of children
-		// use a List as a child node. Ignore them.
-		return new TupleWrapper(null);
 	}
 
 	public TupleWrapper Opt.buildTupleWrapper() {
@@ -203,27 +186,6 @@ aspect DatalogProject {
 
 	public TupleWrapper DivExpr.buildTupleWrapper() {
 		return exprNodeHelper("/");
-	}
-
-	public TupleWrapper Rule.buildTupleWrapper() {
-		TupleWrapper ret = new TupleWrapper();
-		List<CommonLiteral> heads = getHeadss();
-		List<CommonLiteral> bodys = getBodys();
-
-		IntConstant CurrentNodeId = new IntConstant("" + getNodeId());
-		int childIndex = 0;
-		for (ASTNode h : heads) {
-			IntConstant ChildId = new IntConstant("" + h.getNodeId());
-			IntConstant ChildIdx = new IntConstant("" + childIndex++);
-			ret.addTuple("Head", new PseudoTuple(CurrentNodeId, ChildIdx, ChildId));
-		}
-		childIndex = 0;
-		for (ASTNode b : bodys) {
-			IntConstant ChildId = new IntConstant("" + b.getNodeId());
-			IntConstant ChildIdx = new IntConstant("" + childIndex++);
-			ret.addTuple("Body", new PseudoTuple(CurrentNodeId, ChildIdx, ChildId));
-		}
-		return ret;
 	}
 
 	ASTNode contributes buildTupleWrapper() to Program.datalogProjection() ;

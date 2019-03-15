@@ -594,8 +594,8 @@ aspect Types {
 	eq  TYPEOFLiteral.actualType() = new PseudoTuple(new List(getPredicateRef().type(), getTerm().type()));
 	eq  IMPORTLiteral.actualType() = new PseudoTuple(new List(getFileLoc().type(),
 								  getProgramRef().type(),
-								  getHeadRef().type(),
-								  getBodyRef().type(),
+								  getListRef().type(),
+								  getRuleRef().type(),
 								  getFactRef().type(),
 								  getAtomRef().type(),
 								  getPredicateSymbolRef().type(),

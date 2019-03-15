@@ -2,10 +2,10 @@
 
 IMPORT("tests/evaluation/withimport/evalTest_1.in",
        'Program,
-	   'Head,
-	   'Body,
+	   'Child,
+	   'Rule,
 	   'Fact,
-	   'Atom,
+	   'Atom1,
 	   'PredicateSymbol,
 	   'IntConstant,
 	   'StringConstant,
@@ -22,10 +22,10 @@ IMPORT("tests/evaluation/withimport/evalTest_1.in",
 
 # For the purpose of type inference, provide a clauses that contain ground instances of all the predicates.
 Program(0, 0, 0),
-Head(0, 0, 0),
-Body(0, 0, 0),
+Child(0, 0, 0),
+Rule(0, 0, 0),
 Fact(0, 0, 0),
-Atom(0, 0, 0),
+Atom1(0, 0, 0),
 PredicateSymbol(0, ""),
 IntConstant(0, 0),
 StringConstant(0, ""),
@@ -40,10 +40,16 @@ BinExprRef(0, "", 0, 0) :- NEQ(0, 0).
 
 PredicateRef(0, 'PredicateRef) :- NEQ(0, 0).
 
+Body(rule_id, i, atom_id) :- Rule(rule_id, 1, l_id),Child(l_id, i, atom_id).
+Head(rule_id, i, atom_id) :- Rule(rule_id, 0, l_id),Child(l_id, i, atom_id).
+
 Constant(x) :- IntConstant(x, y).
 Constant(x) :- StringConstant(x, y).
 Constant(x) :- PredicateRef(x, y).
 
+
+Atom(a, 0, p) :- Atom1(a, 0, p).
+Atom(a, i, t) :- Atom1(a, 1, j),Child(j, k, t),BIND(i, k+1).
 
 SameVar(v1, v2) :-
 			Body(rule_id, x, atom_id1),
@@ -121,3 +127,4 @@ CType(node_id, "PredicateRef") :- PredicateRef(node_id, x).
 # For a well-typed program, these relations should be empty
 OUTPUT('NotFullyTypedName).
 OUTPUT('InconsistentTypedName).
+OUTPUT('PredTypeName).

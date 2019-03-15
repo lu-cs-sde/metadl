@@ -70,10 +70,10 @@ aspect LiteralSideEffect {
 		switch (relName) {
 		case "Program":
 			return getProgramRef();
-		case "Head":
-			return getHeadRef();
-		case "Body":
-			return getBodyRef();
+		case "List":
+			return getListRef();
+		case "Rule":
+			return getRuleRef();
 		case "Fact":
 			return getFactRef();
 		case "Atom":

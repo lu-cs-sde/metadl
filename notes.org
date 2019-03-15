@@ -15,14 +15,13 @@ The DatalogM engine typechecker is now disabled, so a new type checker written i
 ** DONE Use souffle for evaluation
    CLOSED: [2019-03-06 Wed 18:00]
 
+* Longer term changes:
 ** TODO Replace the typechecker in the DatalogM interpreted with the new one
 ** TODO Remove the TYPEOF special literal
 ** TODO Remove type constants
-
+** TODO Simplify the grammar by removing inclusive and exclusive literals and have a semantic check later
 ** TODO Introduce non-binding variable (i.e. _)
-Allow the non-binding variable in negated atoms.
-
-* Future changes
+- Allow the non-binding variable in negated atoms.
 ** TODO Non-referenceable built-in predicates: e.g. INPUT, OUTPUT, IMPORT, EXPORT, TYPEOF
 - Disallow at grammar level.
 

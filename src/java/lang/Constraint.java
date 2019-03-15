@@ -1,4 +1,4 @@
-package lang.cons;
+package lang;
 
 import lang.ast.*;
 import java.util.ArrayList;
@@ -22,7 +22,7 @@ public abstract class Constraint {
 		return new MemberConstraint(n);
 	}
 
-	public static Constraint eq(ASTNode n1, int pos) {
+	public static Constraint equals(ASTNode n1, int pos) {
 		return new EqualityConstraint(n1, pos);
 	}
 
@@ -61,7 +61,7 @@ class EqualityConstraint extends Constraint {
 
 class MemberConstraint extends Constraint {
 	ArrayList<Literal> result = new ArrayList<>();
-	final String boundVarName = "b_" + node.getNodeId();
+	String boundVarName = "b_" + node.getNodeId();
 	public MemberConstraint(ASTNode node) {
 		super(node);
 	}
@@ -76,7 +76,6 @@ class MemberConstraint extends Constraint {
 }
 
 class LastConstraint extends Constraint {
-	final String newRuleName = node.getParent().getRelation() + "_proj";
 	// This element must be the last one in the list.
 	// Check that the relation List(l, _, i+1) is empty.
 	// List1(l, i) :- List(l, i, c).
@@ -85,9 +84,13 @@ class LastConstraint extends Constraint {
 		super(node);
 	}
 
+	public String newRuleName() {
+		return "List_proj_" + node.getNodeId();
+	}
+
 	@Override
 	public Clause generateClause() {
-		Atom list1 = makeAtom(newRuleName,
+		Atom list1 = makeAtom(newRuleName(),
 							  new Variable("l"),
 							  new Variable("i"));
 		Atom list = makeAtom(node.getParent().getRelation(),
@@ -110,7 +113,7 @@ class LastConstraint extends Constraint {
 								   new AddExpr(new Variable(node.indexVarName()),
 											   new IntConstant("1"))));
 		result.add(new NEGLiteral(new PredicateSymbol("NEG"),
-								  makeAtom(newRuleName,
+								  makeAtom(newRuleName(),
 										   new Variable(node.getParent().varName()),
 										   new Variable(boundVarName))));
 		return result;

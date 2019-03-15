@@ -108,8 +108,7 @@ aspect PretyPrinting {
     }
 
 	public void MetaVariable.prettyPrint(PrettyPrinter pr) {
-		printIndex(pr);
-		pr.out.print("$" + getMETAVAR_ID());
+	 	pr.prettyPrint(getVariable());
 	}
 
 	public void TermGap.prettyPrint(PrettyPrinter pr) {
@@ -227,10 +226,18 @@ aspect PretyPrinting {
     }
 
 	public void ClausePattern.prettyPrint(PrettyPrinter pr) {
-		pr.out.print("[");
-		pr.prettyPrint(getClause());
-		pr.out.print("]");
-		//pr.prettyPrint(asClause());
+		printList(getLiterals(), "", "", ", ", pr);
+	}
+
+	public void AnalyzeBlock.prettyPrint(PrettyPrinter pr) {
+		// pr.out.print("analyze (");
+		// pr.prettyPrint(getProgramRef());
+		// pr.out.print(") {\n");
+		// for (Clause c : getClauses()) {
+		// 	pr.prettyPrint(c);
+		// }
+		// pr.out.print("}\n");
+		printList(getAllClauses(), "", "", "", pr);
 	}
 }
 

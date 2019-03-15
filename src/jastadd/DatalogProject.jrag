@@ -12,7 +12,10 @@ aspect DatalogProject {
 	public String ASTNode.getRelation() {
 		String nodeName = this.getClass().getName();
 		String[] splitNodeName = nodeName.split("\\.");
-		return splitNodeName[splitNodeName.length - 1];
+		String relName = splitNodeName[splitNodeName.length - 1];
+		if (relName.equals("List"))
+			return "Lst";
+		return relName;
 	}
 
 	/**

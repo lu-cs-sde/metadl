@@ -206,4 +206,8 @@ public class PseudoTuple implements Comparable<PseudoTuple> {
 		}
 		return strs;
 	}
+
+	public static PseudoTuple cat(PseudoTuple l, PseudoTuple r) {
+		return new PseudoTuple(l.toList().addAll(r.toList()));
+	}
 }

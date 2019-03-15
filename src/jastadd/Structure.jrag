@@ -181,6 +181,9 @@ aspect Clause {
     	for(CommonLiteral l : getBodys()) {
             if(l.isInclusive())
                 variables.addAll(l.variables());
+            if(l.isBind()) {
+                variables.add(((BINDLiteral)l).getVariable());
+            }
         }
     	return variables;
     }
@@ -216,8 +219,7 @@ aspect Literal {
     syn boolean CommonLiteral.isNeg() = false;
     eq  NEGLiteral.isNeg()    = true;
 
-	syn boolean Literal.isBind();
-    eq  Literal.isBind()       = false;
+	syn boolean CommonLiteral.isBind() = false;
     eq  BINDLiteral.isBind()   = true;
 
 	syn boolean Literal.isIMPORT();

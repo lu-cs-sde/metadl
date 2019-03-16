@@ -171,6 +171,10 @@ public class Relation {
 		return relation.toString();
 	}
 
+	/**
+	   Concatenate two relations columnwise. If a relation contains more
+	   tuples, just pad with default tuples.
+	 */
 	public static Relation cat(Relation left, PseudoTuple defaultLeft,
 							   Relation right, PseudoTuple defaultRight) {
 		Relation result = new Relation(right.arity() + left.arity());

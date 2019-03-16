@@ -1,23 +1,6 @@
 # An incomplete type check/inference  for DatalogM
 
-IMPORT("tests/evaluation/withimport/evalTest_1.in",
-       'Program,
-	   'Child,
-	   'Rule,
-	   'Fact,
-	   'Atom1,
-	   'PredicateSymbol,
-	   'IntConstant,
-	   'StringConstant,
-	   'PredicateRef,
-	   'Variable,
-	   'IMPORTLiteral,
-	   'EDBLiteral,
-	   'OUTPUTLiteral,
-	   'NEGLiteral,
-	   'BINDLiteral,
-	   'BinaryExclusiveTermLiteralRef,
-	   'BinExprRef).
+IMPORT("tests/evaluation/withimport/evalTest_1.in", 'Program1).
 
 
 # For the purpose of type inference, provide a clauses that contain ground instances of all the predicates.
@@ -29,6 +12,7 @@ Atom1(0, 0, 0),
 PredicateSymbol(0, ""),
 IntConstant(0, 0),
 StringConstant(0, ""),
+PredicateRef(0, 'PredicateRef),
 Variable(0, ""),
 IMPORTLiteral(0, 0, 0),
 EDBLiteral(0, 0, 0),
@@ -38,7 +22,70 @@ BINDLiteral(0, 0, 0),
 BinaryExclusiveTermLiteralRef(0, "", 0, 0),
 BinExprRef(0, "", 0, 0) :- NEQ(0, 0).
 
-PredicateRef(0, 'PredicateRef) :- NEQ(0, 0).
+
+Program1(0, 0, 0,
+0, 0, 0,
+0, 0, 0,
+0, 0, 0,
+10, 0, 0,
+0, "",
+0, 0,
+0, "",
+0, 'PredicateRef,
+0, "",
+0, 0, 0,
+0, 0, 0,
+0, 0, 0,
+0, 0, 0,
+0, 0, 0,
+0, "", 0, 0,
+0, "", 0, 0) :- NEQ(0,0).
+
+
+
+ProgramX(p0, p1, p2),
+ChildX(p3, p4, p5),
+RuleX(p6, p7, p8),
+FactX(p9, p10, p11),
+Atom1X(p12, p13, p14),
+PredicateSymbolX(p15, p16),
+IntConstantX(p17, p18),
+StringConstantX(p19, p20),
+PredicateRefX(p21, p22),
+VariableX(p23, p24),
+IMPORTLiteralX(p25, p26, p27),
+EDBLiteralX(p28, p29, p30),
+OUTPUTLiteralX(p31, p32, p33),
+NEGLiteralX(p34, p35, p36),
+BINDLiteralX(p37, p38, p39),
+BinaryExclusiveTermLiteralRefX(p40, p41, p42, p43),
+BinExprRefX(p44, p45, p46, p47) :-
+		Program1(p0, p1, p2, p3, p4, p5, p6, p7, p8, p9,
+		p10, p11, p12, p13,  p14, p15, p16, p17, p18, p19,
+		p20, p21, p22, p23, p24, p25, p26, p27, p28, p29,
+		p30, p31, p32, p33, p34, p35, p36, p37, p38, p39,
+		p40, p41, p42, p43, p44, p45, p46, p47).
+
+Program(p0, p1, p2) :-                                      ProgramX(p0, p1, p2), GT(p0, 0).
+Child(p3, p4, p5) :-					    ChildX(p3, p4, p5), GT(p3, 0).
+Rule(p6, p7, p8) :-					    RuleX(p6, p7, p8), GT(p6, 0).
+Fact(p9, p10, p11) :-					    FactX(p9, p10, p11), GT(p9, 0).
+Atom1(p12, p13, p14) :-					    Atom1X(p12, p13, p14), GT(p12, 0).
+PredicateSymbol(p15, p16) :-				    PredicateSymbolX(p15, p16), GT(p15, 0).
+IntConstant(p17, p18) :-				    IntConstantX(p17, p18), GT(p17, 0).
+StringConstant(p19, p20) :-				    StringConstantX(p19, p20), GT(p19, 0).
+PredicateRef(p21, p22) :-				    PredicateRefX(p21, p22), GT(p21, 0).
+Variable(p23, p24) :-					    VariableX(p23, p24), GT(p23, 0).
+IMPORTLiteral(p25, p26, p27) :-				    IMPORTLiteralX(p25, p26, p27), GT(p25, 0).
+EDBLiteral(p28, p29, p30) :-				    EDBLiteralX(p28, p29, p30), GT(p28, 0).
+OUTPUTLiteral(p31, p32, p33) :-				    OUTPUTLiteralX(p31, p32, p33), GT(p31, 0).
+NEGLiteral(p34, p35, p36) :-				    NEGLiteralX(p34, p35, p36), GT(p34, 0).
+BINDLiteral(p37, p38, p39) :-				    BINDLiteralX(p37, p38, p39), GT(p37, 0).
+BinaryExclusiveTermLiteralRef(p40, p41, p42, p43) :-	    BinaryExclusiveTermLiteralRefX(p40, p41, p42, p43), GT(p40, 0).
+BinExprRef(p44, p45, p46, p47) :-			    BinExprRefX(p44, p45, p46, p47), GT(p44, 0).
+
+
+
 
 Body(rule_id, i, atom_id) :- Rule(rule_id, 1, l_id),Child(l_id, i, atom_id).
 Head(rule_id, i, atom_id) :- Rule(rule_id, 0, l_id),Child(l_id, i, atom_id).

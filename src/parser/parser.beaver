@@ -156,28 +156,8 @@ atom_literal   = ATOM   LPARA term.t RPARA                            {: return 
 typeof_literal = TYPEOF LPARA term.pred COMMA term.t RPARA            {: return new TYPEOFLiteral(new PredicateSymbol("TYPEOF"), pred, t);   :};
 import_literal = IMPORT LPARA term.file_loc
                         COMMA pred_ref.program_ref
-                        COMMA pred_ref.list_ref
-                        COMMA pred_ref.rule_ref
-                        COMMA pred_ref.fact_ref
-                        COMMA pred_ref.atom_ref
-                        COMMA pred_ref.predicate_symbol_ref
-                        COMMA pred_ref.int_constant_ref
-                        COMMA pred_ref.string_constant_ref
-                        COMMA pred_ref.predicate_ref_ref
-                        COMMA pred_ref.variable_ref
-                        COMMA pred_ref.import_literal_ref
-                        COMMA pred_ref.edb_literal_ref
-                        COMMA pred_ref.output_literal_ref
-                        COMMA pred_ref.neg_literal_ref
-                        COMMA pred_ref.bind_literal_ref
-                        COMMA pred_ref.binary_exclusive_term_literal_ref
-                        COMMA pred_ref.bin_expr_ref
                         RPARA
-     {: return new IMPORTLiteral(new PredicateSymbol("IMPORT"), file_loc, program_ref, list_ref, rule_ref, fact_ref, atom_ref, predicate_symbol_ref,
-                       int_constant_ref, string_constant_ref, predicate_ref_ref, variable_ref,
-                       import_literal_ref, edb_literal_ref, output_literal_ref, neg_literal_ref,
-                       bind_literal_ref, binary_exclusive_term_literal_ref, bin_expr_ref); :};
-
+     {: return new IMPORTLiteral(new PredicateSymbol("IMPORT"), file_loc, program_ref); :};
 
 lit_list = common_literal_opt_index.lit {: return new List().add(lit); :}
          | lit_list.list COMMA common_literal_opt_index.c {: return list.add(c); :}

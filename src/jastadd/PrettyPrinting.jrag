@@ -574,24 +574,6 @@ aspect SoufflePrinting {
         }
     }
 
-    /**
-       For a relation representing the AST, return its position in an tuple
-       of the IMPORT relation.
-     */
-    int IMPORTLiteral.getCoordIndexForRel(String relName) {
-	ASTNode child = getPredicateRefForRelation(relName);
-	for (int i = 0; i < getNumChild(); ++i) {
-	    if (getChild(i) == child) {
-		// The first child is the PredicateSymbol and
-		// this is not a present in the tuples of the relation, so skip it.
-		return i - 2;
-	    }
-
-	}
-	return -1;
-    }
-
-
     private String Program.souffleConstantToString(Constant C) {
 	if (C instanceof PredicateRef) {
 	    return "\"'" + ((PredicateRef)C).getPRED_ID() + "\"";
@@ -621,26 +603,21 @@ aspect SoufflePrinting {
 
 			HashMap<String, Relation> nameToRelMap = importedProgram.datalogProjection().nameToRelMap;
 
-			for (Map.Entry<String, Relation> kv : nameToRelMap.entrySet()) {
-				int idx = importLiteral.getCoordIndexForRel(kv.getKey());
-				if (idx < 0) {
-					SimpleLogger.logger().log("Error when translating the IMPORT statement", SimpleLogger.LogLevel.Level.ERROR);
-					System.exit(1);
+			PredicateRef predref = (PredicateRef)(ps.coord(1));
+			String predName = predref.getPRED_ID();
+
+			Relation programRel = IMPORTLiteral.programToRelation(importedProgram);
+
+			for (PseudoTuple fact : programRel.tuples()) {
+				pr.out.print(predName + "(");
+				pr.out.print(souffleConstantToString((Constant)fact.coord(0)));
+
+				for (int i = 1; i < fact.arity(); ++i) {
+					pr.out.print(", ");
+					pr.out.print(souffleConstantToString((Constant)fact.coord(i)));
 				}
-				PredicateRef predref = (PredicateRef)(ps.coord(idx));
-				String predName = predref.getPRED_ID();
 
-				for (PseudoTuple fact : kv.getValue().tuples()) {
-					pr.out.print(predName + "(");
-					pr.out.print(souffleConstantToString((Constant)fact.coord(0)));
-
-					for (int i = 1; i < fact.arity(); ++i) {
-						pr.out.print(", ");
-						pr.out.print(souffleConstantToString((Constant)fact.coord(i)));
-					}
-
-					pr.out.print(").\n");
-				}
+				pr.out.print(").\n");
 			}
 		}
     }

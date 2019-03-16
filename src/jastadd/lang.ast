@@ -32,24 +32,7 @@ TYPEOFLiteral:Literal ::= PredicateRef:Term Term;
 NEGLiteral:Literal    ::= Literal;
 
 BINDLiteral:Literal ::= Variable Right:Expr;
-IMPORTLiteral:Literal ::= FileLoc:Term ProgramRef:PredicateRef
-					     ListRef:PredicateRef
-                                             RuleRef:PredicateRef
-                                             FactRef:PredicateRef
-                                             AtomRef:PredicateRef
-                                             PredicateSymbolRef:PredicateRef
-                                             IntConstantRef:PredicateRef
-                                             StringConstantRef:PredicateRef
-                                             PredicateRefRef:PredicateRef
-                                             VariableRef:PredicateRef
-                                             IMPORTLiteralRef:PredicateRef
-                                             EDBLiteralRef:PredicateRef
-                                             OUTPUTLiteralRef:PredicateRef
-					     NEGLiteralRef:PredicateRef
-					     BINDLiteralRef:PredicateRef
-					     BinaryExclusiveTermLiteralRef:PredicateRef
-					     BinExprRef:PredicateRef
-					     ;
+IMPORTLiteral:Literal ::= FileLoc:Term ProgramRef:PredicateRef;
 
 EQLiteral:BinaryExclusiveTermLiteral;
 NEQLiteral:BinaryExclusiveTermLiteral;

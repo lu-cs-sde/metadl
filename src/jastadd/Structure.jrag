@@ -594,24 +594,7 @@ aspect Types {
 	eq  PREDLiteral.actualType()   = new PseudoTuple(new List(getTerm().type()));
 	eq  EDBLiteral.actualType()    = new PseudoTuple(new List(Type.predRefType, getFileLoc().type()));
 	eq  TYPEOFLiteral.actualType() = new PseudoTuple(new List(getPredicateRef().type(), getTerm().type()));
-	eq  IMPORTLiteral.actualType() = new PseudoTuple(new List(getFileLoc().type(),
-								  getProgramRef().type(),
-								  getListRef().type(),
-								  getRuleRef().type(),
-								  getFactRef().type(),
-								  getAtomRef().type(),
-								  getPredicateSymbolRef().type(),
-								  getIntConstantRef().type(),
-								  getStringConstantRef().type(),
-								  getPredicateRefRef().type(),
-								  getVariableRef().type(),
-								  getIMPORTLiteralRef().type(),
-								  getEDBLiteralRef().type(),
-								  getOUTPUTLiteralRef().type(),
-								  getNEGLiteralRef().type(),
-								  getBINDLiteralRef().type(),
-								  getBinaryExclusiveTermLiteralRef().type(),
-								  getBinExprRef().type()));
+	eq  IMPORTLiteral.actualType() = new PseudoTuple(new List(getFileLoc().type(), getProgramRef().type()));
 
 	syn PseudoTuple PredefinedLiteral.type();
 	eq  ATOMLiteral.type()   = new PseudoTuple(new List(Type.predRefType));
@@ -619,25 +602,7 @@ aspect Types {
 	eq  PREDLiteral.type()   = new PseudoTuple(new List(Type.predRefType));
 	eq  EDBLiteral.type()    = new PseudoTuple(new List(Type.predRefType, Type.stringType));
 	eq  TYPEOFLiteral.type() = new PseudoTuple(new List(Type.predRefType, Type.listOfTypeType));
-	eq  IMPORTLiteral.type() = new PseudoTuple(new List(Type.stringType,
-							    Type.predRefType,
-							    Type.predRefType,
-							    Type.predRefType,
-							    Type.predRefType,
-							    Type.predRefType,
-							    Type.predRefType,
-							    Type.predRefType,
-							    Type.predRefType,
-							    Type.predRefType,
-							    Type.predRefType,
-							    Type.predRefType,
-							    Type.predRefType,
-							    Type.predRefType,
-							    Type.predRefType,
-							    Type.predRefType,
-							    Type.predRefType,
-							    Type.predRefType
-							    ));
+	eq  IMPORTLiteral.type() = new PseudoTuple(new List(Type.stringType, Type.predRefType));
 
 	syn PseudoTuple TYPEOFLiteral.refType() {
 		if(!getTerm().type().isListType()) return new PseudoTuple(Type.badType);

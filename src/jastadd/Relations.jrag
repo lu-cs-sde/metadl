@@ -16,7 +16,7 @@ aspect Arity {
     eq EQLISTLiteral.arity() = 1;
     eq BinaryExclusiveTermLiteral.arity() = 2;
     eq TYPEOFLiteral.arity() = 2;
-    eq IMPORTLiteral.arity() = 16;
+    eq IMPORTLiteral.arity() = 2;
     eq Atom.arity() = getNumTerms();
     eq LiteralGap.arity() = 0;
 
@@ -67,25 +67,7 @@ aspect Relation {
 	eq BINDLiteral.toTuple()   = new PseudoTuple(0);
 	eq TYPEOFLiteral.toTuple() = new PseudoTuple(getPredicateRef(), getTerm());
 	eq NEGLiteral.toTuple() = getLiteral().toTuple();
-	eq IMPORTLiteral.toTuple() = new PseudoTuple(getFileLoc(),
-						     getProgramRef(),
-						     getListRef(),
-						     getRuleRef(),
-						     getFactRef(),
-						     getAtomRef(),
-						     getPredicateSymbolRef(),
-						     getIntConstantRef(),
-						     getStringConstantRef(),
-						     getPredicateRefRef(),
-						     getVariableRef(),
-						     getIMPORTLiteralRef(),
-						     getEDBLiteralRef(),
-						     getOUTPUTLiteralRef(),
-						     getNEGLiteralRef(),
-						     getBINDLiteralRef(),
-						     getBinaryExclusiveTermLiteralRef(),
-						     getBinExprRef()
-						     );
+	eq IMPORTLiteral.toTuple() = new PseudoTuple(getFileLoc(), getProgramRef());
 	eq LiteralGap.toTuple() = null;
 }
 

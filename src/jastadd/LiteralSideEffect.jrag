@@ -66,46 +66,90 @@ aspect LiteralSideEffect {
         }
     }
 
-	public PredicateRef IMPORTLiteral.getPredicateRefForRelation(String relName) {
-		switch (relName) {
-		case "Program":
-			return getProgramRef();
-		case "Lst":
-			return getListRef();
-		case "Rule":
-			return getRuleRef();
-		case "Fact":
-			return getFactRef();
-		case "Atom":
-			return getAtomRef();
-		case "PredicateSymbol":
-			return getPredicateSymbolRef();
-		case "IntConstant":
-			return getIntConstantRef();
-		case "StringConstant":
-			return getStringConstantRef();
-		case "PredicateRef":
-			return getPredicateRefRef();
-		case "Variable":
-			return getVariableRef();
-		case "IMPORTLiteral":
-			return getIMPORTLiteralRef();
-		case "EDBLiteral":
-			return getEDBLiteralRef();
-		case "OUTPUTLiteral":
-			return getOUTPUTLiteralRef();
-		case "NEGLiteral":
-		    return getNEGLiteralRef();
-		case "BINDLiteral":
-		    return getBINDLiteralRef();
-		case "BinaryExclusiveTermLiteral":
-		    return getBinaryExclusiveTermLiteralRef();
-		case "BinExpr":
-		    return getBinExprRef();
-		default:
-			return null;
+
+	public class ProgRelPart {
+		public final String name;
+		public final PseudoTuple defaultValue;
+		ProgRelPart(String name, Object[] defaultValues) {
+			this.name = name;
+			Term terms[] = new Term[defaultValues.length];
+			for (int i = 0; i < defaultValues.length; ++i) {
+				if (defaultValues[i] instanceof String) {
+					terms[i] = new StringConstant((String)defaultValues[i]);
+				} else if (defaultValues[i] instanceof Term) {
+					terms[i] = (Term)defaultValues[i];
+				} else {
+					terms[i] = new IntConstant("" + (Integer)defaultValues[i]);
+				}
+			}
+			this.defaultValue = new PseudoTuple(terms);
 		}
 	}
+
+	public static ProgRelPart[] IMPORTLiteral.programRelationStructure() {
+		Object[] triple = new Object[]{0, 0, 0};
+		Object[] pairString = new Object[]{0, ""};
+		ProgRelPart prs[] = {
+			new ProgRelPart("Program", triple),
+			new ProgRelPart("Lst", triple),
+			new ProgRelPart("Rule", triple),
+			new ProgRelPart("Fact", triple),
+			new ProgRelPart("Atom", triple),
+			new ProgRelPart("PredicateSymbol", pairString),
+			new ProgRelPart("IntConstant", new Object[]{0, 0}),
+			new ProgRelPart("StringConstant", pairString),
+			new ProgRelPart("PredicateRef", new Object[]{0, new PredicateRef("DUMMYPREDREF")}),
+			new ProgRelPart("Variable", pairString),
+			new ProgRelPart("IMPORTLiteral", triple),
+			new ProgRelPart("EDBLiteral", triple),
+			new ProgRelPart("OUTPUTLiteral", triple),
+			new ProgRelPart("NEGLiteral", triple),
+			new ProgRelPart("BINDLiteral", triple),
+			new ProgRelPart("BinaryExclusiveTermLiteral", new Object[] {0, "", 0, 0}),
+			new ProgRelPart("BinExpr", new Object[] {0, "", 0, 0})};
+		return prs;
+	}
+
+	// public PredicateRef IMPORTLiteral.getPredicateRefForRelation(String relName) {
+	// 	switch (relName) {
+	// 	case "Program":
+	// 		return getProgramRef();
+	// 	case "Lst":
+	// 		return getListRef();
+	// 	case "Rule":
+	// 		return getRuleRef();
+	// 	case "Fact":
+	// 		return getFactRef();
+	// 	case "Atom":
+	// 		return getAtomRef();
+	// 	case "PredicateSymbol":
+	// 		return getPredicateSymbolRef();
+	// 	case "IntConstant":
+	// 		return getIntConstantRef();
+	// 	case "StringConstant":
+	// 		return getStringConstantRef();
+	// 	case "PredicateRef":
+	// 		return getPredicateRefRef();
+	// 	case "Variable":
+	// 		return getVariableRef();
+	// 	case "IMPORTLiteral":
+	// 		return getIMPORTLiteralRef();
+	// 	case "EDBLiteral":
+	// 		return getEDBLiteralRef();
+	// 	case "OUTPUTLiteral":
+	// 		return getOUTPUTLiteralRef();
+	// 	case "NEGLiteral":
+	// 	    return getNEGLiteralRef();
+	// 	case "BINDLiteral":
+	// 	    return getBINDLiteralRef();
+	// 	case "BinaryExclusiveTermLiteral":
+	// 	    return getBinaryExclusiveTermLiteralRef();
+	// 	case "BinExpr":
+	// 	    return getBinExprRef();
+	// 	default:
+	// 		return null;
+	// 	}
+	// }
 
 	private void IMPORTLiteral.dumpAllRelations(Map<String, Relation> nameToRelMap)
 	{
@@ -113,6 +157,21 @@ aspect LiteralSideEffect {
 			System.out.println(kv.getKey());
 			System.out.println(kv.getValue());
 		}
+	}
+
+	public static Relation IMPORTLiteral.programToRelation(Program importedProgram) {
+		HashMap<String, Relation> nameToRelMap = importedProgram.datalogProjection().nameToRelMap;
+		Relation importedProgramRel = new Relation(0);
+		PseudoTuple defaultTpl = new PseudoTuple();
+		for (ProgRelPart part : programRelationStructure()) {
+			Relation r = nameToRelMap.get(part.name);
+			if (r == null) {
+				r = new Relation(part.defaultValue.arity());
+			}
+			importedProgramRel = Relation.cat(importedProgramRel, defaultTpl, r, part.defaultValue);
+			defaultTpl = PseudoTuple.cat(defaultTpl, part.defaultValue);
+		}
+		return importedProgramRel;
 	}
 
 
@@ -129,27 +188,9 @@ aspect LiteralSideEffect {
 				System.exit(1);
 			}
 
-			HashMap<String, Relation> nameToRelMap = importedProgram.datalogProjection().nameToRelMap;
-
-			for (Map.Entry<String, Relation> kv : nameToRelMap.entrySet()) {
-				PredicateRef ref = getPredicateRefForRelation(kv.getKey());
-
-				if (ref == null) {
-					SimpleLogger.logger().log("The relation " + kv.getKey() + " cannot be imported using the IMPORT statement.",
-											  SimpleLogger.LogLevel.Level.ERROR);
-					dumpAllRelations(nameToRelMap);
-					continue;
-				}
-
-				FormalPredicate fp = program.formalPredicateMap().get(ref.getPRED_ID());
-				if (fp == null) {
-                    SimpleLogger.logger().log("Each PredicateSymbol should belong to a FormalPredicate: " + ref.getPRED_ID(),
-											  SimpleLogger.LogLevel.Level.ERROR);
-					System.exit(0);
-                }
-
-				fp.relation.addAll(kv.getValue());
-			}
+			Relation importedProgramRel = programToRelation(importedProgram);
+			FormalPredicate fp = program.formalPredicateMap().get(getProgramRef().getPRED_ID());
+			fp.relation.addAll(importedProgramRel);
 		}
 	}
 }

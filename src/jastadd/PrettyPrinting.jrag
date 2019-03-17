@@ -607,7 +607,7 @@ aspect SoufflePrinting {
 			String predName = predref.getPRED_ID();
 
 			Relation programRel = IMPORTLiteral.programToRelation(importedProgram);
-
+			IMPORTLiteral.dumpAllRelations(nameToRelMap);
 			for (PseudoTuple fact : programRel.tuples()) {
 				pr.out.print(predName + "(");
 				pr.out.print(souffleConstantToString((Constant)fact.coord(0)));

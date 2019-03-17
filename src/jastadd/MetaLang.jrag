@@ -175,26 +175,26 @@ aspect MetaLang {
 		return literals;
 	}
 
-	eq MetaAtom.asLiterals() {
-		Variable pred = new Variable(getPredicate().varName());
-		String atomRelName = new Atom().getRelation();
-		// Atom(atom_id, 0, pred_id)
-		List<Literal> literals = new List<>();
-		List<Term> terms = new List<>();
-		terms.add(new Variable(varName()));
-		terms.add(new IntConstant("0"));
-		terms.add(pred);
-		PredicateSymbol predAtom = new PredicateSymbol(getScopePrefix() + atomRelName);
-		literals.add(new Atom(predAtom, terms));
-		for (int i = 0; i < getNumTerm(); ++i) {
-			terms = new List<>();
-			terms.add(new Variable(varName()));
-			terms.add(new IntConstant("" + (i + 1)));
-			terms.add(new Variable(getTerm(i).varName()));
-			literals.add(new Atom(predAtom, terms));
-		}
-		return literals;
-	}
+	// eq MetaAtom.asLiterals() {
+	// 	Variable pred = new Variable(getPredicate().varName());
+	// 	String atomRelName = new Atom().getRelation();
+	// 	// Atom(atom_id, 0, pred_id)
+	// 	List<Literal> literals = new List<>();
+	// 	List<Term> terms = new List<>();
+	// 	terms.add(new Variable(varName()));
+	// 	terms.add(new IntConstant("0"));
+	// 	terms.add(pred);
+	// 	PredicateSymbol predAtom = new PredicateSymbol(getScopePrefix() + atomRelName);
+	// 	literals.add(new Atom(predAtom, terms));
+	// 	for (int i = 0; i < getNumTerm(); ++i) {
+	// 		terms = new List<>();
+	// 		terms.add(new Variable(varName()));
+	// 		terms.add(new IntConstant("" + (i + 1)));
+	// 		terms.add(new Variable(getTerm(i).varName()));
+	// 		literals.add(new Atom(predAtom, terms));
+	// 	}
+	// 	return literals;
+	// }
 
 	syn String ASTNode.indexVarName() = null;
 	eq Term.indexVarName() {

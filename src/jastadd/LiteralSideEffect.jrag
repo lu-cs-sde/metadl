@@ -152,7 +152,7 @@ aspect LiteralSideEffect {
 	// 	}
 	// }
 
-	private void IMPORTLiteral.dumpAllRelations(Map<String, Relation> nameToRelMap)
+	public static void IMPORTLiteral.dumpAllRelations(Map<String, Relation> nameToRelMap)
 	{
 		for (Map.Entry<String, Relation> kv : nameToRelMap.entrySet()) {
 			System.out.println(kv.getKey());

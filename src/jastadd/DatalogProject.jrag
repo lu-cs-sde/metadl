@@ -15,6 +15,8 @@ aspect DatalogProject {
 		String relName = splitNodeName[splitNodeName.length - 1];
 		if (relName.equals("List"))
 			return "Lst";
+		if (relName.equals("MetaAtom"))
+			return "Atom";
 		return relName;
 	}
 

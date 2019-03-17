@@ -19,7 +19,9 @@ The DatalogM engine typechecker is now disabled, so a new type checker written i
 ** TODO Replace the typechecker in the DatalogM interpreted with the new one
 ** TODO Remove the TYPEOF special literal
 ** TODO Remove type constants
-** TODO Simplify the grammar by removing inclusive and exclusive literals and have a semantic check later
+** DONE Simplify the grammar by removing inclusive and exclusive literals
+   CLOSED: [2019-03-15 Fri 09:23]
+** TODO and have a semantic check later
 ** TODO Introduce non-binding variable (i.e. _)
 - Allow the non-binding variable in negated atoms.
 ** TODO Non-referenceable built-in predicates: e.g. INPUT, OUTPUT, IMPORT, EXPORT, TYPEOF
@@ -77,9 +79,13 @@ In all variadic AST nodes. That are:
 - enforce an order between metavariables:
   [$p(...,$x,...,$y,...)] implies that the term to which $x is bound comes before the term to which $y is bound.
 
-*** Open questions:
+*** Attaching indices to metavariables:
 - how do we attach an index to a metavariable: ~[$p(...,$i:$x,...,$j:$y,...,)]~
 
+** Uniform handling of AST nodes
+- remove the Head and Body which do now have any AST equivalent
+- the end goal is to have any ASTNode modeled as a relation ~(parent_id, child_index, child_id)~
+- for terminals (terminal_id, "string") or (terminal_id, integer).
 
 * Observations
 ** JastAdd

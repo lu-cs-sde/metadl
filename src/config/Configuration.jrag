@@ -222,17 +222,22 @@ aspect Souffle {
             SimpleLogger.logger().log("PrettyPrint to: " + soufflePath, SimpleLogger.LogLevel.Level.DEBUG);
             program.soufflePrint(new SoufflePrettyPrinter<Program>(new PrintStream(new FileOutputStream(new File(soufflePath)))));
 
-            String cmd = "souffle -j1 -D " + outputDir() + " " + soufflePath + " -F " + factsDir();
+            String cmd = "souffle -D " + outputDir() + " " + soufflePath + " -F " + factsDir();
             SimpleLogger.logger().log("Run souffle with: " + cmd, SimpleLogger.LogLevel.Level.DEBUG);
 
             Process p = Runtime.getRuntime().exec(cmd);
-            p.waitFor();
-            BufferedReader br = new BufferedReader(new InputStreamReader(p.getInputStream()));
-            while (br.ready())
-                SimpleLogger.logger().log(":SOUFFLE-OUTPUT " + br.readLine(), SimpleLogger.LogLevel.Level.DEBUG);
-            BufferedReader brerr = new BufferedReader(new InputStreamReader(p.getErrorStream()));
-            while (brerr.ready())
-                SimpleLogger.logger().log(":SOUFFLE-ERROR " + brerr.readLine(), SimpleLogger.LogLevel.Level.ERROR);
+
+			BufferedReader brerr = new BufferedReader(new InputStreamReader(p.getErrorStream()));
+			BufferedReader br = new BufferedReader(new InputStreamReader(p.getInputStream()));
+
+			while (p.isAlive()) {
+				while (brerr.ready())
+					SimpleLogger.logger().log(":SOUFFLE-ERROR " + brerr.readLine(), SimpleLogger.LogLevel.Level.ERROR);
+				while (br.ready())
+					SimpleLogger.logger().log(":SOUFFLE-OUTPUT " + br.readLine(), SimpleLogger.LogLevel.Level.DEBUG);
+			}
+
+			p.waitFor();
 
             br.close();
             brerr.close();

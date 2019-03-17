@@ -42,7 +42,7 @@ GTLiteral:BinaryExclusiveTermLiteral;
 GTELiteral:BinaryExclusiveTermLiteral;
 EQLISTLiteral:Literal ::= TermList;
 
-LiteralGap:Literal;
+LiteralGap:CommonLiteral;
 
 /**
 	Expressions

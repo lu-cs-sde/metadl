@@ -206,6 +206,7 @@ aspect Literal {
 	syn PredicateSymbol CommonLiteral.predicate();
 	eq MetaAtom.predicate() = null;
 	eq ClausePattern.predicate() = null;
+	eq LiteralGap.predicate() = null;
 
 	eq Literal.predicate() = getPredicate();
 

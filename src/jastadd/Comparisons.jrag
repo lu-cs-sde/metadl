@@ -45,7 +45,6 @@ aspect Conversion {
 	eq GTLiteral.evalOrder()      =  13;
 	eq GTELiteral.evalOrder()     =  14;
 	eq EQLISTLiteral.evalOrder()  =  15;
-	eq LiteralGap.evalOrder()     =  16; // LiteralGap:s are never evaluated
 }
 
 aspect Comparison {

@@ -18,7 +18,6 @@ aspect Arity {
     eq TYPEOFLiteral.arity() = 2;
     eq IMPORTLiteral.arity() = 2;
     eq Atom.arity() = getNumTerms();
-    eq LiteralGap.arity() = 0;
 
     syn int PredicateSymbol.arity() = literal().arity();
 
@@ -68,7 +67,6 @@ aspect Relation {
 	eq TYPEOFLiteral.toTuple() = new PseudoTuple(getPredicateRef(), getTerm());
 	eq NEGLiteral.toTuple() = getLiteral().toTuple();
 	eq IMPORTLiteral.toTuple() = new PseudoTuple(getFileLoc(), getProgramRef());
-	eq LiteralGap.toTuple() = null;
 }
 
 aspect Rules {

@@ -133,7 +133,7 @@ class AfterConstraint extends Constraint {
 							new Variable(node.indexVarName()),
 							new Variable(node.varName())));
 
-		result.add(new EQLiteral(new PredicateSymbol("GT"),
+		result.add(new GTLiteral(new PredicateSymbol("GT"),
 								 new Variable(node.indexVarName()),
 								 new Variable(predecessor.indexVarName())));
 

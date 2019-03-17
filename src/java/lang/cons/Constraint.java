@@ -4,8 +4,8 @@ import lang.ast.*;
 import java.util.ArrayList;
 
 public abstract class Constraint {
-	public Clause generateClause() {return null;};
-	public abstract ArrayList<Literal> generateLiterals();
+	public Clause generateClause(String scopePrefix) {return null;};
+	public abstract ArrayList<Literal> generateLiterals(String scopePrefix);
 	protected ASTNode node;
 	protected Constraint(ASTNode node) {
 		this.node = node;
@@ -45,9 +45,9 @@ class EqualityConstraint extends Constraint {
 		super(node);
 		this.pos = pos;
 	}
-	public ArrayList<Literal> generateLiterals() {
+	public ArrayList<Literal> generateLiterals(String scopePrefix) {
 		ArrayList<Literal> result = new ArrayList<>();
-		result.add(makeAtom(super.node.getParent().getRelation(),
+		result.add(makeAtom(scopePrefix + super.node.getParent().getRelation(),
 							new Variable(node.getParent().varName()),
 							new Variable(node.indexVarName()),
 							new Variable(node.varName())));
@@ -65,9 +65,9 @@ class MemberConstraint extends Constraint {
 	public MemberConstraint(ASTNode node) {
 		super(node);
 	}
-	public ArrayList<Literal> generateLiterals() {
+	public ArrayList<Literal> generateLiterals(String scopePrefix) {
 		ArrayList<Literal> result = new ArrayList<>();
-		result.add(makeAtom(node.getParent().getRelation(),
+		result.add(makeAtom(scopePrefix + node.getParent().getRelation(),
 							new Variable(node.getParent().varName()),
 							new Variable(node.indexVarName()),
 							new Variable(node.varName())));
@@ -86,11 +86,11 @@ class LastConstraint extends Constraint {
 	}
 
 	@Override
-	public Clause generateClause() {
-		Atom list1 = makeAtom(newRuleName,
+	public Clause generateClause(String scopePrefix) {
+		Atom list1 = makeAtom(scopePrefix + newRuleName,
 							  new Variable("l"),
 							  new Variable("i"));
-		Atom list = makeAtom(node.getParent().getRelation(),
+		Atom list = makeAtom(scopePrefix + node.getParent().getRelation(),
 							 new Variable("l"),
 							 new Variable("i"),
 							 new Variable("x"));
@@ -98,10 +98,10 @@ class LastConstraint extends Constraint {
 		return r;
 	}
 
-	public ArrayList<Literal> generateLiterals() {
+	public ArrayList<Literal> generateLiterals(String scopePrefix) {
 		ArrayList<Literal> result = new ArrayList<>();
 		String boundVarName = "b_" + node.getNodeId();
-		result.add(makeAtom(node.getParent().getRelation(),
+		result.add(makeAtom(scopePrefix + node.getParent().getRelation(),
 							new Variable(node.getParent().varName()),
 							new Variable(node.indexVarName()),
 							new Variable(node.varName())));
@@ -110,7 +110,7 @@ class LastConstraint extends Constraint {
 								   new AddExpr(new Variable(node.indexVarName()),
 											   new IntConstant("1"))));
 		result.add(new NEGLiteral(new PredicateSymbol("NEG"),
-								  makeAtom(newRuleName,
+								  makeAtom(scopePrefix + newRuleName,
 										   new Variable(node.getParent().varName()),
 										   new Variable(boundVarName))));
 		return result;
@@ -125,10 +125,10 @@ class AfterConstraint extends Constraint {
 		this.predecessor = predecessor;
 	}
 
-	public ArrayList<Literal> generateLiterals() {
+	public ArrayList<Literal> generateLiterals(String scopePrefix) {
 		ArrayList<Literal> result = new ArrayList<>();
 
-		result.add(makeAtom(super.node.getParent().getRelation(),
+		result.add(makeAtom(scopePrefix + super.node.getParent().getRelation(),
 							new Variable(node.getParent().varName()),
 							new Variable(node.indexVarName()),
 							new Variable(node.varName())));
@@ -148,10 +148,10 @@ class NextConstraint extends Constraint {
 		this.predecessor = predecessor;
 	}
 
-	public ArrayList<Literal> generateLiterals() {
+	public ArrayList<Literal> generateLiterals(String scopePrefix) {
 		ArrayList<Literal> result = new ArrayList<>();
 
-		result.add(makeAtom(super.node.getParent().getRelation(),
+		result.add(makeAtom(scopePrefix + super.node.getParent().getRelation(),
 							new Variable(node.getParent().varName()),
 							new Variable(node.indexVarName()),
 							new Variable(node.varName())));

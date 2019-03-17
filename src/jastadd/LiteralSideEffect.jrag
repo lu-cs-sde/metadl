@@ -84,6 +84,7 @@ aspect LiteralSideEffect {
 			}
 			this.defaultValue = new PseudoTuple(terms);
 		}
+		public int arity() { return defaultValue.arity(); }
 	}
 
 	public static ProgRelPart[] IMPORTLiteral.programRelationStructure() {

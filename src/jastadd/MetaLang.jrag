@@ -48,7 +48,7 @@ aspect MetaLang {
 			terms.add(new Variable(varName()));
 			terms.add(new IntConstant("" + childIndex++));
 			terms.add(new Variable(getChild(i).varName()));
-			literals.add(new Atom(new PredicateSymbol(getRelation()), terms));
+			literals.add(new Atom(new PredicateSymbol(getScopePrefix() + getRelation()), terms));
 		}
 		return literals;
 	}
@@ -103,18 +103,33 @@ aspect MetaLang {
 		return cons;
 	}
 
-	syn ArrayList<Clause> List.clauses() {
+    syn ArrayList<Clause> List.clauses() {
 		ArrayList<Constraint> cons = constraints();
 		if (cons.isEmpty())
 			return new ArrayList<>();
 		ArrayList<Clause> clauses = new ArrayList<>();
 		for (Constraint c : cons) {
-			Clause cls = c.generateClause();
+			Clause cls = c.generateClause(getParent().getScopePrefix());
 			if (cls != null)
 				clauses.add(cls);
 		}
 		return clauses;
 	}
+
+	// syn ArrayList<Clause> ASTNode.generateClauses() = new ArrayList<>();
+
+	// eq Rule.generateClauses() {
+	// 	ArrayList<Clause> ret = getHeads().clauses();
+	// 	ret.addAll(getBody().clauses());
+	// }
+
+	// eq Fact.generateClauses() {
+	// 	return getHeads().clauses();
+	// }
+
+	// eq Atom.generateClauses() {
+	// 	return getTerms().clauses();
+	// }
 
 	eq List.asLiterals() {
 		ArrayList<Constraint> cons = constraints();
@@ -123,12 +138,12 @@ aspect MetaLang {
 
 		List<Literal> lits = new List<>();
 		for (Constraint c : cons)
-			lits.addAll(c.generateLiterals());
+			lits.addAll(c.generateLiterals(getScopePrefix()));
 		return lits;
 	}
 
 	eq Constant.asLiterals() {
-		PredicateSymbol pred = new PredicateSymbol(getRelation());
+		PredicateSymbol pred = new PredicateSymbol(getScopePrefix() + getRelation());
 		List<Literal> literals = new List<>();
 		List<Term> terms = new List<>();
 		terms.add(new Variable(varName()));
@@ -141,7 +156,7 @@ aspect MetaLang {
 	}
 
 	eq Variable.asLiterals() {
-		PredicateSymbol pred = new PredicateSymbol(getRelation());
+		PredicateSymbol pred = new PredicateSymbol(getScopePrefix() + getRelation());
 		List<Literal> literals = new List<>();
 		List<Term> terms = new List<>();
 		terms.add(new Variable(varName()));
@@ -151,7 +166,7 @@ aspect MetaLang {
 	}
 
 	eq PredicateSymbol.asLiterals() {
-		PredicateSymbol pred = new PredicateSymbol(getRelation());
+		PredicateSymbol pred = new PredicateSymbol(getScopePrefix() + getRelation());
 		List<Literal> literals = new List<>();
 		List<Term> terms = new List<>();
 		terms.add(new Variable(varName()));
@@ -169,7 +184,7 @@ aspect MetaLang {
 		terms.add(new Variable(varName()));
 		terms.add(new IntConstant("0"));
 		terms.add(pred);
-		PredicateSymbol predAtom = new PredicateSymbol(atomRelName);
+		PredicateSymbol predAtom = new PredicateSymbol(getScopePrefix() + atomRelName);
 		literals.add(new Atom(predAtom, terms));
 		for (int i = 0; i < getNumTerm(); ++i) {
 			terms = new List<>();
@@ -250,9 +265,80 @@ aspect MetaLang {
 		return new Variable(varName());
 	}
 
+	syn String ASTNode.getScopePrefix() = getParent().getScopePrefix();
+	eq Program.getScopePrefix() = "";
+    eq AnalyzeBlock.getScopePrefix() = "A_" + getProgramRef().getPRED_ID() + "_";
+
+	/**
+	   For every analyze block, insert relations that provide the
+	   context for evaluating the expanded patterns.
+	 */
+	public List<Clause> AnalyzeBlock.generateHelperRelations() {
+		List<Clause> ret = new List<>();
+
+		// Count the arity of the program relation
+		int numVars = 0;
+		for (ProgRelPart pr : IMPORTLiteral.programRelationStructure())
+			numVars += pr.arity();
+
+		// Project the wide program relation to relations matching the
+		// node types
+		int count = 0;
+		for (ProgRelPart pr : IMPORTLiteral.programRelationStructure()) {
+			// Build the head
+			List<CommonLiteral> head = new List<>();
+			List<Term> vars = new List<>();
+			int firstVar = count;
+			for (int i = 0; i < pr.defaultValue.arity(); ++i, ++count) {
+				vars.add(new Variable("p" + count));
+			}
+			PredicateSymbol ps = new PredicateSymbol(getScopePrefix() + pr.name);
+			head.add(new Atom(ps, vars));
+
+
+			List<CommonLiteral> body = new List<>();
+			List<Term> progVars = new List<>();
+			for (int i = 0; i < numVars; ++i) {
+				progVars.add(new Variable("p" + i));
+			}
+
+			PredicateSymbol progPS = new PredicateSymbol(getProgramRef().getPRED_ID());
+			// Program(p0, ..., pN)
+			body.add(new Atom(new PredicateSymbol(getProgramRef().getPRED_ID()),
+							  progVars));
+
+			// test for the node id to be greater than 0 to filter out any
+			// possible dummy terms
+			body.add(new GTLiteral(new PredicateSymbol("GT"),
+								   new Variable("p" + firstVar),
+								   new IntConstant("0")));
+
+			ret.add(new Rule(head, body));
+		}
+
+		// Now create a clause containing a ground instance of the entire program relation,
+		// for the purpose of type inference
+		List<CommonLiteral> head = new List<>();
+		List<CommonLiteral> body = new List<>();
+		List<Term> vars = new List<>();
+		for (ProgRelPart pr : IMPORTLiteral.programRelationStructure()) {
+			for (int i = 0; i < pr.defaultValue.arity(); ++i) {
+				vars.add(pr.defaultValue.coord(i).fullCopy());
+			}
+		}
+
+		head.add(new Atom(new PredicateSymbol(getProgramRef().getPRED_ID()), vars));
+		body.add(new NEQLiteral(new PredicateSymbol("NEQ"), new IntConstant("0"), new IntConstant("0")));
+
+		ret.add(new Rule(head, body));
+
+		return ret;
+	}
+
 	syn nta List<Clause> AnalyzeBlock.getAllClauses() {
 		List<Clause> cls = new List<>();
 		cls.addAll(clauses());
+		cls.addAll(generateHelperRelations());
 		for (Clause c : getClauses())
 			cls.add(c.fullCopy());
 		return cls;

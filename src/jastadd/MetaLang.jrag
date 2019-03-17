@@ -343,4 +343,7 @@ aspect MetaLang {
 			cls.add(c.fullCopy());
 		return cls;
 	}
+
+	AnalyzeBlock contributes nta getAllClauses() to Program.predicateSymbols();
+	AnalyzeBlock contributes nta getAllClauses() to Program.pass1TypeMap();
 }

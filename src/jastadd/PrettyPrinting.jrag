@@ -396,7 +396,7 @@ aspect TypePrinting {
 			}
 		}
 		HashSet<Rule> rules = new HashSet<Rule>();
-		for(CommonClause c : getCommonClauses()) {
+		for(CommonClause c : flattenedClauses()) {
 			if(!c.isRule()) continue;
 			rules.add((Rule)c);
 		}

@@ -114,6 +114,19 @@ aspect Program {
 
     coll TreeSet<Literal> Program.predefinedLiterals() [new TreeSet<Literal>(Literal.literalComparator)] with add;
     Literal contributes this when isPredefined() to Program.predefinedLiterals();
+
+	public ArrayList<Clause> Program.flattenedClauses() {
+		ArrayList<Clause> clauses = new ArrayList<>();
+		for (CommonClause comc : getCommonClauses()) {
+			if (comc instanceof AnalyzeBlock) {
+				for (Clause c : ((AnalyzeBlock)comc).getAllClauses())
+					clauses.add(c);
+			} else {
+				clauses.add((Clause)comc);
+			}
+		}
+		return clauses;
+	}
 }
 
 aspect Clause {
@@ -130,8 +143,8 @@ aspect Clause {
 
     syn HashSet<Literal> Rule.literals() {
     	HashSet<Literal> literals = new HashSet<Literal>();
-    	for(CommonLiteral l : getHeadss()) literals.add((Literal)l);
-    	for(CommonLiteral l : getBodys())  literals.add((Literal)l);
+    	for(CommonLiteral l : getHeadss()) literals.addAll(l.flattenedLiterals());
+    	for(CommonLiteral l : getBodys())  literals.addAll(l.flattenedLiterals());
     	return literals;
     }
 
@@ -287,9 +300,18 @@ aspect Literal {
     syn TreeSet<Variable> CommonLiteral.variables();
     eq Atom.variables() {
     	TreeSet<Variable> vars = new TreeSet<Variable>(Term.termComparator);
-    	for(Term t : getTermss()) if(t.isVariable()) vars.add((Variable) t);
+    	for(Term t : getTermss())
+			if(t.isVariable())
+				vars.addAll(((CommonVariable)t).variables());
     	return vars;
     }
+
+	eq ClausePattern.variables() {
+		TreeSet<Variable> vars = new TreeSet<Variable>(Term.termComparator);
+		for (CommonLiteral l : getLiterals())
+			vars.addAll(l.variables());
+		return vars;
+	}
     public TreeSet<Variable> Literal.toVarSet(Term t) {
     	TreeSet<Variable> vars = new TreeSet<Variable>(Term.termComparator);
     	if(t.isVariable()) vars.add((Variable)t);
@@ -331,7 +353,6 @@ aspect Literal {
 	}
 
     eq LiteralGap.variables() = new TreeSet<Variable>();
-    eq ClausePattern.variables() = new TreeSet<Variable>();
 	eq MetaAtom.variables() = new TreeSet<Variable>();
 
     syn TreeSet<Constant> BinaryExclusiveTermLiteral.constants() {
@@ -352,6 +373,21 @@ aspect Literal {
         }
         return free;
     }
+}
+
+aspect CommonLiteral {
+	public ArrayList<Literal> CommonLiteral.flattenedLiterals() {
+		ArrayList<Literal> list = new ArrayList<>();
+		list.add((Literal)this);
+		return list;
+	}
+
+	public ArrayList<Literal> ClausePattern.flattenedLiterals() {
+		ArrayList<Literal> list = new ArrayList<>();
+		for (Literal l : asLiterals())
+			list.add(l);
+		return list;
+	}
 }
 
 aspect Predicate {
@@ -431,11 +467,17 @@ aspect Expression {
     }
 
 	syn TreeSet<Variable> Term.variables()     = new TreeSet<Variable>(Term.termComparator);
-	syn TreeSet<Variable> Variable.variables() {
+	syn TreeSet<Variable> CommonVariable.variables() {
 		TreeSet<Variable> vars = new TreeSet<Variable>(Term.termComparator);
-		vars.add(this);
+		vars.add((Variable)this);
 		return vars;
 	}
+	eq MetaVariable.variables() {
+		TreeSet<Variable> vars = new TreeSet<Variable>(Term.termComparator);
+		vars.add(getVariable());
+		return vars;
+	}
+
 
 	public abstract TreeSet<Constant> Expr.constants();
 	syn TreeSet<Constant> BinExpr.constants() {
@@ -562,6 +604,7 @@ aspect Types {
 		if(!hasTerms()) return new ListType(Type.unknownType);
 		return Type.badType;
 	}
+	eq MetaVariable.type() = getVariable().type();
 
 	syn boolean TermList.isWellTyped() = toTuple().toTypeTuple().isUniInfo();
 

@@ -12,15 +12,15 @@ import lang.ast.Program;
 import lang.io.SimpleLogger;
 
 public class Stratification {
-	public static HashSet<Stratum> strat = new HashSet<Stratum>();
-	public static Deque<Stratum> order = new LinkedList<>();
-	public static HashMap<FormalPredicate, Stratum> iso = new HashMap<>();
-	private static int dfnum;
+	public HashSet<Stratum> strat = new HashSet<Stratum>();
+	public Deque<Stratum> order = new LinkedList<>();
+	public HashMap<FormalPredicate, Stratum> iso = new HashMap<>();
+	private int dfnum;
 
 	/**
 	 * Try all pairs and see if there is a negative dependency in the stratum
 	 */
-	private static void checkStratum(Stratum stratum) {
+	private void checkStratum(Stratum stratum) {
 		stratum.forEach(fp1 -> {
 			stratum.forEach(fp2 -> {
 				if (FormalPredicate.hasNegativeDefUse(fp1, fp2)) {
@@ -37,7 +37,7 @@ public class Stratification {
 	/**
 	 * Tarjan's Strongly-Connect Components Alg.
 	 */
-	private static void strongConnect(FormalPredicate fp, Stack<FormalPredicate> stack,
+	private void strongConnect(FormalPredicate fp, Stack<FormalPredicate> stack,
 			HashMap<FormalPredicate, NodeInfo> infoMap) {
 		NodeInfo fpInfo = new NodeInfo(dfnum, dfnum);
 		infoMap.put(fp, fpInfo);
@@ -70,7 +70,7 @@ public class Stratification {
 		}
 	}
 
-	private static void buildStratificationGraph() {
+	private void buildStratificationGraph() {
 		for (Stratum fpStrat : strat) {
 			for (FormalPredicate fp : fpStrat) {
 				for (FormalPredicate w : fp.dependsOn()) {
@@ -92,7 +92,7 @@ public class Stratification {
 		}
 		order.offerLast(s);
 	}
-	
+
 	public static Deque<Stratum> reversePostOrder(HashSet<Stratum> output_strata) {
 		Deque<Stratum> order = new LinkedList<>();
 		for (Stratum s : output_strata) {
@@ -102,13 +102,13 @@ public class Stratification {
 		}
 		return order;
 	}
-	
-	public static Deque<Stratum> order() {
+
+	public Deque<Stratum> order() {
 		return reversePostOrder(strat);
 	}
-	
 
-	private static void stratificationHelper(Program p) {
+
+	private void stratificationHelper(Program p) {
 		dfnum = 0;
 		HashMap<FormalPredicate, NodeInfo> infoMap = new HashMap<>();
 		Stack<FormalPredicate> stack = new Stack<>();
@@ -120,7 +120,7 @@ public class Stratification {
 		buildStratificationGraph();
 	}
 
-	public static void stratification(Program p) {
+	public Stratification(Program p) {
 		dfnum = 0;
 		order = new LinkedList<>();
 		strat = new HashSet<Stratum>();

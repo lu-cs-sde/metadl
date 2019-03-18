@@ -1,0 +1,13 @@
+analyze ('P) {
+	A(1, 5).
+}
+
+analyze ('Q) {
+	P(x, y) :- [$q(x, $v) :- P(y, $v).], R($q, $y), S($q, $v).
+	A(1, 2).
+	A(1, 3) :- P(x, y).
+}
+
+analyze ('Program1) {
+	P($v, $w) :- [...,P(x, y),...,$q($v, $w),...,$r(...,$h,...).].
+}

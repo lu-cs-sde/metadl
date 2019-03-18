@@ -16,9 +16,11 @@ aspect Arity {
     eq EQLISTLiteral.arity() = 1;
     eq BinaryExclusiveTermLiteral.arity() = 2;
     eq TYPEOFLiteral.arity() = 2;
+    eq IMPORTLiteral.arity() = 2;
     eq Atom.arity() = getNumTerms();
+
     syn int PredicateSymbol.arity() = literal().arity();
-    
+
     syn HashSet<Integer> FormalPredicate.arities() {
     	HashSet<Integer> arities = new HashSet<Integer>();
     	for(PredicateSymbol pred : predicates()) {
@@ -26,13 +28,13 @@ aspect Arity {
         }
         return arities;
     }
-    
+
     syn HashSet<Integer> FormalPredicate.realArities() {
         HashSet<Integer> realArities = new HashSet<Integer>(arities());
         realArities.remove(-1);
         return realArities;
     }
-    
+
     syn boolean FormalPredicate.isUniqueArity() {
         return realArities().size() <= 1;
     }
@@ -41,17 +43,18 @@ aspect Arity {
         if(!isUniqueArity() || realArities().size() == 0) return 0;
         return realArities().iterator().next();
     }
+
     Program contributes nta getFormalPredicates() to Program.semanticErrors();
     FormalPredicate contributes ("Different Arities for predicate symbol: " + predicateName())
         when !isUniqueArity() && arities().size() != 1
         to Program.semanticErrors();
-        
+
 }
 
 aspect Relation {
 	public static Relation FormalPredicate.nullRelation = new Relation(0);
 	public Relation FormalPredicate.relation = FormalPredicate.nullRelation;
-	
+
 	syn PseudoTuple Literal.toTuple();
 	eq Atom.toTuple()          = new PseudoTuple(getTermss());
 	eq EDBLiteral.toTuple()    = new PseudoTuple(getPredicateRef(), getFileLoc());
@@ -62,7 +65,8 @@ aspect Relation {
 	eq BinaryExclusiveTermLiteral.toTuple()  = new PseudoTuple(0);
 	eq BINDLiteral.toTuple()   = new PseudoTuple(0);
 	eq TYPEOFLiteral.toTuple() = new PseudoTuple(getPredicateRef(), getTerm());
-	eq NEGLiteral.toTuple() = getInclusiveLiteral().toTuple();
+	eq NEGLiteral.toTuple() = getLiteral().toTuple();
+	eq IMPORTLiteral.toTuple() = new PseudoTuple(getFileLoc(), getProgramRef());
 }
 
 aspect Rules {
@@ -85,34 +89,34 @@ aspect Rules {
 		}
 		return rules;
 	}
-	
+
 	public static boolean FormalPredicate.hasNegativeDefUse(FormalPredicate def, FormalPredicate use) {
 		HashSet<Rule> rules_use = use.useInRules();
 		for(Clause c : def.definedIn()) {
 			if(!c.isRule()) continue;
 			Rule r = (Rule)c;
 			if(!rules_use.contains(r)) continue;
-			for(Literal lit : r.getBodys()) {
+			for(CommonLiteral lit : r.getBodys()) {
 				if(!lit.isNeg()) continue;
 				NEGLiteral nl = (NEGLiteral) lit;
-				if(nl.getInclusiveLiteral().predicate().getPRED_ID().equals(use.predicateName())) return true;
+				if(nl.getLiteral().predicate().getPRED_ID().equals(use.predicateName())) return true;
 			}
 		}
 		return false;
 	}
-	
+
 	syn TreeSet<Literal> Rule.inclusiveBodyLiterals() {
 		TreeSet<Literal> literals = new TreeSet<Literal>(Literal.literalComparator);
-		for(Literal l : getBodys()) {
-			if(l.isInclusive()) literals.add(l);
+		for(CommonLiteral l : getBodys()) {
+			if(l.isInclusive()) literals.add((Literal)l);
 		}
 		return literals;
 	}
-	
+
 	syn TreeSet<Literal> Rule.exclusiveBodyLiterals() {
 		TreeSet<Literal> literals = new TreeSet<Literal>(Literal.literalComparator);
-		for(Literal l : getBodys()) {
-			if(!l.isInclusive()) literals.add(l);
+		for(CommonLiteral l : getBodys()) {
+			if(!l.isInclusive()) literals.add((Literal)l);
 		}
 		return literals;
 	}
@@ -124,16 +128,16 @@ aspect DependencyGraph {
 		for(Clause c : definedIn()) {
 			if(!c.isRule())continue;
 			Rule r = (Rule) c;
-			for(Literal l : r.getBodys()) {
+			for(CommonLiteral l : r.getBodys()) {
 				if(l.isNeg()) {
 					NEGLiteral nl = (NEGLiteral) l;
-					defIn.add(nl.getInclusiveLiteral().predicate().formalpredicate());
+					defIn.add(nl.getLiteral().predicate().formalpredicate());
 				} else if(l.isInclusive()) {
 					defIn.add(l.predicate().formalpredicate());
 				}
 			}
 		}
-		
+
 		/**
 			First compute what to output.
 		**/
@@ -141,16 +145,19 @@ aspect DependencyGraph {
 		if(output != null) {
 			defIn.add(output);
 		}
-		
+
 		for(PredicateRef ref : predicateRefs()) {
 			if(ref.literal().isEDB()) {
 				defIn.add(((EDBLiteral)ref.literal()).getPredicate().formalpredicate());
+			} else if (ref.literal().isIMPORT()) {
+				defIn.add(((IMPORTLiteral)ref.literal()).getPredicate().formalpredicate());
 			}
+
 		}
-		
+
 		if(hasRecursiveEDB()) {
 			defIn.add(formalPredicateMap().get(GlobalNames.EDB_NAME));
 		}
 		return defIn;
-	}	
+	}
 }

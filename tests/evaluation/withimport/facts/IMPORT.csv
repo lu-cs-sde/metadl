@@ -1,0 +1,1 @@
+tests/evaluation/withimport/evalTest_1.in,'Program,'Head,'Body,'Fact,'Atom,'PredicateSymbol,'IntConstant,'StringConstant,'PredicateRef,'Variable,'IMPORTLiteral,'EDBLiteral,'OUTPUTLiteral,'NEGLiteral,'NEQLiteral

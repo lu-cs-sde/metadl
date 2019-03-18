@@ -1,5 +1,8 @@
 package lang;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import lang.ast.config.Description;
 import lang.io.FileUtil;
 import lang.io.SimpleLogger;
@@ -10,6 +13,10 @@ import lang.io.SimpleLogger;
 public class Compiler {
     public static Object DrAST_root_node; // Enable debugging with DrAST
     public static void main(String[] args) {
+		Logger log = Logger.getLogger("lang.io");
+		log.setLevel(Level.FINEST);
+
+
         if (args.length == 0) {
             printUsage();
             System.exit(0);

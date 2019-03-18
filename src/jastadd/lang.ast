@@ -1,32 +1,38 @@
 /**
 	Program
 **/
-Program  ::= Clause* /FormalPredicate*/; 
+Program  ::= CommonClause* /FormalPredicate*/;
 
 /**
-   Clause 
+   Clause
 **/
-abstract Clause ::= Heads:InclusiveLiteral*;
-Rule:Clause ::=  Body:Literal*;
+abstract CommonClause;
+abstract Clause : CommonClause ::= Heads:CommonLiteral*;
+Rule:Clause ::= Body:CommonLiteral*;
 Fact:Clause;
+AnalyzeBlock:CommonClause ::= ProgramRef:PredicateRef Clause*;
 
 /**
-   Literals 
+   Literals
 **/
-abstract Literal ::= Predicate:PredicateSymbol;
-abstract InclusiveLiteral:Literal;
-abstract ExclusiveLiteral:Literal;
-abstract BinaryExclusiveTermLiteral:ExclusiveLiteral ::= Left:Expr Right:Expr;
+abstract CommonLiteral ::= [Index:MetaVariable];
+MetaAtom:CommonLiteral ::= Predicate:MetaVariable Term*;
+abstract Literal:CommonLiteral ::= Predicate:PredicateSymbol;
 
-Atom:InclusiveLiteral          ::= Terms:Term*;
-EDBLiteral:InclusiveLiteral    ::= PredicateRef FileLoc:Term;
-OUTPUTLiteral:InclusiveLiteral ::= Term;
-PREDLiteral:InclusiveLiteral   ::= Term /PredicateRef*/;
-ATOMLiteral:InclusiveLiteral   ::= Term /PredicateRef*/;
-TYPEOFLiteral:InclusiveLiteral ::= PredicateRef:Term Term;
-NEGLiteral:ExclusiveLiteral    ::= InclusiveLiteral;
+abstract BinaryExclusiveTermLiteral:Literal ::= Left:Expr Right:Expr;
 
-BINDLiteral:ExclusiveLiteral ::= Variable Right:Expr;
+
+
+Atom:Literal          ::= Terms:Term*;
+EDBLiteral:Literal    ::= PredicateRef FileLoc:Term;
+OUTPUTLiteral:Literal ::= Term;
+PREDLiteral:Literal   ::= Term /PredicateRef*/;
+ATOMLiteral:Literal   ::= Term /PredicateRef*/;
+TYPEOFLiteral:Literal ::= PredicateRef:Term Term;
+NEGLiteral:Literal    ::= Literal;
+
+BINDLiteral:Literal ::= Variable Right:Expr;
+IMPORTLiteral:Literal ::= FileLoc:Term ProgramRef:PredicateRef;
 
 EQLiteral:BinaryExclusiveTermLiteral;
 NEQLiteral:BinaryExclusiveTermLiteral;
@@ -34,7 +40,9 @@ LTLiteral:BinaryExclusiveTermLiteral;
 LTELiteral:BinaryExclusiveTermLiteral;
 GTLiteral:BinaryExclusiveTermLiteral;
 GTELiteral:BinaryExclusiveTermLiteral;
-EQLISTLiteral:ExclusiveLiteral ::= TermList;
+EQLISTLiteral:Literal ::= TermList;
+
+LiteralGap:CommonLiteral;
 
 /**
 	Expressions
@@ -65,17 +73,28 @@ BadType:Type;
 /**
     Terms
 **/
-abstract Term:Expr;
+abstract Term:Expr ::= [Index:MetaVariable];
 abstract Constant:Term;
+abstract CommonVariable:Term;
 
-Variable:Term           ::= <VAR_ID>;
+MetaVariable : CommonVariable ::= <METAVAR_ID>;
+
+Variable:CommonVariable ::= <VAR_ID>;
 PredicateRef:Constant   ::= <PRED_ID>;
 StringConstant:Constant ::= <STRING>;
 IntConstant:Constant    ::= <NUMERAL>;
 TermList:Constant       ::= Terms:Term*;
+TermGap:Term;
 
 /**
     PredicateSymbols
 **/
 FormalPredicate ::= <PRED_ID>;
 PredicateSymbol ::= <PRED_ID>;
+
+/**
+   Patterns
+**/
+abstract MetaPattern : CommonLiteral;
+
+ClausePattern : MetaPattern ::= Clause;

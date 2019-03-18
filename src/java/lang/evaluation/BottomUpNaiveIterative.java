@@ -5,10 +5,10 @@ import java.util.HashSet;
 import java.util.Set;
 
 import lang.ast.Clause;
+import lang.ast.CommonLiteral;
 import lang.ast.Fact;
 import lang.ast.FormalPredicate;
 import lang.ast.GlobalNames;
-import lang.ast.InclusiveLiteral;
 import lang.ast.Literal;
 import lang.ast.PredicateRef;
 import lang.ast.Program;
@@ -31,9 +31,9 @@ public class BottomUpNaiveIterative extends InternalEvaluation {
 			return;
 		}
 		for(FormalPredicate fp : program.getFormalPredicates())  fp.literal().initialSideEffect(program, descr);
-		Stratification.stratification(program);
-		Stratum outStrat = Stratification.iso.get(output);
-		
+		Stratification stratification = new Stratification(program);
+		Stratum outStrat = stratification.iso.get(output);
+
 		/**
 		 * Evaluate OUTPUT
 		 */
@@ -41,10 +41,11 @@ public class BottomUpNaiveIterative extends InternalEvaluation {
 		HashSet<Stratum> output_strata = new HashSet<Stratum>();
 		for(PseudoTuple ps : output.relation.tuples()) {
 			PredicateRef ref = (PredicateRef)ps.coord(0);
-			Stratum ref_strat = Stratification.iso.get(program.formalPredicateMap().get(ref.getPRED_ID()));
-			output_strata.add(ref_strat);
+			Stratum ref_strat = stratification.iso.get(program.formalPredicateMap().get(ref.getPRED_ID()));
+			if (ref_strat != null)
+				output_strata.add(ref_strat);
 		}
-		
+
 		Deque<Stratum> order = Stratification.reversePostOrder(output_strata);
 
 		while (!order.isEmpty()) {
@@ -54,10 +55,10 @@ public class BottomUpNaiveIterative extends InternalEvaluation {
 		}
 		dumpRelations(program, descr);
 	}
-	
+
 	private Relation immediateConsequenceHelper(Set<Literal> literals, Relation body_rel) {
 		for (Literal rl_current : literals) {
-			
+
 			/**
 			 * Select based on the literal selection rule, e.g. NEGLiteral will remove from the current body_rel.
 			 */
@@ -68,7 +69,7 @@ public class BottomUpNaiveIterative extends InternalEvaluation {
 
 	public boolean immediateConsequence(Program program, Description descr, Rule r) {
 		Relation body_rel = Relation.nullRelation;
-		
+
 		/**
 		 * Find Body Relation if clause is a rule
 		 */
@@ -76,15 +77,16 @@ public class BottomUpNaiveIterative extends InternalEvaluation {
 		body_rel = immediateConsequenceHelper (r.exclusiveBodyLiterals(), body_rel);
 
 		boolean changed = false;
-		for (InclusiveLiteral il : r.getHeadss()) {
+		for (CommonLiteral cil : r.getHeadss()) {
+			Literal il = (Literal) cil;
 			Relation derived = body_rel.selectNamed(Binding.createBinding(il.toTuple()));
 			Relation prev = il.predicate().formalpredicate().relation;
 			Relation delta = Relation.difference(derived, prev);
 			prev.addAll(delta);
-			
+
 			if (delta.size() != 0) {
 				changed = true;
-				
+
 				/**
 				 * Process Potential Side-Effects Such as EDB-loading.
 				 */
@@ -97,7 +99,7 @@ public class BottomUpNaiveIterative extends InternalEvaluation {
 	public void evaluateStratum(Program p, Description d, Stratum strat) {
 		boolean changed = true;
 		HashSet<Rule> rules = new HashSet<Rule>();
-		
+
 		/**
 		 * Collect rules for stratum and load facts.
 		 */
@@ -107,12 +109,13 @@ public class BottomUpNaiveIterative extends InternalEvaluation {
 					rules.add((Rule)c);
 				} else {
 					Fact f = (Fact) c;
-					for(InclusiveLiteral il : f.getHeadss()) {
+					for(CommonLiteral cl : f.getHeadss()) {
+						Literal il = (Literal) cl;
 						Relation derived = new Relation(il.arity());
 						derived.addTuple(il.toTuple());
 						Relation delta = Relation.difference(derived, il.predicate().formalpredicate().relation);
 						il.predicate().formalpredicate().relation.addAll(delta);
-						
+
 						/**
 						 * Process Potential Side-Effects Such as EDB-loading.
 						 */

@@ -1,0 +1,13 @@
+IMPORT("./tests/evaluation/withimport/input_1.in", 'Program1).
+
+analyze ('Program1) {
+	Arity($i) :- [$p(...,$i:$v).].
+}
+
+OUTPUT('Arity).
+
+analyze ('Program1) {
+	MoreThan3($i) :- [$p($v1, $v2, ..., $i:$v).].
+}
+
+OUTPUT('MoreThan3).

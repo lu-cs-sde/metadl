@@ -37,9 +37,9 @@ aspect ErrorCollection {
         to Program.semanticErrors();
 
     TYPEOFLiteral contributes "Wrong number of arguments in: " + this + ", expected: " + predicateRef().formalpredicate().realArity()
-        when getTerm().isList() && 
+        when getTerm().isList() &&
              predicateRef().formalpredicate().isUniqueArity() &&
-             ((TermList)getTerm()).getNumTerms() != 
+             ((TermList)getTerm()).getNumTerms() !=
              predicateRef().formalpredicate().realArity()
         to Program.semanticErrors();
 
@@ -49,5 +49,21 @@ aspect ErrorCollection {
 
     BinExpr contributes "Free variable(s) " + freeVars() + " in " + this + " in rule " + occuresIn().clause()
         when !freeVars().isEmpty()
-        to Program.semanticErrors(); 
+        to Program.semanticErrors();
+
+    ClausePattern contributes "Nested patterns are not allowed in " + enclosingPattern()
+        when enclosingPattern() != null
+        to Program.semanticErrors();
+
+	ClausePattern contributes "Patterns are not allowed outside the 'analyze' blocks " + this
+		when enclosingAnalyzeBlock() == null
+		to Program.semanticErrors();
+
+	TermGap contributes "Gap terms '...' are not allowed outside patterns"
+		when enclosingPattern() == null
+		to Program.semanticErrors();
+
+	LiteralGap contributes "Gap literals '...' are not allowed outside patterns"
+		when enclosingPattern() == null
+		to Program.semanticErrors();
 }

@@ -1,0 +1,142 @@
+* How to build & run
+- We depend on a slightly modified version of JastAdd, that is available at https://bitbucket.org/alexdura/jastadd2/src/master/ .
+#+BEGIN_SRC
+gradle release -PnewVersion=2.100.1  # the version number is fictive
+gradle install
+#+END_SRC
+
+- Then build and test the Datalog engine
+#+BEGIN_SRC
+make jar
+PATH=$PATH:/path/to/souffle make test
+#+END_SRC
+
+- To evaluate an extended Datalog program we need to run the Souffle evaluator:
+#+BEGIN_SRC
+export PATH=$PATH:/path/to/souffle
+make souffle EVAL=file.mdl
+#+END_SRC
+- In case something fails or we just want to read the desugared Datalog resulting from the ~analyze~ blocks:
+#+BEGIN_SRC
+make prettyinternal EVAL=file.mdl
+#+END_SRC
+- An example of extended Datalog that /works/ is
+#+BEGIN_SRC prolog
+IMPORT("./tests/evaluation/withimport/input_1.in", 'Program1).
+
+analyze ('Program1) {
+	Arity($i) :- [$p(...,$i:$v).].
+}
+
+OUTPUT('Arity).
+
+analyze ('Program1) {
+	MoreThan3($i) :- [$p($v1, $v2, ..., $i:$v).].
+}
+
+OUTPUT('MoreThan3).
+#+END_SRC
+
+* To do
+** DONE Populate relations present in the import statement
+   CLOSED: [2019-03-01 Fri 18:07]
+Add to the relations that are referred by the parameters. The other approach is to erase the content of the existing relations. However, this latter approach is not monotonic and requires care during stratification.
+
+Using different IDs for AST nodes from different programs to allow concatenation of programs without mixing AST nodes.
+** DONE Pretty print the program
+   CLOSED: [2019-03-01 Fri 18:17]
+Add a pretty print implementation for the IMPORTLiteral AST node.
+
+** DONE Implement a typechecker in DatalogM
+   CLOSED: [2019-03-04 Mon 12:00]
+The DatalogM engine typechecker is now disabled, so a new type checker written in Datalog is needed. The "!=" literal might be needed, which means that the signature of the IMPORT statement must be expanded to bring in representation of the logical and arithmetic expressions.
+
+** DONE Use souffle for evaluation
+   CLOSED: [2019-03-06 Wed 18:00]
+
+* Longer term changes:
+** TODO Replace the typechecker in the DatalogM interpreted with the new one
+** TODO Remove the TYPEOF special literal
+** TODO Remove type constants
+** DONE Simplify the grammar by removing inclusive and exclusive literals
+   CLOSED: [2019-03-15 Fri 09:23]
+** TODO and have a semantic check later
+** TODO Introduce non-binding variable (i.e. _)
+- Allow the non-binding variable in negated atoms.
+** TODO Non-referenceable built-in predicates: e.g. INPUT, OUTPUT, IMPORT, EXPORT, TYPEOF
+- Disallow at grammar level.
+
+* Questions
+** Do we really need types?
+- Can we replace types with strings?
+- Update the TYPEOF predicate such that it does not use lists
+
+** Can we write a datalog program that typechecks itself?
+Yes. See [[examples/typecheck.in]].
+
+** Add metavariables to improve the capability of Datalog to analyze itself
+#+BEGIN_SRC prolog
+IMPORT("file_path.mdl", 'Program).
+
+analyze (Program) {
+
+IsVarInPred($p, $x) :- [$p(...,$x,...)].
+
+IsFact($p) :- [...,$p(...),... .].
+
+IsNotGround($p) :- [$p(...,$x,...)],NEG(IsConstant($x)].
+
+}
+
+#+END_SRC
+
+** Can we write a Datalog evaluator into Datalog itself???
+- I think this boils down to "Can we write a DL program to compute SCCs?"
+
+*** Analyze blocks ~analyze P { }~
+The only blocks that are allowed to contain patterns, metavariables and gaps
+- these blocks are desugared to plain Datalog relations
+- all the patterns refer to the analyzed program ~P~
+
+*** Patterns ~[$p(x, 1) :- ...,$q, ... .]~
+- allows for matching rules and facts
+- patterns in the head of a rule means adding those rules to the program
+- how rules are removed: use false in the consequent:
+   ~false :- p(q, y), [$q(...)]~
+
+*** Gaps: ~...~
+Where do we need gaps?
+In all variadic AST nodes. That are:
+- literals: $p(...,$x,...)
+- heads and bodies : [...,$p(a, b),... :- ...,$q(b, c),...],[... :- $p(a, b) ]
+
+*** Metavariables: ~$x~, ~$p~
+- terms: p($x, $y)
+- predicates: $p(x, y)
+- arithmetic expressions: $x + y
+- literals: p(x, y) :- $l1, $l2,...
+- enforce an order between metavariables:
+  [$p(...,$x,...,$y,...)] implies that the term to which $x is bound comes before the term to which $y is bound.
+
+*** Attaching indices to metavariables:
+- how do we attach an index to a metavariable: ~[$p(...,$i:$x,...,$j:$y,...,)]~
+
+** Uniform handling of AST nodes
+- remove the Head and Body which do now have any AST equivalent
+- the end goal is to have any ASTNode modeled as a relation ~(parent_id, child_index, child_id)~
+- for terminals (terminal_id, "string") or (terminal_id, integer).
+
+* Observations
+** JastAdd
+It is very difficult to extend an AST with meta AST nodes. The new meta AST nodes do not have the same attributes as the proper AST nodes so it is practically impossible to mix them without adding dummy equations for the inherited attributes.
+
+What I want to do is to allow for a superset of the Datalog grammar inside the ~analyze 'Program {}~ blocks, but with different semantics. As I understand it, JastAdd creates a strong coupling between semantics and the AST which is not desirable in this case. To solve this problem, I am creating a new abstract grammar for the meta-langauge and bring elements from the object-language by aggregation.
+E.g. to use ~Constant~ in the meta grammar:
+#+BEGIN_SRC
+abstract MetaExpr;
+abstract MetaTerm : MetaExpr;
+abstract LangConstant : MetaTerm ::= Constant;
+#+END_SRC
+
+** Parsing
+Because beaver is a bottom-up parser, it cannot distinguish between the same construction in a metacontext or in a normal context. This forces me to have the same AST node kinds for the metalanguage as for the object language.

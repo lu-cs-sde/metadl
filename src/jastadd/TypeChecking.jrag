@@ -5,36 +5,38 @@ import lang.relation.Instantiation;
 aspect TypeChecking {
 	 /**
 	  * Type Store (Gamma)
-	  */ 
+	  */
 	 public TreeMap<FormalPredicate, TermList> Program.derivedTypeMap = new TreeMap<FormalPredicate, TermList>(FormalPredicate.formalPredicateComparator);
-	 
+
 	 private TermList Program.typeTupleToTermList(PseudoTuple type_tuple) {
 	 	TermList tl = new TermList();
 	 	for(int i = 0; i != type_tuple.arity(); ++i) tl.addTerms(type_tuple.coord(i));
 	 	return tl;
 	 }
-	 
+
 	 private void Program.logError(String err) {
 	 	SimpleLogger.logger().log(err, SimpleLogger.LogLevel.Level.ERROR);
 	 }
-	 
+
 	 public void Program.typeCheck() throws IOException, beaver.Parser.Exception {
 	 	String typeProgSource = typePrint();
+
 	 	Program typeProg = FileUtil.parse(typeProgSource);
+
 	 	BottomUpNaiveIterative eval = new BottomUpNaiveIterative();
 	 	eval.evaluate(typeProg, null);
-	 	
+
 	 	boolean typeError = false;
-	 	for(FormalPredicate fp : typeProg.getFormalPredicates()) {	 	    
+	 	for(FormalPredicate fp : typeProg.getFormalPredicates()) {
 	 	    if(fp.predicateName().equals(GlobalNames.OUTPUT_NAME) || !fp.literal().isInclusive() || fp.relation.size() == 1) continue;
-	 	 
+
 	 	    typeError = true;
 	 	    if(fp.predicateName().startsWith(GlobalNames.TYPE_RULE_NAME)) { // A Rule
 	 	    	TreeSet<String> affectedClauses = new TreeSet<String>();
-	 			for(Literal l : ((Rule)fp.literal().clause()).getBodys()) 
+	 			for(CommonLiteral l : ((Rule)fp.literal().clause()).getBodys())
 	 				if(l.isInclusive())
 	 					affectedClauses.add(l.predicate().getPRED_ID());
-	 					
+
 	 	    	if(fp.relation.size() == 0) logError("Not enough type information at: " + affectedClauses);
 		 		else                        logError("Contradictory type information at: " + affectedClauses);
 		 	} else {
@@ -42,17 +44,17 @@ aspect TypeChecking {
 		 		else                        logError("Contradictory type information for: " + fp.predicateName());
 		 	}
 	 	}
-	 	
-	 	if(typeError) System.exit(0);
-	 	 	
+
+	 	if(typeError) System.exit(1);
+
 	 	for(FormalPredicate fp : typeProg.getFormalPredicates()) {
-	 		if(!fp.literal().isAtom()) continue;	 		
+	 		if(!fp.literal().isAtom()) continue;
 	 		derivedTypeMap.put(fp, typeTupleToTermList(fp.relation.tuples().iterator().next()));
 	 	}
 	 	for(Literal l : predefinedLiterals())
 	 		derivedTypeMap.put(l.predicate().formalpredicate(), typeTupleToTermList(((PredefinedLiteral)l).type()));
 	 }
-	
+
 	syn boolean PredefinedLiteral.satisfiedType() {
 		if(type().arity() != actualType().arity()) return false;
 		for(int i = 0; i != type().arity(); ++i) {
@@ -63,11 +65,13 @@ aspect TypeChecking {
 		}
 		return true;
 	}
-	
+
    	syn String PredefinedLiteral.typeErrorMsg() = "Expected: " + type() + " but got: " + actualType() + " for " + predicate().getPRED_ID();
     OUTPUTLiteral contributes typeErrorMsg() when !satisfiedType() to Program.initialTypeCheckErrors();
     ATOMLiteral   contributes typeErrorMsg() when !satisfiedType() to Program.initialTypeCheckErrors();
     EDBLiteral    contributes typeErrorMsg() when !satisfiedType() to Program.initialTypeCheckErrors();
     PREDLiteral   contributes typeErrorMsg() when !satisfiedType() to Program.initialTypeCheckErrors();
     TYPEOFLiteral contributes typeErrorMsg() when !satisfiedType() to Program.initialTypeCheckErrors();
+    IMPORTLiteral contributes typeErrorMsg() when !satisfiedType() to Program.initialTypeCheckErrors();
+
 }

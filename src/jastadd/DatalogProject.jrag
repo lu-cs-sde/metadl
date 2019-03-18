@@ -1,0 +1,199 @@
+import lang.relation.Relation;
+import lang.relation.PseudoTuple;
+import java.util.ArrayList;
+import java.lang.reflect.ParameterizedType;
+
+
+aspect DatalogProject {
+	/**
+	   Build the name of the relation from the dynamic type of the
+	   node.
+	 */
+	public String ASTNode.getRelation() {
+		String nodeName = this.getClass().getName();
+		String[] splitNodeName = nodeName.split("\\.");
+		String relName = splitNodeName[splitNodeName.length - 1];
+		if (relName.equals("List"))
+			return "Lst";
+		if (relName.equals("MetaAtom"))
+			return "Atom";
+		return relName;
+	}
+
+	/**
+	   Assign a unique ID to every node in the AST
+	 */
+	public int ASTNode.UID = 0;
+	public static int ASTNode.RunningId = 0;
+	public synchronized int ASTNode.getNodeId() {
+		if (UID == 0) {
+			UID = ++ASTNode.RunningId;
+		}
+		return UID;
+	}
+
+	public class TupleWrapper {
+		public class RelationTuple {
+			String relation;
+			PseudoTuple tuple;
+			public RelationTuple(String relation, PseudoTuple tuple) {
+				this.relation = relation;
+				this.tuple = tuple;
+			}
+		}
+
+		public ArrayList<RelationTuple> tuples = new ArrayList<>();
+		public String defaultRel;
+
+		TupleWrapper() {}
+
+		TupleWrapper(String defaultRel) {
+			this.defaultRel = defaultRel;
+		}
+
+		public void addTuple(PseudoTuple tpl) {
+			assert defaultRel != null;
+			tuples.add(new RelationTuple(defaultRel, tpl));
+		}
+
+		public void addTuple(String relation, PseudoTuple tpl) {
+			tuples.add(new RelationTuple(relation, tpl));
+		}
+
+		public Iterable<RelationTuple> getTuples() {
+			return tuples;
+		}
+	}
+
+	public class RelationMap {
+		public HashMap<String, Relation> nameToRelMap = new HashMap<>();
+		public void add(TupleWrapper tplw) {
+			for (TupleWrapper.RelationTuple tpl : tplw.getTuples()) {
+				Relation r;
+				r = nameToRelMap.get(tpl.relation);
+				if (r == null) {
+					// Create a relation if it does not exist
+					r = new Relation(tpl.tuple.arity());
+					nameToRelMap.put(tpl.relation, r);
+				}
+				r.addTuple(tpl.tuple);
+			}
+		}
+	}
+
+	coll RelationMap Program.datalogProjection() with add;
+
+	public TupleWrapper ASTNode.buildTupleWrapper() {
+		if (getNumChild() == 0) {
+			// this is a terminal node, record it to terminals relation
+			TupleWrapper ret = new TupleWrapper("Terminal");
+			ret.addTuple(new PseudoTuple(new IntConstant("" + getNodeId())));
+			return ret;
+		}
+
+		String relName = getRelation();
+		TupleWrapper ret = new TupleWrapper(relName);
+
+		int childIndex = 0;
+		for (int i = 0; i < getNumChild(); ++i) {
+			ASTNode child = getChild(i);
+			if (child instanceof Opt)
+				continue;
+			IntConstant ChildId = new IntConstant("" + child.getNodeId());
+			IntConstant CurrentNodeId = new IntConstant("" + getNodeId());
+			IntConstant ChildIdx = new IntConstant("" + childIndex++);
+			ret.addTuple(new PseudoTuple(CurrentNodeId, ChildIdx, ChildId));
+		}
+		return ret;
+	}
+
+	public TupleWrapper Opt.buildTupleWrapper() {
+		return new TupleWrapper(null);
+	}
+
+	public static TupleWrapper Constant.constantNodeHelper(Constant c, String relName) {
+		TupleWrapper ret = new TupleWrapper(relName);
+		IntConstant nodeId = new IntConstant("" + c.getNodeId());
+		ret.addTuple(new PseudoTuple(nodeId, c));
+		return ret;
+	}
+
+	public TupleWrapper IntConstant.buildTupleWrapper() {
+		return constantNodeHelper(this, "IntConstant");
+	}
+
+	public TupleWrapper StringConstant.buildTupleWrapper() {
+		return constantNodeHelper(this, "StringConstant");
+	}
+
+	public TupleWrapper PredicateRef.buildTupleWrapper() {
+		return constantNodeHelper(this, "PredicateRef");
+	}
+
+	public TupleWrapper Variable.buildTupleWrapper() {
+		TupleWrapper ret = new TupleWrapper("Variable");
+		IntConstant nodeId = new IntConstant("" + getNodeId());
+		StringConstant varName = new StringConstant(getVAR_ID());
+
+		ret.addTuple(new PseudoTuple(nodeId, varName));
+		return ret;
+	}
+
+	public TupleWrapper PredicateSymbol.buildTupleWrapper() {
+		TupleWrapper ret = new TupleWrapper("PredicateSymbol");
+		IntConstant nodeId = new IntConstant("" + getNodeId());
+		StringConstant varName = new StringConstant(getPRED_ID());
+
+		ret.addTuple(new PseudoTuple(nodeId, varName));
+		return ret;
+	}
+
+	public TupleWrapper BinaryExclusiveTermLiteral.buildTupleWrapper() {
+		TupleWrapper ret = new TupleWrapper("BinaryExclusiveTermLiteral");
+		IntConstant nodeId = new IntConstant("" + getNodeId());
+		StringConstant compOp = new StringConstant("" + getPredicate().getPRED_ID());
+		IntConstant lhs = new IntConstant("" + getLeft().getNodeId());
+		IntConstant rhs = new IntConstant("" + getRight().getNodeId());
+		ret.addTuple(new PseudoTuple(nodeId, compOp, lhs, rhs));
+		return ret;
+	}
+
+	public TupleWrapper BinExpr.exprNodeHelper(String op) {
+		TupleWrapper ret = new TupleWrapper("BinExpr");
+		IntConstant nodeId = new IntConstant("" + getNodeId());
+		StringConstant compOp = new StringConstant(op);
+		IntConstant lhs = new IntConstant("" + getLeft().getNodeId());
+		IntConstant rhs = new IntConstant("" + getRight().getNodeId());
+		ret.addTuple(new PseudoTuple(nodeId, compOp, lhs, rhs));
+		return ret;
+	}
+
+	public TupleWrapper BINDLiteral.buildTupleWrapper(String op) {
+		TupleWrapper ret = new TupleWrapper("BINDLiteral");
+		IntConstant nodeId = new IntConstant("" + getNodeId());
+		IntConstant lhs = new IntConstant("" + getVariable().getNodeId());
+		IntConstant rhs = new IntConstant("" + getRight().getNodeId());
+		ret.addTuple(new PseudoTuple(nodeId, lhs, rhs));
+		return ret;
+	}
+
+	public TupleWrapper AddExpr.buildTupleWrapper() {
+		return exprNodeHelper("+");
+	}
+
+	public TupleWrapper SubExpr.buildTupleWrapper() {
+		return exprNodeHelper("-");
+	}
+
+	public TupleWrapper MulExpr.buildTupleWrapper() {
+		return exprNodeHelper("*");
+	}
+
+	public TupleWrapper DivExpr.buildTupleWrapper() {
+		return exprNodeHelper("/");
+	}
+
+	ASTNode contributes buildTupleWrapper() to Program.datalogProjection() ;
+
+	public HashSet<String> Program.loadedPrograms = new HashSet<String>();
+}

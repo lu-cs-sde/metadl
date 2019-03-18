@@ -1,0 +1,3 @@
+Nested patterns are not allowed in [R(1) :- [$q($x).
+].
+]

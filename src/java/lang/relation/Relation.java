@@ -1,5 +1,6 @@
 package lang.relation;
 
+import java.util.Iterator;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -53,7 +54,7 @@ public class Relation {
 		relation.forEach(pt -> pt.collectTuple(sb));
 		sb.append("}");
 	}
-	
+
 	public void expand() {
 		tuples().forEach(t -> t.expand());
 		arity = arity + 1;
@@ -72,15 +73,15 @@ public class Relation {
 		}
 		return r;
 	}
-	
+
 	public void addAll(Relation r) {
 		relation.addAll(r.tuples());
 	}
-	
+
 	/**
 	 * Selects a set of tuples respecting the names of the relation columns
 	 * Name is given by a Variable Name
-	 * The semantics of a constant in the selectBind is that it is added to the 
+	 * The semantics of a constant in the selectBind is that it is added to the
 	 * selected tuple at the given coordinate.
 	 */
 	public Relation selectNamed(Binding selectBind) {
@@ -89,7 +90,7 @@ public class Relation {
 		r.binding = selectBind;
 		TreeSet<BindOverlap> intersect = Binding.intersect(selectBind, binding);
 		Binding difference = Binding.difference(intersect, selectBind);
-		
+
 		tuples().forEach(t -> {
 			PseudoTuple tuple = new PseudoTuple(r.arity);
 			for(BindOverlap bo : intersect) {
@@ -129,7 +130,7 @@ public class Relation {
 	public static Relation join(Relation r1, Relation r2) {
 		if(r1 == nullRelation) return r2;
 		if(r2 == nullRelation) return r1;
-		
+
 		TreeSet<BindOverlap> intersect = Binding.intersect(r1.binding, r2.binding);
 		BindResult br = Binding.merge(intersect, r1.binding, r2.binding);
 		Relation r = new Relation(br.b_merged.size());
@@ -144,7 +145,7 @@ public class Relation {
 		});
 		return r;
 	}
-	
+
 	public static Relation difference(Relation r1, Relation r2) {
 		Relation r = new Relation(r1.arity);
 		r1.tuples().forEach(t -> {
@@ -164,9 +165,38 @@ public class Relation {
 			return false;
 		return relation.equals(((Relation) obj).relation);
 	}
-	
+
 	@Override
 	public String toString() {
 		return relation.toString();
+	}
+
+	/**
+	   Concatenate two relations columnwise. If a relation contains more
+	   tuples, just pad with default tuples.
+	 */
+	public static Relation cat(Relation left, PseudoTuple defaultLeft,
+							   Relation right, PseudoTuple defaultRight) {
+		Relation result = new Relation(right.arity() + left.arity());
+
+		Iterator<PseudoTuple> itLeft = left.tuples().iterator();
+		Iterator<PseudoTuple> itRight = right.tuples().iterator();
+
+		while (itLeft.hasNext() && itRight.hasNext()) {
+			PseudoTuple t = PseudoTuple.cat(itLeft.next(), itRight.next());
+			result.addTuple(t);
+		}
+
+		while (itLeft.hasNext()) {
+			PseudoTuple t = PseudoTuple.cat(itLeft.next(), defaultRight);
+			result.addTuple(t);
+		}
+
+		while (itRight.hasNext()) {
+			PseudoTuple t = PseudoTuple.cat(defaultLeft, itRight.next());
+			result.addTuple(t);
+		}
+
+		return result;
 	}
 }

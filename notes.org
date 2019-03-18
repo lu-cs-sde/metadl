@@ -1,3 +1,42 @@
+* How to build & run
+- We depend on a slightly modified version of JastAdd, that is available at https://bitbucket.org/alexdura/jastadd2/src/master/ .
+#+BEGIN_SRC
+gradle release -PnewVersion=2.100.1  # the version number is fictive
+gradle install
+#+END_SRC
+
+- Then build and test the Datalog engine
+#+BEGIN_SRC
+make jar
+PATH=$PATH:/path/to/souffle make test
+#+END_SRC
+
+- To evaluate an extended Datalog program we need to run the Souffle evaluator:
+#+BEGIN_SRC
+export PATH=$PATH:/path/to/souffle
+make souffle EVAL=file.mdl
+#+END_SRC
+- In case something fails or we just want to read the desugared Datalog resulting from the ~analyze~ blocks:
+#+BEGIN_SRC
+make prettyinternal EVAL=file.mdl
+#+END_SRC
+- An example of extended Datalog that /works/ is
+#+BEGIN_SRC prolog
+IMPORT("./tests/evaluation/withimport/input_1.in", 'Program1).
+
+analyze ('Program1) {
+	Arity($i) :- [$p(...,$i:$v).].
+}
+
+OUTPUT('Arity).
+
+analyze ('Program1) {
+	MoreThan3($i) :- [$p($v1, $v2, ..., $i:$v).].
+}
+
+OUTPUT('MoreThan3).
+#+END_SRC
+
 * To do
 ** DONE Populate relations present in the import statement
    CLOSED: [2019-03-01 Fri 18:07]

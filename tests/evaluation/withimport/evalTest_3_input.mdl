@@ -1,0 +1,1 @@
+P(x, y, z) :- NOT(Z(x, y)), M(x, y), Q(x, y), NOT(R(x, y)).

@@ -148,7 +148,7 @@ public class EvaluationTest {
 
 	@DisplayName("Evaluate programs containing patterns using Souffle")
 	@ParameterizedTest(name = "Pattern Tests")
-	@ValueSource(strings = { "evalTest_2" })
+	@ValueSource(strings = { "evalTest_2", "evalTest_3" })
 	void evaluationTestSoufflePatterns(String fileName) throws Exception {
 		Description d1 = FileUtil.parseDescription(
 		   "eval::souffle -OUT ./tests/output/souffle -FACTS ./tests/evaluation/withimport/facts ./tests/evaluation/withimport/"

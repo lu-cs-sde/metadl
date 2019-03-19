@@ -8,6 +8,7 @@ aspect MetaLang {
 	inh ClausePattern ClausePattern.enclosingPattern();
 	inh ClausePattern TermGap.enclosingPattern();
 	inh ClausePattern LiteralGap.enclosingPattern();
+	inh ClausePattern Literal.enclosingPattern();
 
 	eq ClausePattern.getClause().enclosingPattern() = this;
 	eq Program.getCommonClause().enclosingPattern() = null;

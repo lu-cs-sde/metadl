@@ -65,7 +65,7 @@ aspect Relation {
 	eq BinaryExclusiveTermLiteral.toTuple()  = new PseudoTuple(0);
 	eq BINDLiteral.toTuple()   = new PseudoTuple(0);
 	eq TYPEOFLiteral.toTuple() = new PseudoTuple(getPredicateRef(), getTerm());
-	eq NEGLiteral.toTuple() = getLiteral().toTuple();
+	eq NEGLiteral.toTuple() = ((Literal)getLiteral()).toTuple();
 	eq IMPORTLiteral.toTuple() = new PseudoTuple(getFileLoc(), getProgramRef());
 }
 

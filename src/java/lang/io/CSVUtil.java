@@ -31,29 +31,29 @@ public class CSVUtil {
 			return false;
 		}
 	}
-	
+
 	public static Term parseCSV(Program program, String line) {
 		if(isInteger(line)) {
 			return new IntConstant(line);
 		}
 		if(line.charAt(0) == '\'') {
-			if(program.formalPredicateMap().get(line.substring(1)) == null) {
+			if(program != null && program.formalPredicateMap().get(line.substring(1)) == null) {
 				SimpleLogger.logger().log("Must only reference exisiting predicates: " + line, SimpleLogger.LogLevel.Level.ERROR);
 				System.exit(0);
 			}
-			
+
 			/**
 			 * Need to be careful here: The PredicateRef will NOT belong to the AST and so cannot use e.g. literal().
-			 * For future development should really make this explicit through the type-system ... 
+			 * For future development should really make this explicit through the type-system ...
 			 */
 			return new PredicateRef(line.substring(1));
 		}
 		return new StringConstant(line);
 	}
-	
+
 	public static void readFileInto(Program program, Relation r, String path) {
 		SimpleLogger.logger().log("Read file " + path, SimpleLogger.LogLevel.Level.DEBUG);
-		
+
 		CSVParser parser = new CSVParserBuilder().withSeparator(',').build();
 		try (CSVReader reader = new CSVReaderBuilder(new FileReader(new File(path))).withCSVParser(parser).build()) {
 			String[] line;
@@ -78,7 +78,7 @@ public class CSVUtil {
 
 	public static void readFileInto(Program program, FormalPredicate fp, String path) {
 		SimpleLogger.logger().log("Begin Read file " + path + " into " + fp, SimpleLogger.LogLevel.Level.DEBUG);
-		
+
 		CSVParser parser = new CSVParserBuilder().withSeparator(',').build();
 		try (CSVReader reader = new CSVReaderBuilder(new FileReader(new File(path))).withCSVParser(parser).build()) {
 			String[] line;
@@ -97,13 +97,18 @@ public class CSVUtil {
 				}
 				fp.relation.addTuple(ps);
 			}
-			
+
 			SimpleLogger.logger().log("End Read file " + path + " into " + fp, SimpleLogger.LogLevel.Level.DEBUG);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 	}
 
+	/**
+	   Read a relation from a CSV file. In case program is not null, supplementary
+	   checks are performed, i.e. when predicate references are imported, it is
+	   checked that the refered predicate exists in the program.
+     */
 	public static Relation readRelationFrom(Program program, File f, int arity) {
 		if (!f.exists())
 			return null;

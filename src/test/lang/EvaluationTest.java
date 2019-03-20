@@ -134,15 +134,38 @@ public class EvaluationTest {
         doEvaluationTest(d1, d2);
     }
 
-    @DisplayName("Check the results using Souffle evaluation")
+	@DisplayName("Check the results using Souffle evaluation")
 	@ParameterizedTest(name = "IMPORT Tests Valid")
-    @ValueSource(strings = { "evalTest_1.in" })
+	@ValueSource(strings = { "evalTest_1.in" })
 	void evaluationTestSouffleAndImport(String fileName) throws Exception {
 		Description d1 = FileUtil.parseDescription(
-				"eval::souffle -OUT ./tests/output/souffle -FACTS ./tests/evaluation/withimport/facts ./tests/evaluation/withimport/"
-						+ fileName);
+												   "eval::souffle -OUT ./tests/output/souffle -FACTS ./tests/evaluation/withimport/facts ./tests/evaluation/withimport/"
+												   + fileName);
 		Map<String, Relation> outRelations = doSingleEvaluation(d1);
 		assertEquals(0, outRelations.get("NotFullyTypedName").size());
 		assertEquals(0, outRelations.get("InconsistentTypedName").size());
     }
+
+	@DisplayName("Evaluate programs containing patterns using Souffle")
+	@ParameterizedTest(name = "Pattern Tests")
+	@ValueSource(strings = { "evalTest_2", "evalTest_3" })
+	void evaluationTestSoufflePatterns(String fileName) throws Exception {
+		Description d1 = FileUtil.parseDescription(
+		   "eval::souffle -OUT ./tests/output/souffle -FACTS ./tests/evaluation/withimport/facts ./tests/evaluation/withimport/"
+		   + fileName + ".in");
+
+		Map<String, Relation> outRelations = doSingleEvaluation(d1);
+		for (Map.Entry<String, Relation> rel : outRelations.entrySet()) {
+			File expectedF = new File ("./tests/evaluation/withimport/expected/" + fileName + "/" + rel.getKey() + ".csv");
+			Relation expectedRel = CSVUtil.readRelationFrom(null, expectedF, rel.getValue().arity());
+			if (!expectedRel.equals(rel.getValue())) {
+				System.out.println(rel.getKey() + " expects ");
+				System.out.println(expectedRel);
+				System.out.println(rel.getKey() + " actual ");
+				System.out.println(rel.getValue());
+
+			}
+			assertEquals(expectedRel, rel.getValue());
+		}
+	}
 }

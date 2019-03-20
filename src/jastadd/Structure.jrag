@@ -194,6 +194,14 @@ aspect Clause {
     	for(CommonLiteral l : getBodys()) {
             if(l.isInclusive())
                 variables.addAll(l.variables());
+			if(l instanceof ClausePattern) {
+				for (CommonLiteral il : ((ClausePattern) l).getLiterals()) {
+					if (il.isInclusive())
+						variables.addAll(il.variables());
+					else if (il.isBind())
+						variables.add(((BINDLiteral)il).getVariable());
+				}
+			}
             if(l.isBind()) {
                 variables.add(((BINDLiteral)l).getVariable());
             }
@@ -377,16 +385,16 @@ aspect Literal {
 }
 
 aspect CommonLiteral {
-	public ArrayList<Literal> CommonLiteral.flattenedLiterals() {
-		ArrayList<Literal> list = new ArrayList<>();
+	public HashSet<Literal> CommonLiteral.flattenedLiterals() {
+		HashSet<Literal> list = new HashSet<>();
 		list.add((Literal)this);
 		return list;
 	}
 
-	public ArrayList<Literal> ClausePattern.flattenedLiterals() {
-		ArrayList<Literal> list = new ArrayList<>();
-		for (Literal l : asLiterals())
-			list.add(l);
+	public HashSet<Literal> ClausePattern.flattenedLiterals() {
+		HashSet<Literal> list = new HashSet<>();
+		for (CommonLiteral l : getLiterals())
+			list.add((Literal) l);
 		return list;
 	}
 }
@@ -579,7 +587,7 @@ aspect Types {
     IMPORTLiteral contributes new MapEntry<FormalPredicate, PseudoTuple>(predicate().formalpredicate(), type()) to Program.pass1TypeMap();
 
     Literal       contributes new MapEntry<FormalPredicate, PseudoTuple>(predicate().formalpredicate(), toTuple().toTypeTuple())
-    	when isGround()
+    	when isGround() && enclosingPattern() == null
     	to Program.pass1TypeMap();
 
 	public static final Type Type.typeType    = new TypeType();

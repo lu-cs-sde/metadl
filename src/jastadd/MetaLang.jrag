@@ -17,9 +17,12 @@ aspect MetaLang {
 	   enclosingAnalyzeBlock - the enclosing analyze block if it exists
 	 */
 	inh AnalyzeBlock CommonClause.enclosingAnalyzeBlock();
+	// inh AnalyzeBlock Clause.enclosingAnalyzeBlock();
 	inh AnalyzeBlock ClausePattern.enclosingAnalyzeBlock();
-	eq AnalyzeBlock.getClause().enclosingAnalyzeBlock() = this;
+	inh AnalyzeBlock PredicateSymbol.enclosingAnalyzeBlock();
+
 	eq Program.getCommonClause().enclosingAnalyzeBlock() = null;
+	eq AnalyzeBlock.getClause().enclosingAnalyzeBlock() = this;
 
 	syn String ASTNode.varName() {
 		String nodeNameFull = this.getClass().getName();
@@ -231,18 +234,6 @@ aspect MetaLang {
 	MetaVariable contributes varName() to ClausePattern.metaVariables();
 	coll TreeSet<String> ClausePattern.metaVariables() root ClausePattern;
 
-	syn Clause ClausePattern.asClause() {
-		String predicateName = "CP_" + getNodeId();
-		List<Term> vars = new List<>();
-		for (String vname : metaVariables()) {
-			vars.add(new Variable(vname));
-		}
-
-		Atom headAtom = new Atom(new PredicateSymbol(predicateName), vars);
-		return new Rule(new List(headAtom),
-						literals());
-	}
-
 	boolean Rule.containsPatterns() {
 		for (CommonLiteral l : getBodys())
 			if (l instanceof ClausePattern)
@@ -274,6 +265,25 @@ aspect MetaLang {
 	   For every analyze block, insert relations that provide the
 	   context for evaluating the expanded patterns.
 	 */
+
+	public Rule AnalyzeBlock.makeIdentifierRule(String name) {
+		List<CommonLiteral> headList = new List<>();
+		List<CommonLiteral> bodyList = new List<>();
+
+		List<Term> headVars = new List<>();
+		headVars.add(new Variable("n_id"));
+		headVars.add(new Variable("name"));
+		CommonLiteral head = new Atom(new PredicateSymbol(getScopePrefix() + "ID"),
+									  headVars);
+		CommonLiteral body = new Atom(new PredicateSymbol(getScopePrefix() + name),
+									  headVars.fullCopy());
+
+		headList.add(head);
+		bodyList.add(body);
+
+		return new Rule(headList, bodyList);
+	}
+
 	public List<Clause> AnalyzeBlock.generateHelperRelations() {
 		List<Clause> ret = new List<>();
 
@@ -317,21 +327,27 @@ aspect MetaLang {
 			ret.add(new Rule(head, body));
 		}
 
-		// Now create a clause containing a ground instance of the entire program relation,
-		// for the purpose of type inference
-		List<CommonLiteral> head = new List<>();
-		List<CommonLiteral> body = new List<>();
-		List<Term> vars = new List<>();
-		for (ProgRelPart pr : IMPORTLiteral.programRelationStructure()) {
-			for (int i = 0; i < pr.defaultValue.arity(); ++i) {
-				vars.add(pr.defaultValue.coord(i).fullCopy());
+		// Now create a clause containing a ground instance of the entire program relation
+		// with false in the body, needed for type inference
+		{
+			List<CommonLiteral> head = new List<>();
+			List<CommonLiteral> body = new List<>();
+			List<Term> vars = new List<>();
+			for (ProgRelPart pr : IMPORTLiteral.programRelationStructure()) {
+				for (int i = 0; i < pr.defaultValue.arity(); ++i) {
+					vars.add(pr.defaultValue.coord(i).fullCopy());
+				}
 			}
+
+			head.add(new Atom(new PredicateSymbol(getProgramRef().getPRED_ID()), vars));
+			body.add(new NEQLiteral(new PredicateSymbol("NEQ"), new IntConstant("0"), new IntConstant("0")));
+
+			ret.add(new Rule(head, body));
 		}
 
-		head.add(new Atom(new PredicateSymbol(getProgramRef().getPRED_ID()), vars));
-		body.add(new NEQLiteral(new PredicateSymbol("NEQ"), new IntConstant("0"), new IntConstant("0")));
-
-		ret.add(new Rule(head, body));
+		// Add two new rules, to map variables and predicates to their predicates
+		ret.add(makeIdentifierRule("Variable"));
+		ret.add(makeIdentifierRule("PredicateSymbol"));
 
 		return ret;
 	}
@@ -341,10 +357,27 @@ aspect MetaLang {
 		cls.addAll(clauses());
 		cls.addAll(generateHelperRelations());
 		for (Clause c : getClauses())
-			cls.add(c.fullCopy());
+			cls.add(c.treeCopy());
 		return cls;
 	}
 
 	AnalyzeBlock contributes nta getAllClauses() to Program.predicateSymbols();
 	AnalyzeBlock contributes nta getAllClauses() to Program.pass1TypeMap();
+
+	rewrite PredicateSymbol {
+		when (getPRED_ID().equals("INT") && enclosingAnalyzeBlock() != null) to PredicateSymbol {
+			return new PredicateSymbol(getScopePrefix() + "IntConstant");
+		}
+
+		when (getPRED_ID().equals("STR") && enclosingAnalyzeBlock() != null) to PredicateSymbol {
+			return new PredicateSymbol(getScopePrefix() + "StringConstant");
+		}
+
+		when (getPRED_ID().equals("ID") && enclosingAnalyzeBlock() != null) to PredicateSymbol {
+			return new PredicateSymbol(getScopePrefix() + "ID");
+		}
+	}
+
+
+
 }

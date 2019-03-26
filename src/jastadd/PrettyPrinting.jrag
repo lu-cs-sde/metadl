@@ -142,13 +142,10 @@ aspect PretyPrinting {
 		pr.prettyPrint(getPredicate());
 		pr.out.print("(");
 		pr.prettyPrint(getFileLoc());
-		for (int i = 3; i < getNumChild(); ++i) {
-			pr.out.print(",");
-			pr.prettyPrint(getChild(i));
-		}
+		pr.out.print(",");
+		pr.prettyPrint(getProgramRef());
 		pr.out.print(")");
 	}
-
 
     public void OUTPUTLiteral.prettyPrint(PrettyPrinter pr) {
         pr.prettyPrint(getPredicate());

@@ -1,0 +1,43 @@
+IMPORT("tests/evaluation/withimport/evalTest_1.in", 'Program).
+
+analyze ('Program) {
+	# Constants
+	PredType(pred_name, $i, "String") :- [..., $p(...,$i:$v,...), ... .], ID($p, pred_name), STR($v, x).
+	PredType(pred_name, $i, "Int") :- [..., $p(...,$i:$v,...), ... .], ID($p, pred_name), INT($v, x).
+
+	PredType(pred_name, $i, "String") :- [..., $p(...,$i:$v,...), ... :- ... .], ID($p, pred_name), STR($v, x).
+	PredType(pred_name, $i, "Int") :- [..., $p(...,$i:$v,...), ... :- ... .], ID($p, pred_name), INT($v, x).
+
+	PredType(pred_name, $i, "String") :- [... :- ..., $p(...,$i:$v,...), ... .], ID($p, pred_name), STR($v, x).
+	PredType(pred_name, $i, "Int") :- [... :- ..., $p(...,$i:$v,...), ... .], ID($p, pred_name), INT($v, x).
+
+	# Type transfer
+	PredType(q_name, $j, t) :-  [... :- ..., $p(...,$i:$v,...), ... , $q(...,$j:$w, ...), ... . ],
+	                        ID($p, p_name), ID($q, q_name), ID($v, v_name), ID($w, w_name), EQ(v_name, w_name),
+				PredType(p_name, $i, t).
+
+	PredType(p_name, $i, t) :-  [... :- ... , $p(...,$i:$v,...), ... , $q(...,$j:$w, ...), ... . ],
+	                        ID($p, p_name), ID($q, q_name), ID($v, v_name), ID($w, w_name), EQ(v_name, w_name),
+				PredType(q_name, $j, t).
+
+	PredType(q_name, $j, t) :-  [..., $p(...,$i:$v,...), ... :- ... ,$q(...,$j:$w, ...), ... . ],
+	                        ID($p, p_name), ID($q, q_name), ID($v, v_name), ID($w, w_name), EQ(v_name, w_name),
+				PredType(p_name, $i, t).
+
+	PredType(p_name, $i, t) :-  [..., $p(...,$i:$v,...), ... :- ... ,$q(...,$j:$w, ...), ... . ],
+	                        ID($p, p_name), ID($q, q_name), ID($v, v_name), ID($w, w_name), EQ(v_name, w_name),
+				PredType(q_name, $j, t).
+
+	InconsistentTyped(p_name, i) :- PredType(p_name, i, t1), PredType(p_name, i, t2), NEQ(t1, t2).
+
+	TermIndex(pred_name, $i) :- [..., $p(...,$i:$v,...), ... .], ID($p, pred_name).
+	TermIndex(pred_name, $i) :- [..., $p(...,$i:$v,...), ... :- ... .], ID($p, pred_name).
+	TermIndex(pred_name, $i) :- [... :- ..., $p(...,$i:$v,...), ... .], ID($p, pred_name).
+
+	IsTyped(p_name, i) :- PredType(p_name, i, x).
+	IncompleteTyped(p_name, i) :- TermIndex(p_name, i), NOT(IsTyped(p_name, i)).
+}
+
+OUTPUT('PredType).
+OUTPUT('InconsistentTyped).
+OUTPUT('IncompleteTyped).

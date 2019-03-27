@@ -4,14 +4,18 @@ analyze ('Program) {
 	# Constants
 	PredType(pred_name, $i, "String") :- [..., $p(...,$i:$v,...), ... .], ID($p, pred_name), STR($v, x).
 	PredType(pred_name, $i, "Int") :- [..., $p(...,$i:$v,...), ... .], ID($p, pred_name), INT($v, x).
+	PredType(pred_name, $i, "PredicateRef") :- [..., $p(...,$i:$v,...), ... .], ID($p, pred_name), REF($v, x).
 
 	PredType(pred_name, $i, "String") :- [..., $p(...,$i:$v,...), ... :- ... .], ID($p, pred_name), STR($v, x).
 	PredType(pred_name, $i, "Int") :- [..., $p(...,$i:$v,...), ... :- ... .], ID($p, pred_name), INT($v, x).
+	PredType(pred_name, $i, "PredicateRef") :- [..., $p(...,$i:$v,...), ... :- ... .], ID($p, pred_name), REF($v, x).
 
 	PredType(pred_name, $i, "String") :- [... :- ..., $p(...,$i:$v,...), ... .], ID($p, pred_name), STR($v, x).
 	PredType(pred_name, $i, "Int") :- [... :- ..., $p(...,$i:$v,...), ... .], ID($p, pred_name), INT($v, x).
+	PredType(pred_name, $i, "PredicateRef") :- [... :- ..., $p(...,$i:$v,...), ... .], ID($p, pred_name), REF($v, x).
 
 	# Type transfer
+	# between two predicates in the body
 	PredType(q_name, $j, t) :-  [... :- ..., $p(...,$i:$v,...), ... , $q(...,$j:$w, ...), ... . ],
 	                        ID($p, p_name), ID($q, q_name), ID($v, v_name), ID($w, w_name), EQ(v_name, w_name),
 				PredType(p_name, $i, t).
@@ -20,10 +24,11 @@ analyze ('Program) {
 	                        ID($p, p_name), ID($q, q_name), ID($v, v_name), ID($w, w_name), EQ(v_name, w_name),
 				PredType(q_name, $j, t).
 
+	# head -> body
 	PredType(q_name, $j, t) :-  [..., $p(...,$i:$v,...), ... :- ... ,$q(...,$j:$w, ...), ... . ],
 	                        ID($p, p_name), ID($q, q_name), ID($v, v_name), ID($w, w_name), EQ(v_name, w_name),
 				PredType(p_name, $i, t).
-
+	# body -> head
 	PredType(p_name, $i, t) :-  [..., $p(...,$i:$v,...), ... :- ... ,$q(...,$j:$w, ...), ... . ],
 	                        ID($p, p_name), ID($q, q_name), ID($v, v_name), ID($w, w_name), EQ(v_name, w_name),
 				PredType(q_name, $j, t).

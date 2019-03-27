@@ -95,6 +95,8 @@ Program1,44,Int
 Program1,46,Int
 Program1,47,Int
 Atom,1,Int
+PredicateRef,1,PredicateRef
+Program1,22,PredicateRef
 PredType,1,Int
 Atom,2,Int
 PredType,0,Int
@@ -122,6 +124,7 @@ IntConstantX,1,Int
 StringConstantX,0,Int
 StringConstantX,1,String
 PredicateRefX,0,Int
+PredicateRefX,1,PredicateRef
 VariableX,0,Int
 VariableX,1,String
 IMPORTLiteralX,0,Int

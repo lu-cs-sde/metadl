@@ -1,0 +1,31 @@
+# Computes the strata needed for semi-naive evaluation
+# Dep(P, Q): prediate P depends on predicate Q
+# SameStratum(P, Q): predicates P and Q must be evaluated in same stratum
+# DepDirectPredecessorStratum(P, Q):
+# NegationInStratumError(P): predicate P depends on itself in a way that includes negation
+
+IMPORT("p/t0.mdl", 'Program).
+
+analyze ('Program) {
+  DirectDep(p, q)      :- [ ..., $p(...), ... :- ..., $q(...), ... . ], ID($q, q), ID($p, p).
+  DirectDep(p, q),
+    DirectNegDep(p, q) :- [ ..., $p(...), ... :- ..., NOT($q(...)), ... . ], ID($q, q), ID($p, p).
+}
+
+Dep(p, q) :- DirectDep(p, q).
+Dep(p, q) :- DirectDep(p, r), Dep(r, q).
+
+NegationInStratumError(p) :- Dep(p, q), DirectNegDep(q, p).
+
+SameStratum(p, q) :- Dep(p, q), Dep(q, p).
+DepOnAncestorStratum(p, q) :- NOT(SameStratum(p, q)), Dep(p, q).
+IntermediateStratum(p, midp, q) :- DepOnAncestorStratum(p, midp), DepOnAncestorStratum(midp, q).
+
+# Fixme: would be nice to not have to introduce this helper, but that would require us to allow free variables within negation (or `_')
+ExistsIntermediateStratum(p, q) :- IntermediateStratum(p, mid, q).
+DepDirectPredecessorStratum(p, q) :- DepOnAncestorStratum(p, q), NOT(ExistsIntermediateStratum(p, q)).
+
+OUTPUT('Dep).
+OUTPUT('SameStratum).
+OUTPUT('DepDirectPredecessorStratum).
+OUTPUT('NegationInStratumError).

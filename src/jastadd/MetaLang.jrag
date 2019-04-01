@@ -373,6 +373,10 @@ aspect MetaLang {
 			return new PredicateSymbol(getScopePrefix() + "StringConstant");
 		}
 
+		when (getPRED_ID().equals("REF") && enclosingAnalyzeBlock() != null) to PredicateSymbol {
+			return new PredicateSymbol(getScopePrefix() + "PredicateRef");
+		}
+
 		when (getPRED_ID().equals("ID") && enclosingAnalyzeBlock() != null) to PredicateSymbol {
 			return new PredicateSymbol(getScopePrefix() + "ID");
 		}

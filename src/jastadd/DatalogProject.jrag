@@ -127,7 +127,11 @@ aspect DatalogProject {
 	}
 
 	public TupleWrapper PredicateRef.buildTupleWrapper() {
-		return constantNodeHelper(this, "PredicateRef");
+		TupleWrapper ret = new TupleWrapper("PredicateRef");
+		IntConstant nodeId = new IntConstant("" + getNodeId());
+		StringConstant predName = new StringConstant(getPRED_ID());
+		ret.addTuple(new PseudoTuple(nodeId, predName));
+		return ret;
 	}
 
 	public TupleWrapper Variable.buildTupleWrapper() {

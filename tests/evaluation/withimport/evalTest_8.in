@@ -1,0 +1,16 @@
+# Checks that arities of all references to all predicates match up
+# Arity(predicate, arity) : reported arity
+# ArityError(predicate) : observed inconsistency
+
+IMPORT("tests/evaluation/withimport/evalTest_8_input.mdl", 'Program).
+
+analyze ('Program) {
+  Arity(pname, arity) :- [ ... :- ..., $p(...,$i:$x), ... .], BIND(arity, $i+1), ID($p, pname).
+  Arity(pname, arity) :- [ ... :- ..., NOT($p(...,$i:$x)), ... .], BIND(arity, $i+1), ID($p, pname).
+  Arity(pname, arity) :- [ $p(...,$i:$x) :- ... .], BIND(arity, $i+1), ID($p, pname).
+}
+
+OUTPUT('Arity).
+
+ArityError(p) :- Arity(p, i), Arity(p, j), NOT(EQ(i, j)).
+OUTPUT('ArityError).

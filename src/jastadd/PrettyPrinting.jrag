@@ -236,6 +236,12 @@ aspect PretyPrinting {
 		// pr.out.print("}\n");
 		printList(getAllClauses(), "", "", "", pr);
 	}
+
+	public void Functor.prettyPrint(PrettyPrinter pr) {
+		pr.out.print(getFUNC_ID());
+		printList(getArgs(), "(", ")", ", ", pr);
+	}
+
 }
 
 aspect ExtensionablePrinting {

@@ -285,6 +285,17 @@ aspect LiteralSelection {
     syn Term Term.eval(Instantiation inst)     = this;
     syn Term Variable.eval(Instantiation inst) = inst.get(this);
     syn Term BinExpr.eval(Instantiation inst)  = mappend(getLeft().eval(inst), getRight().eval(inst));
+    syn Term Functor.eval(Instantiation inst) {
+		if (!getFUNC_ID().equals("cat") || getNumArg() != 2) {
+			SimpleLogger.logger().log("Unsupported functor " + getFUNC_ID(), SimpleLogger.LogLevel.Level.ERROR);
+			System.exit(1);
+		}
+
+		Term t1 = getArg(0).eval(inst);
+		Term t2 = getArg(1).eval(inst);
+
+		return new StringConstant(((StringConstant)t1).getSTRING() + ((StringConstant)t2).getSTRING());
+	}
 
 
     public Relation EQLISTLiteral.accumBody(Relation body_rel) {

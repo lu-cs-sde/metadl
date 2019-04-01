@@ -464,6 +464,13 @@ aspect Expression {
 		return vars;
 	}
 
+	syn TreeSet<Variable> Functor.variables() {
+		TreeSet<Variable> vars = new TreeSet<Variable>(Term.termComparator);
+		for (Expr e : getArgs())
+			vars.addAll(e.variables());
+		return vars;
+	}
+
     syn TreeSet<Variable> BinExpr.freeVars() {
         TreeSet<Variable> inclbodyvars = ((Rule)occuresIn().clause()).inclusiveBodyVariables();
         TreeSet<Variable> free = new TreeSet<Variable>(Term.termComparator);
@@ -502,16 +509,13 @@ aspect Expression {
 		constants.add(this);
 		return constants;
 	}
-
-	syn Set<Type> Expr.allowedTypes();
-	eq BinExpr.allowedTypes() = Collections.singleton(Type.integerType);
-	eq AddExpr.allowedTypes() {
-		HashSet<Type> allowed = new HashSet<Type>();
-		allowed.add(Type.integerType);
-		allowed.add(Type.stringType);
-		return allowed;
+	syn TreeSet<Constant> Functor.constants() {
+		TreeSet constants = new TreeSet<>(Term.termComparator);
+		for (Expr e : getArgs())
+			constants.addAll(e.constants());
+		return constants;
 	}
-	eq Term.allowedTypes() = Collections.singleton(type());
+
 }
 
 aspect FormalPredicate {

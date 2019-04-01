@@ -48,6 +48,7 @@ LiteralGap:CommonLiteral;
 	Expressions
 **/
 abstract Expr;
+Functor : Expr ::= <FUNC_ID> Arg:Expr*;
 abstract BinExpr:Expr ::= Left:Expr Right:Expr;
 AddExpr:BinExpr;
 SubExpr:BinExpr;

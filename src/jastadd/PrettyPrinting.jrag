@@ -177,22 +177,6 @@ aspect PretyPrinting {
         pr.out.print(")");
     }
 
-    syn String BinExpr.opSymbol();
-    eq AddExpr.opSymbol() = "+";
-    eq SubExpr.opSymbol() = "-";
-    eq MulExpr.opSymbol() = "*";
-    eq DivExpr.opSymbol() = "/";
-
-    public void BinExpr.prettyPrint(PrettyPrinter pr) {
-        pr.out.print("(");
-        pr.prettyPrint(getLeft());
-        pr.out.print(")");
-        pr.out.print(opSymbol());
-        pr.out.print("(");
-        pr.prettyPrint(getRight());
-        pr.out.print(")");
-    }
-
     public void BinaryExclusiveTermLiteral.prettyPrint(PrettyPrinter pr) {
     	pr.prettyPrint(getPredicate());
         pr.out.print("(");
@@ -238,10 +222,36 @@ aspect PretyPrinting {
 	}
 
 	public void Functor.prettyPrint(PrettyPrinter pr) {
-		pr.out.print(getFUNC_ID());
-		printList(getArgs(), "(", ")", ", ", pr);
+		String op = null;
+		String funcId = getFunc().getFUNC_ID();
+		switch (funcId) {
+		default:
+			// generic functor, use prefix notation
+			pr.out.print(funcId);
+			printList(getArgs(), "(", ")", ", ", pr);
+			return;
+		case "add":
+			op = "+";
+			break;
+		case "sub":
+			op = "-";
+			break;
+		case "mul":
+			op = "*";
+			break;
+		case "div":
+			op = "/";
+			break;
+		}
+		// arithmetic, infix notation
+		pr.out.print("(");
+		pr.prettyPrint(getArg(0));
+		pr.out.print(")");
+		pr.out.print(op);
+		pr.out.print("(");
+		pr.prettyPrint(getArg(1));
+		pr.out.print(")");
 	}
-
 }
 
 aspect ExtensionablePrinting {

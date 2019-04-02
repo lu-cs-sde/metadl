@@ -60,10 +60,10 @@
 %typeof  expr_unit           =  "Expr";
 %typeof  expr_list           =  "List";
 %typeof  expr_list_no_empty  =  "List";
-%typeof  add_expr            =  "AddExpr";
-%typeof  sub_expr            =  "SubExpr";
-%typeof  mul_expr            =  "MulExpr";
-%typeof  div_expr            =  "DivExpr";
+%typeof  add_expr            =  "Functor";
+%typeof  sub_expr            =  "Functor";
+%typeof  mul_expr            =  "Functor";
+%typeof  div_expr            =  "Functor";
 %typeof  term_list_term      =  "TermList";
 %typeof  type_term           =  "Type";
 %typeof  concrete_type       =  "ConcreteType";
@@ -177,7 +177,7 @@ expr = expr_term
      | functor
      ;
 
-functor = VAR_ID.id LPARA expr_list.list RPARA {: return new Functor(id, list); :};
+functor = VAR_ID.id LPARA expr_list.list RPARA {: return new Functor(new FunctorSymbol(id), list); :};
 expr_list = expr_list_no_empty
           | /* epsilon */ {: return new List(); :}
           ;
@@ -200,10 +200,18 @@ expr_unit = term
               | LPARA expr.e RPARA {: return e; :}
               ;
 
-add_expr = expr_term.e1   ADD expr_factor.e2 {: return new AddExpr(e1, e2); :};
-sub_expr = expr_term.e1   SUB expr_factor.e2 {: return new SubExpr(e1, e2); :};
-mul_expr = expr_factor.e1 MUL expr_unit.e2   {: return new MulExpr(e1, e2); :};
-div_expr = expr_factor.e1 DIV expr_unit.e2   {: return new DivExpr(e1, e2); :};
+add_expr = expr_term.e1   ADD expr_factor.e2 {: Functor f = new Functor(new FunctorSymbol("add"), new List<Expr>());
+                                                f.addArg(e1); f.addArg(e2);
+                                                return f; :};
+sub_expr = expr_term.e1   SUB expr_factor.e2 {: Functor f = new Functor(new FunctorSymbol("sub"), new List<Expr>());
+                                                f.addArg(e1); f.addArg(e2);
+                                                return f; :};
+mul_expr = expr_factor.e1 MUL expr_unit.e2 {: Functor f = new Functor(new FunctorSymbol("mul"), new List<Expr>());
+                                                f.addArg(e1); f.addArg(e2);
+                                                return f; :};
+div_expr = expr_factor.e1 DIV expr_unit.e2 {: Functor f = new Functor(new FunctorSymbol("div"), new List<Expr>());
+                                                f.addArg(e1); f.addArg(e2);
+                                                return f; :};
 
 term_opt_index = meta_variable.mv COLON term.t {: t.setIndex(mv); return t; :}
                | term

@@ -17,6 +17,12 @@ public abstract class Constraint {
 		return new Atom(ps, terms);
 	}
 
+	protected Expr makeAdd(Expr left, Expr right) {
+		List<Expr> args = new List<>();
+		args.add(left);
+		args.add(right);
+		return new Functor(new FunctorSymbol("add"), args);
+	}
 
 	public static Constraint member(ASTNode n) {
 		return new MemberConstraint(n);
@@ -107,8 +113,8 @@ class LastConstraint extends Constraint {
 							new Variable(node.varName())));
 		result.add(new BINDLiteral(new PredicateSymbol("BIND"),
 								   new Variable(boundVarName),
-								   new AddExpr(new Variable(node.indexVarName()),
-											   new IntConstant("1"))));
+								   makeAdd(new Variable(node.indexVarName()),
+										   new IntConstant("1"))));
 		result.add(new NEGLiteral(new PredicateSymbol("NEG"),
 								  makeAtom(scopePrefix + newRuleName,
 										   new Variable(node.getParent().varName()),
@@ -158,8 +164,8 @@ class NextConstraint extends Constraint {
 
 		result.add(new EQLiteral(new PredicateSymbol("EQ"),
 								 new Variable(node.indexVarName()),
-								 new AddExpr(new Variable(predecessor.indexVarName()),
-											 new IntConstant("1"))));
+								 makeAdd(new Variable(predecessor.indexVarName()),
+										 new IntConstant("1"))));
 
 		return result;
 	}

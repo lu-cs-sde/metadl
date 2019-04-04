@@ -259,7 +259,7 @@ Method_ReturnType(v_method, v_returnType) :-
 Method_Descriptor(v_method, v_descriptor) :-
   Method_ReturnType(v_method, v_returnType),
   Method_Params(v_method, v_params),
-  BIND(v_descriptor, v_returnType + v_params).
+  BIND(v_descriptor, cat(v_returnType, v_params)).
 # .decl _StoreInstanceField(v_instruction:symbol, v_index:number, v_from:symbol, v_base:symbol, v_signature:symbol, v_method:symbol)
 # .input _StoreInstanceField(IO="file", filename="StoreInstanceField.facts", delimiter="\t")
 EDB('EDB_StoreInstanceField, "StoreInstanceField.facts").

@@ -37,10 +37,9 @@ public class CSVUtil {
 		if(isInteger(line)) {
 			return new IntConstant(line);
 		}
-		if(line.charAt(0) == '\'') {
+		if(!line.isEmpty() && line.charAt(0) == '\'') {
 			if(program != null && program.formalPredicateMap().get(line.substring(1)) == null) {
 				SimpleLogger.logger().log("Must only reference exisiting predicates: " + line, SimpleLogger.LogLevel.Level.ERROR);
-				System.exit(0);
 			}
 
 			/**

@@ -35,4 +35,10 @@ semanticcheck: FORCE
 typecheck: FORCE
 	java -jar compiler.jar typecheck $(EVAL)
 
+minidoop: jar
+	mkdir -p ./out/minidoop
+	mkdir -p ./out/minidoop-mdl
+	java -jar compiler.jar eval::souffle -OUT ./out/minidoop-mdl -FACTS $(FACTS) -SEP \\t ./examples/minidoop/minidoop.mdl
+	souffle -j8 ./examples/minidoop/minidoop.dl -F$(FACTS) -D./out/minidoop/
+
 FORCE: ;

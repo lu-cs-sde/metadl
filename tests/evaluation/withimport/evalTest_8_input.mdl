@@ -1,0 +1,12 @@
+EDB('R, "tmp/data0.csv").
+
+R("x", "x") :- False(0).
+
+T(x, y) :- R(x, y).
+T(x, z) :- T(x, y), T(y, z).
+
+N(x) :- T(x, y).
+N(x) :- T(y, x).
+
+OUTPUT('T).
+OUTPUT('N).

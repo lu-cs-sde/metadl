@@ -457,15 +457,15 @@ aspect Expression {
 	inh Literal Expr.occuresIn();
 	public abstract TreeSet<Variable> Expr.variables();
 
-	syn TreeSet<Variable> BinExpr.variables() {
+	syn TreeSet<Variable> Functor.variables() {
 		TreeSet<Variable> vars = new TreeSet<Variable>(Term.termComparator);
-		vars.addAll(getLeft().variables());
-		vars.addAll(getRight().variables());
+		for (Expr e : getArgs())
+			vars.addAll(e.variables());
 		return vars;
 	}
 
-    syn TreeSet<Variable> BinExpr.freeVars() {
-        TreeSet<Variable> inclbodyvars = ((Rule)occuresIn().clause()).inclusiveBodyVariables();
+	syn TreeSet<Variable> Functor.freeVars() {
+		TreeSet<Variable> inclbodyvars = ((Rule)occuresIn().clause()).inclusiveBodyVariables();
         TreeSet<Variable> free = new TreeSet<Variable>(Term.termComparator);
 
         for(Variable v : variables()) {
@@ -473,7 +473,7 @@ aspect Expression {
                 free.add(v);
         }
         return free;
-    }
+	}
 
 	syn TreeSet<Variable> Term.variables()     = new TreeSet<Variable>(Term.termComparator);
 	syn TreeSet<Variable> CommonVariable.variables() {
@@ -487,31 +487,20 @@ aspect Expression {
 		return vars;
 	}
 
-
 	public abstract TreeSet<Constant> Expr.constants();
-	syn TreeSet<Constant> BinExpr.constants() {
-		TreeSet<Constant> constants = new TreeSet<Constant>(Term.termComparator);
-		constants.addAll(getLeft().constants());
-		constants.addAll(getRight().constants());
-		return constants;
-	}
-
 	syn TreeSet<Constant> Term.constants()     = new TreeSet<Constant>(Term.termComparator);
 	syn TreeSet<Constant> Constant.constants() {
 		TreeSet<Constant> constants = new TreeSet<Constant>(Term.termComparator);
 		constants.add(this);
 		return constants;
 	}
-
-	syn Set<Type> Expr.allowedTypes();
-	eq BinExpr.allowedTypes() = Collections.singleton(Type.integerType);
-	eq AddExpr.allowedTypes() {
-		HashSet<Type> allowed = new HashSet<Type>();
-		allowed.add(Type.integerType);
-		allowed.add(Type.stringType);
-		return allowed;
+	syn TreeSet<Constant> Functor.constants() {
+		TreeSet constants = new TreeSet<>(Term.termComparator);
+		for (Expr e : getArgs())
+			constants.addAll(e.constants());
+		return constants;
 	}
-	eq Term.allowedTypes() = Collections.singleton(type());
+
 }
 
 aspect FormalPredicate {

@@ -47,7 +47,7 @@ aspect ErrorCollection {
         when !freeVars().isEmpty()
         to Program.semanticErrors();
 
-    BinExpr contributes "Free variable(s) " + freeVars() + " in " + this + " in rule " + occuresIn().clause()
+    Functor contributes "Free variable(s) " + freeVars() + " in " + this + " in rule " + occuresIn().clause()
         when !freeVars().isEmpty()
         to Program.semanticErrors();
 

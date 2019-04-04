@@ -1,0 +1,17 @@
+EDB('R, "tmp/data0.csv").
+
+R("x", "x") :- False(0).
+
+T(x, y) :- R(x, y).
+T(x, z) :- T(x, y), T(y, z).
+
+N(x) :- T(x, y).
+N(x) :- T(y, x).
+
+Z_bad(x, y) :- T(x, z), T(y, z2). # warn
+Z2(x, y) :- T(x, 5), T(y, y). # don't warn
+Z3(x, x) :- T(x, y). # don't warn
+
+OUTPUT('T).
+OUTPUT('N).
+

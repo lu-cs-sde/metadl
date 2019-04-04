@@ -1,0 +1,653 @@
+# // Main schema
+# .symbol_type Modifier
+# .symbol_type ArrayType
+# .symbol_type ClassType
+# .symbol_type InterfaceType
+# .type ReferenceType = ArrayType | ClassType | InterfaceType
+# .symbol_type PrimitiveType
+# .type Type = PrimitiveType | ReferenceType
+# .decl isType(v_t:Type)
+# .decl isReferenceType(v_t:ReferenceType)
+# .decl isArrayType(v_t:ArrayType)
+# .decl isClassType(v_t:ClassType)
+# .decl isInterfaceType(v_t:InterfaceType)
+
+# .decl DirectSuperclass(v_class:ClassType, v_superclass:ClassType)
+# .input DirectSuperclass(IO="file", filename="DirectSuperclass.facts", delimiter="\t")
+EDB('DirectSuperclass, "DirectSuperclass.facts").
+DirectSuperclass("", "") :- NEQ(0, 0).
+
+# .decl DirectSuperinterface(v_ref:ReferenceType, v_interface:InterfaceType)
+# .input DirectSuperinterface(IO="file", filename="DirectSuperinterface.facts", delimiter="\t")
+EDB('DirectSuperinterface, "DirectSuperinterface.facts").
+DirectSuperinterface("", "") :- NEQ(0, 0).
+
+# .decl ApplicationClass(v_ref:ReferenceType) // belongs to the jar file that we analyse
+# .decl MainClass(v_class:ClassType) // class whose main method was selected for analysis
+# .input MainClass(IO="file", filename="MainClass.facts", delimiter="\t")
+EDB('MainClass, "MainClass.facts").
+MainClass("") :- NEQ(0, 0).
+
+# .symbol_type Field
+# .decl Field_DeclaringType(v_field:Field, v_declaringClass:ReferenceType)
+# .symbol_type MethodDescriptor
+# .symbol_type Method
+# .decl Method_DeclaringType(v_method:Method, v_declaringType:ReferenceType)
+# .decl Method_ReturnType(v_method:Method, v_returnType:Type)
+# .decl Method_SimpleName(v_method:Method, v_simpleName:symbol)
+# .decl Method_Params(v_method:Method, v_params:symbol)
+# .decl Method_Descriptor(v_method:Method, v_descriptor:MethodDescriptor)
+# .decl Method_Modifier(v_mod:Modifier, v_method:Method)
+# .input Method_Modifier(IO="file", filename="Method-Modifier.facts", delimiter="\t")
+EDB('Method_Modifier, "Method-Modifier.facts").
+Method_Modifier("", "") :- NEQ(0, 0).
+
+# .decl FormalParam(v_index:number, v_method:Method, v_var:Var)
+# .input FormalParam(IO="file", filename="FormalParam.facts", delimiter="\t")
+EDB('FormalParam, "FormalParam.facts").
+FormalParam(0, "", "") :- NEQ(0, 0).
+
+# .decl ThisVar(v_method:Method, v_var:Var)
+# .symbol_type Var
+# .decl Var_Type(v_var:Var, v_type:Type)
+# .input Var_Type(IO="file", filename="Var-Type.facts", delimiter="\t")
+EDB('Var_Type, "Var-Type.facts").
+Var_Type("", "") :- NEQ(0, 0).
+
+# .decl Var_DeclaringMethod(v_var:Var, v_method:Method)
+# .symbol_type HeapAllocation
+# .decl HeapAllocation_Type(v_heap:HeapAllocation, v_type:Type)
+# .symbol_type LoadInstanceField_Insn
+# .symbol_type StoreInstanceField_Insn
+# .symbol_type LoadStaticField_Insn
+# .symbol_type StoreStaticField_Insn
+# .type FieldInstruction = LoadInstanceField_Insn | StoreInstanceField_Insn | LoadStaticField_Insn | StoreStaticField_Insn
+# .symbol_type VirtualMethodInvocation_Insn
+# .symbol_type StaticMethodInvocation_Insn
+# .type MethodInvocation = StaticMethodInvocation_Insn | VirtualMethodInvocation_Insn
+# .symbol_type LoadArrayIndex_Insn
+# .symbol_type StoreArrayIndex_Insn
+# .type ArrayInstruction = LoadArrayIndex_Insn | StoreArrayIndex_Insn
+# .symbol_type AssignLocal_Insn
+# .symbol_type AssignCast_Insn
+# .symbol_type AssignHeapAllocation_Insn
+# .type AssignInstruction = AssignCast_Insn | AssignHeapAllocation_Insn | AssignLocal_Insn
+# .symbol_type ReturnInstruction
+# .type Instruction = ReturnInstruction | ArrayInstruction | FieldInstruction | AssignInstruction | MethodInvocation
+# .decl Instruction_Method(v_insn:Instruction, v_inMethod:Method)
+# .decl isVirtualMethodInvocation_Insn(v_insn:VirtualMethodInvocation_Insn)
+# .decl isStaticMethodInvocation_Insn(v_insn:StaticMethodInvocation_Insn)
+# .decl FieldInstruction_Signature(v_insn:FieldInstruction, v_sign:Field)
+# .decl LoadInstanceField_Base(v_insn:LoadInstanceField_Insn, v_var:Var)
+# .decl LoadInstanceField_To(v_insn:LoadInstanceField_Insn, v_var:Var)
+# .decl StoreInstanceField_From(v_insn:StoreInstanceField_Insn, v_var:Var)
+# .decl StoreInstanceField_Base(v_insn:StoreInstanceField_Insn, v_var:Var)
+# .decl LoadStaticField_To(v_insn:LoadStaticField_Insn, v_var:Var)
+# .decl StoreStaticField_From(v_insn:StoreStaticField_Insn, v_var:Var)
+# .decl ComponentType(v_arrayType:ArrayType, v_componentType:Type)
+# .input ComponentType(IO="file", filename="ComponentType.facts", delimiter="\t")
+EDB('ComponentType, "ComponentType.facts").
+ComponentType("", "") :- NEQ(0, 0).
+
+
+# .decl LoadArrayIndex_Base(v_insn:LoadArrayIndex_Insn, v_var:Var)
+# .decl LoadArrayIndex_To(v_insn:LoadArrayIndex_Insn, var:Var)
+# .decl StoreArrayIndex_From(v_insn:StoreArrayIndex_Insn, v_var:Var)
+# .decl StoreArrayIndex_Base(v_insn:StoreArrayIndex_Insn, v_var:Var)
+# .decl AssignInstruction_To(v_insn:AssignInstruction, v_to:Var)
+# .decl AssignCast_From(v_insn:AssignCast_Insn, v_from:Var)
+# .decl AssignCast_Type(v_insn:AssignCast_Insn, v_type:Type)
+# .decl AssignLocal_From(v_insn:AssignLocal_Insn, v_from:Var)
+# .decl AssignHeapAllocation_Heap(v_insn:AssignHeapAllocation_Insn, v_heap:HeapAllocation)
+# .decl ReturnNonvoid_Var(v_return:ReturnInstruction, v_var:Var)
+# .decl MethodInvocation_Method(v_invocation:MethodInvocation, v_signature:Method)
+# .decl AssignReturnValue(v_invocation:MethodInvocation, v_to:Var)
+# .input AssignReturnValue(IO="file", filename="AssignReturnValue.facts", delimiter="\t")
+EDB('AssignReturnValue, "AssignReturnValue.facts").
+AssignReturnValue("", "") :- NEQ(0, 0).
+
+# .decl ActualParam(v_index:number, v_invocation:MethodInvocation, v_var:Var)
+# .input ActualParam(IO="file", filename="ActualParam.facts", delimiter="\t")
+EBD('ActualParam, "ActualParam.facts").
+ActualParam(0, "", "") :- NEQ(0, 0).
+
+# .decl VirtualMethodInvocation_Base(v_invocation:VirtualMethodInvocation_Insn, v_base:Var)
+# .decl VirtualMethodInvocation_SimpleName(v_invocation:MethodInvocation, v_simplename:symbol)
+# .decl VirtualMethodInvocation_Descriptor(v_invocation:MethodInvocation, v_descriptor:MethodDescriptor)
+# .decl SpecialMethodInvocation_Base(v_invocation:MethodInvocation, v_base:Var)
+# .decl MethodInvocation_Base(v_invocation:MethodInvocation, v_base:Var)
+
+# // Fat schema
+# .decl LoadInstanceField(v_base:Var, v_sig:Field, v_to:Var, v_inmethod:Method)
+# .decl StoreInstanceField(v_from:Var, v_base:Var, v_signature:Field, v_inmethod:Method)
+# .decl LoadStaticField(v_sig:Field, v_to:Var, v_inmethod:Method)
+# .decl StoreStaticField(v_from:Var, v_signature:Field, v_inmethod:Method)
+# .decl LoadArrayIndex(v_base:Var, v_to:Var, v_inmethod:Method)
+# .decl StoreArrayIndex(v_from:Var, v_base:Var, v_inmethod:Method)
+# .decl AssignCast(v_type:Type, v_from:Var, v_to:Var, v_inmethod:Method)
+# .decl AssignLocal(v_from:Var, v_to:Var, v_inmethod:Method)
+# .decl AssignHeapAllocation(v_heap:HeapAllocation, v_to:Var, v_inmethod:Method)
+# .decl ReturnVar(v_var:Var, v_method:Method)
+# .decl StaticMethodInvocation(v_invocation:StaticMethodInvocation_Insn, v_signature:Method, v_inmethod:Method)
+
+# // Import data and project it onto the declarations declared above
+# .decl _ClassType(v_class:symbol)
+#.input _ClassType(IO="file", filename="ClassType.facts", delimiter="\t")
+EDB('ClassType, "ClassType.facts").
+ClassType("") :- NEQ(0, 0).
+IsType(v_class),
+IsReferenceType(v_class),
+IsClassType(v_class) :-
+  ClassType(v_class).
+# .decl _ArrayType(v_arrayType:symbol)
+# .input _ArrayType(IO="file", filename="ArrayType.facts", delimiter="\t")
+EDB('ArrayType, "ArrayType.facts").
+ArrayType("") :- NEQ(0, 0).
+IsType(v_arrayType),
+IsReferenceType(v_arrayType),
+IsArrayType(v_arrayType) :-
+  ArrayType(v_arrayType).
+# .decl _InterfaceType(v_interface:symbol)
+# .input _InterfaceType(IO="file", filename="InterfaceType.facts", delimiter="\t")
+EDB('InterfaceType, "InterfaceType.facts").
+InterfaceType("") :- NEQ(0, 0).
+IsType(v_interface),
+IsReferenceType(v_interface),
+IsInterfaceType(v_interface) :-
+  InterfaceType(v_interface).
+# .decl _Var_DeclaringMethod(v_var:symbol, v_method:symbol)
+# .input _Var_DeclaringMethod(IO="file", filename="Var-DeclaringMethod.facts", delimiter="\t")
+EDB('Var_DeclaringMethod, "Var-DeclaringMethod.facts").
+Var_DeclaringMethod("", "") :- NEQ(0, 0).
+Var_DeclaringMethod(v_var, v_method) :-
+  Var_DeclaringMethod(v_var, v_method).
+# .decl _ApplicationClass(v_type:symbol)
+# .input _ApplicationClass(IO="file", filename="ApplicationClass.facts", delimiter="\t")
+ApplicationClass("") :- NEQ(0, 0).
+IsType(v_type),
+IsReferenceType(v_type),
+ApplicationClass(v_type) :-
+  ApplicationClass(v_type).
+# .decl _ThisVar(v_method:symbol, v_var:symbol)
+# .input _ThisVar(IO="file", filename="ThisVar.facts", delimiter="\t")
+EDB('ThisVar, "ThisVar.facts").
+ThisVar("", "") :- NEQ(0, 0).
+ThisVar(v_method, v_var) :-
+  ThisVar(v_method, v_var).
+# .decl _NormalHeap(v_id:symbol, v_type:symbol)
+# .input _NormalHeap(IO="file", filename="NormalHeap.facts", delimiter="\t")
+EDB('NormalHeap, "NormalHeap.facts").
+NormalHeap("", "") :- NEQ(0, 0).
+IsType(v_type),
+HeapAllocation_Type(v_id, v_type) :-
+  NormalHeap(v_id, v_type).
+# .decl _StringConstant(v_id:symbol)
+# .input _StringConstant(IO="file", filename="StringConstant.facts", delimiter="\t")
+EDB('StringConstant, "StringConstant.facts").
+StringConstant("") :- NEQ(0, 0).
+HeapAllocation_Type(v_id, "java.lang.String") :-
+  StringConstant(v_id).
+# .decl _AssignHeapAllocation(v_instruction:symbol, v_index:number, v_heap:symbol, v_to:symbol, v_inmethod:symbol, v_linenumber:number)
+# .input _AssignHeapAllocation(IO="file", filename="AssignHeapAllocation.facts", delimiter="\t")
+EDB('EDB_AssignHeapAllocation, "AssignHeapAllocation.facts").
+EDB_AssignHeapAllocation("", 0, "", "", "", 0) :- NEQ(0, 0).
+Instruction_Method(v_instruction, v_method),
+AssignInstruction_To(v_instruction, v_to),
+AssignHeapAllocation_Heap(v_instruction, v_heap) :-
+  EDB_AssignHeapAllocation(v_instruction, v_index, v_heap, v_to, v_method, v_linenumber).
+# .decl _AssignLocal(v_instruction:symbol, v_index:number, v_from:symbol, v_to:symbol, v_inmethod:symbol)
+# .input _AssignLocal(IO="file", filename="AssignLocal.facts", delimiter="\t")
+EDB('EDB_AssignLocal, "AssignLocal.facts").
+EDB_AssignLocal("", 0, "", "", "") :- NEQ(0, 0).
+Instruction_Method(v_instruction, v_method),
+AssignLocal_From(v_instruction, v_from),
+AssignInstruction_To(v_instruction, v_to) :-
+  EDB_AssignLocal(v_instruction, v_index, v_from, v_to, v_method).
+# .decl _AssignCast(v_instruction:symbol, v_index:number, v_from:symbol, v_to:symbol, v_type:symbol, v_inmethod:symbol)
+# .input _AssignCast(IO="file", filename="AssignCast.facts", delimiter="\t")
+EDB('EDB_AssignCast, "AssignCast.facts").
+EDB_AssignCast("", 0, "", "", "", "") :- NEQ(0, 0).
+Instruction_Method(v_instruction, v_method),
+AssignCast_Type(v_instruction, v_type),
+AssignCast_From(v_instruction, v_from),
+AssignInstruction_To(v_instruction, v_to) :-
+  EDB_AssignCast(v_instruction, v_index, v_from, v_to, v_type, v_method).
+# .decl _Field(v_signature:symbol, v_declaringClass:symbol, v_simplename:symbol, v_type:symbol)
+# .input _Field(IO="file", filename="Field.facts", delimiter="\t")
+EDB('Field, "Field.facts").
+Field("", "", "", "") :- NEQ(0, 0).
+Field_DeclaringType(v_signature, v_declaringType) :-
+  Field(v_signature, v_declaringType, dontcare0, dontcare1).
+MethodInvocation_Base(v_invocation, v_base) :-
+  VirtualMethodInvocation_Base(v_invocation, v_base).
+MethodInvocation_Base(v_invocation, v_base) :-
+  SpecialMethodInvocation_Base(v_invocation, v_base).
+# .decl _StaticMethodInvocation(v_instruction:symbol, v_index:number, v_signature:symbol, v_method:symbol)
+# input _StaticMethodInvocation(IO="file", filename="StaticMethodInvocation.facts", delimiter="\t")
+EDB('EDB_StaticMethodInvocation, "StaticMethodInvocation.facts").
+EDB_StaticMethodInvocation("", 0, "", "") :- NEQ(0, 0).
+Instruction_Method(v_instruction, v_method),
+IsStaticMethodInvocation_Insn(v_instruction),
+MethodInvocation_Method(v_instruction, v_signature) :-
+  EDB_StaticMethodInvocation(v_instruction, v_index, v_signature, v_method).
+# .decl _SpecialMethodInvocation(v_instruction:symbol, v_index:number, v_signature:symbol, v_base:symbol, v_method:symbol)
+# .input _SpecialMethodInvocation(IO="file", filename="SpecialMethodInvocation.facts", delimiter="\t")
+EDB('SpecialMethodInvocation, "SpecialMethodInvocation.facts").
+SpecialMethodInvocation("", 0, "", "", "") :- NEQ(0, 0).
+Instruction_Method(v_instruction, v_method),
+SpecialMethodInvocation_Base(v_instruction, v_base),
+MethodInvocation_Method(v_instruction, v_signature) :-
+  SpecialMethodInvocation(v_instruction, v_index, v_signature, v_base, v_method).
+# .decl _VirtualMethodInvocation(v_instruction:symbol, v_index:number, v_signature:symbol, v_base:symbol, v_method:symbol)
+# .input _VirtualMethodInvocation(IO="file", filename="VirtualMethodInvocation.facts", delimiter="\t")
+EDB('VirtualMethodInvocation, "VirtualMethodInvocation.facts").
+VirtualMethodInvocation("", 0, "", "", "") :- NEQ(0, 0).
+Instruction_Method(v_instruction, v_method),
+IsVirtualMethodInvocation_Insn(v_instruction),
+VirtualMethodInvocation_Base(v_instruction, v_base),
+MethodInvocation_Method(v_instruction, v_signature) :-
+  VirtualMethodInvocation(v_instruction, v_index, v_signature, v_base, v_method).
+# .decl _Method(v_method:symbol, v_simplename:symbol, v_descriptor:symbol, v_declaringType:symbol, v_returnType:symbol, v_jvmDescriptor:symbol, v_arity:number)
+# .input _Method(IO="file", filename="Method.facts", delimiter="\t")
+EDB('Method, "Method.facts").
+Method("", "", "", "", "", "", 0) :- NEQ(0, 0).
+Method_SimpleName(v_method, v_simplename),
+Method_Params(v_method, v_params),
+Method_DeclaringType(v_method, v_declaringType),
+Method_ReturnType(v_method, v_returnType) :-
+  Method(v_method, v_simplename, v_params, v_declaringType, v_returnType, v_jvmDescriptor, v_arity).
+Method_Descriptor(v_method, v_descriptor) :-
+  Method_ReturnType(v_method, v_returnType),
+  Method_Params(v_method, v_params),
+  BIND(v_descriptor, v_returnType + v_params).
+# .decl _StoreInstanceField(v_instruction:symbol, v_index:number, v_from:symbol, v_base:symbol, v_signature:symbol, v_method:symbol)
+# .input _StoreInstanceField(IO="file", filename="StoreInstanceField.facts", delimiter="\t")
+EDB('EDB_StoreInstanceField, "StoreInstanceField.facts").
+EDB_StoreInstanceField("", 0, "", "", "", "") :- NEQ(0, 0).
+Instruction_Method(v_instruction, v_method),
+FieldInstruction_Signature(v_instruction, v_signature),
+StoreInstanceField_Base(v_instruction, v_base),
+StoreInstanceField_From(v_instruction, v_from) :-
+  EDB_StoreInstanceField(v_instruction, v_index, v_from, v_base, v_signature, v_method).
+# .decl _LoadInstanceField(v_instruction:symbol, v_index:number, v_to:symbol, v_base:symbol, v_signature:symbol, v_method:symbol)
+# .input _LoadInstanceField(IO="file", filename="LoadInstanceField.facts", delimiter="\t")
+EDB('EDB_LoadInstanceField, "LoadInstanceField.facts").
+EDB_LoadInstanceField("", 0, "", "", "", "") :- NEQ(0, 0).
+Instruction_Method(v_instruction, v_method),
+FieldInstruction_Signature(v_instruction, v_signature),
+LoadInstanceField_Base(v_instruction, v_base),
+LoadInstanceField_To(v_instruction, v_to) :-
+  EDB_LoadInstanceField(v_instruction, v_index, v_to, v_base, v_signature, v_method).
+# .decl _StoreStaticField(v_instruction:symbol, v_index:number, v_from:symbol, v_signature:symbol, v_method:symbol)
+# .input _StoreStaticField(IO="file", filename="StoreStaticField.facts", delimiter="\t")
+EDB('EDB_StoreStaticField, "StoreStaticField.facts").
+EDB_StoreStaticField("", 0, "", "", "") :- NEQ(0, 0).
+Instruction_Method(v_instruction, v_method),
+FieldInstruction_Signature(v_instruction, v_signature),
+StoreStaticField_From(v_instruction, v_from) :-
+  EDB_StoreStaticField(v_instruction, v_index, v_from, v_signature, v_method).
+# .decl _LoadStaticField(v_instruction:symbol, v_index:number, v_to:symbol, v_signature:symbol, v_method:symbol)
+# .input _LoadStaticField(IO="file", filename="LoadStaticField.facts", delimiter="\t")
+EDB('EDB_LoadStaticField, "LoadStaticField.facts").
+EDB_LoadStaticField("", 0, "", "", "") :- NEQ(0, 0).
+Instruction_Method(v_instruction, v_method),
+FieldInstruction_Signature(v_instruction, v_signature),
+LoadStaticField_To(v_instruction, v_to) :-
+  EDB_LoadStaticField(v_instruction, v_index, v_to, v_signature, v_method).
+# .decl _StoreArrayIndex(v_instruction:symbol, v_index:number, v_from:symbol, v_base:symbol, v_method:symbol)
+# .input _StoreArrayIndex(IO="file", filename="StoreArrayIndex.facts", delimiter="\t")
+EDB('EDB_StoreArrayIndex, "StoreArrayIndex.facts").
+EDB_StoreArrayIndex("", 0, "", "", "") :- NEQ(0, 0).
+Instruction_Method(v_instruction, v_method),
+StoreArrayIndex_Base(v_instruction, v_base),
+StoreArrayIndex_From(v_instruction, v_from) :-
+  EDB_StoreArrayIndex(v_instruction, v_index, v_from, v_base, v_method).
+# .decl _LoadArrayIndex(v_instruction:symbol, v_index:number, v_to:symbol, v_base:symbol, v_method:symbol)
+# .input _LoadArrayIndex(IO="file", filename="LoadArrayIndex.facts", delimiter="\t")
+EDB('EDB_LoadArrayIndex, "LoadArrayIndex.facts").
+EDB_LoadArrayIndex("", 0, "", "", "") :- NEQ(0, 0).
+Instruction_Method(v_instruction, v_method),
+LoadArrayIndex_Base(v_instruction, v_base),
+LoadArrayIndex_To(v_instruction, v_to) :-
+  EDB_LoadArrayIndex(v_instruction, v_index, v_to, v_base, v_method).
+# .decl _Return(v_instruction:symbol, v_index:number, v_var:symbol, v_method:symbol)
+# .input _Return(IO="file", filename="Return.facts", delimiter="\t")
+EDB('Return, "Return.facts").
+Return("", 0, "", "") :- NEQ(0, 0).
+Instruction_Method(v_instruction, v_method),
+ReturnNonvoid_Var(v_instruction, v_var) :-
+  Return(v_instruction, v_index, v_var, v_method).
+
+# // fat schema population
+LoadInstanceField(v_base, v_sig, v_to, v_inmethod) :-
+  Instruction_Method(v_insn, v_inmethod),
+  LoadInstanceField_Base(v_insn, v_base),
+  FieldInstruction_Signature(v_insn, v_sig),
+  LoadInstanceField_To(v_insn, v_to).
+StoreInstanceField(v_from, v_base, v_sig, v_inmethod) :-
+  Instruction_Method(v_insn, v_inmethod),
+  StoreInstanceField_From(v_insn, v_from),
+  StoreInstanceField_Base(v_insn, v_base),
+  FieldInstruction_Signature(v_insn, v_sig).
+LoadStaticField(v_sig, v_to, v_inmethod) :-
+  Instruction_Method(v_insn, v_inmethod),
+  FieldInstruction_Signature(v_insn, v_sig),
+  LoadStaticField_To(v_insn, v_to).
+StoreStaticField(v_from, v_sig, v_inmethod) :-
+  Instruction_Method(v_insn, v_inmethod),
+  StoreStaticField_From(v_insn, v_from),
+  FieldInstruction_Signature(v_insn, v_sig).
+LoadArrayIndex(v_base, v_to, v_inmethod) :-
+  Instruction_Method(v_insn, v_inmethod),
+  LoadArrayIndex_Base(v_insn, v_base),
+  LoadArrayIndex_To(v_insn, v_to).
+StoreArrayIndex(v_from, v_base, v_inmethod) :-
+  Instruction_Method(v_insn, v_inmethod),
+  StoreArrayIndex_From(v_insn, v_from),
+  StoreArrayIndex_Base(v_insn, v_base).
+AssignCast(v_type, v_from, v_to, v_inmethod) :-
+  Instruction_Method(v_insn, v_inmethod),
+  AssignCast_From(v_insn, v_from),
+  AssignInstruction_To(v_insn, v_to),
+  AssignCast_Type(v_insn, v_type).
+AssignLocal(v_from, v_to, v_inmethod) :-
+  AssignInstruction_To(v_insn, v_to),
+  Instruction_Method(v_insn, v_inmethod),
+  AssignLocal_From(v_insn, v_from).
+AssignHeapAllocation(v_heap, v_to, v_inmethod) :-
+  Instruction_Method(v_insn, v_inmethod),
+  AssignHeapAllocation_Heap(v_insn, v_heap),
+  AssignInstruction_To(v_insn, v_to).
+ReturnVar(v_var, v_method) :-
+  Instruction_Method(v_insn, v_method),
+  ReturnNonvoid_Var(v_insn, v_var).
+StaticMethodInvocation(v_invocation, v_signature, v_inmethod) :-
+  IsStaticMethodInvocation_Insn(v_invocation),
+  Instruction_Method(v_invocation, v_inmethod),
+  MethodInvocation_Method(v_invocation, v_signature).
+HeapAllocation_Type(v_heap, v_type) :-
+  BIND(v_heap, "<<main method array>>"),
+  BIND(v_type, "java.lang.String[]").
+HeapAllocation_Type(v_heap, v_type) :-
+  BIND(v_heap, "<<main method array content>>"),
+  BIND(v_type, "java.lang.String").
+VirtualMethodInvocation_SimpleName(v_invocation, v_simplename),
+VirtualMethodInvocation_Descriptor(v_invocation, v_descriptor) :-
+  IsVirtualMethodInvocation_Insn(v_invocation),
+  MethodInvocation_Method(v_invocation, v_signature),
+  Method_SimpleName(v_signature, v_simplename),
+  Method_Descriptor(v_signature, v_descriptor).
+
+# // Basic (type-based) analysis
+# // This defines MethodLookup() and SupertypeOf(), which are used in the main Doop code
+# .comp Basic {
+# .decl MethodLookup(v_simplename:symbol, v_descriptor:MethodDescriptor, v_type:Type, v_method:Method)
+# .decl MethodImplemented(v_simplename:symbol, v_descriptor:MethodDescriptor, v_type:Type, v_method:Method)
+# .decl DirectSubclass(v_a:Type, v_c:Type)
+# .decl Subclass(v_c:Type, v_a:Type)
+# .decl Superclass(v_c:Type, v_a:Type)
+# .decl Superinterface(v_k:Type, v_c:Type)
+# .decl SubtypeOf(v_subtype:Type, v_type:Type)
+# .decl SupertypeOf(v_supertype:Type, v_type:Type)
+# .decl SubtypeOfDifferent(v_subtype:Type, v_type:Type)
+# .decl MainMethodDeclaration(v_method:Method)
+MethodLookup(v_simplename, v_descriptor, v_type, v_method) :-
+  MethodImplemented(v_simplename, v_descriptor, v_type, v_method).
+MethodImplemented_(v_simplename, v_descriptor, v_type) :- MethodImplemented(v_simplename, v_descriptor, v_type, dontcare).
+MethodLookup(v_simplename, v_descriptor, v_type, v_method) :-
+  DirectSuperinterface(v_type, v_supertype),
+  MethodLookup(v_simplename, v_descriptor, v_supertype, v_method),
+  NOT(MethodImplemented_(v_simplename, v_descriptor, v_type)).
+MethodLookup(v_simplename, v_descriptor, v_type, v_method) :-
+  DirectSuperclass(v_type, v_supertype),
+  MethodLookup(v_simplename, v_descriptor, v_supertype, v_method),
+  NOT(MethodImplemented_(v_simplename, v_descriptor, v_type)).
+
+MethodImplemented(v_simplename, v_descriptor, v_type, v_method) :-
+  Method_SimpleName(v_method, v_simplename),
+  Method_Descriptor(v_method, v_descriptor),
+  Method_DeclaringType(v_method, v_type),
+  NOT(Method_Modifier("abstract", v_method)).
+DirectSubclass(v_a, v_c) :-
+  DirectSuperclass(v_a, v_c).
+Subclass(v_c, v_a) :-
+  DirectSubclass(v_a, v_c).
+Subclass(v_c, v_a) :-
+  Subclass(v_b, v_a),
+  DirectSubclass(v_b, v_c).
+Superclass(v_c, v_a) :-
+  Subclass(v_a, v_c).
+Superinterface(v_k, v_c) :-
+  DirectSuperinterface(v_c, v_k).
+Superinterface(v_k, v_c) :-
+  DirectSuperinterface(v_c, v_j),
+  Superinterface(v_k, v_j).
+Superinterface(v_k, v_c) :-
+  DirectSuperclass(v_c, v_super),
+  Superinterface(v_k, v_super).
+SupertypeOf(v_s, v_t) :-
+  SubtypeOf(v_t, v_s).
+SubtypeOf(v_s, v_s) :-
+  IsClassType(v_s).
+SubtypeOf(v_s, v_t) :-
+  Subclass(v_t, v_s).
+SubtypeOf(v_s, v_t) :-
+  IsClassType(v_s),
+  Superinterface(v_t, v_s).
+SubtypeOf(v_s, v_t) :-
+  IsInterfaceType(v_s),
+  IsType(v_t),
+  EQ(v_t, "java.lang.Object").
+SubtypeOf(v_s, v_s) :-
+  IsInterfaceType(v_s).
+SubtypeOf(v_s, v_t) :-
+  IsInterfaceType(v_s),
+  Superinterface(v_t, v_s).
+SubtypeOf(v_s, v_t) :-
+  IsArrayType(v_s),
+  IsType(v_t),
+  EQ(v_t, "java.lang.Object").
+SubtypeOf(v_s, v_t) :-
+  ComponentType(v_s, v_sc),
+  ComponentType(v_t, v_tc),
+  IsReferenceType(v_sc),
+  IsReferenceType(v_tc),
+  SubtypeOf(v_sc, v_tc).
+SubtypeOf(v_s, v_t) :-
+  IsArrayType(v_s),
+  IsInterfaceType(v_t),
+  IsType(v_t),
+  EQ(v_t, "java.lang.Cloneable").
+SubtypeOf(v_s, v_t) :-
+  IsArrayType(v_s),
+  IsInterfaceType(v_t),
+  IsType(v_t),
+  EQ(v_t, "java.io.Serializable").
+SubtypeOf(v_t, v_t) :-
+  IsType(v_t).
+SubtypeOfDifferent(v_s, v_t) :-
+  SubtypeOf(v_s, v_t),
+  NEQ(v_s, v_t).
+MainMethodDeclaration(v_method) :-
+  MainClass(v_type),
+  Method_DeclaringType(v_method, v_type),
+  NEQ(v_method, "<java.util.prefs.Base64: void main(java.lang.String[])>"),
+  NEQ(v_method, "<sun.java2d.loops.GraphicsPrimitiveMgr: void main(java.lang.String[])>"),
+  NEQ(v_method, "<sun.security.provider.PolicyParser: void main(java.lang.String[])>"),
+  Method_SimpleName(v_method, "main"),
+  Method_Descriptor(v_method, "void(java.lang.String[])"),
+  Method_Modifier("public", v_method),
+  Method_Modifier("static", v_method).
+# }
+# .init basic = Basic
+
+# // ----------------------------------------
+# // You will not have to modify anything above this line
+
+# // class initialization
+# // ClassInitializer methods are special static methods that are invoked the first time
+# // that Java code uses a class.  They are used to e.g. initialise static variables.
+# .decl ClassInitializer(v_type:Type, v_method:Method)
+# .decl InitializedClass(v_classOrInterface:Type)
+ClassInitializer(v_type, v_method) :-
+   MethodImplemented("<clinit>", "void()", v_type, v_method).
+InitializedClass(v_superclass) :-
+   InitializedClass(v_class),
+   DirectSuperclass(v_class, v_superclass).
+InitializedClass(v_superinterface) :-
+   InitializedClass(v_classOrInterface),
+   DirectSuperinterface(v_classOrInterface, v_superinterface).
+InitializedClass(v_class) :-
+   MainMethodDeclaration(v_method),
+   Method_DeclaringType(v_method, v_class).
+InitializedClass(v_class) :-
+   Reachable(v_inmethod),
+   AssignHeapAllocation(v_heap, dontcare, v_inmethod),
+   HeapAllocation_Type(v_heap, v_class).
+InitializedClass(v_class) :-
+   Reachable(v_inmethod),
+   Instruction_Method(v_invocation, v_inmethod),
+   IsStaticMethodInvocation_Insn(v_invocation),
+   MethodInvocation_Method(v_invocation, v_signature),
+   Method_DeclaringType(v_signature, v_class).
+InitializedClass(v_classOrInterface) :-
+   Reachable(v_inmethod),
+   StoreStaticField(dontcare, v_signature, v_inmethod),
+   Field_DeclaringType(v_signature, v_classOrInterface).
+InitializedClass(v_classOrInterface) :-
+   Reachable(v_inmethod),
+   LoadStaticField(v_signature, dontcare, v_inmethod),
+   Field_DeclaringType(v_signature, v_classOrInterface).
+Reachable(v_clinit) :-
+   InitializedClass(v_class),
+   ClassInitializer(v_class, v_clinit).
+
+# // Main (value-based) analysis
+# .decl Assign(v_to:Var, v_from:Var)
+# .output Assign
+OUTPUT('Assign).
+# .decl VarPointsTo(v_heap:HeapAllocation, v_var:Var)
+# .output	VarPointsTo
+OUTPUT('VarPointsTo).
+# .decl InstanceFieldPointsTo(v_heap:HeapAllocation , v_fld:Field, v_baseheap:HeapAllocation)
+# .output InstanceFieldPointsTo
+OUTPUT('InstanceFieldPointsTo).
+# .decl StaticFieldPointsTo(v_heap:HeapAllocation, v_fld:Field)
+# .output StaticFieldPointsTo
+OUTPUT('StaticFieldPointsTo).
+# .decl CallGraphEdge(v_invocation:MethodInvocation, v_meth:Method)
+# .output CallGraphEdge
+OUTPUT('CallGraphEdge).
+# .decl ArrayIndexPointsTo(v_baseheap:HeapAllocation, v_heap:HeapAllocation)
+# .output ArrayIndexPointsTo
+OUTPUT('ArrayIndexPointsTo).
+# .decl Reachable(v_method:Method)
+# .output Reachable
+OUTPUT('Reachable).
+
+Assign(v_actual, v_formal) :-
+  CallGraphEdge(v_invocation, v_method),
+  FormalParam(v_index, v_method, v_formal),
+  ActualParam(v_index, v_invocation, v_actual).
+Assign(v_return, v_local) :-
+  CallGraphEdge(v_invocation, v_method),
+  ReturnVar(v_return, v_method),
+  AssignReturnValue(v_invocation, v_local).
+VarPointsTo(v_heap, v_var) :-
+  AssignHeapAllocation(v_heap, v_var, v_inMethod),
+  Reachable(v_inMethod).
+VarPointsTo(v_heap, v_to) :-
+  Assign(v_from, v_to),
+  VarPointsTo(v_heap, v_from).
+VarPointsTo(v_heap, v_to) :-
+  Reachable(v_inmethod),
+  AssignLocal(v_from, v_to, v_inmethod),
+  VarPointsTo(v_heap, v_from).
+VarPointsTo(v_heap, v_to) :-
+  Reachable(v_method),
+  AssignCast(v_type, v_from, v_to, v_method),
+  SupertypeOf(v_type, v_heaptype),
+  HeapAllocation_Type(v_heap, v_heaptype),
+  VarPointsTo(v_heap, v_from).
+ArrayIndexPointsTo(v_baseheap, v_heap) :-
+  Reachable(v_inmethod),
+  StoreArrayIndex(v_from, v_base, v_inmethod),
+  VarPointsTo(v_baseheap, v_base),
+  VarPointsTo(v_heap, v_from),
+  HeapAllocation_Type(v_heap, v_heaptype),
+  HeapAllocation_Type(v_baseheap, v_baseheaptype),
+  ComponentType(v_baseheaptype, v_componenttype),
+  SupertypeOf(v_componenttype, v_heaptype).
+VarPointsTo(v_heap, v_to) :-
+  Reachable(v_inmethod),
+  LoadArrayIndex(v_base, v_to, v_inmethod),
+  VarPointsTo(v_baseheap, v_base),
+  ArrayIndexPointsTo(v_baseheap, v_heap),
+  Var_Type(v_to, v_type),
+  HeapAllocation_Type(v_baseheap, v_baseheaptype),
+  ComponentType(v_baseheaptype, v_basecomponenttype),
+  SupertypeOf(v_type, v_basecomponenttype).
+VarPointsTo(v_heap, v_to) :-
+  Reachable(v_inmethod),
+  LoadInstanceField(v_base, v_signature, v_to, v_inmethod),
+  VarPointsTo(v_baseheap, v_base),
+  InstanceFieldPointsTo(v_heap, v_signature, v_baseheap).
+InstanceFieldPointsTo(v_heap, v_fld, v_baseheap) :-
+  Reachable(v_inmethod),
+  StoreInstanceField(v_from, v_base, v_fld, v_inmethod),
+  VarPointsTo(v_heap, v_from),
+  VarPointsTo(v_baseheap, v_base).
+VarPointsTo(v_heap, v_to) :-
+  Reachable(v_inmethod),
+  LoadStaticField(v_fld, v_to, v_inmethod),
+  StaticFieldPointsTo(v_heap, v_fld).
+StaticFieldPointsTo(v_heap, v_fld) :-
+  Reachable(v_inmethod),
+  StoreStaticField(v_from, v_fld, v_inmethod),
+  VarPointsTo(v_heap, v_from).
+VarPointsTo(v_heap, v_this) :-
+  Reachable(v_inMethod),
+  Instruction_Method(v_invocation, v_inMethod),
+  VirtualMethodInvocation_Base(v_invocation, v_base),
+  VarPointsTo(v_heap, v_base),
+  HeapAllocation_Type(v_heap, v_heaptype),
+  VirtualMethodInvocation_SimpleName(v_invocation, v_simplename),
+  VirtualMethodInvocation_Descriptor(v_invocation, v_descriptor),
+  MethodLookup(v_simplename, v_descriptor, v_heaptype, v_toMethod),
+  ThisVar(v_toMethod, v_this).
+VarPointsTo(v_heap, v_this) :-
+  CallGraphEdge(v_invocation, v_tomethod),
+  SpecialMethodInvocation_Base(v_invocation, v_base),
+  VarPointsTo(v_heap, v_base),
+  ThisVar(v_tomethod, v_this).
+
+# // Reachability
+Reachable(v_method) :-
+  MainMethodDeclaration(v_method).
+Reachable(v_method) :-
+  CallGraphEdge(dontcare, v_method).
+
+# // ----------------------------------------
+# // Call graph construction
+
+# // invokevirtual / invokeinterface
+CallGraphEdge(v_invocation, v_toMethod) :-
+  Reachable(v_inMethod),
+  Instruction_Method(v_invocation, v_inMethod),
+  VirtualMethodInvocation_Base(v_invocation, v_base),
+  VarPointsTo(v_heap, v_base),
+  HeapAllocation_Type(v_heap, v_heaptype),
+  VirtualMethodInvocation_SimpleName(v_invocation, v_simplename),
+  VirtualMethodInvocation_Descriptor(v_invocation, v_descriptor),
+  MethodLookup(v_simplename, v_descriptor, v_heaptype, v_toMethod).
+
+# // invokestatic
+CallGraphEdge(v_invocation, v_tomethod) :-
+  Reachable(v_inmethod),
+  StaticMethodInvocation(v_invocation, v_tomethod, v_inmethod).
+
+# // invokespecial
+CallGraphEdge(v_invocation, v_tomethod) :-
+  Reachable(v_inmethod),
+  Instruction_Method(v_invocation, v_inmethod),
+  MethodInvocation_Method(v_invocation, v_tomethod).

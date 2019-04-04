@@ -20,7 +20,8 @@ OUTPUTLiteral(0, 0, 0),
 NEGLiteral(0, 0, 0),
 BINDLiteral(0, 0, 0),
 BinaryExclusiveTermLiteralRef(0, "", 0, 0),
-BinExprRef(0, "", 0, 0) :- NEQ(0, 0).
+Functor(0, 0, 0),
+FunctorSymbol(0, "") :- NEQ(0, 0).
 
 
 Program1(0, 0, 0,
@@ -39,7 +40,7 @@ Program1(0, 0, 0,
 0, 0, 0,
 0, 0, 0,
 0, "", 0, 0,
-0, "", 0, 0) :- NEQ(0,0).
+0, 0, 0, 0, "") :- NEQ(0,0).
 
 
 
@@ -59,12 +60,13 @@ OUTPUTLiteralX(p31, p32, p33),
 NEGLiteralX(p34, p35, p36),
 BINDLiteralX(p37, p38, p39),
 BinaryExclusiveTermLiteralRefX(p40, p41, p42, p43),
-BinExprRefX(p44, p45, p46, p47) :-
+FunctorX(p44, p45, p46),
+FunctorSymbolX(p47, p48) :-
 		Program1(p0, p1, p2, p3, p4, p5, p6, p7, p8, p9,
 		p10, p11, p12, p13,  p14, p15, p16, p17, p18, p19,
 		p20, p21, p22, p23, p24, p25, p26, p27, p28, p29,
 		p30, p31, p32, p33, p34, p35, p36, p37, p38, p39,
-		p40, p41, p42, p43, p44, p45, p46, p47).
+		p40, p41, p42, p43, p44, p45, p46, p47, p48).
 
 Program(p0, p1, p2) :-                                      ProgramX(p0, p1, p2), GT(p0, 0).
 Child(p3, p4, p5) :-					    ChildX(p3, p4, p5), GT(p3, 0).
@@ -82,8 +84,8 @@ OUTPUTLiteral(p31, p32, p33) :-				    OUTPUTLiteralX(p31, p32, p33), GT(p31, 0)
 NEGLiteral(p34, p35, p36) :-				    NEGLiteralX(p34, p35, p36), GT(p34, 0).
 BINDLiteral(p37, p38, p39) :-				    BINDLiteralX(p37, p38, p39), GT(p37, 0).
 BinaryExclusiveTermLiteralRef(p40, p41, p42, p43) :-	    BinaryExclusiveTermLiteralRefX(p40, p41, p42, p43), GT(p40, 0).
-BinExprRef(p44, p45, p46, p47) :-			    BinExprRefX(p44, p45, p46, p47), GT(p44, 0).
-
+Functor(p44, p45, p46) :-				    FunctorX(p44, p45, p46), GT(p44, 0).
+FunctorSymbol(p47, p48) :-				    FunctorSymbolX(p47, p48), GT(p47, 0).
 
 
 

@@ -152,20 +152,20 @@ aspect DatalogProject {
 		return ret;
 	}
 
+
+	public TupleWrapper FunctorSymbol.buildTupleWrapper() {
+		TupleWrapper ret = new TupleWrapper("FunctorSymbol");
+		IntConstant nodeId = new IntConstant("" + getNodeId());
+		StringConstant varName = new StringConstant(getFUNC_ID());
+
+		ret.addTuple(new PseudoTuple(nodeId, varName));
+		return ret;
+	}
+
 	public TupleWrapper BinaryExclusiveTermLiteral.buildTupleWrapper() {
 		TupleWrapper ret = new TupleWrapper("BinaryExclusiveTermLiteral");
 		IntConstant nodeId = new IntConstant("" + getNodeId());
 		StringConstant compOp = new StringConstant("" + getPredicate().getPRED_ID());
-		IntConstant lhs = new IntConstant("" + getLeft().getNodeId());
-		IntConstant rhs = new IntConstant("" + getRight().getNodeId());
-		ret.addTuple(new PseudoTuple(nodeId, compOp, lhs, rhs));
-		return ret;
-	}
-
-	public TupleWrapper BinExpr.exprNodeHelper(String op) {
-		TupleWrapper ret = new TupleWrapper("BinExpr");
-		IntConstant nodeId = new IntConstant("" + getNodeId());
-		StringConstant compOp = new StringConstant(op);
 		IntConstant lhs = new IntConstant("" + getLeft().getNodeId());
 		IntConstant rhs = new IntConstant("" + getRight().getNodeId());
 		ret.addTuple(new PseudoTuple(nodeId, compOp, lhs, rhs));
@@ -179,22 +179,6 @@ aspect DatalogProject {
 		IntConstant rhs = new IntConstant("" + getRight().getNodeId());
 		ret.addTuple(new PseudoTuple(nodeId, lhs, rhs));
 		return ret;
-	}
-
-	public TupleWrapper AddExpr.buildTupleWrapper() {
-		return exprNodeHelper("+");
-	}
-
-	public TupleWrapper SubExpr.buildTupleWrapper() {
-		return exprNodeHelper("-");
-	}
-
-	public TupleWrapper MulExpr.buildTupleWrapper() {
-		return exprNodeHelper("*");
-	}
-
-	public TupleWrapper DivExpr.buildTupleWrapper() {
-		return exprNodeHelper("/");
 	}
 
 	ASTNode contributes buildTupleWrapper() to Program.datalogProjection() ;

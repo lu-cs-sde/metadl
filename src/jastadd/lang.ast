@@ -48,11 +48,12 @@ LiteralGap:CommonLiteral;
 	Expressions
 **/
 abstract Expr;
-abstract BinExpr:Expr ::= Left:Expr Right:Expr;
-AddExpr:BinExpr;
-SubExpr:BinExpr;
-MulExpr:BinExpr;
-DivExpr:BinExpr;
+Functor : Expr ::= Func:FunctorSymbol Arg:Expr*;
+// abstract BinExpr:Expr ::= Left:Expr Right:Expr;
+// AddExpr:BinExpr;
+// SubExpr:BinExpr;
+// MulExpr:BinExpr;
+// DivExpr:BinExpr;
 
 /**
 	Types
@@ -91,6 +92,7 @@ TermGap:Term;
 **/
 FormalPredicate ::= <PRED_ID>;
 PredicateSymbol ::= <PRED_ID>;
+FunctorSymbol ::= <FUNC_ID>;
 
 /**
    Patterns

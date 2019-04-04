@@ -107,50 +107,10 @@ aspect LiteralSideEffect {
 			new ProgRelPart("NEGLiteral", triple),
 			new ProgRelPart("BINDLiteral", triple),
 			new ProgRelPart("BinaryExclusiveTermLiteral", new Object[] {0, "", 0, 0}),
-			new ProgRelPart("BinExpr", new Object[] {0, "", 0, 0})};
+			new ProgRelPart("Functor", triple),
+			new ProgRelPart("FunctorSymbol", pairString)};
 		return prs;
 	}
-
-	// public PredicateRef IMPORTLiteral.getPredicateRefForRelation(String relName) {
-	// 	switch (relName) {
-	// 	case "Program":
-	// 		return getProgramRef();
-	// 	case "Lst":
-	// 		return getListRef();
-	// 	case "Rule":
-	// 		return getRuleRef();
-	// 	case "Fact":
-	// 		return getFactRef();
-	// 	case "Atom":
-	// 		return getAtomRef();
-	// 	case "PredicateSymbol":
-	// 		return getPredicateSymbolRef();
-	// 	case "IntConstant":
-	// 		return getIntConstantRef();
-	// 	case "StringConstant":
-	// 		return getStringConstantRef();
-	// 	case "PredicateRef":
-	// 		return getPredicateRefRef();
-	// 	case "Variable":
-	// 		return getVariableRef();
-	// 	case "IMPORTLiteral":
-	// 		return getIMPORTLiteralRef();
-	// 	case "EDBLiteral":
-	// 		return getEDBLiteralRef();
-	// 	case "OUTPUTLiteral":
-	// 		return getOUTPUTLiteralRef();
-	// 	case "NEGLiteral":
-	// 	    return getNEGLiteralRef();
-	// 	case "BINDLiteral":
-	// 	    return getBINDLiteralRef();
-	// 	case "BinaryExclusiveTermLiteral":
-	// 	    return getBinaryExclusiveTermLiteralRef();
-	// 	case "BinExpr":
-	// 	    return getBinExprRef();
-	// 	default:
-	// 		return null;
-	// 	}
-	// }
 
 	public static void IMPORTLiteral.dumpAllRelations(Map<String, Relation> nameToRelMap)
 	{
@@ -252,39 +212,35 @@ aspect LiteralSelection {
     public boolean GTELiteral.binaryTest(Term t1, Term t2) { return Term.termComparator.compare(t1, t2) >= 0; }
 
     public abstract Term Expr.eval(Instantiation inst);
-    public abstract Term BinExpr.mappend(Term t1, Term t2);
-
-    syn Term AddExpr.mappend(Term t1, Term t2) {
-        if(!Term.sameType(t1, t2)) {
-            SimpleLogger.logger().log("Different Types for terms: " + t1 + ", " + t2, SimpleLogger.LogLevel.Level.ERROR);
-            System.exit(0);
-        }
-        if(t1.isInteger())
-            return new IntConstant("" + (((IntConstant) t1).intValue() + ((IntConstant) t2).intValue()));
-        else if(t1.isString())
-            return new StringConstant(((StringConstant)t1).getSTRING() + ((StringConstant)t2).getSTRING());
-        if(!Term.sameType(t1, t2)) {
-            SimpleLogger.logger().log("Non-supported add for: " + t1 + ", " + t2, SimpleLogger.LogLevel.Level.ERROR);
-            System.exit(0);
-        }
-        return null;
-    }
-
-    syn Term SubExpr.mappend(Term t1, Term t2) {
-        return new IntConstant("" + (((IntConstant) t1).intValue() - ((IntConstant) t2).intValue()));
-    }
-
-    syn Term MulExpr.mappend(Term t1, Term t2) {
-        return new IntConstant("" + (((IntConstant) t1).intValue() * ((IntConstant) t2).intValue()));
-    }
-
-    syn Term DivExpr.mappend(Term t1, Term t2) {
-        return new IntConstant("" + (((IntConstant) t1).intValue() / ((IntConstant) t2).intValue()));
-    }
 
     syn Term Term.eval(Instantiation inst)     = this;
     syn Term Variable.eval(Instantiation inst) = inst.get(this);
-    syn Term BinExpr.eval(Instantiation inst)  = mappend(getLeft().eval(inst), getRight().eval(inst));
+
+    syn Term Functor.eval(Instantiation inst) {
+		if (getNumArg() != 2) {
+			SimpleLogger.logger().log("Expecting binary functor " + getFunc().getFUNC_ID(), SimpleLogger.LogLevel.Level.ERROR);
+			System.exit(1);
+		}
+
+		Term t1 = getArg(0).eval(inst);
+		Term t2 = getArg(1).eval(inst);
+
+		switch (getFunc().getFUNC_ID()) {
+		default:
+			SimpleLogger.logger().log("Unsupported functor " + getFunc().getFUNC_ID(), SimpleLogger.LogLevel.Level.ERROR);
+			System.exit(1);
+		case "add":
+            return new IntConstant("" + (((IntConstant) t1).intValue() + ((IntConstant) t2).intValue()));
+		case "mul":
+			return new IntConstant("" + (((IntConstant) t1).intValue() * ((IntConstant) t2).intValue()));
+		case "sub":
+			return new IntConstant("" + (((IntConstant) t1).intValue() - ((IntConstant) t2).intValue()));
+		case "div":
+			return new IntConstant("" + (((IntConstant) t1).intValue() / ((IntConstant) t2).intValue()));
+		case "cat":
+			return new StringConstant(((StringConstant)t1).getSTRING() + ((StringConstant)t2).getSTRING());
+		}
+	}
 
 
     public Relation EQLISTLiteral.accumBody(Relation body_rel) {

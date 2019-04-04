@@ -71,7 +71,7 @@ public class EvaluationTest {
 	@DisplayName("Compare Internal Evaluation to Souffle")
 	@ParameterizedTest(name = "Evaluation Tests Valid")
 	@ValueSource(strings = { "evalTest_1.in", "evalTest_2.in", "evalTest_3.in", "evalTest_4.in", "evalTest_5.in",
-			"evalTest_6.in", "evalTest_7.in", "evalTest_8.in", "evalTest_9.in" })
+							 "evalTest_6.in", "evalTest_7.in", "evalTest_8.in", "evalTest_9.in", "evalTest_13.in"})
 	void evaluationTestsBottomUpNaiveCompareSouffle(String fileName) throws Exception {
 		String inputFile = "./tests/evaluation/" + fileName;
 
@@ -148,7 +148,9 @@ public class EvaluationTest {
 
 	@DisplayName("Evaluate programs containing patterns using Souffle")
 	@ParameterizedTest(name = "Pattern Tests")
-	@ValueSource(strings = { "evalTest_2", "evalTest_3", "evalTest_4", "evalTest_5", "evalTest_6" })
+	@ValueSource(strings = { "evalTest_2", "evalTest_3", "evalTest_4",
+							 "evalTest_5", "evalTest_6", "evalTest_7",
+							 "evalTest_8"})
 	void evaluationTestSoufflePatterns(String fileName) throws Exception {
 		Description d1 = FileUtil.parseDescription(
 		   "eval::souffle -OUT ./tests/output/souffle -FACTS ./tests/evaluation/withimport/facts ./tests/evaluation/withimport/"

@@ -18,14 +18,14 @@ Dep(p, q) :- DirectDep(p, r), Dep(r, q).
 NegationInStratumError(p) :- Dep(p, q), DirectNegDep(q, p).
 
 SameStratum(p, q) :- Dep(p, q), Dep(q, p).
-DepOnAncestorStratum(p, q) :- NOT(SameStratum(p, q)), Dep(p, q).
-IntermediateStratum(p, midp, q) :- DepOnAncestorStratum(p, midp), DepOnAncestorStratum(midp, q).
+AncestorStratum(p, q) :- NOT(SameStratum(p, q)), Dep(p, q).
+IntermediateStratum(p, midp, q) :- AncestorStratum(p, midp), AncestorStratum(midp, q).
 
 # Fixme: would be nice to not have to introduce this helper, but that would require us to allow free variables within negation (or `_')
 ExistsIntermediateStratum(p, q) :- IntermediateStratum(p, mid, q).
-DepDirectPredecessorStratum(p, q) :- DepOnAncestorStratum(p, q), NOT(ExistsIntermediateStratum(p, q)).
+ParentStratum(p, q) :- AncestorStratum(p, q), NOT(ExistsIntermediateStratum(p, q)).
 
 OUTPUT('Dep).
 OUTPUT('SameStratum).
-OUTPUT('DepDirectPredecessorStratum).
+OUTPUT('ParentStratum).
 OUTPUT('NegationInStratumError).

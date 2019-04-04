@@ -187,6 +187,16 @@ aspect MetaLang {
 		return literals;
 	}
 
+	eq FunctorSymbol.asLiterals() {
+		PredicateSymbol pred = new PredicateSymbol(getScopePrefix() + getRelation());
+		List<Literal> literals = new List<>();
+		List<Term> terms = new List<>();
+		terms.add(new Variable(varName()));
+		terms.add(new StringConstant(getFUNC_ID()));
+		literals.add(new Atom(pred, terms));
+		return literals;
+	}
+
 	syn String ASTNode.indexVarName() = null;
 	eq Term.indexVarName() {
 		if (hasIndex())
@@ -248,10 +258,6 @@ aspect MetaLang {
 	eq Program.getScopePrefix() = "";
     eq AnalyzeBlock.getScopePrefix() = "A_" + getProgramRef().getPRED_ID() + "_";
 
-	/**
-	   For every analyze block, insert relations that provide the
-	   context for evaluating the expanded patterns.
-	 */
 
 	public Rule AnalyzeBlock.makeIdentifierRule(String name) {
 		List<CommonLiteral> headList = new List<>();
@@ -271,6 +277,39 @@ aspect MetaLang {
 		return new Rule(headList, bodyList);
 	}
 
+	public Rule AnalyzeBlock.makeExprRule() {
+		List<CommonLiteral> headList = new List<>();
+		List<CommonLiteral> bodyList = new List<>();
+
+		List<Term> headVars = new List<>();
+		headVars.add(new Variable("n_id"));
+		headVars.add(new Variable("j"));
+		headVars.add(new Variable("child"));
+
+		headList.add(new Atom(new PredicateSymbol(getScopePrefix() + "EXPR"),
+							  headVars));
+
+		List<Term> bodyVars1 = new List<>();
+		bodyVars1.add(new Variable("n_id"));
+		bodyVars1.add(new IntConstant("1"));
+		bodyVars1.add(new Variable("l"));
+
+		bodyList.add(new Atom(new PredicateSymbol(getScopePrefix() + "Functor"), bodyVars1));
+
+		List<Term> bodyVars2 = new List<>();
+		bodyVars2.add(new Variable("l"));
+		bodyVars2.add(new Variable("j"));
+		bodyVars2.add(new Variable("child"));
+
+		bodyList.add(new Atom(new PredicateSymbol(getScopePrefix() + "Lst"), bodyVars2));
+
+		return new Rule(headList, bodyList);
+	}
+
+	/**
+	   For every analyze block, insert relations that provide the
+	   context for evaluating the expanded patterns.
+	 */
 	public List<Clause> AnalyzeBlock.generateHelperRelations() {
 		List<Clause> ret = new List<>();
 
@@ -335,6 +374,9 @@ aspect MetaLang {
 		// Add two new rules, to map variables and predicates to their predicates
 		ret.add(makeIdentifierRule("Variable"));
 		ret.add(makeIdentifierRule("PredicateSymbol"));
+		ret.add(makeIdentifierRule("FunctorSymbol"));
+
+		ret.add(makeExprRule());
 
 		return ret;
 	}
@@ -367,8 +409,9 @@ aspect MetaLang {
 		when (getPRED_ID().equals("ID") && enclosingAnalyzeBlock() != null) to PredicateSymbol {
 			return new PredicateSymbol(getScopePrefix() + "ID");
 		}
+
+		when (getPRED_ID().equals("EXPR") && enclosingAnalyzeBlock() != null) to PredicateSymbol {
+			return new PredicateSymbol(getScopePrefix() + "EXPR");
+		}
 	}
-
-
-
 }

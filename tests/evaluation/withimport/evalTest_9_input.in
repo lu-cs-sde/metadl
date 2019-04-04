@@ -1,0 +1,8 @@
+Nat(0).
+Nat(1).
+Nat(2).
+Nat(3).
+
+Add(x, y, z, t, w) :- BIND(z, x + y + t  + w), EQ(t, w + u), Nat(u), Nat(y), Nat(z), Nat(t), Nat(w).
+
+OUTPUT('Add).

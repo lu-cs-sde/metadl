@@ -29,6 +29,13 @@ aspect Configuration {
     syn String Description.outputDir() = getTask().outputDir();
     syn String Description.factsDir() = getTask().factsDir();
 
+    syn char Description.CSVSeparator() {
+		String sep = getTask().CSVSeparator();
+		if (sep.equals("\\t"))
+			return '\t';
+		return sep.charAt(0);
+	}
+
     syn String Task.outputDir() {
         for(ConfigParam param : getParamss()) {
             if(param.isOutputDir())
@@ -36,6 +43,13 @@ aspect Configuration {
         }
         return System.getProperty("user.dir");
     }
+
+	syn String Task.CSVSeparator() {
+		for (ConfigParam param : getParamss())
+			if (param instanceof CSVSeparator)
+				return ((CSVSeparator)param).getSeparator();
+		return ",";
+	}
 
     syn String Task.factsDir() {
         for(ConfigParam param : getParamss()) {

@@ -199,11 +199,11 @@ aspect Clause {
 					if (il.isInclusive())
 						variables.addAll(il.variables());
 					else if (il.isBind())
-						variables.add(((BINDLiteral)il).getVariable());
+						variables.addAll(((BINDLiteral)il).getVariable().variables());
 				}
 			}
             if(l.isBind()) {
-                variables.add(((BINDLiteral)l).getVariable());
+                variables.addAll(((BINDLiteral)l).getVariable().variables());
             }
         }
     	return variables;
@@ -343,8 +343,9 @@ aspect Literal {
     }
 
     eq BINDLiteral.variables()  {
-	TreeSet<Variable> vars = new TreeSet<Variable>(Term.termComparator);
-		vars.add(getVariable());
+		TreeSet<Variable> vars = new TreeSet<Variable>(Term.termComparator);
+		Variable v;
+		vars.addAll(getVariable().variables());
 		vars.addAll(getRight().variables());
 		return vars;
     }

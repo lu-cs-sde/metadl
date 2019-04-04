@@ -8,12 +8,12 @@ import lang.ast.config.ConfigParser.SyntaxError;
 // define the signature for the generated scanner
 %public
 %final
-%class ConfigScanner 
+%class ConfigScanner
 %extends beaver.Scanner
 
 // the interface between the scanner and the parser is the nextToken() method
-%type beaver.Symbol 
-%function nextToken 
+%type beaver.Symbol
+%function nextToken
 
 // store line and column information in the tokens
 %line
@@ -32,6 +32,7 @@ ID = [a-zA-Z0-9\?_]+
 Numeral = [0-9]+
 String  = \"[^\"]*\"
 FilePath = [^\s(::)]+
+Separator = , | \\t | ;
 
 %%
 
@@ -40,9 +41,11 @@ FilePath = [^\s(::)]+
 
 // token definitions
 
+{Separator}        {  return  sym(Terminals.SEP_CHAR);           }
 "-OUT"             {  return  sym(Terminals.OUTDIR);             }
 "-FACTS"           {  return  sym(Terminals.FACTSDIR);           }
 "-SOUFFLEOUT"      {  return  sym(Terminals.SOUFFLEOUT);         }
+"-SEP"             {  return  sym(Terminals.CSVSEPARATOR);       }
 "pretty"           {  return  sym(Terminals.PRETTYPRINT);        }
 "eval"             {  return  sym(Terminals.EVAL);               }
 "typeprog"         {  return  sym(Terminals.TYPE_PROG);          }

@@ -18,6 +18,7 @@ abstract FilePath:ConfigParam ::= <Path:String>;
 InputFile:FilePath;
 OutputDir:FilePath;
 FactsDir:FilePath;
+CSVSeparator : ConfigParam ::= <Separator:String>;
 
 abstract SouffleParam;
 OutputFileName:SouffleParam ::= <Name:String>;

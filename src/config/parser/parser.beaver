@@ -10,7 +10,8 @@
 :};
 
 %terminals FILEPATH, SEP, BOTTOMUPNAIVE, SOUFFLE, OUTDIR, FACTSDIR, SOUFFLEOUT,
-           PRETTYPRINT, EVAL, TYPE_PROG, SEMANTIC_CHECK, TYPE_CHECK, PRE_PRINT;
+           PRETTYPRINT, EVAL, TYPE_PROG, SEMANTIC_CHECK, TYPE_CHECK, PRE_PRINT,
+	   CSVSEPARATOR, SEP_CHAR;
 
 %typeof  descr                    =  "Description";
 %typeof  pretty                   =  "Task";
@@ -33,6 +34,7 @@
 %typeof  souffle_params_no_empty  =  "List";
 %typeof  souffle_param            =  "SouffleParam";
 %typeof  output_file_name         =  "OutputFileName";
+%typeof  csv_separator            =  "CSVSeparator";
 
 %goal descr;
 
@@ -56,7 +58,7 @@ pretty_task = BOTTOMUPNAIVE config_params.params {: return new PrettyBottomUpNai
 eval_task = BOTTOMUPNAIVE config_params.params {: return new EvalBottomUpNaive(params); :}
           | SOUFFLE config_params.params souffle_params.s_params {: return new EvalSouffle(params, s_params); :}
           ;
-            
+
 type_prog          =  TYPE_PROG config_params.params {: return new TypeProg(params); :};
 semantic_check     =  SEMANTIC_CHECK config_params.params {: return new SemanticCheck(params); :};
 type_check         =  TYPE_CHECK config_params.params {: return new TypeCheck(params); :};
@@ -66,7 +68,7 @@ souffle_params = souffle_params_no_empty
           ;
 
 souffle_params_no_empty = souffle_param.param {: return new List().add(param); :}
-                       | souffle_params_no_empty.list souffle_param.param {: return list.add(param); :} 
+                       | souffle_params_no_empty.list souffle_param.param {: return list.add(param); :}
                        ;
 
 souffle_param = output_file_name;
@@ -76,10 +78,12 @@ config_params = config_params_no_empty
           ;
 
 config_params_no_empty = config_param.param {: return new List().add(param); :}
-                       | config_params_no_empty.list config_param.param {: return list.add(param); :} 
+                       | config_params_no_empty.list config_param.param {: return list.add(param); :}
                        ;
 
-config_param  = file_path;
+config_param  = file_path
+              | csv_separator
+	      ;
 
 file_path     = output_dir
               | facts_dir
@@ -89,3 +93,4 @@ input_file        =  FILEPATH.fn {: return new InputFile(fn); :};
 output_dir        =  OUTDIR FILEPATH.fn {: return new OutputDir(fn); :};
 facts_dir         =  FACTSDIR FILEPATH.fn {: return new FactsDir(fn); :};
 output_file_name  =  SOUFFLEOUT FILEPATH.fn {: return new OutputFileName(fn); :};
+csv_separator     =  CSVSEPARATOR SEP_CHAR.c {: return new CSVSeparator(c); :};

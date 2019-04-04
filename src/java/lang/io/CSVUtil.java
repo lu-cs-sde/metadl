@@ -21,6 +21,7 @@ import lang.ast.Term;
 import lang.ast.Variable;
 import lang.relation.PseudoTuple;
 import lang.relation.Relation;
+import lang.Compiler;
 
 public class CSVUtil {
 	public static boolean isInteger(String s) {
@@ -54,7 +55,7 @@ public class CSVUtil {
 	public static void readFileInto(Program program, Relation r, String path) {
 		SimpleLogger.logger().log("Read file " + path, SimpleLogger.LogLevel.Level.DEBUG);
 
-		CSVParser parser = new CSVParserBuilder().withSeparator(',').build();
+		CSVParser parser = new CSVParserBuilder().withSeparator(Compiler.getCSVSeparator()).build();
 		try (CSVReader reader = new CSVReaderBuilder(new FileReader(new File(path))).withCSVParser(parser).build()) {
 			String[] line;
 			while ((line = reader.readNext()) != null) {
@@ -79,7 +80,7 @@ public class CSVUtil {
 	public static void readFileInto(Program program, FormalPredicate fp, String path) {
 		SimpleLogger.logger().log("Begin Read file " + path + " into " + fp, SimpleLogger.LogLevel.Level.DEBUG);
 
-		CSVParser parser = new CSVParserBuilder().withSeparator(',').build();
+		CSVParser parser = new CSVParserBuilder().withSeparator(Compiler.getCSVSeparator()).build();
 		try (CSVReader reader = new CSVReaderBuilder(new FileReader(new File(path))).withCSVParser(parser).build()) {
 			String[] line;
 			while ((line = reader.readNext()) != null) {
@@ -113,7 +114,7 @@ public class CSVUtil {
 		if (!f.exists())
 			return null;
 		Relation r = new Relation(arity);
-		CSVParser parser = new CSVParserBuilder().withSeparator(',').build();
+		CSVParser parser = new CSVParserBuilder().withSeparator(Compiler.getCSVSeparator()).build();
 		try (CSVReader reader = new CSVReaderBuilder(new FileReader(f)).withCSVParser(parser).build()) {
 			String[] line;
 			while ((line = reader.readNext()) != null) {
@@ -131,8 +132,10 @@ public class CSVUtil {
 
 	public static void dumpFileInto(FormalPredicate sp, File f) {
 		try (CSVWriter writer = new CSVWriter(new OutputStreamWriter(new FileOutputStream(f)),
-				CSVWriter.DEFAULT_SEPARATOR, CSVWriter.NO_QUOTE_CHARACTER, CSVWriter.DEFAULT_ESCAPE_CHARACTER,
-				CSVWriter.RFC4180_LINE_END)) {
+											  Compiler.getCSVSeparator(),
+											  CSVWriter.NO_QUOTE_CHARACTER,
+											  CSVWriter.DEFAULT_ESCAPE_CHARACTER,
+											  CSVWriter.RFC4180_LINE_END)) {
 
             SimpleLogger.logger().log("Write Relation: " + f.getPath(), SimpleLogger.LogLevel.Level.DEBUG);
 			sp.relation.tuples().forEach(t -> {

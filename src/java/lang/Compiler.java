@@ -12,6 +12,22 @@ import lang.io.SimpleLogger;
  */
 public class Compiler {
     public static Object DrAST_root_node; // Enable debugging with DrAST
+	public static Description descr;
+
+	public static char getCSVSeparator() {
+		if (descr == null) {
+			return ',';
+		} else {
+			return descr.CSVSeparator();
+		}
+	}
+
+	public static String getCSVSeparatorEscaped() {
+		if (getCSVSeparator() != '\t')
+			return String.valueOf(getCSVSeparator());
+		return "\\t";
+	}
+
     public static void main(String[] args) {
 		Logger log = Logger.getLogger("lang.io");
 		log.setLevel(Level.FINEST);
@@ -25,7 +41,7 @@ public class Compiler {
         try {
             StringBuilder sb = new StringBuilder();
             for(int i = 0; i != args.length; ++i) sb.append(args[i]).append(" ");
-            Description descr = FileUtil.parseDescription(sb.toString());
+            descr = FileUtil.parseDescription(sb.toString());
             descr.getTask().perform();
         } catch (Exception e) {
 			e.printStackTrace();

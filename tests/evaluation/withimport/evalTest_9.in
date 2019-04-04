@@ -1,0 +1,10 @@
+IMPORT("tests/evaluation/withimport/evalTest_9_input.in", 'Program).
+
+analyze('Program) {
+	Var(e, v) :- EXPR(e, i, vid), ID(vid, v).
+	Var(e, v) :- EXPR(e, i, e1), Var(e1, v).
+}
+
+AllVarInExpr(v) :- Var(e, v).
+
+OUTPUT('AllVarInExpr).

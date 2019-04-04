@@ -83,8 +83,15 @@ aspect MetaLang {
 					cons.add(Constraint.next(prev, c));
 				} else if (prevNonGap != null) {
 					// seen gaps, but the predecessor is a gap
-					// e.g. P(...,$i:t,...,$j:u,...) -> constrain $j > $i
-					cons.add(Constraint.after(prevNonGap, c));
+					// e.g. P(...,$i:t,...,$j:u,...)
+					// There are two alternatives to chosse from:
+					// 1. constrain $j > $i
+					// 2. no constraint
+					// We choose to implement 2 to allow a pattern like
+					// ... :- ..., EQ(x, y), ..., $p(...),... . to cover cases
+					// where EQ comes before $p and after $p. If ordering is
+					// required, the user can add explicit indices.
+					cons.add(Constraint.member(c));
 				} else if (prevNonGap == null) {
 					// seens only gaps before
 					cons.add(Constraint.member(c));
@@ -178,27 +185,6 @@ aspect MetaLang {
 		literals.add(new Atom(pred, terms));
 		return literals;
 	}
-
-	// eq MetaAtom.asLiterals() {
-	// 	Variable pred = new Variable(getPredicate().varName());
-	// 	String atomRelName = new Atom().getRelation();
-	// 	// Atom(atom_id, 0, pred_id)
-	// 	List<Literal> literals = new List<>();
-	// 	List<Term> terms = new List<>();
-	// 	terms.add(new Variable(varName()));
-	// 	terms.add(new IntConstant("0"));
-	// 	terms.add(pred);
-	// 	PredicateSymbol predAtom = new PredicateSymbol(getScopePrefix() + atomRelName);
-	// 	literals.add(new Atom(predAtom, terms));
-	// 	for (int i = 0; i < getNumTerm(); ++i) {
-	// 		terms = new List<>();
-	// 		terms.add(new Variable(varName()));
-	// 		terms.add(new IntConstant("" + (i + 1)));
-	// 		terms.add(new Variable(getTerm(i).varName()));
-	// 		literals.add(new Atom(predAtom, terms));
-	// 	}
-	// 	return literals;
-	// }
 
 	syn String ASTNode.indexVarName() = null;
 	eq Term.indexVarName() {

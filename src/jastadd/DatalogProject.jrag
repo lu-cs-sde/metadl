@@ -107,6 +107,13 @@ aspect DatalogProject {
 		return ret;
 	}
 
+	public TupleWrapper ASTNode.buildLocationTupleWrapper() {
+		TupleWrapper ret = new TupleWrapper("SourceInfo");
+		ret.addTuple(new PseudoTuple(new IntConstant("" + this.getNodeId()),
+					     new StringConstant("L" + getLine(this.getStart()) + ":" + getColumn(this.getStart()))));
+		return ret;
+	}
+
 	public TupleWrapper Opt.buildTupleWrapper() {
 		return new TupleWrapper(null);
 	}
@@ -182,6 +189,7 @@ aspect DatalogProject {
 	}
 
 	ASTNode contributes buildTupleWrapper() to Program.datalogProjection() ;
+	ASTNode contributes buildLocationTupleWrapper() to Program.datalogProjection() ;
 
 	public HashSet<String> Program.loadedPrograms = new HashSet<String>();
 }

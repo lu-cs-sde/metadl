@@ -1,71 +1,67 @@
-# Checks for any rules that
-# CartesianProjectionWarning(P, i, Q): Field i in predicate P is always a projection of the same field in Q, without any filtering of Q's records.
-# FIXME: include the offending rule (is that possible?)
-
+#IMPORT("examples/minidoop.in", 'Program).
 IMPORT("p/t3.mdl", 'Program).
 
 analyze ('Program) {
-  InRHSOfSameRule($p, $p2) :- [ ... :- ..., $p(...), ..., $p2(...), ... . ].
-  InRHSOfSameRule($p, $p2) :- [ ... :- ..., $p(...), ..., NOT($p2(...)), ... . ].
-  InRHSOfSameRule($p, $p2) :- [ ... :- ..., NOT($p(...)), ..., $p2(...), ... . ].
-  InRHSOfSameRule($p, $p2) :- [ ... :- ..., NOT($p(...)), ..., NOT($p2(...)), ... . ].
-  InRHSOfSameRule($p2, $p) :- InRHSOfSameRule($p, $p2).
+
+  VarIsFiltered($p, v) :-
+          [ ... :- ..., $p(...), ..., $p2(..., $y, ...) . ],
+	  NOT(EQ($p, $p2)),
+	  ID($y, v).
+  VarIsFiltered($p, v) :-
+          [ ... :- ..., $p(...), ..., NOT($p2(..., $y, ...)) . ],
+	  ID($y, v).
 
   VAL($x) :- INT($x, val).
   VAL($x) :- STR($x, val).
-  PredicateIsFiltered($p) :- [ ... :- ..., $p(..., $x, ...), ... . ], VAL($x).
-  PredicateIsFiltered($p) :- [ ... :- ..., $p(..., $x, ..., $y, ...), ... . ], ID($x, v), ID($y, v).
   PredicateIsFiltered($p) :-
-          [ ... :- ..., $p(..., $x, ...), ... . ], ID($x, v),
-          InRHSOfSameRule($p, $p2),
-	  NOT(EQ($p, $p2)),
-	  [ ... :- ..., $p2(..., $y, ...), ... . ], ID($y, v).
+          [ ... :- ..., $p(..., $x, ...), ... . ],
+	  VAL($x).
+  PredicateIsFiltered($p) :-
+          [ ... :- ..., $p(..., $x, ..., $y, ...), ... . ],
+          ID($x, v), NOT(EQ($x, $y)), ID($y, v).
+  PredicateIsFiltered($p) :-
+          [ ... :- ..., $p(..., $x, ...), .... ],
+	  ID($x, v),
+          VarIsFiltered($p, v).
 
-  PureProjection($p, $i, $q, $k, v) :-
-      [ ..., $p(..., $i:$x, ...), ... :- ..., $q(..., $k:$y, ...), ... . ],
-      ID($x, v),
-      ID($y, v),
-      NOT(PredicateIsFiltered($q)).
-
-  ComputationallyInterestingOutput($p, $i, v) :-
+  OutputIsNotProjectionOf(p_name, $i, q_name, $k) :-
       [ ..., $p(..., $i:$x, ...), ... :- ..., $q(..., $k:$y, ...), ... .],
+      ID($p, p_name),
+      ID($q, q_name),
       ID($x, v),
-      ID($y, v),
+      NOT(ID($y, v)).
+
+  OutputIsNotProjectionOf(p_name, $i, q_name, $k) :-
+      [ ..., $p(..., $i:$x, ...), ... :- ..., $q(..., $k:$y, ...), ... .],
+      ID($p, p_name),
+      ID($q, q_name),
       PredicateIsFiltered($q).
 
-  OutputVariableIsFiltered(p, $i) :-
-      [ ..., $p(..., $i:$x, ...), ... :- ... . ],
-      ID($p, p),
-      VAL($x). # not a variable
-
-  OutputVariableIsFiltered(p, $i) :-
-      [ ..., $p(..., $i:$x, ...), ... :- ... . ],
-      ID($p, p),
+  OutputIsProjection(p_name, $i, q_name, $k) :-
+      [ ..., $p(..., $i:$x, ...), ... :- ..., $q(..., $k:$y, ...), ... .],
+      ID($p, p_name),
+      ID($q, q_name),
       ID($x, v),
-      ComputationallyInterestingOutput($p, $i, v).
+      ID($y, v),
+      NOT(OutputIsNotProjectionOf(p_name, $i, q_name, $k)).
 
-  OutputVariableIsNontrivial(pname, $i) :-
-      OutputVariableIsFiltered(pname, $i).
+  CartesianProjectionWarning(p_name, $i, $j) :-
+      [ ..., $p(..., $i:$x, ..., $j:$y, ...), ... :- ... .],
+      ID($p, p_name),
+      NOT(EQ($i, $j)),
+      NOT(VAL($x)),
+      NOT(VAL($y)),
+      OutputIsProjection(p_name, $i, q_name, $ik),
+      OutputIsProjection(p_name, $j, r_name, $jk),
+      NOT(EQ(q_name, r_name)).
 
-  OutputVariableIsNontrivial(pname, $i) :-
-      PureProjection($p, $i, $q, $k, v),
-      PureProjection($p2, $i, $q2, $k2, v2),
-      ID($p, pname),
-      ID($p2, pname),
-      ID($q, qname),
-      NOT(ID($q2, qname)).
-
-  OutputVariableIsNontrivial(pname, $i) :-
-      PureProjection($p, $i, $q, $k, v),
-      PureProjection($p2, $i, $q2, $k2, v2),
-      ID($p, pname),
-      ID($p2, pname),
-      NOT(EQ($k, $k2)).
-
-  CartesianProjectionWarning(pname, $i) :-
+  ProjectionWarning(p_name, $i, src) :-
       [ ..., $p(..., $i:$x, ...), ... :- ... .],
-      ID($p, pname),
-      NOT(OutputVariableIsNontrivial(pname, $i)).
+      ID($p, p_name),
+      NOT(VAL($x)),
+      SRC($i, src),
+      OutputIsProjection(p_name, $i, q_name, $ik).
 }
 
 OUTPUT('CartesianProjectionWarning).
+OUTPUT('ProjectionWarning).

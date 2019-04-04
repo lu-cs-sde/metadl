@@ -108,7 +108,8 @@ aspect LiteralSideEffect {
 			new ProgRelPart("BINDLiteral", triple),
 			new ProgRelPart("BinaryExclusiveTermLiteral", new Object[] {0, "", 0, 0}),
 			new ProgRelPart("Functor", triple),
-			new ProgRelPart("FunctorSymbol", pairString)};
+			new ProgRelPart("FunctorSymbol", pairString),
+			new ProgRelPart("SourceInfo", pairString)};
 		return prs;
 	}
 

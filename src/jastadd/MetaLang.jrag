@@ -377,7 +377,6 @@ aspect MetaLang {
 		ret.add(makeIdentifierRule("FunctorSymbol"));
 
 		ret.add(makeExprRule());
-
 		return ret;
 	}
 
@@ -412,6 +411,10 @@ aspect MetaLang {
 
 		when (getPRED_ID().equals("EXPR") && enclosingAnalyzeBlock() != null) to PredicateSymbol {
 			return new PredicateSymbol(getScopePrefix() + "EXPR");
+		}
+
+		when (getPRED_ID().equals("SRC") && enclosingAnalyzeBlock() != null) to PredicateSymbol {
+			return new PredicateSymbol(getScopePrefix() + "SourceInfo");
 		}
 	}
 }

@@ -132,7 +132,10 @@ clause_pattern = LBRACK inner_clause.c RBRACK {: return new ClausePattern(c); :}
 
 neg_literal = NOT LPARA common_literal.lit RPARA {: return new NEGLiteral(new PredicateSymbol("NOT"), lit); :};
 
-bind_literal = BIND LPARA variable.var COMMA expr.right RPARA {: return new BINDLiteral(new PredicateSymbol("BIND"), var, right); :};
+bind_literal = BIND LPARA variable.var COMMA expr.right RPARA {: return new BINDLiteral(new PredicateSymbol("BIND"), var, right); :}
+             |  BIND LPARA meta_variable.var COMMA expr.right RPARA {: return new BINDLiteral(new PredicateSymbol("BIND"), var, right); :}
+             ;
+
 bin_excl_term_lit = eq_literal
                   | neq_literal
                   | lt_literal

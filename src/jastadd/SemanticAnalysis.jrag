@@ -44,11 +44,11 @@ aspect ErrorCollection {
         to Program.semanticErrors();
 
     NEGLiteral contributes "Free variable(s) " + freeVars() + " in " + this + " in rule " + clause()
-        when !freeVars().isEmpty()
+        when !freeVars().isEmpty() && enclosingPattern() == null
         to Program.semanticErrors();
 
     Functor contributes "Free variable(s) " + freeVars() + " in " + this + " in rule " + occuresIn().clause()
-        when !freeVars().isEmpty()
+        when !freeVars().isEmpty() && enclosingPattern() == null
         to Program.semanticErrors();
 
     ClausePattern contributes "Nested patterns are not allowed in " + enclosingPattern()

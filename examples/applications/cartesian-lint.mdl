@@ -3,64 +3,114 @@ IMPORT("p/t3.mdl", 'Program).
 
 analyze ('Program) {
 
-  VarIsFiltered($p, v) :-
-          [ ... :- ..., $p(...), ..., $p2(..., $y, ...) . ],
-	  NOT(EQ($p, $p2)),
-	  ID($y, v).
-  VarIsFiltered($p, v) :-
-          [ ... :- ..., $p(...), ..., NOT($p2(..., $y, ...)) . ],
-	  ID($y, v).
+  VarOnRHS($p, $q, $i, v) :-
+          [ ..., $p(...), ... :- ..., $q(..., $i:$x, ...), ... . ],
+	  ID($x, v).
 
-  VAL($x) :- INT($x, val).
-  VAL($x) :- STR($x, val).
-  PredicateIsFiltered($p) :-
-          [ ... :- ..., $p(..., $x, ...), ... . ],
-	  VAL($x).
-  PredicateIsFiltered($p) :-
-          [ ... :- ..., $p(..., $x, ..., $y, ...), ... . ],
-          ID($x, v), NOT(EQ($x, $y)), ID($y, v).
-  PredicateIsFiltered($p) :-
-          [ ... :- ..., $p(..., $x, ...), .... ],
-	  ID($x, v),
-          VarIsFiltered($p, v).
+  VarOnRHS($p, $q, $i, v) :-
+          [ ..., $p(...), ... :- ..., NOT($q(..., $i:$x, ...)), ... . ],
+	  ID($x, v).
 
-  OutputIsNotProjectionOf(p_name, $i, q_name, $k) :-
-      [ ..., $p(..., $i:$x, ...), ... :- ..., $q(..., $k:$y, ...), ... .],
-      ID($p, p_name),
-      ID($q, q_name),
-      ID($x, v),
-      NOT(ID($y, v)).
+  VarInBIND($p, v) :-
+          [ ..., $p(...), ... :- ...,BIND($x, $ignore), ... . ],
+  	  ID($x, v).
 
-  OutputIsNotProjectionOf(p_name, $i, q_name, $k) :-
-      [ ..., $p(..., $i:$x, ...), ... :- ..., $q(..., $k:$y, ...), ... .],
-      ID($p, p_name),
-      ID($q, q_name),
-      PredicateIsFiltered($q).
+  VarInBIND($p, v) :-
+          [ ..., $p(...), ... :- ..., BIND($ignore, $e), ... . ],
+  	  VarInExpr($e, v).
 
-  OutputIsProjection(p_name, $i, q_name, $k) :-
-      [ ..., $p(..., $i:$x, ...), ... :- ..., $q(..., $k:$y, ...), ... .],
-      ID($p, p_name),
-      ID($q, q_name),
-      ID($x, v),
-      ID($y, v),
-      NOT(OutputIsNotProjectionOf(p_name, $i, q_name, $k)).
+  VarInExpr($e, v) :-
+          ID($e, v).
+
+  VarInExpr($e, v) :-
+          EXPR($e, i, $se), VarInExpr($se, v).
+
+  VarOnLHS($p, $i, v) :-
+          [ ..., $p(..., $i:$x, ...), ... :- ... . ],
+  	  ID($x, v).
+
+  VarElsewhereOnRHS($p, $q, $k, v) :-
+          VarOnRHS($p, $q, $k, v),
+          VarOnRHS($p, $q2, $k2, v),
+  	  NOT(EQ($q2, $q)).
+
+  VarElsewhereOnRHS($p, $q, $k, v) :-
+          VarOnRHS($p, $q, $k, v),
+          VarOnRHS($p, $q2, $k2, v),
+  	  NOT(EQ($k2, $k)).
+
+  VarUnfiltered($p, $q, $k, v) :-
+          VarOnRHS($p, $q, $k, v),
+  	  NOT(VarInBIND($p, v)),
+  	  NOT(VarElsewhereOnRHS($p, $q, $k, v)).
+
+  PredicateFiltered($q) :-
+          VarOnRHS($p, $q, $k, v),
+  	  NOT(VarUnfiltered($p, $q, $k, v)).
+
+  VarProjected($p, $i, $q, $k) :-
+          VarUnfiltered($p, $q, $k, v),
+  	  NOT(PredicateFiltered($q)),
+          VarOnLHS($p, $i, v).
+
+  VarIsProjected($p, $i) :- VarProjected($p, $i, $q, $k).
+
+  ProjectionIndicesShared($p, $i, $j) :-
+          VarProjected($p, $i, $q, $k1),
+          VarProjected($p, $j, $q, $k2).
+
+  ProjectionIndicesSharedN(p_name, $i, $j) :-
+          ProjectionIndicesShared($p, $i, $j),
+  	  ID($p, p_name).
+
+  InconsistentProjectionN(p_name, $i) :-
+          VarProjected($p, $i, $q, $k),
+  	  VarOnLHS($p2, $i, v),
+  	  ID($p, p_name),
+  	  ID($p2, p_name),
+  	  NOT(VarIsProjected($p2, $i)).
+
+  InconsistentProjectionN(p_name, $i) :-
+          VarProjected($p, $i, $q, $k),
+          VarProjected($p2, $i, $q2, $k2),
+  	  ID($p, p_name),
+  	  ID($p2, p_name),
+  	  NOT(EQ($k, $k2)).
+
+  InconsistentProjectionN(p_name, $i) :-
+          VarProjected($p, $i, $q, $k),
+          VarProjected($p2, $i, $q2, $k2),
+  	  ID($p, p_name),
+  	  ID($p2, p_name),
+  	  ID($q, q_name),
+  	  ID($q2, q2_name),
+  	  NOT(EQ(q_name, q2_name)).
+
+  InconsistentProjectionN(p_name, $i) :-
+          VarProjected($p, $i, $q, $k2),
+          VarProjected($p, $j, $q, $k3),
+          VarProjected($p2, $i, $q2, $k2),
+  	  VarProjected($p2, $j, $q3, $k3),
+  	  ID($p, p_name),
+  	  ID($p2, p_name),
+  	  ID($q, q_name),
+  	  ID($q2, q_name),
+  	  ID($q3, q_name),
+  	  NOT(EQ($q2, $q3)). # in one case we project from one occurrence of Q, in another we project from two distinct ones.
+
+  VarProjectedN(p_name, $i, q_name) :-
+          VarProjected($p, $i, $q, $k),
+  	  ID($p, p_name),
+  	  ID($p, q_name),
+  	  NOT(InconsistentProjectionN(p_name, $i)).
+
+  ProjectionWarning(p_name, $i) :- VarProjectedN(p_name, $i, q_name).
 
   CartesianProjectionWarning(p_name, $i, $j) :-
-      [ ..., $p(..., $i:$x, ..., $j:$y, ...), ... :- ... .],
-      ID($p, p_name),
-      NOT(EQ($i, $j)),
-      NOT(VAL($x)),
-      NOT(VAL($y)),
-      OutputIsProjection(p_name, $i, q_name, $ik),
-      OutputIsProjection(p_name, $j, r_name, $jk),
-      NOT(EQ(q_name, r_name)).
+          VarProjectedN(p_name, $i, q_name),
+          VarProjectedN(p_name, $j, q2_name),
+  	  NOT(ProjectionIndicesSharedN(p_name, $i, $j)).
 
-  ProjectionWarning(p_name, $i, src) :-
-      [ ..., $p(..., $i:$x, ...), ... :- ... .],
-      ID($p, p_name),
-      NOT(VAL($x)),
-      SRC($i, src),
-      OutputIsProjection(p_name, $i, q_name, $ik).
 }
 
 OUTPUT('CartesianProjectionWarning).

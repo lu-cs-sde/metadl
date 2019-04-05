@@ -129,20 +129,24 @@ public class CSVUtil {
 		return r;
 	}
 
-	public static void dumpFileInto(FormalPredicate sp, File f) {
-		try (CSVWriter writer = new CSVWriter(new OutputStreamWriter(new FileOutputStream(f)),
+	public static void dumpFileInto(Relation r, File f, boolean append) {
+		try (CSVWriter writer = new CSVWriter(new OutputStreamWriter(new FileOutputStream(f, append)),
 											  Compiler.getCSVSeparator(),
 											  CSVWriter.NO_QUOTE_CHARACTER,
 											  CSVWriter.DEFAULT_ESCAPE_CHARACTER,
 											  CSVWriter.RFC4180_LINE_END)) {
 
             SimpleLogger.logger().log("Write Relation: " + f.getPath(), SimpleLogger.LogLevel.Level.DEBUG);
-			sp.relation.tuples().forEach(t -> {
-				writer.writeNext(t.toStringArray());
-			});
+			r.tuples().forEach(t -> {
+					writer.writeNext(t.toStringArray());
+				});
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+	}
+
+	public static void dumpFileInto(FormalPredicate sp, File f) {
+		dumpFileInto(sp.relation, f, false);
 	}
 
 	public static void dumpFormalPredicatesInto(Program p, File f) {

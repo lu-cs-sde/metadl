@@ -6,6 +6,8 @@ import lang.ast.FormalPredicate;
 import lang.ast.Literal;
 import lang.ast.PredicateRef;
 import lang.ast.GlobalNames;
+import lang.ast.StringConstant;
+import lang.ast.IMPORTLiteral;
 import lang.relation.PseudoTuple;
 import lang.relation.Relation;
 import lang.io.FileUtil;
@@ -15,6 +17,9 @@ import lang.Compiler;
 import lang.evaluation.BottomUpNaiveIterative;
 import java.util.Set;
 import java.util.HashSet;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.ArrayList;
 import java.io.InputStreamReader;
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -207,16 +212,63 @@ aspect Souffle {
         	}
         }
 
-	// Add IMPORT to the formal predicate map. The facts produced by the IMPORT statement
-	// will be exported in the generated souffle file.
-	FormalPredicate meta_import = program.formalPredicateMap().get(GlobalNames.IMPORT_NAME);
-	FormalPredicate initial_import = initial.formalPredicateMap().get(GlobalNames.IMPORT_NAME);
-	if (initial_import != null && meta_import != null) {
-	    initial_import.relation = new Relation(initial_import.realArity());
-	    for (PseudoTuple ps : meta_import.relation.tuples())
-		initial_import.relation.addTuple(ps);
-	}
+		// Add IMPORT to the formal predicate map. The facts produced by the IMPORT statement
+		// will be exported in the generated souffle file.
+		FormalPredicate meta_import = program.formalPredicateMap().get(GlobalNames.IMPORT_NAME);
+		FormalPredicate initial_import = initial.formalPredicateMap().get(GlobalNames.IMPORT_NAME);
+		if (initial_import != null && meta_import != null) {
+			initial_import.relation = new Relation(initial_import.realArity());
+			for (PseudoTuple ps : meta_import.relation.tuples())
+				initial_import.relation.addTuple(ps);
 
+			// map predicate name to program source files, to handle the case when multiple
+			// files are imported to the same program relation.
+			HashMap<String, ArrayList<String>> predicateSrcFiles = new HashMap<>();
+			for (PseudoTuple ps : initial_import.relation.tuples()) {
+				String progFileLoc = ((StringConstant)ps.coord(0)).getSTRING();
+				PredicateRef predref = (PredicateRef)(ps.coord(1));
+				String predName = predref.getPRED_ID();
+
+				ArrayList<String> files = predicateSrcFiles.get(predName);
+				if (files != null) {
+					files.add(progFileLoc);
+				} else {
+					files = new ArrayList<>();
+					files.add(progFileLoc);
+					predicateSrcFiles.put(predName, files);
+				}
+			}
+
+			for (Map.Entry<String, ArrayList<String>> predicateSrcFile : predicateSrcFiles.entrySet()) {
+				String predName = predicateSrcFile.getKey();
+				output_fp = new File(factsDir() + "/" + predName + ".csv");
+				if(output_fp.exists() && !output_fp.isDirectory()) {
+					SimpleLogger.logger().log("Move: " + output_fp.getName() + " from  " + factsDir() + " to " + tmp_dir_2.getPath(),
+											  SimpleLogger.LogLevel.Level.DEBUG);
+					File mv_file = new File(tmp_dir_2.getPath() + "/" + output_fp.getName());
+					Files.move(output_fp.toPath(), mv_file.toPath(), StandardCopyOption.REPLACE_EXISTING);
+					moved.add(mv_file);
+				}
+
+				boolean append = false;
+				for (String progFileLoc : predicateSrcFile.getValue()) {
+					Program importedProgram = null;
+					try {
+						importedProgram = (Program) FileUtil.parse(new File(progFileLoc));
+					} catch(Exception e) {
+						SimpleLogger.logger().log("Could not open file for IMPORT: "
+												  + progFileLoc, SimpleLogger.LogLevel.Level.ERROR);
+						System.exit(1);
+					}
+
+					HashMap<String, Relation> nameToRelMap = importedProgram.datalogProjection().nameToRelMap;
+					Relation programRel = IMPORTLiteral.programToRelation(importedProgram);
+
+					CSVUtil.dumpFileInto(programRel, output_fp, append);
+					append = true;
+				}
+			}
+		}
         return initial;
     }
 

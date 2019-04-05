@@ -616,34 +616,16 @@ aspect SoufflePrinting {
 		IMPORTLiteral importLiteral = (IMPORTLiteral) fp.literal();
 
 		for (PseudoTuple ps : fp.relation.tuples()) {
-			String progFileLoc = ((StringConstant)ps.coord(0)).getSTRING();
-			Program importedProgram = null;
-
-			try {
-				importedProgram = (Program) FileUtil.parse(new File(progFileLoc));
-			} catch(Exception e) {
-				SimpleLogger.logger().log("Could not open file for IMPORT: " + ps.coord(0).toString(), SimpleLogger.LogLevel.Level.ERROR);
-				System.exit(1);
-			}
-
-			HashMap<String, Relation> nameToRelMap = importedProgram.datalogProjection().nameToRelMap;
-
 			PredicateRef predref = (PredicateRef)(ps.coord(1));
 			String predName = predref.getPRED_ID();
-
-			Relation programRel = IMPORTLiteral.programToRelation(importedProgram);
-
-			for (PseudoTuple fact : programRel.tuples()) {
-				pr.out.print(predName + "(");
-				pr.out.print(souffleConstantToString((Constant)fact.coord(0)));
-
-				for (int i = 1; i < fact.arity(); ++i) {
-					pr.out.print(", ");
-					pr.out.print(souffleConstantToString((Constant)fact.coord(i)));
-				}
-
-				pr.out.print(").\n");
-			}
+			String fileLoc = predName + ".csv";
+            pr.out.print(".input ");
+            pr.out.print(predName);
+            pr.out.print("(filename=\"");
+            pr.out.print(fileLoc);
+            pr.out.print("\", delimiter=\"");
+			pr.out.print(Compiler.getCSVSeparatorEscaped());
+            pr.out.print("\")\n");
 		}
     }
 

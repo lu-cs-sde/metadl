@@ -108,7 +108,7 @@ AssignReturnValue("", "") :- NEQ(0, 0).
 
 # .decl ActualParam(v_index:number, v_invocation:MethodInvocation, v_var:Var)
 # .input ActualParam(IO="file", filename="ActualParam.facts", delimiter="\t")
-EBD('ActualParam, "ActualParam.facts").
+EDB('ActualParam, "ActualParam.facts").
 ActualParam(0, "", "") :- NEQ(0, 0).
 
 # .decl VirtualMethodInvocation_Base(v_invocation:VirtualMethodInvocation_Insn, v_base:Var)
@@ -163,6 +163,7 @@ Var_DeclaringMethod(v_var, v_method) :-
   Var_DeclaringMethod(v_var, v_method).
 # .decl _ApplicationClass(v_type:symbol)
 # .input _ApplicationClass(IO="file", filename="ApplicationClass.facts", delimiter="\t")
+EDB('ApplicationClass, "ApplicationClass.facts").
 ApplicationClass("") :- NEQ(0, 0).
 IsType(v_type),
 IsReferenceType(v_type),

@@ -1,0 +1,18 @@
+IMPORT("tests/evaluation/withimport/evalTest_10_input.mdl", 'Program).
+
+# Extract predicates referred in the deprecated relation
+
+analyze('Program) {
+ Deprecated(p) :- [ $d($p) . ], ID($d, "Deprecated"), REF($p, p).
+ Warning(p, l) :- [ ... :- ..., $p(...), ... . ],
+                  ID($p, p), Deprecated(p), SRC($p, l).
+
+ Warning(p, l) :- [ ..., $p(...), ... :- ... . ],
+                  ID($p, p), Deprecated(p), SRC($p, l).
+
+ Warning(p, l) :- [ ..., $p(...), ... . ],
+                  ID($p, p), Deprecated(p), SRC($p, l).
+}
+
+
+OUTPUT('Warning).

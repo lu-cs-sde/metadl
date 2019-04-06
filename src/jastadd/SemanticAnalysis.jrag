@@ -29,7 +29,7 @@ aspect ErrorCollection {
     }
 
     Literal contributes "Non-ground fact: " + this
-        when !isGround() && isFact()
+        when !isGround() && isFact() && enclosingPattern() == null
         to Program.semanticErrors();
 
     Rule contributes "Unbound variable(s): " + unboundVariables() + " in " + this

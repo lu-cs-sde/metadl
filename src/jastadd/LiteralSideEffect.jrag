@@ -99,7 +99,7 @@ aspect LiteralSideEffect {
 			new ProgRelPart("PredicateSymbol", pairString),
 			new ProgRelPart("IntConstant", new Object[]{0, 0}),
 			new ProgRelPart("StringConstant", pairString),
-			new ProgRelPart("PredicateRef", new Object[]{0, new PredicateRef("DUMMYPREDREF")}),
+			new ProgRelPart("PredicateRef", pairString),
 			new ProgRelPart("Variable", pairString),
 			new ProgRelPart("IMPORTLiteral", triple),
 			new ProgRelPart("EDBLiteral", triple),

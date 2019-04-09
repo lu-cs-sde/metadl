@@ -90,7 +90,7 @@ Special metapredicates are permitted only inside ~analyze~ blocks.
 ** License
 
 This repository is covered by the license BSD 2-clause, see
-[[./LICENSE.md][LICENSE.md]].
+[[./LICENSE][LICENSE]].
 
 ** Dependencies
 *** JFlex

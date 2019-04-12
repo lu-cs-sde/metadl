@@ -1,0 +1,101 @@
+/**
+	Program
+**/
+Program  ::= CommonClause* ;
+
+/**
+   Clause
+**/
+abstract CommonClause;
+abstract Clause : CommonClause ::= Heads:CommonLiteral*;
+Rule:Clause ::= Body:CommonLiteral*;
+Fact:Clause;
+AnalyzeBlock:CommonClause ::= ProgramRef:PredicateRef Clause*;
+
+/**
+   Literals
+**/
+abstract CommonLiteral ::= [Index:MetaVariable];
+MetaAtom:CommonLiteral ::= Predicate:MetaVariable Term*;
+abstract Literal:CommonLiteral ::= Predicate:PredicateSymbol;
+
+abstract BinaryExclusiveTermLiteral:Literal ::= Left:Expr Right:Expr;
+
+
+
+Atom:Literal          ::= Terms:Term*;
+EDBLiteral:Literal    ::= PredicateRef FileLoc:Term;
+OUTPUTLiteral:Literal ::= Term;
+PREDLiteral:Literal   ::= Term ;
+ATOMLiteral:Literal   ::= Term ;
+TYPEOFLiteral:Literal ::= PredicateRef:Term Term;
+NEGLiteral:Literal    ::= Literal:CommonLiteral;
+
+BINDLiteral:Literal ::= Variable:CommonVariable Right:Expr;
+IMPORTLiteral:Literal ::= FileLoc:Term ProgramRef:PredicateRef;
+
+EQLiteral:BinaryExclusiveTermLiteral;
+NEQLiteral:BinaryExclusiveTermLiteral;
+LTLiteral:BinaryExclusiveTermLiteral;
+LTELiteral:BinaryExclusiveTermLiteral;
+GTLiteral:BinaryExclusiveTermLiteral;
+GTELiteral:BinaryExclusiveTermLiteral;
+EQLISTLiteral:Literal ::= TermList;
+
+LiteralGap:CommonLiteral;
+
+/**
+	Expressions
+**/
+abstract Expr;
+Functor : Expr ::= Func:FunctorSymbol Arg:Expr*;
+// abstract BinExpr:Expr ::= Left:Expr Right:Expr;
+// AddExpr:BinExpr;
+// SubExpr:BinExpr;
+// MulExpr:BinExpr;
+// DivExpr:BinExpr;
+
+/**
+	Types
+**/
+abstract Type:Constant;
+abstract ConcreteType:Type;
+
+StringType:ConcreteType;
+IntegerType:ConcreteType;
+PredRefType:ConcreteType;
+
+TypeType:ConcreteType;
+VariableType:ConcreteType;
+ListType:Type  ::= Type;
+UnknownType:Type;
+BadType:Type;
+
+/**
+    Terms
+**/
+abstract Term:Expr ::= [Index:MetaVariable];
+abstract Constant:Term;
+abstract CommonVariable:Term;
+
+MetaVariable : CommonVariable ::= <METAVAR_ID>;
+
+Variable:CommonVariable ::= <VAR_ID>;
+PredicateRef:Constant   ::= <PRED_ID>;
+StringConstant:Constant ::= <STRING>;
+IntConstant:Constant    ::= <NUMERAL>;
+TermList:Constant       ::= Terms:Term*;
+TermGap:Term;
+
+/**
+    PredicateSymbols
+**/
+PredicateSymbol ::= <PRED_ID>;
+FunctorSymbol ::= <FUNC_ID>;
+
+/**
+   Patterns
+**/
+abstract MetaPattern : CommonLiteral;
+
+ClausePattern : MetaPattern ::= Clause;

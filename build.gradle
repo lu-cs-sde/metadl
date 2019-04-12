@@ -101,14 +101,23 @@ jar {
 }
 
 // Before compiling, we should generate some Java code:
-compileJava.dependsOn 'generateJava', 'generateScanner', 'generateParser', 'generateConfig', 'generateScannerConfig', 'generateParserConfig'
+compileJava.dependsOn 'generateJava', 'generateJavaMetalang',
+    'generateScanner',
+    'generateParser', 'generateParserMetalang',
+    'generateConfig', 'generateScannerConfig', 'generateParserConfig'
 
-task generateJava(type: org.jastadd.JastAddTask) {
-    description 'Generates the compiler AST classes from JastAdd specifications.'
-    outputDir = file('src/gen')
-    sources = fileTree(dir: 'src/jastadd', includes: [ '**/*.jrag', '**/*.jadd', '**/*.ast' ])
-    options = [ '--package=lang.ast', '--beaver' , '--rewrite=cnta' ]
+
+void makeGenerateJavaTask(String name, String outDir, String srcDir, String pkg) {
+    tasks.create(name, org.jastadd.JastAddTask) {
+	description 'Generates the compiler AST classes from JastAdd specifications.'
+	outputDir = file(outDir)
+	sources = fileTree(dir: srcDir, includes: [ '**/*.jrag', '**/*.jadd', '**/*.ast' ])
+	options = [ '--package=' + pkg, '--beaver' , '--rewrite=cnta' ]
+    }
 }
+
+makeGenerateJavaTask('generateJava', 'src/gen', 'src/jastadd', 'lang.ast')
+makeGenerateJavaTask('generateJavaMetalang', 'src/gen', 'src/metalang/jastadd', 'metalang.ast')
 
 task generateScanner(type: JavaExec) {
     description 'Generates the scanner with JFlex.'
@@ -124,21 +133,27 @@ task generateScanner(type: JavaExec) {
     }
 }
 
-task generateParser(type: JavaExec) {
-    description 'Generates the parser with Beaver.'
-    classpath = configurations.beaver
-    main = 'beaver.comp.run.Make'
+void makeGenerateParserTask(String name, String outDir, String srcFile) {
+    tasks.create(name, JavaExec) {
+	description 'Generates the parser with Beaver.'
+	classpath = configurations.beaver
+	main = 'beaver.comp.run.Make'
 
-    // Options to Beaver (http://beaver.sourceforge.net/):
-    args '-d', file('src/gen').path,
-    '-t', '-c', '-w',
-    file('src/parser/parser.beaver').path
+	// Options to Beaver (http://beaver.sourceforge.net/):
+	args '-d', file(outDir).path,
+	    '-t', '-c', '-w',
+	    file(srcFile).path
 
-    doFirst {
-        // Ensure src/gen exists before running Beaver:
-        file('src/gen').mkdirs()
+	doFirst {
+            // Ensure src/gen exists before running Beaver:
+            file(outDir).mkdirs()
+	}
     }
 }
+
+makeGenerateParserTask('generateParser', 'src/gen', 'src/parser/parser.beaver')
+makeGenerateParserTask('generateParserMetalang', 'src/gen', 'src/metalang/parser/parser.beaver')
+
 
 task generateConfig(type: org.jastadd.JastAddTask) {
     description 'Generates the compiler AST classes from JastAdd specifications.'

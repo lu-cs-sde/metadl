@@ -11,8 +11,8 @@
 
 %terminals VAR_ID, METAVAR_ID, PRED_ID, PRED_REF, LPARA, RPARA, LBRACK, RBRACK, LBRACE, RBRACE, ELLIPSIS, COLON,
            NUMERAL, STRING, DOT, COMMA, IMPLIED_BY, EDB, OUTPUT, IMPORT, PRED,
-           ATOM, NOT, BIND,  EQ, EQLIST, NEQ, LT, LTE, GT, GTE, ADD, SUB, MUL, DIV,
-           TYPEOF, TYPE_TYPE, STRING_TYPE, INTEGER_TYPE, PRED_REF_TYPE, LIST_TYPE, ANALYZE;
+           ATOM, NOT, BIND,  EQ, NEQ, LT, LTE, GT, GTE, ADD, SUB, MUL, DIV,
+           TYPEOF, ANALYZE;
 
 %typeof  program             =  "Program";
 %typeof  clause              =  "CommonClause";
@@ -29,7 +29,6 @@
 %typeof  atom_literal        =  "ATOMLiteral";
 %typeof  neg_literal         =  "NEGLiteral";
 %typeof  eq_literal          =  "EQLiteral";
-%typeof  eq_list_literal     =  "EQLISTLiteral";
 %typeof  neq_literal         =  "NEQLiteral";
 %typeof  lt_literal          =  "LTLiteral";
 %typeof  lte_literal         =  "LTELiteral";
@@ -47,8 +46,6 @@
 %typeof  term_opt_index      =  "Term";
 %typeof  term_list           =  "List";
 %typeof  term_list_no_empty  =  "List";
-%typeof  term_list_space     =  "List";
-%typeof  term_list_space_no_empty  =  "List";
 %typeof  lit_list            =  "List";
 %typeof  clause_list         =  "List";
 %typeof  inner_clause_list   =  "List";
@@ -64,14 +61,6 @@
 %typeof  sub_expr            =  "Functor";
 %typeof  mul_expr            =  "Functor";
 %typeof  div_expr            =  "Functor";
-%typeof  term_list_term      =  "TermList";
-%typeof  type_term           =  "Type";
-%typeof  concrete_type       =  "ConcreteType";
-%typeof  type_type           =  "Type";
-%typeof  string_type         =  "StringType";
-%typeof  integer_type        =  "IntegerType";
-%typeof  pred_ref_type       =  "PredRefType";
-%typeof  list_type           =  "ListType";
 %typeof  analyze_block       =  "AnalyzeBlock";
 %typeof  clause_pattern      =  "ClausePattern";
 %typeof  meta_atom           =  "MetaAtom";
@@ -120,7 +109,6 @@ literal = gap_literal
         | neg_literal
         | bind_literal
         | bin_excl_term_lit
-        | eq_list_literal
         | pred_literal
         | atom_literal
         ;
@@ -150,8 +138,6 @@ lt_literal  = LT  LPARA expr.left COMMA expr.right RPARA {: return new LTLiteral
 lte_literal = LTE LPARA expr.left COMMA expr.right RPARA {: return new LTELiteral(new PredicateSymbol("LTE"), left, right); :};
 gt_literal  = GT  LPARA expr.left COMMA expr.right RPARA {: return new GTLiteral(new PredicateSymbol("GT"),   left, right); :};
 gte_literal = GTE LPARA expr.left COMMA expr.right RPARA {: return new GTELiteral(new PredicateSymbol("GTE"), left, right); :};
-
-eq_list_literal = EQLIST LPARA term_list_term.terms RPARA {: return new EQLISTLiteral(new PredicateSymbol("EQLIST"),   terms); :};
 
 atom = pred_sym.pred LPARA term_list.terms RPARA                      {: return new Atom(pred, terms); :};
 edb_literal    = EDB    LPARA pred_ref.pred COMMA term.filelocs RPARA {: return new EDBLiteral(new PredicateSymbol("EDB"), pred, filelocs);  :};
@@ -223,8 +209,6 @@ term = variable
      | meta_variable
      | constant
      | pred_ref
-     | term_list_term
-     | type_term
      | term_gap
      ;
 
@@ -241,31 +225,5 @@ constant = int_constant
 
 int_constant    = NUMERAL.num {: return new IntConstant((String)num.value); :};
 string_constant = STRING.str {: return new StringConstant((String)str.value); :};
-term_list_term  = LBRACK term_list_space.tl RBRACK {: return new TermList(tl); :};
-
-term_list_space = term_list_space_no_empty
-          | /* epsilon */ {: return new List(); :}
-          ;
-
-term_list_space_no_empty = term.t {: return new List().add(t); :}
-                   | term_list_space_no_empty.list term.t {: return list.add(t); :}
-                   ;
-
-type_term = concrete_type
-          | list_type
-          ;
-
-type_type = TYPE_TYPE {: return new TypeType(); :};
-
-concrete_type = integer_type
-              | string_type
-              | pred_ref_type
-              | type_type
-              ;
-
-integer_type  = INTEGER_TYPE  {: return new IntegerType(); :};
-string_type   = STRING_TYPE   {: return new StringType();  :};
-pred_ref_type = PRED_REF_TYPE {: return new PredRefType(); :};
-list_type     = LIST_TYPE LPARA concrete_type.embell RPARA {: return new ListType(embell); :};
 
 term_gap = ELLIPSIS {: return new TermGap(); :};

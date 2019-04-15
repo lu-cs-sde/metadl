@@ -40,7 +40,6 @@ LTLiteral:BinaryExclusiveTermLiteral;
 LTELiteral:BinaryExclusiveTermLiteral;
 GTLiteral:BinaryExclusiveTermLiteral;
 GTELiteral:BinaryExclusiveTermLiteral;
-EQLISTLiteral:Literal ::= TermList;
 
 LiteralGap:CommonLiteral;
 
@@ -56,22 +55,6 @@ Functor : Expr ::= Func:FunctorSymbol Arg:Expr*;
 // DivExpr:BinExpr;
 
 /**
-	Types
-**/
-abstract Type:Constant;
-abstract ConcreteType:Type;
-
-StringType:ConcreteType;
-IntegerType:ConcreteType;
-PredRefType:ConcreteType;
-
-TypeType:ConcreteType;
-VariableType:ConcreteType;
-ListType:Type  ::= Type;
-UnknownType:Type;
-BadType:Type;
-
-/**
     Terms
 **/
 abstract Term:Expr ::= [Index:MetaVariable];
@@ -84,7 +67,6 @@ Variable:CommonVariable ::= <VAR_ID>;
 PredicateRef:Constant   ::= <PRED_ID>;
 StringConstant:Constant ::= <STRING>;
 IntConstant:Constant    ::= <NUMERAL>;
-TermList:Constant       ::= Terms:Term*;
 TermGap:Term;
 
 /**

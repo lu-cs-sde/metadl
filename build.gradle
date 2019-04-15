@@ -101,9 +101,8 @@ jar {
 }
 
 // Before compiling, we should generate some Java code:
-compileJava.dependsOn 'generateJava', 'generateJavaMetalang',
-    'generateScanner',
-    'generateParser', 'generateParserMetalang',
+compileJava.dependsOn 'generateJava', 'generateScanner', 'generateParser',
+    'generateParserMetalang', 'generateJavaMetalang',
     'generateConfig', 'generateScannerConfig', 'generateParserConfig'
 
 

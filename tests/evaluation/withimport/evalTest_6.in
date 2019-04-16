@@ -4,8 +4,9 @@ IMPORT("tests/evaluation/withimport/evalTest_6_input.mdl", 'Program).
 
 analyze ('Program) {
 	DirectDep(p_name, q_name) :- [...,$p(...),... :- ...,$q(...),... .], ID($p, p_name), ID($q, q_name).
-	DirectDepNeg(p_name, q_name),DirectDep(p_name, q_name) :- [...,$p(...),... :- ...,NOT($q(...)),... .],
-			     			       	  ID($p, p_name), ID($q, q_name).
+	DirectDepNeg(p_name, q_name),
+	DirectDep(p_name, q_name) :- [...,$p(...),... :- ...,NOT($q(...)),... .],
+	                             ID($p, p_name), ID($q, q_name).
 }
 
 Dep(p_name, q_name) :- DirectDep(p_name, q_name).
@@ -15,19 +16,10 @@ Dep(p_name, q_name) :- Dep(p_name, r_name), DirectDep(r_name, q_name).
 # They form the 0 stratum. When we will be able to analyze OUTPUT predicates,
 # the predicates refered by the OUTPUT should form the 0 stratum instead.
 
+SameStratum(p_name, q_name) :- Dep(p_name, q_name), Dep(q_name, p_name).
+Error(p_name, q_name) :- SameStratum(p_name, q_name), DirectDepNeg(p_name, q_name).
+ParentStratum(p_name, q_name) :- DirectDep(p_name, q_name), NOT(SameStratum(p_name, q_name)).
 
-NonTerminal(p_name) :- Dep(x, p_name).
-Terminal(q_name) :- Dep(q_name, x), NOT(NonTerminal(q_name)).
-
-# Compute a stratum relative to a terminal predicate
-Stratum(root, 0) :- Terminal(root).
-Stratum(q_name, i) :- Dep(p_name, q_name), Dep(q_name, p_name), Stratum(p_name, i).
-Stratum(q_name, i) :- Stratum(p_name, j), DirectDep(p_name, q_name), NOT(Dep(q_name, p_name)), BIND(i, j+1).
-
-# Non-strafiable dependency due to negation
-NonStratDep(p_name, q_name) :- Stratum(p_name, i), Stratum(q_name, i), DirectDepNeg(p_name, q_name).
-
-OUTPUT('Stratum).
-OUTPUT('Dep).
-OUTPUT('Terminal).
-OUTPUT('NonStratDep).
+OUTPUT('SameStratum).
+OUTPUT('ParentStratum).
+OUTPUT('Error).

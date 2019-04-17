@@ -68,6 +68,7 @@
 
 
 %goal program;
+%goal inner_clause;
 
 program =  clause_list.list {: return new Program(list); :};
 

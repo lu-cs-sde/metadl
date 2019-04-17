@@ -211,6 +211,10 @@ aspect PretyPrinting {
 		printList(getLiterals(), "", "", ", ", pr);
 	}
 
+	public void Pattern.prettyPrint(PrettyPrinter pr) {
+		printList(getLiterals(), "", "", ", ", pr);
+	}
+
 	public void AnalyzeBlock.prettyPrint(PrettyPrinter pr) {
 		// pr.out.print("analyze (");
 		// pr.prettyPrint(getProgramRef());

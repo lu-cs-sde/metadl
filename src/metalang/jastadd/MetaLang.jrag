@@ -19,9 +19,9 @@ aspect MetaLang {
 	   factored out to ensure that the relational
 	   representation of a program matches the code generated for a pattern.
 	 */
-	syn lang.ast.List<lang.ast.Literal> ASTNode.asLiterals();
+	syn lang.ast.List<lang.ast.Literal> ASTNode.asLiterals(String scopePrefix);
 
-	eq ASTNode.asLiterals() {
+	eq ASTNode.asLiterals(String scopePrefix) {
 		lang.ast.List<lang.ast.Literal> literals = new lang.ast.List<>();
 
 		int childIndex = 0;
@@ -34,7 +34,7 @@ aspect MetaLang {
 			terms.add(new lang.ast.Variable(varName()));
 			terms.add(new lang.ast.IntConstant("" + childIndex++));
 			terms.add(new lang.ast.Variable(getChild(i).varName()));
-			literals.add(new lang.ast.Atom(new lang.ast.PredicateSymbol(getScopePrefix() + getRelation()), terms));
+			literals.add(new lang.ast.Atom(new lang.ast.PredicateSymbol(scopePrefix + getRelation()), terms));
 		}
 		return literals;
 	}
@@ -110,14 +110,14 @@ aspect MetaLang {
 		return clauses;
 	}
 
-	eq List.asLiterals() {
+	eq List.asLiterals(String scopePrefix) {
 		ArrayList<Constraint> cons = constraints();
 		if (cons.isEmpty())
-			return super.asLiterals();
+			return super.asLiterals(scopePrefix);
 
 		lang.ast.List<lang.ast.Literal> lits = new lang.ast.List<>();
 		for (Constraint c : cons)
-			lits.addAll(c.generateLiterals(getScopePrefix()));
+			lits.addAll(c.generateLiterals(scopePrefix));
 		return lits;
 	}
 
@@ -126,8 +126,8 @@ aspect MetaLang {
 	eq IntConstant.constantValue() = new lang.ast.IntConstant(getNUMERAL());
 	eq PredicateRef.constantValue() = new lang.ast.PredicateRef(getPRED_ID());
 
-	eq Constant.asLiterals() {
-		lang.ast.PredicateSymbol pred = new lang.ast.PredicateSymbol(getScopePrefix() + getRelation());
+	eq Constant.asLiterals(String scopePrefix) {
+		lang.ast.PredicateSymbol pred = new lang.ast.PredicateSymbol(scopePrefix + getRelation());
 		lang.ast.List<lang.ast.Literal> literals = new lang.ast.List<>();
 		lang.ast.List<lang.ast.Term> terms = new lang.ast.List<>();
 		terms.add(new lang.ast.Variable(varName()));
@@ -139,8 +139,8 @@ aspect MetaLang {
 		return literals;
 	}
 
-	eq Variable.asLiterals() {
-		lang.ast.PredicateSymbol pred = new lang.ast.PredicateSymbol(getScopePrefix() + getRelation());
+	eq Variable.asLiterals(String scopePrefix) {
+		lang.ast.PredicateSymbol pred = new lang.ast.PredicateSymbol(scopePrefix + getRelation());
 		lang.ast.List<lang.ast.Literal> literals = new lang.ast.List<>();
 		lang.ast.List<lang.ast.Term> terms = new lang.ast.List<>();
 		terms.add(new lang.ast.Variable(varName()));
@@ -149,8 +149,8 @@ aspect MetaLang {
 		return literals;
 	}
 
-	eq PredicateSymbol.asLiterals() {
-		lang.ast.PredicateSymbol pred = new lang.ast.PredicateSymbol(getScopePrefix() + getRelation());
+	eq PredicateSymbol.asLiterals(String scopePrefix) {
+		lang.ast.PredicateSymbol pred = new lang.ast.PredicateSymbol(scopePrefix + getRelation());
 		lang.ast.List<lang.ast.Literal> literals = new lang.ast.List<>();
 		lang.ast.List<lang.ast.Term> terms = new lang.ast.List<>();
 		terms.add(new lang.ast.Variable(varName()));
@@ -159,8 +159,8 @@ aspect MetaLang {
 		return literals;
 	}
 
-	eq FunctorSymbol.asLiterals() {
-		lang.ast.PredicateSymbol pred = new lang.ast.PredicateSymbol(getScopePrefix() + getRelation());
+	eq FunctorSymbol.asLiterals(String scopePrefix) {
+		lang.ast.PredicateSymbol pred = new lang.ast.PredicateSymbol(scopePrefix + getRelation());
 		lang.ast.List<lang.ast.Literal> literals = new lang.ast.List<>();
 		lang.ast.List<lang.ast.Term> terms = new lang.ast.List<>();
 		terms.add(new lang.ast.Variable(varName()));
@@ -185,14 +185,14 @@ aspect MetaLang {
 	eq LiteralGap.isGap() = true;
 	eq TermGap.isGap() = true;
 
-	eq MetaVariable.asLiterals() = new lang.ast.List<>();
-	eq Opt.asLiterals() = new lang.ast.List<>();
-	eq ClausePattern.asLiterals() = new lang.ast.List<>();
+	eq MetaVariable.asLiterals(String scopePrefix) = new lang.ast.List<>();
+	eq Opt.asLiterals(String scopePrefix) = new lang.ast.List<>();
+	eq ClausePattern.asLiterals(String scopePrefix) = new lang.ast.List<>();
 	eq MetaVariable.varName() = "mv_" + getMETAVAR_ID();
 
 	// Collect all the literals resulting from a ClausePattern
-	ASTNode contributes asLiterals() to ClausePattern.literals();
-	coll lang.ast.List<lang.ast.CommonLiteral> ClausePattern.literals() with addAll root ClausePattern;
+	// ASTNode contributes asLiterals() to ClausePattern.literals();
+	// coll lang.ast.List<lang.ast.CommonLiteral> ClausePattern.literals() with addAll root ClausePattern;
 	coll ArrayList<lang.ast.Clause> AnalyzeBlock.clauses() with addAll root AnalyzeBlock;
 	List contributes clauses() to AnalyzeBlock.clauses();
 

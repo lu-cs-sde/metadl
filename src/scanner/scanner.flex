@@ -34,6 +34,7 @@ VAR_ID = [a-z][a-zA-Z0-9_]*
 METAVAR_ID = "$"{VAR_ID}
 PRED_ID = [A-Z][a-zA-Z0-9_]*
 PRED_REF = '{PRED_ID}
+Pattern = "<:" ({InputCharacter}|{WhiteSpace})*":>"
 Numeral = [0-9]+
 String  = \"[^\"]*\"
 %%
@@ -92,7 +93,15 @@ String  = \"[^\"]*\"
                 String text = yytext();
                 String data = text.substring(1, text.length());
                 return new beaver.Symbol(Terminals.PRED_REF, yyline + 1, yycolumn + 1, yylength() - 1, data);
-		   }
+           }
+
+{Pattern}  {
+                // Remove Quotes from Matched String.
+                String text = yytext();
+                String data = text.substring(2, text.length() - 2);
+                return new beaver.Symbol(Terminals.PATTERN, yyline + 1, yycolumn + 1, yylength() - 3, data);
+           }
+
 {String}   {
                 // Remove Quotes from Matched String.
                 String text = yytext();

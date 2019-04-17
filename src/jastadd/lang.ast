@@ -100,3 +100,4 @@ FunctorSymbol ::= <FUNC_ID>;
 abstract MetaPattern : CommonLiteral;
 
 ClausePattern : MetaPattern ::= Clause;
+Pattern : MetaPattern ::= <PATTERN>;

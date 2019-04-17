@@ -12,7 +12,7 @@
 %terminals VAR_ID, METAVAR_ID, PRED_ID, PRED_REF, LPARA, RPARA, LBRACK, RBRACK, LBRACE, RBRACE, ELLIPSIS, COLON,
            NUMERAL, STRING, DOT, COMMA, IMPLIED_BY, EDB, OUTPUT, IMPORT, PRED,
            ATOM, NOT, BIND,  EQ, EQLIST, NEQ, LT, LTE, GT, GTE, ADD, SUB, MUL, DIV,
-           TYPEOF, TYPE_TYPE, STRING_TYPE, INTEGER_TYPE, PRED_REF_TYPE, LIST_TYPE, ANALYZE;
+           TYPEOF, TYPE_TYPE, STRING_TYPE, INTEGER_TYPE, PRED_REF_TYPE, LIST_TYPE, ANALYZE, PATTERN;
 
 %typeof  program             =  "Program";
 %typeof  clause              =  "CommonClause";
@@ -74,6 +74,7 @@
 %typeof  list_type           =  "ListType";
 %typeof  analyze_block       =  "AnalyzeBlock";
 %typeof  clause_pattern      =  "ClausePattern";
+%typeof  pattern             =  "Pattern";
 %typeof  meta_atom           =  "MetaAtom";
 
 
@@ -109,6 +110,7 @@ common_literal_opt_index = common_literal
 common_literal = literal
                | meta_atom
                | clause_pattern
+	       | pattern
                ;
 
 literal = gap_literal
@@ -129,6 +131,7 @@ meta_atom = meta_variable.mv LPARA term_list.terms RPARA {: return new MetaAtom(
 gap_literal = ELLIPSIS {: return new LiteralGap(); :};
 
 clause_pattern = LBRACK inner_clause.c RBRACK {: return new ClausePattern(c); :};
+pattern = PATTERN.pat {: return new Pattern((String)pat.value); :};
 
 neg_literal = NOT LPARA common_literal.lit RPARA {: return new NEGLiteral(new PredicateSymbol("NOT"), lit); :};
 

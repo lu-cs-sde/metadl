@@ -214,6 +214,7 @@ aspect Literal {
 	syn PredicateSymbol CommonLiteral.predicate();
 	eq MetaAtom.predicate() = null;
 	eq ClausePattern.predicate() = null;
+	eq Pattern.predicate() = null;
 	eq LiteralGap.predicate() = null;
 
 	eq Literal.predicate() = getPredicate();
@@ -321,6 +322,9 @@ aspect Literal {
 			vars.addAll(l.variables());
 		return vars;
 	}
+
+	eq Pattern.variables() = null;
+
     public TreeSet<Variable> Literal.toVarSet(Term t) {
     	TreeSet<Variable> vars = new TreeSet<Variable>(Term.termComparator);
     	if(t.isVariable()) vars.add((Variable)t);
@@ -393,6 +397,13 @@ aspect CommonLiteral {
 	}
 
 	public HashSet<Literal> ClausePattern.flattenedLiterals() {
+		HashSet<Literal> list = new HashSet<>();
+		for (CommonLiteral l : getLiterals())
+			list.add((Literal) l);
+		return list;
+	}
+
+	public HashSet<Literal> Pattern.flattenedLiterals() {
 		HashSet<Literal> list = new HashSet<>();
 		for (CommonLiteral l : getLiterals())
 			list.add((Literal) l);

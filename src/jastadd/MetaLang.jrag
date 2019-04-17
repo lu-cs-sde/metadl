@@ -1,5 +1,6 @@
 import lang.cons.Constraint;
 import metalang.ast.ProgRelPart;
+import java.io.StringReader;
 
 
 aspect MetaLang {
@@ -418,5 +419,18 @@ aspect MetaLang {
 		when (getPRED_ID().equals("SRC") && enclosingAnalyzeBlock() != null) to PredicateSymbol {
 			return new PredicateSymbol(getScopePrefix() + "SourceInfo");
 		}
+	}
+
+	/// The new style of patterns
+	syn nta List<Literal> Pattern.getLiterals() {
+		metalang.ast.LangScanner scanner = new metalang.ast.LangScanner(new StringReader(getPATTERN()));
+		metalang.ast.LangParser parser = new metalang.ast.LangParser();
+		metalang.ast.Clause clause = null;
+		try {
+			clause = (metalang.ast.Clause) parser.parse(scanner, metalang.ast.LangParser.AltGoals.inner_clause);
+		} catch (Exception e) {
+			SimpleLogger.logger().log("Error while parsing pattern: " + getPATTERN() + "\n" + e.toString());
+		}
+		return clause.asLiterals(getScopePrefix());
 	}
 }

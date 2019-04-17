@@ -102,7 +102,7 @@ jar {
 
 // Before compiling, we should generate some Java code:
 compileJava.dependsOn 'generateJava', 'generateScanner', 'generateParser',
-    'generateParserMetalang', 'generateJavaMetalang',
+    'generateScannerMetalang', 'generateParserMetalang', 'generateJavaMetalang',
     'generateConfig', 'generateScannerConfig', 'generateParserConfig'
 
 
@@ -118,19 +118,24 @@ void makeGenerateJavaTask(String name, String outDir, String srcDir, String pkg)
 makeGenerateJavaTask('generateJava', 'src/gen', 'src/jastadd', 'lang.ast')
 makeGenerateJavaTask('generateJavaMetalang', 'src/gen', 'src/metalang/jastadd', 'metalang.ast')
 
-task generateScanner(type: JavaExec) {
-    description 'Generates the scanner with JFlex.'
-    classpath = configurations.jflex
-    main = 'jflex.Main'
+void makeGenerateScannerTask(String name, String outDir, String srcFile) {
+    tasks.create(name, JavaExec) {
+	description 'Generates the scanner with JFlex.'
+	classpath = configurations.jflex
+	main = 'jflex.Main'
 
-    // Options to JFlex (http://jflex.de/manual.html#running-jflex):
-    args '-d', file('src/gen/lang/ast').path, file('src/scanner/scanner.flex').path
+	// Options to JFlex (http://jflex.de/manual.html#running-jflex):
+	args '-d', file(outDir).path, file(srcFile).path
 
-    doFirst {
-        // Ensure src/gen exists before running JFlex:
-        file('src/gen').mkdirs()
+	doFirst {
+            // Ensure src/gen exists before running JFlex:
+            file('src/gen').mkdirs()
+	}
     }
 }
+
+makeGenerateScannerTask('generateScanner', 'src/gen/lang/ast', 'src/scanner/scanner.flex')
+makeGenerateScannerTask('generateScannerMetalang', 'src/gen/metalang/ast/', 'src/metalang/scanner/scanner.flex')
 
 void makeGenerateParserTask(String name, String outDir, String srcFile) {
     tasks.create(name, JavaExec) {

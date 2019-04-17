@@ -8,7 +8,7 @@ import java.util.Collections;
 import java.util.TreeSet;
 import java.util.HashMap;
 import java.util.Map;
-
+import java.io.FileReader;
 
 aspect LiteralSideEffect {
     public void Literal.sideEffect(Program program, Description descr, Relation delta) {}
@@ -66,91 +66,24 @@ aspect LiteralSideEffect {
         }
     }
 
-
-	public class ProgRelPart {
-		public final String name;
-		public final PseudoTuple defaultValue;
-		ProgRelPart(String name, Object[] defaultValues) {
-			this.name = name;
-			Term terms[] = new Term[defaultValues.length];
-			for (int i = 0; i < defaultValues.length; ++i) {
-				if (defaultValues[i] instanceof String) {
-					terms[i] = new StringConstant((String)defaultValues[i]);
-				} else if (defaultValues[i] instanceof Term) {
-					terms[i] = (Term)defaultValues[i];
-				} else {
-					terms[i] = new IntConstant("" + (Integer)defaultValues[i]);
-				}
-			}
-			this.defaultValue = new PseudoTuple(terms);
-		}
-		public int arity() { return defaultValue.arity(); }
-	}
-
-	public static ProgRelPart[] IMPORTLiteral.programRelationStructure() {
-		Object[] triple = new Object[]{0, 0, 0};
-		Object[] pairString = new Object[]{0, ""};
-		ProgRelPart prs[] = {
-			new ProgRelPart("Program", triple),
-			new ProgRelPart("Lst", triple),
-			new ProgRelPart("Rule", triple),
-			new ProgRelPart("Fact", triple),
-			new ProgRelPart("Atom", triple),
-			new ProgRelPart("PredicateSymbol", pairString),
-			new ProgRelPart("IntConstant", new Object[]{0, 0}),
-			new ProgRelPart("StringConstant", pairString),
-			new ProgRelPart("PredicateRef", pairString),
-			new ProgRelPart("Variable", pairString),
-			new ProgRelPart("IMPORTLiteral", triple),
-			new ProgRelPart("EDBLiteral", triple),
-			new ProgRelPart("OUTPUTLiteral", triple),
-			new ProgRelPart("NEGLiteral", triple),
-			new ProgRelPart("BINDLiteral", triple),
-			new ProgRelPart("BinaryExclusiveTermLiteral", new Object[] {0, "", 0, 0}),
-			new ProgRelPart("Functor", triple),
-			new ProgRelPart("FunctorSymbol", pairString),
-			new ProgRelPart("SourceInfo", pairString)};
-		return prs;
-	}
-
-	public static void IMPORTLiteral.dumpAllRelations(Map<String, Relation> nameToRelMap)
-	{
-		for (Map.Entry<String, Relation> kv : nameToRelMap.entrySet()) {
-			System.out.println(kv.getKey());
-			System.out.println(kv.getValue());
-		}
-	}
-
-	public static Relation IMPORTLiteral.programToRelation(Program importedProgram) {
-		HashMap<String, Relation> nameToRelMap = importedProgram.datalogProjection().nameToRelMap;
-		Relation importedProgramRel = new Relation(0);
-		PseudoTuple defaultTpl = new PseudoTuple();
-		for (ProgRelPart part : programRelationStructure()) {
-			Relation r = nameToRelMap.get(part.name);
-			if (r == null) {
-				r = new Relation(part.defaultValue.arity());
-			}
-			importedProgramRel = Relation.cat(importedProgramRel, defaultTpl, r, part.defaultValue);
-			defaultTpl = PseudoTuple.cat(defaultTpl, part.defaultValue);
-		}
-		return importedProgramRel;
-	}
-
-
 	public void IMPORTLiteral.sideEffect(Program program, Description descr, Relation delta) {
 		SimpleLogger.logger().log("Computing side effects of loading program...", SimpleLogger.LogLevel.Level.DEBUG);
 		for (PseudoTuple t : delta.tuples()) {
 			SimpleLogger.logger().log("Loading program " + t.coord(0), SimpleLogger.LogLevel.Level.DEBUG);
-			Program importedProgram = null;
-
+			metalang.ast.Program importedProgram = null;
 			try {
-				importedProgram = (Program) FileUtil.parse(new File(t.coord(0).toString()));
+				importedProgram = metalang.ast.Program.fromFileLoc(t.coord(0).toString());
+			} catch (beaver.Parser.Exception e) {
+				SimpleLogger.logger().log("Error while parsing imported file: " + t.coord(0).toString(),
+										  SimpleLogger.LogLevel.Level.ERROR);
+				SimpleLogger.logger().log(e.toString());
+				System.exit(1);
 			} catch(Exception e) {
 				SimpleLogger.logger().log("Could not open file for IMPORT: " + t.coord(0).toString(), SimpleLogger.LogLevel.Level.ERROR);
 				System.exit(1);
 			}
 
-			Relation importedProgramRel = programToRelation(importedProgram);
+			Relation importedProgramRel = importedProgram.asRelation();
 			FormalPredicate fp = program.formalPredicateMap().get(getProgramRef().getPRED_ID());
 			fp.relation.addAll(importedProgramRel);
 		}

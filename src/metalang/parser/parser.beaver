@@ -1,4 +1,4 @@
-%class "MetalangParser";
+%class "LangParser";
 %package "metalang.ast";
 
 %embed {:

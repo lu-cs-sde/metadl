@@ -1,4 +1,6 @@
 import lang.cons.Constraint;
+import metalang.ast.ProgRelPart;
+
 
 aspect MetaLang {
 	/**
@@ -315,13 +317,13 @@ aspect MetaLang {
 
 		// Count the arity of the program relation
 		int numVars = 0;
-		for (ProgRelPart pr : IMPORTLiteral.programRelationStructure())
+		for (ProgRelPart pr : ProgRelPart.getProgramRelationStructure())
 			numVars += pr.arity();
 
 		// Project the wide program relation to relations matching the
 		// node types
 		int count = 0;
-		for (ProgRelPart pr : IMPORTLiteral.programRelationStructure()) {
+		for (ProgRelPart pr : ProgRelPart.getProgramRelationStructure()) {
 			// Build the head
 			List<CommonLiteral> head = new List<>();
 			List<Term> vars = new List<>();
@@ -359,7 +361,7 @@ aspect MetaLang {
 			List<CommonLiteral> head = new List<>();
 			List<CommonLiteral> body = new List<>();
 			List<Term> vars = new List<>();
-			for (ProgRelPart pr : IMPORTLiteral.programRelationStructure()) {
+			for (ProgRelPart pr : ProgRelPart.getProgramRelationStructure()) {
 				for (int i = 0; i < pr.defaultValue.arity(); ++i) {
 					vars.add(pr.defaultValue.coord(i).fullCopy());
 				}

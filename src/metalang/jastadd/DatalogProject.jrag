@@ -198,10 +198,7 @@ aspect DatalogProject {
 	eq Expr.buildLocationTupleWrapper() = locationTupleWrapper();
 	eq PredicateSymbol.buildLocationTupleWrapper() = locationTupleWrapper();
 
-	ASTNode contributes buildLocationTupleWrapper() to Program.datalogProjection() ;
-
-	public HashSet<String> Program.loadedPrograms = new HashSet<String>();
-
+	ASTNode contributes buildLocationTupleWrapper() to Program.datalogProjection();
 
 	public class ProgRelPart {
 		public final String name;
@@ -221,32 +218,46 @@ aspect DatalogProject {
 			this.defaultValue = new PseudoTuple(terms);
 		}
 		public int arity() { return defaultValue.arity(); }
+
+		public static ProgRelPart[] getProgramRelationStructure() {
+			Object[] triple = new Object[]{0, 0, 0};
+			Object[] pairString = new Object[]{0, ""};
+			ProgRelPart prs[] = {
+				new ProgRelPart("Program", triple),
+				new ProgRelPart("Lst", triple),
+				new ProgRelPart("Rule", triple),
+				new ProgRelPart("Fact", triple),
+				new ProgRelPart("Atom", triple),
+				new ProgRelPart("PredicateSymbol", pairString),
+				new ProgRelPart("IntConstant", new Object[]{0, 0}),
+				new ProgRelPart("StringConstant", pairString),
+				new ProgRelPart("PredicateRef", pairString),
+				new ProgRelPart("Variable", pairString),
+				new ProgRelPart("IMPORTLiteral", triple),
+				new ProgRelPart("EDBLiteral", triple),
+				new ProgRelPart("OUTPUTLiteral", triple),
+				new ProgRelPart("NEGLiteral", triple),
+				new ProgRelPart("BINDLiteral", triple),
+				new ProgRelPart("BinaryExclusiveTermLiteral", new Object[] {0, "", 0, 0}),
+				new ProgRelPart("Functor", triple),
+				new ProgRelPart("FunctorSymbol", pairString),
+				new ProgRelPart("SourceInfo", pairString)};
+			return prs;
+		}
 	}
 
-	public static ProgRelPart[] IMPORTLiteral.programRelationStructure() {
-		Object[] triple = new Object[]{0, 0, 0};
-		Object[] pairString = new Object[]{0, ""};
-		ProgRelPart prs[] = {
-			new ProgRelPart("Program", triple),
-			new ProgRelPart("Lst", triple),
-			new ProgRelPart("Rule", triple),
-			new ProgRelPart("Fact", triple),
-			new ProgRelPart("Atom", triple),
-			new ProgRelPart("PredicateSymbol", pairString),
-			new ProgRelPart("IntConstant", new Object[]{0, 0}),
-			new ProgRelPart("StringConstant", pairString),
-			new ProgRelPart("PredicateRef", pairString),
-			new ProgRelPart("Variable", pairString),
-			new ProgRelPart("IMPORTLiteral", triple),
-			new ProgRelPart("EDBLiteral", triple),
-			new ProgRelPart("OUTPUTLiteral", triple),
-			new ProgRelPart("NEGLiteral", triple),
-			new ProgRelPart("BINDLiteral", triple),
-			new ProgRelPart("BinaryExclusiveTermLiteral", new Object[] {0, "", 0, 0}),
-			new ProgRelPart("Functor", triple),
-			new ProgRelPart("FunctorSymbol", pairString),
-			new ProgRelPart("SourceInfo", pairString)};
-		return prs;
+	syn Relation Program.asRelation() {
+		HashMap<String, Relation> nameToRelMap = datalogProjection().nameToRelMap;
+		Relation importedProgramRel = new Relation(0);
+		PseudoTuple defaultTpl = new PseudoTuple();
+		for (ProgRelPart part : ProgRelPart.getProgramRelationStructure()) {
+			Relation r = nameToRelMap.get(part.name);
+			if (r == null) {
+				r = new Relation(part.defaultValue.arity());
+			}
+			importedProgramRel = Relation.cat(importedProgramRel, defaultTpl, r, part.defaultValue);
+			defaultTpl = PseudoTuple.cat(defaultTpl, part.defaultValue);
+		}
+		return importedProgramRel;
 	}
-
 }

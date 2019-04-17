@@ -261,13 +261,13 @@ aspect MetaLang {
 
 		// Count the arity of the program relation
 		int numVars = 0;
-		for (ProgRelPart pr : IMPORTLiteral.programRelationStructure())
+		for (ProgRelPart pr : ProgRelPart.getProgramRelationStructure())
 			numVars += pr.arity();
 
 		// Project the wide program relation to relations matching the
 		// node types
 		int count = 0;
-		for (ProgRelPart pr : IMPORTLiteral.programRelationStructure()) {
+		for (ProgRelPart pr : ProgRelPart.getProgramRelationStructure()) {
 			// Build the head
 			lang.ast.List<lang.ast.CommonLiteral> head = new lang.ast.List<>();
 			lang.ast.List<lang.ast.Term> vars = new lang.ast.List<>();
@@ -305,7 +305,7 @@ aspect MetaLang {
 			lang.ast.List<lang.ast.CommonLiteral> head = new lang.ast.List<>();
 			lang.ast.List<lang.ast.CommonLiteral> body = new lang.ast.List<>();
 			lang.ast.List<lang.ast.Term> vars = new lang.ast.List<>();
-			for (ProgRelPart pr : IMPORTLiteral.programRelationStructure()) {
+			for (ProgRelPart pr : ProgRelPart.getProgramRelationStructure()) {
 				for (int i = 0; i < pr.defaultValue.arity(); ++i) {
 					vars.add(pr.defaultValue.coord(i).fullCopy());
 				}

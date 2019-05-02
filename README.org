@@ -126,7 +126,7 @@ MetaDL is relying on a fork of JastAdd. You need to get the code and build it:
 git clone git@bitbucket.org:alexdura/jastadd2.git
 cd jastadd2
 gradle release -PnewVersion=2.100.1  # the version number is fictive
-gradle install
+gradle install -PnewVersion=2.100.1
 #+END_SRC
 
 

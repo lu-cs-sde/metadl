@@ -2,7 +2,7 @@ import lang.cons.Constraint;
 import java.util.TreeSet;
 import java.util.HashSet;
 
-aspect MetaLang {
+aspect ObjLang {
 	/**
 	  enclosingPattern - return the enclosing pattern if it exists, otherwise null
 	 */

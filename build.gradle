@@ -116,7 +116,7 @@ void makeGenerateJavaTask(String name, String outDir, String srcDir, String pkg)
 }
 
 makeGenerateJavaTask('generateJava', 'src/gen', 'src/jastadd', 'lang.ast')
-makeGenerateJavaTask('generateJavaMetalang', 'src/gen', 'src/metalang/jastadd', 'metalang.ast')
+makeGenerateJavaTask('generateJavaMetalang', 'src/gen', 'src/objlang/jastadd', 'objlang.ast')
 
 void makeGenerateScannerTask(String name, String outDir, String srcFile) {
     tasks.create(name, JavaExec) {
@@ -135,7 +135,7 @@ void makeGenerateScannerTask(String name, String outDir, String srcFile) {
 }
 
 makeGenerateScannerTask('generateScanner', 'src/gen/lang/ast', 'src/scanner/scanner.flex')
-makeGenerateScannerTask('generateScannerMetalang', 'src/gen/metalang/ast/', 'src/metalang/scanner/scanner.flex')
+makeGenerateScannerTask('generateScannerMetalang', 'src/gen/objlang/ast/', 'src/objlang/scanner/scanner.flex')
 
 void makeGenerateParserTask(String name, String outDir, String srcFile) {
     tasks.create(name, JavaExec) {
@@ -156,7 +156,7 @@ void makeGenerateParserTask(String name, String outDir, String srcFile) {
 }
 
 makeGenerateParserTask('generateParser', 'src/gen', 'src/parser/parser.beaver')
-makeGenerateParserTask('generateParserMetalang', 'src/gen', 'src/metalang/parser/parser.beaver')
+makeGenerateParserTask('generateParserMetalang', 'src/gen', 'src/objlang/parser/parser.beaver')
 
 
 task generateConfig(type: org.jastadd.JastAddTask) {

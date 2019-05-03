@@ -1,7 +1,7 @@
-package metalang.ast; // The generated scanner will belong to the package lang.ast
+package objlang.ast; // The generated scanner will belong to the package lang.ast
 
-import metalang.ast.LangParser.Terminals; // The terminals are implicitly defined in the parser
-import metalang.ast.LangParser.SyntaxError;
+import objlang.ast.LangParser.Terminals; // The terminals are implicitly defined in the parser
+import objlang.ast.LangParser.SyntaxError;
 %%
 
 // define the signature for the generated scanner

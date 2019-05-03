@@ -70,9 +70,9 @@ aspect LiteralSideEffect {
 		SimpleLogger.logger().log("Computing side effects of loading program...", SimpleLogger.LogLevel.Level.DEBUG);
 		for (PseudoTuple t : delta.tuples()) {
 			SimpleLogger.logger().log("Loading program " + t.coord(0), SimpleLogger.LogLevel.Level.DEBUG);
-			metalang.ast.Program importedProgram = null;
+			objlang.ast.Program importedProgram = null;
 			try {
-				importedProgram = metalang.ast.Program.fromFileLoc(t.coord(0).toString());
+				importedProgram = objlang.ast.Program.fromFileLoc(t.coord(0).toString());
 			} catch (beaver.Parser.Exception e) {
 				SimpleLogger.logger().log("Error while parsing imported file: " + t.coord(0).toString(),
 										  SimpleLogger.LogLevel.Level.ERROR);

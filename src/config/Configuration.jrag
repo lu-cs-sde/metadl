@@ -253,9 +253,9 @@ aspect Souffle {
 
 				boolean append = false;
 				for (String progFileLoc : predicateSrcFile.getValue()) {
-					metalang.ast.Program importedProgram = null;
+					objlang.ast.Program importedProgram = null;
 					try {
-						importedProgram = metalang.ast.Program.fromFileLoc(progFileLoc);
+						importedProgram = objlang.ast.Program.fromFileLoc(progFileLoc);
 					} catch(Exception e) {
 						SimpleLogger.logger().log("Could not open file for IMPORT: "
 												  + progFileLoc, SimpleLogger.LogLevel.Level.ERROR);

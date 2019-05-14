@@ -1,8 +1,8 @@
 IMPORT("./tests/evaluation/withimport/evalTest_3_input.mdl", 'Program).
 
 analyze ('Program) {
-   Positive(name) :- [... :- ..., $p(...) , ... .], A_Program_PredicateSymbol($p, name).
-   Negative(name) :- [... :- ..., NOT($p(...)), ... .], A_Program_PredicateSymbol($p, name).
+   Positive(name) :- <:... :- ..., $p(...) , ... .:>, A_Program_PredicateSymbol($p, name).
+   Negative(name) :- <:... :- ..., NOT($p(...)), ... .:>, A_Program_PredicateSymbol($p, name).
 }
 
 OUTPUT('Positive).

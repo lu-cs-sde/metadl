@@ -307,6 +307,12 @@ aspect MetaLang {
 
 	/// The new style of patterns
 	syn nta List<Literal> Pattern.getLiterals() {
+		List<Literal> literals = new List<>();
+		literals.addAll(objectAST().literals(getScopePrefix()));
+		return literals;
+	}
+
+	syn objlang.ast.ASTNode Pattern.objectAST() {
 		objlang.ast.LangScanner scanner = new objlang.ast.LangScanner(new StringReader(getPATTERN()));
 		objlang.ast.LangParser parser = new objlang.ast.LangParser();
 		objlang.ast.Clause clause = null;
@@ -315,8 +321,12 @@ aspect MetaLang {
 		} catch (Exception e) {
 			SimpleLogger.logger().log("Error while parsing pattern: " + getPATTERN() + "\n" + e.toString());
 		}
-		List<Literal> literals = new List<>();
-		literals.addAll(clause.literals(getScopePrefix()));
-		return literals;
+		return clause;
 	}
+
+	eq Pattern.variables() {
+		return objectAST().metavariables();
+	}
+
+	eq Pattern.isInclusive() = true;
 }

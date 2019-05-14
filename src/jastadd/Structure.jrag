@@ -323,13 +323,6 @@ aspect Literal {
 		return vars;
 	}
 
-	eq Pattern.variables() {
-		TreeSet<Variable> vars = new TreeSet<Variable>(Term.termComparator);
-		for (CommonLiteral l : getLiterals())
-			vars.addAll(l.variables());
-		return vars;
-	}
-
     public TreeSet<Variable> Literal.toVarSet(Term t) {
     	TreeSet<Variable> vars = new TreeSet<Variable>(Term.termComparator);
     	if(t.isVariable()) vars.add((Variable)t);

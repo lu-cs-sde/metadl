@@ -1,6 +1,7 @@
 import lang.cons.Constraint;
 import java.util.TreeSet;
 import java.util.HashSet;
+import java.util.Collections;
 import lang.cons.ObjLangASTNode;
 
 aspect Pattern {
@@ -191,7 +192,7 @@ aspect Pattern {
 	eq MetaVariable.asLiterals(String scopePrefix) = new ArrayList<>();
 	eq Opt.asLiterals(String scopePrefix) = new ArrayList<>();
 	eq ClausePattern.asLiterals(String scopePrefix) = new ArrayList<>();
-	eq MetaVariable.varName() = "mv_" + getMETAVAR_ID();
+	eq MetaVariable.varName() = "$" + getMETAVAR_ID();
 
 	syn ArrayList<lang.ast.Literal> ASTNode.literals(String scopePrefix) {
 		// An add-hoc way of implementing parameterized collection attributes
@@ -211,7 +212,20 @@ aspect Pattern {
 		return list;
 	}
 
+	syn TreeSet<lang.ast.Variable> ASTNode.metavariables() {
+		TreeSet<lang.ast.Variable> vars = new TreeSet<>(lang.ast.Term.termComparator);
+		for (ASTNode c : astChildren())
+			vars.addAll(c.metavariables());
+		return vars;
+	}
 
+	eq MetaVariable.metavariables() {
+		TreeSet<lang.ast.Variable> vars = new TreeSet<>(lang.ast.Term.termComparator);
+		vars.add(new lang.ast.Variable(varName()));
+		for (ASTNode c : astChildren())
+			vars.addAll(c.metavariables());
+		return vars;
+	}
 }
 
 aspect AnalyzeBlock {

@@ -528,6 +528,10 @@ aspect SoufflePrinting {
         pr.out.print("\"");
     }
 
+	public void Variable.soufflePrint(PrettyPrinter pr) {
+		pr.out.print(getVAR_ID().replace("$", "?"));
+	}
+
     public void Literal.artificalInput(PrettyPrinter pr) {
         pr.out.print(".input ");
         pr.out.print(predicate().getPRED_ID());

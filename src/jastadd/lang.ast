@@ -49,11 +49,6 @@ LiteralGap:CommonLiteral;
 **/
 abstract Expr;
 Functor : Expr ::= Func:FunctorSymbol Arg:Expr*;
-// abstract BinExpr:Expr ::= Left:Expr Right:Expr;
-// AddExpr:BinExpr;
-// SubExpr:BinExpr;
-// MulExpr:BinExpr;
-// DivExpr:BinExpr;
 
 /**
 	Types

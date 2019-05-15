@@ -1,21 +1,21 @@
 IMPORT("./tests/evaluation/withimport/evalTest_4_input.mdl", 'Program).
 
 analyze ('Program) {
-	IConstant(c) :- [...,$p(...,$v,...),... .], INT($v, c).
-	IConstant(c) :- [...,$p(...,$v,...),... :- ... .], INT($v, c).
-	IConstant(c) :- [... :- ...,$p(...,$v,...),... .], INT($v, c).
+	IConstant(c) :- <:...,$p(...,$v,...),... .:>, INT($v, c).
+	IConstant(c) :- <:...,$p(...,$v,...),... :- ... .:>, INT($v, c).
+	IConstant(c) :- <:... :- ...,$p(...,$v,...),... .:>, INT($v, c).
 
-	Predicate(c) :- [...,$p(...,$v,...),... .], ID($p, c).
-	Predicate(c) :- [...,$p(...,$v,...),... :- ... .], ID($p, c).
-	Predicate(c) :- [... :- ...,$p(...,$v,...),... .], ID($p, c).
+	Predicate(c) :- <:...,$p(...,$v,...),... .:>, ID($p, c).
+	Predicate(c) :- <:...,$p(...,$v,...),... :- ... .:>, ID($p, c).
+	Predicate(c) :- <:... :- ...,$p(...,$v,...),... .:>, ID($p, c).
 
-	Variable(c) :- [...,$p(...,$v,...),... .], ID($v, c).
-	Variable(c) :- [...,$p(...,$v,...),... :- ... .], ID($v, c).
-	Variable(c) :- [... :- ...,$p(...,$v,...),... .], ID($v, c).
+	Variable(c) :- <:...,$p(...,$v,...),... .:>, ID($v, c).
+	Variable(c) :- <:...,$p(...,$v,...),... :- ... .:>, ID($v, c).
+	Variable(c) :- <:... :- ...,$p(...,$v,...),... .:>, ID($v, c).
 
-	SConstant(c) :- [...,$p(...,$v,...),... .], STR($v, c).
-	SConstant(c) :- [...,$p(...,$v,...),... :- ... .], STR($v, c).
-	SConstant(c) :- [... :- ...,$p(...,$v,...),... .], STR($v, c).
+	SConstant(c) :- <:...,$p(...,$v,...),... .:>, STR($v, c).
+	SConstant(c) :- <:...,$p(...,$v,...),... :- ... .:>, STR($v, c).
+	SConstant(c) :- <:... :- ...,$p(...,$v,...),... .:>, STR($v, c).
 }
 
 OUTPUT('IConstant).

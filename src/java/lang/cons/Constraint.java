@@ -6,8 +6,8 @@ import java.util.ArrayList;
 public abstract class Constraint {
 	public Clause generateClause(String scopePrefix) {return null;};
 	public abstract ArrayList<Literal> generateLiterals(String scopePrefix);
-	protected ASTNode node;
-	protected Constraint(ASTNode node) {
+	protected ObjLangASTNode node;
+	protected Constraint(ObjLangASTNode node) {
 		this.node = node;
 	}
 
@@ -24,30 +24,30 @@ public abstract class Constraint {
 		return new Functor(new FunctorSymbol("add"), args);
 	}
 
-	public static Constraint member(ASTNode n) {
+	public static Constraint member(ObjLangASTNode n) {
 		return new MemberConstraint(n);
 	}
 
-	public static Constraint eq(ASTNode n1, int pos) {
+	public static Constraint eq(ObjLangASTNode n1, int pos) {
 		return new EqualityConstraint(n1, pos);
 	}
 
-	public static Constraint last(ASTNode n) {
+	public static Constraint last(ObjLangASTNode n) {
 		return new LastConstraint(n);
 	}
 
-	public static Constraint after(ASTNode n, ASTNode after) {
+	public static Constraint after(ObjLangASTNode n, ObjLangASTNode after) {
 		return new AfterConstraint(after, n);
 	}
 
-	public static Constraint next(ASTNode n, ASTNode next) {
+	public static Constraint next(ObjLangASTNode n, ObjLangASTNode next) {
 		return new NextConstraint(next, n);
 	}
 }
 
 class EqualityConstraint extends Constraint {
 	private int pos;
-	public EqualityConstraint(ASTNode node, int pos) {
+	public EqualityConstraint(ObjLangASTNode node, int pos) {
 		super(node);
 		this.pos = pos;
 	}
@@ -68,7 +68,7 @@ class EqualityConstraint extends Constraint {
 class MemberConstraint extends Constraint {
 	ArrayList<Literal> result = new ArrayList<>();
 	final String boundVarName = "b_" + node.getNodeId();
-	public MemberConstraint(ASTNode node) {
+	public MemberConstraint(ObjLangASTNode node) {
 		super(node);
 	}
 	public ArrayList<Literal> generateLiterals(String scopePrefix) {
@@ -87,7 +87,7 @@ class LastConstraint extends Constraint {
 	// Check that the relation List(l, _, i+1) is empty.
 	// List1(l, i) :- List(l, i, c).
 	// List(l, i, child), BIND(j, i+1), NEG(List1(l, j)).
-	public LastConstraint(ASTNode node) {
+	public LastConstraint(ObjLangASTNode node) {
 		super(node);
 	}
 
@@ -124,9 +124,9 @@ class LastConstraint extends Constraint {
 }
 
 class AfterConstraint extends Constraint {
-	private ASTNode predecessor;
+	private ObjLangASTNode predecessor;
 
-	public AfterConstraint(ASTNode node, ASTNode predecessor) {
+	public AfterConstraint(ObjLangASTNode node, ObjLangASTNode predecessor) {
 		super(node);
 		this.predecessor = predecessor;
 	}
@@ -148,8 +148,8 @@ class AfterConstraint extends Constraint {
 }
 
 class NextConstraint extends Constraint {
-	private ASTNode predecessor;
-	public NextConstraint(ASTNode node, ASTNode predecessor) {
+	private ObjLangASTNode predecessor;
+	public NextConstraint(ObjLangASTNode node, ObjLangASTNode predecessor) {
 		super(node);
 		this.predecessor = predecessor;
 	}

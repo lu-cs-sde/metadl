@@ -29,7 +29,7 @@ aspect ErrorCollection {
     }
 
     Literal contributes "Non-ground fact: " + this
-        when !isGround() && isFact() && enclosingPattern() == null
+        when !isGround() && isFact()
         to Program.semanticErrors();
 
     Rule contributes "Unbound variable(s): " + unboundVariables() + " in " + this
@@ -44,26 +44,10 @@ aspect ErrorCollection {
         to Program.semanticErrors();
 
     NEGLiteral contributes "Free variable(s) " + freeVars() + " in " + this + " in rule " + clause()
-        when !freeVars().isEmpty() && enclosingPattern() == null
+        when !freeVars().isEmpty()
         to Program.semanticErrors();
 
     Functor contributes "Free variable(s) " + freeVars() + " in " + this + " in rule " + occuresIn().clause()
-        when !freeVars().isEmpty() && enclosingPattern() == null
+        when !freeVars().isEmpty()
         to Program.semanticErrors();
-
-    ClausePattern contributes "Nested patterns are not allowed in " + enclosingPattern()
-        when enclosingPattern() != null
-        to Program.semanticErrors();
-
-	ClausePattern contributes "Patterns are not allowed outside the 'analyze' blocks " + this
-		when enclosingAnalyzeBlock() == null
-		to Program.semanticErrors();
-
-	TermGap contributes "Gap terms '...' are not allowed outside patterns"
-		when enclosingPattern() == null
-		to Program.semanticErrors();
-
-	LiteralGap contributes "Gap literals '...' are not allowed outside patterns"
-		when enclosingPattern() == null
-		to Program.semanticErrors();
 }

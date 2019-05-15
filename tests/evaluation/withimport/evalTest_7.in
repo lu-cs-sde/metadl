@@ -5,16 +5,16 @@
 IMPORT("tests/evaluation/withimport/evalTest_7_input.mdl", 'Program).
 
 analyze ('Program) {
-  InputVar($p, $i, v) :- [ ... :- ..., $p(..., $i:$x, ...), ... .], ID($x, v).
-  InputVar($p, $i, v) :- [ ... :- ..., NOT($p(..., $i:$x, ...)), ... .], ID($x, v).
+  InputVar($p, $i, v) :- <: ... :- ..., $p(..., $i:$x, ...), ... .:>, ID($x, v).
+  InputVar($p, $i, v) :- <: ... :- ..., NOT($p(..., $i:$x, ...)), ... .:>, ID($x, v).
 
-  InRHSOfSameRule($p, $p2) :- [ ... :- ..., $p(...), ..., $p2(...), ... . ].
-  InRHSOfSameRule($p, $p2) :- [ ... :- ..., $p(...), ..., NOT($p2(...)), ... . ].
-  InRHSOfSameRule($p, $p2) :- [ ... :- ..., NOT($p(...)), ..., $p2(...), ... . ].
-  InRHSOfSameRule($p, $p2) :- [ ... :- ..., NOT($p(...)), ..., NOT($p2(...)), ... . ].
+  InRHSOfSameRule($p, $p2) :- <: ... :- ..., $p(...), ..., $p2(...), ... . :>.
+  InRHSOfSameRule($p, $p2) :- <: ... :- ..., $p(...), ..., NOT($p2(...)), ... . :>.
+  InRHSOfSameRule($p, $p2) :- <: ... :- ..., NOT($p(...)), ..., $p2(...), ... . :>.
+  InRHSOfSameRule($p, $p2) :- <: ... :- ..., NOT($p(...)), ..., NOT($p2(...)), ... . :>.
   InRHSOfSameRule($p2, $p) :- InRHSOfSameRule($p, $p2).
 
-  InputVarFrom($q, $i, $p, $k, v) :- [ ..., $q(..., $i:$x, ...), ... :- ..., $p(...), ... .], InputVar($p, $k, v), ID($x, v), ID($y, v).
+  InputVarFrom($q, $i, $p, $k, v) :- <: ..., $q(..., $i:$x, ...), ... :- ..., $p(...), ... .:>, InputVar($p, $k, v), ID($x, v), ID($y, v).
 
   InputVarsFrom(q, $i, p, $k) :- InputVarFrom($q, $i, $p, $k, v), ID($q, q), ID($p, p).
 
@@ -23,7 +23,7 @@ analyze ('Program) {
     #  q(..., $i:..., ...) :- ... can be obtained from more than one p(..., $k:..., ...) on the rhs
   MultipleInputVars(q, $i) :- InputVarsFrom(q, $i, p, $k), OtherInputVars(q, $i, p, $k, p2, $k2).
 
-    #  [ q(..., v, ..., v, ...) :- ... . ] holds
+    #  <: q(..., v, ..., v, ...) :- ... . :> holds
   MultipleOccurrencesOfInputVar($q, v) :-
       InputVarFrom($q, $i, $p1, $k1, v),
       InputVarFrom($q, $i2, $p2, $k2, v),
@@ -31,7 +31,7 @@ analyze ('Program) {
 
   VAL($x) :- INT($x, val).
   VAL($x) :- STR($x, val).
-  PredicateIsFiltered($p) :- [ ... :- ..., $p(..., $x, ...), ... . ], VAL($x).
+  PredicateIsFiltered($p) :- <: ... :- ..., $p(..., $x, ...), ... . :>, VAL($x).
 
   MultipleUses($p, v) :- InputVar($p, $i, v), InputVar($p, $j, v), NOT(EQ($i, $j)).
   MultipleUses($p, v) :- InputVar($p, $i, v), InRHSOfSameRule($p, $q), InputVar($q, $j, v), NOT(EQ($p, $q)).

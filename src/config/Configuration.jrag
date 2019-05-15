@@ -26,6 +26,7 @@ import java.io.FileReader;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 
+
 aspect Configuration {
     syn String Description.inputFile() = getInput().getPath();
     syn String Description.inputFileName() {
@@ -252,18 +253,16 @@ aspect Souffle {
 
 				boolean append = false;
 				for (String progFileLoc : predicateSrcFile.getValue()) {
-					Program importedProgram = null;
+					objlang.ast.Program importedProgram = null;
 					try {
-						importedProgram = (Program) FileUtil.parse(new File(progFileLoc));
+						importedProgram = objlang.ast.Program.fromFileLoc(progFileLoc);
 					} catch(Exception e) {
 						SimpleLogger.logger().log("Could not open file for IMPORT: "
 												  + progFileLoc, SimpleLogger.LogLevel.Level.ERROR);
 						System.exit(1);
 					}
 
-					HashMap<String, Relation> nameToRelMap = importedProgram.datalogProjection().nameToRelMap;
-					Relation programRel = IMPORTLiteral.programToRelation(importedProgram);
-
+					Relation programRel = importedProgram.asRelation();
 					CSVUtil.dumpFileInto(programRel, output_fp, append);
 					append = true;
 				}

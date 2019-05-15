@@ -3,9 +3,9 @@
 IMPORT("tests/evaluation/withimport/evalTest_6_input.mdl", 'Program).
 
 analyze ('Program) {
-	DirectDep(p_name, q_name) :- [...,$p(...),... :- ...,$q(...),... .], ID($p, p_name), ID($q, q_name).
+	DirectDep(p_name, q_name) :- <:...,$p(...),... :- ...,$q(...),... .:>, ID($p, p_name), ID($q, q_name).
 	DirectDepNeg(p_name, q_name),
-	DirectDep(p_name, q_name) :- [...,$p(...),... :- ...,NOT($q(...)),... .],
+	DirectDep(p_name, q_name) :- <:...,$p(...),... :- ...,NOT($q(...)),... .:>,
 	                             ID($p, p_name), ID($q, q_name).
 }
 

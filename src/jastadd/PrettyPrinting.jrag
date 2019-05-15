@@ -21,14 +21,14 @@ aspect PretyPrinting {
         if (list.getNumChild() == 0)
             return;
         pr.out.print(pre);
-        pr.prettyPrint(list.getChild(0));
+        pr.prettyPrint(list.getChildNoTransform(0));
         if (list.getNumChild() == 1) {
             pr.out.print(post);
             return;
         }
         for (int i = 1; i != list.getNumChild(); ++i) {
             pr.out.print(delim);
-            pr.prettyPrint(list.getChild(i));
+            pr.prettyPrint(list.getChildNoTransform(i));
         }
         pr.out.print(post);
     }
@@ -73,22 +73,7 @@ aspect PretyPrinting {
         pr.out.print("\"" + toString() + "\"");
     }
 
-	public void Term.printIndex(PrettyPrinter pr) {
-		if (hasIndex()) {
-			pr.prettyPrint(getIndex());
-			pr.out.print(":");
-		}
-	}
-
-	public void CommonLiteral.printIndex(PrettyPrinter pr) {
-		if (hasIndex()) {
-			pr.prettyPrint(getIndex());
-			pr.out.print(":");
-		}
-	}
-
     public void Term.prettyPrint(PrettyPrinter pr) {
-		printIndex(pr);
         pr.out.print(toString());
     }
 
@@ -97,28 +82,9 @@ aspect PretyPrinting {
     }
 
     public void Atom.prettyPrint(PrettyPrinter pr) {
-		printIndex(pr);
         pr.prettyPrint(getPredicate());
         printList(getTermss(), "(", ")", ", ", pr);
     }
-
-    public void MetaAtom.prettyPrint(PrettyPrinter pr) {
-		printIndex(pr);
-        pr.prettyPrint(getPredicate());
-        printList(getTerms(), "(", ")", ", ", pr);
-    }
-
-	public void MetaVariable.prettyPrint(PrettyPrinter pr) {
-	 	pr.prettyPrint(getVariable());
-	}
-
-	public void TermGap.prettyPrint(PrettyPrinter pr) {
-		pr.out.print("...");
-	}
-
-	public void LiteralGap.prettyPrint(PrettyPrinter pr) {
-		pr.out.print("...");
-	}
 
     public void Rule.prettyPrint(PrettyPrinter pr) {
         printList(getHeadss(), "", "", ",", pr);
@@ -207,18 +173,11 @@ aspect PretyPrinting {
     	pr.out.print(")");
     }
 
-	public void ClausePattern.prettyPrint(PrettyPrinter pr) {
+	public void Pattern.prettyPrint(PrettyPrinter pr) {
 		printList(getLiterals(), "", "", ", ", pr);
 	}
 
 	public void AnalyzeBlock.prettyPrint(PrettyPrinter pr) {
-		// pr.out.print("analyze (");
-		// pr.prettyPrint(getProgramRef());
-		// pr.out.print(") {\n");
-		// for (Clause c : getClauses()) {
-		// 	pr.prettyPrint(c);
-		// }
-		// pr.out.print("}\n");
 		printList(getAllClauses(), "", "", "", pr);
 	}
 
@@ -337,11 +296,6 @@ aspect TypePrinting {
 			pr.out.print(Program.transformPredefinedName(predicate().getPRED_ID()));
 		printList(types, "(", ")", ", ", pr);
     }
-	public void ClausePattern.typePrint(PrettyPrinter pr) {
-		printList(getLiterals(), "", "", ",", pr);
-
-
-	}
 
     public void BinaryExclusiveTermLiteral.typePrint(PrettyPrinter pr) {
     	TreeSet<Term> terms = new TreeSet<Term>(Term.termComparator);
@@ -374,8 +328,6 @@ aspect TypePrinting {
 		for(Term t : terms) {
 			if (t.isVariable())
 				terms.add(t);
-			else if (t instanceof MetaVariable)
-				terms.add(((MetaVariable)t).getVariable());
 			else terms.add(t.type());
 		}
 		printCollection(terms, "EQLIST([", "])", " ", pr);
@@ -523,6 +475,10 @@ aspect SoufflePrinting {
         prettyPrint(new StandardPrettyPrinter(pr.out)); // Souffle does not allow nested quotations.
         pr.out.print("\"");
     }
+
+	public void Variable.soufflePrint(PrettyPrinter pr) {
+		pr.out.print(getVAR_ID().replace("$", "?"));
+	}
 
     public void Literal.artificalInput(PrettyPrinter pr) {
         pr.out.print(".input ");

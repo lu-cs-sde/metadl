@@ -1,389 +1,29 @@
 import lang.cons.Constraint;
+import lang.cons.ObjLangASTNode;
+import objlang.ast.ProgRelPart;
+import java.io.StringReader;
+
 
 aspect MetaLang {
-	/**
-	  enclosingPattern - return the enclosing pattern if it exists, otherwise null
-	 */
-	inh ClausePattern CommonClause.enclosingPattern();
-	inh ClausePattern ClausePattern.enclosingPattern();
-	inh ClausePattern TermGap.enclosingPattern();
-	inh ClausePattern LiteralGap.enclosingPattern();
-	inh ClausePattern Literal.enclosingPattern();
-	inh ClausePattern Expr.enclosingPattern();
-
-	eq ClausePattern.getClause().enclosingPattern() = this;
-	eq Program.getCommonClause().enclosingPattern() = null;
-
 	/**
 	   enclosingAnalyzeBlock - the enclosing analyze block if it exists
 	 */
 	inh AnalyzeBlock CommonClause.enclosingAnalyzeBlock();
-	// inh AnalyzeBlock Clause.enclosingAnalyzeBlock();
-	inh AnalyzeBlock ClausePattern.enclosingAnalyzeBlock();
 	inh AnalyzeBlock PredicateSymbol.enclosingAnalyzeBlock();
 
 	eq Program.getCommonClause().enclosingAnalyzeBlock() = null;
 	eq AnalyzeBlock.getClause().enclosingAnalyzeBlock() = this;
 
-	syn String ASTNode.varName() {
-		String nodeNameFull = this.getClass().getName();
-		String[] splitNodeName = nodeNameFull.split("\\.");
-		String nodeName = splitNodeName[splitNodeName.length - 1];
-		return "v_" + getNodeId() + "_" + nodeName;
-	}
-
-	/**
-	   The asLiterals() equations are isomorphic to buildTupleWrapper()
-	   equtions in the DatalogProject aspect. The common parts should be
-	   factored out to ensure that the relational
-	   representation of a program matches the code generated for a pattern.
-	 */
-	syn List<Literal> ASTNode.asLiterals();
-
-	eq ASTNode.asLiterals() {
-		List<Literal> literals = new List<>();
-
-		int childIndex = 0;
-
-		for (int i = 0; i < getNumChild(); ++i) {
-			ASTNode child = getChild(i);
-			if (child instanceof Opt)
-				continue;
-			List<Term> terms = new List<>();
-			terms.add(new Variable(varName()));
-			terms.add(new IntConstant("" + childIndex++));
-			terms.add(new Variable(getChild(i).varName()));
-			literals.add(new Atom(new PredicateSymbol(getScopePrefix() + getRelation()), terms));
-		}
-		return literals;
-	}
-
-	syn ArrayList<Constraint> List.constraints() {
-		if (getNumChild() == 0) {
-			return new ArrayList<>();
-		} else if (getChild(0).indexVarName() == null) {
-			// this list does not contain indexed elements
-			return new ArrayList<>();
-		}
-
-		ArrayList<Constraint> cons = new ArrayList<>();
-		ASTNode prevNonGap = null;
-		ASTNode prev = null;
-		boolean seenGap = false;
-
-		for (int i = 0; i < getNumChild(); ++i) {
-			ASTNode c = getChild(i);
-			if (!c.isGap()) {
-				if (!seenGap) {
-					// no gaps seen from the beginning, then the index variable
-					// is constrained to be equal to the position in the list
-					cons.add(Constraint.eq(c, i));
-				} else if (prev == prevNonGap) {
-					// seen gaps, but the predecessor is not a gap
-					// e.g. P(...,$i:t,$j:u,...) -> constrain $i + 1 == $j
-					cons.add(Constraint.next(prev, c));
-				} else if (prevNonGap != null) {
-					// seen gaps, but the predecessor is a gap
-					// e.g. P(...,$i:t,...,$j:u,...)
-					// There are two alternatives to chosse from:
-					// 1. constrain $j > $i
-					// 2. no constraint
-					// We choose to implement 2 to allow a pattern like
-					// ... :- ..., EQ(x, y), ..., $p(...),... . to cover cases
-					// where EQ comes before $p and after $p. If ordering is
-					// required, the user can add explicit indices.
-					cons.add(Constraint.member(c));
-				} else if (prevNonGap == null) {
-					// seens only gaps before
-					cons.add(Constraint.member(c));
-				}
-
-				if (i + 1 == getNumChild()) {
-					// this is the rightmost element in a list with gaps
-					// e.g. P(...,$i:t) -> constrain $i to be the index of the last element
-					cons.add(Constraint.last(c));
-				}
-			}
-
-			if (!c.isGap()) {
-				prevNonGap = c;
-			} else {
-				seenGap = true;
-			}
-			prev = c;
-		}
-		return cons;
-	}
-
-    syn ArrayList<Clause> List.clauses() {
-		ArrayList<Constraint> cons = constraints();
-		if (cons.isEmpty())
-			return new ArrayList<>();
-		ArrayList<Clause> clauses = new ArrayList<>();
-		for (Constraint c : cons) {
-			Clause cls = c.generateClause(getParent().getScopePrefix());
-			if (cls != null)
-				clauses.add(cls);
-		}
-		return clauses;
-	}
-
-	// syn ArrayList<Clause> ASTNode.generateClauses() = new ArrayList<>();
-
-	// eq Rule.generateClauses() {
-	// 	ArrayList<Clause> ret = getHeads().clauses();
-	// 	ret.addAll(getBody().clauses());
-	// }
-
-	// eq Fact.generateClauses() {
-	// 	return getHeads().clauses();
-	// }
-
-	// eq Atom.generateClauses() {
-	// 	return getTerms().clauses();
-	// }
-
-	eq List.asLiterals() {
-		ArrayList<Constraint> cons = constraints();
-		if (cons.isEmpty())
-			return super.asLiterals();
-
-		List<Literal> lits = new List<>();
-		for (Constraint c : cons)
-			lits.addAll(c.generateLiterals(getScopePrefix()));
-		return lits;
-	}
-
-	eq Constant.asLiterals() {
-		PredicateSymbol pred = new PredicateSymbol(getScopePrefix() + getRelation());
-		List<Literal> literals = new List<>();
-		List<Term> terms = new List<>();
-		terms.add(new Variable(varName()));
-		// remove the index if it exists
-		Constant newConst = this.fullCopy();
-		this.setIndexOpt(new Opt());
-		terms.add(this.fullCopy());
-		literals.add(new Atom(pred, terms));
-		return literals;
-	}
-
-	eq Variable.asLiterals() {
-		PredicateSymbol pred = new PredicateSymbol(getScopePrefix() + getRelation());
-		List<Literal> literals = new List<>();
-		List<Term> terms = new List<>();
-		terms.add(new Variable(varName()));
-		terms.add(new StringConstant(this.getVAR_ID()));
-		literals.add(new Atom(pred, terms));
-		return literals;
-	}
-
-	eq PredicateSymbol.asLiterals() {
-		PredicateSymbol pred = new PredicateSymbol(getScopePrefix() + getRelation());
-		List<Literal> literals = new List<>();
-		List<Term> terms = new List<>();
-		terms.add(new Variable(varName()));
-		terms.add(new StringConstant(this.getPRED_ID()));
-		literals.add(new Atom(pred, terms));
-		return literals;
-	}
-
-	eq FunctorSymbol.asLiterals() {
-		PredicateSymbol pred = new PredicateSymbol(getScopePrefix() + getRelation());
-		List<Literal> literals = new List<>();
-		List<Term> terms = new List<>();
-		terms.add(new Variable(varName()));
-		terms.add(new StringConstant(getFUNC_ID()));
-		literals.add(new Atom(pred, terms));
-		return literals;
-	}
-
-	syn String ASTNode.indexVarName() = null;
-	eq Term.indexVarName() {
-		if (hasIndex())
-			return getIndex().varName();
-		return "i_" + getNodeId();
-	}
-	eq CommonLiteral.indexVarName() {
-		if (hasIndex())
-			return getIndex().varName();
-		return "i_" + getNodeId();
-	}
-
-	syn boolean ASTNode.isGap() = false;
-	eq LiteralGap.isGap() = true;
-	eq TermGap.isGap() = true;
-
-	eq MetaVariable.asLiterals() {
-		return new List<>();
-	}
-
-	eq Opt.asLiterals() = new List<>();
-
-	eq ClausePattern.asLiterals() = new List<>();
-	eq MetaVariable.varName() = "mv_" + getMETAVAR_ID();
-
-	// Collect all the literals resulting from a ClausePattern
-	ASTNode contributes asLiterals() to ClausePattern.literals();
-	coll List<CommonLiteral> ClausePattern.literals() with addAll root ClausePattern;
-	coll ArrayList<Clause> AnalyzeBlock.clauses() with addAll root AnalyzeBlock;
-	List contributes clauses() to AnalyzeBlock.clauses();
-	// Collect all the variables resulting from a ClausePattern
-	MetaVariable contributes varName() to ClausePattern.metaVariables();
-	coll TreeSet<String> ClausePattern.metaVariables() root ClausePattern;
-
-	boolean Rule.containsPatterns() {
-		for (CommonLiteral l : getBodys())
-			if (l instanceof ClausePattern)
-				return true;
-		return false;
-	}
-
-	syn nta List<CommonLiteral> ClausePattern.getLiterals() {
-		return literals();
-	}
-
-	public boolean List.containsAnalyzeBlocks() {
-		for (ASTNode c : this) {
-			if (c instanceof AnalyzeBlock)
-				return true;
-		}
-		return false;
-	}
-
-	syn nta Variable MetaVariable.getVariable() {
-		return new Variable(varName());
-	}
-
 	syn String ASTNode.getScopePrefix() = getParent().getScopePrefix();
 	eq Program.getScopePrefix() = "";
     eq AnalyzeBlock.getScopePrefix() = "A_" + getProgramRef().getPRED_ID() + "_";
 
-
-	public Rule AnalyzeBlock.makeIdentifierRule(String name) {
-		List<CommonLiteral> headList = new List<>();
-		List<CommonLiteral> bodyList = new List<>();
-
-		List<Term> headVars = new List<>();
-		headVars.add(new Variable("n_id"));
-		headVars.add(new Variable("name"));
-		CommonLiteral head = new Atom(new PredicateSymbol(getScopePrefix() + "ID"),
-									  headVars);
-		CommonLiteral body = new Atom(new PredicateSymbol(getScopePrefix() + name),
-									  headVars.fullCopy());
-
-		headList.add(head);
-		bodyList.add(body);
-
-		return new Rule(headList, bodyList);
-	}
-
-	public Rule AnalyzeBlock.makeExprRule() {
-		List<CommonLiteral> headList = new List<>();
-		List<CommonLiteral> bodyList = new List<>();
-
-		List<Term> headVars = new List<>();
-		headVars.add(new Variable("n_id"));
-		headVars.add(new Variable("j"));
-		headVars.add(new Variable("child"));
-
-		headList.add(new Atom(new PredicateSymbol(getScopePrefix() + "EXPR"),
-							  headVars));
-
-		List<Term> bodyVars1 = new List<>();
-		bodyVars1.add(new Variable("n_id"));
-		bodyVars1.add(new IntConstant("1"));
-		bodyVars1.add(new Variable("l"));
-
-		bodyList.add(new Atom(new PredicateSymbol(getScopePrefix() + "Functor"), bodyVars1));
-
-		List<Term> bodyVars2 = new List<>();
-		bodyVars2.add(new Variable("l"));
-		bodyVars2.add(new Variable("j"));
-		bodyVars2.add(new Variable("child"));
-
-		bodyList.add(new Atom(new PredicateSymbol(getScopePrefix() + "Lst"), bodyVars2));
-
-		return new Rule(headList, bodyList);
-	}
-
-	/**
-	   For every analyze block, insert relations that provide the
-	   context for evaluating the expanded patterns.
-	 */
-	public List<Clause> AnalyzeBlock.generateHelperRelations() {
-		List<Clause> ret = new List<>();
-
-		// Count the arity of the program relation
-		int numVars = 0;
-		for (ProgRelPart pr : IMPORTLiteral.programRelationStructure())
-			numVars += pr.arity();
-
-		// Project the wide program relation to relations matching the
-		// node types
-		int count = 0;
-		for (ProgRelPart pr : IMPORTLiteral.programRelationStructure()) {
-			// Build the head
-			List<CommonLiteral> head = new List<>();
-			List<Term> vars = new List<>();
-			int firstVar = count;
-			for (int i = 0; i < pr.defaultValue.arity(); ++i, ++count) {
-				vars.add(new Variable("p" + count));
-			}
-			PredicateSymbol ps = new PredicateSymbol(getScopePrefix() + pr.name);
-			head.add(new Atom(ps, vars));
-
-
-			List<CommonLiteral> body = new List<>();
-			List<Term> progVars = new List<>();
-			for (int i = 0; i < numVars; ++i) {
-				progVars.add(new Variable("p" + i));
-			}
-
-			PredicateSymbol progPS = new PredicateSymbol(getProgramRef().getPRED_ID());
-			// Program(p0, ..., pN)
-			body.add(new Atom(new PredicateSymbol(getProgramRef().getPRED_ID()),
-							  progVars));
-
-			// test for the node id to be greater than 0 to filter out any
-			// possible dummy terms
-			body.add(new GTLiteral(new PredicateSymbol("GT"),
-								   new Variable("p" + firstVar),
-								   new IntConstant("0")));
-
-			ret.add(new Rule(head, body));
-		}
-
-		// Now create a clause containing a ground instance of the entire program relation
-		// with false in the body, needed for type inference
-		{
-			List<CommonLiteral> head = new List<>();
-			List<CommonLiteral> body = new List<>();
-			List<Term> vars = new List<>();
-			for (ProgRelPart pr : IMPORTLiteral.programRelationStructure()) {
-				for (int i = 0; i < pr.defaultValue.arity(); ++i) {
-					vars.add(pr.defaultValue.coord(i).fullCopy());
-				}
-			}
-
-			head.add(new Atom(new PredicateSymbol(getProgramRef().getPRED_ID()), vars));
-			body.add(new NEQLiteral(new PredicateSymbol("NEQ"), new IntConstant("0"), new IntConstant("0")));
-
-			ret.add(new Rule(head, body));
-		}
-
-		// Add two new rules, to map variables and predicates to their predicates
-		ret.add(makeIdentifierRule("Variable"));
-		ret.add(makeIdentifierRule("PredicateSymbol"));
-		ret.add(makeIdentifierRule("FunctorSymbol"));
-
-		ret.add(makeExprRule());
-		return ret;
-	}
-
 	syn nta List<Clause> AnalyzeBlock.getAllClauses() {
 		List<Clause> cls = new List<>();
-		cls.addAll(clauses());
-		cls.addAll(generateHelperRelations());
+		cls.addAll(objlang.ast.ObjLang.generateHelperRelations(
+															   getScopePrefix(),
+															   getProgramRef().getPRED_ID()
+															   ));
 		for (Clause c : getClauses())
 			cls.add(c.treeCopy());
 		return cls;
@@ -393,28 +33,33 @@ aspect MetaLang {
 	AnalyzeBlock contributes nta getAllClauses() to Program.pass1TypeMap();
 
 	rewrite PredicateSymbol {
-		when (getPRED_ID().equals("INT") && enclosingAnalyzeBlock() != null) to PredicateSymbol {
-			return new PredicateSymbol(getScopePrefix() + "IntConstant");
-		}
-
-		when (getPRED_ID().equals("STR") && enclosingAnalyzeBlock() != null) to PredicateSymbol {
-			return new PredicateSymbol(getScopePrefix() + "StringConstant");
-		}
-
-		when (getPRED_ID().equals("REF") && enclosingAnalyzeBlock() != null) to PredicateSymbol {
-			return new PredicateSymbol(getScopePrefix() + "PredicateRef");
-		}
-
-		when (getPRED_ID().equals("ID") && enclosingAnalyzeBlock() != null) to PredicateSymbol {
-			return new PredicateSymbol(getScopePrefix() + "ID");
-		}
-
-		when (getPRED_ID().equals("EXPR") && enclosingAnalyzeBlock() != null) to PredicateSymbol {
-			return new PredicateSymbol(getScopePrefix() + "EXPR");
-		}
-
-		when (getPRED_ID().equals("SRC") && enclosingAnalyzeBlock() != null) to PredicateSymbol {
-			return new PredicateSymbol(getScopePrefix() + "SourceInfo");
+		when (enclosingAnalyzeBlock() != null &&
+			  objlang.ast.ObjLang.translatePredicateName(getScopePrefix(), getPRED_ID()) != null) to PredicateSymbol {
+			return new PredicateSymbol(objlang.ast.ObjLang.translatePredicateName(getScopePrefix(), getPRED_ID()));
 		}
 	}
+
+	syn nta List<Literal> Pattern.getLiterals() {
+		List<Literal> literals = new List<>();
+		literals.addAll(objectAST().literals(getScopePrefix()));
+		return literals;
+	}
+
+	syn objlang.ast.ASTNode Pattern.objectAST() {
+		objlang.ast.LangScanner scanner = new objlang.ast.LangScanner(new StringReader(getPATTERN()));
+		objlang.ast.LangParser parser = new objlang.ast.LangParser();
+		objlang.ast.Clause clause = null;
+		try {
+			clause = (objlang.ast.Clause) parser.parse(scanner, objlang.ast.LangParser.AltGoals.inner_clause);
+		} catch (Exception e) {
+			SimpleLogger.logger().log("Error while parsing pattern: " + getPATTERN() + "\n" + e.toString());
+		}
+		return clause;
+	}
+
+	eq Pattern.variables() {
+		return objectAST().metavariables();
+	}
+
+	eq Pattern.isInclusive() = true;
 }

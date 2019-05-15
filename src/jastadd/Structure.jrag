@@ -245,10 +245,6 @@ aspect Literal {
 	eq TYPEOFLiteral.isInclusive() = true;
 	eq IMPORTLiteral.isInclusive() = true;
 
-    syn boolean Literal.hasExtendedSemantics();
-    eq Literal.hasExtendedSemantics() = true;
-    eq Atom.hasExtendedSemantics()    = false;
-
     inh boolean Literal.isDef();
     eq Clause.getChild().isDef() = false;
     eq Rule.getHeads().isDef()   =  true;
@@ -257,7 +253,6 @@ aspect Literal {
     inh boolean Literal.isUse();
     eq Clause.getChild().isUse() = false;
     eq Rule.getBody().isUse()    = true;
-
 
     inh Program PREDLiteral.program();
     syn List PREDLiteral.getPredicateRefList() {
@@ -382,6 +377,7 @@ aspect Predicate {
 	inh Literal PredicateSymbol.literal();
 	inh Literal PredicateRef.literal();
 	eq  Literal.getChild().literal() = this;
+	eq  AnalyzeBlock.getChild().literal() = null;
 
     public interface PredicateInterface {
     	public boolean isRef();

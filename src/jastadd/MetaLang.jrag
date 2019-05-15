@@ -14,14 +14,6 @@ aspect MetaLang {
 	eq Program.getCommonClause().enclosingAnalyzeBlock() = null;
 	eq AnalyzeBlock.getClause().enclosingAnalyzeBlock() = this;
 
-	public boolean List.containsAnalyzeBlocks() {
-		for (ASTNode c : this) {
-			if (c instanceof AnalyzeBlock)
-				return true;
-		}
-		return false;
-	}
-
 	syn String ASTNode.getScopePrefix() = getParent().getScopePrefix();
 	eq Program.getScopePrefix() = "";
     eq AnalyzeBlock.getScopePrefix() = "A_" + getProgramRef().getPRED_ID() + "_";

@@ -132,7 +132,7 @@ aspect DependencyGraph {
 				if(l.isNeg()) {
 					NEGLiteral nl = (NEGLiteral) l;
 					defIn.add(nl.getLiteral().predicate().formalpredicate());
-				} else if(l.isInclusive()) {
+				} else if (l.isInclusive()) {
 					defIn.add(l.predicate().formalpredicate());
 				}
 			}
@@ -147,12 +147,11 @@ aspect DependencyGraph {
 		}
 
 		for(PredicateRef ref : predicateRefs()) {
-			if(ref.literal().isEDB()) {
+			if (ref.literal() != null && ref.literal().isEDB()) {
 				defIn.add(((EDBLiteral)ref.literal()).getPredicate().formalpredicate());
-			} else if (ref.literal().isIMPORT()) {
+			} else if (ref.literal() != null && ref.literal().isIMPORT()) {
 				defIn.add(((IMPORTLiteral)ref.literal()).getPredicate().formalpredicate());
 			}
-
 		}
 
 		if(hasRecursiveEDB()) {

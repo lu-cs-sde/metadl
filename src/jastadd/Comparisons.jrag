@@ -7,7 +7,6 @@ aspect Conversion {
 	public String IntConstant.toString()    { return getNUMERAL(); }
 
 	public String Term.toString()            { return "NO_IMPL_TO_STRING"; }
-	public String MetaVariable.toString()    { return prettyPrint(); }
 	public String Variable.toString()        { return getVAR_ID(); }
 	public String PredicateRef.toString()    { return "'" + getPRED_ID(); }
 	public String FormalPredicate.toString() { return "FP_" + predicateName(); }

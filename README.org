@@ -7,9 +7,9 @@ programs inside Datalog.
 IMPORT("p/t0.mdl", 'Program).
 
 analyze ('Program) {
-  Arity(pname, arity) :- [ ... :- ..., $p(...,$i:$x), ... .], BIND(arity, $i+1), ID($p, pname).
-  Arity(pname, arity) :- [ ... :- ..., NOT($p(...,$i:$x)), ... .], BIND(arity, $i+1), ID($p, pname).
-  Arity(pname, arity) :- [ ..., $p(...,$i:$x), ... :- ... .], BIND(arity, $i+1), ID($p, pname).
+  Arity(pname, arity) :- <: ... :- ..., $p(...,$i:$x), ... .:>, BIND(arity, $i+1), ID($p, pname).
+  Arity(pname, arity) :- <: ... :- ..., NOT($p(...,$i:$x)), ... .:>, BIND(arity, $i+1), ID($p, pname).
+  Arity(pname, arity) :- <: ..., $p(...,$i:$x), ... :- ... .:>, BIND(arity, $i+1), ID($p, pname).
 }
 
 OUTPUT('Arity).
@@ -39,7 +39,7 @@ Additional Supported features:
 *** Analyze blocks ~analyze ('P) { }~
 The only blocks that are allowed to contain patterns, metavariables and gaps. All the patterns and special predicates inside these blocks refer to the analyzed program, ~\'P~.
 
-*** Patterns ~[$p(x, 1) :- ..., $q(..., $i:$v, ...) , ... .]~
+*** Patterns ~<:$p(x, 1) :- ..., $q(..., $i:$v, ...) , ... .:>~
 Patterns are a mechanism to match rules and bind metavariables to terms, expressions and predicate symbols.
 
 *** Gaps: ~...~
@@ -85,7 +85,6 @@ Special metapredicates are permitted only inside ~analyze~ blocks.
                        Inputs(t, in),
                        BIND(t2, t + 1).
 #+END_SRC
-
 
 ** License
 

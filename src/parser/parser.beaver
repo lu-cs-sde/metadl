@@ -9,7 +9,7 @@
 	}
 :};
 
-%terminals VAR_ID, PRED_ID, PRED_REF, LPARA, RPARA, LBRACK, RBRACK, LBRACE, RBRACE, ELLIPSIS, COLON,
+%terminals VAR_ID, PRED_ID, PRED_REF, LPARA, RPARA, LBRACK, RBRACK, LBRACE, RBRACE,
            NUMERAL, STRING, DOT, COMMA, IMPLIED_BY, EDB, OUTPUT, IMPORT, PRED,
            ATOM, NOT, BIND,  EQ, EQLIST, NEQ, LT, LTE, GT, GTE, ADD, SUB, MUL, DIV,
            TYPEOF, TYPE_TYPE, STRING_TYPE, INTEGER_TYPE, PRED_REF_TYPE, LIST_TYPE, ANALYZE, PATTERN;
@@ -70,7 +70,6 @@
 %typeof  pred_ref_type       =  "PredRefType";
 %typeof  list_type           =  "ListType";
 %typeof  analyze_block       =  "AnalyzeBlock";
-%typeof  clause_pattern      =  "ClausePattern";
 %typeof  pattern             =  "Pattern";
 
 
@@ -101,12 +100,10 @@ rule = lit_list.heads IMPLIED_BY lit_list.body DOT {: return new Rule(heads, bod
 fact = lit_list.heads DOT {: return new Fact(heads); :};
 
 common_literal = literal
-               | clause_pattern
 	       | pattern
                ;
 
-literal = gap_literal
-        | edb_literal
+literal = edb_literal
         | output_literal
         | atom
         | typeof_literal
@@ -119,9 +116,6 @@ literal = gap_literal
         | atom_literal
         ;
 
-gap_literal = ELLIPSIS {: return new LiteralGap(); :};
-
-clause_pattern = LBRACK inner_clause.c RBRACK {: return new ClausePattern(c); :};
 pattern = PATTERN.pat {: return new Pattern((String)pat.value); :};
 
 neg_literal = NOT LPARA common_literal.lit RPARA {: return new NEGLiteral(new PredicateSymbol("NOT"), lit); :};
@@ -213,7 +207,6 @@ term = variable
      | pred_ref
      | term_list_term
      | type_term
-     | term_gap
      ;
 
 pred_sym = PRED_ID.id  {: return new PredicateSymbol((String)id.value); :};
@@ -253,5 +246,3 @@ integer_type  = INTEGER_TYPE  {: return new IntegerType(); :};
 string_type   = STRING_TYPE   {: return new StringType();  :};
 pred_ref_type = PRED_REF_TYPE {: return new PredRefType(); :};
 list_type     = LIST_TYPE LPARA concrete_type.embell RPARA {: return new ListType(embell); :};
-
-term_gap = ELLIPSIS {: return new TermGap(); :};

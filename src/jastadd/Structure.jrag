@@ -138,9 +138,6 @@ aspect Clause {
     eq Fact.isRule() = false;
 	eq AnalyzeBlock.isRule() = false;
 
-	//    inh int Clause.index();
-    // eq Program.getClause(int index).index() = index;
-
     syn HashSet<Literal> Rule.literals() {
     	HashSet<Literal> literals = new HashSet<Literal>();
     	for(CommonLiteral l : getHeadss()) literals.addAll(l.flattenedLiterals());
@@ -194,14 +191,6 @@ aspect Clause {
     	for(CommonLiteral l : getBodys()) {
             if(l.isInclusive())
                 variables.addAll(l.variables());
-			if(l instanceof ClausePattern) {
-				for (CommonLiteral il : ((ClausePattern) l).getLiterals()) {
-					if (il.isInclusive())
-						variables.addAll(il.variables());
-					else if (il.isBind())
-						variables.addAll(((BINDLiteral)il).getVariable().variables());
-				}
-			}
             if(l.isBind()) {
                 variables.addAll(((BINDLiteral)l).getVariable().variables());
             }
@@ -212,10 +201,7 @@ aspect Clause {
 
 aspect Literal {
 	syn PredicateSymbol CommonLiteral.predicate();
-	eq MetaAtom.predicate() = null;
-	eq ClausePattern.predicate() = null;
 	eq Pattern.predicate() = null;
-	eq LiteralGap.predicate() = null;
 
 	eq Literal.predicate() = getPredicate();
 
@@ -316,13 +302,6 @@ aspect Literal {
     	return vars;
     }
 
-	eq ClausePattern.variables() {
-		TreeSet<Variable> vars = new TreeSet<Variable>(Term.termComparator);
-		for (CommonLiteral l : getLiterals())
-			vars.addAll(l.variables());
-		return vars;
-	}
-
     public TreeSet<Variable> Literal.toVarSet(Term t) {
     	TreeSet<Variable> vars = new TreeSet<Variable>(Term.termComparator);
     	if(t.isVariable()) vars.add((Variable)t);
@@ -364,9 +343,6 @@ aspect Literal {
 		return vars;
 	}
 
-    eq LiteralGap.variables() = new TreeSet<Variable>();
-	eq MetaAtom.variables() = new TreeSet<Variable>();
-
     syn TreeSet<Constant> BinaryExclusiveTermLiteral.constants() {
 		TreeSet<Constant> constants = new TreeSet<Constant>(Term.termComparator);
 		constants.addAll(getLeft().constants());
@@ -391,13 +367,6 @@ aspect CommonLiteral {
 	public HashSet<Literal> CommonLiteral.flattenedLiterals() {
 		HashSet<Literal> list = new HashSet<>();
 		list.add((Literal)this);
-		return list;
-	}
-
-	public HashSet<Literal> ClausePattern.flattenedLiterals() {
-		HashSet<Literal> list = new HashSet<>();
-		for (CommonLiteral l : getLiterals())
-			list.add((Literal) l);
 		return list;
 	}
 
@@ -432,10 +401,6 @@ aspect Predicate {
 }
 
 aspect Term {
-	inh int Term.index();
-	eq Literal.getChild().index() = 0;
-	eq Atom.getTerms(int index).index() = index;
-
 	inh Literal Term.occuresIn();
 	eq  Literal.getChild().occuresIn() = this;
 
@@ -489,11 +454,6 @@ aspect Expression {
 	syn TreeSet<Variable> CommonVariable.variables() {
 		TreeSet<Variable> vars = new TreeSet<Variable>(Term.termComparator);
 		vars.add((Variable)this);
-		return vars;
-	}
-	eq MetaVariable.variables() {
-		TreeSet<Variable> vars = new TreeSet<Variable>(Term.termComparator);
-		vars.add(getVariable());
 		return vars;
 	}
 
@@ -585,8 +545,8 @@ aspect Types {
     TYPEOFLiteral contributes new MapEntry<FormalPredicate, PseudoTuple>(predicate().formalpredicate(), type()) to Program.pass1TypeMap();
     IMPORTLiteral contributes new MapEntry<FormalPredicate, PseudoTuple>(predicate().formalpredicate(), type()) to Program.pass1TypeMap();
 
-    Literal       contributes new MapEntry<FormalPredicate, PseudoTuple>(predicate().formalpredicate(), toTuple().toTypeTuple())
-    	when isGround() && enclosingPattern() == null
+    Literal contributes new MapEntry<FormalPredicate, PseudoTuple>(predicate().formalpredicate(), toTuple().toTypeTuple())
+    	when isGround()
     	to Program.pass1TypeMap();
 
 	public static final Type Type.typeType    = new TypeType();
@@ -612,7 +572,6 @@ aspect Types {
 		if(!hasTerms()) return new ListType(Type.unknownType);
 		return Type.badType;
 	}
-	eq MetaVariable.type() = getVariable().type();
 
 	syn boolean TermList.isWellTyped() = toTuple().toTypeTuple().isUniInfo();
 

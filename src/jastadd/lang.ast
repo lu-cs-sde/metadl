@@ -15,8 +15,7 @@ AnalyzeBlock:CommonClause ::= ProgramRef:PredicateRef Clause*;
 /**
    Literals
 **/
-abstract CommonLiteral ::= [Index:MetaVariable];
-MetaAtom:CommonLiteral ::= Predicate:MetaVariable Term*;
+abstract CommonLiteral;
 abstract Literal:CommonLiteral ::= Predicate:PredicateSymbol;
 
 abstract BinaryExclusiveTermLiteral:Literal ::= Left:Expr Right:Expr;
@@ -41,8 +40,6 @@ LTELiteral:BinaryExclusiveTermLiteral;
 GTLiteral:BinaryExclusiveTermLiteral;
 GTELiteral:BinaryExclusiveTermLiteral;
 EQLISTLiteral:Literal ::= TermList;
-
-LiteralGap:CommonLiteral;
 
 /**
 	Expressions
@@ -69,18 +66,15 @@ BadType:Type;
 /**
     Terms
 **/
-abstract Term:Expr ::= [Index:MetaVariable];
+abstract Term:Expr;
 abstract Constant:Term;
 abstract CommonVariable:Term;
-
-MetaVariable : CommonVariable ::= <METAVAR_ID>;
 
 Variable:CommonVariable ::= <VAR_ID>;
 PredicateRef:Constant   ::= <PRED_ID>;
 StringConstant:Constant ::= <STRING>;
 IntConstant:Constant    ::= <NUMERAL>;
 TermList:Constant       ::= Terms:Term*;
-TermGap:Term;
 
 /**
     PredicateSymbols
@@ -93,6 +87,4 @@ FunctorSymbol ::= <FUNC_ID>;
    Patterns
 **/
 abstract MetaPattern : CommonLiteral;
-
-ClausePattern : MetaPattern ::= Clause;
 Pattern : MetaPattern ::= <PATTERN>;

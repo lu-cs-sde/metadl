@@ -373,5 +373,19 @@ aspect AnalyzeBlock {
 			ret.add(makeListProjRule(scopePrefix));
 			return ret;
 		}
+
+		public static String translatePredicateName(String scopePrefix, String predName) {
+			String s = null;
+			switch (predName) {
+			case "INT": s = "IntConstant"; break;
+			case "STR": s = "StringConstant"; break;
+			case "REF": s = "PredicateRef"; break;
+			case "ID": s = "ID"; break;
+			case "EXPR": s = "EXPR"; break;
+			case "SRC": s = "SourceInfo"; break;
+			default: return null;
+			}
+			return scopePrefix + s;
+		}
 	}
 }

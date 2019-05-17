@@ -13,19 +13,6 @@ aspect Conversion {
 	public String TermList.toString()        { return prettyPrint(); }
 	public String ASTNode.toString()         { return prettyPrint(); }
 
-	syn String Type.toString()     = typeName();
-	syn String ListType.toString() = "List(" + getType().typeName() + ")";
-
-	syn String Type.typeName();
-	eq ListType.typeName()       = "List";
-	eq StringType.typeName()     = "String";
-	eq IntegerType.typeName()    = "Integer";
-	eq PredRefType.typeName()    = "PredRef";
-	eq TypeType.typeName()       = "Type";
-	eq VariableType.typeName()   = "Variable";
-	eq UnknownType.typeName()    = "UnknownType";
-	eq BadType.typeName()        = "BadType";
-
 	syn int Literal.evalOrder();
 
 	eq IMPORTLiteral.evalOrder()  = 0;
@@ -47,36 +34,27 @@ aspect Conversion {
 }
 
 aspect Comparison {
-	public class CompareTypes implements Comparator<Type> {
-		@Override
-		public int compare(Type t1, Type t2) {
-			return t1.toString().compareTo(t2.toString());
-		}
-	}
-	public static final CompareTypes Type.typeComparator = new CompareTypes();
-	public static boolean Term.sameType(Term t1, Term t2) { return Type.typeComparator.compare(t1.type(), t2.type()) == 0; }
-
 	public class CompareTerm implements Comparator<Term> {
 		@Override
 		public int compare(Term t1, Term t2) {
-			int typeComp = Type.typeComparator.compare(t1.type(), t2.type());
+			int typeComp = t1.type().toString().compareTo(t2.type().toString());
 			if(typeComp != 0) return typeComp;
-			if(t1.isInteger()) {
-				int i1 = ((IntConstant) t1).intValue();
-				int i2 = ((IntConstant) t2).intValue();
-				return i1 < i2 ? -1 : (i1 == i2 ? 0 : 1);
-			}
-			if(t1.isList()) {
-				TermList tl1 = (TermList) t1;
-				TermList tl2 = (TermList) t2;
-				int size1 = tl1.getNumTerms();
-				int size2 = tl2.getNumTerms();
-				for(int i = 0; i != (int)Math.min(size1, size2); ++i) {
-					int cmp = compare(tl1.getTerms(i), tl2.getTerms(i));
-					if(cmp != 0) return cmp;
-				}
-				return size1 < size2 ? -1 : (size1 == size2 ? 0 : 1);
-			}
+			// if(t1.isInteger()) {
+			// 	int i1 = ((IntConstant) t1).intValue();
+			// 	int i2 = ((IntConstant) t2).intValue();
+			// 	return i1 < i2 ? -1 : (i1 == i2 ? 0 : 1);
+			// }
+			// if(t1.isList()) {
+			// 	TermList tl1 = (TermList) t1;
+			// 	TermList tl2 = (TermList) t2;
+			// 	int size1 = tl1.getNumTerms();
+			// 	int size2 = tl2.getNumTerms();
+			// 	for(int i = 0; i != (int)Math.min(size1, size2); ++i) {
+			// 		int cmp = compare(tl1.getTerms(i), tl2.getTerms(i));
+			// 		if(cmp != 0) return cmp;
+			// 	}
+			// 	return size1 < size2 ? -1 : (size1 == size2 ? 0 : 1);
+			// }
 			return t1.toString().compareTo(t2.toString());
 		}
 	}

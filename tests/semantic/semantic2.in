@@ -1,3 +1,2 @@
-TYPEOF('A, [String String]).
-TYPEOF('B, [String]).
+A("", ""), B("") :- NEQ(0, 0).
 A(x, y) :- B(x).

@@ -58,10 +58,9 @@ aspect TypeChecking {
 	syn boolean PredefinedLiteral.satisfiedType() {
 		if(type().arity() != actualType().arity()) return false;
 		for(int i = 0; i != type().arity(); ++i) {
-			Type t1 = (Type)type().coord(i);
-			Type t2 = (Type)actualType().coord(i);
-			if(t2.isVariableType()) continue;
-			if(Type.typeComparator.compare(t1, t2) != 0) return false;
+			StringConstant t1 = (StringConstant)type().coord(i);
+			StringConstant t2 = (StringConstant)actualType().coord(i);
+			if(TypeComparator.get().compare(t1, t2) != 0) return false;
 		}
 		return true;
 	}

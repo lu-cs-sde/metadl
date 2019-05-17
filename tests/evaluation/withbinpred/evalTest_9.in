@@ -1,7 +1,8 @@
 OUTPUT(x) :- ATOM(x), NEQ('Vars, x).
 OUTPUT('OUTPUT).
 EDB('Vars, "Vars.csv").
-TYPEOF('Vars, [Integer]).
+
+Vars(0) :- NEQ(0, 0).
 
 A(x, y) :- Vars(x), Vars(y).
 Filter(x, y) :- A(x, y), LT(x, y).

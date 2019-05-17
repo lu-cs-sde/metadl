@@ -319,7 +319,7 @@ aspect TypePrinting {
     	if(!getRight().variables().isEmpty()) {
     		pr.out.print(", BIND(" + getVariable() + ", " + getRight().variables().iterator().next() + ")");
     	} else {
-    		pr.out.print(", BIND(" + getVariable() + ", " + getRight().constants().iterator().next().type() + ")");
+    		pr.out.print(", BIND(" + getVariable() + ", \"" + getRight().constants().iterator().next().type() + "\")");
     	}
     }
 
@@ -461,8 +461,6 @@ aspect SoufflePrinting {
         pr.out.print(" ");
         pr.prettyPrint(getRight());
     }
-    syn String Type.souffleType() = "symbol";
-    eq  IntegerType.souffleType() = "number";
 
     public void PredicateRef.soufflePrint(PrettyPrinter pr) {
         pr.out.print("\"");
@@ -505,19 +503,15 @@ aspect SoufflePrinting {
         printCollection(nonIncl, "", " :- true.\n", ", ", pr);
     }
 
-    public void Type.soufflePrint(PrettyPrinter pr) {
-        pr.out.print("\"");
-        prettyPrint(pr);
-        pr.out.print("\"");
-    }
-
     public void FormalPredicate.soufflePrint(PrettyPrinter pr) {
         if(!literal().isInclusive()) return;
         pr.out.print(".decl " + predicateName() + "(");
         List<PredicateSymbol> constants = new List<PredicateSymbol>();
         TermList tl = program().derivedTypeMap.get(this);
         for(int i = 0; i != realArity(); ++i) {
-            constants.add(new PredicateSymbol("x_" + i + ":" + ((Type)tl.getTerms(i)).souffleType()));
+			String souffleType = tl.getTerms(i).toString().equals(TypeName.integer()) ?
+				"number" : "symbol";
+            constants.add(new PredicateSymbol("x_" + i + ":" + souffleType));
         }
         printList(constants, "", "", ", ", pr);
         pr.out.print(")");

@@ -1,1 +1,1 @@
-Wrong number of arguments in: TYPEOF('A,[Integer String]), expected: 1
+Different Arities for predicate symbol: A

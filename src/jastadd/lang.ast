@@ -50,18 +50,18 @@ Functor : Expr ::= Func:FunctorSymbol Arg:Expr*;
 /**
 	Types
 **/
-abstract Type:Constant;
-abstract ConcreteType:Type;
+// abstract Type:Constant;
+// abstract ConcreteType:Type;
 
-StringType:ConcreteType;
-IntegerType:ConcreteType;
-PredRefType:ConcreteType;
+// StringType:ConcreteType;
+// IntegerType:ConcreteType;
+// PredRefType:ConcreteType;
 
-TypeType:ConcreteType;
-VariableType:ConcreteType;
-ListType:Type  ::= Type;
-UnknownType:Type;
-BadType:Type;
+// TypeType:ConcreteType;
+// VariableType:ConcreteType;
+// ListType:Type  ::= Type;
+// UnknownType:Type;
+// BadType:Type;
 
 /**
     Terms

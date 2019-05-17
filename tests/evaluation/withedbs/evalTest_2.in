@@ -1,6 +1,7 @@
 OUTPUT(x) :- ATOM(x).
 EDB('A, "A.csv").
-TYPEOF('A, [String String]).
+
+A("", "") :- NEQ(0, 0).
 A(x, z) :- A(x, y), A(y, z).
 A(x, y) :- A(y, x).
 A(x, x) :- A(y, x).

@@ -1,2 +1,2 @@
-TYPEOF('A, [Integer String]).
+A(0, "") :- NEQ(0, 0).
 B(x) :- A(x).

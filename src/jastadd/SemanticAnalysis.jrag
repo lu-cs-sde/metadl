@@ -36,12 +36,12 @@ aspect ErrorCollection {
         when !unboundVariables().isEmpty()
         to Program.semanticErrors();
 
-    TYPEOFLiteral contributes "Wrong number of arguments in: " + this + ", expected: " + predicateRef().formalpredicate().realArity()
-        when getTerm().isList() &&
-             predicateRef().formalpredicate().isUniqueArity() &&
-             ((TermList)getTerm()).getNumTerms() !=
-             predicateRef().formalpredicate().realArity()
-        to Program.semanticErrors();
+    // TYPEOFLiteral contributes "Wrong number of arguments in: " + this + ", expected: " + predicateRef().formalpredicate().realArity()
+    //     when getTerm().isList() &&
+    //          predicateRef().formalpredicate().isUniqueArity() &&
+    //          ((TermList)getTerm()).getNumTerms() !=
+    //          predicateRef().formalpredicate().realArity()
+    //     to Program.semanticErrors();
 
     NEGLiteral contributes "Free variable(s) " + freeVars() + " in " + this + " in rule " + clause()
         when !freeVars().isEmpty()

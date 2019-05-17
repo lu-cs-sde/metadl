@@ -28,7 +28,7 @@ OUTPUTLiteral:Literal ::= Term;
 PREDLiteral:Literal   ::= Term /PredicateRef*/;
 ATOMLiteral:Literal   ::= Term /PredicateRef*/;
 TYPEOFLiteral:Literal ::= PredicateRef:Term Term;
-NEGLiteral:Literal    ::= Literal:CommonLiteral;
+NEGLiteral:Literal    ::= Literal;
 
 BINDLiteral:Literal ::= Variable:CommonVariable Right:Expr;
 IMPORTLiteral:Literal ::= FileLoc:Term ProgramRef:PredicateRef;

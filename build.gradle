@@ -211,3 +211,8 @@ task cleanGeneratedJava(type: Delete) {
     delete file('./out')
     delete file('./tmp')
 }
+
+// Additional flags to the java compilter
+compileJava {
+    options.compilerArgs << "-Xlint:deprecation"
+}

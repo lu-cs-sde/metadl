@@ -136,7 +136,7 @@ aspect Pattern {
 		lang.ast.List<lang.ast.Term> terms = new lang.ast.List<>();
 		terms.add(new lang.ast.Variable(varName()));
 		// remove the index if it exists
-		Constant newConst = this.fullCopy();
+		Constant newConst = this.treeCopyNoTransform();
 		this.setIndexOpt(new Opt());
 		terms.add(constantValue());
 		literals.add(new lang.ast.Atom(pred, terms));
@@ -259,7 +259,7 @@ aspect AnalyzeBlock {
 			lang.ast.CommonLiteral head = new lang.ast.Atom(new lang.ast.PredicateSymbol(scopePrefix + "ID"),
 									headVars);
 			lang.ast.CommonLiteral body = new lang.ast.Atom(new lang.ast.PredicateSymbol(scopePrefix + name),
-									headVars.fullCopy());
+									headVars.treeCopyNoTransform());
 
 			headList.add(head);
 			bodyList.add(body);
@@ -351,7 +351,7 @@ aspect AnalyzeBlock {
 				lang.ast.List<lang.ast.Term> vars = new lang.ast.List<>();
 				for (ProgRelPart pr : ProgRelPart.getProgramRelationStructure()) {
 					for (int i = 0; i < pr.defaultValue.arity(); ++i) {
-						vars.add(pr.defaultValue.coord(i).fullCopy());
+						vars.add(pr.defaultValue.coord(i).treeCopyNoTransform());
 					}
 				}
 

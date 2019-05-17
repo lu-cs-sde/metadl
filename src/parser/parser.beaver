@@ -118,7 +118,7 @@ literal = edb_literal
 
 pattern = PATTERN.pat {: return new Pattern((String)pat.value); :};
 
-neg_literal = NOT LPARA common_literal.lit RPARA {: return new NEGLiteral(new PredicateSymbol("NOT"), lit); :};
+neg_literal = NOT LPARA literal.lit RPARA {: return new NEGLiteral(new PredicateSymbol("NOT"), lit); :};
 
 bind_literal = BIND LPARA variable.var COMMA expr.right RPARA {: return new BINDLiteral(new PredicateSymbol("BIND"), var, right); :};
 

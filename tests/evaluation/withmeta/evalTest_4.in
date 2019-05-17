@@ -1,2 +1,0 @@
-OUTPUT('B).
-B(x, y) :- TYPEOF(x, y).

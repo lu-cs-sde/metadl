@@ -135,15 +135,6 @@ aspect PretyPrinting {
         pr.out.print(")");
     }
 
-    public void TYPEOFLiteral.prettyPrint(PrettyPrinter pr) {
-        pr.prettyPrint(getPredicate());
-        pr.out.print("(");
-        pr.prettyPrint(getPredicateRef());
-        pr.out.print(",");
-        pr.prettyPrint(getTerm());
-        pr.out.print(")");
-    }
-
     public void BinaryExclusiveTermLiteral.prettyPrint(PrettyPrinter pr) {
     	pr.prettyPrint(getPredicate());
         pr.out.print("(");

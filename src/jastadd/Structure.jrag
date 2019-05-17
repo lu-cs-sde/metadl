@@ -249,7 +249,6 @@ aspect Literal {
 	eq OUTPUTLiteral.isInclusive() = true;
 	eq PREDLiteral.isInclusive() = true;
 	eq ATOMLiteral.isInclusive() = true;
-	eq TYPEOFLiteral.isInclusive() = true;
 	eq IMPORTLiteral.isInclusive() = true;
 
     inh boolean Literal.isDef();
@@ -280,7 +279,6 @@ aspect Literal {
     	return list;
     }
 
-    syn PredicateRef TYPEOFLiteral.predicateRef() = (PredicateRef) getPredicateRef();
 
     syn boolean Literal.isGround() = variables().isEmpty();
 
@@ -289,7 +287,6 @@ aspect Literal {
     EDBLiteral    implements PredefinedLiteral;
     PREDLiteral   implements PredefinedLiteral;
     OUTPUTLiteral implements PredefinedLiteral;
-    TYPEOFLiteral implements PredefinedLiteral;
     IMPORTLiteral implements PredefinedLiteral;
 
     syn boolean CommonLiteral.isPredefined() = false;
@@ -314,11 +311,6 @@ aspect Literal {
     eq OUTPUTLiteral.variables() = toVarSet(getTerm());
     eq ATOMLiteral.variables()   = toVarSet(getTerm());
     eq PREDLiteral.variables()   = toVarSet(getTerm());
-    eq TYPEOFLiteral.variables() {
-    	TreeSet<Variable> s = toVarSet(getTerm());
-    	if(getPredicateRef().isVariable()) s.add((Variable)getPredicateRef());
-    	return s;
-    }
     eq NEGLiteral.variables()    = getLiteral().variables();
     eq EQLISTLiteral.variables() {
     	if(getTermList().isVariable()) return toVarSet(getTermList());
@@ -541,7 +533,6 @@ aspect Types {
     ATOMLiteral   contributes new MapEntry<FormalPredicate, PseudoTuple>(predicate().formalpredicate(), type()) to Program.pass1TypeMap();
     EDBLiteral    contributes new MapEntry<FormalPredicate, PseudoTuple>(predicate().formalpredicate(), type()) to Program.pass1TypeMap();
     PREDLiteral   contributes new MapEntry<FormalPredicate, PseudoTuple>(predicate().formalpredicate(), type()) to Program.pass1TypeMap();
-    TYPEOFLiteral contributes new MapEntry<FormalPredicate, PseudoTuple>(predicate().formalpredicate(), type()) to Program.pass1TypeMap();
     IMPORTLiteral contributes new MapEntry<FormalPredicate, PseudoTuple>(predicate().formalpredicate(), type()) to Program.pass1TypeMap();
 
     Literal contributes new MapEntry<FormalPredicate, PseudoTuple>(predicate().formalpredicate(), toTuple().toTypeTuple())
@@ -572,7 +563,6 @@ aspect Types {
 	eq  OUTPUTLiteral.actualType() = new PseudoTuple(new List(getTerm().type()));
 	eq  PREDLiteral.actualType()   = new PseudoTuple(new List(getTerm().type()));
 	eq  EDBLiteral.actualType()    = new PseudoTuple(new List(TypeName.predRefT(), getFileLoc().type()));
-	eq  TYPEOFLiteral.actualType() = new PseudoTuple(new List(getPredicateRef().type(), getTerm().type()));
 	eq  IMPORTLiteral.actualType() = new PseudoTuple(new List(getFileLoc().type(), getProgramRef().type()));
 
 	syn PseudoTuple PredefinedLiteral.type();
@@ -580,7 +570,6 @@ aspect Types {
 	eq  OUTPUTLiteral.type() = new PseudoTuple(new List(TypeName.predRefT()));
 	eq  PREDLiteral.type()   = new PseudoTuple(new List(TypeName.predRefT()));
 	eq  EDBLiteral.type()    = new PseudoTuple(new List(TypeName.predRefT(), TypeName.stringT()));
-	eq  TYPEOFLiteral.type() = new PseudoTuple(new List(TypeName.predRefT(), TypeName.listOfT(TypeName.typeT())));
 	eq  IMPORTLiteral.type() = new PseudoTuple(new List(TypeName.stringT(), TypeName.predRefT()));
 
 	syn String Term.souffleType() {

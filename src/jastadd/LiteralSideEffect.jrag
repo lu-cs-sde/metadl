@@ -114,17 +114,6 @@ aspect InitialSideEffect {
             r.addTuple(new PseudoTuple(pr));
         }
     }
-
-    public void TYPEOFLiteral.initialSideEffect(Program program, Description descr) {
-    	predicate().formalpredicate().relation = new Relation(arity());
-    	Relation r = predicate().formalpredicate().relation;
-    	for(FormalPredicate fp : program.getFormalPredicates()) {
-    		PredicateRef pr = new PredicateRef(fp.predicateName());
-    		Term type = program.derivedTypeMap.get(fp);
-    		if(type == null) continue;
-    		r.addTuple(new PseudoTuple(pr, type));
-    	}
-    }
 }
 
 aspect LiteralSelection {

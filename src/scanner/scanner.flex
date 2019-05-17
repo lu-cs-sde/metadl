@@ -69,7 +69,6 @@ String  = \"[^\"]*\"
 "PRED"     {  return  sym(Terminals.PRED);           }
 "ATOM"     {  return  sym(Terminals.ATOM);           }
 "BIND"     {  return  sym(Terminals.BIND);           }
-"TYPEOF"   {  return  sym(Terminals.TYPEOF);         }
 "IMPORT"   {  return  sym(Terminals.IMPORT);         }
 "analyze"  {  return  sym(Terminals.ANALYZE);        }
 {Numeral}  {  return  sym(Terminals.NUMERAL);        }

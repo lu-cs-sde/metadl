@@ -21,7 +21,6 @@
 %typeof  literal             =  "Literal";
 %typeof  bin_excl_term_lit   =  "BinaryExclusiveTermLiteral";
 %typeof  bind_literal        =  "BINDLiteral";
-%typeof  typeof_literal      =  "TYPEOFLiteral";
 %typeof  edb_literal         =  "EDBLiteral";
 %typeof  output_literal      =  "OUTPUTLiteral";
 %typeof  pred_literal        =  "PREDLiteral";
@@ -99,7 +98,6 @@ common_literal = literal
 literal = edb_literal
         | output_literal
         | atom
-        | typeof_literal
         | import_literal
         | neg_literal
         | bind_literal
@@ -137,7 +135,6 @@ edb_literal    = EDB    LPARA pred_ref.pred COMMA term.filelocs RPARA {: return 
 output_literal = OUTPUT LPARA term.t RPARA                            {: return new OUTPUTLiteral(new PredicateSymbol("OUTPUT"), t);         :};
 pred_literal   = PRED   LPARA term.t RPARA                            {: return new PREDLiteral(new PredicateSymbol("PRED"), t);             :};
 atom_literal   = ATOM   LPARA term.t RPARA                            {: return new ATOMLiteral(new PredicateSymbol("ATOM"), t);             :};
-typeof_literal = TYPEOF LPARA term.pred COMMA term.t RPARA            {: return new TYPEOFLiteral(new PredicateSymbol("TYPEOF"), pred, t);   :};
 import_literal = IMPORT LPARA term.file_loc
                         COMMA pred_ref.program_ref
                         RPARA

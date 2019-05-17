@@ -96,7 +96,7 @@ aspect Rules {
 			if(!c.isRule()) continue;
 			Rule r = (Rule)c;
 			if(!rules_use.contains(r)) continue;
-			for(CommonLiteral lit : r.getBodys()) {
+			for(CommonLiteral lit : r.flattenedBodyLiterals()) {
 				if(!lit.isNeg()) continue;
 				NEGLiteral nl = (NEGLiteral) lit;
 				if(nl.getLiteral().predicate().getPRED_ID().equals(use.predicateName())) return true;
@@ -107,16 +107,16 @@ aspect Rules {
 
 	syn TreeSet<Literal> Rule.inclusiveBodyLiterals() {
 		TreeSet<Literal> literals = new TreeSet<Literal>(Literal.literalComparator);
-		for(CommonLiteral l : getBodys()) {
-			if(l.isInclusive()) literals.add((Literal)l);
+		for(Literal l : flattenedBodyLiterals()) {
+			if(l.isInclusive()) literals.add(l);
 		}
 		return literals;
 	}
 
 	syn TreeSet<Literal> Rule.exclusiveBodyLiterals() {
 		TreeSet<Literal> literals = new TreeSet<Literal>(Literal.literalComparator);
-		for(CommonLiteral l : getBodys()) {
-			if(!l.isInclusive()) literals.add((Literal)l);
+		for(Literal l : flattenedBodyLiterals()) {
+			if(!l.isInclusive()) literals.add(l);
 		}
 		return literals;
 	}
@@ -128,7 +128,7 @@ aspect DependencyGraph {
 		for(Clause c : definedIn()) {
 			if(!c.isRule())continue;
 			Rule r = (Rule) c;
-			for(CommonLiteral l : r.getBodys()) {
+			for (Literal l : r.flattenedBodyLiterals()) {
 				if(l.isNeg()) {
 					NEGLiteral nl = (NEGLiteral) l;
 					defIn.add(nl.getLiteral().predicate().formalpredicate());

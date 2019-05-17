@@ -139,11 +139,17 @@ aspect Clause {
 	eq AnalyzeBlock.isRule() = false;
 
     syn HashSet<Literal> Rule.literals() {
-    	HashSet<Literal> literals = new HashSet<Literal>();
-    	for(CommonLiteral l : getHeadss()) literals.addAll(l.flattenedLiterals());
-    	for(CommonLiteral l : getBodys())  literals.addAll(l.flattenedLiterals());
-    	return literals;
-    }
+		HashSet<Literal> literals = new HashSet<Literal>();
+		for(CommonLiteral l : getHeadss()) literals.addAll(l.flattenedLiterals());
+		literals.addAll(flattenedBodyLiterals());
+		return literals;
+	}
+
+	syn HashSet<Literal> Rule.flattenedBodyLiterals() {
+		HashSet<Literal> literals = new HashSet<Literal>();
+		for(CommonLiteral l : getBodys())  literals.addAll(l.flattenedLiterals());
+		return literals;
+	}
 
     syn HashSet<Literal> Rule.inclusiveLiterals() {
     	HashSet<Literal> literals = new HashSet<Literal>();

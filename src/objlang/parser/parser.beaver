@@ -10,9 +10,9 @@
 :};
 
 %terminals VAR_ID, METAVAR_ID, PRED_ID, PRED_REF, LPARA, RPARA, LBRACK, RBRACK, LBRACE, RBRACE, ELLIPSIS, COLON,
-           NUMERAL, STRING, DOT, COMMA, IMPLIED_BY, EDB, OUTPUT, IMPORT, PRED,
-           ATOM, NOT, BIND,  EQ, NEQ, LT, LTE, GT, GTE, ADD, SUB, MUL, DIV,
-           TYPEOF, ANALYZE;
+           NUMERAL, STRING, DOT, COMMA, IMPLIED_BY, EDB, OUTPUT, IMPORT,
+           NOT, BIND,  EQ, NEQ, LT, LTE, GT, GTE, ADD, SUB, MUL, DIV,
+           ANALYZE;
 
 %typeof  program             =  "Program";
 %typeof  clause              =  "CommonClause";
@@ -22,11 +22,8 @@
 %typeof  literal             =  "Literal";
 %typeof  bin_excl_term_lit   =  "BinaryExclusiveTermLiteral";
 %typeof  bind_literal        =  "BINDLiteral";
-%typeof  typeof_literal      =  "TYPEOFLiteral";
 %typeof  edb_literal         =  "EDBLiteral";
 %typeof  output_literal      =  "OUTPUTLiteral";
-%typeof  pred_literal        =  "PREDLiteral";
-%typeof  atom_literal        =  "ATOMLiteral";
 %typeof  neg_literal         =  "NEGLiteral";
 %typeof  eq_literal          =  "EQLiteral";
 %typeof  neq_literal         =  "NEQLiteral";
@@ -105,13 +102,10 @@ literal = gap_literal
         | edb_literal
         | output_literal
         | atom
-        | typeof_literal
         | import_literal
         | neg_literal
         | bind_literal
         | bin_excl_term_lit
-        | pred_literal
-        | atom_literal
         ;
 
 meta_atom = meta_variable.mv LPARA term_list.terms RPARA {: return new MetaAtom(mv, terms); :};
@@ -143,9 +137,6 @@ gte_literal = GTE LPARA expr.left COMMA expr.right RPARA {: return new GTELitera
 atom = pred_sym.pred LPARA term_list.terms RPARA                      {: return new Atom(pred, terms); :};
 edb_literal    = EDB    LPARA pred_ref.pred COMMA term.filelocs RPARA {: return new EDBLiteral(new PredicateSymbol("EDB"), pred, filelocs);  :};
 output_literal = OUTPUT LPARA term.t RPARA                            {: return new OUTPUTLiteral(new PredicateSymbol("OUTPUT"), t);         :};
-pred_literal   = PRED   LPARA term.t RPARA                            {: return new PREDLiteral(new PredicateSymbol("PRED"), t);             :};
-atom_literal   = ATOM   LPARA term.t RPARA                            {: return new ATOMLiteral(new PredicateSymbol("ATOM"), t);             :};
-typeof_literal = TYPEOF LPARA term.pred COMMA term.t RPARA            {: return new TYPEOFLiteral(new PredicateSymbol("TYPEOF"), pred, t);   :};
 import_literal = IMPORT LPARA term.file_loc
                         COMMA pred_ref.program_ref
                         RPARA

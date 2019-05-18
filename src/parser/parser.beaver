@@ -40,8 +40,6 @@
 %typeof  term                =  "Term";
 %typeof  term_list           =  "List";
 %typeof  term_list_no_empty  =  "List";
-%typeof  term_list_space     =  "List";
-%typeof  term_list_space_no_empty  =  "List";
 %typeof  lit_list            =  "List";
 %typeof  clause_list         =  "List";
 %typeof  inner_clause_list   =  "List";
@@ -57,7 +55,6 @@
 %typeof  sub_expr            =  "Functor";
 %typeof  mul_expr            =  "Functor";
 %typeof  div_expr            =  "Functor";
-%typeof  term_list_term      =  "TermList";
 %typeof  analyze_block       =  "AnalyzeBlock";
 %typeof  pattern             =  "Pattern";
 
@@ -186,7 +183,6 @@ div_expr = expr_factor.e1 DIV expr_unit.e2 {: Functor f = new Functor(new Functo
 term = variable
      | constant
      | pred_ref
-     | term_list_term
      ;
 
 pred_sym = PRED_ID.id  {: return new PredicateSymbol((String)id.value); :};
@@ -200,12 +196,3 @@ constant = int_constant
 
 int_constant    = NUMERAL.num {: return new IntConstant((String)num.value); :};
 string_constant = STRING.str {: return new StringConstant((String)str.value); :};
-term_list_term  = LBRACK term_list_space.tl RBRACK {: return new TermList(tl); :};
-
-term_list_space = term_list_space_no_empty
-          | /* epsilon */ {: return new List(); :}
-          ;
-
-term_list_space_no_empty = term.t {: return new List().add(t); :}
-                   | term_list_space_no_empty.list term.t {: return list.add(t); :}
-                   ;

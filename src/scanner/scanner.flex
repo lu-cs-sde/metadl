@@ -45,8 +45,6 @@ String  = \"[^\"]*\"
 // token definitions
 "("        {  return  sym(Terminals.LPARA);          }
 ")"        {  return  sym(Terminals.RPARA);          }
-"["        {  return  sym(Terminals.LBRACK);         }
-"]"        {  return  sym(Terminals.RBRACK);         }
 "{"        {  return  sym(Terminals.LBRACE);         }
 "}"        {  return  sym(Terminals.RBRACE);         }
 ":-"       {  return  sym(Terminals.IMPLIED_BY);     }

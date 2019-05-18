@@ -17,7 +17,6 @@ aspect Conversion {
 
 	eq IMPORTLiteral.evalOrder()  = 0;
 	eq EDBLiteral.evalOrder()     = 1;
-	eq ATOMLiteral.evalOrder()    =  2;
 	eq OUTPUTLiteral.evalOrder()  =  5;
 	eq Atom.evalOrder()           =  6;
 	eq BINDLiteral.evalOrder()    =  7;

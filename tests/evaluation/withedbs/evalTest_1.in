@@ -1,4 +1,4 @@
-OUTPUT(x) :- ATOM(x).
+OUTPUT('A).
 A("", "") :- NEQ(0, 0).
 EDB('A, "A.csv").
 A(x, z) :- A(x, y), A(y, z).

@@ -1,5 +1,5 @@
 EDBNAME("EDB.csv").
 EDB('EDB, x) :- EDBNAME(x).
 A("", "") :- NEQ(0, 0).
-OUTPUT(x) :- ATOM(x).
+OUTPUT('A).
 A(x, z) :- A(x, y), A(y, z).

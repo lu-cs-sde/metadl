@@ -1,4 +1,4 @@
-OUTPUT(x) :- ATOM(x).
+OUTPUT('A).
 EDB('A, "A.csv").
 
 A("", "") :- NEQ(0, 0).

@@ -67,7 +67,6 @@ aspect TypeChecking {
 
    	syn String PredefinedLiteral.typeErrorMsg() = "Expected: " + type() + " but got: " + actualType() + " for " + predicate().getPRED_ID();
     OUTPUTLiteral contributes typeErrorMsg() when !satisfiedType() to Program.initialTypeCheckErrors();
-    ATOMLiteral   contributes typeErrorMsg() when !satisfiedType() to Program.initialTypeCheckErrors();
     EDBLiteral    contributes typeErrorMsg() when !satisfiedType() to Program.initialTypeCheckErrors();
     IMPORTLiteral contributes typeErrorMsg() when !satisfiedType() to Program.initialTypeCheckErrors();
 }

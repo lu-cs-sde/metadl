@@ -1,2 +1,2 @@
-OUTPUT(x) :- ATOM(x).
+OUTPUT('A).
 A(x) :- BIND(x, "Integer").

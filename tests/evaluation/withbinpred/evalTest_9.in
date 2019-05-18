@@ -1,4 +1,7 @@
-OUTPUT(x) :- ATOM(x), NEQ('Vars, x).
+OUTPUT('A).
+OUTPUT('B).
+OUTPUT('C).
+OUTPUT('Filter).
 OUTPUT('OUTPUT).
 EDB('Vars, "Vars.csv").
 

@@ -1,5 +1,4 @@
-OUTPUT(x) :- ATOM(x).
-
+OUTPUT('A), OUTPUT('B), OUTPUT('C).
 A("A", "B").
 B("D", "E").
 C("C11", "C12", "C13").

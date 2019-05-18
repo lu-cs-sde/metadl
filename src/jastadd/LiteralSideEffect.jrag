@@ -98,14 +98,6 @@ aspect InitialSideEffect {
 				fp.relation = new Relation(fp.realArity());
         }
     }
-
-    public void ATOMLiteral.initialSideEffect(Program program, Description descr) {
-        predicate().formalpredicate().relation = new Relation(arity());
-        Relation r = predicate().formalpredicate().relation;
-        for(PredicateRef pr : getPredicateRefs()) {
-            r.addTuple(new PseudoTuple(pr));
-        }
-    }
 }
 
 aspect LiteralSelection {

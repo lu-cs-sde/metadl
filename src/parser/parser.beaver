@@ -11,7 +11,7 @@
 
 %terminals VAR_ID, PRED_ID, PRED_REF, LPARA, RPARA, LBRACK, RBRACK, LBRACE, RBRACE,
            NUMERAL, STRING, DOT, COMMA, IMPLIED_BY, EDB, OUTPUT, IMPORT,
-           ATOM, NOT, BIND,  EQ, EQLIST, NEQ, LT, LTE, GT, GTE, ADD, SUB, MUL, DIV,
+           NOT, BIND,  EQ, EQLIST, NEQ, LT, LTE, GT, GTE, ADD, SUB, MUL, DIV,
            ANALYZE, PATTERN;
 
 %typeof  program             =  "Program";
@@ -23,7 +23,6 @@
 %typeof  bind_literal        =  "BINDLiteral";
 %typeof  edb_literal         =  "EDBLiteral";
 %typeof  output_literal      =  "OUTPUTLiteral";
-%typeof  atom_literal        =  "ATOMLiteral";
 %typeof  neg_literal         =  "NEGLiteral";
 %typeof  eq_literal          =  "EQLiteral";
 %typeof  eq_list_literal     =  "EQLISTLiteral";
@@ -102,7 +101,6 @@ literal = edb_literal
         | bind_literal
         | bin_excl_term_lit
         | eq_list_literal
-        | atom_literal
         ;
 
 pattern = PATTERN.pat {: return new Pattern((String)pat.value); :};
@@ -131,7 +129,6 @@ eq_list_literal = EQLIST LPARA term_list_term.terms RPARA {: return new EQLISTLi
 atom = pred_sym.pred LPARA term_list.terms RPARA                      {: return new Atom(pred, terms); :};
 edb_literal    = EDB    LPARA pred_ref.pred COMMA term.filelocs RPARA {: return new EDBLiteral(new PredicateSymbol("EDB"), pred, filelocs);  :};
 output_literal = OUTPUT LPARA term.t RPARA                            {: return new OUTPUTLiteral(new PredicateSymbol("OUTPUT"), t);         :};
-atom_literal   = ATOM   LPARA term.t RPARA                            {: return new ATOMLiteral(new PredicateSymbol("ATOM"), t);             :};
 import_literal = IMPORT LPARA term.file_loc
                         COMMA pred_ref.program_ref
                         RPARA

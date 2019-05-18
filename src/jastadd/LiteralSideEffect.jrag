@@ -99,14 +99,6 @@ aspect InitialSideEffect {
         }
     }
 
-    public void PREDLiteral.initialSideEffect(Program program, Description descr) {
-        predicate().formalpredicate().relation = new Relation(arity());
-        Relation r = predicate().formalpredicate().relation;
-        for(PredicateRef pr : getPredicateRefs()) {
-            r.addTuple(new PseudoTuple(pr));
-        }
-    }
-
     public void ATOMLiteral.initialSideEffect(Program program, Description descr) {
         predicate().formalpredicate().relation = new Relation(arity());
         Relation r = predicate().formalpredicate().relation;
@@ -118,7 +110,7 @@ aspect InitialSideEffect {
 
 aspect LiteralSelection {
     public Relation Literal.accumBody(Relation body_rel) {
-    	Relation r_current = predicate().formalpredicate().relation.select(Binding.createBinding(toTuple()));
+		Relation r_current = predicate().formalpredicate().relation.select(Binding.createBinding(toTuple()));
 		return Relation.join(body_rel, r_current);
     }
     public Relation NEGLiteral.accumBody(Relation body_rel) {

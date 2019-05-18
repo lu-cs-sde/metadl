@@ -69,6 +69,5 @@ aspect TypeChecking {
     OUTPUTLiteral contributes typeErrorMsg() when !satisfiedType() to Program.initialTypeCheckErrors();
     ATOMLiteral   contributes typeErrorMsg() when !satisfiedType() to Program.initialTypeCheckErrors();
     EDBLiteral    contributes typeErrorMsg() when !satisfiedType() to Program.initialTypeCheckErrors();
-    PREDLiteral   contributes typeErrorMsg() when !satisfiedType() to Program.initialTypeCheckErrors();
     IMPORTLiteral contributes typeErrorMsg() when !satisfiedType() to Program.initialTypeCheckErrors();
 }

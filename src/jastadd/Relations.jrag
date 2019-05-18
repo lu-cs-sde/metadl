@@ -10,7 +10,6 @@ aspect Arity {
     eq NEGLiteral.arity()    = 1;
     eq EDBLiteral.arity()    = 2;
     eq OUTPUTLiteral.arity() = 1;
-    eq PREDLiteral.arity()   = 1;
     eq ATOMLiteral.arity()   = 1;
     eq BINDLiteral.arity()   = 2;
     eq EQLISTLiteral.arity() = 1;
@@ -58,7 +57,6 @@ aspect Relation {
 	eq Atom.toTuple()          = new PseudoTuple(getTermss());
 	eq EDBLiteral.toTuple()    = new PseudoTuple(getPredicateRef(), getFileLoc());
 	eq OUTPUTLiteral.toTuple() = new PseudoTuple(getTerm());
-	eq PREDLiteral.toTuple()   = new PseudoTuple(getTerm());
 	eq ATOMLiteral.toTuple()   = new PseudoTuple(getTerm());
 	eq EQLISTLiteral.toTuple() = new PseudoTuple(getTermList().getTermss());
 	eq BinaryExclusiveTermLiteral.toTuple()  = new PseudoTuple(0);

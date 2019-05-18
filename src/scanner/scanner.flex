@@ -66,7 +66,6 @@ String  = \"[^\"]*\"
 "EDB"      {  return  sym(Terminals.EDB);            }
 "OUTPUT"   {  return  sym(Terminals.OUTPUT);         }
 "NOT"      {  return  sym(Terminals.NOT);            }
-"PRED"     {  return  sym(Terminals.PRED);           }
 "ATOM"     {  return  sym(Terminals.ATOM);           }
 "BIND"     {  return  sym(Terminals.BIND);           }
 "IMPORT"   {  return  sym(Terminals.IMPORT);         }

@@ -279,7 +279,26 @@ aspect TypePrinting {
     	terms.addAll(variables());
     	for(Constant c : constants())
     		terms.add(c.type());
-    	printCollection(terms, "EQLIST([", "])", " ", pr);
+
+		if (terms.size() < 2)
+			return;
+
+		Iterator<Term> it = terms.iterator();
+		Term t1 = it.next();
+		Term t2 = null;
+
+		while (it.hasNext()) {
+			t2 = it.next();
+			pr.out.print("EQ(");
+			pr.prettyPrint(t1);
+			pr.out.print(",");
+			pr.prettyPrint(t2);
+			pr.out.print(")");
+			if (it.hasNext())
+				pr.out.print(",");
+			t1 = t2;
+		}
+
     }
 
     public void BINDLiteral.typePrintRule(PrettyPrinter pr) {
@@ -288,7 +307,25 @@ aspect TypePrinting {
     	terms.addAll(getRight().variables());
     	for(Constant c : getRight().constants())
     		terms.add(c.type());
-    	printCollection(terms, "EQLIST([", "])", " ", pr);
+
+		if (terms.size() < 2)
+			return;
+
+		Iterator<Term> it = terms.iterator();
+		Term t1 = it.next();
+		Term t2 = null;
+
+		while (it.hasNext()) {
+			t2 = it.next();
+			pr.out.print("EQ(");
+			pr.prettyPrint(t1);
+			pr.out.print(",");
+			pr.prettyPrint(t2);
+			pr.out.print(")");
+			if (it.hasNext())
+				pr.out.print(",");
+			t1 = t2;
+		}
     }
 
     public void BINDLiteral.typePrint(PrettyPrinter pr) {

@@ -283,10 +283,6 @@ aspect Literal {
     eq EDBLiteral.variables()    = toVarSet(getFileLoc());
     eq OUTPUTLiteral.variables() = toVarSet(getTerm());
     eq NEGLiteral.variables()    = getLiteral().variables();
-    eq EQLISTLiteral.variables() {
-    	if(getTermList().isVariable()) return toVarSet(getTermList());
-    	return getTermList().variables();
-    }
 
     eq BINDLiteral.variables()  {
 		TreeSet<Variable> vars = new TreeSet<Variable>(Term.termComparator);

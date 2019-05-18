@@ -27,7 +27,6 @@ aspect Conversion {
 	eq LTELiteral.evalOrder()     =  12;
 	eq GTLiteral.evalOrder()      =  13;
 	eq GTELiteral.evalOrder()     =  14;
-	eq EQLISTLiteral.evalOrder()  =  15;
 }
 
 aspect Comparison {

@@ -11,7 +11,7 @@
 
 %terminals VAR_ID, PRED_ID, PRED_REF, LPARA, RPARA, LBRACK, RBRACK, LBRACE, RBRACE,
            NUMERAL, STRING, DOT, COMMA, IMPLIED_BY, EDB, OUTPUT, IMPORT,
-           NOT, BIND,  EQ, EQLIST, NEQ, LT, LTE, GT, GTE, ADD, SUB, MUL, DIV,
+           NOT, BIND,  EQ, NEQ, LT, LTE, GT, GTE, ADD, SUB, MUL, DIV,
            ANALYZE, PATTERN;
 
 %typeof  program             =  "Program";
@@ -25,7 +25,6 @@
 %typeof  output_literal      =  "OUTPUTLiteral";
 %typeof  neg_literal         =  "NEGLiteral";
 %typeof  eq_literal          =  "EQLiteral";
-%typeof  eq_list_literal     =  "EQLISTLiteral";
 %typeof  neq_literal         =  "NEQLiteral";
 %typeof  lt_literal          =  "LTLiteral";
 %typeof  lte_literal         =  "LTELiteral";
@@ -100,7 +99,6 @@ literal = edb_literal
         | neg_literal
         | bind_literal
         | bin_excl_term_lit
-        | eq_list_literal
         ;
 
 pattern = PATTERN.pat {: return new Pattern((String)pat.value); :};
@@ -124,7 +122,6 @@ lte_literal = LTE LPARA expr.left COMMA expr.right RPARA {: return new LTELitera
 gt_literal  = GT  LPARA expr.left COMMA expr.right RPARA {: return new GTLiteral(new PredicateSymbol("GT"),   left, right); :};
 gte_literal = GTE LPARA expr.left COMMA expr.right RPARA {: return new GTELiteral(new PredicateSymbol("GTE"), left, right); :};
 
-eq_list_literal = EQLIST LPARA term_list_term.terms RPARA {: return new EQLISTLiteral(new PredicateSymbol("EQLIST"),   terms); :};
 
 atom = pred_sym.pred LPARA term_list.terms RPARA                      {: return new Atom(pred, terms); :};
 edb_literal    = EDB    LPARA pred_ref.pred COMMA term.filelocs RPARA {: return new EDBLiteral(new PredicateSymbol("EDB"), pred, filelocs);  :};

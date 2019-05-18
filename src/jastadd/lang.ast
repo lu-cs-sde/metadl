@@ -36,7 +36,6 @@ LTLiteral:BinaryExclusiveTermLiteral;
 LTELiteral:BinaryExclusiveTermLiteral;
 GTLiteral:BinaryExclusiveTermLiteral;
 GTELiteral:BinaryExclusiveTermLiteral;
-EQLISTLiteral:Literal ::= TermList;
 
 /**
 	Expressions

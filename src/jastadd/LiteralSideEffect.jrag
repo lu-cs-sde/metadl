@@ -149,27 +149,6 @@ aspect LiteralSelection {
 		}
 	}
 
-
-    public Relation EQLISTLiteral.accumBody(Relation body_rel) {
-        TreeSet<Variable> variables = getTermList().variables();
-        TreeSet<Constant> constants = getTermList().constants();
-        PseudoTuple name_tuple = new PseudoTuple(variables);
-
-        Iterator<PseudoTuple> itr = body_rel.tuples().iterator();
-        while(itr.hasNext()) {
-            PseudoTuple ps = itr.next();
-            PseudoTuple project = new PseudoTuple(ps, body_rel.binding, name_tuple);
-
-            if(!project.isUniInfo() || constants.size() > 1) {
-                itr.remove();
-            } else if (constants.size() == 1 && project.arity() > 0 &&
-                    Term.termComparator.compare(constants.iterator().next(), project.coord(0)) != 0) {
-                itr.remove();
-            }
-        }
-        return body_rel;
-    }
-
     public Relation BinaryExclusiveTermLiteral.accumBody(Relation body_rel) {
         TreeSet<Variable> variables = variables();
         PseudoTuple name_tuple = new PseudoTuple(variables);

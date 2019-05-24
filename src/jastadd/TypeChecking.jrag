@@ -2,15 +2,16 @@ import lang.io.FileUtil;
 import lang.evaluation.BottomUpNaiveIterative;
 import java.util.Collections;
 import lang.relation.Instantiation;
+import java.util.LinkedList;
 aspect TypeChecking {
 	 /**
 	  * Type Store (Gamma)
 	  */
-	 public TreeMap<FormalPredicate, TermList> Program.derivedTypeMap = new TreeMap<FormalPredicate, TermList>(FormalPredicate.formalPredicateComparator);
+	 public TreeMap<FormalPredicate, LinkedList<Term>> Program.derivedTypeMap = new TreeMap<>(FormalPredicate.formalPredicateComparator);
 
-	 private TermList Program.typeTupleToTermList(PseudoTuple type_tuple) {
-	 	TermList tl = new TermList();
-	 	for(int i = 0; i != type_tuple.arity(); ++i) tl.addTerms(type_tuple.coord(i));
+	 private LinkedList<Term> Program.typeTupleToTermList(PseudoTuple type_tuple) {
+	 	LinkedList<Term> tl = new LinkedList();
+	 	for(int i = 0; i != type_tuple.arity(); ++i) tl.add(type_tuple.coord(i));
 	 	return tl;
 	 }
 

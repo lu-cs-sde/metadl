@@ -51,7 +51,6 @@ Variable:CommonVariable ::= <VAR_ID>;
 PredicateRef:Constant   ::= <PRED_ID>;
 StringConstant:Constant ::= <STRING>;
 IntConstant:Constant    ::= <NUMERAL>;
-TermList:Constant       ::= Terms:Term*;
 
 /**
     PredicateSymbols

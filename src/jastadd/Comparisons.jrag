@@ -10,7 +10,6 @@ aspect Conversion {
 	public String Variable.toString()        { return getVAR_ID(); }
 	public String PredicateRef.toString()    { return "'" + getPRED_ID(); }
 	public String FormalPredicate.toString() { return "FP_" + predicateName(); }
-	public String TermList.toString()        { return prettyPrint(); }
 	public String ASTNode.toString()         { return prettyPrint(); }
 
 	syn int Literal.evalOrder();
@@ -35,22 +34,6 @@ aspect Comparison {
 		public int compare(Term t1, Term t2) {
 			int typeComp = t1.type().toString().compareTo(t2.type().toString());
 			if(typeComp != 0) return typeComp;
-			// if(t1.isInteger()) {
-			// 	int i1 = ((IntConstant) t1).intValue();
-			// 	int i2 = ((IntConstant) t2).intValue();
-			// 	return i1 < i2 ? -1 : (i1 == i2 ? 0 : 1);
-			// }
-			// if(t1.isList()) {
-			// 	TermList tl1 = (TermList) t1;
-			// 	TermList tl2 = (TermList) t2;
-			// 	int size1 = tl1.getNumTerms();
-			// 	int size2 = tl2.getNumTerms();
-			// 	for(int i = 0; i != (int)Math.min(size1, size2); ++i) {
-			// 		int cmp = compare(tl1.getTerms(i), tl2.getTerms(i));
-			// 		if(cmp != 0) return cmp;
-			// 	}
-			// 	return size1 < size2 ? -1 : (size1 == size2 ? 0 : 1);
-			// }
 			return t1.toString().compareTo(t2.toString());
 		}
 	}

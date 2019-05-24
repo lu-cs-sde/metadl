@@ -77,10 +77,6 @@ aspect PretyPrinting {
         pr.out.print(toString());
     }
 
-	public void TermList.prettyPrint(PrettyPrinter pr) {
-        printList(getTermss(), "[", "]", " ", pr);
-    }
-
     public void Atom.prettyPrint(PrettyPrinter pr) {
         pr.prettyPrint(getPredicate());
         printList(getTermss(), "(", ")", ", ", pr);
@@ -466,12 +462,6 @@ aspect SoufflePrinting {
         pr.out.print("\"");
     }
 
-    public void TermList.soufflePrint(PrettyPrinter pr) {
-        pr.out.print("\"");
-        prettyPrint(new StandardPrettyPrinter(pr.out)); // Souffle does not allow nested quotations.
-        pr.out.print("\"");
-    }
-
 	public void Variable.soufflePrint(PrettyPrinter pr) {
 		pr.out.print(getVAR_ID().replace("$", "?"));
 	}
@@ -505,9 +495,9 @@ aspect SoufflePrinting {
         if(!literal().isInclusive()) return;
         pr.out.print(".decl " + predicateName() + "(");
         List<PredicateSymbol> constants = new List<PredicateSymbol>();
-        TermList tl = program().derivedTypeMap.get(this);
+        LinkedList<Term> tl = program().derivedTypeMap.get(this);
         for(int i = 0; i != realArity(); ++i) {
-			String souffleType = tl.getTerms(i).toString().equals(TypeName.integer()) ?
+			String souffleType = tl.get(i).toString().equals(TypeName.integer()) ?
 				"number" : "symbol";
             constants.add(new PredicateSymbol("x_" + i + ":" + souffleType));
         }

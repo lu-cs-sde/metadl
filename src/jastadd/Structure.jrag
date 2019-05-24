@@ -368,26 +368,6 @@ aspect Term {
 
 	inh boolean Term.isNested();
 	eq Program.getChild().isNested() = false;
-	eq TermList.getChild().isNested() = true;
-
-	syn PseudoTuple TermList.toTuple() = new PseudoTuple(getTermss());
-	syn TreeSet<Variable> TermList.variables() {
-		TreeSet<Variable> variables = new TreeSet<Variable>(Term.termComparator);
-		for(Term t : getTermss()) {
-			if(t.isVariable())
-				variables.add((Variable)t);
-		}
-		return variables;
-	}
-
-	syn TreeSet<Constant> TermList.constants() {
-		TreeSet<Constant> constants = new TreeSet<Constant>(Term.termComparator);
-		for(Term t : getTermss()) {
-			if(t.isConstant())
-				constants.add((Constant)t);
-		}
-		return constants;
-	}
 }
 
 aspect Expression {
@@ -509,16 +489,6 @@ aspect Types {
     eq PredicateRef.type()    =  TypeName.predRefT();
     eq StringConstant.type()  =  TypeName.stringT();
     eq IntConstant.type()     =  TypeName.integerT();
-	eq TermList.type() {
-		if(isWellTyped() && hasTerms()) {
-			return TypeName.listOfT(getTerms(0).type());
-		}
-		if(!hasTerms()) return TypeName.listOfT(TypeName.unknownT());
-		return TypeName.badT();
-	}
-
-	syn boolean TermList.isWellTyped() = toTuple().toTypeTuple().isUniInfo();
-
 
 	syn boolean Term.isVariable() = this instanceof Variable;
 	syn boolean Term.isConstant() = !isVariable();

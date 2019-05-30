@@ -16,6 +16,17 @@ aspect Utility {
 			this.k = k;
 			this.v = v;
 		}
+
+		public boolean equals(Object o) {
+			if (!(o instanceof MapEntry))
+				return false;
+			MapEntry<Key, Value> other = (MapEntry<Key, Value>) o;
+			return k.equals(other.k) && v.equals(other.v);
+		}
+
+		public int hashCode() {
+			return k.hashCode() ^ v.hashCode();
+		}
 	}
 
 	public abstract class SetConstructor<Value, S extends Set<Value>> {

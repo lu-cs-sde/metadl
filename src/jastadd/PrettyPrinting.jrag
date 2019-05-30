@@ -8,6 +8,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import lang.relation.PseudoTuple;
 import lang.Compiler;
+import java.util.ArrayList;
 
 aspect PretyPrinting {
 	public void ASTNode.prettyPrint(PrettyPrinter pr) {
@@ -251,7 +252,7 @@ aspect TypePrinting {
     public void NEGLiteral.typePrint(PrettyPrinter pr) { getLiteral().typePrint(pr); }
     public void Literal.typePrint(PrettyPrinter pr) {
 		PseudoTuple tuple = toTuple();
-		List types = new List();
+		ArrayList<Term> types = new ArrayList<>();
 		for(int i = 0; i != tuple.arity(); ++i) {
 			Term t = tuple.coord(i);
 			if(t.isVariable()) types.add(t);
@@ -261,7 +262,7 @@ aspect TypePrinting {
 			pr.out.print(predicate().getPRED_ID());
 		else
 			pr.out.print(Program.transformPredefinedName(predicate().getPRED_ID()));
-		printList(types, "(", ")", ", ", pr);
+		printCollection(types, "(", ")", ", ", pr);
     }
 
     public void BinaryExclusiveTermLiteral.typePrint(PrettyPrinter pr) {
@@ -494,14 +495,14 @@ aspect SoufflePrinting {
     public void FormalPredicate.soufflePrint(PrettyPrinter pr) {
         if(!literal().isInclusive()) return;
         pr.out.print(".decl " + predicateName() + "(");
-        List<PredicateSymbol> constants = new List<PredicateSymbol>();
+        ArrayList<PredicateSymbol> constants = new ArrayList<PredicateSymbol>();
         LinkedList<Term> tl = program().derivedTypeMap.get(this);
         for(int i = 0; i != realArity(); ++i) {
 			String souffleType = tl.get(i).toString().equals(TypeName.integer()) ?
 				"number" : "symbol";
             constants.add(new PredicateSymbol("x_" + i + ":" + souffleType));
         }
-        printList(constants, "", "", ", ", pr);
+        printCollection(constants, "", "", ", ", pr);
         pr.out.print(")");
     }
 

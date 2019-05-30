@@ -1,11 +1,13 @@
 import lang.ast.Term;
 import lang.ast.StringConstant;
 import java.util.Comparator;
+import java.util.Collections;
 
 aspect Type {
 	public abstract class Type {
 		public abstract String name();
 		public Type join(Type t) {
+			// Use a flat type lattice.
 			if (this == t) {
 				return this;
 			} else if (this == BadType.get() || t == BadType.get()) {
@@ -102,6 +104,10 @@ aspect Type {
 			types.set(i, types.get(i).join(t));
 		}
 
+		public Type get(int i) {
+			return types.get(i);
+		}
+
 		public static class Index {
 			private int i;
 			private Type t;
@@ -112,7 +118,7 @@ aspect Type {
 		}
 
 		public void join(Index t) {
-			types.set(t.i, t.t);
+			joinAt(t.i, t.t);
 		}
 	}
 
@@ -145,14 +151,105 @@ aspect Type {
 	}
 }
 
-aspect BasicTypeInference {
+aspect TypeInference {
 	coll PredicateType FormalPredicate.type() [new PredicateType(realArity())] with join root Program;
 	inh int Term.indexInLiteral();
-	eq Literal.getChild(int i).indexInLiteral() = i;
-	eq Functor.getChild().indexInLiteral() = -1;
+	eq Atom.getTerms(int i).indexInLiteral() {
+		return i;
+	}
+	eq Literal.getChild().indexInLiteral() = -1;
+	eq Expr.getChild().indexInLiteral() = -1;
+	eq AnalyzeBlock.getProgramRef().indexInLiteral() = -1;
+	// explicit rules for special literals
+	eq EDBLiteral.getPredicateRef().indexInLiteral() = 0;
+	eq EDBLiteral.getFileLoc().indexInLiteral() = 1;
+	eq OUTPUTLiteral.getTerm().indexInLiteral() = 0;
+	eq IMPORTLiteral.getFileLoc().indexInLiteral() = 0;
+	eq IMPORTLiteral.getProgramRef().indexInLiteral() = 1;
+
 
 	IntConstant contributes (new PredicateType.Index(indexInLiteral(), IntegerType.get()))
 		when indexInLiteral() >= 0
-	    to FormalPredicate.type()
+		to FormalPredicate.type()
 		for literal().getPredicate().formalpredicate();
+
+	StringConstant contributes (new PredicateType.Index(indexInLiteral(), StringType.get()))
+		when indexInLiteral() >= 0
+		to FormalPredicate.type()
+		for literal().getPredicate().formalpredicate();
+
+	PredicateRef contributes (new PredicateType.Index(indexInLiteral(), PredicateRefType.get()))
+		when indexInLiteral() >= 0
+		to FormalPredicate.type()
+		for literal().getPredicate().formalpredicate();
+
+	coll VariableMap Clause.varMap() [new VariableMap()] with add;
+	Variable contributes (new VariableMap.Entry(getVAR_ID(), literal().getPredicate().formalpredicate(), indexInLiteral()))
+		when indexInLiteral() >= 0
+		to Clause.varMap()
+		for literal().clause();
+
+	AnalyzeBlock contributes nta getAllClauses() to Clause.varMap();
+	AnalyzeBlock contributes nta getAllClauses() to FormalPredicate.type();
+	Pattern contributes nta getLiterals() to Clause.varMap();
+
+	public class VariableMap {
+		private Map<String, Set<MapEntry<FormalPredicate, Integer>>> m = new HashMap<>();
+		public void add(String varName, FormalPredicate p, int index) {
+			Set<MapEntry<FormalPredicate, Integer>> occurences = m.get(varName);
+			if (occurences == null) {
+				HashSet<MapEntry<FormalPredicate, Integer>> s = new HashSet<>();
+				s.add(new MapEntry<FormalPredicate, Integer>(p, index));
+				m.put(varName, s);
+			} else {
+				occurences.add(new MapEntry<FormalPredicate, Integer>(p, index));
+			}
+		}
+
+		public static class Entry {
+			private String varName;
+			private FormalPredicate p;
+			private int index;
+			Entry(String varName, FormalPredicate p, int index) {
+				this.varName = varName;
+				this.p = p;
+				this.index = index;
+			}
+		}
+
+		public void add(Entry e) {
+			add(e.varName, e.p, e.index);
+		}
+
+		public Set<MapEntry<FormalPredicate, Integer>> get(String varName) {
+			Set<MapEntry<FormalPredicate, Integer>> entry = m.get(varName);
+			if (entry == null) {
+				return Collections.emptySet();
+			}
+			return entry;
+		}
+	}
+
+	syn PredicateType FormalPredicate.type2() circular [type()];
+	eq FormalPredicate.type2() {
+		PredicateType current = type2();
+		for (PredicateSymbol ps : predicates()) {
+			if (!(ps.literal() instanceof Atom))
+				continue;
+			Atom a = (Atom)(ps.literal());
+			Clause c = a.clause();
+
+			for (int i = 0; i < a.arity(); ++i) {
+				Term t = a.getTerms(i);
+				if (!(t instanceof Variable))
+					continue;
+				String varName = ((Variable) t).getVAR_ID();
+				Set<MapEntry<FormalPredicate, Integer>> sources = c.varMap().get(varName);
+				for (MapEntry<FormalPredicate, Integer> e : sources) {
+					current.joinAt(i, e.k.type2().get(e.v));
+				}
+			}
+		}
+		return current;
+	}
 }

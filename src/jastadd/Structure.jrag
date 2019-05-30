@@ -8,69 +8,69 @@ import java.util.Collections;
 import lang.ast.TypeName;
 
 aspect Utility {
-    public class MapEntry<Key, Value> {
-    	public Key k;
-    	public Value v;
+	public class MapEntry<Key, Value> {
+		public Key k;
+		public Value v;
 
-    	public MapEntry(Key k, Value v) {
-    		this.k = k;
-    		this.v = v;
-    	}
-    }
+		public MapEntry(Key k, Value v) {
+			this.k = k;
+			this.v = v;
+		}
+	}
 
-    public abstract class SetConstructor<Value, S extends Set<Value>> {
-    	public abstract S construct();
-    }
+	public abstract class SetConstructor<Value, S extends Set<Value>> {
+		public abstract S construct();
+	}
 
-    public class TreeSetConstructor<Value> extends SetConstructor<Value, TreeSet<Value>> {
-    	private Comparator<Value> comparator;
-    	public TreeSetConstructor(Comparator<Value> comparator) {
-    		this.comparator = comparator;
-    	}
-    	public TreeSet<Value> construct() {
-    		if(comparator == null)
-    			return new TreeSet<Value>();
+	public class TreeSetConstructor<Value> extends SetConstructor<Value, TreeSet<Value>> {
+		private Comparator<Value> comparator;
+		public TreeSetConstructor(Comparator<Value> comparator) {
+			this.comparator = comparator;
+		}
+		public TreeSet<Value> construct() {
+			if(comparator == null)
+				return new TreeSet<Value>();
 			else
 				return new TreeSet<Value>(comparator);
-    	}
-    }
+		}
+	}
 
-     public class HashSetConstructor<Value> extends SetConstructor<Value, HashSet<Value>> {
-    	public HashSet<Value> construct() {
+	 public class HashSetConstructor<Value> extends SetConstructor<Value, HashSet<Value>> {
+		public HashSet<Value> construct() {
 			return new HashSet<Value>();
-    	}
-    }
+		}
+	}
 
-    public class MapToSetOf<Key, Value> extends HashMap<Key, Set<Value>> {
-    	private SetConstructor<Value, Set<Value>> constructor;
-    	public MapToSetOf(SetConstructor<Value, Set<Value>> constructor) {
-    		this.constructor = constructor;
-    	}
-    	public void add(MapEntry<Key, Value> me) {
-    		Set<Value> values = get(me.k);
-    		if(values == null) {
-	    		values = constructor.construct();
-	    		values.add(me.v);
-	    		put(me.k, values);
-    		}else {
-    			values.add(me.v);
-    		}
-    	}
+	public class MapToSetOf<Key, Value> extends HashMap<Key, Set<Value>> {
+		private SetConstructor<Value, Set<Value>> constructor;
+		public MapToSetOf(SetConstructor<Value, Set<Value>> constructor) {
+			this.constructor = constructor;
+		}
+		public void add(MapEntry<Key, Value> me) {
+			Set<Value> values = get(me.k);
+			if(values == null) {
+				values = constructor.construct();
+				values.add(me.v);
+				put(me.k, values);
+			}else {
+				values.add(me.v);
+			}
+		}
 
 
-    	public void addAll(Set<MapEntry<Key, Value>> mes) {
-    		for(MapEntry<Key, Value> me : mes) {
-	    		Set<Value> values = get(me.k);
-	    		if(values == null) {
-		    		values = constructor.construct();
-		    		values.add(me.v);
-		    		put(me.k, values);
-	    		}else {
-	    			values.add(me.v);
-	    		}
-    		}
-    	}
-    }
+		public void addAll(Set<MapEntry<Key, Value>> mes) {
+			for(MapEntry<Key, Value> me : mes) {
+				Set<Value> values = get(me.k);
+				if(values == null) {
+					values = constructor.construct();
+					values.add(me.v);
+					put(me.k, values);
+				}else {
+					values.add(me.v);
+				}
+			}
+		}
+	}
 }
 
 aspect Program {
@@ -87,34 +87,34 @@ aspect Program {
 	}
 
 	coll HashSet<PredicateInterface> Program.predicateSymbols() [new HashSet<PredicateInterface>()] with add;
-    PredicateSymbol contributes this to Program.predicateSymbols();
-    PredicateRef    contributes this to Program.predicateSymbols();
+	PredicateSymbol contributes this to Program.predicateSymbols();
+	PredicateRef	contributes this to Program.predicateSymbols();
 
-    syn TreeSet<PredicateInterface> Program.uniquePredicateSymbols() {
-        TreeSet<PredicateInterface> uniquePredicateSymbols = new TreeSet<PredicateInterface>(Program.predicateComparator);
-        uniquePredicateSymbols.addAll(predicateSymbols());
-        return uniquePredicateSymbols;
-    }
+	syn TreeSet<PredicateInterface> Program.uniquePredicateSymbols() {
+		TreeSet<PredicateInterface> uniquePredicateSymbols = new TreeSet<PredicateInterface>(Program.predicateComparator);
+		uniquePredicateSymbols.addAll(predicateSymbols());
+		return uniquePredicateSymbols;
+	}
 
-    syn MapToSetOf<String, PredicateInterface> Program.predicateMap() {
-        MapToSetOf<String, PredicateInterface> predicateMap = new MapToSetOf(new HashSetConstructor());
-        for(PredicateInterface pred : predicateSymbols())
-            predicateMap.add(new MapEntry(pred.getPRED_ID(), pred));
-        return predicateMap;
-    }
+	syn MapToSetOf<String, PredicateInterface> Program.predicateMap() {
+		MapToSetOf<String, PredicateInterface> predicateMap = new MapToSetOf(new HashSetConstructor());
+		for(PredicateInterface pred : predicateSymbols())
+			predicateMap.add(new MapEntry(pred.getPRED_ID(), pred));
+		return predicateMap;
+	}
 
-    public class FormalPredicateMap extends HashMap<String, FormalPredicate> {
-    	public void add(MapEntry<String, FormalPredicate> me) { put(me.k, me.v); }
-    }
+	public class FormalPredicateMap extends HashMap<String, FormalPredicate> {
+		public void add(MapEntry<String, FormalPredicate> me) { put(me.k, me.v); }
+	}
 
-    syn boolean Program.haveFormalPredicate(String name) = formalPredicateMap().get(name) != null;
-    coll FormalPredicateMap Program.formalPredicateMap() [new FormalPredicateMap()] with add;
-    Program contributes nta getFormalPredicateList() to Program.formalPredicateMap();
-    FormalPredicate contributes new MapEntry(predicateName(), this) to Program.formalPredicateMap();
-    eq Program.getChild().formalPredicateMap() = formalPredicateMap();
+	syn boolean Program.haveFormalPredicate(String name) = formalPredicateMap().get(name) != null;
+	coll FormalPredicateMap Program.formalPredicateMap() [new FormalPredicateMap()] with add;
+	Program contributes nta getFormalPredicateList() to Program.formalPredicateMap();
+	FormalPredicate contributes new MapEntry(predicateName(), this) to Program.formalPredicateMap();
+	eq Program.getChild().formalPredicateMap() = formalPredicateMap();
 
-    coll TreeSet<Literal> Program.predefinedLiterals() [new TreeSet<Literal>(Literal.literalComparator)] with add;
-    Literal contributes this when isPredefined() to Program.predefinedLiterals();
+	coll TreeSet<Literal> Program.predefinedLiterals() [new TreeSet<Literal>(Literal.literalComparator)] with add;
+	Literal contributes this when isPredefined() to Program.predefinedLiterals();
 
 	public ArrayList<Clause> Program.flattenedClauses() {
 		ArrayList<Clause> clauses = new ArrayList<>();
@@ -131,15 +131,15 @@ aspect Program {
 }
 
 aspect Clause {
-    inh Clause Literal.clause();
-    eq Clause.getChild().clause() = this;
+	inh Clause Literal.clause();
+	eq Clause.getChild().clause() = this;
 
-    syn boolean CommonClause.isRule();
-    eq Rule.isRule() = true;
-    eq Fact.isRule() = false;
+	syn boolean CommonClause.isRule();
+	eq Rule.isRule() = true;
+	eq Fact.isRule() = false;
 	eq AnalyzeBlock.isRule() = false;
 
-    syn HashSet<Literal> Rule.literals() {
+	syn HashSet<Literal> Rule.literals() {
 		HashSet<Literal> literals = new HashSet<Literal>();
 		for(CommonLiteral l : getHeadss()) literals.addAll(l.flattenedLiterals());
 		literals.addAll(flattenedBodyLiterals());
@@ -152,58 +152,58 @@ aspect Clause {
 		return literals;
 	}
 
-    syn HashSet<Literal> Rule.inclusiveLiterals() {
-    	HashSet<Literal> literals = new HashSet<Literal>();
-    	for(Literal l : literals())
-    		if(l.isInclusive())
-    			literals.add(l);
-    	return literals;
-    }
+	syn HashSet<Literal> Rule.inclusiveLiterals() {
+		HashSet<Literal> literals = new HashSet<Literal>();
+		for(Literal l : literals())
+			if(l.isInclusive())
+				literals.add(l);
+		return literals;
+	}
 
-    syn HashSet<Literal> Rule.exclusiveLiterals() {
-    	HashSet<Literal> literals = new HashSet<Literal>();
-    	for(Literal l : literals())
-    		if(!l.isInclusive())
-    			literals.add(l);
-    	return literals;
-    }
+	syn HashSet<Literal> Rule.exclusiveLiterals() {
+		HashSet<Literal> literals = new HashSet<Literal>();
+		for(Literal l : literals())
+			if(!l.isInclusive())
+				literals.add(l);
+		return literals;
+	}
 
-    syn TreeSet<Variable> Rule.variables() {
-    	TreeSet<Variable> variables = new TreeSet<Variable>(Term.termComparator);
-    	for(CommonLiteral l : literals()) variables.addAll(l.variables());
-    	return variables;
-    }
+	syn TreeSet<Variable> Rule.variables() {
+		TreeSet<Variable> variables = new TreeSet<Variable>(Term.termComparator);
+		for(CommonLiteral l : literals()) variables.addAll(l.variables());
+		return variables;
+	}
 
-    syn TreeSet<Variable> Rule.headVariables() {
-    	TreeSet<Variable> variables = new TreeSet<Variable>(Term.termComparator);
-    	for(CommonLiteral l : getHeadss()) variables.addAll(l.variables());
-    	return variables;
-    }
+	syn TreeSet<Variable> Rule.headVariables() {
+		TreeSet<Variable> variables = new TreeSet<Variable>(Term.termComparator);
+		for(CommonLiteral l : getHeadss()) variables.addAll(l.variables());
+		return variables;
+	}
 
-    syn TreeSet<Variable> Rule.bodyVariables() {
-    	TreeSet<Variable> variables = new TreeSet<Variable>(Term.termComparator);
-    	for(CommonLiteral l : getBodys()) variables.addAll(l.variables());
-    	return variables;
-    }
+	syn TreeSet<Variable> Rule.bodyVariables() {
+		TreeSet<Variable> variables = new TreeSet<Variable>(Term.termComparator);
+		for(CommonLiteral l : getBodys()) variables.addAll(l.variables());
+		return variables;
+	}
 
-    syn TreeSet<Variable> Rule.unboundVariables() {
-    	TreeSet<Variable> variables = new TreeSet<Variable>(Term.termComparator);
-    	for(Variable v : headVariables())
-            if(!bodyVariables().contains(v)) variables.add(v);
-        return variables;
-    }
+	syn TreeSet<Variable> Rule.unboundVariables() {
+		TreeSet<Variable> variables = new TreeSet<Variable>(Term.termComparator);
+		for(Variable v : headVariables())
+			if(!bodyVariables().contains(v)) variables.add(v);
+		return variables;
+	}
 
-    syn TreeSet<Variable> Rule.inclusiveBodyVariables() {
-     	TreeSet<Variable> variables = new TreeSet<Variable>(Term.termComparator);
-    	for(CommonLiteral l : getBodys()) {
-            if(l.isInclusive())
-                variables.addAll(l.variables());
-            if(l.isBind()) {
-                variables.addAll(((BINDLiteral)l).getVariable().variables());
-            }
-        }
-    	return variables;
-    }
+	syn TreeSet<Variable> Rule.inclusiveBodyVariables() {
+		TreeSet<Variable> variables = new TreeSet<Variable>(Term.termComparator);
+		for(CommonLiteral l : getBodys()) {
+			if(l.isInclusive())
+				variables.addAll(l.variables());
+			if(l.isBind()) {
+				variables.addAll(((BINDLiteral)l).getVariable().variables());
+			}
+		}
+		return variables;
+	}
 }
 
 aspect Literal {
@@ -212,116 +212,115 @@ aspect Literal {
 
 	eq Literal.predicate() = getPredicate();
 
- 	inh boolean Literal.isFact();
-    eq Clause.getChild().isFact()        = false;
-    eq Fact.getHeads(int index).isFact() =  true;
+	inh boolean Literal.isFact();
+	eq Clause.getChild().isFact()		 = false;
+	eq Fact.getHeads(int index).isFact() =	true;
+	syn boolean Literal.isEDB();
+	eq	Literal.isEDB()	   = false;
+	eq	EDBLiteral.isEDB() = true;
 
-   	syn boolean Literal.isEDB();
-    eq  Literal.isEDB()    = false;
-    eq  EDBLiteral.isEDB() = true;
 
+	syn boolean Literal.isOUTPUT();
+	eq	Literal.isOUTPUT()		 = false;
+	eq	OUTPUTLiteral.isOUTPUT() = true;
 
-   	syn boolean Literal.isOUTPUT();
-    eq  Literal.isOUTPUT()       = false;
-    eq  OUTPUTLiteral.isOUTPUT() = true;
+	syn boolean Literal.isAtom();
+	eq	Literal.isAtom() = false;
+	eq	Atom.isAtom()	 = true;
 
-    syn boolean Literal.isAtom();
-    eq  Literal.isAtom() = false;
-    eq  Atom.isAtom()    = true;
-
-    syn boolean CommonLiteral.isNeg() = false;
-    eq  NEGLiteral.isNeg()    = true;
+	syn boolean CommonLiteral.isNeg() = false;
+	eq	NEGLiteral.isNeg()	  = true;
 
 	syn boolean CommonLiteral.isBind() = false;
-    eq  BINDLiteral.isBind()   = true;
+	eq	BINDLiteral.isBind()   = true;
 
 	syn boolean Literal.isIMPORT();
-	eq  Literal.isIMPORT() = false;
-	eq  IMPORTLiteral.isIMPORT() = true;
+	eq	Literal.isIMPORT() = false;
+	eq	IMPORTLiteral.isIMPORT() = true;
 
-    syn boolean CommonLiteral.isInclusive();
-    eq CommonLiteral.isInclusive() = false;
+	syn boolean CommonLiteral.isInclusive();
+	eq CommonLiteral.isInclusive() = false;
 	eq Atom.isInclusive() = true;
 	eq EDBLiteral.isInclusive() = true;
 	eq OUTPUTLiteral.isInclusive() = true;
 	eq IMPORTLiteral.isInclusive() = true;
 
-    inh boolean Literal.isDef();
-    eq Clause.getChild().isDef() = false;
-    eq Rule.getHeads().isDef()   =  true;
-    eq Fact.getHeads().isDef()   =  true;
+	inh boolean Literal.isDef();
+	eq Clause.getChild().isDef() = false;
+	eq Rule.getHeads().isDef()	 =	true;
+	eq Fact.getHeads().isDef()	 =	true;
 
-    inh boolean Literal.isUse();
-    eq Clause.getChild().isUse() = false;
-    eq Rule.getBody().isUse()    = true;
+	inh boolean Literal.isUse();
+	eq Clause.getChild().isUse() = false;
+	eq Rule.getBody().isUse()	 = true;
 
-    syn boolean Literal.isGround() = variables().isEmpty();
+	syn boolean Literal.isGround() = variables().isEmpty();
 
-    public interface PredefinedLiteral {}
-    EDBLiteral    implements PredefinedLiteral;
-    OUTPUTLiteral implements PredefinedLiteral;
-    IMPORTLiteral implements PredefinedLiteral;
+	public interface PredefinedLiteral {}
+	EDBLiteral	  implements PredefinedLiteral;
+	OUTPUTLiteral implements PredefinedLiteral;
+	IMPORTLiteral implements PredefinedLiteral;
 
-    syn boolean CommonLiteral.isPredefined() = false;
-    syn boolean PredefinedLiteral.isPredefined() = true;
+	syn boolean CommonLiteral.isPredefined() = false;
+	syn boolean PredefinedLiteral.isPredefined() = true;
 
-    syn TreeSet<Variable> CommonLiteral.variables();
-    eq Atom.variables() {
-    	TreeSet<Variable> vars = new TreeSet<Variable>(Term.termComparator);
-    	for(Term t : getTermss())
+	syn TreeSet<Variable> CommonLiteral.variables();
+	eq Atom.variables() {
+		TreeSet<Variable> vars = new TreeSet<Variable>(Term.termComparator);
+		for(Term t : getTermss())
 			if(t.isVariable())
 				vars.addAll(((CommonVariable)t).variables());
-    	return vars;
-    }
+		return vars;
+	}
 
-    public TreeSet<Variable> Literal.toVarSet(Term t) {
-    	TreeSet<Variable> vars = new TreeSet<Variable>(Term.termComparator);
-    	if(t.isVariable()) vars.add((Variable)t);
-    	return vars;
-    }
+	public TreeSet<Variable> Literal.toVarSet(Term t) {
+		TreeSet<Variable> vars = new TreeSet<Variable>(Term.termComparator);
+		if(t.isVariable()) vars.add((Variable)t);
+		return vars;
+	}
 
-    eq EDBLiteral.variables()    = toVarSet(getFileLoc());
-    eq OUTPUTLiteral.variables() = toVarSet(getTerm());
-    eq NEGLiteral.variables()    = getLiteral().variables();
+	eq EDBLiteral.variables()	 = toVarSet(getFileLoc());
+	eq OUTPUTLiteral.variables() = toVarSet(getTerm());
+	eq NEGLiteral.variables()	 = getLiteral().variables();
 
-    eq BINDLiteral.variables()  {
+	eq BINDLiteral.variables()	{
 		TreeSet<Variable> vars = new TreeSet<Variable>(Term.termComparator);
 		Variable v;
 		vars.addAll(getVariable().variables());
 		vars.addAll(getRight().variables());
 		return vars;
-    }
+	}
 
-    eq IMPORTLiteral.variables() {
+	eq IMPORTLiteral.variables() {
 		TreeSet<Variable> vars = toVarSet(getFileLoc());
 		return vars;
 	}
 
-    eq BinaryExclusiveTermLiteral.variables() {
+	eq BinaryExclusiveTermLiteral.variables() {
 		TreeSet<Variable> vars = new TreeSet<Variable>(Term.termComparator);
 		vars.addAll(getLeft().variables());
 		vars.addAll(getRight().variables());
 		return vars;
 	}
 
-    syn TreeSet<Constant> BinaryExclusiveTermLiteral.constants() {
+	syn TreeSet<Constant> BinaryExclusiveTermLiteral.constants() {
 		TreeSet<Constant> constants = new TreeSet<Constant>(Term.termComparator);
 		constants.addAll(getLeft().constants());
 		constants.addAll(getRight().constants());
 		return constants;
 	}
 
-    syn TreeSet<Variable> NEGLiteral.freeVars() {
-        TreeSet<Variable> negvars  = getLiteral().variables();
-        TreeSet<Variable> inclbodyvars = ((Rule)clause()).inclusiveBodyVariables();
-        TreeSet<Variable> free = new TreeSet<Variable>(Term.termComparator);
+	syn TreeSet<Variable> NEGLiteral.freeVars() {
+		TreeSet<Variable> negvars  = getLiteral().variables();
+		TreeSet<Variable> inclbodyvars = ((Rule)clause()).inclusiveBodyVariables();
+		TreeSet<Variable> free = new TreeSet<Variable>(Term.termComparator);
 
-        for(Variable v : negvars) {
-            if(!inclbodyvars.contains(v))
-                free.add(v);
-        }
-        return free;
-    }
+		for(Variable v : negvars) {
+			if(!inclbodyvars.contains(v))
+				free.add(v);
+		}
+		return free;
+	}
 }
 
 aspect CommonLiteral {
@@ -341,30 +340,31 @@ aspect CommonLiteral {
 
 aspect Predicate {
 	inh Literal PredicateSymbol.literal();
+	inh Literal Term.literal();
 	inh Literal PredicateRef.literal();
-	eq  Literal.getChild().literal() = this;
-	eq  AnalyzeBlock.getChild().literal() = null;
+	eq	Literal.getChild().literal() = this;
+	eq	AnalyzeBlock.getChild().literal() = null;
 
-    public interface PredicateInterface {
-    	public boolean isRef();
-    	public String getPRED_ID();
-    }
-    PredicateSymbol implements PredicateInterface;
-    PredicateRef    implements PredicateInterface;
+	public interface PredicateInterface {
+		public boolean isRef();
+		public String getPRED_ID();
+	}
+	PredicateSymbol implements PredicateInterface;
+	PredicateRef	implements PredicateInterface;
 
-    public boolean PredicateSymbol.isRef() { return false; }
-    public boolean PredicateRef.isRef()    { return true; }
+	public boolean PredicateSymbol.isRef() { return false; }
+	public boolean PredicateRef.isRef()	   { return true; }
 
-    syn boolean PredicateInterface.isFact()  = literal().isFact();
-    syn boolean PredicateInterface.isEDB()   = literal().isEDB();
-    syn boolean PredicateInterface.isUse()   = literal().isUse();
-    syn boolean PredicateInterface.isDef()   = literal().isDef();
-    syn boolean PredicateInterface.isNeg()   = literal().isNeg();
+	syn boolean PredicateInterface.isFact()	 = literal().isFact();
+	syn boolean PredicateInterface.isEDB()	 = literal().isEDB();
+	syn boolean PredicateInterface.isUse()	 = literal().isUse();
+	syn boolean PredicateInterface.isDef()	 = literal().isDef();
+	syn boolean PredicateInterface.isNeg()	 = literal().isNeg();
 }
 
 aspect Term {
 	inh Literal Term.occuresIn();
-	eq  Literal.getChild().occuresIn() = this;
+	eq	Literal.getChild().occuresIn() = this;
 
 	inh boolean Term.isNested();
 	eq Program.getChild().isNested() = false;
@@ -383,16 +383,16 @@ aspect Expression {
 
 	syn TreeSet<Variable> Functor.freeVars() {
 		TreeSet<Variable> inclbodyvars = ((Rule)occuresIn().clause()).inclusiveBodyVariables();
-        TreeSet<Variable> free = new TreeSet<Variable>(Term.termComparator);
+		TreeSet<Variable> free = new TreeSet<Variable>(Term.termComparator);
 
-        for(Variable v : variables()) {
-            if(!inclbodyvars.contains(v))
-                free.add(v);
-        }
-        return free;
+		for(Variable v : variables()) {
+			if(!inclbodyvars.contains(v))
+				free.add(v);
+		}
+		return free;
 	}
 
-	syn TreeSet<Variable> Term.variables()     = new TreeSet<Variable>(Term.termComparator);
+	syn TreeSet<Variable> Term.variables()	   = new TreeSet<Variable>(Term.termComparator);
 	syn TreeSet<Variable> CommonVariable.variables() {
 		TreeSet<Variable> vars = new TreeSet<Variable>(Term.termComparator);
 		vars.add((Variable)this);
@@ -400,7 +400,7 @@ aspect Expression {
 	}
 
 	public abstract TreeSet<Constant> Expr.constants();
-	syn TreeSet<Constant> Term.constants()     = new TreeSet<Constant>(Term.termComparator);
+	syn TreeSet<Constant> Term.constants()	   = new TreeSet<Constant>(Term.termComparator);
 	syn TreeSet<Constant> Constant.constants() {
 		TreeSet<Constant> constants = new TreeSet<Constant>(Term.termComparator);
 		constants.add(this);
@@ -412,96 +412,95 @@ aspect Expression {
 			constants.addAll(e.constants());
 		return constants;
 	}
-
 }
 
 aspect FormalPredicate {
-    syn List Program.getFormalPredicateList() {
-    	List list = new List();
-    	for(PredicateInterface pred : uniquePredicateSymbols()) {
-    		if(!pred.isRef()) {
-    			FormalPredicate fp = new FormalPredicate(pred.getPRED_ID());
-    			list.add(fp);
-    		}
-    	}
-    	return list;
-    }
-    inh Program FormalPredicate.program();
-    inh boolean FormalPredicate.hasRecursiveEDB();
-    inh FormalPredicateMap FormalPredicate.formalPredicateMap();
+	syn List Program.getFormalPredicateList() {
+		List list = new List();
+		for(PredicateInterface pred : uniquePredicateSymbols()) {
+			if(!pred.isRef()) {
+				FormalPredicate fp = new FormalPredicate(pred.getPRED_ID());
+				list.add(fp);
+			}
+		}
+		return list;
+	}
+	inh Program FormalPredicate.program();
+	inh boolean FormalPredicate.hasRecursiveEDB();
+	inh FormalPredicateMap FormalPredicate.formalPredicateMap();
 
-    syn String FormalPredicate.predicateName() = getPRED_ID();
-    syn Literal FormalPredicate.literal() = predicates().iterator().next().literal();
-    syn HashSet<Literal> FormalPredicate.literals() {
-    	HashSet<Literal> literals = new HashSet<Literal>();
-    	for(PredicateSymbol ps : predicates()) {
-    		literals.add(ps.literal());
-    	}
-    	return literals;
-    }
+	syn String FormalPredicate.predicateName() = getPRED_ID();
+	syn Literal FormalPredicate.literal() = predicates().iterator().next().literal();
+	syn HashSet<Literal> FormalPredicate.literals() {
+		HashSet<Literal> literals = new HashSet<Literal>();
+		for(PredicateSymbol ps : predicates()) {
+			literals.add(ps.literal());
+		}
+		return literals;
+	}
 
-    inh HashSet<PredicateSymbol> FormalPredicate.predicates();
-    eq Program.getFormalPredicate(int index).predicates() {
-    	HashSet<PredicateSymbol> predicates = new HashSet<PredicateSymbol>();
-    	for(PredicateInterface pi :  predicateMap().get(getFormalPredicate(index).getPRED_ID())) {
-    		if(!pi.isRef())
-    			predicates.add((PredicateSymbol)pi);
-    	}
-    	return predicates;
-    }
+	inh HashSet<PredicateSymbol> FormalPredicate.predicates();
+	eq Program.getFormalPredicate(int index).predicates() {
+		HashSet<PredicateSymbol> predicates = new HashSet<PredicateSymbol>();
+		for(PredicateInterface pi :	 predicateMap().get(getFormalPredicate(index).getPRED_ID())) {
+			if(!pi.isRef())
+				predicates.add((PredicateSymbol)pi);
+		}
+		return predicates;
+	}
 
-    inh HashSet<PredicateRef> FormalPredicate.predicateRefs();
-    eq Program.getFormalPredicate(int index).predicateRefs() {
-    	HashSet<PredicateRef> predicates = new HashSet<PredicateRef>();
-    	for(PredicateInterface pi :  predicateMap().get(getFormalPredicate(index).getPRED_ID())) {
-    		if(pi.isRef())
-    			predicates.add((PredicateRef)pi);
-    	}
-    	return predicates;
-    }
+	inh HashSet<PredicateRef> FormalPredicate.predicateRefs();
+	eq Program.getFormalPredicate(int index).predicateRefs() {
+		HashSet<PredicateRef> predicates = new HashSet<PredicateRef>();
+		for(PredicateInterface pi :	 predicateMap().get(getFormalPredicate(index).getPRED_ID())) {
+			if(pi.isRef())
+				predicates.add((PredicateRef)pi);
+		}
+		return predicates;
+	}
 
-    syn FormalPredicate PredicateInterface.formalpredicate() {
-    	FormalPredicate fp = literal().clause().program().formalPredicateMap().get(getPRED_ID());
-    	if(fp == null) {
-	    	SimpleLogger.logger().log("Each PredicateSymbol should belong to a FormalPredicate: " + this,
-	    		SimpleLogger.LogLevel.Level.ERROR);
-	    	System.exit(0);
-	    	return null; // Needed for JastAdd
-    	}
-    	return fp;
-    }
+	syn FormalPredicate PredicateInterface.formalpredicate() {
+		FormalPredicate fp = literal().clause().program().formalPredicateMap().get(getPRED_ID());
+		if(fp == null) {
+			SimpleLogger.logger().log("Each PredicateSymbol should belong to a FormalPredicate: " + this,
+				SimpleLogger.LogLevel.Level.ERROR);
+			System.exit(0);
+			return null; // Needed for JastAdd
+		}
+		return fp;
+	}
 }
 
 aspect Types {
 	public TreeMap<FormalPredicate, PseudoTuple> Program.typeMap = new TreeMap<FormalPredicate, PseudoTuple>(FormalPredicate.formalPredicateComparator);
-    coll MapToSetOf<FormalPredicate, PseudoTuple> Program.pass1TypeMap() [new MapToSetOf(new TreeSetConstructor(null))] with add;
+	coll MapToSetOf<FormalPredicate, PseudoTuple> Program.pass1TypeMap() [new MapToSetOf(new TreeSetConstructor(null))] with add;
 
-    OUTPUTLiteral contributes new MapEntry<FormalPredicate, PseudoTuple>(predicate().formalpredicate(), type()) to Program.pass1TypeMap();
-    EDBLiteral    contributes new MapEntry<FormalPredicate, PseudoTuple>(predicate().formalpredicate(), type()) to Program.pass1TypeMap();
-    IMPORTLiteral contributes new MapEntry<FormalPredicate, PseudoTuple>(predicate().formalpredicate(), type()) to Program.pass1TypeMap();
+	OUTPUTLiteral contributes new MapEntry<FormalPredicate, PseudoTuple>(predicate().formalpredicate(), type()) to Program.pass1TypeMap();
+	EDBLiteral	  contributes new MapEntry<FormalPredicate, PseudoTuple>(predicate().formalpredicate(), type()) to Program.pass1TypeMap();
+	IMPORTLiteral contributes new MapEntry<FormalPredicate, PseudoTuple>(predicate().formalpredicate(), type()) to Program.pass1TypeMap();
 
-    Literal contributes new MapEntry<FormalPredicate, PseudoTuple>(predicate().formalpredicate(), toTuple().toTypeTuple())
-    	when isGround()
-    	to Program.pass1TypeMap();
+	Literal contributes new MapEntry<FormalPredicate, PseudoTuple>(predicate().formalpredicate(), toTuple().toTypeTuple())
+		when isGround()
+		to Program.pass1TypeMap();
 
-	syn StringConstant Term.type()      =  TypeName.typeT();
-    eq Variable.type()        =  TypeName.varT();
-    eq PredicateRef.type()    =  TypeName.predRefT();
-    eq StringConstant.type()  =  TypeName.stringT();
-    eq IntConstant.type()     =  TypeName.integerT();
+	syn StringConstant Term.type()		=  TypeName.typeT();
+	eq Variable.type()		  =	 TypeName.varT();
+	eq PredicateRef.type()	  =	 TypeName.predRefT();
+	eq StringConstant.type()  =	 TypeName.stringT();
+	eq IntConstant.type()	  =	 TypeName.integerT();
 
 	syn boolean Term.isVariable() = this instanceof Variable;
 	syn boolean Term.isConstant() = !isVariable();
 
 	syn PseudoTuple PredefinedLiteral.actualType();
-	eq  OUTPUTLiteral.actualType() = new PseudoTuple(new List(getTerm().type()));
-	eq  EDBLiteral.actualType()    = new PseudoTuple(new List(TypeName.predRefT(), getFileLoc().type()));
-	eq  IMPORTLiteral.actualType() = new PseudoTuple(new List(getFileLoc().type(), getProgramRef().type()));
+	eq	OUTPUTLiteral.actualType() = new PseudoTuple(new List(getTerm().type()));
+	eq	EDBLiteral.actualType()	   = new PseudoTuple(new List(TypeName.predRefT(), getFileLoc().type()));
+	eq	IMPORTLiteral.actualType() = new PseudoTuple(new List(getFileLoc().type(), getProgramRef().type()));
 
 	syn PseudoTuple PredefinedLiteral.type();
-	eq  OUTPUTLiteral.type() = new PseudoTuple(new List(TypeName.predRefT()));
-	eq  EDBLiteral.type()    = new PseudoTuple(new List(TypeName.predRefT(), TypeName.stringT()));
-	eq  IMPORTLiteral.type() = new PseudoTuple(new List(TypeName.stringT(), TypeName.predRefT()));
+	eq	OUTPUTLiteral.type() = new PseudoTuple(new List(TypeName.predRefT()));
+	eq	EDBLiteral.type()	 = new PseudoTuple(new List(TypeName.predRefT(), TypeName.stringT()));
+	eq	IMPORTLiteral.type() = new PseudoTuple(new List(TypeName.stringT(), TypeName.predRefT()));
 
 	syn String Term.souffleType() {
 		if (type().toString().equals("__Integer__"))

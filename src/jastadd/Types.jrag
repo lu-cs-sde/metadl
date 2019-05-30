@@ -1,0 +1,158 @@
+import lang.ast.Term;
+import lang.ast.StringConstant;
+import java.util.Comparator;
+
+aspect Type {
+	public abstract class Type {
+		public abstract String name();
+		public Type join(Type t) {
+			if (this == t) {
+				return this;
+			} else if (this == BadType.get() || t == BadType.get()) {
+				return BadType.get();
+			} else if (this == UnknownType.get()) {
+				return t;
+			} else if (t == UnknownType.get()) {
+				return this;
+			} else {
+				return BadType.get();
+			}
+		}
+	}
+
+	public class IntegerType extends Type {
+		private static IntegerType intI = new IntegerType();
+		private IntegerType() { super(); }
+		@Override public String name() {
+			return "Integer";
+		}
+		public static IntegerType get() { return intI; }
+
+	}
+
+	public class StringType extends Type {
+		private static StringType strI = new StringType();
+		private StringType() { super(); }
+		@Override public String name() {
+			return "String";
+		}
+		public static StringType get() {
+			return strI;
+		}
+	}
+
+	public class PredicateRefType extends Type {
+		private static PredicateRefType predI = new PredicateRefType();
+		private PredicateRefType() { super(); }
+		@Override public String name() {
+			return "PredicateRef";
+		}
+		public static PredicateRefType get() {
+			return predI;
+		}
+	}
+
+	public class UnknownType extends Type {
+		private static UnknownType unknownI = new UnknownType();
+		private UnknownType() { super(); }
+		@Override public String name() {
+			return "Unknown";
+		}
+		public static UnknownType get() {
+			return unknownI;
+		}
+	}
+
+	public class BadType extends Type {
+		private static  BadType badI = new BadType();
+		private BadType() { super(); }
+		@Override public String name() {
+			return "Bad";
+		}
+		public static BadType get() {
+			return badI;
+		}
+	}
+
+	public class PredicateType {
+		private ArrayList<Type> types;
+		public PredicateType(int arity) {
+			types = new ArrayList<>();
+			for (int i = 0; i < arity; ++i)
+				types.add(UnknownType.get());
+		}
+
+		@Override public String toString() {
+			StringBuilder sb = new StringBuilder();
+			sb.append("(");
+			boolean first = true;
+			for (Type t : types) {
+				if (first) {
+					first = false;
+				} else {
+					sb.append(", ");
+				}
+				sb.append(t.name());
+			}
+			sb.append(")");
+			return sb.toString();
+		}
+
+		public void joinAt(int i, Type t) {
+			types.set(i, types.get(i).join(t));
+		}
+
+		public static class Index {
+			private int i;
+			private Type t;
+			public Index(int i, Type t) {
+				this.i = i;
+				this.t = t;
+			}
+		}
+
+		public void join(Index t) {
+			types.set(t.i, t.t);
+		}
+	}
+
+	public class TypeName {
+		public static String string() { return "__String__"; };
+		public static String integer() { return "__Integer__"; };
+		public static String predref() { return "__PredicateRef__"; };
+
+		public static StringConstant stringT() { return new StringConstant(string()); };
+		public static StringConstant integerT() { return new StringConstant(integer()); };
+		public static StringConstant predRefT() { return new StringConstant(predref()); };
+		public static StringConstant unknownT() { return new StringConstant("__Unknown__"); };
+		public static StringConstant typeT() { return new StringConstant("__Type__"); };
+		public static StringConstant varT() { return new StringConstant("__Var__"); };
+		public static StringConstant badT() { return new StringConstant("__Bad__"); };
+	}
+
+	public class TypeComparator implements Comparator<Term> {
+		public int compare(Term t1, Term t2) {
+			return t1.type().toString().compareTo(t2.type().toString());
+		}
+
+		private static TypeComparator instance = null;
+		public static TypeComparator get() {
+			if (instance == null) {
+				instance = new TypeComparator();
+			}
+			return instance;
+		}
+	}
+}
+
+aspect BasicTypeInference {
+	coll PredicateType FormalPredicate.type() [new PredicateType(realArity())] with join root Program;
+	inh int Term.indexInLiteral();
+	eq Literal.getChild(int i).indexInLiteral() = i;
+	eq Functor.getChild().indexInLiteral() = -1;
+
+	IntConstant contributes (new PredicateType.Index(indexInLiteral(), IntegerType.get()))
+		when indexInLiteral() >= 0
+	    to FormalPredicate.type()
+		for literal().getPredicate().formalpredicate();
+}

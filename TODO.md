@@ -1,2 +1,0 @@
-* Aggregation, Horizontal, Vertical, 
-* WildCards

@@ -358,7 +358,7 @@ aspect TypeProg {
         System.out.println("\t\t\t TYPEINFERENCE RESULT");
         System.out.println("------------------------------------------------");
         for(FormalPredicate fp : program.getFormalPredicates()) {
-			System.out.println(fp.predicateName() + ": " + fp.type2());
+			System.out.println(fp.predicateName() + ": " + fp.type());
         }
         System.out.println("------------------------------------------------");
 
@@ -402,6 +402,11 @@ aspect SubTask {
 
     public void TypeCheck.perform(Program program, Description descr) throws Exception {
         program.typeCheck();
+
+		for(FormalPredicate fp : program.getFormalPredicates()) {
+			fp.type();
+        }
+
         if(!program.hasTypeErrors()) return;
         SimpleLogger.logger().log("Compilation failed with type error: \n" + program.typeErrorReport(), SimpleLogger.LogLevel.Level.ERROR);
         System.exit(0);

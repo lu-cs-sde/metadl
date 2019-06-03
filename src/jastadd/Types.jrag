@@ -108,6 +108,10 @@ aspect Type {
 			return types.get(i);
 		}
 
+		public int arity() {
+			return types.size();
+		}
+
 		public static class Index {
 			private int i;
 			private Type t;
@@ -151,8 +155,52 @@ aspect Type {
 	}
 }
 
+aspect TypeCheck {
+	public class TypeError implements Comparable<TypeError> {
+		private FormalPredicate pred;
+		private ArrayList<Integer> pos;
+		public void addUndefined(int i) {
+			pos.add(i);
+		}
+		public void addContradictory(int i) {
+			pos.add(-i);
+		}
+		public TypeError(FormalPredicate pred) {
+			this.pred = pred;
+		}
+		@Override public int compareTo(TypeError other) {
+			if (pred.equals(other.pred))
+				return 0;
+			return FormalPredicate.formalPredicateComparator
+				.compare(pred, other.pred);
+		}
+	}
+
+	// Type errors for the program. Empty iff the program
+	// is well-typed.
+	coll TreeSet<TypeError> Program.typeErrors() [new TreeSet<>()];
+
+	syn TypeError FormalPredicate.typeError() {
+		TypeError err = null;
+		for (int i = 0; i < type().arity(); ++i) {
+			if (type().get(i) == BadType.get()) {
+				if (err == null)
+					err = new TypeError(this);
+				err.addContradictory(i);
+			} else if (type().get(i) == UnknownType.get()) {
+				if (err == null)
+					err = new TypeError(this);
+				err.addUndefined(i);
+			}
+		}
+		return err;
+	}
+
+	FormalPredicate contributes typeError() when (typeError() != null) to Program.typeErrors();
+}
+
 aspect TypeInference {
-	coll PredicateType FormalPredicate.type() [new PredicateType(realArity())] with join root Program;
+	coll PredicateType FormalPredicate.initialType() [new PredicateType(realArity())] with join root Program;
 	inh int Term.indexInLiteral();
 	eq Atom.getTerms(int i).indexInLiteral() {
 		return i;
@@ -170,19 +218,22 @@ aspect TypeInference {
 
 	IntConstant contributes (new PredicateType.Index(indexInLiteral(), IntegerType.get()))
 		when indexInLiteral() >= 0
-		to FormalPredicate.type()
+		to FormalPredicate.initialType()
 		for literal().getPredicate().formalpredicate();
 
 	StringConstant contributes (new PredicateType.Index(indexInLiteral(), StringType.get()))
 		when indexInLiteral() >= 0
-		to FormalPredicate.type()
+		to FormalPredicate.initialType()
 		for literal().getPredicate().formalpredicate();
 
 	PredicateRef contributes (new PredicateType.Index(indexInLiteral(), PredicateRefType.get()))
 		when indexInLiteral() >= 0
-		to FormalPredicate.type()
+		to FormalPredicate.initialType()
 		for literal().getPredicate().formalpredicate();
 
+
+	// map variable names to formal predicates and position of the respective
+	// variable in a given predicate
 	coll VariableMap Clause.varMap() [new VariableMap()] with add;
 	Variable contributes (new VariableMap.Entry(getVAR_ID(), literal().getPredicate().formalpredicate(), indexInLiteral()))
 		when indexInLiteral() >= 0
@@ -190,7 +241,7 @@ aspect TypeInference {
 		for literal().clause();
 
 	AnalyzeBlock contributes nta getAllClauses() to Clause.varMap();
-	AnalyzeBlock contributes nta getAllClauses() to FormalPredicate.type();
+	AnalyzeBlock contributes nta getAllClauses() to FormalPredicate.initialType();
 	Pattern contributes nta getLiterals() to Clause.varMap();
 
 	public class VariableMap {
@@ -230,9 +281,9 @@ aspect TypeInference {
 		}
 	}
 
-	syn PredicateType FormalPredicate.type2() circular [type()];
-	eq FormalPredicate.type2() {
-		PredicateType current = type2();
+	syn PredicateType FormalPredicate.type() circular [initialType()];
+	eq FormalPredicate.type() {
+		PredicateType current = type();
 		for (PredicateSymbol ps : predicates()) {
 			if (!(ps.literal() instanceof Atom))
 				continue;
@@ -246,7 +297,7 @@ aspect TypeInference {
 				String varName = ((Variable) t).getVAR_ID();
 				Set<MapEntry<FormalPredicate, Integer>> sources = c.varMap().get(varName);
 				for (MapEntry<FormalPredicate, Integer> e : sources) {
-					current.joinAt(i, e.k.type2().get(e.v));
+					current.joinAt(i, e.k.type().get(e.v));
 				}
 			}
 		}

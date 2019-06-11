@@ -3,6 +3,7 @@ package lang.relation;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.ArrayList;
 
 import lang.ast.Constant;
 import lang.ast.List;
@@ -33,6 +34,14 @@ public class PseudoTuple implements Comparable<PseudoTuple> {
 		this.tuple = new Term[size];
 		for(int i = 0; i != size; ++i) {
 			tuple[i] = terms.getChild(i);
+		}
+	}
+
+	public PseudoTuple(java.util.List<Term> terms) {
+		this.size = terms.size();
+		this.tuple = new Term[size];
+		for(int i = 0; i != size; ++i) {
+			tuple[i] = terms.get(i);
 		}
 	}
 
@@ -68,8 +77,8 @@ public class PseudoTuple implements Comparable<PseudoTuple> {
 		return pt;
 	}
 
-	public List<Term> toList() {
-		List<Term> list = new List<Term>();
+	public java.util.List<Term> toList() {
+		java.util.List<Term> list = new ArrayList<Term>();
 		for(int i = 0; i != size; ++i)
 			list.add(tuple[i]);
 		return list;
@@ -82,13 +91,6 @@ public class PseudoTuple implements Comparable<PseudoTuple> {
 		System.arraycopy(tmp, 0, tuple, 0, size);
 		tuple[size] = uninitializedVar;
 		size = size + 1;
-	}
-
-	public PseudoTuple toTypeTuple() {
-		PseudoTuple tt = new PseudoTuple(size);
-		for(int i = 0; i != size; ++i)
-			tt.set(i, tuple[i].type());
-		return tt;
 	}
 
 	public int arity() {
@@ -208,6 +210,8 @@ public class PseudoTuple implements Comparable<PseudoTuple> {
 	}
 
 	public static PseudoTuple cat(PseudoTuple l, PseudoTuple r) {
-		return new PseudoTuple(l.toList().addAll(r.toList()));
+		java.util.List<Term> ts = l.toList();
+		ts.addAll(r.toList());
+		return new PseudoTuple(ts);
 	}
 }

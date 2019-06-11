@@ -30,7 +30,6 @@ aspect MetaLang {
 	}
 
 	AnalyzeBlock contributes nta getAllClauses() to Program.predicateSymbols();
-	AnalyzeBlock contributes nta getAllClauses() to Program.pass1TypeMap();
 
 	rewrite PredicateSymbol {
 		when (enclosingAnalyzeBlock() != null &&

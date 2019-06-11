@@ -483,39 +483,6 @@ aspect FormalPredicate {
 }
 
 aspect Types {
-	public TreeMap<FormalPredicate, PseudoTuple> Program.typeMap = new TreeMap<FormalPredicate, PseudoTuple>(FormalPredicate.formalPredicateComparator);
-	coll MapToSetOf<FormalPredicate, PseudoTuple> Program.pass1TypeMap() [new MapToSetOf(new TreeSetConstructor(null))] with add;
-
-	OUTPUTLiteral contributes new MapEntry<FormalPredicate, PseudoTuple>(predicate().formalpredicate(), type()) to Program.pass1TypeMap();
-	EDBLiteral	  contributes new MapEntry<FormalPredicate, PseudoTuple>(predicate().formalpredicate(), type()) to Program.pass1TypeMap();
-	IMPORTLiteral contributes new MapEntry<FormalPredicate, PseudoTuple>(predicate().formalpredicate(), type()) to Program.pass1TypeMap();
-
-	Literal contributes new MapEntry<FormalPredicate, PseudoTuple>(predicate().formalpredicate(), toTuple().toTypeTuple())
-		when isGround()
-		to Program.pass1TypeMap();
-
-	syn StringConstant Term.type()		=  TypeName.typeT();
-	eq Variable.type()		  =	 TypeName.varT();
-	eq PredicateRef.type()	  =	 TypeName.predRefT();
-	eq StringConstant.type()  =	 TypeName.stringT();
-	eq IntConstant.type()	  =	 TypeName.integerT();
-
 	syn boolean Term.isVariable() = this instanceof Variable;
 	syn boolean Term.isConstant() = !isVariable();
-
-	syn PseudoTuple PredefinedLiteral.actualType();
-	eq	OUTPUTLiteral.actualType() = new PseudoTuple(new List(getTerm().type()));
-	eq	EDBLiteral.actualType()	   = new PseudoTuple(new List(TypeName.predRefT(), getFileLoc().type()));
-	eq	IMPORTLiteral.actualType() = new PseudoTuple(new List(getFileLoc().type(), getProgramRef().type()));
-
-	syn PseudoTuple PredefinedLiteral.type();
-	eq	OUTPUTLiteral.type() = new PseudoTuple(new List(TypeName.predRefT()));
-	eq	EDBLiteral.type()	 = new PseudoTuple(new List(TypeName.predRefT(), TypeName.stringT()));
-	eq	IMPORTLiteral.type() = new PseudoTuple(new List(TypeName.stringT(), TypeName.predRefT()));
-
-	syn String Term.souffleType() {
-		if (type().toString().equals("__Integer__"))
-			return ".number";
-		return ".symbol";
-	}
 }

@@ -101,7 +101,6 @@ aspect Task {
     public Program Task.getProgramWithChecks(String path) throws Exception {
         Program program = (Program) FileUtil.parse(new File(path));
         Compiler.DrAST_root_node = program; // Enable debugging with DrAST
-        new InitialTypeCheck(getParamss()).perform(program, description());
         new SemanticCheck(getParamss()).perform(program, description());
         new TypeCheck(getParamss()).perform(program, description());
         return program;
@@ -333,28 +332,6 @@ aspect TypeProg {
     **/
     public Program TypeProg.perform()  throws Exception{
         Program program = (Program) FileUtil.parse(new File(description().getInput().getPath()));
-        new SemanticCheck(getParamss()).perform(program, description());
-        String typeProgSource = program.typePrint();
-        System.out.println("------------------------------------------------");
-        System.out.println("\t\t\t TYPESOURCE");
-        System.out.println("------------------------------------------------");
-        System.out.println(typeProgSource);
-        System.out.println("------------------------------------------------");
-
-        Program typeProg = FileUtil.parse(typeProgSource);
-        BottomUpNaiveIterative eval = new BottomUpNaiveIterative();
-        eval.evaluate(typeProg, null);
-
-        System.out.println("------------------------------------------------");
-        System.out.println("\t\t\t EVAL RESULT");
-        System.out.println("------------------------------------------------");
-        for(FormalPredicate fp : typeProg.getFormalPredicates()) {
-            System.out.println(fp.predicateName() + ": " + fp.relation);
-        }
-
-        System.out.println("------------------------------------------------");
-        new TypeCheck(getParamss()).perform(program, description());
-
         System.out.println("------------------------------------------------");
         System.out.println("\t\t\t TYPEINFERENCE RESULT");
         System.out.println("------------------------------------------------");
@@ -368,12 +345,6 @@ aspect TypeProg {
 }
 
 aspect SubTask {
-    public Program InitialTypeCheck.perform()  throws Exception {
-        Program program = (Program) FileUtil.parse(new File(description().getInput().getPath()));
-        Compiler.DrAST_root_node = program; // Enable debugging with DrAST
-        perform(program, description());
-        return program;
-    }
     public Program SemanticCheck.perform()  throws Exception {
         Program program = (Program) FileUtil.parse(new File(description().getInput().getPath()));
         Compiler.DrAST_root_node = program; // Enable debugging with DrAST
@@ -391,15 +362,9 @@ aspect SubTask {
     public interface SubTask {
         void perform(Program program, Description descr) throws Exception;
     }
-    InitialTypeCheck implements SubTask;
+
     TypeCheck        implements SubTask;
     SemanticCheck    implements SubTask;
-
-    public void InitialTypeCheck.perform(Program program, Description descr) throws Exception {
-        if(!program.hasInitialTypeErrors()) return;
-        SimpleLogger.logger().log("Compilation failed with initial type error: \n" + program.initialTypeErrorReport(), SimpleLogger.LogLevel.Level.ERROR);
-        System.exit(0);
-    }
 
     public void TypeCheck.perform(Program program, Description descr) {
 		if (program.typeErrors().isEmpty()) return;

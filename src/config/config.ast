@@ -3,7 +3,6 @@ Description ::= Task Input:InputFile;
 abstract Task ::= Params:ConfigParam *;
 SemanticCheck:Task;
 TypeCheck:Task;
-InitialTypeCheck:Task;
 TypeProg:Task;
 EvalBottomUpNaive:Task;
 PrettyBottomUpNaive:Task;

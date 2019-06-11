@@ -31,8 +31,6 @@ aspect Comparison {
 	public class CompareTerm implements Comparator<Term> {
 		@Override
 		public int compare(Term t1, Term t2) {
-			int typeComp = t1.type().toString().compareTo(t2.type().toString());
-			if(typeComp != 0) return typeComp;
 			return t1.toString().compareTo(t2.toString());
 		}
 	}

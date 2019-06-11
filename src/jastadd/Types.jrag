@@ -20,6 +20,7 @@ aspect Type {
 				return BadType.get();
 			}
 		}
+		@Override public String toString() { return name(); }
 	}
 
 	public class IntegerType extends Type {
@@ -279,30 +280,82 @@ aspect TypeCheck {
 
 		for (int i = 0; i < getNumArg(); ++i) {
 			Expr e = getArg(i);
-			if (e.vtype() != expectedType) {
-				return new ExpressionTypeError(this, i, e.vtype(), expectedType);
+			if (e.type() != expectedType) {
+				return new ExpressionTypeError(this, i, e.type(), expectedType);
 			}
 		}
 		return null;
 	}
 
 	syn TypeError BinaryExclusiveTermLiteral.typeError() {
-		if (getLeft().vtype() != getRight().vtype()) {
-			return new TypeMismatchError(this, getLeft().vtype(), getRight().vtype());
+		if (getLeft().type() != getRight().type()) {
+			return new TypeMismatchError(this, getLeft().type(), getRight().type());
 		}
 		return null;
 	}
 
 	syn TypeError BINDLiteral.typeError() {
-		if (getVariable().vtype() != getRight().vtype()) {
-			return new TypeMismatchError(this, getVariable().vtype(), getRight().vtype());
+		if (getVariable().type() != getRight().type()) {
+			return new TypeMismatchError(this, getVariable().type(), getRight().type());
 		}
+		return null;
+	}
+
+	syn TypeError OUTPUTLiteral.typeError() {
+		if (getTerm().type() != PredicateRefType.get())
+			return new TypeError() {
+				public String report() {
+					return "Argument to OUTPUT must have type " +
+						PredicateRefType.get() + ", but got " + getTerm().type() + ".";
+				}
+			};
+		return null;
+	}
+
+
+	syn TypeError EDBLiteral.typeError() {
+		if (getPredicateRef().type() != PredicateRefType.get())
+			return new TypeError() {
+				public String report() {
+					return "First argument to EDB must have type " +
+						PredicateRefType.get() + ", but got " + getPredicateRef().type() + ".";
+				}
+			};
+		if (getFileLoc().type() != StringType.get())
+			return new TypeError() {
+				public String report() {
+					return "Second argument to EDB must have type " +
+						StringType.get() + ", but got " + getFileLoc().type() + ".";
+				}
+			};
+		return null;
+	}
+
+	syn TypeError IMPORTLiteral.typeError() {
+		if (getProgramRef().type() != PredicateRefType.get())
+			return new TypeError() {
+				public String report() {
+					return "Second argument to IMPORT must have type " +
+						PredicateRefType.get() + ", but got " + getProgramRef().type() + ".";
+				}
+			};
+
+		if (getFileLoc().type() != StringType.get())
+			return new TypeError() {
+				public String report() {
+					return "First argument to IMPORT must have type " +
+						StringType.get() + ", but got " + getFileLoc().type() + ".";
+				}
+			};
 		return null;
 	}
 
 	Functor contributes typeError() when (typeError() != null) to Program.typeErrors();
 	BinaryExclusiveTermLiteral contributes typeError() when (typeError() != null) to Program.typeErrors();
 	BINDLiteral contributes typeError() when (typeError() != null) to Program.typeErrors();
+	OUTPUTLiteral contributes typeError() when (typeError() != null) to Program.typeErrors();
+	EDBLiteral contributes typeError() when (typeError() != null) to Program.typeErrors();
+	IMPORTLiteral contributes typeError() when (typeError() != null) to Program.typeErrors();
 	FormalPredicate contributes typeError() when (typeError() != null) to Program.typeErrors();
 }
 
@@ -384,7 +437,7 @@ aspect TypeInference {
 
 					java.util.List<Variable> sources = c.varMap().get(varName);
 					for (Variable v : sources) {
-						current.joinAt(i, v.vtype());
+						current.joinAt(i, v.type());
 					}
 				}
 			}
@@ -437,13 +490,16 @@ aspect TypeInference {
 	eq Literal.getChild().atom() = null;
 	eq Atom.getTerms(int i).atom() = this;
 
-	syn Type Expr.vtype() circular [itype()];
+	// Constant AST nodes are created inside the naive evaluator, but they
+	// have no parents, so there is no way to compute the itype() attribute for them,
+	// so we use the bottom value in the type lattice.
+	syn Type Expr.type() circular [getParent() != null ? itype() : UnknownType.get()];
 
-	eq Expr.vtype() {
-		Type t = vtype();
+	eq Expr.type() {
+		Type t = type();
 
 		if (sibling() != null) {
-			t = t.join(sibling().vtype());
+			t = t.join(sibling().type());
 		}
 
 		if (atom() != null) {
@@ -455,8 +511,8 @@ aspect TypeInference {
 		return t;
 	}
 
-	eq Functor.vtype() {
-		Type t = super.vtype();
+	eq Functor.type() {
+		Type t = super.type();
 		switch (getFunc().getFUNC_ID()) {
 		case "add":
 		case "mul":
@@ -471,15 +527,15 @@ aspect TypeInference {
 		return t;
 	}
 
-	eq IntConstant.vtype() {
+	eq IntConstant.type() {
 		return IntegerType.get();
 	}
 
-	eq StringConstant.vtype() {
+	eq StringConstant.type() {
 		return StringType.get();
 	}
 
-	eq PredicateRef.vtype() {
+	eq PredicateRef.type() {
 		return PredicateRefType.get();
 	}
 }

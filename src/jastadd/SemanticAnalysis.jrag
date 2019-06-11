@@ -4,13 +4,13 @@ aspect ErrorCollection {
     /**
     	Check if the types of the constant terms used in meta-predicates are valid.
     **/
-    coll TreeSet<String> Program.initialTypeCheckErrors() [new TreeSet<String>()] with add;
-    syn boolean Program.hasInitialTypeErrors() = !initialTypeCheckErrors().isEmpty();
-    syn String Program.initialTypeErrorReport() {
-        StringBuilder sb = new StringBuilder();
-        for(String err : initialTypeCheckErrors()) sb.append(err).append("\n");
-        return sb.toString();
-    }
+    // coll TreeSet<String> Program.initialTypeCheckErrors() [new TreeSet<String>()] with add;
+    // syn boolean Program.hasInitialTypeErrors() = !initialTypeCheckErrors().isEmpty();
+    // syn String Program.initialTypeErrorReport() {
+    //     StringBuilder sb = new StringBuilder();
+    //     for(String err : initialTypeCheckErrors()) sb.append(err).append("\n");
+    //     return sb.toString();
+    // }
 
     coll TreeSet<String> Program.semanticErrors() [new TreeSet<String>()] with add;
     syn boolean Program.hasSemanticErrors() = !semanticErrors().isEmpty();

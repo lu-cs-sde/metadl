@@ -156,7 +156,20 @@ aspect Type {
 }
 
 aspect TypeCheck {
-	public class TypeError implements Comparable<TypeError> {
+	public abstract class TypeError implements Comparable<TypeError> {
+		@Override public int compareTo(TypeError other) {
+			if ((other instanceof PredicateTypeError) &&
+				!(this instanceof PredicateTypeError))
+				return 1;
+			if ((this instanceof PredicateTypeError) &&
+				!(other instanceof PredicateTypeError))
+				return -1;
+			return 0;
+		}
+		public abstract String report();
+	}
+
+	public class PredicateTypeError extends TypeError {
 		private FormalPredicate pred;
 		private ArrayList<Integer> pos;
 		public void addUndefined(int i) {
@@ -165,14 +178,19 @@ aspect TypeCheck {
 		public void addContradictory(int i) {
 			pos.add(-i - 1);
 		}
-		public TypeError(FormalPredicate pred) {
+		public PredicateTypeError(FormalPredicate pred) {
 			this.pred = pred;
 		}
 		@Override public int compareTo(TypeError other) {
-			if (pred.equals(other.pred))
+			if (!(other instanceof PredicateTypeError))
+				return super.compareTo(other);
+
+			PredicateTypeError otherPE = (PredicateTypeError) other;
+
+			if (pred.equals(otherPE.pred))
 				return 0;
 			return FormalPredicate.formalPredicateComparator
-				.compare(pred, other.pred);
+				.compare(pred, otherPE.pred);
 		}
 		public String report() {
 			StringBuffer sb = new StringBuffer();
@@ -192,26 +210,99 @@ aspect TypeCheck {
 		}
 	}
 
+	public class ExpressionTypeError extends TypeError {
+		private int pos;
+		private Functor f;
+		private Type actualType;
+		private Type expectedType;
+
+		public ExpressionTypeError(Functor f, int pos, Type actualType, Type expectedType) {
+			this.f = f;
+			this.pos = pos;
+			this.actualType = actualType;
+			this.expectedType = expectedType;
+		}
+
+		public String report() {
+			return "Expected type " + expectedType + " as argument " + pos + " of " + f + ", but got " + actualType + ".";
+		}
+	}
+
+	public class TypeMismatchError extends TypeError {
+		private Literal l;
+		private Type t1, t2;
+
+		public TypeMismatchError(Literal l, Type t1, Type t2) {
+			this.l = l;
+			this.t1 = t1;
+			this.t2 = t2;
+		}
+
+		public String report() {
+			return "Arguments of " + l + " must have the same type " + ", but got " + t1 + " and " + t2 + ".";
+		}
+	}
+
 	// Type errors for the program. Empty iff the program
 	// is well-typed.
 	coll TreeSet<TypeError> Program.typeErrors() [new TreeSet<>()];
 
 	syn TypeError FormalPredicate.typeError() {
-		TypeError err = null;
+		PredicateTypeError err = null;
 		for (int i = 0; i < type().arity(); ++i) {
 			if (type().get(i) == BadType.get()) {
 				if (err == null)
-					err = new TypeError(this);
+					err = new PredicateTypeError(this);
 				err.addContradictory(i);
 			} else if (type().get(i) == UnknownType.get()) {
 				if (err == null)
-					err = new TypeError(this);
+					err = new PredicateTypeError(this);
 				err.addUndefined(i);
 			}
 		}
 		return err;
 	}
 
+	syn TypeError Functor.typeError() {
+		Type expectedType;
+		switch (getFunc().getFUNC_ID()) {
+		case "add":
+		case "mul":
+		case "sub":
+		case "div":
+			expectedType = IntegerType.get(); break;
+		case "cat":
+			expectedType = StringType.get(); break;
+		default:
+			expectedType = BadType.get(); break;
+		}
+
+		for (int i = 0; i < getNumArg(); ++i) {
+			Expr e = getArg(i);
+			if (e.vtype() != expectedType) {
+				return new ExpressionTypeError(this, i, e.vtype(), expectedType);
+			}
+		}
+		return null;
+	}
+
+	syn TypeError BinaryExclusiveTermLiteral.typeError() {
+		if (getLeft().vtype() != getRight().vtype()) {
+			return new TypeMismatchError(this, getLeft().vtype(), getRight().vtype());
+		}
+		return null;
+	}
+
+	syn TypeError BINDLiteral.typeError() {
+		if (getVariable().vtype() != getRight().vtype()) {
+			return new TypeMismatchError(this, getVariable().vtype(), getRight().vtype());
+		}
+		return null;
+	}
+
+	Functor contributes typeError() when (typeError() != null) to Program.typeErrors();
+	BinaryExclusiveTermLiteral contributes typeError() when (typeError() != null) to Program.typeErrors();
+	BINDLiteral contributes typeError() when (typeError() != null) to Program.typeErrors();
 	FormalPredicate contributes typeError() when (typeError() != null) to Program.typeErrors();
 }
 
@@ -291,13 +382,13 @@ aspect TypeInference {
 
 			for (int i = 0; i < a.arity(); ++i) {
 				Term t = a.getTerms(i);
-				if (!(t instanceof Variable))
-					continue;
-				String varName = ((Variable) t).getVAR_ID();
+				if (t instanceof Variable) {
+					String varName = ((Variable) t).getVAR_ID();
 
-				java.util.List<Variable> sources = c.varMap().get(varName);
-				for (Variable v : sources) {
-					current.joinAt(i, v.vtype());
+					java.util.List<Variable> sources = c.varMap().get(varName);
+					for (Variable v : sources) {
+						current.joinAt(i, v.vtype());
+					}
 				}
 			}
 		}
@@ -336,13 +427,15 @@ aspect TypeInference {
 		return IntegerType.get();
 	}
 
+	// For an expression, return the other expression that
+	// has the same type
 	inh Expr Expr.sibling();
 	eq Literal.getChild().sibling() = null;
 	eq BinaryExclusiveTermLiteral.getLeft().sibling() = getRight();
 	eq BinaryExclusiveTermLiteral.getRight().sibling() = getLeft();
 	eq BINDLiteral.getVariable().sibling() = getRight();
 	eq BINDLiteral.getRight().sibling() = getVariable();
-
+	// Return the parent atom for an expression, if any
 	inh Atom Expr.atom();
 	eq Literal.getChild().atom() = null;
 	eq Atom.getTerms(int i).atom() = this;
@@ -372,24 +465,24 @@ aspect TypeInference {
 		case "mul":
 		case "sub":
 		case "div":
-			t = t.join(IntegerType.get());
+			t = t.join(IntegerType.get()); break;
 		case "cat":
-			t = t.join(StringType.get());
+			t = t.join(StringType.get()); break;
 		default:
-			t = t.join(BadType.get());
+			t = t.join(BadType.get()); break;
 		}
 		return t;
 	}
 
 	eq IntConstant.vtype() {
-		return super.vtype().join(IntegerType.get());
+		return IntegerType.get();
 	}
 
 	eq StringConstant.vtype() {
-		return super.vtype().join(StringType.get());
+		return StringType.get();
 	}
 
 	eq PredicateRef.vtype() {
-		return super.vtype().join(PredicateRefType.get());
+		return PredicateRefType.get();
 	}
 }

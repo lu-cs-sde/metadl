@@ -49,6 +49,8 @@ sourceSets {
 
 // Configuration for the test running.
 test {
+    maxParallelForks = Runtime.runtime.availableProcessors()
+
     useJUnitPlatform()
     // {
         // excludeTags 'slow'

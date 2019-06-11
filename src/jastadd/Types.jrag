@@ -201,7 +201,7 @@ aspect TypeCheck {
 				if (e >= 0)
 					sb.append("undefined type at position " + (e - 1));
 				else
-					sb.append("contradictory type at position " + (e + 1));
+					sb.append("contradictory type at position " + (-e - 1));
 				if (i < pos.size() - 1)
 					sb.append(", ");
 				else

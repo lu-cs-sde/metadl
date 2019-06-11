@@ -342,10 +342,7 @@ aspect TypeInference {
 	// variable in a given predicate
 	coll VariableMap Clause.varMap() [new VariableMap()] with add;
 
-	Variable contributes this
-		when indexInLiteral() >= 0
-		to Clause.varMap()
-		for literal().clause();
+	Variable contributes this to Clause.varMap() for literal().clause();
 
 	AnalyzeBlock contributes nta getAllClauses() to Clause.varMap();
 	AnalyzeBlock contributes nta getAllClauses() to FormalPredicate.initialType();

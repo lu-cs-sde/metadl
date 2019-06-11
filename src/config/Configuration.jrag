@@ -371,9 +371,9 @@ aspect SubTask {
 
 		StringBuffer typeErrs = new StringBuffer();
 		for (TypeError e : program.typeErrors())
-			typeErrs.append(e.report() + "\n");
+			typeErrs.append(e.reportPosition() + "\n");
 
-		SimpleLogger.logger().log("Compilation failed with type errors: \n" + typeErrs.toString());
+		SimpleLogger.logger().log("Compilation failed with type errors: \n" + typeErrs.toString(), SimpleLogger.LogLevel.Level.ERROR);
     }
 
     public void SemanticCheck.perform(Program program, Description descr) throws Exception {

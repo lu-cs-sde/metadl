@@ -158,44 +158,44 @@ aspect Type {
 
 aspect TypeCheck {
 	public abstract class TypeError implements Comparable<TypeError> {
+		private int startPos, endPos;
+		TypeError(beaver.Symbol s) {
+			startPos = s.getStart();
+			endPos = s.getEnd();
+		}
+
 		@Override public int compareTo(TypeError other) {
-			if ((other instanceof PredicateTypeError) &&
-				!(this instanceof PredicateTypeError))
-				return 1;
-			if ((this instanceof PredicateTypeError) &&
-				!(other instanceof PredicateTypeError))
-				return -1;
+			if (startPos != other.startPos)
+				return startPos - other.startPos;
+			if (endPos != other.endPos)
+				return endPos - other.endPos;
 			return 0;
 		}
+
 		public abstract String report();
+
+		public String reportPosition() {
+			return beaver.Symbol.getLine(startPos) + "," + beaver.Symbol.getColumn(startPos) + "-" +
+				beaver.Symbol.getLine(endPos) + "," + beaver.Symbol.getColumn(endPos) + ": " + report();
+		}
 	}
 
 	public class PredicateTypeError extends TypeError {
-		private FormalPredicate pred;
-		private ArrayList<Integer> pos;
+		private Literal l;
+		private ArrayList<Integer> pos = new ArrayList<>();
 		public void addUndefined(int i) {
 			pos.add(i + 1);
 		}
 		public void addContradictory(int i) {
 			pos.add(-i - 1);
 		}
-		public PredicateTypeError(FormalPredicate pred) {
-			this.pred = pred;
-		}
-		@Override public int compareTo(TypeError other) {
-			if (!(other instanceof PredicateTypeError))
-				return super.compareTo(other);
-
-			PredicateTypeError otherPE = (PredicateTypeError) other;
-
-			if (pred.equals(otherPE.pred))
-				return 0;
-			return FormalPredicate.formalPredicateComparator
-				.compare(pred, otherPE.pred);
+		public PredicateTypeError(Literal l) {
+			super(l);
+			this.l = l;
 		}
 		public String report() {
 			StringBuffer sb = new StringBuffer();
-			sb.append("Predicate " + pred.getPRED_ID() + " is not well-typed: ");
+			sb.append("Predicate " + l.getPredicate().getPRED_ID() + " is not well-typed: ");
 			for (int i = 0; i < pos.size(); ++i) {
 				int e = pos.get(i);
 				if (e >= 0)
@@ -218,6 +218,7 @@ aspect TypeCheck {
 		private Type expectedType;
 
 		public ExpressionTypeError(Functor f, int pos, Type actualType, Type expectedType) {
+			super(f);
 			this.f = f;
 			this.pos = pos;
 			this.actualType = actualType;
@@ -234,6 +235,7 @@ aspect TypeCheck {
 		private Type t1, t2;
 
 		public TypeMismatchError(Literal l, Type t1, Type t2) {
+			super(l);
 			this.l = l;
 			this.t1 = t1;
 			this.t2 = t2;
@@ -248,14 +250,15 @@ aspect TypeCheck {
 	// is well-typed.
 	coll TreeSet<TypeError> Program.typeErrors() [new TreeSet<>()];
 
-	syn TypeError FormalPredicate.typeError() {
+	syn TypeError Atom.typeError() {
 		PredicateTypeError err = null;
-		for (int i = 0; i < type().arity(); ++i) {
-			if (type().get(i) == BadType.get()) {
+		PredicateType type = getPredicate().formalpredicate().type();
+		for (int i = 0; i < type.arity(); ++i) {
+			if (type.get(i) == BadType.get()) {
 				if (err == null)
 					err = new PredicateTypeError(this);
 				err.addContradictory(i);
-			} else if (type().get(i) == UnknownType.get()) {
+			} else if (type.get(i) == UnknownType.get()) {
 				if (err == null)
 					err = new PredicateTypeError(this);
 				err.addUndefined(i);
@@ -303,7 +306,7 @@ aspect TypeCheck {
 
 	syn TypeError OUTPUTLiteral.typeError() {
 		if (getTerm().type() != PredicateRefType.get())
-			return new TypeError() {
+			return new TypeError(this) {
 				public String report() {
 					return "Argument to OUTPUT must have type " +
 						PredicateRefType.get() + ", but got " + getTerm().type() + ".";
@@ -315,14 +318,14 @@ aspect TypeCheck {
 
 	syn TypeError EDBLiteral.typeError() {
 		if (getPredicateRef().type() != PredicateRefType.get())
-			return new TypeError() {
+			return new TypeError(this) {
 				public String report() {
 					return "First argument to EDB must have type " +
 						PredicateRefType.get() + ", but got " + getPredicateRef().type() + ".";
 				}
 			};
 		if (getFileLoc().type() != StringType.get())
-			return new TypeError() {
+			return new TypeError(this) {
 				public String report() {
 					return "Second argument to EDB must have type " +
 						StringType.get() + ", but got " + getFileLoc().type() + ".";
@@ -333,7 +336,7 @@ aspect TypeCheck {
 
 	syn TypeError IMPORTLiteral.typeError() {
 		if (getProgramRef().type() != PredicateRefType.get())
-			return new TypeError() {
+			return new TypeError(this) {
 				public String report() {
 					return "Second argument to IMPORT must have type " +
 						PredicateRefType.get() + ", but got " + getProgramRef().type() + ".";
@@ -341,7 +344,7 @@ aspect TypeCheck {
 			};
 
 		if (getFileLoc().type() != StringType.get())
-			return new TypeError() {
+			return new TypeError(this) {
 				public String report() {
 					return "First argument to IMPORT must have type " +
 						StringType.get() + ", but got " + getFileLoc().type() + ".";
@@ -356,7 +359,7 @@ aspect TypeCheck {
 	OUTPUTLiteral contributes typeError() when (typeError() != null) to Program.typeErrors();
 	EDBLiteral contributes typeError() when (typeError() != null) to Program.typeErrors();
 	IMPORTLiteral contributes typeError() when (typeError() != null) to Program.typeErrors();
-	FormalPredicate contributes typeError() when (typeError() != null) to Program.typeErrors();
+	Atom contributes typeError() when (typeError() != null) to Program.typeErrors();
 }
 
 aspect TypeInference {

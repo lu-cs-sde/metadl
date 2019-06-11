@@ -268,7 +268,7 @@ aspect Literal {
 	syn boolean Literal.isGround() = variables().isEmpty();
 
 	public interface PredefinedLiteral {}
-	EDBLiteral	  implements PredefinedLiteral;
+	EDBLiteral implements PredefinedLiteral;
 	OUTPUTLiteral implements PredefinedLiteral;
 	IMPORTLiteral implements PredefinedLiteral;
 

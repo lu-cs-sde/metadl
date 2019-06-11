@@ -160,10 +160,10 @@ aspect TypeCheck {
 		private FormalPredicate pred;
 		private ArrayList<Integer> pos;
 		public void addUndefined(int i) {
-			pos.add(i);
+			pos.add(i + 1);
 		}
 		public void addContradictory(int i) {
-			pos.add(-i);
+			pos.add(-i - 1);
 		}
 		public TypeError(FormalPredicate pred) {
 			this.pred = pred;
@@ -173,6 +173,22 @@ aspect TypeCheck {
 				return 0;
 			return FormalPredicate.formalPredicateComparator
 				.compare(pred, other.pred);
+		}
+		public String report() {
+			StringBuffer sb = new StringBuffer();
+			sb.append("Predicate " + pred.getPRED_ID() + " is not well-typed: ");
+			for (int i = 0; i < pos.size(); ++i) {
+				int e = pos.get(i);
+				if (e >= 0)
+					sb.append("undefined type at position " + (e - 1));
+				else
+					sb.append("contradictory type at position " + (e + 1));
+				if (i < pos.size() - 1)
+					sb.append(", ");
+				else
+					sb.append(".");
+			}
+			return sb.toString();
 		}
 	}
 
@@ -201,7 +217,7 @@ aspect TypeCheck {
 
 aspect TypeInference {
 	coll PredicateType FormalPredicate.initialType() [new PredicateType(realArity())] with join root Program;
-	inh int Term.indexInLiteral();
+	inh int Expr.indexInLiteral();
 	eq Atom.getTerms(int i).indexInLiteral() {
 		return i;
 	}
@@ -231,11 +247,11 @@ aspect TypeInference {
 		to FormalPredicate.initialType()
 		for literal().getPredicate().formalpredicate();
 
-
 	// map variable names to formal predicates and position of the respective
 	// variable in a given predicate
 	coll VariableMap Clause.varMap() [new VariableMap()] with add;
-	Variable contributes (new VariableMap.Entry(getVAR_ID(), literal().getPredicate().formalpredicate(), indexInLiteral()))
+
+	Variable contributes this
 		when indexInLiteral() >= 0
 		to Clause.varMap()
 		for literal().clause();
@@ -245,37 +261,20 @@ aspect TypeInference {
 	Pattern contributes nta getLiterals() to Clause.varMap();
 
 	public class VariableMap {
-		private Map<String, Set<MapEntry<FormalPredicate, Integer>>> m = new HashMap<>();
-		public void add(String varName, FormalPredicate p, int index) {
-			Set<MapEntry<FormalPredicate, Integer>> occurences = m.get(varName);
+		private Map<String, java.util.List<Variable>> m = new HashMap<>();
+		public void add(Variable v) {
+			java.util.List<Variable> occurences = m.get(v.getVAR_ID());
 			if (occurences == null) {
-				HashSet<MapEntry<FormalPredicate, Integer>> s = new HashSet<>();
-				s.add(new MapEntry<FormalPredicate, Integer>(p, index));
-				m.put(varName, s);
-			} else {
-				occurences.add(new MapEntry<FormalPredicate, Integer>(p, index));
+				occurences = new ArrayList<>();
+				m.put(v.getVAR_ID(), occurences);
 			}
+			occurences.add(v);
 		}
 
-		public static class Entry {
-			private String varName;
-			private FormalPredicate p;
-			private int index;
-			Entry(String varName, FormalPredicate p, int index) {
-				this.varName = varName;
-				this.p = p;
-				this.index = index;
-			}
-		}
-
-		public void add(Entry e) {
-			add(e.varName, e.p, e.index);
-		}
-
-		public Set<MapEntry<FormalPredicate, Integer>> get(String varName) {
-			Set<MapEntry<FormalPredicate, Integer>> entry = m.get(varName);
+		public java.util.List<Variable> get(String varName) {
+			java.util.List<Variable> entry = m.get(varName);
 			if (entry == null) {
-				return Collections.emptySet();
+				return Collections.emptyList();
 			}
 			return entry;
 		}
@@ -295,12 +294,102 @@ aspect TypeInference {
 				if (!(t instanceof Variable))
 					continue;
 				String varName = ((Variable) t).getVAR_ID();
-				Set<MapEntry<FormalPredicate, Integer>> sources = c.varMap().get(varName);
-				for (MapEntry<FormalPredicate, Integer> e : sources) {
-					current.joinAt(i, e.k.type().get(e.v));
+
+				java.util.List<Variable> sources = c.varMap().get(varName);
+				for (Variable v : sources) {
+					current.joinAt(i, v.vtype());
 				}
 			}
 		}
 		return current;
+	}
+
+	inh Type Expr.itype();
+	eq Literal.getChild().itype() = UnknownType.get();
+    eq Functor.getArg(int i).itype() {
+		switch (getFunc().getFUNC_ID()) {
+		case "add":
+		case "mul":
+		case "sub":
+		case "div":
+			return IntegerType.get();
+		case "cat":
+			return StringType.get();
+		default:
+			return UnknownType.get();
+		}
+	}
+
+	eq LTLiteral.getChild().itype() {
+		return IntegerType.get();
+	}
+
+	eq GTLiteral.getChild().itype() {
+		return IntegerType.get();
+	}
+
+	eq LTELiteral.getChild().itype() {
+		return IntegerType.get();
+	}
+
+	eq GTELiteral.getChild().itype() {
+		return IntegerType.get();
+	}
+
+	inh Expr Expr.sibling();
+	eq Literal.getChild().sibling() = null;
+	eq BinaryExclusiveTermLiteral.getLeft().sibling() = getRight();
+	eq BinaryExclusiveTermLiteral.getRight().sibling() = getLeft();
+	eq BINDLiteral.getVariable().sibling() = getRight();
+	eq BINDLiteral.getRight().sibling() = getVariable();
+
+	inh Atom Expr.atom();
+	eq Literal.getChild().atom() = null;
+	eq Atom.getTerms(int i).atom() = this;
+
+	syn Type Expr.vtype() circular [itype()];
+
+	eq Expr.vtype() {
+		Type t = vtype();
+
+		if (sibling() != null) {
+			t = t.join(sibling().vtype());
+		}
+
+		if (atom() != null) {
+			Literal l = atom();
+			int i = indexInLiteral();
+			t = t.join(l.getPredicate().formalpredicate().type().get(i));
+		}
+
+		return t;
+	}
+
+	eq Functor.vtype() {
+		Type t = super.vtype();
+		switch (getFunc().getFUNC_ID()) {
+		case "add":
+		case "mul":
+		case "sub":
+		case "div":
+			t = t.join(IntegerType.get());
+		case "cat":
+			t = t.join(StringType.get());
+		default:
+			t = t.join(BadType.get());
+		}
+		return t;
+	}
+
+	eq IntConstant.vtype() {
+		return super.vtype().join(IntegerType.get());
+	}
+
+	eq StringConstant.vtype() {
+		return super.vtype().join(StringType.get());
+	}
+
+	eq PredicateRef.vtype() {
+		return super.vtype().join(PredicateRefType.get());
 	}
 }

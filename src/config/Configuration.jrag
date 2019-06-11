@@ -8,6 +8,7 @@ import lang.ast.PredicateRef;
 import lang.ast.GlobalNames;
 import lang.ast.StringConstant;
 import lang.ast.IMPORTLiteral;
+import lang.ast.TypeError;
 import lang.relation.PseudoTuple;
 import lang.relation.Relation;
 import lang.io.FileUtil;
@@ -400,16 +401,14 @@ aspect SubTask {
         System.exit(0);
     }
 
-    public void TypeCheck.perform(Program program, Description descr) throws Exception {
-        program.typeCheck();
+    public void TypeCheck.perform(Program program, Description descr) {
+		if (program.typeErrors().isEmpty()) return;
 
-		for(FormalPredicate fp : program.getFormalPredicates()) {
-			fp.type();
-        }
+		StringBuffer typeErrs = new StringBuffer();
+		for (TypeError e : program.typeErrors())
+			typeErrs.append(e.report() + "\n");
 
-        if(!program.hasTypeErrors()) return;
-        SimpleLogger.logger().log("Compilation failed with type error: \n" + program.typeErrorReport(), SimpleLogger.LogLevel.Level.ERROR);
-        System.exit(0);
+		SimpleLogger.logger().log("Compilation failed with type errors: \n" + typeErrs.toString());
     }
 
     public void SemanticCheck.perform(Program program, Description descr) throws Exception {

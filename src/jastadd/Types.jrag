@@ -514,6 +514,14 @@ aspect TypeInference {
 		return t;
 	}
 
+	eq Variable.type() {
+		Type t = super.type();
+		for (Variable v : literal().clause().varMap().get(getVAR_ID())) {
+			t = t.join(v.type());
+		}
+		return t;
+	}
+
 	eq Functor.type() {
 		Type t = super.type();
 		switch (getFunc().getFUNC_ID()) {

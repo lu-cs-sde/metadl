@@ -10,6 +10,7 @@ aspect MetaLang {
 	 */
 	inh AnalyzeBlock CommonClause.enclosingAnalyzeBlock();
 	inh AnalyzeBlock PredicateSymbol.enclosingAnalyzeBlock();
+	inh AnalyzeBlock CommonLiteral.enclosingAnalyzeBlock();
 
 	eq Program.getCommonClause().enclosingAnalyzeBlock() = null;
 	eq AnalyzeBlock.getClause().enclosingAnalyzeBlock() = this;

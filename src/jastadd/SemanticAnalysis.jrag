@@ -35,4 +35,7 @@ aspect ErrorCollection {
 
 	Literal contributes "Nullary literals are not (yet) supported: " + getPredicate().getPRED_ID() + "." when
 		arity() == 0 to Program.semanticErrors();
+
+	Pattern contributes "Patterns are not allowed outside analyze blocks: " + this + "." when
+		enclosingAnalyzeBlock() == null to Program.semanticErrors();
 }

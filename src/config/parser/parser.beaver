@@ -10,7 +10,7 @@
 :};
 
 %terminals FILEPATH, SEP, BOTTOMUPNAIVE, SOUFFLE, OUTDIR, FACTSDIR, SOUFFLEOUT,
-           PRETTYPRINT, EVAL, TYPE_PROG, SEMANTIC_CHECK, TYPE_CHECK, PRE_PRINT,
+           PRETTYPRINT, EVAL, TYPE_PROG, SEMANTIC_CHECK, TYPE_CHECK,
 	   CSVSEPARATOR, SEP_CHAR;
 
 %typeof  descr                    =  "Description";
@@ -22,7 +22,6 @@
 %typeof  eval_task                =  "Task";
 %typeof  semantic_check           =  "Task";
 %typeof  type_check               =  "Task";
-%typeof  pre_print                =  "Task";
 %typeof  file_path                =  "FilePath";
 %typeof  input_file               =  "InputFile";
 %typeof  output_dir               =  "OutputDir";
@@ -45,7 +44,6 @@ task = pretty
      | type_prog
      | semantic_check
      | type_check
-     | pre_print
      ;
 
 pretty     =  PRETTYPRINT SEP pretty_task;
@@ -62,7 +60,6 @@ eval_task = BOTTOMUPNAIVE config_params.params {: return new EvalBottomUpNaive(p
 type_prog          =  TYPE_PROG config_params.params {: return new TypeProg(params); :};
 semantic_check     =  SEMANTIC_CHECK config_params.params {: return new SemanticCheck(params); :};
 type_check         =  TYPE_CHECK config_params.params {: return new TypeCheck(params); :};
-pre_print          =  PRE_PRINT config_params.params  souffle_params.s_params{: return new PrePrint(params, s_params); :};
 souffle_params = souffle_params_no_empty
           | /* epsilon */ {: return new List(); :}
           ;

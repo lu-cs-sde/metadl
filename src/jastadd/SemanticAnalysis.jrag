@@ -9,14 +9,6 @@ aspect ErrorCollection {
         return sb.toString();
     }
 
-    coll TreeSet<String> Program.typeCheckErrors() [new TreeSet<String>()] with add;
-    syn boolean Program.hasTypeErrors() = !typeCheckErrors().isEmpty();
-    syn String Program.typeErrorReport() {
-        StringBuilder sb = new StringBuilder();
-        for(String err : typeCheckErrors()) sb.append(err).append("\n");
-        return sb.toString();
-    }
-
     Literal contributes "Non-ground fact: " + this
         when !isGround() && isFact()
         to Program.semanticErrors();
@@ -37,7 +29,7 @@ aspect ErrorCollection {
 	Literal contributes getPredicate().getPRED_ID() + " predicate must be ground." when
 		isPredefined() && !isGround() to Program.semanticErrors();
 
-	// predefined literals must appear only in the head
-	Literal contributes getPredicate().getPRED_ID() + " predicate can be used only in a rule's head." when
-		isPredefined() && !isDef() to Program.semanticErrors();
+	// predefined literals must appear only inside facts
+	Literal contributes getPredicate().getPRED_ID() + " predicate can be used only as a fact." when
+		isPredefined() && !(clause() instanceof Fact) to Program.semanticErrors();
 }

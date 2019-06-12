@@ -16,6 +16,8 @@ import lang.ast.FormalPredicate;
 import lang.ast.GlobalNames;
 import lang.ast.PredicateRef;
 import lang.ast.Program;
+import lang.ast.PredicateSymbol;
+import lang.ast.OUTPUTLiteral;
 import lang.ast.config.Description;
 import lang.io.CSVUtil;
 import lang.io.FileUtil;
@@ -33,10 +35,10 @@ public class EvaluationTest {
 
 		if (fpOut1 == null)
 			fail();
-
 		HashMap<String, Relation> nameToRel = new HashMap<>();
-		for (PseudoTuple ps : fpOut1.relation.tuples()) {
-			PredicateRef pr = (PredicateRef) ps.coord(0);
+		for (PredicateSymbol psym : fpOut1.predicates()) {
+			OUTPUTLiteral output = (OUTPUTLiteral) psym.literal();
+			PredicateRef pr = (PredicateRef)output.getTerm();
 			FormalPredicate fp = pr.formalpredicate();
 
 			File in1 = new File(d1.outputDir() + "/" + fp.predicateName() + ".csv");
@@ -61,7 +63,7 @@ public class EvaluationTest {
 			Relation rel1 = sr.getValue();
 			Relation rel2 = rels2.get(sr.getKey());
 			assertTrue(rel2 != null);
-			assertEquals(rel1, rel2);
+			assertEquals(rel1, rel2, "Relation " + sr.getKey() + " differs.");
 		}
 
 		// so far we proved rels1 is include in rels2, check their sizes are equal
@@ -85,7 +87,7 @@ public class EvaluationTest {
 
 	@DisplayName("Compare Internal Evaluation to Souffle WithEDB")
 	@ParameterizedTest(name = "Evaluation Tests Valid WithEDB")
-	@ValueSource(strings = { "evalTest_1.in", "evalTest_2.in", "evalTest_3.in" })
+	@ValueSource(strings = { "evalTest_1.in", "evalTest_2.in"})
 	void evaluationTestsBottomUpNaiveCompareSouffleWithEDBs(String fileName) throws Exception {
 		String outname = FileUtil.changeExtension(fileName, "_with_edb.dl");
 		Description d1 = FileUtil.parseDescription(

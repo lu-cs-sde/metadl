@@ -1,3 +1,4 @@
 Free variable(s) [x] in NOT(A(x)) in rule B(x) :- NOT(A(x)).
 
+OUTPUT predicate can be used only as a fact.
 OUTPUT predicate must be ground.

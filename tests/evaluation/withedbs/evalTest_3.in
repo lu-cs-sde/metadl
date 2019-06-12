@@ -1,4 +1,0 @@
-OUTPUT('A).
-EDB('EDB, "EDB.csv").
-A("", "") :- NEQ(0, 0).
-A(x, z) :- A(x, y), A(y, z).

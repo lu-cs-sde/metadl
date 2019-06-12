@@ -209,64 +209,11 @@ aspect ExtensionablePrinting {
             super(out);
         }
     }
-
-    public class SoufflePrePrinter<T extends ASTNode> extends PrettyPrinter<T> {
-        public void prettyPrint(T node) {
-            node.prePrint(this);
-        }
-        public SoufflePrePrinter(PrintStream out) {
-            super(out);
-        }
-    }
-
 }
 
 aspect MetaPrinting {
     public static String Program.transformPredefinedName(String l) {
     	return l + "METAPREDICATE0000011111";
-    }
-}
-
-/**
-	Compute the Pre-Defined Literals to input as facts to Souffle
-**/
-aspect SoufflePreProcess {
-	public void ASTNode.prePrint(String path) throws IOException {
-        File file = new File(path);
-        FileOutputStream fop = new FileOutputStream(file);
-        SoufflePrePrinter soufflePrinter = new SoufflePrePrinter(new PrintStream(fop));
-        soufflePrinter.prettyPrint(this);
-        fop.flush();
-        fop.close();
-    }
-
-    public String ASTNode.prePrint() {
-        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
-        SoufflePrePrinter soufflePrinter = new SoufflePrePrinter(new PrintStream(bytes));
-        soufflePrinter.prettyPrint(this);
-        return bytes.toString();
-    }
-
-    public void PredicateSymbol.prePrint(PrettyPrinter pr) {
-    	if(!literal().isOUTPUT())
-	 		pr.out.print(getPRED_ID());
-	 	else
-	 		pr.out.print(GlobalNames.OUTPUT_PRE_PROC_NAME);
-    }
-
-    public void ASTNode.prePrint(PrettyPrinter pr) {
-        prettyPrint(pr);
-    }
-
-    public void Program.prePrint(PrettyPrinter pr) {
-    	HashSet<String> printed = new HashSet<String>();
-        for(Literal l : predefinedLiterals()) {
-            String pred_id = l.predicate().prePrint();
-            if(printed.contains(pred_id)) continue;
-            printed.add(pred_id);
-        	pr.out.print("OUTPUT('" + pred_id + ").\n");
-        }
-        prettyPrint(pr);
     }
 }
 
@@ -336,15 +283,12 @@ aspect SoufflePrinting {
     	pr.prettyPrint(getRight());
     }
 
-    public void Fact.soufflePrint(PrettyPrinter pr) {
-    	HashSet<Literal> nonIncl = new HashSet<Literal>();
-    	for(CommonLiteral il : getHeadss()) {
-    		if(!il.isPredefined()) {
-    			nonIncl.add((Literal)il);
-    		}
-    	}
-        printCollection(nonIncl, "", " :- true.\n", ", ", pr);
-    }
+	public void Fact.soufflePrint(PrettyPrinter pr) {
+		HashSet<Literal> nonIncl = new HashSet<Literal>();
+		for(CommonLiteral il : getHeadss())
+			nonIncl.add((Literal)il);
+		printCollection(nonIncl, "", " :- true.\n", ", ", pr);
+	}
 
     public void FormalPredicate.soufflePrint(PrettyPrinter pr) {
         if(!literal().isInclusive()) return;
@@ -362,33 +306,32 @@ aspect SoufflePrinting {
     private void Program.soufflePrintEDBDecl(PrettyPrinter pr) {
         FormalPredicate fp = formalPredicateMap().get(GlobalNames.EDB_NAME);
         if(fp == null) return;
-        EDBLiteral edb = (EDBLiteral) fp.literal();
-        for(PseudoTuple ps : fp.relation.tuples()) {
-            PredicateRef predref = (PredicateRef)ps.coord(0);
-            StringConstant fileloc = (StringConstant)ps.coord(1);
+		for (PredicateSymbol psym : fp.predicates()) {
+			EDBLiteral edb = (EDBLiteral) psym.literal();
 
-            if(fp.program().formalPredicateMap().get(predref.getPRED_ID()).literal().isPredefined()) continue;
+			PredicateRef predref = edb.getPredicateRef();
+			StringConstant fileloc = (StringConstant) edb.getFileLoc();
 
-            pr.out.print(".input ");
-            pr.out.print(predref.getPRED_ID());
-            pr.out.print("(filename=");
-            pr.prettyPrint(fileloc);
-            pr.out.print(", delimiter=\"");
+			pr.out.print(".input ");
+			pr.out.print(predref.getPRED_ID());
+			pr.out.print("(filename=");
+			pr.prettyPrint(fileloc);
+			pr.out.print(", delimiter=\"");
 			pr.out.print(Compiler.getCSVSeparatorEscaped());
-            pr.out.print("\")\n");
-        }
+			pr.out.print("\")\n");
+		}
     }
 
     private void Program.soufflePrintOUTPUTDecl(PrettyPrinter pr) {
         FormalPredicate fp = formalPredicateMap().get(GlobalNames.OUTPUT_NAME);
         if(fp == null) return;
-        OUTPUTLiteral output = (OUTPUTLiteral) fp.literal();
-        for(PseudoTuple ps : fp.relation.tuples()) {
-            PredicateRef predref = (PredicateRef)ps.coord(0);
+		for (PredicateSymbol psym : fp.predicates()) {
+			OUTPUTLiteral output = (OUTPUTLiteral) psym.literal();
+			PredicateRef predref = (PredicateRef)output.getTerm();
             pr.out.print(".output " + predref.getPRED_ID() + "(delimiter=\"");
 			pr.out.print(Compiler.getCSVSeparatorEscaped());
 			pr.out.print("\")\n");
-        }
+		}
     }
 
     private String Program.souffleConstantToString(Constant C) {
@@ -407,8 +350,9 @@ aspect SoufflePrinting {
 		if (fp == null) return;
 		IMPORTLiteral importLiteral = (IMPORTLiteral) fp.literal();
 
-		for (PseudoTuple ps : fp.relation.tuples()) {
-			PredicateRef predref = (PredicateRef)(ps.coord(1));
+		for (PredicateSymbol psym : fp.predicates()) {
+			IMPORTLiteral imp = (IMPORTLiteral) psym.literal();
+			PredicateRef predref = (PredicateRef) imp.getProgramRef();
 			String predName = predref.getPRED_ID();
 			String fileLoc = predName + ".csv";
             pr.out.print(".input ");
@@ -427,13 +371,13 @@ aspect SoufflePrinting {
         HashSet<String> visited = new HashSet<String>();
         for(Literal l : predefinedLiterals()) {
             if(!visited.contains(l.predicate().getPRED_ID())) {
-                l.artificalInput(pr);
+                // l.artificalInput(pr);
                 visited.add(l.predicate().getPRED_ID());
             }
         }
         soufflePrintEDBDecl(pr);
         soufflePrintOUTPUTDecl(pr);
-	soufflePrintIMPORTFacts(pr);
+		soufflePrintIMPORTFacts(pr);
         prettyPrint(pr);
     }
 }

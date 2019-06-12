@@ -5,7 +5,6 @@ import java.util.TreeMap;
 import java.util.Set;
 import lang.io.SimpleLogger;
 import java.util.Collections;
-import lang.ast.TypeName;
 
 aspect Utility {
 	public class MapEntry<Key, Value> {

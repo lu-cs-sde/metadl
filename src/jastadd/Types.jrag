@@ -127,20 +127,6 @@ aspect Type {
 		}
 	}
 
-	public class TypeName {
-		public static String string() { return "__String__"; };
-		public static String integer() { return "__Integer__"; };
-		public static String predref() { return "__PredicateRef__"; };
-
-		public static StringConstant stringT() { return new StringConstant(string()); };
-		public static StringConstant integerT() { return new StringConstant(integer()); };
-		public static StringConstant predRefT() { return new StringConstant(predref()); };
-		public static StringConstant unknownT() { return new StringConstant("__Unknown__"); };
-		public static StringConstant typeT() { return new StringConstant("__Type__"); };
-		public static StringConstant varT() { return new StringConstant("__Var__"); };
-		public static StringConstant badT() { return new StringConstant("__Bad__"); };
-	}
-
 	public class TypeComparator implements Comparator<Term> {
 		public int compare(Term t1, Term t2) {
 			return t1.type().toString().compareTo(t2.type().toString());

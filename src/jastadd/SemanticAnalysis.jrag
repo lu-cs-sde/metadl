@@ -32,4 +32,7 @@ aspect ErrorCollection {
 	// predefined literals must appear only inside facts
 	Literal contributes getPredicate().getPRED_ID() + " predicate can be used only as a fact." when
 		isPredefined() && !(clause() instanceof Fact) to Program.semanticErrors();
+
+	Literal contributes "Nullary literals are not (yet) supported: " + getPredicate().getPRED_ID() + "." when
+		arity() == 0 to Program.semanticErrors();
 }

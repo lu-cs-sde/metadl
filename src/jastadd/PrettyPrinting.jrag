@@ -17,40 +17,23 @@ aspect PretyPrinting {
         }
 	}
 
-    protected static <T extends ASTNode> void ASTNode.printList(List<T> list,
-            String pre, String post, String delim, PrettyPrinter pr) {
-        if (list.getNumChild() == 0)
-            return;
-        pr.out.print(pre);
-        pr.prettyPrint(list.getChildNoTransform(0));
-        if (list.getNumChild() == 1) {
-            pr.out.print(post);
-            return;
-        }
-        for (int i = 1; i != list.getNumChild(); ++i) {
-            pr.out.print(delim);
-            pr.prettyPrint(list.getChildNoTransform(i));
-        }
-        pr.out.print(post);
-    }
+	protected static <T extends ASTNode> void ASTNode.printCollection(Iterable<T> collection,
+			String pre, String post, String delim, PrettyPrinter pr) {
+		Iterator<T> itr = collection.iterator();
 
-    protected static <T extends ASTNode> void ASTNode.printCollection(Collection<T> collection,
-            String pre, String post, String delim, PrettyPrinter pr) {
-        Iterator<T> itr = collection.iterator();
-        if (!itr.hasNext())
-            return;
-        pr.out.print(pre);
-        pr.prettyPrint(itr.next());
-        if (!itr.hasNext()) {
-            pr.out.print(post);
-            return;
-        }
-        while(itr.hasNext()) {
-            pr.out.print(delim);
-            pr.prettyPrint(itr.next());
-        }
-        pr.out.print(post);
-    }
+		pr.out.print(pre);
+		if (itr.hasNext())
+			pr.prettyPrint(itr.next());
+		if (!itr.hasNext()) {
+			pr.out.print(post);
+			return;
+		}
+		while(itr.hasNext()) {
+			pr.out.print(delim);
+			pr.prettyPrint(itr.next());
+		}
+		pr.out.print(post);
+	}
 
     public String ASTNode.prettyPrint() {
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
@@ -80,17 +63,17 @@ aspect PretyPrinting {
 
     public void Atom.prettyPrint(PrettyPrinter pr) {
         pr.prettyPrint(getPredicate());
-        printList(getTermss(), "(", ")", ", ", pr);
+        printCollection(getTermss(), "(", ")", ", ", pr);
     }
 
     public void Rule.prettyPrint(PrettyPrinter pr) {
-        printList(getHeadss(), "", "", ",", pr);
+        printCollection(getHeadss(), "", "", ",", pr);
         pr.out.print(" :- ");
-        printList(getBodys(), "", ".\n", ", ", pr);
+        printCollection(getBodys(), "", ".\n", ", ", pr);
     }
 
     public void Fact.prettyPrint(PrettyPrinter pr) {
-        printList(getHeadss(), "", ".\n", ", ", pr);
+        printCollection(getHeadss(), "", ".\n", ", ", pr);
     }
 
     public void EDBLiteral.prettyPrint(PrettyPrinter pr) {
@@ -142,11 +125,11 @@ aspect PretyPrinting {
     }
 
 	public void Pattern.prettyPrint(PrettyPrinter pr) {
-		printList(getLiterals(), "", "", ", ", pr);
+		printCollection(getLiterals(), "", "", ", ", pr);
 	}
 
 	public void AnalyzeBlock.prettyPrint(PrettyPrinter pr) {
-		printList(getAllClauses(), "", "", "", pr);
+		printCollection(getAllClauses(), "", "", "", pr);
 	}
 
 	public void Functor.prettyPrint(PrettyPrinter pr) {
@@ -156,7 +139,7 @@ aspect PretyPrinting {
 		default:
 			// generic functor, use prefix notation
 			pr.out.print(funcId);
-			printList(getArgs(), "(", ")", ", ", pr);
+			printCollection(getArgs(), "(", ")", ", ", pr);
 			return;
 		case "add":
 			op = "+";
@@ -367,7 +350,7 @@ aspect SoufflePrinting {
 
 
     public void Program.soufflePrint(PrettyPrinter pr) {
-        printList(getFormalPredicates(), "", "\n", "\n", pr);
+        printCollection(getFormalPredicates(), "", "\n", "\n", pr);
         HashSet<String> visited = new HashSet<String>();
         for(Literal l : predefinedLiterals()) {
             if(!visited.contains(l.predicate().getPRED_ID())) {

@@ -135,6 +135,17 @@ public class EvaluationTest {
         doEvaluationTest(d1, d2);
     }
 
+	@DisplayName("Compare Internal Evaluation to Souffle WithWildcard")
+	@ParameterizedTest(name = "Evaluation Tests Valid")
+	@ValueSource(strings = {"evalTest_1.in", "evalTest_2.in"})
+	void evaluationTestsBottomUpNaiveCompareWithWildcard(String fileName) throws Exception {
+		Description d1 = FileUtil.parseDescription(
+				"eval::souffle      -OUT ./tests/output/souffle -FACTS ./tests/evaluation/withwildcard/facts ./tests/evaluation/withwildcard/" + fileName);
+		Description d2 = FileUtil.parseDescription(
+				"eval::bottomupnaive -OUT ./tests/output        -FACTS ./tests/evaluation/withwildcard/facts ./tests/evaluation/withwildcard/" + fileName);
+		doEvaluationTest(d1, d2);
+	}
+
 	@DisplayName("Check the results using Souffle evaluation")
 	@ParameterizedTest(name = "IMPORT Tests Valid")
 	@ValueSource(strings = { "evalTest_1.in" })

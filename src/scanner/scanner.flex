@@ -66,6 +66,7 @@ String  = \"[^\"]*\"
 "BIND"     {  return  sym(Terminals.BIND);           }
 "IMPORT"   {  return  sym(Terminals.IMPORT);         }
 "analyze"  {  return  sym(Terminals.ANALYZE);        }
+"_"        {  return  sym(Terminals.WILDCARD);       }
 {Numeral}  {  return  sym(Terminals.NUMERAL);        }
 {VAR_ID}   {  return  sym(Terminals.VAR_ID);         }
 {PRED_ID}  {  return  sym(Terminals.PRED_ID);        }

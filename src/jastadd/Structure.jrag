@@ -279,7 +279,7 @@ aspect Literal {
 		TreeSet<Variable> vars = new TreeSet<Variable>(Term.termComparator);
 		for(Term t : getTermss())
 			if(t.isVariable())
-				vars.addAll(((CommonVariable)t).variables());
+				vars.addAll(t.variables());
 		return vars;
 	}
 
@@ -376,8 +376,8 @@ aspect Term {
 	inh Literal Term.occuresIn();
 	eq	Literal.getChild().occuresIn() = this;
 
-	inh boolean Term.isNested();
-	eq Program.getChild().isNested() = false;
+	syn boolean Term.isWildcard() = false;
+	eq Wildcard.isWildcard() = true;
 }
 
 aspect Expression {
@@ -403,9 +403,9 @@ aspect Expression {
 	}
 
 	syn TreeSet<Variable> Term.variables()	   = new TreeSet<Variable>(Term.termComparator);
-	syn TreeSet<Variable> CommonVariable.variables() {
+	syn TreeSet<Variable> Variable.variables() {
 		TreeSet<Variable> vars = new TreeSet<Variable>(Term.termComparator);
-		vars.add((Variable)this);
+		vars.add(this);
 		return vars;
 	}
 

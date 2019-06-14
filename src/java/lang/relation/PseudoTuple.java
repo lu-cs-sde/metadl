@@ -69,6 +69,8 @@ public class PseudoTuple implements Comparable<PseudoTuple> {
 		}
 	}
 
+
+
 	public static PseudoTuple of(Term ... consts) {
 		PseudoTuple pt = new PseudoTuple(consts.length);
 		for(int i = 0; i != consts.length; ++i) {

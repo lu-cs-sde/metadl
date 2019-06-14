@@ -25,13 +25,13 @@ public class Binding extends TreeSet<BindTerm> {
 		}
 		return true;
 	}
-	
+
 	public int firstCoordOf(Term t) {
 		BindTerm bt = floor(new BindTerm(t));
 		if(bt == null || Term.termComparator.compare(bt.t, t) != 0) return -1;
 		return bt.coords.first();
 	}
-	
+
 	public int totalSize() {
 		int size = 0;
 		for(BindTerm bt : this) {
@@ -39,9 +39,10 @@ public class Binding extends TreeSet<BindTerm> {
 		}
 		return size;
 	}
-	
+
 	public void bind(Term t, int index) {
-		bind(this, t, index);
+		if (!t.isWildcard())
+			bind(this, t, index);
 	}
 
 	public static void bind(Binding binding, Term t, int index) {
@@ -59,6 +60,7 @@ public class Binding extends TreeSet<BindTerm> {
 	public static Binding createBinding(PseudoTuple t) {
 		Binding binding = new Binding();
 		for (int i = 0; i != t.arity(); ++i) {
+			if (t.coord(i).isWildcard()) continue;
 			bind(binding, t.coord(i), i);
 		}
 		return binding;
@@ -81,7 +83,7 @@ public class Binding extends TreeSet<BindTerm> {
 		});
 		return b;
 	}
-	
+
 	public static Binding difference(TreeSet<BindOverlap> bo, Binding b) {
 		Binding bd = new Binding();
 		b.forEach(bt -> {

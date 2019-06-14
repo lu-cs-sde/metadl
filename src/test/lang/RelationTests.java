@@ -1,5 +1,6 @@
 package lang;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.TreeSet;
@@ -388,6 +389,25 @@ public class RelationTests {
 		assertTrue(j.tuples().toString().equals("[(A,A,C), (B,B,C2), (C,C,C), (D,D,C4), (E,E,C)]"));
 	}
 	
+	@Test 
+	public void testDifference() {
+		Relation r1 = Relation.of(PseudoTuple.of(new StringConstant("A"), new StringConstant("B")),
+					PseudoTuple.of(new StringConstant("B"), new StringConstant("C")));
+		
+		Relation r2 = Relation.of(
+				PseudoTuple.of(new StringConstant("A"), new StringConstant("B")));
+		
+		Relation d1 = Relation.difference(r1, r2);
+		assertEquals("[(B,C)]", d1.tuples().toString());
+		Relation d2 = Relation.difference(r2, r1);
+		assertTrue(d2.tuples().isEmpty());
+	}
+
+	@Test
+	public void testDifferenceWithBinding() {
+		
+	}
+
 	@Test
 	public void testExpand() {
 		Relation r1 = Relation.of(

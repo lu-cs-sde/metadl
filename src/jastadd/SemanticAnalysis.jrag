@@ -38,4 +38,11 @@ aspect ErrorCollection {
 
 	Pattern contributes "Patterns are not allowed outside analyze blocks: " + this + "." when
 		enclosingAnalyzeBlock() == null to Program.semanticErrors();
+
+	Wildcard contributes this + " is not allowed inside implicit predicates." when
+		!occuresIn().isInclusive() to Program.semanticErrors();
+
+	Wildcard contributes this + " is not allowed in rule heads or facts." when
+		occuresIn().isDef() to Program.semanticErrors();
+
 }

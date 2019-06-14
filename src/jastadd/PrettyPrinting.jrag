@@ -134,6 +134,10 @@ aspect PretyPrinting {
 		printCollection(getAllClauses(), "", "", "", pr);
 	}
 
+	public void Wildcard.prettyPrint(PrettyPrinter pr) {
+		pr.out.print("_");
+	}
+
 	public void Functor.prettyPrint(PrettyPrinter pr) {
 		String op = null;
 		String funcId = getFunc().getFUNC_ID();

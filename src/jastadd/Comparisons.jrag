@@ -9,7 +9,9 @@ aspect Conversion {
 	public String Variable.toString()        { return getVAR_ID(); }
 	public String PredicateRef.toString()    { return "'" + getPRED_ID(); }
 	public String FormalPredicate.toString() { return "FP_" + predicateName(); }
+	public String Wildcard.toString()        { return "_"; }
 	public String ASTNode.toString()         { return prettyPrint(); }
+
 
 	syn int Literal.evalOrder();
 

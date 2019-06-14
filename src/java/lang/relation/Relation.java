@@ -28,7 +28,7 @@ public class Relation {
 	}
 
 	public static Relation of(PseudoTuple... tuples) {
-		Relation r = new Relation(tuples.length);
+		Relation r = new Relation(tuples[0].arity());
 		for (PseudoTuple t : tuples)
 			r.relation.add(t);
 		return r;
@@ -46,8 +46,8 @@ public class Relation {
 		return arity;
 	}
 
-	public void addTuple(PseudoTuple pt) {
-		relation.add(pt);
+	public boolean addTuple(PseudoTuple pt) {
+		return relation.add(pt);
 	}
 
 	public void collectRelation(StringBuilder sb) {
@@ -148,9 +148,38 @@ public class Relation {
 
 	public static Relation difference(Relation r1, Relation r2) {
 		Relation r = new Relation(r1.arity);
-		r1.tuples().forEach(t -> {
-			if(!r2.contains(t)) r.addTuple(new PseudoTuple(t));
-		});
+		r1.tuples().forEach(
+				t -> {
+					if (!r2.contains(t)) r.addTuple(t);
+				}
+		);
+		r.binding = r1.binding;
+		return r;
+	}
+
+	private static PseudoTuple projectWithBindings(Binding newBinding, PseudoTuple other, Binding otherBinding) {
+		PseudoTuple result = new PseudoTuple(newBinding.totalSize());
+		TreeSet<Binding.BindOverlap> intersect = Binding.intersect(newBinding, otherBinding);
+		for (Binding.BindOverlap overlap : intersect) {
+			for (Integer bt : overlap.b1.coords) {
+				result.set(bt, other.coord(overlap.b2.coords.first()));
+			}
+		}
+		return result;
+	}
+
+	public static Relation differenceWithBindings(Relation r1, Relation r2) {
+		assert r1.binding != Binding.anyBinding;
+		assert r2.binding != Binding.anyBinding;
+
+		Relation r2Filtered = r2.selectNamed(r2.binding);
+
+		Relation r = new Relation(r1.arity);
+		r1.tuples().forEach(
+				t -> {
+					PseudoTuple tp = projectWithBindings(r2.binding, t, r1.binding);
+					if (!r2Filtered.contains(tp)) r.addTuple(t);
+				});
 		r.binding = r1.binding;
 		return r;
 	}

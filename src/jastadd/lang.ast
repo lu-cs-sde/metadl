@@ -48,6 +48,7 @@ abstract Constant:Term;
 abstract CommonVariable:Term;
 
 Variable:CommonVariable ::= <VAR_ID>;
+Wildcard:CommonVariable;
 PredicateRef:Constant   ::= <PRED_ID>;
 StringConstant:Constant ::= <STRING>;
 IntConstant:Constant    ::= <NUMERAL>;

@@ -106,8 +106,8 @@ aspect LiteralSelection {
 		return Relation.join(body_rel, r_current);
     }
     public Relation NEGLiteral.accumBody(Relation body_rel) {
-        Relation positive = getLiteral().predicate().formalpredicate().relation.select(Binding.createBinding(toTuple()));
-        return Relation.difference(body_rel, positive);
+        Relation positive = getLiteral().predicate().formalpredicate().relation.selectNamed(Binding.createBinding(toTuple()));
+        return Relation.differenceWithBindings(body_rel, positive);
     }
 
     public abstract boolean BinaryExclusiveTermLiteral.binaryTest(Term t1, Term t2);

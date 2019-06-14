@@ -12,7 +12,7 @@
 %terminals VAR_ID, PRED_ID, PRED_REF, LPARA, RPARA, LBRACK, RBRACK, LBRACE, RBRACE,
            NUMERAL, STRING, DOT, COMMA, IMPLIED_BY, EDB, OUTPUT, IMPORT,
            NOT, BIND,  EQ, NEQ, LT, LTE, GT, GTE, ADD, SUB, MUL, DIV,
-           ANALYZE, PATTERN;
+           ANALYZE, PATTERN, WILDCARD;
 
 %typeof  program             =  "Program";
 %typeof  clause              =  "CommonClause";
@@ -57,6 +57,7 @@
 %typeof  div_expr            =  "Functor";
 %typeof  analyze_block       =  "AnalyzeBlock";
 %typeof  pattern             =  "Pattern";
+%typeof  wildcard            =  "Wildcard";
 
 
 
@@ -183,7 +184,10 @@ div_expr = expr_factor.e1 DIV expr_unit.e2 {: Functor f = new Functor(new Functo
 term = variable
      | constant
      | pred_ref
+     | wildcard
      ;
+
+wildcard = WILDCARD {: return new Wildcard(); :};
 
 pred_sym = PRED_ID.id  {: return new PredicateSymbol((String)id.value); :};
 pred_ref = PRED_REF.id {: return new PredicateRef((String)id.value); :};

@@ -10,6 +10,7 @@ import lang.ast.Fact;
 import lang.ast.FormalPredicate;
 import lang.ast.GlobalNames;
 import lang.ast.Literal;
+import lang.ast.NEGLiteral;
 import lang.ast.PredicateRef;
 import lang.ast.Program;
 import lang.ast.Rule;
@@ -67,30 +68,49 @@ public class BottomUpNaiveIterative extends InternalEvaluation {
 		return body_rel;
 	}
 
+	public boolean isVacuous(Rule r) {
+		for (Literal il : r.flattenedBodyLiterals()) {
+			if (!il.isNeg())
+				return false;
+			NEGLiteral neg = (NEGLiteral) il;
+			if (neg.getLiteral().predicate().formalpredicate().relation.size() != 0)
+				return false;
+		}
+		return true;
+	}
+
 	public boolean immediateConsequence(Program program, Description descr, Rule r) {
-		Relation body_rel = Relation.nullRelation;
-
-		/**
-		 * Find Body Relation if clause is a rule
-		 */
-		body_rel = immediateConsequenceHelper (r.inclusiveBodyLiterals(), body_rel);
-		body_rel = immediateConsequenceHelper (r.exclusiveBodyLiterals(), body_rel);
-
 		boolean changed = false;
-		for (CommonLiteral cil : r.getHeadss()) {
-			Literal il = (Literal) cil;
-			Relation derived = body_rel.selectNamed(Binding.createBinding(il.toTuple()));
-			Relation prev = il.predicate().formalpredicate().relation;
-			Relation delta = Relation.difference(derived, prev);
-			prev.addAll(delta);
+		if (isVacuous(r)) {
+			// Handle rules where all the literals are emptiness checks for other rules.
+			// E.g.  A(1, 2) :- NOT(B(_)), NOT(C(_, _)).
+			// In this case, the relation for the body is empty, but we still have to
+			// add tuples to the relations in the head.
+			for (CommonLiteral cil : r.getHeadss()) {
+				Literal il = (Literal) cil;
+				Relation prev = il.predicate().formalpredicate().relation;
+				if (il.isGround() && !prev.contains(il.toTuple())) {
+					changed = changed || prev.addTuple(il.toTuple());
+				}
+			}
+		} else {
+			Relation body_rel = Relation.nullRelation;
+			/**
+			 * Find Body Relation if clause is a rule
+			 */
+			body_rel = immediateConsequenceHelper (r.inclusiveBodyLiterals(), body_rel);
+			body_rel = immediateConsequenceHelper (r.exclusiveBodyLiterals(), body_rel);
 
-			if (delta.size() != 0) {
-				changed = true;
+			for (CommonLiteral cil : r.getHeadss()) {
+				Literal il = (Literal) cil;
+				Relation derived = body_rel.selectNamed(Binding.createBinding(il.toTuple()));
+				Relation prev = il.predicate().formalpredicate().relation;
+				Relation delta = Relation.difference(derived, prev);
+				prev.addAll(delta);
 
-				/**
-				 * Process Potential Side-Effects Such as EDB-loading.
-				 */
-				il.sideEffect(program, descr, delta);
+				if (delta.size() != 0) {
+					changed = true;
+				}
 			}
 		}
 		return changed;

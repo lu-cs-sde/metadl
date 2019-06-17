@@ -119,18 +119,7 @@ engine that MetaDL uses as backend for evaluating complex queries that
 are too slow for the internal evaluator.
 
 ** Building
-
-MetaDL is relying on a fork of JastAdd. You need to get the code and build it:
-#+BEGIN_SRC
-git clone git@bitbucket.org:alexdura/jastadd2.git
-cd jastadd2
-gradle release -PnewVersion=2.100.1  # the version number is fictive
-gradle install -PnewVersion=2.100.1
-#+END_SRC
-
-
-[[https://gradle.org/][Gradle]] is used as a build tool. There is
-additionally a Makefile to summarize certain common build sequences.
+[[https://gradle.org/][Gradle]] is used as a build tool. Additionally, a Makefile summarizes the common build and run commands:
 - Package: ~make jar~
 - Test: ~make test~
 - Evaluate using the internal engine: ~make eval EVAL=<Input File>~

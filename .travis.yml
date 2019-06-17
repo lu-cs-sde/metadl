@@ -1,0 +1,14 @@
+language: C++
+compiler:
+  - gcc
+
+os: linux
+addons:
+  apt:
+    packages:
+      - libtool
+
+jobs:
+  script: make souffle
+  script: PATH=$PATH:/souffle/src/ make test
+  script: make jar

@@ -108,15 +108,15 @@ literal = gap_literal
         | bin_excl_term_lit
         ;
 
-meta_atom = meta_variable.mv LPARA term_list.terms RPARA {: return new MetaAtom(mv, terms); :};
+meta_atom = meta_variable.mv LPARA term_list.terms RPARA {: return new MetaAtom(new Opt(), mv, terms); :};
 gap_literal = ELLIPSIS {: return new LiteralGap(); :};
 
-clause_pattern = LBRACK inner_clause.c RBRACK {: return new ClausePattern(c); :};
+clause_pattern = LBRACK inner_clause.c RBRACK {: return new ClausePattern(new Opt(), c); :};
 
-neg_literal = NOT LPARA common_literal.lit RPARA {: return new NEGLiteral(new PredicateSymbol("NOT"), lit); :};
+neg_literal = NOT LPARA common_literal.lit RPARA {: return new NEGLiteral(new Opt(), new PredicateSymbol("NOT"), lit); :};
 
-bind_literal = BIND LPARA variable.var COMMA expr.right RPARA {: return new BINDLiteral(new PredicateSymbol("BIND"), var, right); :}
-             |  BIND LPARA meta_variable.var COMMA expr.right RPARA {: return new BINDLiteral(new PredicateSymbol("BIND"), var, right); :}
+bind_literal = BIND LPARA variable.var COMMA expr.right RPARA {: return new BINDLiteral(new Opt(), new PredicateSymbol("BIND"), var, right); :}
+             |  BIND LPARA meta_variable.var COMMA expr.right RPARA {: return new BINDLiteral(new Opt(), new PredicateSymbol("BIND"), var, right); :}
              ;
 
 bin_excl_term_lit = eq_literal
@@ -127,20 +127,20 @@ bin_excl_term_lit = eq_literal
                   | gte_literal
                   ;
 
-eq_literal  = EQ  LPARA expr.left COMMA expr.right RPARA {: return new EQLiteral(new PredicateSymbol("EQ"),   left, right); :};
-neq_literal = NEQ LPARA expr.left COMMA expr.right RPARA {: return new NEQLiteral(new PredicateSymbol("NEQ"), left, right); :};
-lt_literal  = LT  LPARA expr.left COMMA expr.right RPARA {: return new LTLiteral(new PredicateSymbol("LT"),   left, right); :};
-lte_literal = LTE LPARA expr.left COMMA expr.right RPARA {: return new LTELiteral(new PredicateSymbol("LTE"), left, right); :};
-gt_literal  = GT  LPARA expr.left COMMA expr.right RPARA {: return new GTLiteral(new PredicateSymbol("GT"),   left, right); :};
-gte_literal = GTE LPARA expr.left COMMA expr.right RPARA {: return new GTELiteral(new PredicateSymbol("GTE"), left, right); :};
+eq_literal  = EQ  LPARA expr.left COMMA expr.right RPARA {: return new EQLiteral(new Opt(), new PredicateSymbol("EQ"),   left, right); :};
+neq_literal = NEQ LPARA expr.left COMMA expr.right RPARA {: return new NEQLiteral(new Opt(), new PredicateSymbol("NEQ"), left, right); :};
+lt_literal  = LT  LPARA expr.left COMMA expr.right RPARA {: return new LTLiteral(new Opt(), new PredicateSymbol("LT"),   left, right); :};
+lte_literal = LTE LPARA expr.left COMMA expr.right RPARA {: return new LTELiteral(new Opt(), new PredicateSymbol("LTE"), left, right); :};
+gt_literal  = GT  LPARA expr.left COMMA expr.right RPARA {: return new GTLiteral(new Opt(), new PredicateSymbol("GT"),   left, right); :};
+gte_literal = GTE LPARA expr.left COMMA expr.right RPARA {: return new GTELiteral(new Opt(), new PredicateSymbol("GTE"), left, right); :};
 
-atom = pred_sym.pred LPARA term_list.terms RPARA                      {: return new Atom(pred, terms); :};
-edb_literal    = EDB    LPARA pred_ref.pred COMMA term.filelocs RPARA {: return new EDBLiteral(new PredicateSymbol("EDB"), pred, filelocs);  :};
-output_literal = OUTPUT LPARA term.t RPARA                            {: return new OUTPUTLiteral(new PredicateSymbol("OUTPUT"), t);         :};
+atom = pred_sym.pred LPARA term_list.terms RPARA                      {: return new Atom(new Opt(), pred, terms); :};
+edb_literal    = EDB    LPARA pred_ref.pred COMMA term.filelocs RPARA {: return new EDBLiteral(new Opt(), new PredicateSymbol("EDB"), pred, filelocs);  :};
+output_literal = OUTPUT LPARA term.t RPARA                            {: return new OUTPUTLiteral(new Opt(), new PredicateSymbol("OUTPUT"), t);         :};
 import_literal = IMPORT LPARA term.file_loc
                         COMMA pred_ref.program_ref
                         RPARA
-     {: return new IMPORTLiteral(new PredicateSymbol("IMPORT"), file_loc, program_ref); :};
+     {: return new IMPORTLiteral(new Opt(), new PredicateSymbol("IMPORT"), file_loc, program_ref); :};
 
 lit_list = common_literal_opt_index.lit {: return new List().add(lit); :}
          | lit_list.list COMMA common_literal_opt_index.c {: return list.add(c); :}
@@ -205,17 +205,17 @@ term = variable
      ;
 
 pred_sym = PRED_ID.id  {: return new PredicateSymbol((String)id.value); :};
-pred_ref = PRED_REF.id {: return new PredicateRef((String)id.value); :};
+pred_ref = PRED_REF.id {: return new PredicateRef(new Opt(), (String)id.value); :};
 
 
-meta_variable = METAVAR_ID.id {: return new MetaVariable((String)id.value); :};
+meta_variable = METAVAR_ID.id {: return new MetaVariable(new Opt(), (String)id.value); :};
 
-variable = VAR_ID.id {: return new Variable((String)id.value); :};
+variable = VAR_ID.id {: return new Variable(new Opt(), (String)id.value); :};
 constant = int_constant
          | string_constant
          ;
 
-int_constant    = NUMERAL.num {: return new IntConstant((String)num.value); :};
-string_constant = STRING.str {: return new StringConstant((String)str.value); :};
+int_constant    = NUMERAL.num {: return new IntConstant(new Opt(), (String)num.value); :};
+string_constant = STRING.str {: return new StringConstant(new Opt(), (String)str.value); :};
 
 term_gap = ELLIPSIS {: return new TermGap(); :};

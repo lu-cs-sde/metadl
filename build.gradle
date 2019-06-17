@@ -37,7 +37,6 @@ dependencies {
 
     jflex 'de.jflex:jflex:1.6.1'
     beaver 'net.sf.beaver:beaver-cc:0.9.11'
-    jastadd2 'org.jastadd:jastadd:2.100.1'
 }
 
 

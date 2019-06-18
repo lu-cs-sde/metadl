@@ -1,0 +1,17 @@
+# Checks that arities of all references to all predicates match up
+# Arity(predicate, arity) : reported arity
+# ArityError(predicate) : observed inconsistency
+
+IMPORT("examples/arity/minidoop_x8.mdl", 'Program).
+
+analyze ('Program) {
+  Arity(pname, arity, loc) :- <: ... :- ..., $p(...,$i:$x), ... .:>, BIND(arity, $i+1), ID($p, pname), SRC($p, loc).
+  Arity(pname, arity, loc) :- <: ... :- ..., NOT($p(...,$i:$x)), ... .:>, BIND(arity, $i+1), ID($p, pname), SRC($p, loc).
+  Arity(pname, arity, loc) :- <: ..., $p(...,$i:$x), ... :- ... .:>, BIND(arity, $i+1), ID($p, pname), SRC($p, loc).
+  Arity(pname, arity, loc) :- <: ..., $p(...,$i:$x), ... .:>, BIND(arity, $i+1), ID($p, pname), SRC($p, loc).
+}
+
+OUTPUT('Arity).
+
+ArityError(p, li), ArityError(p, lj) :- Arity(p, i, li), Arity(p, j, lj), NOT(EQ(i, j)).
+OUTPUT('ArityError).

@@ -41,4 +41,13 @@ minidoop: jar
 	java -jar compiler.jar eval::souffle -OUT ./out/minidoop-mdl -FACTS $(FACTS) -SEP \\t ./examples/minidoop/minidoop.mdl
 	souffle -j8 ./examples/minidoop/minidoop.dl -F$(FACTS) -D./out/minidoop/
 
+time: jar
+	@echo "Run time (wall clock) for Arity check on:"
+	@echo "126 rules":
+	@time -f "\t%e real" make souffle EVAL=examples/arity/arity.mdl > /dev/null
+	@echo "1008 rules":
+	@time -f "\t%e real" make souffle EVAL=examples/arity/arity_x8.mdl > /dev/null
+	@echo "10080 rules":
+	@time -f "\t%e real" make souffle EVAL=examples/arity/arity_x80.mdl > /dev/null
+
 FORCE: ;

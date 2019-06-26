@@ -2,7 +2,7 @@ buildscript {
     // This configuration is needed to find the JastAdd plugin.
     repositories.mavenCentral()
         dependencies {
-                classpath 'org.jastadd:jastaddgradle:1.10.6'
+                classpath 'org.jastadd:jastaddgradle:1.13.3'
         }
 }
 
@@ -42,7 +42,7 @@ dependencies {
 
 // This specifies where the source code is located:
 sourceSets {
-    main.java.srcDirs = [ 'src/java', 'src/gen' ]
+    main.java.srcDirs = [ 'src/java', 'src/gen' , 'src/config/gen', 'src/objlang/gen', 'src/patlang/gen']
     test.java.srcDirs = [ 'src/test' ]
 }
 
@@ -103,7 +103,8 @@ jar {
 
 // Before compiling, we should generate some Java code:
 compileJava.dependsOn 'generateJava', 'generateScanner', 'generateParser',
-    'generateScannerMetalang', 'generateParserMetalang', 'generateJavaMetalang',
+    'generateJavaObjlang', 'generateScannerObjlang', 'generateParserObjlang',
+    'generateJavaPatternLang',
     'generateConfig', 'generateScannerConfig', 'generateParserConfig'
 
 
@@ -117,7 +118,9 @@ void makeGenerateJavaTask(String name, String outDir, String srcDir, String pkg)
 }
 
 makeGenerateJavaTask('generateJava', 'src/gen', 'src/jastadd', 'lang.ast')
-makeGenerateJavaTask('generateJavaMetalang', 'src/gen', 'src/objlang/jastadd', 'objlang.ast')
+makeGenerateJavaTask('generateJavaObjlang', 'src/objlang/gen', 'src/objlang/jastadd', 'objlang.ast')
+makeGenerateJavaTask('generateJavaPatternLang', 'src/patlang/gen', 'src/patlang/jastadd', 'patlang.ast')
+
 
 void makeGenerateScannerTask(String name, String outDir, String srcFile) {
     tasks.create(name, JavaExec) {
@@ -127,16 +130,11 @@ void makeGenerateScannerTask(String name, String outDir, String srcFile) {
 
 	// Options to JFlex (http://jflex.de/manual.html#running-jflex):
 	args '-d', file(outDir).path, file(srcFile).path
-
-	doFirst {
-            // Ensure src/gen exists before running JFlex:
-            file('src/gen').mkdirs()
-	}
     }
 }
 
 makeGenerateScannerTask('generateScanner', 'src/gen/lang/ast', 'src/scanner/scanner.flex')
-makeGenerateScannerTask('generateScannerMetalang', 'src/gen/objlang/ast/', 'src/objlang/scanner/scanner.flex')
+makeGenerateScannerTask('generateScannerObjlang', 'src/objlang/gen/objlang/ast/', 'src/objlang/scanner/scanner.flex')
 
 void makeGenerateParserTask(String name, String outDir, String srcFile) {
     tasks.create(name, JavaExec) {
@@ -148,57 +146,31 @@ void makeGenerateParserTask(String name, String outDir, String srcFile) {
 	args '-d', file(outDir).path,
 	    '-t', '-c', '-w',
 	    file(srcFile).path
-
-	doFirst {
-            // Ensure src/gen exists before running Beaver:
-            file(outDir).mkdirs()
-	}
     }
 }
 
 makeGenerateParserTask('generateParser', 'src/gen', 'src/parser/parser.beaver')
-makeGenerateParserTask('generateParserMetalang', 'src/gen', 'src/objlang/parser/parser.beaver')
+makeGenerateParserTask('generateParserObjlang', 'src/objlang/gen', 'src/objlang/parser/parser.beaver')
 
 
-task generateConfig(type: org.jastadd.JastAddTask) {
-    description 'Generates the compiler AST classes from JastAdd specifications.'
-    outputDir = file('src/gen')
-    sources = fileTree(dir: 'src/config', includes: [ '**/*.jrag', '**/*.jadd', '**/*.ast' ])
-    options = [ '--package=lang.ast.config', '--beaver' ]
-}
+makeGenerateJavaTask('generateConfig', 'src/config/gen', 'src/config/', 'lang.ast.config')
+makeGenerateScannerTask('generateScannerConfig', 'src/config/gen/lang/ast/config', 'src/config/scanner/scanner.flex')
+makeGenerateParserTask('generateParserConfig', 'src/config/gen', 'src/config/parser/parser.beaver')
 
-task generateScannerConfig(type: JavaExec) {
-    description 'Generates the Configuration scanner with JFlex.'
-    classpath = configurations.jflex
-    main = 'jflex.Main'
 
-    // Options to JFlex (http://jflex.de/manual.html#running-jflex):
-    args '-d', file('src/gen/lang/ast/config').path, file('src/config/scanner/scanner.flex').path
+// generateScannerObjlang.dependsOn 'generateParserObjlang'
+// generateParserObjlang.dependsOn 'generateJavaObjlang'
 
-    doFirst {
-        // Ensure src/gen exists before running JFlex:
-        file('src/gen').mkdirs()
-    }
-}
+// generateScanner.dependsOn 'generateParser'
+// generateParser.dependsOn 'generateJava'
 
-task generateParserConfig(type: JavaExec) {
-    description 'Generates the Configuration parser with Beaver.'
-    classpath = configurations.beaver
-    main = 'beaver.comp.run.Make'
+// generateScannerConfig.dependsOn 'generateParserConfig'
+// generateParserConfig.dependsOn 'generateConfig'
 
-    // Options to Beaver (http://beaver.sourceforge.net/):
-    args '-d', file('src/gen').path,
-    '-t', '-c', '-w',
-    file('src/config/parser/parser.beaver').path
+// generateJavaPatternLang.dependsOn 'generateParser'
+// generateParserConfig.dependsOn 'generateParser'
+// generateParser.dependsOn 'generateParserObjlang'
 
-    doFirst {
-        // Ensure src/gen exists before running Beaver:
-        file('src/gen').mkdirs()
-        file('out').mkdirs()
-        file('facts').mkdirs()
-        file('tmp').mkdirs()
-    }
-}
 
 // The following makes the clean task also remove generated code:
 clean.dependsOn 'cleanGeneratedJava'
@@ -206,6 +178,9 @@ clean.dependsOn 'cleanGeneratedJava'
 task cleanGeneratedJava(type: Delete) {
     description 'Remove generated Java code.'
     delete file('src/gen')
+    delete file('src/objlang/gen')
+    delete file('src/patlang/gen')
+    delete file('src/config/gen')
     delete file('compiler.jar')
     delete file('tests/output')
     delete file('tests/evaluation/bottomupout')

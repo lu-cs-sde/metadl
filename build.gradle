@@ -2,7 +2,7 @@ buildscript {
     // This configuration is needed to find the JastAdd plugin.
     repositories.mavenCentral()
         dependencies {
-                classpath 'org.jastadd:jastaddgradle:1.13.3'
+        classpath 'org.jastadd:jastaddgradle:1.13.3'
         }
 }
 
@@ -21,6 +21,7 @@ repositories.mavenLocal()
     configurations {
         jflex
         beaver
+        jastaddparser
     }
 
 // Dependencies are Jar files needed to compile and generate the compiler.
@@ -37,12 +38,13 @@ dependencies {
 
     jflex 'de.jflex:jflex:1.6.1'
     beaver 'net.sf.beaver:beaver-cc:0.9.11'
+    jastaddparser 'org.jastadd:jastaddparser:1.0.3'
 }
 
 
 // This specifies where the source code is located:
 sourceSets {
-    main.java.srcDirs = [ 'src/java', 'src/gen' , 'src/config/gen', 'src/gen', 'src/gen']
+    main.java.srcDirs = [ 'src/java', 'src/gen' ]
     test.java.srcDirs = [ 'src/test' ]
 }
 
@@ -151,9 +153,29 @@ void makeGenerateParserTask(String name, String outDir, String srcFile) {
     }
 }
 
-makeGenerateParserTask('generateParser', 'src/gen', 'src/parser/parser.beaver')
+
+void makeGenerateBeaverTask(String name, String outFile, String srcFile) {
+    tasks.create(name, JavaExec) {
+	doFirst {
+            file('src/gen').mkdirs()
+	}
+
+	description 'Generates the parser with Beaver.'
+	classpath = configurations.jastaddparser
+	main = 'org.jastadd.jastaddparser.Main'
+
+	// Options to Beaver (http://beaver.sourceforge.net/):
+	args file(srcFile).path, file(outFile).path
+    }
+}
+
+makeGenerateBeaverTask('generateBeaver', 'src/gen/LangParser.beaver', 'src/parser/metadl.parser')
+
+makeGenerateParserTask('generateParser', 'src/gen/lang/ast', 'src/gen/LangParser.beaver')
 makeGenerateParserTask('generateParserObjlang', 'src/gen', 'src/objlang/parser/parser.beaver')
 makeGenerateParserTask('generateParserConfig', 'src/gen', 'src/config/parser/parser.beaver')
+
+generateParser.dependsOn 'generateBeaver'
 
 // The following makes the clean task also remove generated code:
 clean.dependsOn 'cleanGeneratedJava'

@@ -39,6 +39,7 @@ dependencies {
     jflex 'de.jflex:jflex:1.6.1'
     beaver 'net.sf.beaver:beaver-cc:0.9.11'
     jastaddparser 'org.jastadd:jastaddparser:1.0.3'
+    // jastadd2 files('/work/projects/jastadd2/jastadd2.jar')
 }
 
 
@@ -106,7 +107,7 @@ jar {
 // Before compiling, we should generate some Java code:
 compileJava.dependsOn 'generateJava', 'generateScanner', 'generateParser',
     'generateJavaObjlang', 'generateScannerObjlang', 'generateParserObjlang',
-    'generateJavaPatternLang',
+    'generateJavaPatternLang', // 'generateParserPatlang',
     'generateConfig', 'generateScannerConfig', 'generateParserConfig'
 
 
@@ -170,12 +171,15 @@ void makeGenerateBeaverTask(String name, String outFile, String srcFile) {
 }
 
 makeGenerateBeaverTask('generateBeaver', 'src/gen/LangParser.beaver', 'src/parser/metadl.parser')
+makeGenerateBeaverTask('generateBeaverPatlang', 'src/gen/PatLangParser.beaver', 'src/patlang/parser/metadl.parser')
 
 makeGenerateParserTask('generateParser', 'src/gen/lang/ast', 'src/gen/LangParser.beaver')
 makeGenerateParserTask('generateParserObjlang', 'src/gen', 'src/objlang/parser/parser.beaver')
 makeGenerateParserTask('generateParserConfig', 'src/gen', 'src/config/parser/parser.beaver')
+makeGenerateParserTask('generateParserPatlang', 'src/gen', 'src/gen/PatLangParser.beaver')
 
 generateParser.dependsOn 'generateBeaver'
+generateParserPatlang.dependsOn 'generateBeaverPatlang'
 
 // The following makes the clean task also remove generated code:
 clean.dependsOn 'cleanGeneratedJava'

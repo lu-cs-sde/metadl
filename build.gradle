@@ -110,7 +110,7 @@ jar {
 // Before compiling, we should generate some Java code:
 compileJava.dependsOn 'generateJava', 'generateScanner', 'generateParser',
     'generateJavaObjlang', 'generateScannerObjlang', 'generateParserObjlang',
-    'generateJavaPatternLang', 'generateParserPatlang',
+    'generateJavaPatlang', 'generateScannerPatlang', 'generateParserPatlang',
     'generateConfig', 'generateScannerConfig', 'generateParserConfig'
 
 
@@ -127,7 +127,7 @@ void makeGenerateJavaTask(String name, String outDir, String srcDir, String pkg,
 
 makeGenerateJavaTask('generateJava', 'src/gen', 'src/jastadd', 'lang.ast')
 makeGenerateJavaTask('generateJavaObjlang', 'src/gen', 'src/objlang/jastadd', 'objlang.ast')
-makeGenerateJavaTask('generateJavaPatternLang', 'src/gen', 'src/patlang/jastadd', 'patlang.ast', true)
+makeGenerateJavaTask('generateJavaPatlang', 'src/gen', 'src/patlang/jastadd', 'patlang.ast', true)
 makeGenerateJavaTask('generateConfig', 'src/gen', 'src/config/', 'lang.ast.config')
 
 void makeGenerateScannerTask(String name, String outDir, String srcFile) {
@@ -144,6 +144,7 @@ void makeGenerateScannerTask(String name, String outDir, String srcFile) {
 makeGenerateScannerTask('generateScanner', 'src/gen/lang/ast', 'src/scanner/scanner.flex')
 makeGenerateScannerTask('generateScannerObjlang', 'src/gen/objlang/ast/', 'src/objlang/scanner/scanner.flex')
 makeGenerateScannerTask('generateScannerConfig', 'src/gen/lang/ast/config', 'src/config/scanner/scanner.flex')
+makeGenerateScannerTask('generateScannerPatlang', 'src/gen/patlang/ast/', 'src/patlang/scanner/scanner.flex')
 
 
 void makeGenerateParserTask(String name, String outDir, String srcFile) {
@@ -184,7 +185,7 @@ makeGenerateBeaverTask('generateBeaverPatlang', 'src/gen/PatLangParser.beaver', 
 makeGenerateParserTask('generateParser', 'src/gen/lang/ast', 'src/gen/LangParser.beaver')
 makeGenerateParserTask('generateParserObjlang', 'src/gen', 'src/objlang/parser/parser.beaver')
 makeGenerateParserTask('generateParserConfig', 'src/gen', 'src/config/parser/parser.beaver')
-makeGenerateParserTask('generateParserPatlang', 'src/gen', 'src/gen/PatLangParser.beaver')
+makeGenerateParserTask('generateParserPatlang', 'src/gen/patlang/ast', 'src/gen/PatLangParser.beaver')
 
 generateParser.dependsOn 'generateBeaver'
 generateParserPatlang.dependsOn 'generateBeaverPatlang'

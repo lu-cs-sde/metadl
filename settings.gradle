@@ -1,0 +1,13 @@
+rootProject.name = 'metadl'
+
+includeBuild('./deps/metajap') {
+    dependencySubstitution {
+	substitute module('org.jastadd:jastaddparser:100.100.100') with project(':')
+    }
+}
+
+includeBuild('./deps/metajastadd2') {
+    dependencySubstitution {
+	substitute module('org.jastadd:jastadd:100.100.100') with project(':')
+    }
+}

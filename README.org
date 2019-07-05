@@ -119,9 +119,11 @@ engine that MetaDL uses as backend for evaluating complex queries that
 are too slow for the internal evaluator.
 
 ** Building
+MetaDL depends on modified versions of [[http://jastadd.org/web/][JastAdd]] and [[https://bitbucket.org/jastadd/jastaddparser/][JastAddParser]]. These dependencies are packaged as submodules, so run ~git submodule update --init --recursive~ to fetch them.
+
 [[https://gradle.org/][Gradle]] is used as a build tool. Additionally, a Makefile summarizes the common build and run commands:
-- Package: ~make jar~
-- Test: ~make test~
+- Package: ~./gradlew :jar~ or ~make jar~
+- Test: ~./gradlew :test~ or ~make test~
 - Evaluate using the internal engine: ~make eval EVAL=<Input File>~
 - Evaluate using the Souffle back-end: ~make souffle EVAL=<Input File>~
 

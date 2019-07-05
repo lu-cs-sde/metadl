@@ -1,0 +1,6 @@
+[submodule "deps/metajap"]
+	path = deps/metajap
+	url = git@git.cs.lth.se:al7330du/metajap.git
+[submodule "deps/metajastadd2"]
+	path = deps/metajastadd2
+	url = git@git.cs.lth.se:al7330du/metajastadd2.git

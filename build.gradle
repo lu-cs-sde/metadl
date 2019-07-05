@@ -17,12 +17,12 @@ defaultTasks 'test'
 repositories.mavenCentral()
 repositories.mavenLocal()
 
-    // Dependency configurations (https://docs.gradle.org/current/userguide/dependency_management.html#sub:configurations):
-    configurations {
-        jflex
-        beaver
-        jastaddparser
-    }
+// Dependency configurations (https://docs.gradle.org/current/userguide/dependency_management.html#sub:configurations):
+configurations {
+    jflex
+    beaver
+    jastaddparser
+}
 
 // Dependencies are Jar files needed to compile and generate the compiler.
 dependencies {
@@ -38,9 +38,11 @@ dependencies {
 
     jflex 'de.jflex:jflex:1.6.1'
     beaver 'net.sf.beaver:beaver-cc:0.9.11'
-    //jastaddparser 'org.jastadd:jastaddparser:1.0.3'
-    jastaddparser files('/work/projects/jastaddparser/build/libs/jastaddparser-1.0.4.jar')
-    jastadd2 files('/work/projects/jastadd2/jastadd2.jar')
+
+    // fictive versions for jastadd and jastaddparser - they
+    // are substituted in settings.gradle
+    jastaddparser 'org.jastadd:jastaddparser:100.100.100'
+    jastadd2 'org.jastadd:jastadd:100.100.100'
 }
 
 

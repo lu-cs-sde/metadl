@@ -38,8 +38,9 @@ dependencies {
 
     jflex 'de.jflex:jflex:1.6.1'
     beaver 'net.sf.beaver:beaver-cc:0.9.11'
-    jastaddparser 'org.jastadd:jastaddparser:1.0.3'
-    // jastadd2 files('/work/projects/jastadd2/jastadd2.jar')
+    //jastaddparser 'org.jastadd:jastaddparser:1.0.3'
+    jastaddparser files('/work/projects/jastaddparser/build/libs/jastaddparser-1.0.4.jar')
+    jastadd2 files('/work/projects/jastadd2/jastadd2.jar')
 }
 
 
@@ -107,22 +108,24 @@ jar {
 // Before compiling, we should generate some Java code:
 compileJava.dependsOn 'generateJava', 'generateScanner', 'generateParser',
     'generateJavaObjlang', 'generateScannerObjlang', 'generateParserObjlang',
-    'generateJavaPatternLang', // 'generateParserPatlang',
+    'generateJavaPatternLang', 'generateParserPatlang',
     'generateConfig', 'generateScannerConfig', 'generateParserConfig'
 
 
-void makeGenerateJavaTask(String name, String outDir, String srcDir, String pkg) {
+void makeGenerateJavaTask(String name, String outDir, String srcDir, String pkg, boolean patternGrammar = false) {
     tasks.create(name, org.jastadd.JastAddTask) {
 	description 'Generates the compiler AST classes from JastAdd specifications.'
 	outputDir = file(outDir)
 	sources = fileTree(dir: srcDir, includes: [ '**/*.jrag', '**/*.jadd', '**/*.ast' ])
 	options = [ '--package=' + pkg, '--beaver' , '--rewrite=cnta' ]
+	if (patternGrammar)
+	    options << '--pattern_grammar'
     }
 }
 
 makeGenerateJavaTask('generateJava', 'src/gen', 'src/jastadd', 'lang.ast')
 makeGenerateJavaTask('generateJavaObjlang', 'src/gen', 'src/objlang/jastadd', 'objlang.ast')
-makeGenerateJavaTask('generateJavaPatternLang', 'src/gen', 'src/patlang/jastadd', 'patlang.ast')
+makeGenerateJavaTask('generateJavaPatternLang', 'src/gen', 'src/patlang/jastadd', 'patlang.ast', true)
 makeGenerateJavaTask('generateConfig', 'src/gen', 'src/config/', 'lang.ast.config')
 
 void makeGenerateScannerTask(String name, String outDir, String srcFile) {
@@ -155,7 +158,7 @@ void makeGenerateParserTask(String name, String outDir, String srcFile) {
 }
 
 
-void makeGenerateBeaverTask(String name, String outFile, String srcFile) {
+void makeGenerateBeaverTask(String name, String outFile, String srcFile, boolean patternGrammar = false) {
     tasks.create(name, JavaExec) {
 	doFirst {
             file('src/gen').mkdirs()
@@ -166,12 +169,15 @@ void makeGenerateBeaverTask(String name, String outFile, String srcFile) {
 	main = 'org.jastadd.jastaddparser.Main'
 
 	// Options to Beaver (http://beaver.sourceforge.net/):
-	args file(srcFile).path, file(outFile).path
+	if (patternGrammar)
+	    args '--pattern_grammar', file(srcFile).path, file(outFile).path
+	else
+	    args file(srcFile).path, file(outFile).path
     }
 }
 
 makeGenerateBeaverTask('generateBeaver', 'src/gen/LangParser.beaver', 'src/parser/metadl.parser')
-makeGenerateBeaverTask('generateBeaverPatlang', 'src/gen/PatLangParser.beaver', 'src/patlang/parser/metadl.parser')
+makeGenerateBeaverTask('generateBeaverPatlang', 'src/gen/PatLangParser.beaver', 'src/parser/metadl.parser', true)
 
 makeGenerateParserTask('generateParser', 'src/gen/lang/ast', 'src/gen/LangParser.beaver')
 makeGenerateParserTask('generateParserObjlang', 'src/gen', 'src/objlang/parser/parser.beaver')

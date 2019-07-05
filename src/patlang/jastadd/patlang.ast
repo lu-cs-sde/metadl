@@ -1,218 +1,67 @@
-// Pattern grammar
-MetaVariable ::= <ID:String> ;
-Program ::= MetaOrConcreteCommonClause* ;
-abstract MetaOrConcreteProgram;
-MetaVarProgram : MetaElementProgram ::= Var:MetaVariable ;
-abstract MetaElementProgram : MetaOrConcreteProgram;
-GapProgram : MetaOrConcreteProgram;
-ConcreteProgram : MetaElementProgram ::= ConcreteNode:Program ;
+/**
+	Program
+**/
+Program  ::= CommonClause* /FormalPredicate*/;
+
+/**
+   Clause
+**/
 abstract CommonClause;
-abstract MetaOrConcreteCommonClause;
-MetaVarCommonClause : MetaElementCommonClause ::= Var:MetaVariable ;
-abstract MetaElementCommonClause : MetaOrConcreteCommonClause;
-GapCommonClause : MetaOrConcreteCommonClause;
-ConcreteCommonClause : MetaElementCommonClause ::= ConcreteNode:CommonClause ;
-abstract Clause : CommonClause ::= Heads:MetaOrConcreteCommonLiteral* ;
-abstract MetaOrConcreteClause;
-MetaVarClause : MetaElementClause ::= Var:MetaVariable ;
-abstract MetaElementClause : MetaOrConcreteClause;
-GapClause : MetaOrConcreteClause;
-ConcreteClause : MetaElementClause ::= ConcreteNode:Clause ;
-Rule : Clause ::= Body:MetaOrConcreteCommonLiteral* ;
-abstract MetaOrConcreteRule;
-MetaVarRule : MetaElementRule ::= Var:MetaVariable ;
-abstract MetaElementRule : MetaOrConcreteRule;
-GapRule : MetaOrConcreteRule;
-ConcreteRule : MetaElementRule ::= ConcreteNode:Rule ;
-Fact : Clause;
-abstract MetaOrConcreteFact;
-MetaVarFact : MetaElementFact ::= Var:MetaVariable ;
-abstract MetaElementFact : MetaOrConcreteFact;
-GapFact : MetaOrConcreteFact;
-ConcreteFact : MetaElementFact ::= ConcreteNode:Fact ;
-AnalyzeBlock : CommonClause ::= ProgramRef:MetaOrConcretePredicateRef MetaOrConcreteClause* ;
-abstract MetaOrConcreteAnalyzeBlock;
-MetaVarAnalyzeBlock : MetaElementAnalyzeBlock ::= Var:MetaVariable ;
-abstract MetaElementAnalyzeBlock : MetaOrConcreteAnalyzeBlock;
-GapAnalyzeBlock : MetaOrConcreteAnalyzeBlock;
-ConcreteAnalyzeBlock : MetaElementAnalyzeBlock ::= ConcreteNode:AnalyzeBlock ;
+abstract Clause : CommonClause ::= Heads:CommonLiteral*;
+Rule:Clause ::= Body:CommonLiteral*;
+Fact:Clause;
+AnalyzeBlock:CommonClause ::= ProgramRef:PredicateRef Clause*;
+
+/**
+   Literals
+**/
 abstract CommonLiteral;
-abstract MetaOrConcreteCommonLiteral;
-MetaVarCommonLiteral : MetaElementCommonLiteral ::= Var:MetaVariable ;
-abstract MetaElementCommonLiteral : MetaOrConcreteCommonLiteral;
-GapCommonLiteral : MetaOrConcreteCommonLiteral;
-ConcreteCommonLiteral : MetaElementCommonLiteral ::= ConcreteNode:CommonLiteral ;
-abstract Literal : CommonLiteral ::= Predicate:MetaOrConcretePredicateSymbol ;
-abstract MetaOrConcreteLiteral;
-MetaVarLiteral : MetaElementLiteral ::= Var:MetaVariable ;
-abstract MetaElementLiteral : MetaOrConcreteLiteral;
-GapLiteral : MetaOrConcreteLiteral;
-ConcreteLiteral : MetaElementLiteral ::= ConcreteNode:Literal ;
-abstract BinaryExclusiveTermLiteral : Literal ::= Left:MetaOrConcreteExpr Right:MetaOrConcreteExpr ;
-abstract MetaOrConcreteBinaryExclusiveTermLiteral;
-MetaVarBinaryExclusiveTermLiteral : MetaElementBinaryExclusiveTermLiteral ::= Var:MetaVariable ;
-abstract MetaElementBinaryExclusiveTermLiteral : MetaOrConcreteBinaryExclusiveTermLiteral;
-GapBinaryExclusiveTermLiteral : MetaOrConcreteBinaryExclusiveTermLiteral;
-ConcreteBinaryExclusiveTermLiteral : MetaElementBinaryExclusiveTermLiteral ::= ConcreteNode:BinaryExclusiveTermLiteral ;
-Atom : Literal ::= Terms:MetaOrConcreteTerm* ;
-abstract MetaOrConcreteAtom;
-MetaVarAtom : MetaElementAtom ::= Var:MetaVariable ;
-abstract MetaElementAtom : MetaOrConcreteAtom;
-GapAtom : MetaOrConcreteAtom;
-ConcreteAtom : MetaElementAtom ::= ConcreteNode:Atom ;
-EDBLiteral : Literal ::= MetaOrConcretePredicateRef FileLoc:MetaOrConcreteTerm ;
-abstract MetaOrConcreteEDBLiteral;
-MetaVarEDBLiteral : MetaElementEDBLiteral ::= Var:MetaVariable ;
-abstract MetaElementEDBLiteral : MetaOrConcreteEDBLiteral;
-GapEDBLiteral : MetaOrConcreteEDBLiteral;
-ConcreteEDBLiteral : MetaElementEDBLiteral ::= ConcreteNode:EDBLiteral ;
-OUTPUTLiteral : Literal ::= MetaOrConcreteTerm ;
-abstract MetaOrConcreteOUTPUTLiteral;
-MetaVarOUTPUTLiteral : MetaElementOUTPUTLiteral ::= Var:MetaVariable ;
-abstract MetaElementOUTPUTLiteral : MetaOrConcreteOUTPUTLiteral;
-GapOUTPUTLiteral : MetaOrConcreteOUTPUTLiteral;
-ConcreteOUTPUTLiteral : MetaElementOUTPUTLiteral ::= ConcreteNode:OUTPUTLiteral ;
-NEGLiteral : Literal ::= MetaOrConcreteLiteral ;
-abstract MetaOrConcreteNEGLiteral;
-MetaVarNEGLiteral : MetaElementNEGLiteral ::= Var:MetaVariable ;
-abstract MetaElementNEGLiteral : MetaOrConcreteNEGLiteral;
-GapNEGLiteral : MetaOrConcreteNEGLiteral;
-ConcreteNEGLiteral : MetaElementNEGLiteral ::= ConcreteNode:NEGLiteral ;
-BINDLiteral : Literal ::= Variable:MetaOrConcreteCommonVariable Right:MetaOrConcreteExpr ;
-abstract MetaOrConcreteBINDLiteral;
-MetaVarBINDLiteral : MetaElementBINDLiteral ::= Var:MetaVariable ;
-abstract MetaElementBINDLiteral : MetaOrConcreteBINDLiteral;
-GapBINDLiteral : MetaOrConcreteBINDLiteral;
-ConcreteBINDLiteral : MetaElementBINDLiteral ::= ConcreteNode:BINDLiteral ;
-IMPORTLiteral : Literal ::= FileLoc:MetaOrConcreteTerm ProgramRef:MetaOrConcretePredicateRef ;
-abstract MetaOrConcreteIMPORTLiteral;
-MetaVarIMPORTLiteral : MetaElementIMPORTLiteral ::= Var:MetaVariable ;
-abstract MetaElementIMPORTLiteral : MetaOrConcreteIMPORTLiteral;
-GapIMPORTLiteral : MetaOrConcreteIMPORTLiteral;
-ConcreteIMPORTLiteral : MetaElementIMPORTLiteral ::= ConcreteNode:IMPORTLiteral ;
-EQLiteral : BinaryExclusiveTermLiteral;
-abstract MetaOrConcreteEQLiteral;
-MetaVarEQLiteral : MetaElementEQLiteral ::= Var:MetaVariable ;
-abstract MetaElementEQLiteral : MetaOrConcreteEQLiteral;
-GapEQLiteral : MetaOrConcreteEQLiteral;
-ConcreteEQLiteral : MetaElementEQLiteral ::= ConcreteNode:EQLiteral ;
-NEQLiteral : BinaryExclusiveTermLiteral;
-abstract MetaOrConcreteNEQLiteral;
-MetaVarNEQLiteral : MetaElementNEQLiteral ::= Var:MetaVariable ;
-abstract MetaElementNEQLiteral : MetaOrConcreteNEQLiteral;
-GapNEQLiteral : MetaOrConcreteNEQLiteral;
-ConcreteNEQLiteral : MetaElementNEQLiteral ::= ConcreteNode:NEQLiteral ;
-LTLiteral : BinaryExclusiveTermLiteral;
-abstract MetaOrConcreteLTLiteral;
-MetaVarLTLiteral : MetaElementLTLiteral ::= Var:MetaVariable ;
-abstract MetaElementLTLiteral : MetaOrConcreteLTLiteral;
-GapLTLiteral : MetaOrConcreteLTLiteral;
-ConcreteLTLiteral : MetaElementLTLiteral ::= ConcreteNode:LTLiteral ;
-LTELiteral : BinaryExclusiveTermLiteral;
-abstract MetaOrConcreteLTELiteral;
-MetaVarLTELiteral : MetaElementLTELiteral ::= Var:MetaVariable ;
-abstract MetaElementLTELiteral : MetaOrConcreteLTELiteral;
-GapLTELiteral : MetaOrConcreteLTELiteral;
-ConcreteLTELiteral : MetaElementLTELiteral ::= ConcreteNode:LTELiteral ;
-GTLiteral : BinaryExclusiveTermLiteral;
-abstract MetaOrConcreteGTLiteral;
-MetaVarGTLiteral : MetaElementGTLiteral ::= Var:MetaVariable ;
-abstract MetaElementGTLiteral : MetaOrConcreteGTLiteral;
-GapGTLiteral : MetaOrConcreteGTLiteral;
-ConcreteGTLiteral : MetaElementGTLiteral ::= ConcreteNode:GTLiteral ;
-GTELiteral : BinaryExclusiveTermLiteral;
-abstract MetaOrConcreteGTELiteral;
-MetaVarGTELiteral : MetaElementGTELiteral ::= Var:MetaVariable ;
-abstract MetaElementGTELiteral : MetaOrConcreteGTELiteral;
-GapGTELiteral : MetaOrConcreteGTELiteral;
-ConcreteGTELiteral : MetaElementGTELiteral ::= ConcreteNode:GTELiteral ;
+abstract Literal:CommonLiteral ::= Predicate:PredicateSymbol;
+abstract BinaryExclusiveTermLiteral:Literal ::= Left:Expr Right:Expr;
+
+Atom:Literal          ::= Terms:Term*;
+EDBLiteral:Literal    ::= PredicateRef FileLoc:Term;
+OUTPUTLiteral:Literal ::= Term;
+NEGLiteral:Literal    ::= Literal;
+
+BINDLiteral:Literal ::= Variable:CommonVariable Right:Expr;
+IMPORTLiteral:Literal ::= FileLoc:Term ProgramRef:PredicateRef;
+
+EQLiteral:BinaryExclusiveTermLiteral;
+NEQLiteral:BinaryExclusiveTermLiteral;
+LTLiteral:BinaryExclusiveTermLiteral;
+LTELiteral:BinaryExclusiveTermLiteral;
+GTLiteral:BinaryExclusiveTermLiteral;
+GTELiteral:BinaryExclusiveTermLiteral;
+
+/**
+	Expressions
+**/
 abstract Expr;
-abstract MetaOrConcreteExpr;
-MetaVarExpr : MetaElementExpr ::= Var:MetaVariable ;
-abstract MetaElementExpr : MetaOrConcreteExpr;
-GapExpr : MetaOrConcreteExpr;
-ConcreteExpr : MetaElementExpr ::= ConcreteNode:Expr ;
-Functor : Expr ::= Func:MetaOrConcreteFunctorSymbol Arg:MetaOrConcreteExpr* ;
-abstract MetaOrConcreteFunctor;
-MetaVarFunctor : MetaElementFunctor ::= Var:MetaVariable ;
-abstract MetaElementFunctor : MetaOrConcreteFunctor;
-GapFunctor : MetaOrConcreteFunctor;
-ConcreteFunctor : MetaElementFunctor ::= ConcreteNode:Functor ;
-abstract Term : Expr;
-abstract MetaOrConcreteTerm;
-MetaVarTerm : MetaElementTerm ::= Var:MetaVariable ;
-abstract MetaElementTerm : MetaOrConcreteTerm;
-GapTerm : MetaOrConcreteTerm;
-ConcreteTerm : MetaElementTerm ::= ConcreteNode:Term ;
-abstract Constant : Term;
-abstract MetaOrConcreteConstant;
-MetaVarConstant : MetaElementConstant ::= Var:MetaVariable ;
-abstract MetaElementConstant : MetaOrConcreteConstant;
-GapConstant : MetaOrConcreteConstant;
-ConcreteConstant : MetaElementConstant ::= ConcreteNode:Constant ;
-abstract CommonVariable : Term;
-abstract MetaOrConcreteCommonVariable;
-MetaVarCommonVariable : MetaElementCommonVariable ::= Var:MetaVariable ;
-abstract MetaElementCommonVariable : MetaOrConcreteCommonVariable;
-GapCommonVariable : MetaOrConcreteCommonVariable;
-ConcreteCommonVariable : MetaElementCommonVariable ::= ConcreteNode:CommonVariable ;
-Variable : CommonVariable ::= <VAR_ID:String> ;
-abstract MetaOrConcreteVariable;
-MetaVarVariable : MetaElementVariable ::= Var:MetaVariable ;
-abstract MetaElementVariable : MetaOrConcreteVariable;
-GapVariable : MetaOrConcreteVariable;
-ConcreteVariable : MetaElementVariable ::= ConcreteNode:Variable ;
-Wildcard : CommonVariable;
-abstract MetaOrConcreteWildcard;
-MetaVarWildcard : MetaElementWildcard ::= Var:MetaVariable ;
-abstract MetaElementWildcard : MetaOrConcreteWildcard;
-GapWildcard : MetaOrConcreteWildcard;
-ConcreteWildcard : MetaElementWildcard ::= ConcreteNode:Wildcard ;
-PredicateRef : Constant ::= <PRED_ID:String> ;
-abstract MetaOrConcretePredicateRef;
-MetaVarPredicateRef : MetaElementPredicateRef ::= Var:MetaVariable ;
-abstract MetaElementPredicateRef : MetaOrConcretePredicateRef;
-GapPredicateRef : MetaOrConcretePredicateRef;
-ConcretePredicateRef : MetaElementPredicateRef ::= ConcreteNode:PredicateRef ;
-StringConstant : Constant ::= <STRING:String> ;
-abstract MetaOrConcreteStringConstant;
-MetaVarStringConstant : MetaElementStringConstant ::= Var:MetaVariable ;
-abstract MetaElementStringConstant : MetaOrConcreteStringConstant;
-GapStringConstant : MetaOrConcreteStringConstant;
-ConcreteStringConstant : MetaElementStringConstant ::= ConcreteNode:StringConstant ;
-IntConstant : Constant ::= <NUMERAL:String> ;
-abstract MetaOrConcreteIntConstant;
-MetaVarIntConstant : MetaElementIntConstant ::= Var:MetaVariable ;
-abstract MetaElementIntConstant : MetaOrConcreteIntConstant;
-GapIntConstant : MetaOrConcreteIntConstant;
-ConcreteIntConstant : MetaElementIntConstant ::= ConcreteNode:IntConstant ;
-FormalPredicate ::= <PRED_ID:String> ;
-abstract MetaOrConcreteFormalPredicate;
-MetaVarFormalPredicate : MetaElementFormalPredicate ::= Var:MetaVariable ;
-abstract MetaElementFormalPredicate : MetaOrConcreteFormalPredicate;
-GapFormalPredicate : MetaOrConcreteFormalPredicate;
-ConcreteFormalPredicate : MetaElementFormalPredicate ::= ConcreteNode:FormalPredicate ;
-PredicateSymbol ::= <PRED_ID:String> ;
-abstract MetaOrConcretePredicateSymbol;
-MetaVarPredicateSymbol : MetaElementPredicateSymbol ::= Var:MetaVariable ;
-abstract MetaElementPredicateSymbol : MetaOrConcretePredicateSymbol;
-GapPredicateSymbol : MetaOrConcretePredicateSymbol;
-ConcretePredicateSymbol : MetaElementPredicateSymbol ::= ConcreteNode:PredicateSymbol ;
-FunctorSymbol ::= <FUNC_ID:String> ;
-abstract MetaOrConcreteFunctorSymbol;
-MetaVarFunctorSymbol : MetaElementFunctorSymbol ::= Var:MetaVariable ;
-abstract MetaElementFunctorSymbol : MetaOrConcreteFunctorSymbol;
-GapFunctorSymbol : MetaOrConcreteFunctorSymbol;
-ConcreteFunctorSymbol : MetaElementFunctorSymbol ::= ConcreteNode:FunctorSymbol ;
+Functor : Expr ::= Func:FunctorSymbol Arg:Expr*;
+
+/**
+    Terms
+**/
+abstract Term:Expr;
+abstract Constant:Term;
+abstract CommonVariable:Term;
+
+Variable:CommonVariable ::= <VAR_ID>;
+Wildcard:CommonVariable;
+PredicateRef:Constant   ::= <PRED_ID>;
+StringConstant:Constant ::= <STRING>;
+IntConstant:Constant    ::= <NUMERAL>;
+
+/**
+    PredicateSymbols
+**/
+FormalPredicate ::= <PRED_ID>;
+PredicateSymbol ::= <PRED_ID>;
+FunctorSymbol ::= <FUNC_ID>;
+
+/**
+   Patterns
+**/
 abstract MetaPattern : CommonLiteral;
-abstract MetaOrConcreteMetaPattern;
-MetaVarMetaPattern : MetaElementMetaPattern ::= Var:MetaVariable ;
-abstract MetaElementMetaPattern : MetaOrConcreteMetaPattern;
-GapMetaPattern : MetaOrConcreteMetaPattern;
-ConcreteMetaPattern : MetaElementMetaPattern ::= ConcreteNode:MetaPattern ;
-Pattern : MetaPattern ::= <PATTERN:String> ;
-abstract MetaOrConcretePattern;
-MetaVarPattern : MetaElementPattern ::= Var:MetaVariable ;
-abstract MetaElementPattern : MetaOrConcretePattern;
-GapPattern : MetaOrConcretePattern;
-ConcretePattern : MetaElementPattern ::= ConcreteNode:Pattern ;
+Pattern : MetaPattern ::= <PATTERN>;

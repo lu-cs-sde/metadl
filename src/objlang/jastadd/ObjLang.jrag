@@ -230,25 +230,6 @@ aspect Pattern {
 
 aspect AnalyzeBlock {
 	public class ObjLang {
-		public static lang.ast.Rule makeListProjRule(String scopePrefix) {
-			lang.ast.List<lang.ast.Term> headVars = new lang.ast.List<>();
-			headVars.add(new lang.ast.Variable("l"));
-			headVars.add(new lang.ast.Variable("i"));
-
-			lang.ast.Atom list1 = new lang.ast.Atom(new lang.ast.PredicateSymbol(scopePrefix + "Lst_proj"),
-													headVars);
-
-			lang.ast.List<lang.ast.Term> bodyVars = new lang.ast.List<>();
-			bodyVars.add(new lang.ast.Variable("l"));
-			bodyVars.add(new lang.ast.Variable("i"));
-			bodyVars.add(new lang.ast.Variable("x"));
-
-			lang.ast.Atom list = new lang.ast.Atom(new lang.ast.PredicateSymbol(scopePrefix + "Lst"),
-												   bodyVars);
-			lang.ast.Rule r = new lang.ast.Rule(new lang.ast.List<>(list1), new lang.ast.List<>(list));
-			return r;
-		}
-
 		public static lang.ast.Rule makeIdentifierRule(String scopePrefix, String name) {
 			lang.ast.List<lang.ast.CommonLiteral> headList = new lang.ast.List<>();
 			lang.ast.List<lang.ast.CommonLiteral> bodyList = new  lang.ast.List<>();
@@ -370,7 +351,6 @@ aspect AnalyzeBlock {
 
 			ret.add(makeExprRule(scopePrefix));
 
-			ret.add(makeListProjRule(scopePrefix));
 			return ret;
 		}
 

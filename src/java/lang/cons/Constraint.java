@@ -82,26 +82,13 @@ class MemberConstraint extends Constraint {
 }
 
 class LastConstraint extends Constraint {
-	final String newRuleName = node.getParent().getRelation() + "_proj";
+	final String newRuleName = node.getParent().getRelation();
 	// This element must be the last one in the list.
 	// Check that the relation List(l, _, i+1) is empty.
 	// List1(l, i) :- List(l, i, c).
 	// List(l, i, child), BIND(j, i+1), NEG(List1(l, j)).
 	public LastConstraint(ObjLangASTNode node) {
 		super(node);
-	}
-
-	@Override
-	public Clause generateClause(String scopePrefix) {
-		Atom list1 = makeAtom(scopePrefix + newRuleName,
-							  new Variable("l"),
-							  new Variable("i"));
-		Atom list = makeAtom(scopePrefix + node.getParent().getRelation(),
-							 new Variable("l"),
-							 new Variable("i"),
-							 new Variable("x"));
-		Rule r = new Rule(new List<>(list1), new List<>(list));
-		return r;
 	}
 
 	public ArrayList<Literal> generateLiterals(String scopePrefix) {
@@ -118,7 +105,8 @@ class LastConstraint extends Constraint {
 		result.add(new NEGLiteral(new PredicateSymbol("NEG"),
 								  makeAtom(scopePrefix + newRuleName,
 										   new Variable(node.getParent().varName()),
-										   new Variable(boundVarName))));
+										   new Variable(boundVarName),
+										   new Wildcard())));
 		return result;
 	}
 }

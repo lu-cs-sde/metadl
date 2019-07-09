@@ -124,16 +124,17 @@ aspect Pattern {
 
 			lang.ast.List<lang.ast.Term> terms = new lang.ast.List<>();
 			lang.ast.StringConstant Kind = new lang.ast.StringConstant(relName);
-			lang.ast.IntConstant ChildId;
+			lang.ast.Term ChildId;
 			if (child instanceof Opt) {
 				if (child.getNumChild() == 0)
+					// TODO: semantics around optionals
 					ChildId = new lang.ast.IntConstant("0");
 				else
-					ChildId = new lang.ast.IntConstant("" + child.getChild(0).varName());
+					ChildId = new lang.ast.Variable(child.getChild(0).varName());
 			} else {
-				ChildId = new lang.ast.IntConstant("" + child.getNodeId());
+				ChildId = new lang.ast.Variable(child.varName());
 			}
-			lang.ast.IntConstant CurrentNodeId = new lang.ast.IntConstant("" + getNodeId());
+			lang.ast.Variable CurrentNodeId = new lang.ast.Variable(varName());
 			lang.ast.IntConstant ChildIdx = new lang.ast.IntConstant("" + childIndex++);
 			lang.ast.StringConstant Token = new lang.ast.StringConstant("");
 
@@ -152,8 +153,8 @@ aspect Pattern {
 
 				// Add a tuple to the current node relation
 				lang.ast.StringConstant Kind = new lang.ast.StringConstant(relName);
-				lang.ast.IntConstant ChildId = new lang.ast.IntConstant("t_" + tokenUID);
-				lang.ast.IntConstant CurrentNodeId = new lang.ast.IntConstant("" + varName());
+				lang.ast.Variable ChildId = new lang.ast.Variable("t_" + tokenUID);
+				lang.ast.Variable CurrentNodeId = new lang.ast.Variable(varName());
 				lang.ast.IntConstant ChildIdx = new lang.ast.IntConstant("" + childIndex++);
 				lang.ast.Wildcard Token = new lang.ast.Wildcard();
 
@@ -167,7 +168,7 @@ aspect Pattern {
 
 				lang.ast.StringConstant Kind = new lang.ast.StringConstant("Terminal");
 				lang.ast.Wildcard ChildId = new lang.ast.Wildcard();
-				lang.ast.IntConstant CurrentNodeId = new lang.ast.IntConstant("t_" + tokenUID);
+				lang.ast.Variable CurrentNodeId = new lang.ast.Variable("t_" + tokenUID);
 				lang.ast.Wildcard ChildIdx = new lang.ast.Wildcard();
 				lang.ast.StringConstant Token = new lang.ast.StringConstant(t);
 

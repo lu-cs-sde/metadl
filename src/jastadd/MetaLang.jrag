@@ -58,13 +58,20 @@ aspect MetaLang {
 
 		java.util.List<Exception> exceptions = new java.util.ArrayList<>();
 
+		ByteArrayOutputStream errStream = new ByteArrayOutputStream();
+
+
 		// Try all the goals until one succeeds. Also collect the errors to report them
 		// in case none of the parsing attempts is successful.
 		for (short g : AltGoals) {
 			try {
 				patlang.ast.LangScanner scanner = new patlang.ast.LangScanner(new StringReader(getPATTERN()));
 				patlang.ast.PatLangParser parser = new patlang.ast.PatLangParser();
+				// the parsers writes directly to System.err so we capture it
+				PrintStream oldErr = System.err;
+				System.setErr(new PrintStream(errStream));
 				node = (patlang.ast.ASTNode) parser.parse(scanner, g);
+				System.setErr(oldErr);
 				break;
 			} catch (Exception e) {
 				exceptions.add(e);
@@ -75,6 +82,7 @@ aspect MetaLang {
 			// None of the parsing attempts succeeded. Print the errors
 			for (Exception e : exceptions)
 				SimpleLogger.logger().log("Error while parsing pattern: " + getPATTERN() + "\n" + e.toString());
+			System.out.println(errStream.toString());
 			System.exit(1);
 		}
 

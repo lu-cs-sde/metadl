@@ -130,7 +130,7 @@ aspect Program {
 		ArrayList<Clause> clauses = new ArrayList<>();
 		for (CommonClause comc : getCommonClauses()) {
 			if (comc instanceof AnalyzeBlock) {
-				for (Clause c : ((AnalyzeBlock)comc).getAllClauses())
+				for (Clause c : ((AnalyzeBlock)comc).getExpandedClauses())
 					clauses.add(c);
 			} else {
 				clauses.add((Clause)comc);

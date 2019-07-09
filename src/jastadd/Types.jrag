@@ -386,8 +386,8 @@ aspect TypeInference {
 
 	Variable contributes this to Clause.varMap() for literal().clause();
 
-	AnalyzeBlock contributes nta getAllClauses() to Clause.varMap();
-	AnalyzeBlock contributes nta getAllClauses() to FormalPredicate.initialType();
+	AnalyzeBlock contributes nta getExpandedClauses() to Clause.varMap();
+	AnalyzeBlock contributes nta getExpandedClauses() to FormalPredicate.initialType();
 	Pattern contributes nta getLiterals() to Clause.varMap();
 
 	public class VariableMap {

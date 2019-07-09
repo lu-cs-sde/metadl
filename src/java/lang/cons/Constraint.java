@@ -1,11 +1,12 @@
 package lang.cons;
 
 import lang.ast.*;
+import lang.ast.AnalyzeContext;
 import java.util.ArrayList;
 
 public abstract class Constraint {
-	public Clause generateClause(String scopePrefix) {return null;};
-	public abstract ArrayList<Literal> generateLiterals(String scopePrefix);
+	public Clause generateClause(AnalyzeContext ctx) {return null;};
+	public abstract ArrayList<Literal> generateLiterals(AnalyzeContext ctx);
 	protected ObjLangASTNode node;
 	protected Constraint(ObjLangASTNode node) {
 		this.node = node;
@@ -15,6 +16,18 @@ public abstract class Constraint {
 		PredicateSymbol ps = new PredicateSymbol(pred);
 		List<Term> terms = new List<>(ts);
 		return new Atom(ps, terms);
+	}
+
+	protected static Atom makeListAtom(AnalyzeContext ctx,
+									   Term nodeId,
+									   Term childIdx,
+									   Term childId) {
+		PredicateSymbol ps = new PredicateSymbol(ctx.progRelName);
+		Term list = new StringConstant("List");
+		List<Term> terms = new List<>();
+		terms.add(list).add(nodeId).add(childIdx).add(childId).add(new Wildcard());
+		return new Atom(ps, terms);
+
 	}
 
 	protected Expr makeAdd(Expr left, Expr right) {
@@ -51,12 +64,12 @@ class EqualityConstraint extends Constraint {
 		super(node);
 		this.pos = pos;
 	}
-	public ArrayList<Literal> generateLiterals(String scopePrefix) {
+	public ArrayList<Literal> generateLiterals(AnalyzeContext ctx) {
 		ArrayList<Literal> result = new ArrayList<>();
-		result.add(makeAtom(scopePrefix + super.node.getParent().getRelation(),
-							new Variable(node.getParent().varName()),
-							new Variable(node.indexVarName()),
-							new Variable(node.varName())));
+		result.add(makeListAtom(ctx,
+								new Variable(node.getParent().varName()),
+								new Variable(node.indexVarName()),
+								new Variable(node.varName())));
 
 		result.add(new EQLiteral(new PredicateSymbol("EQ"),
 								 new Variable(node.indexVarName()),
@@ -71,12 +84,12 @@ class MemberConstraint extends Constraint {
 	public MemberConstraint(ObjLangASTNode node) {
 		super(node);
 	}
-	public ArrayList<Literal> generateLiterals(String scopePrefix) {
+	public ArrayList<Literal> generateLiterals(AnalyzeContext ctx) {
 		ArrayList<Literal> result = new ArrayList<>();
-		result.add(makeAtom(scopePrefix + node.getParent().getRelation(),
-							new Variable(node.getParent().varName()),
-							new Variable(node.indexVarName()),
-							new Variable(node.varName())));
+		result.add(makeListAtom(ctx,
+								new Variable(node.getParent().varName()),
+								new Variable(node.indexVarName()),
+								new Variable(node.varName())));
 		return result;
 	}
 }
@@ -91,22 +104,22 @@ class LastConstraint extends Constraint {
 		super(node);
 	}
 
-	public ArrayList<Literal> generateLiterals(String scopePrefix) {
+	public ArrayList<Literal> generateLiterals(AnalyzeContext ctx) {
 		ArrayList<Literal> result = new ArrayList<>();
 		String boundVarName = "b_" + node.getNodeId();
-		result.add(makeAtom(scopePrefix + node.getParent().getRelation(),
-							new Variable(node.getParent().varName()),
-							new Variable(node.indexVarName()),
-							new Variable(node.varName())));
+		result.add(makeListAtom(ctx,
+								new Variable(node.getParent().varName()),
+								new Variable(node.indexVarName()),
+								new Variable(node.varName())));
 		result.add(new BINDLiteral(new PredicateSymbol("BIND"),
 								   new Variable(boundVarName),
 								   makeAdd(new Variable(node.indexVarName()),
 										   new IntConstant("1"))));
 		result.add(new NEGLiteral(new PredicateSymbol("NEG"),
-								  makeAtom(scopePrefix + newRuleName,
-										   new Variable(node.getParent().varName()),
-										   new Variable(boundVarName),
-										   new Wildcard())));
+								  makeListAtom(ctx,
+											   new Variable(node.getParent().varName()),
+											   new Variable(boundVarName),
+											   new Wildcard())));
 		return result;
 	}
 }
@@ -119,18 +132,15 @@ class AfterConstraint extends Constraint {
 		this.predecessor = predecessor;
 	}
 
-	public ArrayList<Literal> generateLiterals(String scopePrefix) {
+	public ArrayList<Literal> generateLiterals(AnalyzeContext ctx) {
 		ArrayList<Literal> result = new ArrayList<>();
-
-		result.add(makeAtom(scopePrefix + super.node.getParent().getRelation(),
-							new Variable(node.getParent().varName()),
-							new Variable(node.indexVarName()),
-							new Variable(node.varName())));
-
+		result.add(makeListAtom(ctx,
+								new Variable(node.getParent().varName()),
+								new Variable(node.indexVarName()),
+								new Variable(node.varName())));
 		result.add(new GTLiteral(new PredicateSymbol("GT"),
 								 new Variable(node.indexVarName()),
 								 new Variable(predecessor.indexVarName())));
-
 		return result;
 	}
 }
@@ -142,13 +152,13 @@ class NextConstraint extends Constraint {
 		this.predecessor = predecessor;
 	}
 
-	public ArrayList<Literal> generateLiterals(String scopePrefix) {
+	public ArrayList<Literal> generateLiterals(AnalyzeContext ctx) {
 		ArrayList<Literal> result = new ArrayList<>();
 
-		result.add(makeAtom(scopePrefix + super.node.getParent().getRelation(),
-							new Variable(node.getParent().varName()),
-							new Variable(node.indexVarName()),
-							new Variable(node.varName())));
+		result.add(makeListAtom(ctx,
+								new Variable(node.getParent().varName()),
+								new Variable(node.indexVarName()),
+								new Variable(node.varName())));
 
 		result.add(new EQLiteral(new PredicateSymbol("EQ"),
 								 new Variable(node.indexVarName()),

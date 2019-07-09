@@ -6,9 +6,8 @@ import java.util.Collections;
 import lang.cons.ObjLangASTNode;
 import java.lang.reflect.Method;
 import java.lang.ReflectiveOperationException;
-
-import objlang.ast.ProgRelPart;
-
+import lang.ast.AnalyzeContext;
+import lang.io.StringUID;
 
 aspect Pattern {
 
@@ -37,8 +36,6 @@ aspect Pattern {
 		String nodeNameFull = this.getClass().getName();
 		String[] splitNodeName = nodeNameFull.split("\\.");
 		String nodeName = splitNodeName[splitNodeName.length - 1];
-		if (nodeName.equals("List"))
-			return "Lst";
 		return nodeName;
 	}
 
@@ -105,53 +102,81 @@ aspect Pattern {
 	}
 
 	/**
-	   The asLiterals() equations are isomorphic to buildTupleWrapper()
+	   The asLiterals() equations are isomorphic to toTuples()
 	   equations in the DatalogProject aspect. The common parts should be
 	   factored out to ensure that the relational
 	   representation of a program matches the code generated for a pattern.
 	 */
-	syn ArrayList<lang.ast.Literal> ASTNode.asLiterals(String scopePrefix);
+	syn ArrayList<lang.ast.Literal> ASTNode.asLiterals(AnalyzeContext ctx);
 
-	eq ASTNode.asLiterals(String scopePrefix) {
+	eq ASTNode.asLiterals(AnalyzeContext ctx) {
 		ArrayList<lang.ast.Literal> literals = new ArrayList<>();
 		if (isGap() || isMetaVar() || isIndexMetaVar())
 			return literals;
 
-		int childIndex = 0;
+		String relName = getRelation();
+		java.util.ArrayList<lang.ast.Literal> ret = new ArrayList<>();
 
+		// the children in the tree
+		int childIndex = 0;
 		for (int i = 0; i < getNumChild(); ++i) {
 			ASTNode child = getChild(i);
 
 			lang.ast.List<lang.ast.Term> terms = new lang.ast.List<>();
-			terms.add(new lang.ast.Variable(varName()));
-			terms.add(new lang.ast.IntConstant("" + childIndex++));
+			lang.ast.StringConstant Kind = new lang.ast.StringConstant(relName);
+			lang.ast.IntConstant ChildId;
 			if (child instanceof Opt) {
-				if (getNumChild() == 0) {
-					terms.add(new lang.ast.IntConstant("0"));
-				} else {
-					terms.add(new lang.ast.Variable(child.getChild(0).varName()));
-				}
+				if (child.getNumChild() == 0)
+					ChildId = new lang.ast.IntConstant("0");
+				else
+					ChildId = new lang.ast.IntConstant("" + child.getChild(0).varName());
 			} else {
-				terms.add(new lang.ast.Variable(child.varName()));
+				ChildId = new lang.ast.IntConstant("" + child.getNodeId());
 			}
-			literals.add(new lang.ast.Atom(new lang.ast.PredicateSymbol(scopePrefix + getRelation()), terms));
+			lang.ast.IntConstant CurrentNodeId = new lang.ast.IntConstant("" + getNodeId());
+			lang.ast.IntConstant ChildIdx = new lang.ast.IntConstant("" + childIndex++);
+			lang.ast.StringConstant Token = new lang.ast.StringConstant("");
+
+			terms.add(Kind).add(CurrentNodeId).add(ChildIdx).add(ChildId).add(Token);
+			ret.add(new lang.ast.Atom(new lang.ast.PredicateSymbol(ctx.progRelName), terms));
 		}
 
+		// other tokens attached to the node
 		for (String t : tokens()) {
-			String tokenVarName = "t_" + t.hashCode();
+			// For every token, we generate two tuples
+			// ("NodeKind", CurrentNodeId, ChildIdx, ChildId, "")
+			// ("Token", ChildId, 0, 0, "TokenAsString")
+			int tokenUID = StringUID.getInstance().uid(t);
+			{
+				lang.ast.List<lang.ast.Term> terms = new lang.ast.List<>();
 
-			lang.ast.List<lang.ast.Term> termsChild = new lang.ast.List<>();
-			termsChild.add(new lang.ast.Variable(varName()));
-			termsChild.add(new lang.ast.IntConstant("" + childIndex++));
-			termsChild.add(new lang.ast.Variable(tokenVarName));
-			literals.add(new lang.ast.Atom(new lang.ast.PredicateSymbol(scopePrefix + getRelation()), termsChild));
+				// Add a tuple to the current node relation
+				lang.ast.StringConstant Kind = new lang.ast.StringConstant(relName);
+				lang.ast.IntConstant ChildId = new lang.ast.IntConstant("t_" + tokenUID);
+				lang.ast.IntConstant CurrentNodeId = new lang.ast.IntConstant("" + varName());
+				lang.ast.IntConstant ChildIdx = new lang.ast.IntConstant("" + childIndex++);
+				lang.ast.Wildcard Token = new lang.ast.Wildcard();
 
-			lang.ast.List<lang.ast.Term> termsToken = new lang.ast.List<>();
-			termsToken.add(new lang.ast.Variable(tokenVarName));
-			termsToken.add(new lang.ast.StringConstant(t));
-			literals.add(new lang.ast.Atom(new lang.ast.PredicateSymbol(scopePrefix + "Token"), termsToken));
+				terms.add(Kind).add(CurrentNodeId).add(ChildIdx).add(ChildId).add(Token);
+				ret.add(new lang.ast.Atom(new lang.ast.PredicateSymbol(ctx.progRelName), terms));
+			}
+
+			{
+				// Add a tuple to Token relation
+				lang.ast.List<lang.ast.Term> terms = new lang.ast.List<>();
+
+				lang.ast.StringConstant Kind = new lang.ast.StringConstant("Terminal");
+				lang.ast.Wildcard ChildId = new lang.ast.Wildcard();
+				lang.ast.IntConstant CurrentNodeId = new lang.ast.IntConstant("t_" + tokenUID);
+				lang.ast.Wildcard ChildIdx = new lang.ast.Wildcard();
+				lang.ast.StringConstant Token = new lang.ast.StringConstant(t);
+
+				terms.add(Kind).add(CurrentNodeId).add(ChildIdx).add(ChildId).add(Token);
+				ret.add(new lang.ast.Atom(new lang.ast.PredicateSymbol(ctx.progRelName), terms));
+			}
 		}
-		return literals;
+
+		return ret;
 	}
 
 	ASTNode implements ObjLangASTNode;
@@ -210,98 +235,41 @@ aspect Pattern {
 		return cons;
 	}
 
-	syn ArrayList<lang.ast.Clause> ASTNode.asClauses(String scopePrefix) = new ArrayList<>();
-	eq List.asClauses(String scopePrefix) {
+	syn ArrayList<lang.ast.Clause> ASTNode.asClauses(AnalyzeContext ctx) = new ArrayList<>();
+	eq List.asClauses(AnalyzeContext ctx) {
 		ArrayList<Constraint> cons = constraints();
 		if (cons.isEmpty())
 			return new ArrayList<>();
 		ArrayList<lang.ast.Clause> clauses = new ArrayList<>();
 		for (Constraint c : cons) {
-			lang.ast.Clause cls = c.generateClause(scopePrefix);
+			lang.ast.Clause cls = c.generateClause(ctx);
 			if (cls != null)
 				clauses.add(cls);
 		}
 		return clauses;
 	}
 
-	eq List.asLiterals(String scopePrefix) {
+	eq List.asLiterals(AnalyzeContext ctx) {
 		ArrayList<Constraint> cons = constraints();
 		if (cons.isEmpty())
-			return super.asLiterals(scopePrefix);
+			return super.asLiterals(ctx);
 
 		ArrayList<lang.ast.Literal> lits = new ArrayList<>();
 		for (Constraint c : cons)
-			lits.addAll(c.generateLiterals(scopePrefix));
+			lits.addAll(c.generateLiterals(ctx));
 		return lits;
 	}
 
-	// syn lang.ast.Constant Constant.constantValue();
-	// eq StringConstant.constantValue() = new lang.ast.StringConstant(getSTRING());
-	// eq IntConstant.constantValue() = new lang.ast.IntConstant(getNUMERAL());
-	// eq PredicateRef.constantValue() = new lang.ast.PredicateRef(getPRED_ID());
-
-	// eq Constant.asLiterals(String scopePrefix) {
-	// 	lang.ast.PredicateSymbol pred = new lang.ast.PredicateSymbol(scopePrefix + getRelation());
-	// 	ArrayList<lang.ast.Literal> literals = new ArrayList<>();
-	// 	lang.ast.List<lang.ast.Term> terms = new lang.ast.List<>();
-	// 	terms.add(new lang.ast.Variable(varName()));
-	// 	// remove the index if it exists
-	// 	Constant newConst = this.treeCopyNoTransform();
-	// 	this.setIndexOpt(new Opt());
-	// 	terms.add(constantValue());
-	// 	literals.add(new lang.ast.Atom(pred, terms));
-	// 	return literals;
-	// }
-
-	// eq Variable.asLiterals(String scopePrefix) {
-	// 	lang.ast.PredicateSymbol pred = new lang.ast.PredicateSymbol(scopePrefix + getRelation());
-	// 	ArrayList<lang.ast.Literal> literals = new ArrayList<>();
-	// 	lang.ast.List<lang.ast.Term> terms = new lang.ast.List<>();
-	// 	terms.add(new lang.ast.Variable(varName()));
-	// 	terms.add(new lang.ast.StringConstant(this.getVAR_ID()));
-	// 	literals.add(new lang.ast.Atom(pred, terms));
-	// 	return literals;
-	// }
-
-	// eq PredicateSymbol.asLiterals(String scopePrefix) {
-	// 	lang.ast.PredicateSymbol pred = new lang.ast.PredicateSymbol(scopePrefix + getRelation());
-	// 	ArrayList<lang.ast.Literal> literals = new ArrayList<>();
-	// 	lang.ast.List<lang.ast.Term> terms = new lang.ast.List<>();
-	// 	terms.add(new lang.ast.Variable(varName()));
-	// 	terms.add(new lang.ast.StringConstant(this.getPRED_ID()));
-	// 	literals.add(new lang.ast.Atom(pred, terms));
-	// 	return literals;
-	// }
-
-	// eq FunctorSymbol.asLiterals(String scopePrefix) {
-	// 	lang.ast.PredicateSymbol pred = new lang.ast.PredicateSymbol(scopePrefix + getRelation());
-	// 	ArrayList<lang.ast.Literal> literals = new ArrayList<>();
-	// 	lang.ast.List<lang.ast.Term> terms = new lang.ast.List<>();
-	// 	terms.add(new lang.ast.Variable(varName()));
-	// 	terms.add(new lang.ast.StringConstant(getFUNC_ID()));
-	// 	literals.add(new lang.ast.Atom(pred, terms));
-	// 	return literals;
-	// }
-
 	// eq MetaVariable.asLiterals(String scopePrefix) = new ArrayList<>();
-	eq Opt.asLiterals(String scopePrefix) = new ArrayList<>();
+	eq Opt.asLiterals(AnalyzeContext ctx) = new ArrayList<>();
 	// eq MetaVariable.varName() = "$" + getMETAVAR_ID();
 
-	syn ArrayList<lang.ast.Literal> ASTNode.literals(String scopePrefix) {
+	syn ArrayList<lang.ast.Literal> ASTNode.literals(AnalyzeContext ctx) {
 		// An add-hoc way of implementing parameterized collection attributes
 		ArrayList<lang.ast.Literal> list = new ArrayList<>();
-		list.addAll(asLiterals(scopePrefix));
+		list.addAll(asLiterals(ctx));
 		for (ASTNode c : astChildren())
-			list.addAll(c.literals(scopePrefix));
-		return list;
-	}
-
-	syn ArrayList<lang.ast.Clause> ASTNode.clauses(String scopePrefix) {
-		// An add-hoc way of implementing parameterized collection attributes
-		ArrayList<lang.ast.Clause> list = new ArrayList<>();
-		list.addAll(asClauses(scopePrefix));
-		for (ASTNode c : astChildren())
-			list.addAll(c.literals(scopePrefix));
+			list.addAll(c.literals(ctx));
 		return list;
 	}
 
@@ -321,35 +289,36 @@ aspect Pattern {
 
 aspect AnalyzeBlock {
 	public class PatLang {
-		private static lang.ast.Rule makeListProjRule(String scopePrefix) {
-			lang.ast.List<lang.ast.Term> headVars = new lang.ast.List<>();
-			headVars.add(new lang.ast.Variable("l"));
-			headVars.add(new lang.ast.Variable("i"));
+		public static lang.ast.Rule implicitTypeDecl(AnalyzeContext ctx) {
+			lang.ast.List<lang.ast.CommonLiteral> head = new lang.ast.List<>();
+			lang.ast.List<lang.ast.CommonLiteral> body = new lang.ast.List<>();
+			lang.ast.List<lang.ast.Term> vars = new lang.ast.List<>();
+			vars.add(new lang.ast.StringConstant("")).add(new lang.ast.IntConstant("0")).add(new lang.ast.IntConstant("0"))
+				.add(new lang.ast.IntConstant("0")).add(new lang.ast.StringConstant("0"));
 
-			lang.ast.Atom list1 = new lang.ast.Atom(new lang.ast.PredicateSymbol(scopePrefix + "Lst_proj"),
-													headVars);
+			head.add(new lang.ast.Atom(new lang.ast.PredicateSymbol(ctx.progRelName), vars));
+			body.add(new lang.ast.NEQLiteral(new lang.ast.PredicateSymbol("NEQ"),
+											 new lang.ast.IntConstant("0"),
+											 new lang.ast.IntConstant("0")));
 
-			lang.ast.List<lang.ast.Term> bodyVars = new lang.ast.List<>();
-			bodyVars.add(new lang.ast.Variable("l"));
-			bodyVars.add(new lang.ast.Variable("i"));
-			bodyVars.add(new lang.ast.Variable("x"));
-
-			lang.ast.Atom list = new lang.ast.Atom(new lang.ast.PredicateSymbol(scopePrefix + "Lst"),
-												   bodyVars);
-			lang.ast.Rule r = new lang.ast.Rule(new lang.ast.List<>(list1), new lang.ast.List<>(list));
-			return r;
+			return new lang.ast.Rule(head, body);
 		}
 
-		private static lang.ast.Rule makeIdentifierRule(String scopePrefix, String name) {
+
+		/**
+		   For every analyze block, insert relations that provide the
+		   context for evaluating the expanded patterns.
+		*/
+		public static lang.ast.Rule makeIdentifierRule(AnalyzeContext ctx, String name) {
 			lang.ast.List<lang.ast.CommonLiteral> headList = new lang.ast.List<>();
 			lang.ast.List<lang.ast.CommonLiteral> bodyList = new  lang.ast.List<>();
 
 			lang.ast.List<lang.ast.Term> headVars = new lang.ast.List<>();
 			headVars.add(new lang.ast.Variable("n_id"));
 			headVars.add(new lang.ast.Variable("name"));
-			lang.ast.CommonLiteral head = new lang.ast.Atom(new lang.ast.PredicateSymbol(scopePrefix + "ID"),
+			lang.ast.CommonLiteral head = new lang.ast.Atom(new lang.ast.PredicateSymbol(ctx.scopePrefix + "ID"),
 									headVars);
-			lang.ast.CommonLiteral body = new lang.ast.Atom(new lang.ast.PredicateSymbol(scopePrefix + name),
+			lang.ast.CommonLiteral body = new lang.ast.Atom(new lang.ast.PredicateSymbol(ctx.scopePrefix + name),
 									headVars.treeCopyNoTransform());
 
 			headList.add(head);
@@ -358,114 +327,20 @@ aspect AnalyzeBlock {
 			return new lang.ast.Rule(headList, bodyList);
 		}
 
-		private static lang.ast.Rule makeExprRule(String scopePrefix) {
-			lang.ast.List<lang.ast.CommonLiteral> headList = new lang.ast.List<>();
-			lang.ast.List<lang.ast.CommonLiteral> bodyList = new lang.ast.List<>();
 
-			lang.ast.List<lang.ast.Term> headVars = new lang.ast.List<>();
-			headVars.add(new lang.ast.Variable("n_id"));
-			headVars.add(new lang.ast.Variable("j"));
-			headVars.add(new lang.ast.Variable("child"));
-
-			headList.add(new lang.ast.Atom(new lang.ast.PredicateSymbol(scopePrefix + "EXPR"),
-						       headVars));
-
-			lang.ast.List<lang.ast.Term> bodyVars1 = new lang.ast.List<>();
-			bodyVars1.add(new lang.ast.Variable("n_id"));
-			bodyVars1.add(new lang.ast.IntConstant("1"));
-			bodyVars1.add(new lang.ast.Variable("l"));
-
-			bodyList.add(new lang.ast.Atom(new lang.ast.PredicateSymbol(scopePrefix + "Functor"), bodyVars1));
-
-			lang.ast.List<lang.ast.Term> bodyVars2 = new lang.ast.List<>();
-			bodyVars2.add(new lang.ast.Variable("l"));
-			bodyVars2.add(new lang.ast.Variable("j"));
-			bodyVars2.add(new lang.ast.Variable("child"));
-
-			bodyList.add(new lang.ast.Atom(new lang.ast.PredicateSymbol(scopePrefix + "Lst"), bodyVars2));
-
-			return new lang.ast.Rule(headList, bodyList);
-		}
-
-		/**
-		   For every analyze block, insert relations that provide the
-		   context for evaluating the expanded patterns.
-		*/
-		public static lang.ast.List<lang.ast.Clause> generateHelperRelations(String scopePrefix, String progRelName) {
+		public static lang.ast.List<lang.ast.Clause> generateHelperRelations(AnalyzeContext ctx) {
 			lang.ast.List<lang.ast.Clause> ret = new lang.ast.List<>();
 
-			// Count the arity of the program relation
-			int numVars = 0;
-			for (ProgRelPart pr : ProgRelPart.getProgramRelationStructure())
-				numVars += pr.arity();
-
-			// Project the wide program relation to relations matching the
-			// node types
-			int count = 0;
-			for (ProgRelPart pr : ProgRelPart.getProgramRelationStructure()) {
-				// Build the head
-				lang.ast.List<lang.ast.CommonLiteral> head = new lang.ast.List<>();
-				lang.ast.List<lang.ast.Term> vars = new lang.ast.List<>();
-				int firstVar = count;
-				for (int i = 0; i < pr.defaultValue.arity(); ++i, ++count) {
-					vars.add(new lang.ast.Variable("p" + count));
-				}
-				lang.ast.PredicateSymbol ps = new lang.ast.PredicateSymbol(scopePrefix + pr.name);
-				head.add(new lang.ast.Atom(ps, vars));
-
-
-				lang.ast.List<lang.ast.CommonLiteral> body = new lang.ast.List<>();
-				lang.ast.List<lang.ast.Term> progVars = new lang.ast.List<>();
-				for (int i = 0; i < numVars; ++i) {
-					progVars.add(new lang.ast.Variable("p" + i));
-				}
-
-				lang.ast.PredicateSymbol progPS = new lang.ast.PredicateSymbol(progRelName);
-				// Program(p0, ..., pN)
-				body.add(new lang.ast.Atom(new lang.ast.PredicateSymbol(progRelName),
-							   progVars));
-
-				// test for the node id to be greater than 0 to filter out any
-				// possible dummy terms
-				body.add(new lang.ast.GTLiteral(new lang.ast.PredicateSymbol("GT"),
-								new lang.ast.Variable("p" + firstVar),
-								new lang.ast.IntConstant("0")));
-
-				ret.add(new lang.ast.Rule(head, body));
-			}
-
-			// Now create a clause containing a ground instance of the entire program relation
-			// with false in the body, needed for type inference
-			{
-				lang.ast.List<lang.ast.CommonLiteral> head = new lang.ast.List<>();
-				lang.ast.List<lang.ast.CommonLiteral> body = new lang.ast.List<>();
-				lang.ast.List<lang.ast.Term> vars = new lang.ast.List<>();
-				for (ProgRelPart pr : ProgRelPart.getProgramRelationStructure()) {
-					for (int i = 0; i < pr.defaultValue.arity(); ++i) {
-						vars.add(pr.defaultValue.coord(i).treeCopyNoTransform());
-					}
-				}
-
-				head.add(new lang.ast.Atom(new lang.ast.PredicateSymbol(progRelName), vars));
-				body.add(new lang.ast.NEQLiteral(new lang.ast.PredicateSymbol("NEQ"),
-								 new lang.ast.IntConstant("0"),
-								 new lang.ast.IntConstant("0")));
-
-				ret.add(new lang.ast.Rule(head, body));
-			}
-
 			// Add two new rules, to map variables and predicates to their predicates
-			ret.add(makeIdentifierRule(scopePrefix, "Variable"));
-			ret.add(makeIdentifierRule(scopePrefix, "PredicateSymbol"));
-			ret.add(makeIdentifierRule(scopePrefix, "FunctorSymbol"));
+			// ret.add(makeIdentifierRule(ctx, "Variable"));
+			// ret.add(makeIdentifierRule(ctx, "PredicateSymbol"));
+			// ret.add(makeIdentifierRule(ctx, "FunctorSymbol"));
+			ret.add(implicitTypeDecl(ctx));
 
-			ret.add(makeExprRule(scopePrefix));
-
-			ret.add(makeListProjRule(scopePrefix));
 			return ret;
 		}
 
-		public static String translatePredicateName(String scopePrefix, String predName) {
+		public static String translatePredicateName(AnalyzeContext ctx, String predName) {
 			String s = null;
 			switch (predName) {
 			case "INT": s = "IntConstant"; break;
@@ -476,7 +351,7 @@ aspect AnalyzeBlock {
 			case "SRC": s = "SourceInfo"; break;
 			default: return null;
 			}
-			return scopePrefix + s;
+			return ctx. scopePrefix + s;
 		}
 	}
 }

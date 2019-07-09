@@ -1,6 +1,4 @@
 import lang.cons.Constraint;
-import lang.cons.ObjLangASTNode;
-import objlang.ast.ProgRelPart;
 import java.io.StringReader;
 
 
@@ -11,53 +9,43 @@ aspect MetaLang {
 	inh AnalyzeBlock CommonClause.enclosingAnalyzeBlock();
 	inh AnalyzeBlock PredicateSymbol.enclosingAnalyzeBlock();
 	inh AnalyzeBlock CommonLiteral.enclosingAnalyzeBlock();
+	inh AnalyzeBlock Pattern.enclosingAnalyzeBlock();
 
 	eq Program.getCommonClause().enclosingAnalyzeBlock() = null;
 	eq AnalyzeBlock.getClause().enclosingAnalyzeBlock() = this;
+	eq AnalyzeBlock.getExpandedClause().enclosingAnalyzeBlock() = this;
 
 	syn String ASTNode.getScopePrefix() = getParent().getScopePrefix();
 	eq Program.getScopePrefix() = "";
     eq AnalyzeBlock.getScopePrefix() = "A_" + getProgramRef().getPRED_ID() + "_";
+	syn AnalyzeContext AnalyzeBlock.getContext() {
+		return new AnalyzeContext(getScopePrefix(), getProgramRef().getPRED_ID());
+	}
 
-	syn nta List<Clause> AnalyzeBlock.getAllClauses() {
+	syn nta List<Clause> AnalyzeBlock.getExpandedClauseList() {
 		List<Clause> cls = new List<>();
-		cls.addAll(objlang.ast.ObjLang.generateHelperRelations(
-															   getScopePrefix(),
-															   getProgramRef().getPRED_ID()
-															   ));
+		cls.addAll(patlang.ast.PatLang.generateHelperRelations(getContext()));
 		for (Clause c : getClauses())
 			cls.add(c.treeCopy());
 		return cls;
 	}
 
-	AnalyzeBlock contributes nta getAllClauses() to Program.predicateSymbols();
+	AnalyzeBlock contributes nta getExpandedClauses() to Program.predicateSymbols();
 
 	rewrite PredicateSymbol {
 		when (enclosingAnalyzeBlock() != null &&
-			  objlang.ast.ObjLang.translatePredicateName(getScopePrefix(), getPRED_ID()) != null) to PredicateSymbol {
-			return new PredicateSymbol(objlang.ast.ObjLang.translatePredicateName(getScopePrefix(), getPRED_ID()));
+			  patlang.ast.PatLang.translatePredicateName(enclosingAnalyzeBlock().getContext(), getPRED_ID()) != null)
+			to PredicateSymbol {
+			return new PredicateSymbol(patlang.ast.PatLang.translatePredicateName(enclosingAnalyzeBlock().getContext(),
+																				  getPRED_ID()));
 		}
 	}
 
 	syn nta List<Literal> Pattern.getLiterals() {
 		List<Literal> literals = new List<>();
-		literals.addAll(objectAST().literals(getScopePrefix()));
+		literals.addAll(patternAST().literals(enclosingAnalyzeBlock().getContext()));
 		return literals;
 	}
-
-	syn objlang.ast.ASTNode Pattern.objectAST() {
-		objlang.ast.LangScanner scanner = new objlang.ast.LangScanner(new StringReader(getPATTERN()));
-		objlang.ast.LangParser parser = new objlang.ast.LangParser();
-		objlang.ast.Clause clause = null;
-		try {
-			clause = (objlang.ast.Clause) parser.parse(scanner, objlang.ast.LangParser.AltGoals.inner_clause);
-		} catch (Exception e) {
-			SimpleLogger.logger().log("Error while parsing pattern: " + getPATTERN() + "\n" + e.toString());
-		}
-		return clause;
-	}
-
-	//syn patlang.ast.ASTNode Pattern.objectAST() = patternAST();
 
 	syn patlang.ast.ASTNode Pattern.patternAST() {
 		patlang.ast.ASTNode node = null;
@@ -87,14 +75,25 @@ aspect MetaLang {
 			// None of the parsing attempts succeeded. Print the errors
 			for (Exception e : exceptions)
 				SimpleLogger.logger().log("Error while parsing pattern: " + getPATTERN() + "\n" + e.toString());
+			System.exit(1);
 		}
 
 		return node;
 	}
 
 	eq Pattern.variables() {
-		return objectAST().metavariables();
+		return patternAST().metavariables();
 	}
 
 	eq Pattern.isInclusive() = true;
+
+	public class AnalyzeContext {
+		public String scopePrefix;
+		public String progRelName;
+
+		public AnalyzeContext(String scopePrefix, String progRelName) {
+			this.scopePrefix = scopePrefix;
+			this.progRelName = progRelName;
+		}
+	}
 }

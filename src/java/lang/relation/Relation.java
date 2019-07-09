@@ -3,6 +3,7 @@ package lang.relation;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.Collection;
 
 import lang.ast.Term;
 import lang.relation.Binding.BindOverlap;
@@ -48,6 +49,10 @@ public class Relation {
 
 	public boolean addTuple(PseudoTuple pt) {
 		return relation.add(pt);
+	}
+
+	public boolean addTuples(Collection<PseudoTuple> c) {
+		return relation.addAll(c);
 	}
 
 	public void collectRelation(StringBuilder sb) {

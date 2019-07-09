@@ -3,7 +3,7 @@ import lang.relation.PseudoTuple;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.lang.reflect.ParameterizedType;
-
+import lang.io.StringUID;
 
 aspect DatalogProject {
 	/**
@@ -14,10 +14,6 @@ aspect DatalogProject {
 		String nodeName = this.getClass().getName();
 		String[] splitNodeName = nodeName.split("\\.");
 		String relName = splitNodeName[splitNodeName.length - 1];
-		if (relName.equals("List"))
-			return "Lst";
-		if (relName.equals("MetaAtom"))
-			return "Atom";
 		return relName;
 	}
 
@@ -82,182 +78,142 @@ aspect DatalogProject {
 		}
 	}
 
-	coll RelationMap Program.datalogProjection() with add;
+	coll Relation Program.datalogProjection() [new Relation(5)] with addTuples;
 
-	public TupleWrapper ASTNode.buildTupleWrapper() {
-		if (getNumChild() == 0) {
-			// this is a terminal node, record it to terminals relation
-			TupleWrapper ret = new TupleWrapper("Terminal");
-			ret.addTuple(new PseudoTuple(new lang.ast.IntConstant("" + getNodeId())));
-			return ret;
-		}
-
+	syn java.util.List<PseudoTuple> ASTNode.toTuples() {
 		String relName = getRelation();
-		TupleWrapper ret = new TupleWrapper(relName);
+		java.util.List<PseudoTuple> ret = new ArrayList<>();
 
+		// the children in the tree
 		int childIndex = 0;
 		for (int i = 0; i < getNumChild(); ++i) {
 			ASTNode child = getChild(i);
-			if (child instanceof Opt)
-				continue;
-			lang.ast.IntConstant ChildId = new lang.ast.IntConstant("" + child.getNodeId());
+
+			lang.ast.StringConstant Kind = new lang.ast.StringConstant(relName);
+			lang.ast.IntConstant ChildId;
+			if (child instanceof Opt) {
+				if (child.getNumChild() == 0)
+					ChildId = new lang.ast.IntConstant("0");
+				else
+					ChildId = new lang.ast.IntConstant("" + child.getChild(0).getNodeId());
+			} else {
+				ChildId = new lang.ast.IntConstant("" + child.getNodeId());
+			}
 			lang.ast.IntConstant CurrentNodeId = new lang.ast.IntConstant("" + getNodeId());
 			lang.ast.IntConstant ChildIdx = new lang.ast.IntConstant("" + childIndex++);
-			ret.addTuple(new PseudoTuple(CurrentNodeId, ChildIdx, ChildId));
+			lang.ast.StringConstant Token = new lang.ast.StringConstant("");
+			ret.add(new PseudoTuple(Kind, CurrentNodeId, ChildIdx, ChildId, Token));
 		}
-		return ret;
-	}
 
-	public TupleWrapper Opt.buildTupleWrapper() {
-		return new TupleWrapper(null);
-	}
-
-	public static TupleWrapper Constant.constantNodeHelper(Constant c, String relName) {
-		TupleWrapper ret = new TupleWrapper(relName);
-		lang.ast.IntConstant nodeId = new lang.ast.IntConstant("" + c.getNodeId());
-		ret.addTuple(new PseudoTuple(nodeId, c.constantValue()));
-		return ret;
-	}
-
-	public TupleWrapper IntConstant.buildTupleWrapper() {
-		return constantNodeHelper(this, "IntConstant");
-	}
-
-	public TupleWrapper StringConstant.buildTupleWrapper() {
-		return constantNodeHelper(this, "StringConstant");
-	}
-
-	public TupleWrapper PredicateRef.buildTupleWrapper() {
-		TupleWrapper ret = new TupleWrapper("PredicateRef");
-		lang.ast.IntConstant nodeId = new lang.ast.IntConstant("" + getNodeId());
-		lang.ast.StringConstant predName = new lang.ast.StringConstant(getPRED_ID());
-		ret.addTuple(new PseudoTuple(nodeId, predName));
-		return ret;
-	}
-
-	public TupleWrapper Variable.buildTupleWrapper() {
-		TupleWrapper ret = new TupleWrapper("Variable");
-		lang.ast.IntConstant nodeId = new lang.ast.IntConstant("" + getNodeId());
-		lang.ast.StringConstant varName = new lang.ast.StringConstant(getVAR_ID());
-
-		ret.addTuple(new PseudoTuple(nodeId, varName));
-		return ret;
-	}
-
-	public TupleWrapper PredicateSymbol.buildTupleWrapper() {
-		TupleWrapper ret = new TupleWrapper("PredicateSymbol");
-		lang.ast.IntConstant nodeId = new lang.ast.IntConstant("" + getNodeId());
-		lang.ast.StringConstant varName = new lang.ast.StringConstant(getPRED_ID());
-
-		ret.addTuple(new PseudoTuple(nodeId, varName));
-		return ret;
-	}
-
-
-	public TupleWrapper FunctorSymbol.buildTupleWrapper() {
-		TupleWrapper ret = new TupleWrapper("FunctorSymbol");
-		lang.ast.IntConstant nodeId = new lang.ast.IntConstant("" + getNodeId());
-		lang.ast.StringConstant varName = new lang.ast.StringConstant(getFUNC_ID());
-
-		ret.addTuple(new PseudoTuple(nodeId, varName));
-		return ret;
-	}
-
-	public TupleWrapper BinaryExclusiveTermLiteral.buildTupleWrapper() {
-		TupleWrapper ret = new TupleWrapper("BinaryExclusiveTermLiteral");
-		lang.ast.IntConstant nodeId = new lang.ast.IntConstant("" + getNodeId());
-		lang.ast.StringConstant compOp = new lang.ast.StringConstant("" + getPredicate().getPRED_ID());
-		lang.ast.IntConstant lhs = new lang.ast.IntConstant("" + getLeft().getNodeId());
-		lang.ast.IntConstant rhs = new lang.ast.IntConstant("" + getRight().getNodeId());
-		ret.addTuple(new PseudoTuple(nodeId, compOp, lhs, rhs));
-		return ret;
-	}
-
-	public TupleWrapper BINDLiteral.buildTupleWrapper(String op) {
-		TupleWrapper ret = new TupleWrapper("BINDLiteral");
-		lang.ast.IntConstant nodeId = new lang.ast.IntConstant("" + getNodeId());
-		lang.ast.IntConstant lhs = new lang.ast.IntConstant("" + getVariable().getNodeId());
-		lang.ast.IntConstant rhs = new lang.ast.IntConstant("" + getRight().getNodeId());
-		ret.addTuple(new PseudoTuple(nodeId, lhs, rhs));
-		return ret;
-	}
-
-	ASTNode contributes buildTupleWrapper() to Program.datalogProjection() ;
-
-	syn TupleWrapper ASTNode.buildLocationTupleWrapper() {
-		return new TupleWrapper(null);
-	}
-
-	public TupleWrapper ASTNode.locationTupleWrapper() {
-		TupleWrapper ret = new TupleWrapper("SourceInfo");
-		ret.addTuple(new PseudoTuple(new lang.ast.IntConstant("" + this.getNodeId()),
-					     new lang.ast.StringConstant("L" + getLine(this.getStart()) + ":" + getColumn(this.getStart()))));
-		return ret;
-	}
-
-	eq Expr.buildLocationTupleWrapper() = locationTupleWrapper();
-	eq PredicateSymbol.buildLocationTupleWrapper() = locationTupleWrapper();
-
-	ASTNode contributes buildLocationTupleWrapper() to Program.datalogProjection();
-
-	public class ProgRelPart {
-		public final String name;
-		public final PseudoTuple defaultValue;
-		ProgRelPart(String name, Object[] defaultValues) {
-			this.name = name;
-			lang.ast.Term terms[] = new lang.ast.Term[defaultValues.length];
-			for (int i = 0; i < defaultValues.length; ++i) {
-				if (defaultValues[i] instanceof String) {
-					terms[i] = new lang.ast.StringConstant((String)defaultValues[i]);
-				} else if (defaultValues[i] instanceof Term) {
-					terms[i] = (lang.ast.Term)defaultValues[i];
-				} else {
-					terms[i] = new lang.ast.IntConstant("" + (Integer)defaultValues[i]);
-				}
+		// other tokens attached to the node
+		for (String t : tokens()) {
+			// For every token, we generate two tuples
+			// ("NodeKind", CurrentNodeId, ChildIdx, ChildId, "")
+			// ("Token", ChildId, 0, 0, "TokenAsString")
+			int tokenUID = StringUID.getInstance().uid(t);
+			{
+				// Add a tuple to the current node relation
+				lang.ast.StringConstant Kind = new lang.ast.StringConstant(relName);
+				lang.ast.IntConstant ChildId = new lang.ast.IntConstant("" + tokenUID);
+				lang.ast.IntConstant CurrentNodeId = new lang.ast.IntConstant("" + getNodeId());
+				lang.ast.IntConstant ChildIdx = new lang.ast.IntConstant("" + childIndex++);
+				lang.ast.StringConstant Token = new lang.ast.StringConstant("");
+				ret.add(new PseudoTuple(Kind, CurrentNodeId, ChildIdx, ChildId, Token));
 			}
-			this.defaultValue = new PseudoTuple(terms);
-		}
-		public int arity() { return defaultValue.arity(); }
 
-		public static ProgRelPart[] getProgramRelationStructure() {
-			Object[] triple = new Object[]{0, 0, 0};
-			Object[] pairString = new Object[]{0, ""};
-			ProgRelPart prs[] = {
-				new ProgRelPart("Program", triple),
-				new ProgRelPart("Lst", triple),
-				new ProgRelPart("Rule", triple),
-				new ProgRelPart("Fact", triple),
-				new ProgRelPart("Atom", triple),
-				new ProgRelPart("PredicateSymbol", pairString),
-				new ProgRelPart("IntConstant", new Object[]{0, 0}),
-				new ProgRelPart("StringConstant", pairString),
-				new ProgRelPart("PredicateRef", pairString),
-				new ProgRelPart("Variable", pairString),
-				new ProgRelPart("IMPORTLiteral", triple),
-				new ProgRelPart("EDBLiteral", triple),
-				new ProgRelPart("OUTPUTLiteral", triple),
-				new ProgRelPart("NEGLiteral", triple),
-				new ProgRelPart("BINDLiteral", triple),
-				new ProgRelPart("BinaryExclusiveTermLiteral", new Object[] {0, "", 0, 0}),
-				new ProgRelPart("Functor", triple),
-				new ProgRelPart("FunctorSymbol", pairString),
-				new ProgRelPart("SourceInfo", pairString)};
-			return prs;
-		}
-	}
-
-	syn Relation Program.asRelation() {
-		HashMap<String, Relation> nameToRelMap = datalogProjection().nameToRelMap;
-		Relation importedProgramRel = new Relation(0);
-		PseudoTuple defaultTpl = new PseudoTuple();
-		for (ProgRelPart part : ProgRelPart.getProgramRelationStructure()) {
-			Relation r = nameToRelMap.get(part.name);
-			if (r == null) {
-				r = new Relation(part.defaultValue.arity());
+			{
+				// Add a tuple to Token relation
+				lang.ast.StringConstant Kind = new lang.ast.StringConstant("Terminal");
+				lang.ast.IntConstant ChildId = new lang.ast.IntConstant("0");
+				lang.ast.IntConstant CurrentNodeId = new lang.ast.IntConstant("" + tokenUID);
+				lang.ast.IntConstant ChildIdx = new lang.ast.IntConstant("0");
+				lang.ast.StringConstant Token = new lang.ast.StringConstant(t);
+				ret.add(new PseudoTuple(Kind, CurrentNodeId, ChildIdx, ChildId, Token));
 			}
-			importedProgramRel = Relation.cat(importedProgramRel, defaultTpl, r, part.defaultValue);
-			defaultTpl = PseudoTuple.cat(defaultTpl, part.defaultValue);
 		}
-		return importedProgramRel;
+
+		{
+			// record the source location
+			// ("SourceInfo, CurrentNodeId, Line, Col, "")
+			lang.ast.StringConstant Kind = new lang.ast.StringConstant("SourceInfo");
+			lang.ast.IntConstant CurrentNodeId = new lang.ast.IntConstant("" + getNodeId());
+			lang.ast.IntConstant Line = new lang.ast.IntConstant("" + getLine(getStart()));
+			lang.ast.IntConstant Col = new lang.ast.IntConstant("" + getColumn(getStart()));
+			lang.ast.StringConstant Token = new lang.ast.StringConstant("");
+			ret.add(new PseudoTuple(Kind, CurrentNodeId, Line, Col, Token));
+		}
+
+		return ret;
 	}
+
+    eq Opt.toTuples() {
+		return Collections.emptyList();
+	}
+
+	syn java.util.List<String> ASTNode.tokens() = Collections.emptyList();
+	eq IntConstant.tokens() {
+		return Collections.singletonList(getNUMERAL());
+	}
+	eq StringConstant.tokens() {
+		return Collections.singletonList(getSTRING());
+	}
+	eq PredicateRef.tokens() {
+		return Collections.singletonList(getPRED_ID());
+	}
+	eq PredicateSymbol.tokens() {
+		return Collections.singletonList(getPRED_ID());
+	}
+	eq FunctorSymbol.tokens() {
+		return Collections.singletonList(getFUNC_ID());
+	}
+
+	ASTNode contributes toTuples() to Program.datalogProjection() ;
+
+	// public class ProgRelPart {
+	// 	public final String name;
+	// 	public final PseudoTuple defaultValue;
+	// 	ProgRelPart(String name, Object[] defaultValues) {
+	// 		this.name = name;
+	// 		lang.ast.Term terms[] = new lang.ast.Term[defaultValues.length];
+	// 		for (int i = 0; i < defaultValues.length; ++i) {
+	// 			if (defaultValues[i] instanceof String) {
+	// 				terms[i] = new lang.ast.StringConstant((String)defaultValues[i]);
+	// 			} else if (defaultValues[i] instanceof Term) {
+	// 				terms[i] = (lang.ast.Term)defaultValues[i];
+	// 			} else {
+	// 				terms[i] = new lang.ast.IntConstant("" + (Integer)defaultValues[i]);
+	// 			}
+	// 		}
+	// 		this.defaultValue = new PseudoTuple(terms);
+	// 	}
+	// 	public int arity() { return defaultValue.arity(); }
+
+	// 	public static ProgRelPart[] getProgramRelationStructure() {
+	// 		Object[] triple = new Object[]{0, 0, 0};
+	// 		Object[] pairString = new Object[]{0, ""};
+	// 		ProgRelPart prs[] = {
+	// 			new ProgRelPart("Program", triple),
+	// 			new ProgRelPart("Lst", triple),
+	// 			new ProgRelPart("Rule", triple),
+	// 			new ProgRelPart("Fact", triple),
+	// 			new ProgRelPart("Atom", triple),
+	// 			new ProgRelPart("PredicateSymbol", pairString),
+	// 			new ProgRelPart("IntConstant", new Object[]{0, 0}),
+	// 			new ProgRelPart("StringConstant", pairString),
+	// 			new ProgRelPart("PredicateRef", pairString),
+	// 			new ProgRelPart("Variable", pairString),
+	// 			new ProgRelPart("IMPORTLiteral", triple),
+	// 			new ProgRelPart("EDBLiteral", triple),
+	// 			new ProgRelPart("OUTPUTLiteral", triple),
+	// 			new ProgRelPart("NEGLiteral", triple),
+	// 			new ProgRelPart("BINDLiteral", triple),
+	// 			new ProgRelPart("BinaryExclusiveTermLiteral", new Object[] {0, "", 0, 0}),
+	// 			new ProgRelPart("Functor", triple),
+	// 			new ProgRelPart("FunctorSymbol", pairString),
+	// 			new ProgRelPart("SourceInfo", pairString)};
+	// 		return prs;
+	// 	}
+	// }
+
+	syn Relation Program.asRelation() = datalogProjection();
 }

@@ -30,4 +30,6 @@ public interface ObjLangASTNode {
 	   The name of the representative relation for this node type
 	 */
 	String getRelation();
+
+
 }

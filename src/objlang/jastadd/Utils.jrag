@@ -5,8 +5,8 @@ import beaver.Parser;
 
 aspect Utils {
 	static public Program Program.fromFileLoc(String loc) throws IOException, beaver.Parser.Exception {
-		LangScanner scanner = new LangScanner(new FileReader(new File(loc)));
-		LangParser parser = new LangParser();
+		ObjLangScanner scanner = new ObjLangScanner(new FileReader(new File(loc)));
+		ObjLangParser parser = new ObjLangParser();
 		return (Program) parser.parse(scanner);
 	}
 }

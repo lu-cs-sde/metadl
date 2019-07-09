@@ -2,8 +2,10 @@ import lang.relation.Relation;
 import lang.relation.PseudoTuple;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Collections;
 import java.lang.reflect.ParameterizedType;
 import lang.io.StringUID;
+
 
 aspect DatalogProject {
 	/**
@@ -29,56 +31,7 @@ aspect DatalogProject {
 		return UID;
 	}
 
-	public class TupleWrapper {
-		public class RelationTuple {
-			String relation;
-			PseudoTuple tuple;
-			public RelationTuple(String relation, PseudoTuple tuple) {
-				this.relation = relation;
-				this.tuple = tuple;
-			}
-		}
-
-		public ArrayList<RelationTuple> tuples = new ArrayList<>();
-		public String defaultRel;
-
-		TupleWrapper() {}
-
-		TupleWrapper(String defaultRel) {
-			this.defaultRel = defaultRel;
-		}
-
-		public void addTuple(PseudoTuple tpl) {
-			assert defaultRel != null;
-			tuples.add(new RelationTuple(defaultRel, tpl));
-		}
-
-		public void addTuple(String relation, PseudoTuple tpl) {
-			tuples.add(new RelationTuple(relation, tpl));
-		}
-
-		public Iterable<RelationTuple> getTuples() {
-			return tuples;
-		}
-	}
-
-	public class RelationMap {
-		public HashMap<String, Relation> nameToRelMap = new HashMap<>();
-		public void add(TupleWrapper tplw) {
-			for (TupleWrapper.RelationTuple tpl : tplw.getTuples()) {
-				Relation r;
-				r = nameToRelMap.get(tpl.relation);
-				if (r == null) {
-					// Create a relation if it does not exist
-					r = new Relation(tpl.tuple.arity());
-					nameToRelMap.put(tpl.relation, r);
-				}
-				r.addTuple(tpl.tuple);
-			}
-		}
-	}
-
-	coll Relation Program.datalogProjection() [new Relation(5)] with addTuples;
+	coll Relation Program.datalogProjection() [new Relation(5)] with addTuples root Program;
 
 	syn java.util.List<PseudoTuple> ASTNode.toTuples() {
 		String relName = getRelation();
@@ -166,54 +119,11 @@ aspect DatalogProject {
 	eq FunctorSymbol.tokens() {
 		return Collections.singletonList(getFUNC_ID());
 	}
+	eq Variable.tokens() {
+		return Collections.singletonList(getVAR_ID());
+	}
 
 	ASTNode contributes toTuples() to Program.datalogProjection() ;
-
-	// public class ProgRelPart {
-	// 	public final String name;
-	// 	public final PseudoTuple defaultValue;
-	// 	ProgRelPart(String name, Object[] defaultValues) {
-	// 		this.name = name;
-	// 		lang.ast.Term terms[] = new lang.ast.Term[defaultValues.length];
-	// 		for (int i = 0; i < defaultValues.length; ++i) {
-	// 			if (defaultValues[i] instanceof String) {
-	// 				terms[i] = new lang.ast.StringConstant((String)defaultValues[i]);
-	// 			} else if (defaultValues[i] instanceof Term) {
-	// 				terms[i] = (lang.ast.Term)defaultValues[i];
-	// 			} else {
-	// 				terms[i] = new lang.ast.IntConstant("" + (Integer)defaultValues[i]);
-	// 			}
-	// 		}
-	// 		this.defaultValue = new PseudoTuple(terms);
-	// 	}
-	// 	public int arity() { return defaultValue.arity(); }
-
-	// 	public static ProgRelPart[] getProgramRelationStructure() {
-	// 		Object[] triple = new Object[]{0, 0, 0};
-	// 		Object[] pairString = new Object[]{0, ""};
-	// 		ProgRelPart prs[] = {
-	// 			new ProgRelPart("Program", triple),
-	// 			new ProgRelPart("Lst", triple),
-	// 			new ProgRelPart("Rule", triple),
-	// 			new ProgRelPart("Fact", triple),
-	// 			new ProgRelPart("Atom", triple),
-	// 			new ProgRelPart("PredicateSymbol", pairString),
-	// 			new ProgRelPart("IntConstant", new Object[]{0, 0}),
-	// 			new ProgRelPart("StringConstant", pairString),
-	// 			new ProgRelPart("PredicateRef", pairString),
-	// 			new ProgRelPart("Variable", pairString),
-	// 			new ProgRelPart("IMPORTLiteral", triple),
-	// 			new ProgRelPart("EDBLiteral", triple),
-	// 			new ProgRelPart("OUTPUTLiteral", triple),
-	// 			new ProgRelPart("NEGLiteral", triple),
-	// 			new ProgRelPart("BINDLiteral", triple),
-	// 			new ProgRelPart("BinaryExclusiveTermLiteral", new Object[] {0, "", 0, 0}),
-	// 			new ProgRelPart("Functor", triple),
-	// 			new ProgRelPart("FunctorSymbol", pairString),
-	// 			new ProgRelPart("SourceInfo", pairString)};
-	// 		return prs;
-	// 	}
-	// }
 
 	syn Relation Program.asRelation() = datalogProjection();
 }

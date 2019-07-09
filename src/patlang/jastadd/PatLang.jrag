@@ -100,6 +100,9 @@ aspect Pattern {
 	eq FunctorSymbol.tokens() {
 		return Collections.singletonList(getFUNC_ID());
 	}
+	eq Variable.tokens() {
+		return Collections.singletonList(getVAR_ID());
+	}
 
 	/**
 	   The asLiterals() equations are isomorphic to toTuples()
@@ -362,8 +365,9 @@ aspect AnalyzeBlock {
 			ret.add(makeIdentifierRule(ctx, "Variable", "ID", 0, null));
 			ret.add(makeIdentifierRule(ctx, "PredicateSymbol", "ID", 0, null));
 			ret.add(makeIdentifierRule(ctx, "FunctorSymbol", "ID", 0, null));
-			ret.add(makeIdentifierRule(ctx, "IntegerConstant", "INT", 0, "to_number"));
+			ret.add(makeIdentifierRule(ctx, "IntConstant", "INT", 0, "to_number"));
 			ret.add(makeIdentifierRule(ctx, "StringConstant", "STR", 0, null));
+			ret.add(makeIdentifierRule(ctx, "PredicateRef", "REF", 0, null));
 
 			// Insert an implicit type declaration for the program relation
 			ret.add(implicitTypeDecl(ctx));
@@ -374,10 +378,11 @@ aspect AnalyzeBlock {
 		public static String translatePredicateName(AnalyzeContext ctx, String predName) {
 			String s = null;
 			switch (predName) {
-			case "INT": s = "IntConstant"; break;
-			case "STR": s = "StringConstant"; break;
-			case "REF": s = "PredicateRef"; break;
-			case "ID": s = "ID"; break;
+			case "INT":
+			case "STR":
+			case "ID":
+			case "REF":
+				s = predName; break;
 			case "EXPR": s = "EXPR"; break;
 			case "SRC": s = "SourceInfo"; break;
 			default: return null;

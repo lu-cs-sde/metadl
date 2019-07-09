@@ -1,13 +1,13 @@
 package objlang.ast; // The generated scanner will belong to the package lang.ast
 
-import objlang.ast.LangParser.Terminals; // The terminals are implicitly defined in the parser
-import objlang.ast.LangParser.SyntaxError;
+import objlang.ast.ObjLangParser.Terminals; // The terminals are implicitly defined in the parser
+import objlang.ast.ObjLangParser.SyntaxError;
 %%
 
 // define the signature for the generated scanner
 %public
 %final
-%class LangScanner
+%class ObjLangScanner
 %extends beaver.Scanner
 
 // the interface between the scanner and the parser is the nextToken() method
@@ -30,10 +30,10 @@ LineTerminator = \r|\n|\r\n
 InputCharacter = [^\r\n]
 WhiteSpace     = {LineTerminator} | [ \t\f]
 Comment        = "#" {InputCharacter}* {LineTerminator}?
-VAR_ID = [a-z][a-zA-Z0-9_]*
-METAVAR_ID = "$"{VAR_ID}
+VAR_ID = "$"?[a-z][a-zA-Z0-9_]*
 PRED_ID = [A-Z][a-zA-Z0-9_]*
 PRED_REF = '{PRED_ID}
+Pattern = "<:" ~":>"
 Numeral = [0-9]+
 String  = \"[^\"]*\"
 %%
@@ -45,13 +45,9 @@ String  = \"[^\"]*\"
 // token definitions
 "("        {  return  sym(Terminals.LPARA);          }
 ")"        {  return  sym(Terminals.RPARA);          }
-"["        {  return  sym(Terminals.LBRACK);         }
-"]"        {  return  sym(Terminals.RBRACK);         }
 "{"        {  return  sym(Terminals.LBRACE);         }
 "}"        {  return  sym(Terminals.RBRACE);         }
 ":-"       {  return  sym(Terminals.IMPLIED_BY);     }
-"..."      {  return  sym(Terminals.ELLIPSIS);       }
-":"        {  return  sym(Terminals.COLON);          }
 "."        {  return  sym(Terminals.DOT);            }
 ","        {  return  sym(Terminals.COMMA);          }
 "+"        {  return  sym(Terminals.ADD);            }
@@ -70,20 +66,23 @@ String  = \"[^\"]*\"
 "BIND"     {  return  sym(Terminals.BIND);           }
 "IMPORT"   {  return  sym(Terminals.IMPORT);         }
 "analyze"  {  return  sym(Terminals.ANALYZE);        }
+"_"        {  return  sym(Terminals.WILDCARD);       }
 {Numeral}  {  return  sym(Terminals.NUMERAL);        }
-{METAVAR_ID} {
-               // Remove the initial $
-               String text = yytext();
-               String data = text.substring(1, text.length());
-               return new beaver.Symbol(Terminals.METAVAR_ID, yyline + 1, yycolumn + 1, yylength() - 1, data);
-             }
 {VAR_ID}   {  return  sym(Terminals.VAR_ID);         }
 {PRED_ID}  {  return  sym(Terminals.PRED_ID);        }
 {PRED_REF} {
                 String text = yytext();
                 String data = text.substring(1, text.length());
                 return new beaver.Symbol(Terminals.PRED_REF, yyline + 1, yycolumn + 1, yylength() - 1, data);
-		   }
+           }
+
+{Pattern}  {
+                // Remove Quotes from Matched String.
+                String text = yytext();
+                String data = text.substring(2, text.length() - 2);
+                return new beaver.Symbol(Terminals.PATTERN, yyline + 1, yycolumn + 1, yylength() - 3, data);
+           }
+
 {String}   {
                 // Remove Quotes from Matched String.
                 String text = yytext();

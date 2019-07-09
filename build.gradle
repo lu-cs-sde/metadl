@@ -181,14 +181,16 @@ void makeGenerateBeaverTask(String name, String outFile, String srcFile, boolean
 
 makeGenerateBeaverTask('generateBeaver', 'src/gen/LangParser.beaver', 'src/parser/metadl.parser')
 makeGenerateBeaverTask('generateBeaverPatlang', 'src/gen/PatLangParser.beaver', 'src/parser/metadl.parser', true)
+makeGenerateBeaverTask('generateBeaverObjlang', 'src/gen/ObjLangParser.beaver', 'src/objlang/parser/metadl.parser')
 
 makeGenerateParserTask('generateParser', 'src/gen/lang/ast', 'src/gen/LangParser.beaver')
-makeGenerateParserTask('generateParserObjlang', 'src/gen', 'src/objlang/parser/parser.beaver')
+makeGenerateParserTask('generateParserObjlang', 'src/gen/objlang/ast', 'src/gen/ObjLangParser.beaver')
 makeGenerateParserTask('generateParserConfig', 'src/gen', 'src/config/parser/parser.beaver')
 makeGenerateParserTask('generateParserPatlang', 'src/gen/patlang/ast', 'src/gen/PatLangParser.beaver')
 
 generateParser.dependsOn 'generateBeaver'
 generateParserPatlang.dependsOn 'generateBeaverPatlang'
+generateParserObjlang.dependsOn 'generateBeaverObjlang'
 
 // The following makes the clean task also remove generated code:
 clean.dependsOn 'cleanGeneratedJava'

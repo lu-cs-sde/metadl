@@ -261,6 +261,7 @@ aspect TypeCheck {
 		case "sub":
 		case "div":
 			expectedType = IntegerType.get(); break;
+		case "to_number":
 		case "cat":
 			expectedType = StringType.get(); break;
 		default:
@@ -444,6 +445,7 @@ aspect TypeInference {
 		case "div":
 			return IntegerType.get();
 		case "cat":
+		case "to_number":
 			return StringType.get();
 		default:
 			return UnknownType.get();
@@ -470,6 +472,7 @@ aspect TypeInference {
 	// has the same type
 	inh Expr Expr.sibling();
 	eq Literal.getChild().sibling() = null;
+	eq Expr.getChild().sibling() = null;
 	eq BinaryExclusiveTermLiteral.getLeft().sibling() = getRight();
 	eq BinaryExclusiveTermLiteral.getRight().sibling() = getLeft();
 	eq BINDLiteral.getVariable().sibling() = getRight();
@@ -515,6 +518,7 @@ aspect TypeInference {
 		case "mul":
 		case "sub":
 		case "div":
+		case "to_number":
 			t = t.join(IntegerType.get()); break;
 		case "cat":
 			t = t.join(StringType.get()); break;

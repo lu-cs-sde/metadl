@@ -1,0 +1,7 @@
+
+R("11").
+
+P(1) :- R(x), EQ(to_number("13"), 13).
+P(2) :- R(x), EQ(11,  to_number(x)).
+
+OUTPUT('P).

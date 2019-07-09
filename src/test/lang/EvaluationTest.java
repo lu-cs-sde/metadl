@@ -73,7 +73,8 @@ public class EvaluationTest {
 	@DisplayName("Compare Internal Evaluation to Souffle")
 	@ParameterizedTest(name = "Evaluation Tests Valid")
 	@ValueSource(strings = { "evalTest_1.in", "evalTest_2.in", "evalTest_3.in", "evalTest_4.in", "evalTest_5.in",
-							 "evalTest_6.in", "evalTest_7.in", "evalTest_8.in", "evalTest_9.in", "evalTest_13.in"})
+							 "evalTest_6.in", "evalTest_7.in", "evalTest_8.in", "evalTest_9.in", "evalTest_13.in",
+							 "evalTest_14.in"})
 	void evaluationTestsBottomUpNaiveCompareSouffle(String fileName) throws Exception {
 		String inputFile = "./tests/evaluation/" + fileName;
 

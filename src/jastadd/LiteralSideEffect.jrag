@@ -123,7 +123,26 @@ aspect LiteralSelection {
     syn Term Term.eval(Instantiation inst)     = this;
     syn Term Variable.eval(Instantiation inst) = inst.get(this);
 
-    syn Term Functor.eval(Instantiation inst) {
+	syn Term Functor.evalUnary(Instantiation inst)  {
+		Term t1 = getArg(0).eval(inst);
+		switch (getFunc().getFUNC_ID()) {
+		default:
+			SimpleLogger.logger().log("Unsupported functor " + getFunc().getFUNC_ID(), SimpleLogger.LogLevel.Level.ERROR);
+			System.exit(1);
+		case "to_number":
+			StringConstant s1 = (StringConstant)t1;
+			try {
+				Integer.parseInt(s1.getSTRING());
+			} catch (NumberFormatException e) {
+				SimpleLogger.logger().log("Bad format for string to be converted to integer: " +
+										  s1.getSTRING(), SimpleLogger.LogLevel.Level.ERROR);
+				System.exit(1);
+			}
+			return new IntConstant(s1.getSTRING());
+		}
+	}
+
+    syn Term Functor.evalBinary(Instantiation inst) {
 		if (getNumArg() != 2) {
 			SimpleLogger.logger().log("Expecting binary functor " + getFunc().getFUNC_ID(), SimpleLogger.LogLevel.Level.ERROR);
 			System.exit(1);
@@ -146,6 +165,19 @@ aspect LiteralSelection {
 			return new IntConstant("" + (((IntConstant) t1).intValue() / ((IntConstant) t2).intValue()));
 		case "cat":
 			return new StringConstant(((StringConstant)t1).getSTRING() + ((StringConstant)t2).getSTRING());
+		}
+	}
+
+	syn Term Functor.eval(Instantiation inst) {
+		if (getNumArg() == 1) {
+			return evalUnary(inst);
+		} else if (getNumArg() == 2) {
+			return evalBinary(inst);
+		} else {
+			SimpleLogger.logger().log("Unexpected number of arguments for functor" + getFunc().getFUNC_ID(),
+									  SimpleLogger.LogLevel.Level.ERROR);
+			System.exit(1);
+			return null;
 		}
 	}
 

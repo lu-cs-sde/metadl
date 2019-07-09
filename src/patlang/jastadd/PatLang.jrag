@@ -310,32 +310,62 @@ aspect AnalyzeBlock {
 		   For every analyze block, insert relations that provide the
 		   context for evaluating the expanded patterns.
 		*/
-		public static lang.ast.Rule makeIdentifierRule(AnalyzeContext ctx, String name) {
+		public static lang.ast.Rule makeIdentifierRule(AnalyzeContext ctx,
+													   String nodeKind,
+													   String name,
+													   int idx,
+													   String convertFunctor) {
 			lang.ast.List<lang.ast.CommonLiteral> headList = new lang.ast.List<>();
 			lang.ast.List<lang.ast.CommonLiteral> bodyList = new  lang.ast.List<>();
 
 			lang.ast.List<lang.ast.Term> headVars = new lang.ast.List<>();
 			headVars.add(new lang.ast.Variable("n_id"));
-			headVars.add(new lang.ast.Variable("name"));
-			lang.ast.CommonLiteral head = new lang.ast.Atom(new lang.ast.PredicateSymbol(ctx.scopePrefix + "ID"),
+			headVars.add(new lang.ast.Variable("v"));
+			lang.ast.CommonLiteral head = new lang.ast.Atom(new lang.ast.PredicateSymbol(ctx.scopePrefix + name),
 									headVars);
-			lang.ast.CommonLiteral body = new lang.ast.Atom(new lang.ast.PredicateSymbol(ctx.scopePrefix + name),
-									headVars.treeCopyNoTransform());
+
+			// ID(n_id, v) :- P(nodeKind, n_id, idx, t_id, _), P("Terminal", t_id, _, _, v).
+			lang.ast.List<lang.ast.Term> body0Vars = new lang.ast.List<lang.ast.Term>()
+				.add(new lang.ast.StringConstant(nodeKind))
+				.add(new lang.ast.Variable("n_id"))
+				.add(new lang.ast.IntConstant("" + idx))
+				.add(new lang.ast.Variable("t_id"))
+				.add(new lang.ast.Wildcard());
+
+			lang.ast.List<lang.ast.Term> body1Vars = new lang.ast.List<lang.ast.Term>()
+				.add(new lang.ast.StringConstant("Terminal"))
+				.add(new lang.ast.Variable("t_id"))
+				.add(new lang.ast.Wildcard())
+				.add(new lang.ast.Wildcard())
+				.add(new lang.ast.Variable(convertFunctor != null ? "w" : "v"));
 
 			headList.add(head);
-			bodyList.add(body);
+			bodyList.add(new lang.ast.Atom(new lang.ast.PredicateSymbol(ctx.progRelName), body0Vars))
+				.add(new lang.ast.Atom(new lang.ast.PredicateSymbol(ctx.progRelName), body1Vars));
+
+			if (convertFunctor != null) {
+				// name(n_id, v) :- P(nodeKind, n_id, idx, t_id, _), P("Terminal", t_id, _, _, w), BIND(v, convertFunctor(w))
+				bodyList.add(new lang.ast.BINDLiteral(new lang.ast.PredicateSymbol("BIND"),
+													  new lang.ast.Variable("v"),
+													  new lang.ast.Functor(new lang.ast.FunctorSymbol(convertFunctor),
+																		   new lang.ast.List<lang.ast.Expr>()
+																		   .add(new lang.ast.Variable("w")))));
+			}
 
 			return new lang.ast.Rule(headList, bodyList);
 		}
-
 
 		public static lang.ast.List<lang.ast.Clause> generateHelperRelations(AnalyzeContext ctx) {
 			lang.ast.List<lang.ast.Clause> ret = new lang.ast.List<>();
 
 			// Add two new rules, to map variables and predicates to their predicates
-			// ret.add(makeIdentifierRule(ctx, "Variable"));
-			// ret.add(makeIdentifierRule(ctx, "PredicateSymbol"));
-			// ret.add(makeIdentifierRule(ctx, "FunctorSymbol"));
+			ret.add(makeIdentifierRule(ctx, "Variable", "ID", 0, null));
+			ret.add(makeIdentifierRule(ctx, "PredicateSymbol", "ID", 0, null));
+			ret.add(makeIdentifierRule(ctx, "FunctorSymbol", "ID", 0, null));
+			ret.add(makeIdentifierRule(ctx, "IntegerConstant", "INT", 0, "to_number"));
+			ret.add(makeIdentifierRule(ctx, "StringConstant", "STR", 0, null));
+
+			// Insert an implicit type declaration for the program relation
 			ret.add(implicitTypeDecl(ctx));
 
 			return ret;

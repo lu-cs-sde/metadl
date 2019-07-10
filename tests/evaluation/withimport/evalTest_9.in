@@ -1,8 +1,13 @@
 IMPORT("tests/evaluation/withimport/evalTest_9_input.in", 'Program).
 
 analyze('Program) {
-	Var(e, v) :- EXPR(e, i, vid), ID(vid, v).
-	Var(e, v) :- EXPR(e, i, e1), Var(e1, v).
+	Expr($p, 0, $q, "+"), Expr($p, 1, $r, "+") :- $p <:$q + $r:>.
+	Expr($p, 0, $q, "*"), Expr($p, 1, $r, "*") :- $p <:$q * $r:>.
+	Expr($p, 0, $q, "-"), Expr($p, 1, $r, "-") :- $p <:$q - $r:>.
+	Expr($p, 0, $q, "/"), Expr($p, 1, $r, "/") :- $p <:$q / $r:>.
+
+	Var(e, v) :- Expr(e, _, vid, _), ID(vid, v).
+	Var(e, v) :- Expr(e, _, e1, _), Var(e1, v).
 }
 
 AllVarInExpr(v) :- Var(e, v).

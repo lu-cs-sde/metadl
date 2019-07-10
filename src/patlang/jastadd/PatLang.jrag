@@ -118,9 +118,9 @@ aspect Pattern {
 	   factored out to ensure that the relational
 	   representation of a program matches the code generated for a pattern.
 	 */
-	syn ArrayList<lang.ast.Literal> ASTNode.asLiterals(AnalyzeContext ctx);
+	syn ArrayList<lang.ast.Literal> ASTNode.asLiterals(AnalyzeContext ctx, lang.ast.CommonVariable root);
 
-	eq ASTNode.asLiterals(AnalyzeContext ctx) {
+	eq ASTNode.asLiterals(AnalyzeContext ctx, lang.ast.CommonVariable root) {
 		ArrayList<lang.ast.Literal> literals = new ArrayList<>();
 		if (isGap() || isMetaVar() || isIndexMetaVar())
 			return literals;
@@ -145,7 +145,7 @@ aspect Pattern {
 			} else {
 				ChildId = new lang.ast.Variable(child.varName());
 			}
-			lang.ast.Variable CurrentNodeId = new lang.ast.Variable(varName());
+			lang.ast.CommonVariable CurrentNodeId = root != null ? root : new lang.ast.Variable(varName());
 			lang.ast.IntConstant ChildIdx = new lang.ast.IntConstant("" + childIndex++);
 			lang.ast.StringConstant Token = new lang.ast.StringConstant("");
 
@@ -165,7 +165,7 @@ aspect Pattern {
 				// Add a tuple to the current node relation
 				lang.ast.StringConstant Kind = new lang.ast.StringConstant(relName);
 				lang.ast.Variable ChildId = new lang.ast.Variable("t_" + tokenUID);
-				lang.ast.Variable CurrentNodeId = new lang.ast.Variable(varName());
+				lang.ast.CommonVariable CurrentNodeId = root != null ? root : new lang.ast.Variable(varName());
 				lang.ast.IntConstant ChildIdx = new lang.ast.IntConstant("" + childIndex++);
 				lang.ast.Wildcard Token = new lang.ast.Wildcard();
 
@@ -261,10 +261,10 @@ aspect Pattern {
 		return clauses;
 	}
 
-	eq List.asLiterals(AnalyzeContext ctx) {
+	eq List.asLiterals(AnalyzeContext ctx, lang.ast.CommonVariable root) {
 		ArrayList<Constraint> cons = constraints();
 		if (cons.isEmpty())
-			return super.asLiterals(ctx);
+			return super.asLiterals(ctx, null);
 
 		ArrayList<lang.ast.Literal> lits = new ArrayList<>();
 		for (Constraint c : cons)
@@ -273,15 +273,15 @@ aspect Pattern {
 	}
 
 	// eq MetaVariable.asLiterals(String scopePrefix) = new ArrayList<>();
-	eq Opt.asLiterals(AnalyzeContext ctx) = new ArrayList<>();
+	eq Opt.asLiterals(AnalyzeContext ctx, lang.ast.CommonVariable root) = new ArrayList<>();
 	// eq MetaVariable.varName() = "$" + getMETAVAR_ID();
 
-	syn ArrayList<lang.ast.Literal> ASTNode.literals(AnalyzeContext ctx) {
+	syn ArrayList<lang.ast.Literal> ASTNode.literals(AnalyzeContext ctx, lang.ast.CommonVariable root) {
 		// An add-hoc way of implementing parameterized collection attributes
 		ArrayList<lang.ast.Literal> list = new ArrayList<>();
-		list.addAll(asLiterals(ctx));
+		list.addAll(asLiterals(ctx, root));
 		for (ASTNode c : astChildren())
-			list.addAll(c.literals(ctx));
+			list.addAll(c.literals(ctx, null));
 		return list;
 	}
 

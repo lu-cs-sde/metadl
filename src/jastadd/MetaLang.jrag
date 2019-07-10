@@ -51,10 +51,15 @@ aspect MetaLang {
 		}
 	}
 
-
 	syn nta List<Literal> Pattern.getLiterals() {
 		List<Literal> literals = new List<>();
-		literals.addAll(patternAST().literals(enclosingAnalyzeBlock().getContext()));
+		literals.addAll(patternAST().literals(enclosingAnalyzeBlock().getContext(), null));
+		return literals;
+	}
+
+	syn nta List<Literal> BoundedPattern.getLiterals() {
+		List<Literal> literals = new List<>();
+		literals.addAll(patternAST().literals(enclosingAnalyzeBlock().getContext(), getCommonVariable()));
 		return literals;
 	}
 
@@ -102,6 +107,13 @@ aspect MetaLang {
 
 	eq Pattern.variables() {
 		return patternAST().metavariables();
+	}
+
+	eq BoundedPattern.variables() {
+		TreeSet<lang.ast.Variable> vars = new TreeSet<>(lang.ast.Term.termComparator);
+		vars.addAll(patternAST().metavariables());
+		vars.add((Variable)getCommonVariable());
+		return vars;
 	}
 
 	eq Pattern.isInclusive() = true;

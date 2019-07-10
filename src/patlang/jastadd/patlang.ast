@@ -10,7 +10,7 @@ abstract CommonClause;
 abstract Clause : CommonClause ::= Heads:CommonLiteral*;
 Rule:Clause ::= Body:CommonLiteral*;
 Fact:Clause;
-AnalyzeBlock:CommonClause ::= ProgramRef:PredicateRef Clause*;
+AnalyzeBlock:CommonClause ::= ProgramRef:PredicateRef Clause* /ExpandedClause:Clause*/;
 
 /**
    Literals
@@ -65,3 +65,4 @@ FunctorSymbol ::= <FUNC_ID>;
 **/
 abstract MetaPattern : CommonLiteral;
 Pattern : MetaPattern ::= <PATTERN>;
+BoundedPattern : Pattern ::= CommonVariable;

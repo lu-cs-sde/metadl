@@ -18,7 +18,7 @@ OUTPUT('Arity).
 ** Datalog
 
 [[https://en.wikipedia.org/wiki/Datalog][Datalog]] is a declarative query language,
-with roots in logic programming. Relations between tables are expressed as Horn-Clauses.
+with roots in logic programming. Relations between tables are expressed as Horn clauses.
 
 ** Language description
 

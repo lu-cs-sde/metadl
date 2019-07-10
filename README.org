@@ -41,6 +41,8 @@ The only blocks that are allowed to contain patterns, metavariables and gaps. Al
 
 *** Patterns ~<:$p(x, 1) :- ..., $q(..., $i:$v, ...) , ... .:>~
 Patterns are a mechanism to match rules and bind metavariables to terms, expressions and predicate symbols.
+**** Bounded patterns
+The root node of a pattern can be accessed by using a bounded pattern ~$p <:$x + $y:>~.
 
 *** Gaps: ~...~
 Gaps are mechanism to express missing elements inside a list.
@@ -56,11 +58,35 @@ Variables used inside analyze blocks to connect patterns with other literals in 
 Special metapredicates are permitted only inside ~analyze~ blocks.
 - ~STR(c, "value")~, ~INT($c, value)~
 - ~ID(v, "name")~
-- ~EXPR(expr, index, child_expr)~
-
+- ~SRC(n, l, c)~
 
 ** Examples
-*** Finite automaton example:
+*** Constant folding for Datalog
+#+BEGIN_SRC
+#Import a program that contains BIND(t, x*y + ((1 + 2*3) - 1) / 2)
+
+IMPORT("bpatterns.in", 'P).
+
+analyze('P) {
+	    Expr($p, 0, $q, "+"), Expr($p, 1, $r, "+") :- $p <:$q + $r:>.
+	    Expr($p, 0, $q, "*"), Expr($p, 1, $r, "*") :- $p <:$q * $r:>.
+	    Expr($p, 0, $q, "-"), Expr($p, 1, $r, "-") :- $p <:$q - $r:>.
+	    Expr($p, 0, $q, "/"), Expr($p, 1, $r, "/") :- $p <:$q / $r:>.
+
+	    Eval(e, v) :- INT(e, v).
+	    Eval(e, v) :- Expr(e, 0, l, "+"), Expr(e, 1, r, "+"), Eval(l, lv), Eval(r, rv), BIND(v, lv + rv).
+	    Eval(e, v) :- Expr(e, 0, l, "*"), Expr(e, 1, r, "*"), Eval(l, lv), Eval(r, rv), BIND(v, lv * rv).
+	    Eval(e, v) :- Expr(e, 0, l, "-"), Expr(e, 1, r, "-"), Eval(l, lv), Eval(r, rv), BIND(v, lv - rv).
+	    Eval(e, v) :- Expr(e, 0, l, "/"), Expr(e, 1, r, "/"), Eval(l, lv), Eval(r, rv), BIND(v, lv / rv).
+
+	    OurExprEval(v) :- <: ... :- ..., BIND(t, x*y + $e), ... .:>, Eval($e, v).
+}
+
+# OurExprEval = {3}.
+OUTPUT('OurExprEval).
+#+END_SRC
+
+*** Finite state automaton
 
 #+BEGIN_SRC
     # Input Sequence

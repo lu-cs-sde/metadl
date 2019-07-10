@@ -10,6 +10,7 @@ aspect MetaLang {
 	inh AnalyzeBlock PredicateSymbol.enclosingAnalyzeBlock();
 	inh AnalyzeBlock CommonLiteral.enclosingAnalyzeBlock();
 	inh AnalyzeBlock Pattern.enclosingAnalyzeBlock();
+	inh AnalyzeBlock PredicateRef.enclosingAnalyzeBlock();
 
 	eq Program.getCommonClause().enclosingAnalyzeBlock() = null;
 	eq AnalyzeBlock.getClause().enclosingAnalyzeBlock() = this;
@@ -40,6 +41,16 @@ aspect MetaLang {
 																				  getPRED_ID()));
 		}
 	}
+
+	rewrite PredicateRef {
+		when (enclosingAnalyzeBlock() != null &&
+			  patlang.ast.PatLang.translatePredicateName(enclosingAnalyzeBlock().getContext(), getPRED_ID()) != null)
+			to PredicateRef {
+			return new PredicateRef(patlang.ast.PatLang.translatePredicateName(enclosingAnalyzeBlock().getContext(),
+																			   getPRED_ID()));
+		}
+	}
+
 
 	syn nta List<Literal> Pattern.getLiterals() {
 		List<Literal> literals = new List<>();

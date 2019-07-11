@@ -49,7 +49,7 @@ Literal literal = edb_literal
                 ;
 
 Pattern pattern = PATTERN.pat {: return new Pattern(pat); :};
-BoundedPattern bounded_pattern = variable PATTERN {: return new BoundedPattern(PATTERN, variable); :};
+BoundedPattern bounded_pattern = variable.var PATTERN {: return new BoundedPattern(PATTERN, var); :};
 
 NEGLiteral neg_literal = NOT LPARA literal.lit RPARA {: return new NEGLiteral(new PredicateSymbol("NOT"), lit); :};
 

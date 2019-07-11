@@ -109,8 +109,7 @@ jar {
 
 // Before compiling, we should generate some Java code:
 compileJava.dependsOn 'generateJava', 'generateScanner', 'generateParser',
-    'generateJavaObjlang', 'generateScannerObjlang', 'generateParserObjlang',
-    'generateJavaPatlang', 'generateScannerPatlang', 'generateParserPatlang',
+    'genMetadlLang',
     'generateConfig', 'generateScannerConfig', 'generateParserConfig'
 
 
@@ -126,8 +125,6 @@ void makeGenerateJavaTask(String name, String outDir, String srcDir, String pkg,
 }
 
 makeGenerateJavaTask('generateJava', 'src/gen', 'src/jastadd', 'lang.ast')
-makeGenerateJavaTask('generateJavaObjlang', 'src/gen', 'src/objlang/jastadd', 'objlang.ast')
-makeGenerateJavaTask('generateJavaPatlang', 'src/gen', 'src/patlang/jastadd', 'patlang.ast', true)
 makeGenerateJavaTask('generateConfig', 'src/gen', 'src/config/', 'lang.ast.config')
 
 void makeGenerateScannerTask(String name, String outDir, String srcFile) {
@@ -142,9 +139,8 @@ void makeGenerateScannerTask(String name, String outDir, String srcFile) {
 }
 
 makeGenerateScannerTask('generateScanner', 'src/gen/lang/ast', 'src/scanner/scanner.flex')
-makeGenerateScannerTask('generateScannerObjlang', 'src/gen/objlang/ast/', 'src/objlang/scanner/scanner.flex')
 makeGenerateScannerTask('generateScannerConfig', 'src/gen/lang/ast/config', 'src/config/scanner/scanner.flex')
-makeGenerateScannerTask('generateScannerPatlang', 'src/gen/patlang/ast/', 'src/patlang/scanner/scanner.flex')
+
 
 
 void makeGenerateParserTask(String name, String outDir, String srcFile) {
@@ -159,6 +155,8 @@ void makeGenerateParserTask(String name, String outDir, String srcFile) {
 	    file(srcFile).path
     }
 }
+
+makeGenerateParserTask('generateParserConfig', 'src/gen', 'src/config/parser/parser.beaver')
 
 
 void makeGenerateBeaverTask(String name, String outFile, String srcFile, boolean patternGrammar = false) {
@@ -179,18 +177,65 @@ void makeGenerateBeaverTask(String name, String outFile, String srcFile, boolean
     }
 }
 
+void makeGenerateLangTask(String taskName, String outDir, String srcLang) {
+    tasks.create('MkDirs' + taskName) {
+	doFirst {
+	    file(outDir + '/' + srcLang + '/obj/ast').mkdirs()
+	    file(outDir + '/' + srcLang + '/pat/ast').mkdirs()
+	}
+    }
+
+    makeGenerateBeaverTask('generateBeaverPatlang' + taskName, outDir + '/' + srcLang + '/PatLangParser.beaver',
+			   'src/lang/' + srcLang + '/pat/parser/lang.parser',
+			   true)
+    makeGenerateBeaverTask('generateBeaverObjlang' + taskName, outDir + '/' + srcLang + '/ObjLangParser.beaver',
+			   'src/lang/' + srcLang + '/obj/parser/lang.parser',
+			   false)
+    makeGenerateParserTask('generateParserPatlang' + taskName, outDir + '/lang/' + srcLang + '/pat/ast',
+			   outDir + '/' + srcLang + '/PatLangParser.beaver')
+    makeGenerateParserTask('generateParserObjlang' + taskName, outDir + '/lang/' + srcLang + '/obj/ast',
+			   outDir + '/' + srcLang + '/ObjLangParser.beaver')
+    makeGenerateScannerTask('generateScannerPatlang' + taskName, outDir + '/lang/' + srcLang + '/pat/ast',
+			    'src/lang/' + srcLang + '/pat/scanner/scanner.flex')
+    makeGenerateScannerTask('generateScannerObjlang' + taskName, outDir + '/lang/' + srcLang + '/obj/ast',
+			    'src/lang/' + srcLang + '/obj/scanner/scanner.flex')
+    makeGenerateJavaTask('generateJavaPatlang' + taskName, outDir,
+			 'src/lang/' + srcLang + '/pat/jastadd', 'lang.' + srcLang + '.pat.ast', true)
+    makeGenerateJavaTask('generateJavaObjlang' + taskName, outDir,
+			 'src/lang/' + srcLang + '/obj/jastadd', 'lang.' + srcLang + '.obj.ast', false)
+
+    tasks.create(taskName)
+
+    tasks.getByName(taskName).dependsOn tasks.getByName('generateBeaverPatlang' + taskName)
+    tasks.getByName(taskName).dependsOn tasks.getByName('generateParserPatlang' + taskName)
+
+    tasks.getByName(taskName).dependsOn tasks.getByName('generateScannerPatlang' + taskName)
+    tasks.getByName(taskName).dependsOn tasks.getByName('generateJavaPatlang' + taskName)
+
+    tasks.getByName(taskName).dependsOn tasks.getByName('generateBeaverObjlang' + taskName)
+    tasks.getByName(taskName).dependsOn tasks.getByName('generateParserObjlang' + taskName)
+    tasks.getByName(taskName).dependsOn tasks.getByName('generateScannerObjlang' + taskName)
+    tasks.getByName(taskName).dependsOn tasks.getByName('generateJavaObjlang' + taskName)
+
+    tasks.getByName('generateParserPatlang' + taskName).dependsOn tasks.getByName('generateBeaverPatlang' + taskName)
+    tasks.getByName('generateParserObjlang' + taskName).dependsOn tasks.getByName('generateBeaverObjlang' + taskName)
+
+    tasks.getByName('generateBeaverObjlang' + taskName).dependsOn tasks.getByName('MkDirs' + taskName)
+    tasks.getByName('generateBeaverPatlang' + taskName).dependsOn tasks.getByName('MkDirs' + taskName)
+
+    tasks.getByName('generateScannerObjlang' + taskName).dependsOn tasks.getByName('MkDirs' + taskName)
+    tasks.getByName('generateScannerPatlang' + taskName).dependsOn tasks.getByName('MkDirs' + taskName)
+
+    tasks.getByName('generateJavaObjlang' + taskName).dependsOn tasks.getByName('MkDirs' + taskName)
+    tasks.getByName('generateJavaPatlang' + taskName).dependsOn tasks.getByName('MkDirs' + taskName)
+}
+
+makeGenerateLangTask('genMetadlLang', 'src/gen/', 'metadl')
+
 makeGenerateBeaverTask('generateBeaver', 'src/gen/LangParser.beaver', 'src/parser/metadl.parser')
-makeGenerateBeaverTask('generateBeaverPatlang', 'src/gen/PatLangParser.beaver', 'src/parser/metadl.parser', true)
-makeGenerateBeaverTask('generateBeaverObjlang', 'src/gen/ObjLangParser.beaver', 'src/objlang/parser/metadl.parser')
-
 makeGenerateParserTask('generateParser', 'src/gen/lang/ast', 'src/gen/LangParser.beaver')
-makeGenerateParserTask('generateParserObjlang', 'src/gen/objlang/ast', 'src/gen/ObjLangParser.beaver')
-makeGenerateParserTask('generateParserConfig', 'src/gen', 'src/config/parser/parser.beaver')
-makeGenerateParserTask('generateParserPatlang', 'src/gen/patlang/ast', 'src/gen/PatLangParser.beaver')
-
 generateParser.dependsOn 'generateBeaver'
-generateParserPatlang.dependsOn 'generateBeaverPatlang'
-generateParserObjlang.dependsOn 'generateBeaverObjlang'
+
 
 // The following makes the clean task also remove generated code:
 clean.dependsOn 'cleanGeneratedJava'

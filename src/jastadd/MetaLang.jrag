@@ -25,7 +25,7 @@ aspect MetaLang {
 
 	syn nta List<Clause> AnalyzeBlock.getExpandedClauseList() {
 		List<Clause> cls = new List<>();
-		cls.addAll(patlang.ast.PatLang.generateHelperRelations(getContext()));
+		cls.addAll(lang.metadl.pat.ast.PatLang.generateHelperRelations(getContext()));
 		for (Clause c : getClauses())
 			cls.add(c.treeCopy());
 		return cls;
@@ -35,18 +35,18 @@ aspect MetaLang {
 
 	rewrite PredicateSymbol {
 		when (enclosingAnalyzeBlock() != null &&
-			  patlang.ast.PatLang.translatePredicateName(enclosingAnalyzeBlock().getContext(), getPRED_ID()) != null)
+			  lang.metadl.pat.ast.PatLang.translatePredicateName(enclosingAnalyzeBlock().getContext(), getPRED_ID()) != null)
 			to PredicateSymbol {
-			return new PredicateSymbol(patlang.ast.PatLang.translatePredicateName(enclosingAnalyzeBlock().getContext(),
+			return new PredicateSymbol(lang.metadl.pat.ast.PatLang.translatePredicateName(enclosingAnalyzeBlock().getContext(),
 																				  getPRED_ID()));
 		}
 	}
 
 	rewrite PredicateRef {
 		when (enclosingAnalyzeBlock() != null &&
-			  patlang.ast.PatLang.translatePredicateName(enclosingAnalyzeBlock().getContext(), getPRED_ID()) != null)
+			  lang.metadl.pat.ast.PatLang.translatePredicateName(enclosingAnalyzeBlock().getContext(), getPRED_ID()) != null)
 			to PredicateRef {
-			return new PredicateRef(patlang.ast.PatLang.translatePredicateName(enclosingAnalyzeBlock().getContext(),
+			return new PredicateRef(lang.metadl.pat.ast.PatLang.translatePredicateName(enclosingAnalyzeBlock().getContext(),
 																			   getPRED_ID()));
 		}
 	}
@@ -63,13 +63,13 @@ aspect MetaLang {
 		return literals;
 	}
 
-	syn patlang.ast.ASTNode Pattern.patternAST() {
-		patlang.ast.ASTNode node = null;
+	syn lang.metadl.pat.ast.ASTNode Pattern.patternAST() {
+		lang.metadl.pat.ast.ASTNode node = null;
 
 		short[] AltGoals = new short[]{
-			patlang.ast.PatLangParser.AltGoals.clause,
-			patlang.ast.PatLangParser.AltGoals.common_literal,
-			patlang.ast.PatLangParser.AltGoals.expr
+			lang.metadl.pat.ast.PatLangParser.AltGoals.clause,
+			lang.metadl.pat.ast.PatLangParser.AltGoals.common_literal,
+			lang.metadl.pat.ast.PatLangParser.AltGoals.expr
 		};
 
 		java.util.List<Exception> exceptions = new java.util.ArrayList<>();
@@ -81,12 +81,12 @@ aspect MetaLang {
 		// in case none of the parsing attempts is successful.
 		for (short g : AltGoals) {
 			try {
-				patlang.ast.LangScanner scanner = new patlang.ast.LangScanner(new StringReader(getPATTERN()));
-				patlang.ast.PatLangParser parser = new patlang.ast.PatLangParser();
+				lang.metadl.pat.ast.LangScanner scanner = new lang.metadl.pat.ast.LangScanner(new StringReader(getPATTERN()));
+				lang.metadl.pat.ast.PatLangParser parser = new lang.metadl.pat.ast.PatLangParser();
 				// the parsers writes directly to System.err so we capture it
 				PrintStream oldErr = System.err;
 				System.setErr(new PrintStream(errStream));
-				node = (patlang.ast.ASTNode) parser.parse(scanner, g);
+				node = (lang.metadl.pat.ast.ASTNode) parser.parse(scanner, g);
 				System.setErr(oldErr);
 				break;
 			} catch (Exception e) {

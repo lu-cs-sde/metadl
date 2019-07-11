@@ -1,7 +1,7 @@
-package patlang.ast; // The generated scanner will belong to the package lang.ast
+package lang.metadl.pat.ast; // The generated scanner will belong to the package lang.ast
 
-import patlang.ast.PatLangParser.Terminals; // The terminals are implicitly defined in the parser
-import patlang.ast.PatLangParser.SyntaxError;
+import lang.metadl.pat.ast.PatLangParser.Terminals; // The terminals are implicitly defined in the parser
+import lang.metadl.pat.ast.PatLangParser.SyntaxError;
 %%
 
 // define the signature for the generated scanner

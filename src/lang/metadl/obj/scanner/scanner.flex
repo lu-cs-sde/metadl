@@ -1,7 +1,7 @@
-package objlang.ast; // The generated scanner will belong to the package lang.ast
+package lang.metadl.obj.ast; // The generated scanner will belong to the package lang.ast
 
-import objlang.ast.ObjLangParser.Terminals; // The terminals are implicitly defined in the parser
-import objlang.ast.ObjLangParser.SyntaxError;
+import lang.metadl.obj.ast.ObjLangParser.Terminals; // The terminals are implicitly defined in the parser
+import lang.metadl.obj.ast.ObjLangParser.SyntaxError;
 %%
 
 // define the signature for the generated scanner

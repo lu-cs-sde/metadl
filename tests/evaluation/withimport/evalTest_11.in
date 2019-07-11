@@ -12,7 +12,7 @@ analyze('P) {
 	    Eval(e, v) :- Expr(e, 0, l, "-"), Expr(e, 1, r, "-"), Eval(l, lv), Eval(r, rv), BIND(v, lv - rv).
 	    Eval(e, v) :- Expr(e, 0, l, "/"), Expr(e, 1, r, "/"), Eval(l, lv), Eval(r, rv), BIND(v, lv / rv).
 
-	    OurExprEval(v) :- <: ... :- ..., BIND(t, x*y + $e), ... .:>, Eval($e, v).
+	    OurExprEval(v) :- <: ... :- ..., BIND($v, x*y + $e), ... .:>, Eval($e, v).
 }
 
 OUTPUT('OurExprEval).

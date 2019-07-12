@@ -109,7 +109,7 @@ jar {
 
 // Before compiling, we should generate some Java code:
 compileJava.dependsOn 'generateJava', 'generateScanner', 'generateParser',
-    'genMetadlLang',
+    'genMetadlLang', 'genJava4Lang',
     'generateConfig', 'generateScannerConfig', 'generateParserConfig'
 
 
@@ -126,6 +126,15 @@ void makeGenerateJavaTask(String name, String outDir, String srcDir, String pkg,
 
 makeGenerateJavaTask('generateJava', 'src/gen', 'src/jastadd', 'lang.ast')
 makeGenerateJavaTask('generateConfig', 'src/gen', 'src/config/', 'lang.ast.config')
+
+void makeConcatenateTask(String name, String outFile, FileCollection sources) {
+    tasks.create(name) {
+	doFirst {
+	    file(file(outFile).getParent()).mkdirs()
+	}
+	(new File(outFile)).text = sources.collect{it.getText()}.join('\n')
+    }
+}
 
 void makeGenerateScannerTask(String name, String outDir, String srcFile) {
     tasks.create(name, JavaExec) {
@@ -180,21 +189,21 @@ void makeGenerateBeaverTask(String name, String outFile, String srcFile, boolean
 void makeGenerateLangTask(String taskName, String outDir, String srcLang) {
     tasks.create('MkDirs' + taskName) {
 	doFirst {
-	    file(outDir + '/' + srcLang + '/obj/ast').mkdirs()
-	    file(outDir + '/' + srcLang + '/pat/ast').mkdirs()
+	    file(outDir + '/lang/' + srcLang + '/obj/ast').mkdirs()
+	    file(outDir + '/lang/' + srcLang + '/pat/ast').mkdirs()
 	}
     }
 
-    makeGenerateBeaverTask('generateBeaverPatlang' + taskName, outDir + '/' + srcLang + '/PatLangParser.beaver',
+    makeGenerateBeaverTask('generateBeaverPatlang' + taskName, outDir + '/lang/' + srcLang + '/PatLangParser.beaver',
 			   'src/lang/' + srcLang + '/pat/parser/lang.parser',
 			   true)
-    makeGenerateBeaverTask('generateBeaverObjlang' + taskName, outDir + '/' + srcLang + '/ObjLangParser.beaver',
+    makeGenerateBeaverTask('generateBeaverObjlang' + taskName, outDir + '/lang/' + srcLang + '/ObjLangParser.beaver',
 			   'src/lang/' + srcLang + '/obj/parser/lang.parser',
 			   false)
     makeGenerateParserTask('generateParserPatlang' + taskName, outDir + '/lang/' + srcLang + '/pat/ast',
-			   outDir + '/' + srcLang + '/PatLangParser.beaver')
+			   outDir + '/lang/' + srcLang + '/PatLangParser.beaver')
     makeGenerateParserTask('generateParserObjlang' + taskName, outDir + '/lang/' + srcLang + '/obj/ast',
-			   outDir + '/' + srcLang + '/ObjLangParser.beaver')
+			   outDir + '/lang/' + srcLang + '/ObjLangParser.beaver')
     makeGenerateScannerTask('generateScannerPatlang' + taskName, outDir + '/lang/' + srcLang + '/pat/ast',
 			    'src/lang/' + srcLang + '/pat/scanner/scanner.flex')
     makeGenerateScannerTask('generateScannerObjlang' + taskName, outDir + '/lang/' + srcLang + '/obj/ast',
@@ -231,6 +240,41 @@ void makeGenerateLangTask(String taskName, String outDir, String srcLang) {
 }
 
 makeGenerateLangTask('genMetadlLang', 'src/gen/', 'metadl')
+makeGenerateLangTask('genJava4Lang', 'src/gen/', 'java4')
+
+makeConcatenateTask('catJava4ObjlangParser',
+		    'src/lang/java4/obj/parser/lang.parser',
+		    fileTree(dir : 'src/lang/java4/obj/parser', includes : ['**/*.parser']))
+makeConcatenateTask('catJava4PatlangParser',
+		    'src/lang/java4/pat/parser/lang.parser',
+		    fileTree(dir : 'src/lang/java4/obj/parser', includes : ['**/*.parser']))
+
+def javaParserOrder = [
+    "Header.flex",
+    "Preamble.flex",
+    "Macros.flex",
+    "RulesPreamble.flex",
+    "WhiteSpace.flex",
+    "Comments.flex",
+    "Keywords.flex",
+    "Literals.flex",
+    "Operators.flex",
+    "Separators.flex",
+    "Identifiers.flex",
+    "Postamble.flex"]
+
+
+makeConcatenateTask('catJava4ObjScanner',
+		    'src/lang/java4/obj/scanner/scanner.flex',
+		    files(javaParserOrder.collect({'src/lang/java4/obj/scanner/' + it})))
+
+makeConcatenateTask('catJava4PatScanner',
+		    'src/lang/java4/pat/scanner/scanner.flex',
+		    files(javaParserOrder.collect({'src/lang/java4/pat/scanner/' + it})))
+
+
+genJava4Lang.dependsOn 'catJava4ObjlangParser', 'catJava4PatlangParser',
+    'catJava4ObjScanner', 'catJava4PatScanner'
 
 makeGenerateBeaverTask('generateBeaver', 'src/gen/LangParser.beaver', 'src/parser/metadl.parser')
 makeGenerateParserTask('generateParser', 'src/gen/lang/ast', 'src/gen/LangParser.beaver')

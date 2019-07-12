@@ -1,0 +1,6 @@
+/**
+ * This node only exists to distinguish NTA-finally blocks from
+ * regular, non-NTA, blocks. This is required to avoid an endlessly
+ * recursive AST.
+ */
+NTAFinallyBlock : Block;

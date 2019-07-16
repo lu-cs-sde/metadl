@@ -1,14 +1,15 @@
-package org.extendj.scanner;
+package lang.java4.pat.ast;
 
 import beaver.Symbol;
 import beaver.Scanner;
-import org.extendj.parser.JavaParser.Terminals;
+import lang.java4.pat.ast.PatLangParser.Terminals;
 import java.io.*;
+
 %%
 
 %public
 %final
-%class JavaScanner
+%class PatLangScanner
 %extends Scanner
 
 %type Symbol

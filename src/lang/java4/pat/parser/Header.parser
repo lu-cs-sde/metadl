@@ -1,7 +1,7 @@
 %header {:
- package org.extendj.parser;
+ package lang.java4.pat.ast;
 
- import org.extendj.ast.*;
- import org.extendj.scanner.JavaScanner;
- import org.extendj.scanner.UnicodeEscapeReader;
+ import lang.java4.pat.ast.*;
+ import lang.java4.pat.ast.PatLangScanner;
+ // import org.extendj.scanner.UnicodeEscapeReader;
 :};

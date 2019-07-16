@@ -1,0 +1,150 @@
+/* Copyright (c) 2005-2008, Torbjorn Ekman
+ *                    2015, Jesper Öqvist <jesper.oqvist@cs.lth.se>
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice,
+ * this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ * this list of conditions and the following disclaimer in the documentation
+ * and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its
+ * contributors may be used to endorse or promote products derived from this
+ * software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+
+aspect SyntacticClassification {
+  // 6.5.1 Syntactic Classification of Name According to Context
+
+  // The syntactic classification context.
+  inh NameType Expr.nameType();
+
+  uncache Expr.nameType(); // Circular.
+
+  /**
+   * The classified name type of a parsed name or expression.
+   *
+   * <p>Method Name is not in this enum because it never occurs in the ASTs
+   * produced by our parser: the parser builds the correct node since it has a
+   * different structure.
+   */
+  enum NameType {
+    NOT_CLASSIFIED,
+    PACKAGE_NAME,
+    TYPE_NAME,
+    PACKAGE_OR_TYPE_NAME,
+    AMBIGUOUS_NAME,
+    EXPRESSION_NAME
+  }
+
+  /**
+   * Defines the expected kind of name for the left hand side in a qualified
+   * expression.
+   */
+  syn NameType Access.predNameType() {
+    switch (nameType()) {
+      case PACKAGE_NAME:
+        return NameType.PACKAGE_NAME;
+      case TYPE_NAME:
+      case PACKAGE_OR_TYPE_NAME:
+        return NameType.PACKAGE_OR_TYPE_NAME;
+      case AMBIGUOUS_NAME:
+      case EXPRESSION_NAME:
+        return NameType.AMBIGUOUS_NAME;
+      case NOT_CLASSIFIED:
+      default:
+        return NameType.NOT_CLASSIFIED;
+    }
+  }
+
+  // This equation propagates predNameType() to the left hand side of a
+  // qualified expression.  The equation uses getRightNoTransform() because the
+  // right hand side of a dot is not rewritten until after the left hand side
+  // is rewritten, and the nameType() attribute is only evaluated during a left
+  // hand side rewrite.
+  eq Dot.getLeft().nameType() = getRightNoTransform().predNameType();
+
+  eq Dot.predNameType() =
+      getLeft() instanceof Access
+      ? ((Access) getLeft()).predNameType()
+      : NameType.NOT_CLASSIFIED;
+
+  // Equations for the syntactic classification context.
+  eq Program.getChild().nameType() = NameType.NOT_CLASSIFIED;
+
+  // Package name.
+  eq PackageAccess.predNameType() = NameType.PACKAGE_NAME;
+  eq CompilationUnit.getImportDecl().nameType() = NameType.PACKAGE_NAME;
+
+  // Type Name.
+  eq SingleTypeImportDecl.getAccess().nameType() = NameType.TYPE_NAME;
+  eq ClassDecl.getSuperClass().nameType() = NameType.TYPE_NAME;
+  eq ClassDecl.getImplements().nameType() = NameType.TYPE_NAME;
+  eq InterfaceDecl.getSuperInterface().nameType() = NameType.TYPE_NAME;
+
+  eq FieldDecl.getTypeAccess().nameType() = NameType.TYPE_NAME;
+  eq MethodDecl.getTypeAccess().nameType() = NameType.TYPE_NAME;
+  eq MethodDecl.getParameter().nameType() = NameType.TYPE_NAME;
+  eq MethodDecl.getException().nameType() = NameType.TYPE_NAME;
+  eq ConstructorDecl.getParameter().nameType() = NameType.TYPE_NAME;
+  eq ConstructorDecl.getException().nameType() = NameType.TYPE_NAME;
+  eq VarDeclStmt.getTypeAccess().nameType() = NameType.TYPE_NAME;
+  eq Declarator.getTypeAccess().nameType() = NameType.TYPE_NAME;
+  eq BasicCatch.getParameter().nameType() = NameType.TYPE_NAME;
+  eq ArrayCreationExpr.getTypeAccess().nameType() = NameType.TYPE_NAME;
+  eq CastExpr.getTypeAccess().nameType() = NameType.TYPE_NAME;
+  eq InstanceOfExpr.getTypeAccess().nameType() = NameType.TYPE_NAME;
+
+  eq ClassAccess.predNameType() = NameType.TYPE_NAME;
+  eq ThisAccess.predNameType() = NameType.TYPE_NAME;
+  eq SuperAccess.predNameType() = NameType.TYPE_NAME;
+
+  // Expression Name.
+  eq SuperConstructorAccess.predNameType() = NameType.EXPRESSION_NAME;
+  eq ClassInstanceExpr.predNameType() = NameType.EXPRESSION_NAME;
+  eq PostfixExpr.getOperand().nameType() = NameType.EXPRESSION_NAME;
+  eq AssignExpr.getDest().nameType() = NameType.EXPRESSION_NAME;
+  eq ArrayAccess.predNameType() = NameType.EXPRESSION_NAME;
+
+  // Package Or Type Name.
+  eq TypeAccess.predNameType() = NameType.PACKAGE_OR_TYPE_NAME;
+  eq TypeImportOnDemandDecl.getAccess().nameType() = NameType.PACKAGE_OR_TYPE_NAME;
+
+  // Ambiguous Name.
+  eq VarAccess.predNameType() = NameType.AMBIGUOUS_NAME;
+  eq MethodAccess.predNameType() = NameType.AMBIGUOUS_NAME;
+
+  // Extras.
+  eq Block.getStmt().nameType() = NameType.EXPRESSION_NAME;
+  eq ConstructorDecl.getParsedConstructorInvocation().nameType() = NameType.EXPRESSION_NAME;
+  eq ConstructorDecl.getImplicitConstructorInvocation().nameType() = NameType.EXPRESSION_NAME;
+  eq TypeDecl.getBodyDecl().nameType() = NameType.EXPRESSION_NAME;
+
+  eq MethodAccess.getArg().nameType() = NameType.EXPRESSION_NAME;
+  eq ConstructorAccess.getArg().nameType() = NameType.EXPRESSION_NAME;
+  eq ArrayAccess.getExpr().nameType() = NameType.EXPRESSION_NAME;
+  eq ArrayTypeWithSizeAccess.getExpr().nameType() = NameType.EXPRESSION_NAME;
+
+  eq ClassInstanceExpr.getAccess().nameType() = NameType.TYPE_NAME;
+  eq ClassInstanceExpr.getTypeDecl().nameType() = NameType.TYPE_NAME;
+  eq ClassInstanceExpr.getArg().nameType() = NameType.EXPRESSION_NAME;
+
+  eq ConstructorAccess.predNameType() = NameType.AMBIGUOUS_NAME;
+  eq ArrayTypeAccess.predNameType() = NameType.AMBIGUOUS_NAME;
+}

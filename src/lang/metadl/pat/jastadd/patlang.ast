@@ -1,7 +1,7 @@
 /**
 	Program
 **/
-Program  ::= CommonClause* /FormalPredicate*/;
+Program  ::= CommonClause*;
 
 /**
    Clause
@@ -10,7 +10,7 @@ abstract CommonClause;
 abstract Clause : CommonClause ::= Heads:CommonLiteral*;
 Rule:Clause ::= Body:CommonLiteral*;
 Fact:Clause;
-AnalyzeBlock:CommonClause ::= ProgramRef:PredicateRef Clause* /ExpandedClause:Clause*/;
+AnalyzeBlock:CommonClause ::= ProgramRef:PredicateRef Clause*;
 
 /**
    Literals

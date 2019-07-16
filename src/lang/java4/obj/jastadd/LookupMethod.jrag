@@ -1,0 +1,798 @@
+/* Copyright (c) 2005-2008, Torbjorn Ekman
+ *               2014-2018, Jesper Öqvist <jesper.oqvist@cs.lth.se>
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice,
+ * this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ * this list of conditions and the following disclaimer in the documentation
+ * and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its
+ * contributors may be used to endorse or promote products derived from this
+ * software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+
+import java.util.*;
+import java.util.ArrayList;
+
+/**
+ * Attributes for method lookup.
+ */
+aspect LookupMethod {
+  /**
+   * Returns a method declaration representing unknown methods.
+   * Used in method lookup when no matching method was found.
+   */
+  inh MethodDecl MethodDecl.unknownMethod();
+
+  /**
+   * Returns a method declaration representing unknown methods.
+   * Used in method lookup when no matching method was found.
+   */
+  inh MethodDecl MethodAccess.unknownMethod();
+
+  // Make the unknown type visible to MethodDecl.
+  inh TypeDecl MethodDecl.unknownType();
+
+  /**
+   * Safe parameter type access.
+   *
+   * @return the type of the parameter at the given index, or
+   * UnknownType if there is not parameter at the given index.
+   */
+  syn TypeDecl MethodDecl.paramType(int index) =
+      index >= 0 && index < getNumParameter()
+      ? getParameter(index).type()
+      : unknownType();
+
+
+  /**
+   * Safe parameter type access.
+   *
+   * @return the type of the parameter at the given index, or
+   * UnknownType if there is not parameter at the given index.
+   */
+  syn TypeDecl ConstructorDecl.paramType(int index) =
+      index >= 0 && index < getNumParameter()
+      ? getParameter(index).type()
+      : unknownType();
+
+  /**
+   * Find the outermost qualified expression this access.
+   *
+   * <p>If this is not a qualified access, then this access is returned.
+   *
+   * <p>For example, if {@code unqualifiedScope()} is evaluated for the {@code
+   * MethodAccess} inside the expression {@code Dot(FieldAccess,
+   * Dot(FieldAccess, MethodAcceess))}, then the outermost {@code Dot} is the
+   * unqualified scope of the {@code MethodAccess}.
+   */
+  syn Expr Access.unqualifiedScope() = isQualified() ? nestedScope() : this;
+
+  /**
+   * Find the outermost qualified expression of a qualified access.
+   *
+   * <p>It is an error if this attribute is evaluated on an unqualified
+   * access.
+   *
+   * @throws UnsupportedOperationException if evaluated on an unqualified
+   * access.
+   */
+  inh Expr Access.nestedScope();
+
+  eq Dot.getChild().nestedScope() = isQualified() ? nestedScope() : this;
+
+  eq Program.getChild().nestedScope() {
+    throw new UnsupportedOperationException(
+        "Can not evaluate nestedScope() on unqualified access.");
+  }
+
+  /**
+   * Find all visible methods with the given name in the local
+   * scope or a qualified scope.
+   */
+  inh Collection<MethodDecl> Expr.lookupMethod(String name);
+
+  /**
+   * Find all visible methods with the given name in the local scope.
+   */
+  inh Collection<MethodDecl> Stmt.lookupMethod(String name);
+
+  /**
+   * Find all visible methods with the given name in the local scope.
+   */
+  inh Collection<MethodDecl> BodyDecl.lookupMethod(String name);
+
+  /**
+   * Find all visible methods with the given name in the local scope.
+   */
+  inh lazy Collection<MethodDecl> TypeDecl.lookupMethod(String name);
+
+  eq MethodAccess.getArg().lookupMethod(String name) = unqualifiedScope().lookupMethod(name);
+
+  eq ConstructorAccess.getArg().lookupMethod(String name) = unqualifiedScope().lookupMethod(name);
+
+  eq ArrayAccess.getExpr().lookupMethod(String name) = unqualifiedScope().lookupMethod(name);
+
+  eq ArrayTypeWithSizeAccess.getExpr().lookupMethod(String name) =
+      unqualifiedScope().lookupMethod(name);
+
+  eq Program.getChild().lookupMethod(String name) = Collections.EMPTY_LIST;
+
+  eq TypeDecl.getBodyDecl(int i).lookupMethod(String name) = unqualifiedLookupMethod(name);
+
+  /**
+   * Find all visible methods with the given name in this type or an enclosing
+   * type.
+   */
+  syn lazy Collection<MethodDecl> TypeDecl.unqualifiedLookupMethod(String name) {
+    Collection<MethodDecl> methods = memberMethods(name);
+    if (!methods.isEmpty()) {
+      return methods;
+    }
+    if (isInnerType()) {
+      return lookupMethod(name);
+    }
+    return keepStaticMethods(lookupMethod(name));
+  }
+
+  // In explicit constructor invocation.
+  eq ConstructorDecl.getParsedConstructorInvocation().lookupMethod(String name) {
+    Collection<MethodDecl> methods = new ArrayList<MethodDecl>();
+    for (MethodDecl m : lookupMethod(name)) {
+      if (!hostType().memberMethods(name).contains(m) || m.isStatic()) {
+        methods.add(m);
+      }
+    }
+    return methods;
+  }
+
+  eq ConstructorDecl.getImplicitConstructorInvocation().lookupMethod(String name) {
+    Collection<MethodDecl> methods = new ArrayList<MethodDecl>();
+    for (MethodDecl m : lookupMethod(name)) {
+      if (!hostType().memberMethods(name).contains(m) || m.isStatic()) {
+        methods.add(m);
+      }
+    }
+    return methods;
+  }
+
+  /**
+   * Filter a collection of methods, keeping only the static methods
+   * from the input collection.
+   *
+   * @return the filtered collection of methods.
+   */
+  public static Collection<MethodDecl> ASTNode.keepStaticMethods(
+      Collection<MethodDecl> methods) {
+    Collection<MethodDecl> result = new LinkedList<MethodDecl>();
+    for (MethodDecl method : methods) {
+      if (method.isStatic()) {
+        result.add(method);
+      }
+    }
+    return result;
+  }
+
+  eq Dot.getRight().lookupMethod(String name) = getLeft().type().memberMethods(name);
+
+  /**
+   * Returns one of the candidate declarations of this method access,
+   * or {@code null} if there exist no possible candidate declarations.
+   *
+   * <p>This attribute is only used in error reporting, to give a hint about
+   * a candidate declaration that was not applicable for method invocation
+   * for some reason.
+   */
+  syn MethodDecl MethodAccess.singleCandidateDecl() {
+    String signature = "";
+    MethodDecl result = null;
+    for (MethodDecl m : lookupMethod(name())) {
+      String otherSignature = m.fullSignature();
+      // Choose the candidate matching arity or the lexicographically first signature.
+      if (result == null
+          || (m.getNumParameter() == getNumArg() && result.getNumParameter() != getNumArg())
+          || (m.getNumParameter() == getNumArg() && otherSignature.compareTo(signature) < 0)) {
+        signature = otherSignature;
+        result = m;
+      }
+    }
+    return result;
+  }
+
+  /**
+   * Filters a collection of candidate method declarations, keeping
+   * only the most specific declarations for this invocation.
+   */
+  protected SimpleSet<MethodDecl> MethodAccess.maxSpecific(Iterable<MethodDecl> candidates) {
+    SimpleSet<MethodDecl> maxSpecific = emptySet();
+    for (MethodDecl decl : candidates) {
+      if (applicable(decl) && accessible(decl)) {
+        if (maxSpecific.isEmpty()) {
+          maxSpecific = maxSpecific.add(decl);
+        } else {
+          MethodDecl other = maxSpecific.iterator().next();
+          if (decl.moreSpecificThan(other)) {
+            maxSpecific = decl;
+          } else if (!other.moreSpecificThan(decl)) {
+            maxSpecific = maxSpecific.add(decl);
+          }
+        }
+      }
+    }
+    return maxSpecific;
+  }
+
+  /**
+   * Find all most specific applicable method declarations for this invocation.
+   */
+  syn lazy SimpleSet<MethodDecl> MethodAccess.decls() {
+    SimpleSet<MethodDecl> maxSpecific = maxSpecific(lookupMethod(name()));
+    if (isQualified() ? qualifier().staticContextQualifier() : inStaticContext()) {
+      maxSpecific = keepStaticMethods(maxSpecific);
+    }
+    return maxSpecific;
+  }
+
+  /**
+   * Find the single method declaration matching this invocation.
+   *
+   * <p>If no such declaration exists, the unknown method declaration is returned
+   * instead.
+   */
+  syn lazy MethodDecl MethodAccess.decl() {
+    SimpleSet<MethodDecl> decls = decls();
+    if (decls.isSingleton()) {
+      return decls.singletonValue();
+    }
+
+    // Only return the first method in case of multiply inherited abstract methods.
+    // See JLS6 section 8.4.6.4.
+    boolean allAbstract = true;
+    for (MethodDecl m : decls) {
+      if (!m.isAbstract() && !m.hostType().isObject()) {
+        allAbstract = false;
+        break;
+      }
+    }
+    if (decls.size() > 1 && allAbstract) {
+      return decls.iterator().next();
+    }
+    return unknownMethod();
+  }
+
+  /**
+   * Filter a set of methods, keeping only the static methods
+   * from the input set.
+   */
+  protected static SimpleSet<MethodDecl> MethodAccess.keepStaticMethods(
+      SimpleSet<MethodDecl> methods) {
+    SimpleSet<MethodDecl> result = emptySet();
+    for (MethodDecl method : methods) {
+      if (method.isStatic()) {
+        result = result.add(method);
+      }
+    }
+    return result;
+  }
+}
+
+aspect MethodDecl {
+  syn String MethodDecl.name() = getID();
+
+  /**
+   * A method signature that is used to discriminate methods with the same name
+   * and argument types.
+   *
+   * <p>See JLS6 &sect;8.4.2.
+   */
+  syn lazy String MethodDecl.signature() {
+    StringBuilder sb = new StringBuilder();
+    sb.append(name() + "(");
+    for (int i = 0; i < getNumParameter(); i++) {
+      if (i != 0) {
+        sb.append(", ");
+      }
+      sb.append(getParameter(i).type().typeName());
+    }
+    sb.append(")");
+    return sb.toString();
+  }
+
+  /** Method signature, including type arguments.  */
+  syn String MethodDecl.fullSignature() {
+    StringBuilder sb = new StringBuilder();
+    sb.append(name() + "(");
+    for (int i = 0; i < getNumParameter(); i++) {
+      if (i != 0) {
+        sb.append(", ");
+      }
+      // TODO: TypeDecl.fullName() should not include @primitive.
+      TypeDecl paramType = getParameter(i).type();
+      if (paramType instanceof PrimitiveType) {
+        sb.append(paramType.typeName());
+      } else {
+        sb.append(paramType.fullName());
+      }
+    }
+    sb.append(")");
+    return sb.toString();
+  }
+
+
+  /**
+   * Compare the signature of this method declaration with another
+   * method declaration.
+   *
+   * See JLS6 &sect;8.4.2.
+   *
+   * @return {@code true} if the signature of this method is equal to
+   * the signature of the argument method.
+   */
+  syn boolean MethodDecl.sameSignature(MethodDecl other) =
+      signature().equals(other.signature());
+
+  /**
+   * Determine if this method declaration is more specific than another
+   * method declaration.
+   *
+   * @param m argument method to compare to
+   * @return {@code true} if this the argument method is less specific than this
+   * and this is not less specific than the argument
+   */
+  syn boolean MethodDecl.moreSpecificThan(MethodDecl m) =
+      m.lessSpecificThan(this) && !this.lessSpecificThan(m);
+
+  /**
+   * Determine if this method declaration is less specific than another
+   * method declaration.
+   *
+   * <p>Caution: that {@code a} is less specific than {@code b} does not mean that
+   * {@code b} is not less specific than {@code a}!
+   *
+   * @param m argument method to compare to.
+   * @return {@code true} if any parameter of this method declaration is not a
+   * (non-proper) subtype of the corresponding parameter of the argument
+   * method.
+   */
+  syn lazy boolean MethodDecl.lessSpecificThan(MethodDecl m) {
+    if (getNumParameter() == 0) {
+      return false;
+    }
+    for (int i = 0; i < getNumParameter(); i++) {
+      if (!getParameter(i).type().subtype(m.paramType(i))) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Determine if a candidate method declaration is applicable
+   * for this invocation.
+   */
+  public boolean MethodAccess.applicable(MethodDecl decl) {
+    if (getNumArg() != decl.getNumParameter()) {
+      return false;
+    }
+    if (!name().equals(decl.name())) {
+      return false;
+    }
+    for (int i = 0; i < getNumArg(); i++) {
+      if (!getArg(i).type().subtype(decl.paramType(i))) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  /**
+   * Determine if a candidate method declaration is accessible
+   * from this invocation.
+   */
+  syn boolean MethodAccess.accessible(MethodDecl m) {
+    if (!isQualified()) {
+      return true;
+    }
+    if (!m.accessibleFrom(hostType())) {
+      return false;
+    }
+    // The method is not accessible if the type is not accessible.
+    if (!qualifier().type().accessibleFrom(hostType())) {
+      return false;
+    }
+    // 6.6.2.1 -  include qualifier type for protected access
+    if (m.isProtected() && !m.hostPackage().equals(hostPackage())
+        && !m.isStatic() && !qualifier().isSuperAccess()) {
+      return hostType().mayAccess(this, m);
+    }
+    return true;
+  }
+
+  /**
+   * Determine if a method invocation may access a given method declaration
+   * with protected access modifier from within a body declaration of this
+   * type.
+   */
+  public boolean TypeDecl.mayAccess(MethodAccess access, MethodDecl method) {
+    if (subtype(method.hostType())
+        && access.qualifier().type().subtype(this)) {
+      return true;
+    }
+
+    if (isNestedType()) {
+      return enclosingType().mayAccess(access, method);
+    } else {
+      return false;
+    }
+  }
+
+  /**
+   * Only check if this method would be able to override other method,
+   * not if this method is declared in a subtype of the hostType of
+   * other method. NB: does not check for equal signature!
+   *
+   * @param m other method.
+   * @return {@code true} of the method could potentially override.
+   */
+  syn lazy boolean MethodDecl.overrideCandidate(MethodDecl m) =
+      !isStatic() && !m.isPrivate() && m.accessibleFrom(hostType());
+
+  /**
+   * Determine if this method declaration actually overrides
+   * another declaration from a supertype.
+   */
+  syn lazy boolean MethodDecl.overrides(MethodDecl m) =
+      !isStatic() && !m.isPrivate() && m.accessibleFrom(hostType())
+      && hostType().subtype(m.hostType()) && m.signature().equals(signature());
+
+  /**
+   * A method declaration hides another declaration from a superclass
+   * if the other method would otherwise be accessible, and this
+   * method is static and has the same signature.
+   */
+  syn lazy boolean MethodDecl.hides(MethodDecl m) =
+      isStatic() && !m.isPrivate() && m.accessibleFrom(hostType())
+      && hostType().subtype(m.hostType()) && m.signature().equals(signature());
+}
+
+/**
+ * Attributes for enumerating member methods of types.
+ */
+aspect MemberMethods {
+  /**
+   * Find all member method declarations with the given name.
+   * This includes methods inherited from supertypes.
+   */
+  syn Collection<MethodDecl> TypeDecl.memberMethods(String name) {
+    Collection<MethodDecl> methods = methodsNameMap().get(name);
+    if (methods != null) {
+      return methods;
+    } else {
+      return Collections.emptyList();
+    }
+  }
+
+  /**
+   * Maps method names to method declarations for methods declared
+   * in this type and inherited from supertypes.
+   *
+   * <p>Each method name can map to multiple declarations.
+   */
+  syn lazy Map<String, Collection<MethodDecl>> TypeDecl.methodsNameMap() {
+    Map<String, Collection<MethodDecl>> map = new HashMap<String, Collection<MethodDecl>>();
+    for (MethodDecl m : methods()) {
+      Collection<MethodDecl> methods = map.get(m.name());
+      if (methods == null) {
+        methods = new ArrayList<MethodDecl>(4);
+        map.put(m.name(), methods);
+      }
+      methods.add(m);
+    }
+    return map;
+  }
+
+  /**
+   * Utility method to add a method to a method collection map.
+   */
+  protected static void TypeDecl.addMethodToMap(MethodDecl method,
+      Map<String, Collection<MethodDecl>> map) {
+    String name = method.name();
+    Collection<MethodDecl> methods = map.get(name);
+    if (methods == null) {
+      methods = new ArrayList<MethodDecl>(2);
+      map.put(name, methods);
+    }
+    methods.add(method);
+  }
+
+  /**
+   * Find local method declarations for the given method signature.
+   *
+   * <p>Does not include supertype methods. The result can contain multiple
+   * method declarations.
+   */
+  syn SimpleSet<MethodDecl> TypeDecl.localMethodsSignature(String signature) {
+    SimpleSet<MethodDecl> result = localMethodsSignatureMap().get(signature);
+    if (result != null) {
+      return result;
+    } else {
+      return emptySet();
+    }
+  }
+
+  /**
+   * All local method declarations in this type.
+   *
+   * <p>Does not include supertype methods.
+   */
+  syn lazy java.util.List<MethodDecl> TypeDecl.localMethods() {
+    if (getNumBodyDecl() == 0) {
+      return Collections.emptyList();
+    }
+    ArrayList<MethodDecl> methods = new ArrayList<MethodDecl>(getNumBodyDecl());
+    for (BodyDecl decl : getBodyDeclList()) {
+      if (decl instanceof MethodDecl) {
+        methods.add((MethodDecl) decl);
+      }
+    }
+    return methods;
+  }
+
+  /**
+   * Maps method signatures to local method declarations.
+   *
+   * <p>Does not include supertype methods.
+   * Each signature can map to multiple declarations.
+   *
+   * @return a mapping of method signature to method declarations
+   */
+  syn lazy Map<String, SimpleSet<MethodDecl>> TypeDecl.localMethodsSignatureMap() {
+    Map<String, SimpleSet<MethodDecl>> map = new HashMap<String, SimpleSet<MethodDecl>>(
+        localMethods().size());
+    for (MethodDecl m : localMethods()) {
+      putSimpleSetElement(map, m.signature(), m);
+    }
+    return map;
+  }
+
+  /**
+   * Find method declarations inherited from superinterfaces with the given
+   * signature.
+   * The result can be multiple method declarations.
+   */
+  syn SimpleSet<MethodDecl> ClassDecl.interfacesMethodsSignature(String signature) {
+    SimpleSet<MethodDecl> result = interfacesMethodsSignatureMap().get(signature);
+    if (result != null) {
+      return result;
+    } else {
+      return emptySet();
+    }
+  }
+
+  /**
+   * A list of all methods inherited from (transitive) superinterfaces of this type.
+   *
+   * <p>The result is sorted according to a preorder traversal of the inheritance
+   * graph. If one type in the graph has mutliple superinterfaces, then their contributions
+   * are added according to the order of the implements clause.
+   */
+  syn lazy java.util.List<MethodDecl> TypeDecl.interfacesMethods() {
+    ArrayList<MethodDecl> methods = new ArrayList<MethodDecl>();
+    for (InterfaceDecl iface : superInterfaces()) {
+      methods.addAll(iface.localMethods());
+      methods.addAll(iface.interfacesMethods());
+    }
+    return methods;
+  }
+
+  /**
+   * Maps method signatures to sets of method declarations
+   * inherited from superinterfaces of this type.
+   * Each signature can map to multiple declarations.
+   */
+  syn lazy Map<String, SimpleSet<MethodDecl>> TypeDecl.interfacesMethodsSignatureMap() {
+    Map<String, SimpleSet<MethodDecl>> map = new HashMap<String, SimpleSet<MethodDecl>>();
+    for (MethodDecl m : interfacesMethods()) {
+      putSimpleSetElement(map, m.signature(), m);
+    }
+    return map;
+  }
+
+  /**
+   * Finds visible methods matching the given signature.
+   */
+  syn SimpleSet<MethodDecl> TypeDecl.methodsSignature(String signature) {
+    SimpleSet<MethodDecl> result = methodsSignatureMap().get(signature);
+    if (result != null) {
+      return result;
+    } else {
+      return emptySet();
+    }
+  }
+
+  /**
+   * Finds all visible methods for this type (includes inherited methods).
+   *
+   * <p>Shadowed declarations are not included in the result.
+   */
+  syn lazy java.util.List<MethodDecl> TypeDecl.methods() = localMethods();
+
+  eq ClassDecl.methods() {
+    Map<String, SimpleSet<MethodDecl>> localMap = localMethodsSignatureMap();
+    ArrayList<MethodDecl> methods = new ArrayList<MethodDecl>(localMethods());
+    if (hasSuperclass()) {
+      for (MethodDecl m : superclass().methods()) {
+        if (!m.isPrivate()
+            && m.accessibleFrom(this)
+            && !localMap.containsKey(m.signature())) {
+          // Accessible and not shadowed.
+          methods.add(m);
+        }
+      }
+    }
+    for (MethodDecl m : interfacesMethods()) {
+      // TODO(joqvist): is it possible to simplify this?
+      if (m.accessibleFrom(this)
+          && !localMap.containsKey(m.signature())
+          && allMethodsAbstract(methods, m.signature())) {
+        methods.add(m);
+      }
+    }
+    return methods;
+  }
+
+  eq InterfaceDecl.methods() {
+    Map<String, SimpleSet<MethodDecl>> localMap = localMethodsSignatureMap();
+    ArrayList<MethodDecl> methods = new ArrayList<MethodDecl>(localMethods());
+    for (MethodDecl m : interfacesMethods()) {
+      if (m.accessibleFrom(this)
+          && !localMap.containsKey(m.signature())) {
+        // Accessible and not shadowed.
+        methods.add(m);
+      }
+    }
+    for (MethodDecl m : typeObject().methods()) {
+      // TODO(joqvist): is it possible to simplify this?
+      if (m.isPublic()
+          && !containsSignature(methods, m.signature())) {
+        methods.add(m);
+      }
+    }
+    return methods;
+  }
+
+  /**
+   * Map method signatures to sets of visible method declarations
+   * for this type.
+   *
+   * <p>Includes inherited method declarations from supertypes.
+   */
+  syn lazy Map<String, SimpleSet<MethodDecl>> TypeDecl.methodsSignatureMap() {
+    Map<String, SimpleSet<MethodDecl>> map = new HashMap<String, SimpleSet<MethodDecl>>();
+    for (MethodDecl m : methods()) {
+      putSimpleSetElement(map, m.signature(), m);
+    }
+    return map;
+  }
+
+  /**
+   * Utility method to add a single item in a {@code SimpleSet}-based map.
+   */
+  protected static <E> void ASTNode.putSimpleSetElement(Map<String, SimpleSet<E>> map,
+      String key, E value) {
+    SimpleSet<E> result = map.get(key);
+    if (result == null) {
+      result = emptySet();
+    }
+    map.put(key, result.add(value));
+  }
+
+  /**
+   * Test if all methods in the collection with the given signature are abstract.
+   */
+  protected boolean TypeDecl.allMethodsAbstract(Collection<MethodDecl> methods, String signature) {
+    for (MethodDecl method : methods) {
+      if (!method.isAbstract() && method.signature().equals(signature)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  /**
+   * Test if the method collection contains a method with the given signature.
+   */
+  protected boolean TypeDecl.containsSignature(Collection<MethodDecl> methods, String signature) {
+    for (MethodDecl method : methods) {
+      if (method.signature().equals(signature)) {
+        return true;
+      }
+    }
+    return false;
+  }
+}
+
+/**
+ * Attributes for enumerating method declarations inherited
+ * from supertypes.
+ */
+aspect AncestorMethods {
+  /**
+   * Finds methods with the same signature declared in ancestors types.  This
+   * is used when checking correct overriding, hiding, and implementation of
+   * abstract methods.
+   */
+  syn lazy SimpleSet<MethodDecl> TypeDecl.ancestorMethods(String signature) = emptySet();
+
+  eq ClassDecl.ancestorMethods(String signature) {
+    SimpleSet<MethodDecl> result = emptySet();
+    if (hasSuperclass()) {
+      for (MethodDecl method : superclass().localMethodsSignature(signature)) {
+        if (!method.isPrivate()) {
+          result = result.add(method);
+        }
+      }
+    }
+    // Always add interface methods to the ancestorMethods set so that their
+    // access modifiers are checked against local overriding methods.
+    for (MethodDecl method : interfacesMethodsSignature(signature)) {
+      result = result.add(method);
+    }
+    if (!hasSuperclass()) {
+      return result;
+    }
+    if (result.isSingleton()) {
+      MethodDecl m = result.singletonValue();
+      if (!m.isAbstract()) {
+        boolean done = true;
+        for (MethodDecl n : superclass().ancestorMethods(signature)) {
+          if (n.isPrivate() || !n.accessibleFrom(m.hostType())) {
+            done = false;
+          }
+        }
+        if (done) {
+          return result;
+        }
+      }
+    }
+    for (MethodDecl m : superclass().ancestorMethods(signature)) {
+      result = result.add(m);
+    }
+    return result;
+  }
+
+  eq InterfaceDecl.ancestorMethods(String signature) {
+    SimpleSet<MethodDecl> result = emptySet();
+    for (InterfaceDecl typeDecl : superInterfaces()) {
+      for (MethodDecl m : typeDecl.methodsSignature(signature)) {
+        result = result.add(m);
+      }
+    }
+    if (getNumSuperInterface() == 0) {
+      for (MethodDecl m : typeObject().methodsSignature(signature)) {
+        if (m.isPublic()) {
+          result = result.add(m);
+        }
+      }
+    }
+    return result;
+  }
+}

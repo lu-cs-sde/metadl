@@ -1,0 +1,618 @@
+/* Copyright (c) 2005-2008, Torbjorn Ekman
+ *               2015-2016, Jesper Öqvist <jesper.oqvist@cs.lth.se>
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice,
+ * this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ * this list of conditions and the following disclaimer in the documentation
+ * and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its
+ * contributors may be used to endorse or promote products derived from this
+ * software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+
+import java.util.*;
+
+aspect AccessTypes {
+  syn boolean Expr.isTypeAccess() = false;
+  eq TypeAccess.isTypeAccess() = true;
+  eq Dot.isTypeAccess() = getRight().isTypeAccess();
+
+  /**
+   * Tests if this is a qualified type access expression for
+   * the given type.
+   */
+  syn boolean Expr.isTypeAccess(String packageName, String type) = false;
+  eq TypeAccess.isTypeAccess(String packageName, String type) =
+      getID().equals(type) && getPackage().equals(packageName());
+
+  syn boolean Expr.isMethodAccess() = false;
+  eq Dot.isMethodAccess() = getRight().isMethodAccess();
+  eq MethodAccess.isMethodAccess() = true;
+
+  syn boolean Expr.isFieldAccess() = false;
+  eq Dot.isFieldAccess() = getRight().isFieldAccess();
+  syn lazy boolean VarAccess.isFieldAccess() =
+      decl().isClassVariable() || decl().isInstanceVariable();
+
+  syn boolean Expr.isSuperAccess() = false;
+  eq Dot.isSuperAccess() = getRight().isSuperAccess();
+  eq SuperAccess.isSuperAccess() = true;
+  eq ParExpr.isSuperAccess() = getExpr().isSuperAccess();
+  eq CastExpr.isSuperAccess() = getExpr().isSuperAccess();
+
+  syn boolean Expr.isThisAccess() = false;
+  eq Dot.isThisAccess() = getRight().isThisAccess();
+  eq ThisAccess.isThisAccess() = true;
+  eq ParExpr.isThisAccess() = getExpr().isThisAccess();
+  eq CastExpr.isThisAccess() = getExpr().isThisAccess();
+
+  syn boolean Expr.isPackageAccess() = false;
+  eq Dot.isPackageAccess() = getRight().isPackageAccess();
+  eq PackageAccess.isPackageAccess() = true;
+
+  syn boolean Expr.isArrayAccess() = false;
+  eq Dot.isArrayAccess() = getRight().isArrayAccess();
+  eq ArrayAccess.isArrayAccess() = true;
+
+  syn boolean Expr.isClassAccess() = false;
+  eq Dot.isClassAccess() = getRight().isClassAccess();
+  eq ClassAccess.isClassAccess() = true;
+
+  syn boolean Expr.isSuperConstructorAccess() = false;
+  eq Dot.isSuperConstructorAccess() = getRight().isSuperConstructorAccess();
+  eq SuperConstructorAccess.isSuperConstructorAccess() = true;
+}
+
+aspect QualifiedNames {
+  inh boolean Expr.isLeftChildOfDot();
+
+  //eq ASTNode.getChild().isLeftChildOfDot() = false;
+  eq Dot.getLeft().isLeftChildOfDot() = true;
+  eq Dot.getRight().isLeftChildOfDot() = false;
+
+  eq Access.getChild().isLeftChildOfDot() = false;
+  eq Expr.getChild().isLeftChildOfDot() = false;
+  eq Stmt.getChild().isLeftChildOfDot() = false;
+  eq Declarator.getChild().isLeftChildOfDot() = false;
+  eq BodyDecl.getChild().isLeftChildOfDot() = false;
+  eq TypeDecl.getChild().isLeftChildOfDot() = false;
+  eq ImportDecl.getChild().isLeftChildOfDot() = false;
+  eq Modifier.getChild().isLeftChildOfDot() = false;
+
+  inh boolean Expr.isRightChildOfDot();
+
+  //eq ASTNode.getChild().isLeftChildOfDot() = false;
+  eq Dot.getLeft().isRightChildOfDot() = isRightChildOfDot();
+  eq Dot.getRight().isRightChildOfDot() = true;
+
+  eq MethodAccess.getArg().isRightChildOfDot() = false;
+  eq MethodAccess.getChild().isRightChildOfDot() = isRightChildOfDot();
+  eq Access.getChild().isRightChildOfDot() = false;
+  eq Expr.getChild().isRightChildOfDot() = false;
+  eq Stmt.getChild().isRightChildOfDot() = false;
+  eq Declarator.getChild().isRightChildOfDot() = false;
+  eq BodyDecl.getChild().isRightChildOfDot() = false;
+  eq TypeDecl.getChild().isRightChildOfDot() = false;
+  eq ImportDecl.getChild().isRightChildOfDot() = false;
+  eq Modifier.getChild().isRightChildOfDot() = false;
+
+  inh Expr Expr.prevExpr();
+
+  eq Dot.getLeft().prevExpr() = prevExpr();
+  eq Dot.getRight().prevExpr() = getLeft();
+
+  eq MethodAccess.getArg().prevExpr() = prevExprError();
+  eq MethodAccess.getChild().prevExpr() = prevExpr();
+  eq Access.getChild().prevExpr() = prevExprError();
+  eq Expr.getChild().prevExpr() = prevExprError();
+  eq Stmt.getChild().prevExpr() = prevExprError();
+  eq Declarator.getChild().prevExpr() = prevExprError();
+  eq BodyDecl.getChild().prevExpr() = prevExprError();
+  eq TypeDecl.getChild().prevExpr() = prevExprError();
+  eq ImportDecl.getChild().prevExpr() = prevExprError();
+  eq Modifier.getChild().prevExpr() = prevExprError();
+
+  /**
+   * Helper method to throw an error when prevExpr is evaluated somewhere where
+   * the attribute can not be evaluated.
+   */
+  protected Expr ASTNode.prevExprError() {
+    throw new Error("prevExpr can not be evaluated outside of the right side of a Dot access.");
+  }
+
+  inh Access Expr.nextAccess();
+
+  eq Dot.getLeft().nextAccess() = getRight();
+  eq Dot.getRight().nextAccess() = nextAccessError();
+
+  eq Access.getChild().nextAccess() = nextAccessError();
+  eq Expr.getChild().nextAccess() = nextAccessError();
+  eq Stmt.getChild().nextAccess() = nextAccessError();
+  eq Declarator.getChild().nextAccess() = nextAccessError();
+  eq BodyDecl.getChild().nextAccess() = nextAccessError();
+  eq TypeDecl.getChild().nextAccess() = nextAccessError();
+  eq ImportDecl.getChild().nextAccess() = nextAccessError();
+  eq Modifier.getChild().nextAccess() = nextAccessError();
+
+  /**
+   * Helper method to throw an error when nextAccess is evaluated somewhere
+   * where the attribute can not be evaluated.
+   */
+  protected Access ASTNode.nextAccessError() {
+    throw new Error("nextAccess can not be evaluated outside of the left side of a Dot access.");
+  }
+
+  syn boolean Access.isQualified() = hasPrevExpr();
+  eq Dot.isQualified() = hasParentDot();
+
+  syn Expr Access.qualifier() = prevExpr();
+
+  syn Expr Dot.leftSide() = getLeft();
+
+  syn Access Dot.rightSide() = getRight() instanceof Dot ?
+    (Access)((Dot) getRight()).getLeft() : (Access) getRight();
+
+  syn Access Access.lastAccess() = this;
+  eq Dot.lastAccess() = getRight().lastAccess();
+
+  syn Dot Expr.parentDot() = getParent() instanceof Dot ?
+    (Dot) getParent() : null;
+
+  syn boolean Expr.hasParentDot() = parentDot() != null;
+
+  syn boolean Expr.hasNextAccess() = isLeftChildOfDot();
+
+  syn boolean Access.hasPrevExpr() = isRightChildOfDot();
+
+  // Access.hasPrevExpr() is part of circular attribute/rewrite dependency:
+  // rewrite ParseName -> hasPrev() -> isRightChildOfDot() -> getRight() -> rewrite.
+  uncache Access.hasPrevExpr();
+
+  public Dot Dot.lastDot() {
+    Dot node = this;
+    while (node.getRightNoTransform() instanceof Dot) {
+      node = (Dot) node.getRightNoTransform();
+    }
+    return node;
+  }
+
+  /**
+   * Creates a qualified expression. This will not be subject to rewriting.
+   */
+  public Access Expr.qualifiesAccess(Access access) {
+    Dot dot = new Dot(this, access);
+    dot.setStart(this.getStart());
+    dot.setEnd(access.getEnd());
+    return dot;
+  }
+
+  public Access Dot.qualifiesAccess(Access access) {
+    Dot lastDot = lastDot();
+    Expr last = lastDot.getRightNoTransform();
+    Access qualified = last.qualifiesAccess(access);
+    qualified.setEnd(access.getEnd());
+    lastDot.setRight(qualified);
+    return this;
+  }
+
+  public Access ParseName.qualifiesAccess(Access access) {
+    if (access instanceof ParseName) {
+      ParseName name = (ParseName) access;
+      ArrayList<NamePart> parts = new ArrayList<NamePart>(nameParts);
+      parts.addAll(name.nameParts);
+      return new ParseName(parts);
+    } else {
+      Access result = new Dot(this, access);
+      result.setStart(getStart());
+      result.setEnd(access.getEnd());
+      return result;
+    }
+  }
+
+  /**
+   * Used when replacing pairs from a list to concatenate the result to the
+   * tail of the current location.
+   */
+  private Access Dot.qualifyTailWith(Access expr) {
+    if (getRight() instanceof Dot) {
+      Dot dot = (Dot) getRight();
+      return expr.qualifiesAccess(dot.getRight().treeCopyNoTransform());
+    }
+    return expr;
+  }
+
+  /**
+   * A part of a paritally classified parse name.
+   */
+  class NamePart {
+    public static final NamePart EMPTY = new NamePart() {
+      @Override
+      public boolean isPackageQualifier() {
+        return true;
+      }
+
+      @Override
+      public boolean hasType(Expr context, NamePart typeName) {
+        return !context.lookupType(typeName.toString()).isEmpty();
+      }
+
+      @Override
+      public String toString() {
+        return "";
+      }
+    };
+
+    protected NamePart pred = EMPTY;
+    protected String name;
+    protected int start;
+    protected int end;
+
+    protected NamePart() {
+    }
+
+    public NamePart(Symbol sym) {
+      name = (String) sym.value;
+      start = sym.getStart();
+      end = sym.getEnd();
+    }
+
+    public TypeDecl lookupType(Expr context) {
+      return null;
+    }
+
+    public boolean hasType(Expr context, NamePart typeName) {
+      return false;
+    }
+
+    public Access buildAccess() {
+      throw new Error("Can not build access from unclassified name part.");
+    }
+
+    /**
+     * @return {@code true} if this name part can precede a package name.
+     */
+    public boolean isPackageQualifier() {
+      return false;
+    }
+
+    @Override
+    public String toString() {
+      return name;
+    }
+
+    static class Package extends NamePart {
+      public Package(NamePart qualifier, NamePart pkgName) {
+        if (qualifier instanceof Package) {
+          name = qualifier.toString() + "." + pkgName.toString();
+          start = qualifier.start;
+          end = pkgName.end;
+        } else {
+          name = pkgName.toString();
+          start = pkgName.start;
+          end = pkgName.end;
+        }
+      }
+
+      @Override
+      public boolean hasType(Expr context, NamePart typeName) {
+        TypeDecl type = context.lookupType(name, typeName.toString());
+        if (!type.isUnknown()) {
+          TypeDecl hostType = context.hostType();
+          if (hostType != null && type.accessibleFrom(hostType)) {
+            return true;
+          } else if (hostType == null && type.accessibleFromPackage(context.hostPackage())) {
+            return true;
+          }
+        }
+        return false;
+      }
+
+      @Override
+      public boolean isPackageQualifier() {
+        return true;
+      }
+
+      @Override
+      public Access buildAccess() {
+        return new PackageAccess(name, start, end);
+      }
+    }
+
+    static class Type extends NamePart {
+      protected final String pkg;
+
+      public Type(NamePart qualifier, NamePart typeName) {
+        if (qualifier instanceof Package) {
+          pkg = qualifier.toString();
+          name = typeName.toString();
+          start = qualifier.start;
+          end = typeName.end;
+        } else {
+          pred = qualifier;
+          pkg = "";
+          name = typeName.toString();
+          start = typeName.start;
+          end = typeName.end;
+        }
+      }
+
+      @Override
+      public TypeDecl lookupType(Expr context) {
+        if (pkg.isEmpty()) {
+          TypeDecl hostType = pred.lookupType(context);
+          SimpleSet<TypeDecl> type;
+          if (hostType == null) {
+            type = context.lookupType(name);
+          } else {
+            type = context.keepAccessibleTypes(hostType.memberTypes(name));
+          }
+          return type.isSingleton() ? type.singletonValue() : null;
+        } else {
+          return context.lookupType(pkg, name);
+        }
+      }
+
+      @Override
+      public boolean hasType(Expr context, NamePart typeName) {
+        TypeDecl hostType = lookupType(context);
+        return hostType != null
+            && !context.keepAccessibleTypes(hostType.memberTypes(typeName.toString())).isEmpty();
+      }
+
+      @Override
+      public Access buildAccess() {
+        TypeAccess access = new TypeAccess(name, start, end);
+        if (!pkg.isEmpty()) {
+          access.setPackage(pkg);
+        }
+        return access;
+      }
+
+      @Override
+      public String toString() {
+        return pkg.isEmpty() ? name : pkg + "." + name;
+      }
+    }
+
+    static class VarName extends NamePart {
+      public VarName(NamePart qualifier, NamePart varName) {
+        pred = qualifier;
+        name = varName.toString();
+        start = varName.start;
+        end = varName.end;
+      }
+
+      @Override
+      public boolean hasType(Expr context, NamePart typeName) {
+        TypeDecl hostType = lookupType(context);
+        return hostType != null
+            && !context.keepAccessibleTypes(hostType.memberTypes(typeName.toString())).isEmpty();
+      }
+
+      @Override
+      public TypeDecl lookupType(Expr context) {
+        if (pred == NamePart.EMPTY) {
+          SimpleSet<Variable> var = context.lookupVariable(name.toString());
+          if (var.isSingleton()) {
+            return var.singletonValue().type();
+          }
+        } else {
+          TypeDecl hostType = pred.lookupType(context);
+          if (hostType != null) {
+            SimpleSet<Variable> var = context.keepAccessibleFields(
+                hostType.memberFields(name.toString()));
+            if (var.isSingleton()) {
+              return var.singletonValue().type();
+            }
+          }
+        }
+        return null;
+      }
+
+      @Override
+      public Access buildAccess() {
+        return new VarAccess(name, start, end);
+      }
+    }
+  }
+
+  private ArrayList<NamePart> ParseName.nameParts = new ArrayList<NamePart>();
+
+  public ParseName.ParseName(ArrayList<NamePart> nameParts) {
+    this.nameParts.addAll(nameParts);
+  }
+
+  public ParseName.ParseName(Symbol name) {
+    nameParts.add(new NamePart(name));
+  }
+
+  /**
+   * Used by the parser to build a method access from a parsed, potentially qualified, name.
+   */
+  public Access Access.buildMethodAccess(List<Expr> arguments) {
+    throw new Error("Can not build method access from access of type "
+        + getClass().getSimpleName());
+  }
+
+  public Access ParseName.buildMethodAccess(List<Expr> arguments) {
+    if (nameParts.isEmpty()) {
+      throw new Error("Can not build method access using empty parse name!");
+    }
+    int num = nameParts.size();
+    NamePart methodName = nameParts.get(nameParts.size() - 1);
+    ArrayList<NamePart> head = new ArrayList<NamePart>();
+    for (int i = 0; i < nameParts.size() - 1; ++i) {
+      head.add(nameParts.get(i));
+    }
+    MethodAccess call = new MethodAccess(methodName.toString(), arguments);
+    if (head.isEmpty()) {
+      return call;
+    } else {
+      return new Dot(new ParseName(head), call);
+    }
+  }
+
+  public Access Access.addArrayDims(List list) {
+    Access a = this;
+    for (int i = 0; i < list.getNumChildNoTransform(); i++) {
+      Dims dims = (Dims) list.getChildNoTransform(i);
+      Opt<Expr> opt = dims.getExprOpt();
+      if (opt.getNumChildNoTransform() == 1) {
+        a = new ArrayTypeWithSizeAccess(a, (Expr) opt.getChildNoTransform(0));
+      } else {
+        a = new ArrayTypeAccess(a);
+      }
+      a.setStart(dims.start());
+      a.setEnd(dims.end());
+    }
+    return a;
+  }
+}
+
+aspect NameResolution {
+
+  syn boolean Expr.isParseName() = false;
+
+  eq ParseName.isParseName() = true;
+
+  syn String ParseName.name() {
+    StringBuilder sb = new StringBuilder();
+    for (NamePart part : nameParts) {
+      if (sb.length() != 0) {
+        sb.append(".");
+      }
+      sb.append(part.toString());
+    }
+    return sb.toString();
+  }
+
+  protected NamePart ParseName.resolvePackageOrTypeName(NamePart qualifier, NamePart name) {
+    if (qualifier.isPackageQualifier()) {
+      if (!qualifier.hasType(this, name)) {
+        return new NamePart.Package(qualifier, name);
+      }
+    }
+    return new NamePart.Type(qualifier, name);
+  }
+
+  protected NamePart ParseName.resolveAmbiguousName(NamePart qualifier, NamePart name) {
+    if (qualifier == NamePart.EMPTY) {
+      SimpleSet<Variable> var = lookupVariable(name.toString());
+      if (!var.isEmpty()) {
+        return new NamePart.VarName(qualifier, name);
+      }
+    } else {
+      TypeDecl hostType = qualifier.lookupType(this);
+      if (hostType != null) {
+        SimpleSet<Variable> var = hostType().keepAccessibleFields(hostType,
+            hostType.memberFields(name.toString()));
+        if (!var.isEmpty()) {
+          return new NamePart.VarName(qualifier, name);
+        }
+      }
+    }
+    return resolvePackageOrTypeName(qualifier, name);
+  }
+
+  /**
+   * A parse name can only be disambiguated if it is not qualified by an
+   * expression containing another unresolved parse name.
+   */
+  inh boolean ParseName.canResolve();
+  inh boolean Dot.canResolve();
+
+  // Default equations:
+  eq TypeDecl.getChild().canResolve() = true;
+  eq BodyDecl.getChild().canResolve() = true;
+  eq CompilationUnit.getChild().canResolve() = true;
+
+  // The right hand side can be resolved if the left does not contain a parse name,
+  // and if the current context allows resolution.
+  eq Dot.getRight().canResolve() = !getLeft().containsParseName() && canResolve();
+
+  /**
+   * Test if an expression contains an unresolved parse name.
+   */
+  syn boolean Expr.containsParseName() = false;
+  eq Binary.containsParseName() =
+      getLeftOperand().containsParseName() || getRightOperand().containsParseName();
+  eq CastExpr.containsParseName() =
+      getTypeAccess().containsParseName() || getExpr().containsParseName();
+  eq ParExpr.containsParseName() = getExpr().containsParseName();
+  eq ClassInstanceExpr.containsParseName() = getAccess().containsParseName();
+  eq ParseName.containsParseName() = true;
+
+  // This rewrite replaces a parsed name with a name reclassified according to context.
+  // Rewrites in qualified expressions must happen left-to-right. Rewrite ordering
+  // is ensured by the rewrite condition.
+  rewrite ParseName {
+    when (canResolve())
+    to Access {
+      NamePart name = NamePart.EMPTY;
+      switch (nameType()) {
+        case PACKAGE_NAME:
+          for (NamePart next : nameParts) {
+            name = new NamePart.Package(name, next);
+          }
+          break;
+        case TYPE_NAME:
+          // The first part of the name is the package part.
+          for (int i = 0; i < nameParts.size() - 1; ++i) {
+            name = resolvePackageOrTypeName(name, nameParts.get(i));
+          }
+          // The rest of the name is the type name.
+          name = new NamePart.Type(name, nameParts.get(nameParts.size() - 1));
+          break;
+        case PACKAGE_OR_TYPE_NAME:
+          for (NamePart next : nameParts) {
+            name = resolvePackageOrTypeName(name, next);
+          }
+          break;
+        case AMBIGUOUS_NAME:
+          for (NamePart next : nameParts) {
+            name = resolveAmbiguousName(name, next);
+          }
+          break;
+        case EXPRESSION_NAME:
+          // The first part of the name is the package part.
+          for (int i = 0; i < nameParts.size() - 1; ++i) {
+            name = resolveAmbiguousName(name, nameParts.get(i));
+          }
+          name = new NamePart.VarName(name, nameParts.get(nameParts.size() - 1));
+          break;
+        case NOT_CLASSIFIED:
+        default:
+          throw new Error("Failure in name classification: unknown name type encountered");
+      }
+      Access result = null;
+      while (name != NamePart.EMPTY) {
+        if (result == null) {
+          result = name.buildAccess();
+        } else {
+          result = new Dot(name.buildAccess(), result);
+        }
+        name = name.pred;
+      }
+      return result;
+    }
+  }
+}

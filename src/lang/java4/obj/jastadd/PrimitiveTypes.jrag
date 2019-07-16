@@ -1,0 +1,150 @@
+/* Copyright (c) 2005-2008, Torbjorn Ekman
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice,
+ * this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ * this list of conditions and the following disclaimer in the documentation
+ * and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its
+ * contributors may be used to endorse or promote products derived from this
+ * software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+
+/**
+ * Primitive type nonterminal attributes.
+ */
+aspect PrimitiveTypes {
+  protected static final String ASTNode.PRIMITIVE_PACKAGE_NAME = "@primitive";
+
+  syn nta TypeDecl PrimitiveCompilationUnit.typeBoolean() {
+    BooleanType type = new BooleanType();
+    type.setModifiers(new Modifiers(new List().add(new Modifier("public"))));
+    type.setID("boolean");
+    return type;
+  }
+
+  syn nta TypeDecl PrimitiveCompilationUnit.typeByte() {
+    ByteType type = new ByteType();
+    type.setModifiers(new Modifiers(new List().add(new Modifier("public"))));
+    type.setID("byte");
+    return type;
+  }
+
+  syn nta TypeDecl PrimitiveCompilationUnit.typeShort() {
+    ShortType type = new ShortType();
+    type.setModifiers(new Modifiers(new List().add(new Modifier("public"))));
+    type.setID("short");
+    return type;
+  }
+
+  syn nta TypeDecl PrimitiveCompilationUnit.typeChar() {
+    CharType type = new CharType();
+    type.setModifiers(new Modifiers(new List().add(new Modifier("public"))));
+    type.setID("char");
+    return type;
+  }
+
+  syn nta TypeDecl PrimitiveCompilationUnit.typeInt() {
+    IntType type = new IntType();
+    type.setModifiers(new Modifiers(new List().add(new Modifier("public"))));
+    type.setID("int");
+    return type;
+  }
+
+  syn nta TypeDecl PrimitiveCompilationUnit.typeLong() {
+    LongType type = new LongType();
+    type.setModifiers(new Modifiers(new List().add(new Modifier("public"))));
+    type.setID("long");
+    return type;
+  }
+
+  syn nta TypeDecl PrimitiveCompilationUnit.typeFloat() {
+    FloatType type = new FloatType();
+    type.setModifiers(new Modifiers(new List().add(new Modifier("public"))));
+    type.setID("float");
+    return type;
+  }
+
+  syn nta TypeDecl PrimitiveCompilationUnit.typeDouble() {
+    DoubleType type = new DoubleType();
+    type.setModifiers(new Modifiers(new List().add(new Modifier("public"))));
+    type.setID("double");
+    return type;
+  }
+
+  syn nta TypeDecl PrimitiveCompilationUnit.typeVoid() {
+    VoidType classDecl = new VoidType();
+    classDecl.setModifiers(new Modifiers(new List().add(new Modifier("public"))));
+    classDecl.setID("void");
+    return classDecl;
+  }
+
+  syn nta TypeDecl PrimitiveCompilationUnit.typeNull() {
+    NullType classDecl = new NullType();
+    classDecl.setModifiers(new Modifiers(new List().add(new Modifier("public"))));
+    classDecl.setID("null");
+    return classDecl;
+  }
+
+  syn nta TypeDecl PrimitiveCompilationUnit.unknownType() {
+    ClassDecl classDecl = new UnknownType();
+    classDecl.setModifiers(new Modifiers(new List().add(new Modifier("public"))));
+    classDecl.setID("Unknown");
+    MethodDecl methodDecl = new MethodDecl(
+        new Modifiers(new List().add(
+          new Modifier("public")
+        )),
+        new PrimitiveTypeAccess("Unknown"),
+        "unknown",
+        new List(),
+        new List(),
+        new Opt()
+    );
+    classDecl.addBodyDecl(methodDecl);
+    FieldDeclarator unknown = new FieldDeclarator(
+        "unknown",
+        new List<Dims>(),
+        new Opt<Expr>());
+    FieldDecl fieldDecl = new FieldDecl(
+        new Modifiers(new List<Modifier>(new Modifier("public"))),
+        new PrimitiveTypeAccess("Unknown"),
+        new List<FieldDeclarator>(unknown)
+    );
+    classDecl.addBodyDecl(fieldDecl);
+    ConstructorDecl constrDecl = new ConstructorDecl(
+      new Modifiers(new List().add(new Modifier("public"))),
+      "Unknown",
+      new List(),
+      new List(),
+      new Opt(),
+      new Block()
+    );
+    classDecl.addBodyDecl(constrDecl);
+    return classDecl;
+  }
+
+  /** Creates a compilation unit with primitive types. */
+  syn nta PrimitiveCompilationUnit Program.getPrimitiveCompilationUnit() {
+    PrimitiveCompilationUnit u = new PrimitiveCompilationUnit();
+    u.setPackageDecl(PRIMITIVE_PACKAGE_NAME);
+    return u;
+  }
+}

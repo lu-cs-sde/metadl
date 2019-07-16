@@ -1,0 +1,218 @@
+/* Copyright (c) 2005-2008, Torbjorn Ekman
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice,
+ * this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ * this list of conditions and the following disclaimer in the documentation
+ * and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its
+ * contributors may be used to endorse or promote products derived from this
+ * software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+
+import java.io.FileNotFoundException;
+import java.io.InputStream;
+
+aspect BytecodeAttributes {
+  class Attributes {
+    private AbstractClassfileParser p;
+
+    private List<Access> exceptionList;
+
+    private boolean isSynthetic;
+
+    private CONSTANT_Info constantValue;
+
+    public Attributes(AbstractClassfileParser parser) throws IOException {
+      this(parser, null, null, null);
+    }
+
+    public Attributes(AbstractClassfileParser parser, TypeDecl typeDecl, TypeDecl outerTypeDecl,
+        Program classPath) throws IOException {
+      p = parser;
+      exceptionList = new List<Access>();
+      isSynthetic = false;
+
+      int attributes_count = p.u2();
+      if (AbstractClassfileParser.VERBOSE) {
+        p.format("    %d attributes:%n", attributes_count);
+      }
+      for (int j = 0; j < attributes_count; j++) {
+        int attribute_name_index = p.u2();
+        int attribute_length = p.u4();
+        String attribute_name = p.getCONSTANT_Utf8_Info(attribute_name_index).string();
+        if (AbstractClassfileParser.VERBOSE) {
+          p.format("    Attribute: %s, length: %d%n", attribute_name, attribute_length);
+        }
+        if (attribute_name.equals("Exceptions")) {
+          exceptions();
+        } else if (attribute_name.equals("ConstantValue") && attribute_length == 2) {
+          constantValues();
+        } else if (attribute_name.equals("InnerClasses")) {
+          innerClasses(typeDecl, outerTypeDecl, classPath);
+        } else if (attribute_name.equals("Synthetic")) {
+          isSynthetic = true;
+        } else {
+          p.skip(attribute_length);
+        }
+      }
+    }
+
+    /**
+     * Load inner classes from their respective class files.
+     */
+    public void innerClasses(TypeDecl typeDecl, TypeDecl outerTypeDecl, Program classPath)
+        throws IOException {
+      int number_of_classes = p.u2();
+      if (AbstractClassfileParser.VERBOSE) {
+        p.format("    Number of classes: %d%n", number_of_classes);
+      }
+      for (int i = 0; i < number_of_classes; i++) {
+        if (AbstractClassfileParser.VERBOSE) {
+          p.format("      %d(%d):", i, number_of_classes);
+        }
+        int inner_class_info_index = p.u2();
+        int outer_class_info_index = p.u2();
+        int inner_name_index = p.u2();
+        int inner_class_access_flags = p.u2();
+        String inner_name = "";
+        if (inner_class_info_index > 0 && outer_class_info_index > 0 && inner_name_index >  0) {
+          CONSTANT_Class_Info inner_class_info = p.getCONSTANT_Class_Info(inner_class_info_index);
+          CONSTANT_Class_Info outer_class_info = p.getCONSTANT_Class_Info(outer_class_info_index);
+          String inner_class_name = inner_class_info.name();
+          String outer_class_name = outer_class_info.name();
+
+          if (AbstractClassfileParser.VERBOSE) {
+            p.format("      inner: %s, outer: %s%n", inner_class_name, outer_class_name);
+          }
+
+          if (inner_name_index != 0) {
+            inner_name = p.getCONSTANT_Utf8_Info(inner_name_index).string();
+          } else {
+            inner_name = inner_class_info.simpleName();
+          }
+
+          if (inner_class_info.name().equals(p.classInfo.name())) {
+            if (AbstractClassfileParser.VERBOSE) {
+              p.format("      Class %s is inner%n", inner_class_name);
+            }
+            typeDecl.setID(inner_name);
+            typeDecl.setModifiers(
+                AbstractClassfileParser.modifiers(inner_class_access_flags & 0x041f));
+            if ((inner_class_access_flags & 0x0008) == 0) {
+              removeEnclosingThis(typeDecl);
+            }
+            if (p.outerClassNameEquals(outer_class_info.name())) {
+              MemberTypeDecl m = null;
+              if (typeDecl instanceof ClassDecl) {
+                m = new MemberClassDecl((ClassDecl) typeDecl);
+                outerTypeDecl.addBodyDecl(m);
+              } else if (typeDecl instanceof InterfaceDecl) {
+                m = new MemberInterfaceDecl((InterfaceDecl) typeDecl);
+                outerTypeDecl.addBodyDecl(m);
+              }
+            }
+          }
+          if (outer_class_info.name().equals(p.classInfo.name())) {
+            if (AbstractClassfileParser.VERBOSE) {
+              p.format("      Class %s has inner class: %s%n",
+                  p.classInfo.name(), inner_class_name);
+            }
+            if (AbstractClassfileParser.VERBOSE) {
+              p.format("Begin processing: %s%n", inner_class_name);
+            }
+            try {
+              InputStream is = classPath.getInputStream(inner_class_name);
+              if (is != null) {
+                BytecodeParser p2 = new BytecodeParser(is, p.name);
+                p2.parse(typeDecl, outer_class_info, classPath);
+                is.close();
+              } else {
+                System.err.format("Error: ClassFile %s not found%n", inner_class_name);
+              }
+            } catch (FileNotFoundException e) {
+              System.err.format("Error: %s not found%n", inner_class_name);
+            } catch (Exception e) {
+              e.printStackTrace();
+              System.exit(1);
+            }
+            if (AbstractClassfileParser.VERBOSE) {
+              p.format("End processing: %s%n", inner_class_name);
+            }
+          }
+        }
+      }
+      if (AbstractClassfileParser.VERBOSE) {
+        p.println("    end");
+      }
+    }
+
+    private void removeEnclosingThis(ASTNode node) {
+      if (node instanceof ConstructorDecl) {
+        ConstructorDecl d = (ConstructorDecl) node;
+        List<ParameterDeclaration> list = new List<ParameterDeclaration>();
+        List<ParameterDeclaration> old = d.getParameterListNoTransform();
+        for (int j = 1; j < old.getNumChildNoTransform(); j++) {
+          list.add(old.getChildNoTransform(j));
+        }
+        d.setParameterList(list);
+        return;
+      }
+      for (int i = 0; i < node.getNumChildNoTransform(); i++) {
+        ASTNode child = node.getChildNoTransform(i);
+        if (child != null) {
+          removeEnclosingThis(child);
+        }
+      }
+    }
+
+    private void exceptions() throws IOException {
+      int number_of_exceptions = p.u2();
+      if (AbstractClassfileParser.VERBOSE) {
+        p.format("      %d exceptions:%n", number_of_exceptions);
+      }
+      for (int i = 0; i < number_of_exceptions; i++) {
+        CONSTANT_Class_Info exception = p.getCONSTANT_Class_Info(p.u2());
+        if (AbstractClassfileParser.VERBOSE) {
+          p.format("        exception %s%n", exception.name());
+        }
+        exceptionList.add(exception.access());
+      }
+    }
+
+    private void constantValues() throws IOException {
+      int constantvalue_index = p.u2();
+      constantValue = p.getCONSTANT_Info(constantvalue_index);
+    }
+
+    public List exceptionList() {
+      return exceptionList;
+    }
+
+    public CONSTANT_Info constantValue() {
+      return constantValue;
+    }
+
+    public boolean isSynthetic() {
+      return isSynthetic;
+    }
+  }
+}

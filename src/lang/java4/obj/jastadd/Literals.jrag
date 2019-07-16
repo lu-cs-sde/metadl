@@ -1,0 +1,230 @@
+/* Copyright (c) 2005-2008, Torbjorn Ekman
+ *                    2013, Jesper Öqvist <jesper.oqvist@cs.lth.se>
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice,
+ * this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ * this list of conditions and the following disclaimer in the documentation
+ * and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its
+ * contributors may be used to endorse or promote products derived from this
+ * software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+
+/**
+ * Utility attributes and methods for Literals.
+ * This used only for Java 4 and 5.
+ */
+aspect Literals {
+  syn lazy boolean FloatingPointLiteral.isZero() {
+    String s = getLITERAL();
+    int len = s.length();
+    if (s.charAt(len - 1) == 'f' || s.charAt(len - 1) == 'F') {
+      len -= 1;
+    }
+    for (int i = 0; i < len; i++) {
+      char c = s.charAt(i);
+      if (c == 'E'  || c == 'e' || c == 'P' || c == 'p') {
+        break;
+      }
+      if (Character.isDigit(c) && c != '0') {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  syn lazy boolean DoubleLiteral.isZero() {
+    String s = getLITERAL();
+    int len = s.length();
+    if (s.charAt(len - 1) == 'd' || s.charAt(len - 1) == 'D') {
+      len -= 1;
+    }
+    for (int i = 0; i < len; i++) {
+      char c = s.charAt(i);
+      if (c == 'E'  || c == 'e' || c == 'P' || c == 'p') {
+        break;
+      }
+      if (Character.isDigit(c) && c != '0') {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  static long Literal.parseLong(String s) {
+    long x = 0L;
+    s = s.toLowerCase();
+    if (s.endsWith("l")) {
+      s = s.substring(0, s.length() - 1);
+    }
+    boolean neg = false;
+    if (s.startsWith("-")) {
+      s = s.substring(1);
+      neg = true;
+    }
+    if (s.startsWith("0x")) {
+      s = s.substring(2);
+      if (s.length() > 16) {
+        for (int i = 0; i < s.length() - 16; i++) {
+          if (s.charAt(i) != '0') {
+            throw new NumberFormatException("");
+          }
+        }
+      }
+      for (int i = 0; i < s.length(); i++) {
+        int c = s.charAt(i);
+        if (c >= 'a' && c <= 'f') {
+          c = c - 'a' + 10;
+        } else if (c >= '0' && c <= '9') {
+          c = c - '0';
+        } else {
+          throw new NumberFormatException("");
+        }
+        x = x * 16 + c;
+      }
+    } else if (s.startsWith("0")) {
+      s = s.substring(1);
+      // Octal literals larger than 01777777777777777777777L are not valid.
+      if (s.length() > 21) {
+        for (int i = 0; i < s.length() - 21; i++) {
+          if (i == s.length() - 21 - 1) {
+            if (s.charAt(i) != '0' && s.charAt(i) != '1') {
+              throw new NumberFormatException("");
+            }
+          } else {
+            if (s.charAt(i) != '0') {
+              throw new NumberFormatException("");
+            }
+          }
+        }
+      }
+      for (int i = 0; i < s.length(); i++) {
+        int c = s.charAt(i);
+        if (c >= '0' && c <= '7') {
+          c = c - '0';
+        } else {
+          throw new NumberFormatException("");
+        }
+        x = x * 8 + c;
+      }
+    } else {
+      long oldx = 0;
+      for (int i = 0; i < s.length(); i++) {
+        int c = s.charAt(i);
+        if (c >= '0' && c <= '9') {
+          c = c - '0';
+        } else {
+          throw new NumberFormatException("");
+        }
+        x = x * 10 + c;
+        if (x < oldx) {
+          boolean negMinValue = i == (s.length()-1) && neg && x == Long.MIN_VALUE;
+          if (!negMinValue) {
+            throw new NumberFormatException("");
+          }
+        }
+        oldx = x;
+      }
+      if (x == Long.MIN_VALUE) {
+        return x;
+      }
+      if (x < 0) {
+        throw new NumberFormatException("");
+      }
+    }
+    return neg ? -x : x;
+  }
+
+  syn boolean IntegerLiteral.isHex() = getLITERAL().toLowerCase().startsWith("0x");
+
+  syn boolean IntegerLiteral.isOctal() = getLITERAL().startsWith("0");
+
+  syn boolean IntegerLiteral.isDecimal() = !isHex() && !isOctal();
+
+  syn boolean LongLiteral.isHex() = getLITERAL().toLowerCase().startsWith("0x");
+
+  syn boolean LongLiteral.isOctal() = getLITERAL().startsWith("0");
+
+  syn boolean LongLiteral.isDecimal() = !isHex() && !isOctal();
+
+  eq IntegerLiteral.constant() {
+    long l = 0;
+    try {
+      l = Literal.parseLong(getLITERAL());
+    } catch (NumberFormatException e) {
+      Constant c = Constant.create(0L);
+      c.error = true;
+      return c;
+    }
+    Constant c = Constant.create((int) l);
+    if (isDecimal() && l != (int) l) {
+      c.error = true;
+    }
+    if (isOctal() && l > 037777777777L) {
+      c.error = true;
+    }
+    if (isHex() && l > 0xffffffffL) {
+      c.error = true;
+    }
+    return c;
+  }
+
+  eq LongLiteral.constant() {
+    try {
+      return Constant.create(Literal.parseLong(getLITERAL()));
+    } catch (NumberFormatException e) {
+      Constant c = Constant.create(0L);
+      c.error = true;
+      return c;
+    }
+  }
+
+  eq FloatingPointLiteral.constant() {
+    try {
+      String literal = getLITERAL();
+      int len = literal.length();
+      if (literal.charAt(len - 1) == 'f' || literal.charAt(len - 1) == 'F') {
+        literal = literal.substring(0, len - 1);
+      }
+      return Constant.create(Float.parseFloat(literal));
+    } catch (NumberFormatException e) {
+      Constant c = Constant.create(0.0f);
+      c.error = true;
+      return c;
+    }
+  }
+
+  eq DoubleLiteral.constant() {
+    try {
+      String literal = getLITERAL();
+      int len = literal.length();
+      if (literal.charAt(len - 1) == 'd' || literal.charAt(len - 1) == 'D') {
+        literal = literal.substring(0, len - 1);
+      }
+      return Constant.create(Double.parseDouble(literal));
+    } catch (NumberFormatException e) {
+      Constant c = Constant.create(0.0d);
+      c.error = true;
+      return c;
+    }
+  }
+}

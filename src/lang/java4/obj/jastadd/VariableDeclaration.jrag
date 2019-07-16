@@ -1,0 +1,149 @@
+/* Copyright (c) 2005-2008, Torbjorn Ekman
+ *               2011-2016, Jesper Öqvist <jesper.oqvist@cs.lth.se>
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice,
+ * this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ * this list of conditions and the following disclaimer in the documentation
+ * and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its
+ * contributors may be used to endorse or promote products derived from this
+ * software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+
+aspect Variables {
+  Declarator implements Variable;
+
+  syn boolean VariableDeclarator.isParameter() = false;
+
+  // 4.5.3
+  syn boolean VariableDeclarator.isClassVariable() = false;
+  syn boolean VariableDeclarator.isInstanceVariable() = false;
+  syn boolean VariableDeclarator.isMethodParameter() = false;
+  syn boolean VariableDeclarator.isConstructorParameter() = false;
+  syn boolean VariableDeclarator.isExceptionHandlerParameter() = false;
+  syn boolean VariableDeclarator.isLocalVariable() = true;
+  syn boolean VariableDeclarator.isField() = false;
+  // 4.5.4
+  syn boolean VariableDeclarator.isFinal() = getModifiers().isFinal();
+  syn boolean VariableDeclarator.isVolatile() = getModifiers().isVolatile();
+  syn boolean VariableDeclarator.isBlank() = !hasInit();
+  syn boolean VariableDeclarator.isStatic() = false;
+
+  syn String VariableDeclarator.name() = getID();
+
+  syn lazy Constant VariableDeclarator.constant() = type().cast(getInit().constant());
+
+  syn boolean FieldDeclarator.isParameter() = false;
+  // 4.5.3
+  syn boolean FieldDeclarator.isClassVariable() = isStatic() || hostType().isInterfaceDecl();
+  syn boolean FieldDeclarator.isInstanceVariable() =
+      (hostType().isClassDecl() || hostType().isAnonymous()) && !isStatic();
+  syn boolean FieldDeclarator.isMethodParameter() = false;
+  syn boolean FieldDeclarator.isConstructorParameter() = false;
+  syn boolean FieldDeclarator.isExceptionHandlerParameter() = false;
+  syn boolean FieldDeclarator.isLocalVariable() = false;
+  syn boolean FieldDeclarator.isField() = true;
+
+  syn boolean FieldDeclarator.isBlank() = !hasInit();
+
+  syn String FieldDeclarator.name() = getID();
+  syn lazy Constant FieldDeclarator.constant() = type().cast(getInit().constant());
+
+  ParameterDeclaration implements Variable;
+
+  syn boolean ParameterDeclaration.isParameter() = true;
+
+  syn boolean ParameterDeclaration.isConstant() = false;
+  syn boolean ParameterDeclaration.isPublic() = false;
+  syn boolean ParameterDeclaration.accessibleFrom(TypeDecl type) = false;
+
+  // 4.5.3
+  syn boolean ParameterDeclaration.isClassVariable() = false;
+  syn boolean ParameterDeclaration.isInstanceVariable() = false;
+  inh boolean ParameterDeclaration.isMethodParameter();
+  inh boolean ParameterDeclaration.isConstructorParameter();
+  inh boolean ParameterDeclaration.isExceptionHandlerParameter();
+  syn boolean ParameterDeclaration.isLocalVariable() = false;
+  syn boolean ParameterDeclaration.isField() = false;
+
+  // 4.5.3
+  eq ConstructorDecl.getParameter().isMethodParameter() = false;
+  eq ConstructorDecl.getParameter().isConstructorParameter() = true;
+  eq ConstructorDecl.getParameter().isExceptionHandlerParameter() = false;
+  eq MethodDecl.getParameter().isMethodParameter() = true;
+  eq MethodDecl.getParameter().isConstructorParameter() = false;
+  eq MethodDecl.getParameter().isExceptionHandlerParameter() = false;
+  eq BasicCatch.getParameter().isMethodParameter() = false;
+  eq BasicCatch.getParameter().isConstructorParameter() = false;
+  eq BasicCatch.getParameter().isExceptionHandlerParameter() = true;
+
+  eq Program.getChild().isMethodParameter() = false;
+  eq Program.getChild().isConstructorParameter() = false;
+  eq Program.getChild().isExceptionHandlerParameter() = false;
+
+  // 4.5.4
+  syn boolean ParameterDeclaration.isFinal() = getModifiers().isFinal();
+  syn boolean ParameterDeclaration.isVolatile() = getModifiers().isVolatile();
+  syn boolean ParameterDeclaration.isBlank() = true;
+  syn boolean ParameterDeclaration.isStatic() = false;
+
+  syn String ParameterDeclaration.name() = getID();
+
+  syn boolean ParameterDeclaration.hasInit() = false;
+  syn Expr ParameterDeclaration.getInit() {
+    throw new UnsupportedOperationException();
+  }
+  syn Constant ParameterDeclaration.constant() {
+    throw new UnsupportedOperationException();
+  }
+}
+
+aspect VariableDeclarationTransformation {
+  public void ASTNode.clearLocations() {
+    setStart(0);
+    setEnd(0);
+    for (int i = 0; i < getNumChildNoTransform(); i++) {
+      getChildNoTransform(i).clearLocations();
+    }
+  }
+
+  /** Modifiers are same as the parent declaration (e.g. VarDeclStmt). */
+  syn lazy Modifiers Declarator.getModifiers() = declarationModifiers();
+
+  /** Inherited attribute computing the modifiers of the parent declaration. */
+  inh lazy Modifiers Declarator.declarationModifiers();
+
+  eq VarDeclStmt.getDeclarator(int index).declarationModifiers() = getModifiers();
+
+  eq FieldDecl.getDeclarator(int index).declarationModifiers() = getModifiers();
+
+  /** Type access is copied from the parent declaration, with added array dimensions. */
+  syn lazy Access Declarator.getTypeAccess() =
+      ((Access) declarationType().treeCopyNoTransform()).addArrayDims(getDimsList());
+
+  /** Inherited attribute computing the type access of the parent declaration. */
+  inh lazy Access Declarator.declarationType();
+
+  eq VarDeclStmt.getDeclarator(int index).declarationType() = getTypeAccess();
+
+  eq FieldDecl.getDeclarator(int index).declarationType() = getTypeAccess();
+}

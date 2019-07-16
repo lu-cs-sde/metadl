@@ -1,0 +1,148 @@
+/* Copyright (c) 2005-2008, Torbjorn Ekman
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice,
+ * this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ * this list of conditions and the following disclaimer in the documentation
+ * and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its
+ * contributors may be used to endorse or promote products derived from this
+ * software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+
+aspect AnonymousClasses {
+
+  inh TypeDecl AnonymousDecl.superType();
+
+  eq ClassInstanceExpr.getTypeDecl().superType() = getAccess().type();
+
+  eq Program.getChild().superType() = null;
+
+  inh ConstructorDecl AnonymousDecl.constructorDecl();
+
+  eq ClassInstanceExpr.getTypeDecl().constructorDecl() {
+    Collection<ConstructorDecl> constructors = getAccess().type().constructors();
+    SimpleSet<ConstructorDecl> maxSpecific = mostSpecificConstructor(constructors);
+    if (maxSpecific.isSingleton()) {
+      return maxSpecific.singletonValue();
+    }
+    return unknownConstructor();
+  }
+
+  eq Program.getChild().constructorDecl() = unknownConstructor();
+
+  public int TypeDecl.anonymousIndex = 0;
+
+  eq AnonymousDecl.isCircular() = false;
+
+  syn lazy Opt AnonymousDecl.getSuperClassOpt() {
+    if (superType().isInterfaceDecl()) {
+      return new Opt(typeObject().createQualifiedAccess());
+    } else {
+      return new Opt(superType().createBoundAccess());
+    }
+  }
+
+  syn lazy List AnonymousDecl.getImplementsList() {
+    if (superType().isInterfaceDecl()) {
+      return new List().add(superType().createBoundAccess());
+    } else {
+      return new List();
+    }
+  }
+
+  public int TypeDecl.nextAnonymousIndex() {
+    if (isNestedType()) {
+      return enclosingType().nextAnonymousIndex();
+    }
+    return anonymousIndex++;
+  }
+
+  /**
+   * Create the list of parameters for the anonymous class constructor.
+   */
+  protected List AnonymousDecl.constructorParameterList(ConstructorDecl decl) {
+    List parameterList = new List();
+    for (int i = 0; i < decl.getNumParameter(); i++) {
+      ParameterDeclaration param = decl.getParameter(i);
+      parameterList.add(
+          new ParameterDeclaration(
+              param.type().createBoundAccess(),
+              param.name()));
+    }
+
+    return parameterList;
+  }
+
+  inh TypeDecl AnonymousDecl.typeNullPointerException();
+
+  /**
+   * Used in bytecode generation to generate the exception list for this field.
+   */
+  syn lazy Collection<TypeDecl> FieldDeclarator.exceptions() {
+    Collection<TypeDecl> exceptions = new HashSet<TypeDecl>();
+    if (isInstanceVariable() && hasInit()) {
+      collectExceptions(exceptions);
+    }
+    return exceptions;
+  }
+
+  /**
+   * Used in bytecode generation to generate the exception list for this initializer.
+   */
+  syn lazy Collection<TypeDecl> InstanceInitializer.exceptions() {
+    Collection<TypeDecl> exceptions = new HashSet<TypeDecl>();
+    collectExceptions(exceptions);
+    for (Iterator<TypeDecl> iter = exceptions.iterator(); iter.hasNext(); ) {
+      TypeDecl exception = iter.next();
+      if (!getBlock().reachedException(exception)) {
+        iter.remove();
+      }
+    }
+    return exceptions;
+  }
+
+  // TODO(joqvist): Refactor this as a collection attribute?
+  /**
+   * Finds all exceptions thrown in this part of the AST.
+   */
+  protected void ASTNode.collectExceptions(Collection<TypeDecl> exceptions) {
+    for (int i = 0; i < getNumChild(); i++) {
+      getChild(i).collectExceptions(exceptions);
+    }
+  }
+
+  protected void ThrowStmt.collectExceptions(Collection<TypeDecl> exceptions) {
+    super.collectExceptions(exceptions);
+    TypeDecl exceptionType = getExpr().type();
+    if (exceptionType == typeNull()) {
+      exceptionType = typeNullPointerException();
+    }
+    exceptions.add(exceptionType);
+  }
+
+  protected void MethodAccess.collectExceptions(Collection<TypeDecl> exceptions) {
+    super.collectExceptions(exceptions);
+    for (int i = 0; i < decl().getNumException(); i++) {
+      exceptions.add(decl().getException(i).type());
+    }
+  }
+}

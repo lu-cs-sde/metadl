@@ -1,0 +1,17 @@
+aspect NTA {
+	Opt<Block> BreakStmt.getFinallyOpt() {
+		return null;
+	}
+
+	Opt<Block> ContinueStmt.getFinallyOpt() {
+		return null;
+	}
+
+	Opt<Block> ReturnStmt.getFinallyOpt() {
+		return null;
+	}
+
+	Opt<ConstructorDecl> ClassDecl.getImplicitConstructorOpt() {
+		return null;
+	}
+}

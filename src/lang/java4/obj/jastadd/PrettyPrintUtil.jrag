@@ -1,0 +1,459 @@
+/* Copyright (c) 2015-2017, Jesper Öqvist <jesper.oqvist@cs.lth.se>
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice,
+ * this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ * this list of conditions and the following disclaimer in the documentation
+ * and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its
+ * contributors may be used to endorse or promote products derived from this
+ * software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+
+import org.jastadd.util.PrettyPrintable;
+import org.jastadd.util.PrettyPrinter;
+
+aspect PrettyPrintUtil {
+  ASTNode implements PrettyPrintable;
+
+  /**
+   * Pretty-print this ASTNode.
+   * @return pretty-printed representation of this AST node
+   */
+  public String ASTNode.prettyPrint() {
+    ByteArrayOutputStream buf = new ByteArrayOutputStream();
+    prettyPrint(new PrettyPrinter("  ", new PrintStream(buf)));
+    return buf.toString();
+  }
+
+  /**
+   * Pretty print this AST node to the target PrintStream.
+   * @param out target for pretty printing
+   */
+  public void ASTNode.prettyPrint(PrintStream out) {
+    prettyPrint(new PrettyPrinter("  ", out));
+  }
+
+  // The ASTNode.toString() method is used for debugging ExtendJ and should not access
+  // any attributes that can trigger rewrites. We want to avoid rewrite processing
+  // during debugging because it may cause unwanted side effects that are very confusing
+  // wehn inspecting the AST in a debugger.
+  // Another reason we avoid attribute evaluation in toString is to avoid
+  // breakpoints in attributes from triggering by using toString.
+
+  /** @return the name of the class implementing this AST node. */
+  @Override public String ASTNode.toString() {
+    return getClass().getName();
+  }
+
+  @Override public String CompilationUnit.toString() {
+    return classSource.sourceName();
+  }
+
+  @Override public String TypeAccess.toString() {
+    if (getPackage().isEmpty()) {
+      return getID();
+    } else {
+      return getPackage() + "." + getID();
+    }
+  }
+
+  @Override public String PrimitiveTypeAccess.toString() {
+    return getID();
+  }
+
+  @Override public String BoundTypeAccess.toString() {
+    return getTypeDecl().toString(); // TypeDecl is a token: no rewrites apply.
+  }
+
+  @Override public String ArrayTypeAccess.toString() {
+    return getAccessNoTransform().toString() + "[]";
+  }
+
+  @Override public String ArrayTypeWithSizeAccess.toString() {
+    return String.format("%s[%s]",
+        getAccessNoTransform().toString(),
+        getExprNoTransform().toString());
+  }
+
+  @Override public String TypeDecl.toString() {
+    return getID();
+  }
+
+  @Override public String VarAccess.toString() {
+    return name();
+  }
+
+  @Override public String Declarator.toString() {
+    return getID();
+  }
+
+  @Override public String MethodAccess.toString() {
+    return name() + "()";
+  }
+
+  @Override public String BoundMethodAccess.toString() {
+    return methodDecl.toString();
+  }
+
+  @Override public String ParseName.toString() {
+    return name();
+  }
+
+  @Override public String Literal.toString() {
+    return getLITERAL();
+  }
+
+  @Override public String MethodDecl.toString() {
+    int numParams = 0;
+    StringBuilder params = new StringBuilder();
+    for (ParameterDeclaration param : getParameterListNoTransform()) {
+      if (numParams > 0) {
+        params.append(", ");
+      }
+      params.append(param.toString());
+      numParams += 1;
+    }
+    return String.format("%s %s(%s)",
+        getTypeAccessNoTransform().toString(),
+        getID(),
+        params);
+  }
+
+  @Override public String ParameterDeclaration.toString() {
+    return String.format("%s %s",
+        getTypeAccessNoTransform().toString(),
+        getID());
+  }
+
+  @Override public String Dot.toString() {
+    Expr left = getLeftNoTransform();
+    Expr right = getRightNoTransform();
+    if (!(right instanceof ArrayAccess)) {
+      return String.format("%s.%s",
+          left.toString(),
+          right.toString());
+    } else {
+      ArrayAccess array = (ArrayAccess) right;
+      return String.format("%s[%s]",
+          left.toString(),
+          array.getExprNoTransform().toString());
+
+    }
+  }
+
+  @Override public String ThisAccess.toString() {
+    return "this";
+  }
+
+  @Override public String SuperAccess.toString() {
+    return "super";
+  }
+
+  public void ASTNode.prettyPrint(PrettyPrinter out) {
+  }
+
+  /** Pretty-print Opt nodes only if they are not empty. */
+  public void Opt.prettyPrint(PrettyPrinter out) {
+    if (getNumChild() > 0) {
+      getChild(0).prettyPrint(out);
+    }
+  }
+
+  /** Default list pretty printing prints all list elements. */
+  public void List.prettyPrint(PrettyPrinter out) {
+    for (int i = 0; i < getNumChild(); ++i) {
+      getChild(i).prettyPrint(out);
+    }
+  }
+
+  public void Program.prettyPrint(PrettyPrinter out) {
+    for (Iterator iter = compilationUnitIterator(); iter.hasNext(); ) {
+      CompilationUnit cu = (CompilationUnit) iter.next();
+      if (cu.fromSource()) {
+        out.print(cu);
+      }
+    }
+  }
+
+  /**
+   * Manually implemented because it is too complex for a template.
+   */
+  public void ForStmt.prettyPrint(PrettyPrinter out) {
+    out.print("for (");
+    if (getNumInitStmt() > 0) {
+      if (getInitStmt(0) instanceof ExprStmt) {
+        ExprStmt stmt = (ExprStmt) getInitStmt(0);
+        out.print(stmt.getExpr());
+        for (int i = 1; i < getNumInitStmt(); i++) {
+          out.print(", ");
+          stmt = (ExprStmt) getInitStmt(i);
+          out.print(stmt.getExpr());
+        }
+        out.print("; ");
+      } else {
+        out.print(getInitStmt(0));
+        out.print(" ");
+      }
+    } else {
+      out.print(" ; ");
+    }
+
+    if (hasCondition()) {
+      out.print(getCondition());
+    }
+    out.print("; ");
+
+    // Print update statements.
+    for (int i = 0; i < getNumUpdateStmt(); i++) {
+      if (i > 0) {
+        out.print(", ");
+      }
+      ExprStmt update = (ExprStmt) getUpdateStmt(i);
+      out.print(update.getExpr());
+    }
+
+    out.print(") ");
+    if (getStmt() instanceof Block) {
+      out.print(getStmt());
+    } else {
+      out.print("{");
+      out.println();
+      out.indent(1);
+      out.print(getStmt());
+      out.println();
+      out.print("}");
+    }
+  }
+
+  public void IfStmt.prettyPrint(PrettyPrinter out) {
+    out.print("if (");
+    out.print(getCondition());
+    out.print(") ");
+    if (getThen() instanceof Block) {
+      out.print(getThen());
+    } else {
+      out.print("{");
+      out.println();
+      out.indent(1);
+      out.print(getThen());
+      out.indent(0);
+      out.println();
+      out.print("}");
+    }
+    if (hasElse()) {
+      out.print(" else ");
+      if (getElse() instanceof Block) {
+        out.print(getElse());
+      } else {
+        out.print("{");
+        out.println();
+        out.indent(1);
+        out.print(getElse());
+        out.println();
+        out.print("}");
+      }
+    }
+  }
+
+  public void WhileStmt.prettyPrint(PrettyPrinter out) {
+    out.print("while (");
+    out.print(getCondition());
+    out.print(") ");
+    if (getStmt() instanceof Block) {
+      out.print(getStmt());
+    } else {
+      out.print("{");
+      out.println();
+      out.indent(1);
+      out.print(getStmt());
+      out.println();
+      out.print("}");
+    }
+  }
+
+  /**
+   * Has package name (not @primitive)
+   */
+  syn boolean TypeAccess.hasPackage() = !getPackage().isEmpty() && decl().isReferenceType();
+
+  syn boolean InstanceInitializer.blockIsEmpty() = getBlock().getNumStmt() == 0;
+
+  syn boolean StaticInitializer.blockIsEmpty() = getBlock().getNumStmt() == 0;
+
+  syn boolean Block.hasStmts() = getNumStmt() > 0;
+
+  /**
+   * @return <code>true</code> if there is any printable body decl
+   */
+  syn boolean ClassInstanceExpr.hasPrintableBodyDecl() {
+    TypeDecl decl = getTypeDecl();
+    for (int i = 0; i < decl.getNumBodyDecl(); ++i) {
+      if (decl.getBodyDecl(i) instanceof ConstructorDecl) {
+        ConstructorDecl cd = (ConstructorDecl) decl.getBodyDecl(i);
+        if (!cd.isImplicitConstructor()) {
+          return true;
+        }
+      } else {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  syn List<BodyDecl> ClassInstanceExpr.bodyDecls() = getTypeDecl().getBodyDeclList();
+
+  syn boolean ClassDecl.hasModifiers() = getModifiers().getNumModifier() > 0;
+
+  syn boolean InterfaceDecl.hasModifiers() = getModifiers().getNumModifier() > 0;
+
+  syn boolean ConstructorDecl.hasModifiers() = getModifiers().getNumModifier() > 0;
+
+  syn boolean MethodDecl.hasModifiers() = getModifiers().getNumModifier() > 0;
+
+  syn boolean FieldDecl.hasModifiers() = getModifiers().getNumModifier() > 0;
+
+  syn boolean Declarator.hasModifiers() = getModifiers().getNumModifier() > 0;
+
+  syn boolean ParameterDeclaration.hasModifiers() = getModifiers().getNumModifier() > 0;
+
+  syn boolean ConstructorDecl.hasExceptions() = getNumException() > 0;
+
+  syn List<Stmt> ConstructorDecl.blockStmts() = getBlock().getStmtList();
+
+  syn boolean MethodDecl.hasExceptions() = getNumException() > 0;
+
+  syn boolean CompilationUnit.hasPackageDecl() = !getPackageDecl().isEmpty();
+
+  syn String StringLiteral.escapedLiteral() = escape(getLITERAL());
+
+  syn String CharacterLiteral.escapedLiteral() = escape(getLITERAL());
+
+  /**
+   * Pretty-printed qualified expression needs a dot unless the right
+   * hand side is an array access.
+   */
+  syn boolean Dot.needsDot() = !(rightSide() instanceof ArrayAccess);
+
+  /** The operator string used for pretty printing this expression. */
+  syn String Binary.printOp();
+  eq MulExpr.printOp() = "*";
+  eq DivExpr.printOp() = "/";
+  eq ModExpr.printOp() = "%";
+  eq AddExpr.printOp() = "+";
+  eq SubExpr.printOp() = "-";
+  eq LShiftExpr.printOp() = "<<";
+  eq RShiftExpr.printOp() = ">>";
+  eq URShiftExpr.printOp() = ">>>";
+  eq AndBitwiseExpr.printOp() = "&";
+  eq OrBitwiseExpr.printOp() = "|";
+  eq XorBitwiseExpr.printOp() = "^";
+  eq AndLogicalExpr.printOp() = "&&";
+  eq OrLogicalExpr.printOp() = "||";
+  eq LTExpr.printOp() = "<";
+  eq GTExpr.printOp() = ">";
+  eq LEExpr.printOp() = "<=";
+  eq GEExpr.printOp() = ">=";
+  eq EQExpr.printOp() = "==";
+  eq NEExpr.printOp() = "!=";
+
+  /** The operator string used for pretty printing this expression. */
+  syn String AssignExpr.printOp();
+  eq AssignSimpleExpr.printOp() = "=";
+  eq AssignMulExpr.printOp() = "*=";
+  eq AssignDivExpr.printOp() = "/=";
+  eq AssignModExpr.printOp() = "%=";
+  eq AssignPlusExpr.printOp() = "+=";
+  eq AssignMinusExpr.printOp() = "-=";
+  eq AssignLShiftExpr.printOp() = "<<=";
+  eq AssignRShiftExpr.printOp() = ">>=";
+  eq AssignURShiftExpr.printOp() = ">>>=";
+  eq AssignAndExpr.printOp() = "&=";
+  eq AssignXorExpr.printOp() = "^=";
+  eq AssignOrExpr.printOp()  = "|=";
+
+  syn String Unary.printPostOp() = "";
+  eq PostIncExpr.printPostOp() = "++";
+  eq PostDecExpr.printPostOp() = "--";
+
+  syn String Unary.printPreOp() = "";
+  eq PreIncExpr.printPreOp() = "++";
+  eq PreDecExpr.printPreOp() = "--";
+  eq MinusExpr.printPreOp() = "-";
+  eq PlusExpr.printPreOp() = "+";
+  eq BitNotExpr.printPreOp() = "~";
+  eq LogNotExpr.printPreOp() = "!";
+
+  /**
+   * Escapes a string literal.
+   * @param s string to escape
+   * @return escaped string literal
+   */
+  protected static String Literal.escape(String s) {
+    StringBuilder result = new StringBuilder();
+    for (int i=0; i < s.length(); i++) {
+      switch(s.charAt(i)) {
+        case '\b':
+          result.append("\\b");
+          break;
+        case '\t':
+          result.append("\\t");
+          break;
+        case '\n':
+          result.append("\\n");
+          break;
+        case '\f':
+          result.append("\\f");
+          break;
+        case '\r':
+          result.append("\\r");
+          break;
+        case '\"':
+          result.append("\\\"");
+          break;
+        case '\'':
+          result.append("\\\'");
+          break;
+        case '\\':
+          result.append("\\\\");
+          break;
+        default:
+          int value = (int) s.charAt(i);
+          if (value < 0x20 || (value > 0x7e)) {
+            result.append(asEscape(value));
+          } else {
+            result.append(s.charAt(i));
+          }
+      }
+    }
+    return result.toString();
+  }
+
+  protected static String Literal.asEscape(int value) {
+    StringBuilder s = new StringBuilder("\\u");
+    String hex = Integer.toHexString(value);
+    for (int i = 0; i < 4-hex.length(); i++) {
+      s.append("0");
+    }
+    s.append(hex);
+    return s.toString();
+  }
+}

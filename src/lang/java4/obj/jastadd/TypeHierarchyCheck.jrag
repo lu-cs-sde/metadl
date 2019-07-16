@@ -1,0 +1,565 @@
+/* Copyright (c) 2005-2008, Torbjorn Ekman
+ *                    2016, Jesper Öqvist <jesper.oqvist@cs.lth.se>
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice,
+ * this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ * this list of conditions and the following disclaimer in the documentation
+ * and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its
+ * contributors may be used to endorse or promote products derived from this
+ * software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+
+aspect TypeHierarchyCheck {
+  inh String Expr.methodHost();
+
+  eq TypeDecl.getChild().methodHost() = typeName();
+
+  eq Dot.getRight().methodHost() = getLeft().type().typeName();
+
+  eq Program.getChild().methodHost() {
+    throw new Error("Needs extra equation for methodHost()");
+  }
+
+  eq MethodAccess.getChild().methodHost() = unqualifiedScope().methodHost();
+
+  eq ConstructorAccess.getChild().methodHost() = unqualifiedScope().methodHost();
+
+  syn boolean Expr.isUnknown() = type().isUnknown();
+
+  eq PackageAccess.isUnknown() = !hasPackage(packageName());
+
+  /**
+   * Test if this method call has an argument of Unknown type.
+   *
+   * <p>If an argument has Unknown type, then some error messages should
+   * be skipped because the root error is that the type of the argument
+   * could not be decided.
+   */
+  syn boolean MethodAccess.hasUnknownArg() {
+    for (Expr arg : getArgList()) {
+      if (arg.type().isUnknown()) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  MethodAccess contributes each typeHierarchyProblems() to CompilationUnit.problems();
+
+  syn Collection<Problem> MethodAccess.typeHierarchyProblems() {
+    Collection<Problem> problems = new LinkedList<Problem>();
+    if (isQualified() && qualifier().isPackageAccess() && !qualifier().isUnknown()) {
+      problems.add(errorf("The method %s can not be qualified by a package name.",
+          decl().fullSignature()));
+    }
+    if (isQualified() && decl().isAbstract() && qualifier().isSuperAccess()) {
+      problems.add(error("may not access abstract methods in superclass"));
+    }
+    if (decls().isEmpty() && !hasUnknownArg() && (!isQualified() || !qualifier().isUnknown())) {
+      StringBuilder sb = new StringBuilder();
+      sb.append("no method named " + name());
+      sb.append("(");
+      for (int i = 0; i < getNumArg(); i++) {
+        TypeDecl argType = getArg(i).type();
+        if (argType.isVoid()) {
+          // Error will be reported for the void argument in typeCheck
+          // so we return now to avoid confusing double errors.
+          return problems;
+        }
+        if (i != 0) {
+          sb.append(", ");
+        }
+        sb.append(argType.typeName());
+      }
+      sb.append(")" + " in " + methodHost() + " matches.");
+      if (singleCandidateDecl() != null) {
+        sb.append(" However, there is a method " + singleCandidateDecl().fullSignature());
+      }
+      problems.add(error(sb.toString()));
+    }
+    if (decls().size() > 1) {
+      boolean allAbstract = true;
+      for (MethodDecl m : decls()) {
+        if (!m.isAbstract() && !m.hostType().isObject()) {
+          allAbstract = false;
+          break;
+        }
+      }
+      if (!allAbstract && validArgs()) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("several most specific methods for " + this.prettyPrint() + "\n");
+        for (MethodDecl m : decls()) {
+          sb.append("    " + m.fullSignature() + " in " + m.hostType().typeName() + "\n");
+        }
+        problems.add(error(sb.toString()));
+      }
+    }
+    return problems;
+  }
+
+  SuperConstructorAccess contributes each typeHierarchyProblems() to CompilationUnit.problems();
+
+  syn Collection<Problem> SuperConstructorAccess.typeHierarchyProblems() {
+    Collection<Problem> problems = new LinkedList<Problem>();
+    // JLS 5?: 8.8.5.1
+    // JLS 7: 8.8.7.1
+    TypeDecl c = hostType();
+    TypeDecl s = c.isClassDecl() ? ((ClassDecl) c).superclass() : unknownType();
+    if (isQualified()) {
+      if (!s.isInnerType() || s.inStaticContext()) {
+        problems.add(errorf("the super type %s of %s is not an inner class",
+            s.typeName(), c.typeName()));
+      } else if (!qualifier().type().subtype(s.enclosingType())) {
+        problems.add(errorf(
+            "the type of this primary expression, %s is not enclosing the super type, %s, of %s",
+            qualifier().type().typeName(), s.typeName(), c.typeName()));
+      }
+    }
+    if (!isQualified() && s.isInnerType() && !c.hasEnclosingType(s.enclosingType())) {
+      problems.add(errorf("superconstructor call in constructor for class %s requires "
+          + "enclosing instance for the enclosing class %s of superclass %s",
+          c.name(), s.enclosingType().name(), s.typeName()));
+    }
+    if (s.isInnerType() && hostType().subtype(s.enclosingType())) {
+      problems.add(error("cannot reference 'this' before supertype constructor has been called"));
+    }
+    return problems;
+  }
+
+  SuperAccess contributes each typeHierarchyProblems() to CompilationUnit.problems();
+
+  syn Collection<Problem> SuperAccess.typeHierarchyProblems() {
+    Collection<Problem> problems = new LinkedList<Problem>();
+    if (isQualified()) {
+      if (!hostType().isInnerTypeOf(decl()) && hostType() != decl()) {
+        problems.add(error("qualified super must name an enclosing type"));
+      }
+      if (inStaticContext()) {
+        problems.add(error("*** Qualified super may not occur in static context"));
+      }
+    }
+    // 8.8.5.1
+    // JLSv7 8.8.7.1
+    TypeDecl constructorHostType = enclosingExplicitConstructorHostType();
+    if (constructorHostType != null && (constructorHostType == decl())) {
+      problems.add(error("super may not be accessed in an explicit constructor invocation"));
+    }
+    // 8.4.3.2
+    if (inStaticContext()) {
+      problems.add(error("super may not be accessed in a static context"));
+    }
+    return problems;
+  }
+
+  ThisAccess contributes each typeHierarchyProblems() to CompilationUnit.problems();
+
+  syn Collection<Problem> ThisAccess.typeHierarchyProblems() {
+    Collection<Problem> problems = new LinkedList<Problem>();
+    // 8.8.5.1
+    // JLSv7 8.8.7.1
+    TypeDecl constructorHostType = enclosingExplicitConstructorHostType();
+    if (constructorHostType != null && (constructorHostType == decl())) {
+      problems.add(error("this may not be accessed in an explicit constructor invocation"));
+    } else if (isQualified()) {
+      // 15.8.4
+      if (inStaticContext()) {
+        problems.add(error("qualified this may not occur in static context"));
+      } else if (!hostType().isInnerTypeOf(decl()) && hostType() != decl()) {
+        problems.add(errorf("qualified this access must name an enclosing type which %s is not",
+            decl().typeName()));
+      }
+    } else if (!isQualified() && inStaticContext()) {
+      // 8.4.3.2
+      problems.add(error("this access may not be used in a static context"));
+    }
+    return problems;
+  }
+
+  // 8.8.5.1
+  inh boolean VarAccess.inExplicitConstructorInvocation();
+  inh boolean MethodAccess.inExplicitConstructorInvocation();
+  inh boolean SuperAccess.inExplicitConstructorInvocation();
+  inh boolean ThisAccess.inExplicitConstructorInvocation();
+  inh boolean ClassInstanceExpr.inExplicitConstructorInvocation();
+  inh lazy boolean TypeDecl.inExplicitConstructorInvocation();
+  eq Program.getChild().inExplicitConstructorInvocation() = false;
+
+  eq ConstructorAccess.getArg().inExplicitConstructorInvocation() = true;
+  eq SuperConstructorAccess.getArg().inExplicitConstructorInvocation() = true;
+  eq ConstructorDecl.getParsedConstructorInvocation().inExplicitConstructorInvocation() = true;
+  eq ConstructorDecl.getImplicitConstructorInvocation().inExplicitConstructorInvocation() = true;
+
+  inh TypeDecl SuperAccess.enclosingExplicitConstructorHostType();
+  inh TypeDecl ThisAccess.enclosingExplicitConstructorHostType();
+
+  eq Program.getChild().enclosingExplicitConstructorHostType() = null;
+  eq ConstructorAccess.getArg().enclosingExplicitConstructorHostType() = hostType();
+  eq SuperConstructorAccess.getArg().enclosingExplicitConstructorHostType() = hostType();
+  eq ConstructorDecl.getParsedConstructorInvocation().enclosingExplicitConstructorHostType() =
+      hostType();
+  eq ConstructorDecl.getImplicitConstructorInvocation().enclosingExplicitConstructorHostType() =
+      hostType();
+
+  inh boolean Expr.inStaticContext(); // SuperAccess, ThisAccess, ClassInstanceExpr, MethodAccess.
+  inh lazy boolean TypeDecl.inStaticContext();
+
+  eq Program.getChild().inStaticContext() = false;
+  eq TypeDecl.getChild().inStaticContext() = isStatic() || inStaticContext();
+  eq StaticInitializer.getBlock().inStaticContext() = true;
+  eq InstanceInitializer.getBlock().inStaticContext() = false;
+  eq FieldDecl.getChild().inStaticContext() = isStatic();
+  eq MethodDecl.getBlock().inStaticContext() = isStatic();
+  eq ConstructorDecl.getBlock().inStaticContext() = false;
+  eq ConstructorDecl.getParsedConstructorInvocation().inStaticContext() = false;
+  eq ConstructorDecl.getImplicitConstructorInvocation().inStaticContext() = false;
+  eq MemberClassDecl.getClassDecl().inStaticContext() = false;
+
+  eq ClassInstanceExpr.getTypeDecl().inStaticContext() = isQualified() ?
+      qualifier().staticContextQualifier() : inStaticContext();
+
+  syn boolean Expr.staticContextQualifier() = false;
+  eq ParExpr.staticContextQualifier() = getExpr().staticContextQualifier();
+  eq CastExpr.staticContextQualifier() = getExpr().staticContextQualifier();
+  eq Dot.staticContextQualifier() = lastAccess().staticContextQualifier();
+  eq TypeAccess.staticContextQualifier() = true;
+  eq ArrayTypeAccess.staticContextQualifier() = true;
+
+  TypeDecl contributes each typeProblems() to CompilationUnit.problems();
+
+  syn Collection<Problem> TypeDecl.typeProblems() {
+    Collection<Problem> problems = new LinkedList<Problem>();
+    // 8.4.6.4 & 9.4.1
+    for (MethodDecl m : localMethods()) {
+      ASTNode target = m.hostType() == this ? (ASTNode) m : (ASTNode) this;
+
+      for (MethodDecl decl : ancestorMethods(m.signature())) {
+        if (m.overrides(decl)) {
+          // 8.4.6.1
+          if (!m.isStatic() && decl.isStatic()) {
+            problems.add(target.error("an instance method may not override a static method"));
+          }
+
+          // Regardless of overriding.
+          // 8.4.6.3
+          if (!m.mayOverride(decl)) {
+            problems.add(target.errorf(
+                "the return type of method %s in %s does not match the return type of"
+                + " method %s in %s and may thus not be overridden",
+                m.fullSignature(), m.hostType().typeName(), decl.fullSignature(),
+                decl.hostType().typeName()));
+          }
+
+          // Regardless of overriding.
+          // 8.4.4
+          for (Access e: m.getExceptionList()) {
+            if (e.type().isCheckedException()) {
+              boolean found = false;
+              for (Access declException: decl.getExceptionList()) {
+                if (e.type().subtype(declException.type())) {
+                  found = true;
+                  break;
+                }
+              }
+              if (!found) {
+                problems.add(target.errorf("%s in %s may not throw more checked exceptions than"
+                    + " overridden method %s in %s",
+                    m.fullSignature(), m.hostType().typeName(), decl.fullSignature(),
+                    decl.hostType().typeName()));
+              }
+            }
+          }
+
+          // 8.4.6.3
+          if (decl.isPublic() && !m.isPublic()) {
+            problems.add(target.error("overriding access modifier error"));
+          }
+          // 8.4.6.3
+          if (decl.isProtected() && !(m.isPublic() || m.isProtected())) {
+            problems.add(target.error("overriding access modifier error"));
+          }
+          // 8.4.6.3
+          if ((!decl.isPrivate() && !decl.isProtected() && !decl.isPublic()) && m.isPrivate()) {
+            problems.add(target.error("overriding access modifier error"));
+          }
+          // Regardless of overriding.
+          if (decl.isFinal()) {
+            problems.add(target.errorf("method %s in %s can not override final method %s in %s",
+                m.fullSignature(), hostType().typeName(), decl.fullSignature(),
+                decl.hostType().typeName()));
+          }
+        }
+        if (m.hides(decl)) {
+          // 8.4.6.2
+          if (m.isStatic() && !decl.isStatic()) {
+            problems.add(target.error("a static method may not hide an instance method"));
+          }
+          // 8.4.6.3
+          if (!m.mayOverride(decl)) {
+            problems.add(target.error("can not hide a method with a different return type"));
+          }
+          // 8.4.4
+          for (int i = 0; i < m.getNumException(); i++) {
+            Access e = m.getException(i);
+            boolean found = false;
+            for (int j = 0; !found && j < decl.getNumException(); j++) {
+              if (e.type().subtype(decl.getException(j).type())) {
+                found = true;
+              }
+            }
+            if (!found) {
+              problems.add(target.error(
+                  "may not throw more checked exceptions than hidden method"));
+            }
+          }
+          // 8.4.6.3
+          if (decl.isPublic() && !m.isPublic()) {
+            problems.add(target.errorf("hiding access modifier:"
+                + " public method %s in %s is hidden by non public method %s in %s",
+                decl.fullSignature(), decl.hostType().typeName(), m.fullSignature(),
+                m.hostType().typeName()));
+          }
+          // 8.4.6.3
+          if (decl.isProtected() && !(m.isPublic() || m.isProtected())) {
+            problems.add(target.errorf("hiding access modifier:"
+                + " protected method %s in %s is hidden by non (public|protected) method %s in %s",
+                decl.fullSignature(), decl.hostType().typeName(), m.fullSignature(),
+                m.hostType().typeName()));
+          }
+          // 8.4.6.3
+          if ((!decl.isPrivate() && !decl.isProtected() && !decl.isPublic()) && m.isPrivate()) {
+            problems.add(target.errorf("hiding access modifier:"
+                + " default method %s in %s is hidden by private method %s in %s",
+                decl.fullSignature(), decl.hostType().typeName(), m.fullSignature(),
+                m.hostType().typeName()));
+          }
+          if (decl.isFinal()) {
+            problems.add(target.errorf("method %s in %s can not hide final method %s in %s",
+                m.fullSignature(), hostType().typeName(), decl.fullSignature(),
+                decl.hostType().typeName()));
+          }
+        }
+      }
+    }
+    return problems;
+  }
+
+  ClassDecl contributes each typeProblems() to CompilationUnit.problems();
+
+  syn Collection<Problem> ClassDecl.typeProblems() {
+    Collection<Problem> problems = new LinkedList<Problem>(super.typeProblems());
+
+    // Check if methods inherited from interfaces are compatible with the
+    // overriding method in this class or method inherited from ancestor class.
+    for (MethodDecl decl : interfacesMethods()) {
+      // First we check locally declared methods, then if no local method
+      // overrides the interface method we check ancestor methods.  We check
+      // ancestor types in superclass order and stop at the first overriding method.
+      boolean overridden = false;
+      ClassDecl hostType = this;
+      while (!overridden) {
+        for (MethodDecl m : hostType.localMethodsSignature(decl.signature())) {
+          if (m.overrideCandidate(decl)) {
+            overridden = true;
+            if (!m.mayOverride(decl)) {
+              problems.add(errorf(
+                  "the return type of method %s in %s does not match the return type of"
+                  + " method %s in %s and may thus not be overridden",
+                  m.fullSignature(), hostType.typeName(), decl.fullSignature(),
+                  decl.hostType().typeName()));
+            }
+          }
+        }
+        if (!hostType.hasSuperclass()) {
+          break;
+        }
+        hostType = (ClassDecl) hostType.superclass();
+      }
+    }
+    return problems;
+  }
+
+  syn boolean MethodDecl.mayOverride(MethodDecl m) = type() == m.type();
+
+  syn Collection<Problem> ClassDecl.nameProblems() {
+    Collection<Problem> problems = new LinkedList<Problem>(super.nameProblems());
+    if (hasSuperClass() && !getSuperClass().type().isClassDecl()) {
+      problems.add(errorf("a class may only inherit another class, which %s is not",
+          getSuperClass().type().typeName()));
+    }
+    if (isObject() && hasSuperClass()) {
+      problems.add(error("class Object may not have a superclass"));
+    }
+    if (isObject() && getNumImplements() != 0) {
+      problems.add(error("class Object may not implement an interface"));
+    }
+
+    // 8.1.3
+    if (isCircular()) {
+      problems.add(errorf("circular inheritance dependency in %s", typeName()));
+    }
+
+    // 8.1.4
+    Collection<TypeDecl> set = new HashSet<TypeDecl>();
+    for (int i = 0; i < getNumImplements(); i++) {
+      TypeDecl decl = getImplements(i).type();
+      if (!decl.isInterfaceDecl() && !decl.isUnknown()) {
+        problems.add(errorf("type %s can not implement the non-interface type %s",
+            fullName(), decl.fullName()));
+      }
+      if (set.contains(decl)) {
+        problems.add(errorf("type %s is mentionened multiple times in implements clause",
+            decl.fullName()));
+      }
+      set.add(decl);
+    }
+
+    for (MethodDecl m : interfacesMethods()) {
+      if (localMethodsSignature(m.signature()).isEmpty()) {
+        SimpleSet<MethodDecl> s = superclass().methodsSignature(m.signature());
+        for (MethodDecl n : s) {
+          if (n.accessibleFrom(this)) {
+            interfaceMethodCompatibleWithInherited(problems, m, n);
+          }
+        }
+        if (s.isEmpty()) {
+          for (MethodDecl n : interfacesMethodsSignature(m.signature())) {
+            // TODO(joqvist): don't report this error twice.
+            checkAbstractMethodDecls(problems, m, n);
+          }
+        }
+      }
+    }
+
+    // Check if there is a matching accessible super constructor for the default constructor.
+    if (hasImplicitConstructor()) {
+      Stmt superCall = getImplicitConstructor().getParsedConstructorInvocation();
+      SuperConstructorAccess superAccess =
+          (SuperConstructorAccess) ((ExprStmt) superCall).getExpr();
+      if (superAccess.decls().isEmpty()) {
+        problems.add(errorf(
+            "can not generate default constructor for class %s because "
+            + "superclass %s has no accessible zero-argument constructor",
+            name(), superclass().name()));
+      } else if (!isAnonymous() && superclass().isInnerType()
+          && !hasEnclosingType(superclass().enclosingType())) {
+        problems.add(errorf(
+            "can not generate default constructor for class %s because its "
+            + "superclass %s is an inner type of %s but %s is not an inner type of %s or a "
+            + "subtype thereof",
+            name(), superclass().typeName(), superclass().enclosingType().name(),
+            name(), superclass().enclosingType().name()));
+      }
+    }
+    return problems;
+  }
+
+  /**
+   * Check compatibility of interface method and superclass method.
+   * @param m interface method
+   * @param n superclass method
+   */
+  private void ClassDecl.interfaceMethodCompatibleWithInherited(Collection<Problem> problems,
+      MethodDecl m, MethodDecl n) {
+    if (n.isAbstract()) {
+      checkAbstractMethodDecls(problems, m, n);
+    }
+    if (n.isStatic()) {
+      problems.add(error("Xa static method may not hide an instance method"));
+    }
+    if (!n.isAbstract() && !n.isPublic()) {
+      problems.add(errorf("Xoverriding access modifier error for %s in %s and %s",
+          m.fullSignature(), m.hostType().typeName(), n.hostType().typeName()));
+    }
+    if (!n.mayOverride(m) && !m.mayOverride(m)) {
+      problems.add(errorf("Xthe return type of method %s in %s does not match"
+          + " the return type of method %s in %s and may thus not be overridden",
+          m.fullSignature(), m.hostType().typeName(), n.fullSignature(), n.hostType().typeName()));
+    }
+
+    if (!n.isAbstract()) {
+      // If n implements and overrides method m in the interface then it
+      // may not throw more checked exceptions.
+      for (Access e: n.getExceptionList()) {
+        if (e.type().isCheckedException()) {
+          boolean found = false;
+          for (Access declException: m.getExceptionList()) {
+            if (e.type().subtype(declException.type())) {
+              found = true;
+              break;
+            }
+          }
+          if (!found) {
+            problems.add(errorf(
+                "%s in %s may not throw more checked exceptions than overridden method %s in %s",
+                n.fullSignature(), n.hostType().typeName(), m.fullSignature(),
+                m.hostType().typeName()));
+          }
+        }
+      }
+    }
+  }
+
+  InterfaceDecl contributes each typeHierarchyProblems() to CompilationUnit.problems();
+
+  syn Collection<Problem> InterfaceDecl.typeHierarchyProblems() {
+    Collection<Problem> problems = new LinkedList<Problem>();
+    if (isCircular()) {
+      problems.add(errorf("circular inheritance dependency in %s", typeName()));
+    } else {
+      for (int i = 0; i < getNumSuperInterface(); i++) {
+        TypeDecl typeDecl = getSuperInterface(i).type();
+        if (typeDecl.isCircular()) {
+          problems.add(errorf("circular inheritance dependency in %s", typeName()));
+        }
+      }
+    }
+    for (SimpleSet<MethodDecl> set : methodsSignatureMap().values()) {
+      if (set.size() > 1) {
+        Iterator<MethodDecl> iter = set.iterator();
+        MethodDecl m = iter.next();
+        while (iter.hasNext()) {
+          MethodDecl n = iter.next();
+          checkAbstractMethodDecls(problems, m, n);
+        }
+      }
+    }
+    return problems;
+  }
+
+  /**
+   * Error-check two interface method declarations.
+   */
+  protected void TypeDecl.checkAbstractMethodDecls(Collection<Problem> problems,
+      MethodDecl m1, MethodDecl m2) {
+    if (!m1.mayOverride(m2) && !m2.mayOverride(m1)) {
+      String inh1 = "";
+      TypeDecl host1 = m1.hostType();
+      TypeDecl host2 = m2.hostType();
+      if (host1 != this || host2 != this) {
+        inh1 = "inherited ";
+      }
+      problems.add(errorf("%smethod %s is multiply declared with incompatible return types in %s",
+          inh1, m1.fullSignature(), fullName()));
+    }
+  }
+}

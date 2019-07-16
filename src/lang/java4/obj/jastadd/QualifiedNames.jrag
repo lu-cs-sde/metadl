@@ -1,0 +1,134 @@
+/* Copyright (c) 2005-2008, Torbjorn Ekman
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice,
+ * this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ * this list of conditions and the following disclaimer in the documentation
+ * and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its
+ * contributors may be used to endorse or promote products derived from this
+ * software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+
+import java.util.*;
+
+aspect Names {
+  // Simple names of node types.
+  syn String VarAccess.name() = getID();
+  syn String MethodAccess.name() = getID();
+  syn String ConstructorAccess.name() = "this";
+  syn String SuperConstructorAccess.name() = "super";
+  syn String TypeAccess.name() = getID();
+
+  syn String PackageAccess.name() = getPackage();
+
+  syn String Expr.packageName() = "";
+  eq TypeAccess.packageName() = getPackage();
+
+  eq PackageAccess.packageName() {
+    StringBuilder sb = new StringBuilder();
+    if (hasPrevExpr()) {
+      sb.append(prevExpr().packageName());
+      sb.append(".");
+    }
+    sb.append(getPackage());
+    return sb.toString();
+  }
+
+  /** @return the qualified type name including the package name. */
+  syn String TypeAccess.nameWithPackage() =
+      getPackage().equals("") ? name() : (getPackage() + "." + name());
+
+  syn String ImportDecl.typeName() {
+    Access a = getAccess().lastAccess();
+    String name = a.isTypeAccess() ? ((TypeAccess) a).nameWithPackage() : "";
+    while (a.hasPrevExpr() && a.prevExpr() instanceof Access) {
+      Access pred = (Access) a.prevExpr();
+      if (pred.isTypeAccess()) {
+        name = ((TypeAccess) pred).nameWithPackage() + "." + name;
+      }
+      a = pred;
+    }
+    return name;
+  }
+
+  syn String Expr.typeName() = "";
+
+  eq Dot.typeName() = lastAccess().typeName();
+
+  eq TypeAccess.typeName() =
+      isQualified() ? (qualifier().typeName() + "." + name()) : nameWithPackage();
+}
+
+aspect TypeName {
+  syn String TypeDecl.name() = getID();
+
+  syn lazy String TypeDecl.fullName() {
+    if (isNestedType()) {
+      return enclosingType().fullName() + "." + name();
+    }
+    String packageName = packageName();
+    if (packageName.equals("")) {
+      return name();
+    }
+    return packageName + "." + name();
+  }
+
+  /**
+   * The qualified typename of this type.
+   *
+   * <p>Includes array suffix and type arguments.
+   */
+  syn lazy String TypeDecl.typeName() {
+    if (isNestedType()) {
+      return enclosingType().typeName() + "." + name();
+    }
+    String packageName = packageName();
+    if (packageName.equals("") || packageName.equals(PRIMITIVE_PACKAGE_NAME)) {
+      return name();
+    }
+    return packageName + "." + name();
+  }
+
+  eq ArrayDecl.typeName() = componentType().typeName() + "[]";
+
+  inh lazy String TypeDecl.packageName();
+
+  eq CompilationUnit.getChild().packageName() = packageName();
+
+  syn lazy String CompilationUnit.packageName() {return getPackageDecl();}
+}
+
+aspect CreateQualifiedAccesses {
+  public Access TypeDecl.createQualifiedAccess() {
+    if (isLocalClass() || isAnonymous()) {
+      return new TypeAccess(name());
+    } else if (!isTopLevelType()) {
+      return enclosingType().createQualifiedAccess().qualifiesAccess(new TypeAccess(name()));
+    } else {
+      return new TypeAccess(packageName(), name());
+    }
+  }
+
+  public Access PrimitiveType.createQualifiedAccess() {
+    return new PrimitiveTypeAccess(name());
+  }
+}

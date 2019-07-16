@@ -1,0 +1,324 @@
+/* Copyright (c) 2005-2008, Torbjorn Ekman
+ *                    2013, Jesper Öqvist <jesper.oqvist@cs.lth.se>
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice,
+ * this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ * this list of conditions and the following disclaimer in the documentation
+ * and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its
+ * contributors may be used to endorse or promote products derived from this
+ * software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+
+import java.util.HashSet;
+
+aspect BranchTarget {
+
+  /**
+   * Find the target statement for break and continue. This can be a try
+   * statement with a finally block that can not complete normally.
+   */
+  syn lazy Stmt BreakStmt.targetStmt();
+
+  /**
+   * Find the target statement for break and continue. This can be a try
+   * statement with a finally block that can not complete normally.
+   */
+  syn lazy Stmt ContinueStmt.targetStmt();
+
+  class LazyFinallyIterator implements Iterator<FinallyHost> {
+    private final Stmt branch;
+    private FinallyHost enclosing;
+
+    LazyFinallyIterator(Stmt root) {
+      branch = root;
+      enclosing = branch.enclosingFinally(branch);
+    }
+
+    @Override
+    public boolean hasNext() {
+      return enclosing != null;
+    }
+
+    @Override
+    public FinallyHost next() {
+      FinallyHost b = enclosing;
+      enclosing = enclosing.enclosingFinally(branch);
+      return b;
+    }
+
+    @Override
+    public void remove() {
+      throw new UnsupportedOperationException();
+    }
+  }
+
+  /**
+   * Finds enclosing finally and monitor exit blocks.
+   * @return an iterator for finally (and monitor exit) blocks that are
+   * reached before the final target of this statement is reached
+   */
+  syn lazy Iterator<FinallyHost> Stmt.finallyIterator() {
+    return new LazyFinallyIterator(this);
+  }
+
+  syn lazy Collection<ContinueStmt> BranchTargetStmt.targetContinues();
+
+  syn lazy Collection<BreakStmt> BranchTargetStmt.targetBreaks();
+
+  syn lazy Collection<Stmt> BranchTargetStmt.targetBranches();
+
+  syn lazy Collection<Stmt> BranchTargetStmt.escapedBranches();
+
+  syn lazy Collection<Stmt> BranchTargetStmt.branches();
+
+  public void ASTNode.collectBranches(Collection<Stmt> c) {
+    for (int i = 0; i < getNumChild(); i++) {
+      getChild(i).collectBranches(c);
+    }
+  }
+
+  public void ContinueStmt.collectBranches(Collection<Stmt> c) {
+    c.add(this);
+  }
+
+  public void BreakStmt.collectBranches(Collection<Stmt> c) {
+    c.add(this);
+  }
+
+  public void ReturnStmt.collectBranches(Collection<Stmt> c) {
+    c.add(this);
+  }
+
+  public void BranchTargetStmt.collectBranches(Collection<Stmt> c) {
+    c.addAll(escapedBranches());
+  }
+
+  public void TryStmt.collectBranches(Collection<Stmt> c) {
+    c.addAll(escapedBranches());
+  }
+
+  syn boolean ContinueStmt.hasLabel() = !getLabel().equals("");
+
+  syn boolean BreakStmt.hasLabel() = !getLabel().equals("");
+
+  /** The branches for which this node is the target. */
+  eq BranchTargetStmt.targetBranches() {
+    Collection<Stmt> set = new HashSet<Stmt>();
+    for (Stmt branch : branches()) {
+      if (potentialTargetOf(branch)) {
+        set.add(branch);
+      }
+    }
+    return set;
+  }
+
+  /** The branches that escape this node. */
+  eq BranchTargetStmt.escapedBranches() {
+    Collection<Stmt> set = new HashSet<Stmt>();
+    for (Stmt branch : branches()) {
+      if (!potentialTargetOf(branch)) {
+        set.add(branch);
+      } else if (branch instanceof ReturnStmt) {
+        set.add(branch);
+      }
+    }
+    return set;
+  }
+
+  /** All branches that reach this node. */
+  eq BranchTargetStmt.branches() {
+    Collection<Stmt> set = new HashSet<Stmt>();
+    super.collectBranches(set);
+    return set;
+  }
+
+  /** All branches that reach this node. */
+  syn lazy Collection<Stmt> TryStmt.branches() {
+    Collection<Stmt> set = new HashSet<Stmt>();
+    getBlock().collectBranches(set);
+    for (int i = 0; i < getNumCatchClause(); i++) {
+      getCatchClause(i).collectBranches(set);
+    }
+    return set;
+  }
+
+  /** All branches that escape this node. */
+  syn lazy Collection<Stmt> TryStmt.escapedBranches() {
+    Collection<Stmt> set = new HashSet<Stmt>();
+    if (hasNonEmptyFinally()) {
+      // Branches from finally.
+      getFinally().collectBranches(set);
+    }
+    if (!hasFinally() || getFinally().canCompleteNormally()) {
+      set.addAll(branches());
+    }
+    return set;
+  }
+
+  /**
+   * @return <code>true</code> if this statement can branch to
+   * the target statement.
+   */
+  syn boolean Stmt.canBranchTo(BranchTargetStmt target) = false;
+
+  syn boolean Stmt.canBranchTo(LabeledStmt target) = false;
+
+  syn boolean Stmt.canBranchTo(SwitchStmt target) = false;
+
+  eq BreakStmt.canBranchTo(BranchTargetStmt target) = !hasLabel();
+
+  /**
+   * A break-statement can target a labeled statement if
+   * it has a label and the labels match.
+   */
+  eq BreakStmt.canBranchTo(LabeledStmt target) =
+      hasLabel() && target.getLabel().equals(getLabel());
+
+  eq BreakStmt.canBranchTo(SwitchStmt target) = !hasLabel();
+
+  eq ContinueStmt.canBranchTo(BranchTargetStmt target) = !hasLabel();
+
+  eq ContinueStmt.canBranchTo(LabeledStmt target) =
+      hasLabel() && target.getLabel().equals(getLabel());
+
+  eq ContinueStmt.canBranchTo(SwitchStmt target) = false;
+
+  // Find the target statement for break and continue.
+  eq BreakStmt.targetStmt() = branchTarget(this);
+
+  eq ContinueStmt.targetStmt() = branchTarget(this);
+
+  /**
+   * @return <code>true</code> if this statement is a potential
+   * branch target of the given branch statement.
+   */
+  syn boolean BranchTargetStmt.potentialTargetOf(Stmt branch) = false;
+
+  eq LabeledStmt.potentialTargetOf(Stmt branch) = branch.canBranchTo(this);
+
+  eq WhileStmt.potentialTargetOf(Stmt branch) = branch.canBranchTo(this);
+
+  eq DoStmt.potentialTargetOf(Stmt branch) = branch.canBranchTo(this);
+
+  eq ForStmt.potentialTargetOf(Stmt branch) = branch.canBranchTo(this);
+
+  eq SwitchStmt.potentialTargetOf(Stmt branch) = branch.canBranchTo(this);
+
+  /**
+   * @return the target statement for a break or continue
+   */
+  inh Stmt Stmt.branchTarget(Stmt branch);
+
+  eq BodyDecl.getChild().branchTarget(Stmt branch) {
+    throw new Error("Found no branch targets for " + branch.getClass().getName());
+  }
+
+  eq LabeledStmt.getChild().branchTarget(Stmt branch) =
+      branch.canBranchTo(this) ? this : branchTarget(branch);
+
+  eq WhileStmt.getChild().branchTarget(Stmt branch) =
+      branch.canBranchTo(this) ? this : branchTarget(branch);
+
+  eq DoStmt.getChild().branchTarget(Stmt branch) =
+      branch.canBranchTo(this) ? this : branchTarget(branch);
+
+  eq ForStmt.getChild().branchTarget(Stmt branch) =
+      branch.canBranchTo(this) ? this : branchTarget(branch);
+
+  eq SwitchStmt.getChild().branchTarget(Stmt branch) =
+      branch.canBranchTo(this) ? this : branchTarget(branch);
+
+  /** Lookup visible label. */
+  inh lazy LabeledStmt BreakStmt.lookupLabel(String name);
+
+  /** Lookup visible label. */
+  inh lazy LabeledStmt ContinueStmt.lookupLabel(String name);
+
+  /** Lookup visible label. */
+  inh lazy LabeledStmt LabeledStmt.lookupLabel(String name);
+
+  eq LabeledStmt.getStmt().lookupLabel(String name) =
+      name.equals(getLabel()) ? this : lookupLabel(name);
+
+  eq Program.getChild().lookupLabel(String name) = null;
+
+  /**
+   * Finds the finally block of an enclosing try-statement, or monitor exit
+   * block of an enclosing synchronized block.
+   *
+   * @param branch the source branch
+   * @return a finally block, or <code>null</code> if there is no enclosing
+   * try-statement or synchronized block.
+   */
+  inh lazy FinallyHost Stmt.enclosingFinally(Stmt branch);
+
+  eq BodyDecl.getChild().enclosingFinally(Stmt branch) = null;
+
+  eq TryStmt.getChild().enclosingFinally(Stmt branch) =
+      hasNonEmptyFinally() ? this : enclosingFinally(branch);
+
+  eq TryStmt.getFinally().enclosingFinally(Stmt branch) = enclosingFinally(branch);
+
+  eq SynchronizedStmt.getChild().enclosingFinally(Stmt branch) = this;
+
+  eq SynchronizedStmt.getMonitorExit().enclosingFinally(Stmt branch) = enclosingFinally(branch);
+
+  eq BranchTargetStmt.getChild().enclosingFinally(Stmt branch) =
+      potentialTargetOf(branch) ? null : enclosingFinally(branch);
+
+  /**
+   * NTA finally blocks ignore their immediate enclosing finally block
+   * (otherwise nta-finally blocks would be recursive).
+   */
+  eq NTAFinallyBlock.getChild().enclosingFinally(Stmt branch) =
+      origin.enclosingFinally(branch);
+
+  /** Find the continue statements that have this node as actual target. */
+  eq BranchTargetStmt.targetContinues() {
+    Collection<ContinueStmt> set = new HashSet<ContinueStmt>();
+    for (Stmt branch : targetBranches()) {
+      if (branch instanceof ContinueStmt) {
+        set.add((ContinueStmt) branch);
+      }
+    }
+    if (getParent() instanceof LabeledStmt) {
+      for (Stmt branch : ((LabeledStmt) getParent()).targetBranches()) {
+        if (branch instanceof ContinueStmt) {
+          set.add((ContinueStmt) branch);
+        }
+      }
+    }
+    return set;
+  }
+
+  /** Find the break statements that have this node as their actual target. */
+  eq BranchTargetStmt.targetBreaks() {
+    Collection<BreakStmt> set = new HashSet<BreakStmt>();
+    for (Stmt branch : targetBranches()) {
+      if (branch instanceof BreakStmt) {
+        set.add((BreakStmt) branch);
+      }
+    }
+    return set;
+  }
+}

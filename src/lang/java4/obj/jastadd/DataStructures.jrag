@@ -1,0 +1,465 @@
+/* Copyright (c) 2005-2008, Torbjorn Ekman
+ *               2015-2016, Jesper Öqvist <jesper.oqvist@cs.lth.se>
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice,
+ * this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ * this list of conditions and the following disclaimer in the documentation
+ * and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its
+ * contributors may be used to endorse or promote products derived from this
+ * software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+import java.util.LinkedHashSet;
+
+/**
+ * Adds the SimpleSet type which is used to build small sets.
+ */
+aspect DataStructures {
+  /**
+   * A persistent Set that can be implemented by AST nodes.
+   */
+  public interface SimpleSet<T> {
+    int size();
+
+    boolean isEmpty();
+
+    SimpleSet<T> add(T o);
+
+    Iterator<T> iterator();
+
+    /** @return {@code true} if this set contains the given object. */
+    boolean contains(Object o);
+
+    /** @return {@code true} if this set is a singleton set (size == 1). */
+    boolean isSingleton();
+
+    /** @return {@code true} if this set is a singleton set containing the given object. */
+    boolean isSingleton(T o);
+
+    /** @return the single value in the set. Throws an error if the set is not a singleton. */
+    T singletonValue();
+
+    SimpleSet<Object> EMPTY_SET = new SimpleSet<Object>() {
+      @Override
+      public int size() {
+        return 0;
+      }
+
+      @Override
+      public boolean isEmpty() {
+        return true;
+      }
+
+      @Override
+      public SimpleSet<Object> add(Object o) {
+        if (o instanceof SimpleSet) {
+          return (SimpleSet<Object>) o;
+        }
+        return new SimpleSetImpl<Object>(o);
+      }
+
+      @Override
+      public boolean contains(Object o) {
+        return false;
+      }
+
+      @Override
+      public Iterator<Object> iterator() {
+        return (Iterator<Object>) Collections.EMPTY_LIST.iterator();
+      }
+
+      @Override
+      public boolean isSingleton() {
+        return false;
+      }
+
+      @Override
+      public boolean isSingleton(Object o) {
+        return false;
+      }
+
+      @Override
+      public Object singletonValue() {
+        throw new Error("The empty set has no singleton value.");
+      }
+
+      @Override
+      public boolean equals(Object o) {
+        if (o == this) {
+          return true;
+        }
+        if (o instanceof SimpleSet) {
+          return ((SimpleSet) o).isEmpty();
+        }
+        return false;
+      }
+
+      @Override public String toString() {
+        return "{}";
+      }
+    };
+
+    /**
+     * This class is used for sets of more than one object.
+     */
+    class SimpleSetImpl<T> implements SimpleSet<T> {
+      private java.util.Set<T> internalSet;
+
+      public SimpleSetImpl() {
+        internalSet = new LinkedHashSet<T>(4);
+      }
+
+      public SimpleSetImpl(T a) {
+        internalSet = Collections.singleton(a);
+      }
+
+      public SimpleSetImpl(T a, T b) {
+        internalSet = new LinkedHashSet<T>(2);
+        internalSet.add(a);
+        internalSet.add(b);
+      }
+
+      public SimpleSetImpl(T... set) {
+        internalSet = new LinkedHashSet<T>(set.length);
+        for (T item : set) {
+          internalSet.add(item);
+        }
+      }
+
+      public SimpleSetImpl(java.util.Collection<? extends T> c) {
+        internalSet = new LinkedHashSet<T>(c);
+      }
+
+      private SimpleSetImpl(SimpleSetImpl<? extends T> set) {
+        this.internalSet = new LinkedHashSet<T>(set.internalSet);
+      }
+
+      @Override
+      public int size() {
+        return internalSet.size();
+      }
+
+      @Override
+      public boolean isEmpty() {
+        return internalSet.isEmpty();
+      }
+
+      @Override
+      public SimpleSet<T> add(T o) {
+        if (internalSet.contains(o)) {
+          return this;
+        }
+        SimpleSetImpl<T> set = new SimpleSetImpl<T>(this);
+        set.internalSet.add(o);
+        return set;
+      }
+
+      @Override
+      public Iterator<T> iterator() {
+        return internalSet.iterator();
+      }
+
+      @Override
+      public boolean contains(Object o) {
+        return internalSet.contains(o);
+      }
+
+      @Override
+      public boolean isSingleton() {
+        return internalSet.size() == 1;
+      }
+
+      @Override
+      public boolean isSingleton(T o) {
+        return isSingleton() && contains(o);
+      }
+
+      @Override
+      public T singletonValue() {
+        if (!isSingleton()) {
+          throw new Error("This set has no singleton value.");
+        }
+        return internalSet.iterator().next();
+      }
+
+      @Override
+      public boolean equals(Object o) {
+        if (o instanceof SimpleSet) {
+          SimpleSet<?> other = (SimpleSet<?>) o;
+          if (size() != other.size()) {
+            return false;
+          }
+          return isEqualCollection(this, other);
+        } else {
+          return false;
+        }
+      }
+
+      // See http://llbit.se/?p=2009 for algorithm description.
+      private static boolean isEqualCollection(Iterable<?> a, Iterable<?> b) {
+        Map<Object, Integer> map = new java.util.IdentityHashMap<Object, Integer>();
+        for (Object o : a) {
+          Integer val = map.get(o);
+          int count = (val == null) ? 0 : val;
+          map.put(o, count + 1);
+        }
+        for (Object o : b) {
+          Integer val = map.get(o);
+          int count;
+          if (val != null) {
+            count = val;
+            if (count == 0) {
+              return false;
+            }
+          } else {
+            return false;
+          }
+          map.put(o, count - 1);
+        }
+        for (Integer count : map.values()) {
+          if (count != 0) {
+            return false;
+          }
+        }
+        return true;
+      }
+    }
+  }
+
+  /**
+   * An iterator that iterates over one single item.
+   *
+   * <p>This is used to iterate singleton sets.
+   */
+  public class SingleItemIterator<T> implements Iterator<T> {
+    private boolean done = false;
+    private final T item;
+
+    public SingleItemIterator(T item) {
+      this.item = item;
+    }
+
+    @Override
+    public boolean hasNext() {
+      return !done;
+    }
+
+    @Override
+    public T next() {
+      done = true;
+      return item;
+    }
+
+    @Override
+    public void remove() {
+      throw new UnsupportedOperationException();
+    }
+  }
+
+  public static <T> SimpleSet<T> ASTNode.emptySet() {
+    return (SimpleSet<T>) SimpleSet.EMPTY_SET;
+  }
+
+  SimpleSet implements Iterable<T>;
+
+  // Declarator is part of a variable SimpleSet.
+  Declarator implements SimpleSet<Variable>;
+
+  @Override
+  public int Declarator.size() {
+    return 1;
+  }
+
+  @Override
+  public boolean Declarator.isEmpty() {
+    return false;
+  }
+
+  @Override
+  public SimpleSet<Variable> Declarator.add(Variable o) {
+    return new SimpleSetImpl<Variable>(this, o);
+  }
+
+  @Override
+  public boolean Declarator.contains(Object o) {
+    return this == o;
+  }
+
+  @Override
+  public boolean Declarator.isSingleton() {
+    return true;
+  }
+
+  @Override
+  public boolean Declarator.isSingleton(Variable o) {
+    return contains(o);
+  }
+
+  @Override
+  public Variable Declarator.singletonValue() {
+    return this;
+  }
+
+  @Override
+  public boolean Declarator.equals(Object o) {
+    return this == o;
+  }
+
+  @Override
+  public Iterator<Variable> Declarator.iterator() {
+    return new SingleItemIterator(this);
+  }
+
+  // ParameterDeclaration is part of a variable SimpleSet.
+  ParameterDeclaration implements SimpleSet<Variable>;
+
+  @Override
+  public int ParameterDeclaration.size() {
+    return 1;
+  }
+
+  @Override
+  public boolean ParameterDeclaration.isEmpty() {
+    return false;
+  }
+
+  @Override
+  public SimpleSet<Variable> ParameterDeclaration.add(Variable o) {
+    return new SimpleSetImpl<Variable>(this, o);
+  }
+
+  @Override
+  public boolean ParameterDeclaration.contains(Object o) {
+    return this == o;
+  }
+
+  @Override
+  public boolean ParameterDeclaration.isSingleton() {
+    return true;
+  }
+
+  @Override
+  public boolean ParameterDeclaration.isSingleton(Variable o) {
+    return contains(o);
+  }
+
+  @Override
+  public Variable ParameterDeclaration.singletonValue() {
+    return this;
+  }
+
+  @Override
+  public Iterator<Variable> ParameterDeclaration.iterator() {
+    return new SingleItemIterator(this);
+  }
+
+  // TypeDecl is a SimpleSet.
+  TypeDecl implements SimpleSet<TypeDecl>;
+
+  @Override
+  public int TypeDecl.size() {
+    return 1;
+  }
+
+  @Override
+  public boolean TypeDecl.isEmpty() {
+    return false;
+  }
+
+  @Override
+  public SimpleSet<TypeDecl> TypeDecl.add(TypeDecl o) {
+    return new SimpleSetImpl<TypeDecl>(this, o);
+  }
+
+  @Override
+  public boolean TypeDecl.contains(Object o) {
+    return this == o;
+  }
+
+  @Override
+  public boolean TypeDecl.isSingleton() {
+    return true;
+  }
+
+  @Override
+  public boolean TypeDecl.isSingleton(TypeDecl o) {
+    return contains(o);
+  }
+
+  @Override
+  public TypeDecl TypeDecl.singletonValue() {
+    return this;
+  }
+
+  @Override
+  public Iterator<TypeDecl> TypeDecl.iterator() {
+    return new SingleItemIterator(this);
+  }
+
+  // MethodDecl is a SimpleSet.
+  MethodDecl implements SimpleSet<MethodDecl>;
+
+  @Override
+  public int MethodDecl.size() {
+    return 1;
+  }
+
+  @Override
+  public boolean MethodDecl.isEmpty() {
+    return false;
+  }
+
+  @Override
+  public SimpleSet<MethodDecl> MethodDecl.add(MethodDecl o) {
+    return new SimpleSetImpl<MethodDecl>(this, o);
+  }
+
+  @Override
+  public boolean MethodDecl.contains(Object o) {
+    return this == o;
+  }
+
+  @Override
+  public boolean MethodDecl.isSingleton() {
+    return true;
+  }
+
+  @Override
+  public boolean MethodDecl.isSingleton(MethodDecl o) {
+    return contains(o);
+  }
+
+  @Override
+  public MethodDecl MethodDecl.singletonValue() {
+    return this;
+  }
+
+  @Override
+  public boolean MethodDecl.equals(Object o) {
+    return this == o;
+  }
+
+  @Override
+  public Iterator<MethodDecl> MethodDecl.iterator() {
+    return new SingleItemIterator(this);
+  }
+}

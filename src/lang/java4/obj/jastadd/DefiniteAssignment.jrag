@@ -1,0 +1,1615 @@
+/* Copyright (c) 2005-2008, Torbjorn Ekman
+ *               2015-2016, Jesper Öqvist <joqvist@google.com>
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice,
+ * this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ * this list of conditions and the following disclaimer in the documentation
+ * and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its
+ * contributors may be used to endorse or promote products derived from this
+ * software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+
+aspect DefiniteAssignment {
+
+  inh boolean Expr.isDest();
+  eq Program.getChild().isDest() = false;
+  eq AssignSimpleExpr.getDest().isDest() = true;
+  eq AssignExpr.getDest().isDest() = true;
+  eq AssignExpr.getSource().isDest() = false;
+  eq TypeDecl.getChild().isDest() = false;
+  eq Dot.getLeft().isDest() = false;
+
+  eq ImportDecl.getAccess().isDest() = false;
+
+  inh boolean Expr.isSource();
+  eq Program.getChild().isSource() = true;
+  eq AssignSimpleExpr.getDest().isSource() = false;
+  eq AssignExpr.getDest().isSource() = true;
+  eq AssignExpr.getSource().isSource() = true;
+  eq TypeDecl.getChild().isSource() = true;
+  eq Dot.getLeft().isSource() = true;
+  eq ImportDecl.getAccess().isSource() = true;
+
+  eq ArrayAccess.getExpr().isDest() = false;
+  eq ArrayAccess.getExpr().isSource() = true;
+  eq ArrayTypeWithSizeAccess.getExpr().isDest() = false;
+  eq ArrayTypeWithSizeAccess.getExpr().isSource() = true;
+
+  eq Declarator.getInit().isSource() = true;
+  eq ArrayInit.getInit().isSource() = true;
+
+  eq Unary.getOperand().isSource() = true;
+  eq PostfixExpr.getOperand().isDest() = true;
+  eq PreIncExpr.getOperand().isDest() = true;
+  eq PreDecExpr.getOperand().isDest() = true;
+
+  inh boolean Expr.isIncOrDec();
+  eq Program.getChild().isIncOrDec() = false;
+  eq CompilationUnit.getTypeDecl().isIncOrDec() = false;
+  eq Block.getStmt().isIncOrDec() = false;
+  eq VarDeclStmt.getDeclarator().isIncOrDec() = false;
+  eq FieldDecl.getDeclarator().isIncOrDec() = false;
+  eq PostfixExpr.getOperand().isIncOrDec() = true;
+  eq PreIncExpr.getOperand().isIncOrDec() = true;
+  eq PreDecExpr.getOperand().isIncOrDec() = true;
+
+
+  syn Variable Expr.varDecl() = null;
+  eq Dot.varDecl() = lastAccess().varDecl();
+  eq VarAccess.varDecl() = decl();
+  eq ParExpr.varDecl() = getExpr().varDecl();
+
+  PostfixExpr contributes
+      error("++ and -- can not be applied to final variable " + getOperand().varDecl().name())
+      when getOperand().isVariable()
+          && getOperand().varDecl() != null
+          && getOperand().varDecl().isFinal()
+      to CompilationUnit.problems();
+
+  PreIncExpr contributes
+      error("++ and -- can not be applied to final variable " + getOperand().varDecl().name())
+      when getOperand().isVariable()
+          && getOperand().varDecl() != null
+          && getOperand().varDecl().isFinal()
+      to CompilationUnit.problems();
+
+  PreDecExpr contributes
+      error("++ and -- can not be applied to final variable " + getOperand().varDecl().name())
+      when getOperand().isVariable()
+          && getOperand().varDecl() != null
+          && getOperand().varDecl().isFinal()
+      to CompilationUnit.problems();
+
+  // TODO(joqvist): Why test (!getInit().isConstant()) here? Shouldn't it just be (!hasInit())?
+  syn boolean Declarator.isBlankFinal() = isFinal() && (!hasInit() || !getInit().isConstant());
+
+  // Final variables with a constant initializer are considered values and not variables.
+  syn boolean Declarator.isValue() = isFinal() && hasInit() && getInit().isConstant();
+
+  VarAccess contributes each definiteAssignmentProblems() to CompilationUnit.problems();
+
+  syn Collection<Problem> VarAccess.definiteAssignmentProblems() {
+    Collection<Problem> problems = new LinkedList<Problem>();
+    if (isSource()) {
+      if (decl() instanceof Declarator) {
+        Declarator v = (Declarator) decl();
+        if (v.isField()) {
+          if (v.isFinal() && !v.hasInit() && !isQualified() && !assignedBefore(v)) {
+            problems.add(errorf("Final field %s is not assigned before used", v.name()));
+          }
+        } else if (!v.isValue()) {
+          if (v.isBlankFinal()) {
+            if (!assignedBefore(v)) {
+              problems.add(errorf("Final variable %s is not assigned before used", v.name()));
+            }
+          } else {
+            // We can not use v.hasInit() here as a quick test for assignedness, because
+            // v is a variable and the initialization may not have been reached from the
+            // current access, e.g., if declared in a previous switch branch.
+            if (!assignedBefore(v)) {
+              problems.add(errorf("Local variable %s is not assigned before used", v.name()));
+            }
+          }
+        }
+      }
+    }
+    if (isDest()) {
+      Variable v = decl();
+      if (v.isFinal() && v.isBlank() && !hostType().subtype(v.hostType())) {
+        // Blank final field.
+        problems.add(error("The final variable is not a blank final in this context, "
+            + "so it may not be assigned."));
+      } else if (v.isFinal() && isQualified()
+          && (!qualifier().isThisAccess() || ((Access) qualifier()).isQualified())) {
+        problems.add(errorf("the blank final field %s may only be assigned by simple name",
+              v.name()));
+      } else if (v instanceof VariableDeclarator) {
+        // Local variable.
+        VariableDeclarator var = (VariableDeclarator) v;
+        if (!var.isValue()
+            // TODO(joqvist): use inherited attribute instead.
+            && var.getParent().getParent().getParent() instanceof SwitchStmt
+            && var.isFinal()) {
+          if (!unassignedBefore(var)) {
+            problems.add(errorf("Final variable %s may only be assigned once", var.name()));
+          }
+        } else if (var.isValue()) {
+          if (var.hasInit() || !unassignedBefore(var)) {
+            problems.add(errorf("Final variable %s may only be assigned once", var.name()));
+          }
+        } else if (var.isBlankFinal()) {
+          if (var.hasInit() || !unassignedBefore(var)) {
+            problems.add(errorf("Final variable %s may only be assigned once", var.name()));
+          }
+        }
+      } else if (v.isField()) {
+        // Field.
+        if (v.isFinal()) {
+          if (v.hasInit()) {
+            problems.add(errorf("already initialized final field %s can not be assigned",
+                  v.name()));
+          } else {
+            BodyDecl bodyDecl = enclosingBodyDecl();
+            if (!(bodyDecl instanceof ConstructorDecl)
+                && !(bodyDecl instanceof InstanceInitializer)
+                && !(bodyDecl instanceof StaticInitializer)
+                && !(bodyDecl instanceof FieldDecl)) {
+              problems.add(errorf(
+                  "final field %s may only be assigned in constructors and initializers",
+                  v.name()));
+            } else if (!unassignedBefore(v)) {
+              problems.add(errorf("blank final field %s may only be assigned once", v.name()));
+            }
+          }
+        }
+      } else if (v.isParameter()) {
+        // 8.4.1
+        if (v.isFinal()) {
+          problems.add(errorf("Final parameter %s may not be assigned", v.name()));
+        }
+      }
+    }
+    return problems;
+  }
+
+  FieldDeclarator contributes each definiteAssignmentProblems() to CompilationUnit.problems();
+
+  syn Collection<Problem> FieldDeclarator.definiteAssignmentProblems() {
+    Collection<Problem> problems = new LinkedList<Problem>();
+    if (isBlank() && isFinal() && isClassVariable()) {
+      boolean found = false;
+      TypeDecl typeDecl = hostType();
+      for (int i = 0; i < typeDecl.getNumBodyDecl(); i++) {
+        if (typeDecl.getBodyDecl(i) instanceof StaticInitializer) {
+          StaticInitializer s = (StaticInitializer) typeDecl.getBodyDecl(i);
+          if (s.assignedAfter(this)) {
+            found = true;
+          }
+        } else if (typeDecl.getBodyDecl(i) instanceof FieldDecl) {
+          FieldDecl f = (FieldDecl) typeDecl.getBodyDecl(i);
+          if (f.isStatic() && f.assignedAfter(this)) {
+            found = true;
+          }
+        }
+      }
+      if (!found) {
+        problems.add(errorf("blank final class variable %s in %s is not definitely assigned "
+            + "in static initializer", name(), hostType().typeName()));
+      }
+    }
+    if (isBlank() && isFinal() && isInstanceVariable()) {
+      TypeDecl typeDecl = hostType();
+      boolean found = false;
+      for (int i = 0; !found && i < typeDecl.getNumBodyDecl(); i++) {
+        if (typeDecl.getBodyDecl(i) instanceof FieldDecl) {
+          FieldDecl f = (FieldDecl) typeDecl.getBodyDecl(i);
+          if (!f.isStatic() && f.assignedAfter(this)) {
+            found = true;
+          }
+        } else if (typeDecl.getBodyDecl(i) instanceof InstanceInitializer) {
+          InstanceInitializer ii = (InstanceInitializer) typeDecl.getBodyDecl(i);
+          if (ii.getBlock().assignedAfter(this)) {
+            found = true;
+          }
+        }
+      }
+      if (!found) {
+        for (ConstructorDecl cons : typeDecl.constructors()) {
+          if (!cons.assignedAfter(this)) {
+            problems.add(errorf(
+                "blank final instance variable %s in %s is not definitely assigned after %s",
+                name(), hostType().typeName(), cons.signature()));
+          }
+        }
+      }
+    }
+    if (isBlank() && hostType().isInterfaceDecl()) {
+      problems.add(errorf("variable  %s in %s which is an interface must have an initializer",
+          name(), hostType().typeName()));
+    }
+    return problems;
+  }
+
+  syn lazy boolean ConditionalExpr.booleanOperator() =
+      getTrueExpr().type().isBoolean() && getFalseExpr().type().isBoolean();
+
+  inh boolean Stmt.assignedBefore(Variable v);
+
+  inh boolean Declarator.assignedBefore(Variable v);
+
+  /**
+   * @return {@code true} if the given variable is definitely assigned after
+   * this statement.
+   */
+  syn boolean Stmt.assignedAfter(Variable v) circular [true];
+
+  inh boolean Expr.assignedBefore(Variable v);
+
+  syn boolean Expr.assignedAfter(Variable v);
+
+  inh boolean TypeDecl.assignedBefore(Variable v);
+
+  syn boolean BodyDecl.assignedAfter(Variable v) circular [true];
+
+  eq BodyDecl.assignedAfter(Variable v) = true;
+
+  eq BodyDecl.getChild().assignedBefore(Variable v) = assignedBefore(v, this);
+
+  syn boolean BodyDecl.assignedBefore(Variable v) circular [true] = assignedBefore(v, this);
+
+  inh boolean BodyDecl.assignedBefore(Variable v, BodyDecl b);
+
+  /**
+   * Check if the instance variable is definitely assigned after all
+   * instance initializers and variable initializers preceding the given
+   * body declaration in this type declaration.
+   *
+   * <p>If the given body declaration is a constructor this checks all
+   * preceding instance initializers and instance variable initializers.
+   *
+   * <p>This attribute is not circular.
+   */
+  eq TypeDecl.getChild().assignedBefore(Variable v, BodyDecl b) {
+    if (!v.isField()) {
+      if (v.hostType() != this) {
+        return assignedBefore(v);
+      }
+      return false;
+    }
+    if (b instanceof FieldDecl && !((FieldDecl) b).isStatic() && v.isClassVariable()) {
+      return true;
+    }
+    if (b instanceof MemberTypeDecl && v.isBlank() && v.isFinal() && v.hostType() == this) {
+      return true;
+    }
+    if (v.isField()) {
+      if (v.isFinal() && v.hostType() != this && subtype(v.hostType())) {
+        return true;
+      }
+      boolean skip = !(b instanceof ConstructorDecl);
+      for (int i = getNumBodyDecl() - 1; i >= 0; --i) {
+        BodyDecl decl = getBodyDecl(i);
+        if (skip && b == decl) {
+          skip = false;
+        } else if (!skip) {
+          if (decl instanceof FieldDecl) {
+            FieldDecl f = (FieldDecl) decl;
+            if ((v.isClassVariable() && f.isStatic())
+                || (v.isInstanceVariable() && !f.isStatic())) {
+              return f.assignedAfter(v);
+            }
+          } else if (decl instanceof StaticInitializer && v.isClassVariable()) {
+            StaticInitializer si = (StaticInitializer) decl;
+            return si.assignedAfter(v);
+          } else if (decl instanceof InstanceInitializer && v.isInstanceVariable()) {
+            InstanceInitializer ii = (InstanceInitializer) decl;
+            return ii.assignedAfter(v);
+          }
+        }
+      }
+    }
+    return assignedBefore(v);
+  }
+
+  eq InstanceInitializer.assignedAfter(Variable v) = getBlock().assignedAfter(v);
+
+  eq StaticInitializer.assignedAfter(Variable v) = getBlock().assignedAfter(v);
+
+  eq ConstructorDecl.assignedAfter(Variable v) =
+      getBlock().assignedAfter(v) && getBlock().assignedAfterReturn(v);
+
+  eq ConstructorAccess.assignedAfter(Variable v) = v.isField();
+
+  eq SuperConstructorAccess.assignedAfter(Variable v) =
+      v.isInstanceVariable() ? assignedBefore(v) : v.isClassVariable();
+
+  eq ConstructorDecl.getBlock().assignedBefore(Variable v) =
+      getConstructorInvocation().assignedAfter(v);
+
+  syn boolean Block.assignedAfterReturn(Variable v) circular [true] {
+    Collection<Stmt> branches = new HashSet<Stmt>();
+    collectBranches(branches);
+    for (Stmt branch : branches) {
+      if (branch instanceof ReturnStmt) {
+        ReturnStmt stmt = (ReturnStmt) branch;
+        if (!stmt.assignedAfterReachedFinallyBlocks(v)) {
+          return false;
+        }
+      }
+    }
+    return true;
+  }
+
+  eq FieldDeclarator.assignedAfter(Variable v) =
+      hasInit()
+      ? v == this || getInit().assignedAfter(v)
+      : assignedBefore(v);
+
+  eq FieldDeclarator.getInit().assignedBefore(Variable v) = assignedBefore(v);
+
+  // Missing assignment => not definitely assigned.
+  eq Program.getChild().assignedBefore(Variable v) = false;
+
+  eq Stmt.assignedAfter(Variable v) = assignedBefore(v);
+
+  syn boolean Expr.assignedAfterTrue(Variable v);
+
+  syn boolean Expr.assignedAfterFalse(Variable v);
+
+  eq Dot.assignedAfterTrue(Variable v) = assignedAfter(v);
+
+  eq Dot.assignedAfterFalse(Variable v) = assignedAfter(v);
+
+  // JLSv3 16.1.7
+  eq Expr.assignedAfterFalse(Variable v) = isTrue() || assignedAfter(v);
+
+  eq Expr.assignedAfterTrue(Variable v) = isFalse() || assignedAfter(v);
+
+  eq Expr.assignedAfter(Variable v) = assignedBefore(v);
+
+  eq InstanceOfExpr.assignedAfterFalse(Variable v) = assignedAfter(v);
+
+  eq InstanceOfExpr.assignedAfterTrue(Variable v) = assignedAfter(v);
+
+  eq ParExpr.assignedAfterTrue(Variable v) = isFalse() || getExpr().assignedAfterTrue(v);
+
+  eq ParExpr.assignedAfterFalse(Variable v) = isTrue() || getExpr().assignedAfterFalse(v);
+
+  eq VarAccess.assignedAfter(Variable v) = assignedBefore(v);
+
+  eq Dot.getRight().assignedBefore(Variable v) = getLeft().assignedAfter(v);
+
+  eq Dot.assignedAfter(Variable v) = lastAccess().assignedAfter(v);
+
+  eq ArrayAccess.assignedAfter(Variable v) = getExpr().assignedAfter(v);
+
+  eq ArrayTypeAccess.assignedAfter(Variable v) = getAccess().assignedAfter(v);
+
+  eq ArrayTypeWithSizeAccess.assignedAfter(Variable v) = getExpr().assignedAfter(v);
+
+  eq ArrayTypeWithSizeAccess.getExpr().assignedBefore(Variable v) = getAccess().assignedAfter(v);
+
+  // 16.1.2 1st bullet
+  eq AndLogicalExpr.assignedAfterTrue(Variable v) =
+      isFalse() || getRightOperand().assignedAfterTrue(v);
+
+  // 16.1.2 2nd bullet
+  eq AndLogicalExpr.assignedAfterFalse(Variable v) =
+      isTrue()
+      || (getLeftOperand().assignedAfterFalse(v) && getRightOperand().assignedAfterFalse(v));
+
+  // 16.1.2 3rd bullet
+  eq AndLogicalExpr.getLeftOperand().assignedBefore(Variable v) = assignedBefore(v);
+
+  // 16.1.2 4th bullet
+  eq AndLogicalExpr.getRightOperand().assignedBefore(Variable v) =
+      getLeftOperand().assignedAfterTrue(v);
+
+  // 16.1.2 5th bullet
+  eq AndLogicalExpr.assignedAfter(Variable v) = assignedAfterTrue(v) && assignedAfterFalse(v);
+
+  eq OrLogicalExpr.assignedAfterTrue(Variable v) =
+      isFalse()
+      || (getLeftOperand().assignedAfterTrue(v) && getRightOperand().assignedAfterTrue(v));
+
+  eq OrLogicalExpr.assignedAfterFalse(Variable v) =
+      isTrue() || getRightOperand().assignedAfterFalse(v);
+
+  eq OrLogicalExpr.getLeftOperand().assignedBefore(Variable v) = assignedBefore(v);
+
+  eq OrLogicalExpr.getRightOperand().assignedBefore(Variable v) =
+      getLeftOperand().assignedAfterFalse(v);
+
+  eq OrLogicalExpr.assignedAfter(Variable v) = assignedAfterTrue(v) && assignedAfterFalse(v);
+
+  eq LogNotExpr.assignedAfterTrue(Variable v) = isFalse() || getOperand().assignedAfterFalse(v);
+
+  eq LogNotExpr.assignedAfterFalse(Variable v) = isTrue() || getOperand().assignedAfterTrue(v);
+
+  eq LogNotExpr.getOperand().assignedBefore(Variable v) = assignedBefore(v);
+
+  eq LogNotExpr.assignedAfter(Variable v) = assignedAfterTrue(v) && assignedAfterFalse(v);
+
+  eq ConditionalExpr.assignedAfterTrue(Variable v) =
+      isFalse() || (getTrueExpr().assignedAfterTrue(v) && getFalseExpr().assignedAfterTrue(v));
+
+  eq ConditionalExpr.assignedAfterFalse(Variable v) =
+      isTrue() || (getTrueExpr().assignedAfterFalse(v) && getFalseExpr().assignedAfterFalse(v));
+
+  eq ConditionalExpr.getCondition().assignedBefore(Variable v) = assignedBefore(v);
+
+  eq ConditionalExpr.getTrueExpr().assignedBefore(Variable v) = getCondition().assignedAfterTrue(v);
+
+  eq ConditionalExpr.getFalseExpr().assignedBefore(Variable v) =
+      getCondition().assignedAfterFalse(v);
+
+  eq ConditionalExpr.assignedAfter(Variable v) =
+      booleanOperator()
+      ? assignedAfterTrue(v) && assignedAfterFalse(v)
+      : getTrueExpr().assignedAfter(v) && getFalseExpr().assignedAfter(v);
+
+  eq AssignExpr.assignedAfter(Variable v) =
+      (getDest().isVariable() && getDest().varDecl() == v) || getSource().assignedAfter(v);
+
+  eq AssignExpr.getSource().assignedBefore(Variable v) = getDest().assignedAfter(v);
+
+  eq AssignExpr.getDest().assignedBefore(Variable v) = assignedBefore(v);
+
+  eq AssignExpr.assignedAfterTrue(Variable v) = isFalse() || assignedAfter(v);
+
+  eq AssignExpr.assignedAfterFalse(Variable v) = isTrue() || assignedAfter(v);
+
+  eq ParExpr.assignedAfter(Variable v) = getExpr().assignedAfter(v);
+
+  eq Unary.assignedAfter(Variable v) = getOperand().assignedAfter(v);
+
+  eq CastExpr.assignedAfter(Variable v) = getExpr().assignedAfter(v);
+
+  syn boolean Binary.assignedAfterTrue(Variable v) circular [true] =
+      isFalse() || getRightOperand().assignedAfter(v);
+
+  syn boolean Binary.assignedAfterFalse(Variable v) circular [true] =
+      isTrue() || getRightOperand().assignedAfter(v);
+
+  eq Binary.assignedAfter(Variable v) = getRightOperand().assignedAfter(v);
+
+  eq Binary.getRightOperand().assignedBefore(Variable v) = getLeftOperand().assignedAfter(v);
+
+  eq InstanceOfExpr.assignedAfter(Variable v) = getExpr().assignedAfter(v);
+
+  eq MethodAccess.getArg(int i).assignedBefore(Variable v) = computeDAbefore(i, v);
+
+  syn boolean MethodAccess.computeDAbefore(int i, Variable v) circular [true] =
+      i == 0 ? assignedBefore(v) : getArg(i-1).assignedAfter(v);
+
+  eq MethodAccess.assignedAfter(Variable v) =
+      getNumArg() == 0
+      ? assignedBefore(v)
+      : getArg(getNumArg()-1).assignedAfter(v);
+
+  eq MethodAccess.assignedAfterTrue(Variable v) =
+      isFalse() || (getNumArg() == 0 ? assignedBefore(v) : getArg(getNumArg()-1).assignedAfter(v));
+
+  eq MethodAccess.assignedAfterFalse(Variable v) =
+      isTrue() || (getNumArg() == 0 ? assignedBefore(v) : getArg(getNumArg()-1).assignedAfter(v));
+
+  eq EmptyStmt.assignedAfter(Variable v) = assignedBefore(v);
+
+  eq AssertStmt.assignedAfter(Variable v) = getCondition().assignedAfter(v);
+
+  eq AssertStmt.getMessage().assignedBefore(Variable v) = getCondition().assignedAfter(v);
+
+  syn boolean ClassInstanceExpr.assignedAfterInstance(Variable v) circular [true] {
+    if (getNumArg() == 0) {
+      return assignedBefore(v);
+    }
+    return getArg(getNumArg()-1).assignedAfter(v);
+  }
+
+  eq ClassInstanceExpr.assignedAfter(Variable v) = assignedAfterInstance(v);
+
+  eq ClassInstanceExpr.getArg(int i).assignedBefore(Variable v) = computeDAbefore(i, v);
+
+  syn boolean ClassInstanceExpr.computeDAbefore(int i, Variable v) circular [true] =
+      i == 0 ? assignedBefore(v) : getArg(i-1).assignedAfter(v);
+
+  eq ClassInstanceExpr.getTypeDecl().assignedBefore(Variable v) = assignedAfterInstance(v);
+
+  syn boolean ArrayCreationExpr.assignedAfterCreation(Variable v) =
+      getTypeAccess().assignedAfter(v);
+
+  eq ArrayCreationExpr.assignedAfter(Variable v) =
+      hasArrayInit() ? getArrayInit().assignedAfter(v) : assignedAfterCreation(v);
+
+  eq ArrayCreationExpr.getArrayInit().assignedBefore(Variable v) = assignedAfterCreation(v);
+
+  // 16.2.2 1st bullet
+  eq MethodDecl.getBlock().assignedBefore(Variable v) = v.isField() || assignedBefore(v);
+
+  eq InstanceInitializer.getBlock().assignedBefore(Variable v) = assignedBefore(v);
+
+  eq StaticInitializer.getBlock().assignedBefore(Variable v) = assignedBefore(v);
+
+  eq Block.assignedAfter(Variable v) =
+      getNumStmt() == 0 ? assignedBefore(v) : getStmt(getNumStmt()-1).assignedAfter(v);
+
+  // 16.2.2 7th bullet
+  eq Block.getStmt(int index).assignedBefore(Variable v) =
+      index == 0 ? assignedBefore(v) : getStmt(index - 1).assignedAfter(v);
+
+  eq VarDeclStmt.getDeclarator(int index).assignedBefore(Variable v) =
+      index == 0 ? assignedBefore(v) : getDeclarator(index - 1).assignedAfter(v);
+
+  eq FieldDecl.getDeclarator(int index).assignedBefore(Variable v) =
+      index == 0 ? assignedBefore(v) : getDeclarator(index - 1).assignedAfter(v);
+
+  // 16.2.2 8th, 9th, 10th bullet
+  syn boolean Block.unassignedEverywhere(Variable v) = unassignedBefore(v) && checkDUeverywhere(v);
+
+  // 16.2.2 9th, 10th bullet
+  protected boolean ASTNode.checkDUeverywhere(Variable v) {
+    for (int i = 0; i < getNumChild(); i++) {
+      if (!getChild(i).checkDUeverywhere(v)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  protected boolean VarAccess.checkDUeverywhere(Variable v) {
+    if (isDest() && decl() == v) {
+      return false;
+    }
+    return super.checkDUeverywhere(v);
+  }
+
+  // 16.2.2 9th bullet
+  protected boolean AssignExpr.checkDUeverywhere(Variable v) {
+    if (getDest().isVariable() && getDest().varDecl() == v) {
+      if (!getSource().assignedAfter(v)) {
+        return false;
+      }
+    }
+    return super.checkDUeverywhere(v);
+  }
+
+  // 16.2.2 10th bullet
+  protected boolean PostfixExpr.checkDUeverywhere(Variable v) {
+    if (getOperand().isVariable() && getOperand().varDecl() == v) {
+      if (!assignedBefore(v)) {
+        return false;
+      }
+    }
+    return super.checkDUeverywhere(v);
+  }
+
+  protected boolean PreIncExpr.checkDUeverywhere(Variable v) {
+    if (getOperand().isVariable() && getOperand().varDecl() == v) {
+      if (!assignedBefore(v)) {
+        return false;
+      }
+    }
+    return super.checkDUeverywhere(v);
+  }
+
+  protected boolean PreDecExpr.checkDUeverywhere(Variable v) {
+    if (getOperand().isVariable() && getOperand().varDecl() == v) {
+      if (!assignedBefore(v)) {
+        return false;
+      }
+    }
+    return super.checkDUeverywhere(v);
+  }
+
+  eq LocalClassDeclStmt.assignedAfter(Variable v) = assignedBefore(v);
+
+  eq VarDeclStmt.assignedAfter(Variable v) =
+      getDeclarator(getNumDeclarator() - 1).assignedAfter(v);
+
+  eq FieldDecl.assignedAfter(Variable v) =
+      getDeclarator(getNumDeclarator() - 1).assignedAfter(v);
+
+  syn boolean Declarator.assignedAfter(Variable v) circular [true] {
+    if (v == this) {
+      return hasInit();
+    } else {
+      return hasInit() ? getInit().assignedAfter(v) : assignedBefore(v);
+    }
+  }
+
+  eq Declarator.getInit().assignedBefore(Variable v) = assignedBefore(v);
+
+  eq ArrayInit.assignedAfter(Variable v) =
+      getNumInit() == 0
+      ? assignedBefore(v)
+      : getInit(getNumInit()-1).assignedAfter(v);
+
+  eq ArrayInit.getInit(int childIndex).assignedBefore(Variable v) = computeDABefore(childIndex, v);
+
+  syn boolean ArrayInit.computeDABefore(int childIndex, Variable v) circular [true] {
+    if (childIndex == 0) {
+      return assignedBefore(v);
+    }
+    int index = childIndex-1;
+    while (index > 0 && getInit(index).isConstant()) {
+      index--;
+    }
+    return getInit(childIndex-1).assignedAfter(v);
+  }
+
+  eq LabeledStmt.getStmt().assignedBefore(Variable v) = assignedBefore(v);
+
+  eq LabeledStmt.assignedAfter(Variable v) {
+    if (!getStmt().assignedAfter(v)) {
+      return false;
+    }
+    for (BreakStmt stmt : targetBreaks()) {
+      if (!stmt.assignedAfterReachedFinallyBlocks(v)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  eq ExprStmt.assignedAfter(Variable v) = getExpr().assignedAfter(v);
+
+  eq ExprStmt.getExpr().assignedBefore(Variable v) = assignedBefore(v);
+
+  eq IfStmt.assignedAfter(Variable v) =
+      hasElse()
+      ? getThen().assignedAfter(v) && getElse().assignedAfter(v)
+      : getThen().assignedAfter(v) && getCondition().assignedAfterFalse(v);
+
+  eq IfStmt.getCondition().assignedBefore(Variable v) = assignedBefore(v);
+
+  eq IfStmt.getThen().assignedBefore(Variable v) = getCondition().assignedAfterTrue(v);
+
+  eq IfStmt.getElse().assignedBefore(Variable v) = getCondition().assignedAfterFalse(v);
+
+  // 16.2.9 1st bullet
+  eq SwitchStmt.assignedAfter(Variable v) {
+    if (!(!noDefaultLabel() || getExpr().assignedAfter(v))) {
+      return false;
+    }
+    if (!(!switchLabelEndsBlock() || getExpr().assignedAfter(v))) {
+      return false;
+    }
+    if (!assignedAfterLastStmt(v)) {
+      return false;
+    }
+    for (BreakStmt stmt : targetBreaks()) {
+      if (!stmt.assignedAfterReachedFinallyBlocks(v)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  syn boolean SwitchStmt.assignedAfterLastStmt(Variable v) = getBlock().assignedAfter(v);
+
+  // 16.2.9 2nd bullet
+  eq SwitchStmt.getExpr().assignedBefore(Variable v) {
+    if (((ASTNode) v).isDescendantTo(this)) {
+      return false;
+    }
+    boolean result = assignedBefore(v);
+    return result;
+  }
+
+  protected boolean ASTNode.isDescendantTo(ASTNode node) {
+    if (this == node) {
+      return true;
+    }
+    if (getParent() == null) {
+      return false;
+    }
+    return getParent().isDescendantTo(node);
+  }
+
+  eq SwitchStmt.getBlock().assignedBefore(Variable v) = getExpr().assignedAfter(v);
+
+  syn boolean Case.assignedBefore(Variable v) circular [true] =
+      getParent().getParent() instanceof Block
+      && ((Block) getParent().getParent()).assignedBefore(v)
+      && super.assignedBefore(v);
+
+  eq Case.assignedAfter(Variable v) = assignedBefore(v);
+
+  eq WhileStmt.assignedAfter(Variable v) {
+    if (!getCondition().assignedAfterFalse(v)) {
+      return false;
+    }
+    for (BreakStmt stmt : targetBreaks()) {
+      if (!stmt.assignedAfterReachedFinallyBlocks(v)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  eq WhileStmt.getCondition().assignedBefore(Variable v) = assignedBefore(v);
+
+  eq WhileStmt.getStmt().assignedBefore(Variable v) = getCondition().assignedAfterTrue(v);
+
+  eq DoStmt.assignedAfter(Variable v) {
+    if (!getCondition().assignedAfterFalse(v)) {
+      return false;
+    }
+    for (BreakStmt stmt : targetBreaks()) {
+      if (!stmt.assignedAfterReachedFinallyBlocks(v)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  eq DoStmt.getStmt().assignedBefore(Variable v) = assignedBefore(v);
+
+  eq DoStmt.getCondition().assignedBefore(Variable v) {
+    if (!getStmt().assignedAfter(v)) {
+      return false;
+    }
+    for (ContinueStmt stmt : targetContinues()) {
+      if (!stmt.assignedAfterReachedFinallyBlocks(v)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  // 16.2.11 1st bullet
+  eq ForStmt.assignedAfter(Variable v) {
+    if (!(!hasCondition() || getCondition().assignedAfterFalse(v))) {
+      return false;
+    }
+    for (BreakStmt stmt : targetBreaks()) {
+      if (!stmt.assignedAfterReachedFinallyBlocks(v)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  // 16.2.11 2nd bullet
+  eq ForStmt.getInitStmt(int i).assignedBefore(Variable v) =
+      i == 0 ? assignedBefore(v) : getInitStmt(i - 1).assignedAfter(v);
+
+  // 16.2.11 3rd bullet
+  syn boolean ForStmt.assignedAfterInitialization(Variable v) =
+      getNumInitStmt() == 0
+      ? assignedBefore(v)
+      : getInitStmt(getNumInitStmt()-1).assignedAfter(v);
+
+  eq ForStmt.getCondition().assignedBefore(Variable v) = assignedAfterInitialization(v);
+
+  // 16.2.11 5th bullet
+  eq ForStmt.getStmt().assignedBefore(Variable v) {
+    if (hasCondition() && getCondition().assignedAfterTrue(v)) {
+      return true;
+    }
+    if (!hasCondition() && assignedAfterInitialization(v)) {
+      return true;
+    }
+    return false;
+  }
+
+  // 16.2.11 6th bullet
+  eq ForStmt.getUpdateStmt().assignedBefore(Variable v) {
+    if (!getStmt().assignedAfter(v)) {
+      return false;
+    }
+    for (ContinueStmt stmt :  targetContinues()) {
+      if (!stmt.assignedAfterReachedFinallyBlocks(v)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  eq BreakStmt.assignedAfter(Variable v) = true;
+
+  eq ContinueStmt.assignedAfter(Variable v) = true;
+
+  eq ReturnStmt.assignedAfter(Variable v) = true;
+
+  eq ThrowStmt.assignedAfter(Variable v) = true;
+
+  eq ReturnStmt.getResult().assignedBefore(Variable v) = assignedBefore(v);
+
+  eq ThrowStmt.getExpr().assignedBefore(Variable v) = assignedBefore(v);
+
+  eq SynchronizedStmt.assignedAfter(Variable v) = getBlock().assignedAfter(v);
+
+  eq SynchronizedStmt.getExpr().assignedBefore(Variable v) = assignedBefore(v);
+
+  eq SynchronizedStmt.getBlock().assignedBefore(Variable v) = getExpr().assignedAfter(v);
+
+  // 16.2.15 1st bullet
+  eq TryStmt.getBlock().assignedBefore(Variable v) = assignedBefore(v);
+
+  // 16.2.15 2nd bullet
+  eq TryStmt.getCatchClause().assignedBefore(Variable v) = getBlock().assignedBefore(v);
+
+  // 16.2.15 6th bullet
+  eq TryStmt.getFinally().assignedBefore(Variable v) = assignedBefore(v);
+
+  eq TryStmt.assignedAfter(Variable v) {
+    // 16.2.15 4th bullet
+    if (!hasNonEmptyFinally()) {
+      if (!getBlock().assignedAfter(v)) {
+        return false;
+      }
+      for (int i = 0; i < getNumCatchClause(); i++) {
+        if (!getCatchClause(i).getBlock().assignedAfter(v)) {
+          return false;
+        }
+      }
+      return true;
+    } else {
+      // 16.2.15 5th bullet
+      if (getFinally().assignedAfter(v)) {
+        return true;
+      }
+      if (!getBlock().assignedAfter(v)) {
+        return false;
+      }
+      for (int i = 0; i < getNumCatchClause(); i++) {
+        if (!getCatchClause(i).getBlock().assignedAfter(v)) {
+          return false;
+        }
+      }
+      return true;
+    }
+  }
+}
+
+aspect DefiniteUnassignment {
+  inh boolean Stmt.unassignedBefore(Variable v);
+
+  inh boolean Declarator.unassignedBefore(Variable v);
+
+  /**
+   * @return {@code true} if the given variable is definitely unassigned after
+   * this statement.
+   */
+  syn boolean Stmt.unassignedAfter(Variable v) circular [true];
+
+  inh boolean Expr.unassignedBefore(Variable v);
+
+  syn boolean Expr.unassignedAfter(Variable v) circular [true];
+
+  inh boolean Binary.unassignedBefore(Variable v);
+
+  inh boolean Dot.unassignedBefore(Variable v);
+
+  syn boolean Expr.unassignedAfterTrue(Variable v) circular [true];
+
+  syn boolean Expr.unassignedAfterFalse(Variable v) circular [true];
+
+  inh boolean TypeDecl.unassignedBefore(Variable v);
+
+  syn boolean BodyDecl.unassignedAfter(Variable v) circular [true] = true;
+
+  eq Program.getChild().unassignedBefore(Variable v) = true;
+
+  eq BodyDecl.getChild().unassignedBefore(Variable v) = unassignedBefore(v, this);
+
+  syn boolean BodyDecl.unassignedBefore(Variable v) = unassignedBefore(v, this);
+
+  eq MethodDecl.unassignedBefore(Variable v) = false;
+
+  eq MemberTypeDecl.unassignedBefore(Variable v) = false;
+
+  inh boolean BodyDecl.unassignedBefore(Variable v, BodyDecl b);
+
+  /**
+   * Check if the instance variable is definitely unassigned after all instance
+   * initializers and variable initializers preceding the given body
+   * declaration in this type declaration.
+   *
+   * <p>If the given body declaration is a constructor this checks all
+   * preceding instance initializers and instance variable initializers.
+   *
+   * <p>This attribute is not circular.
+   */
+  eq TypeDecl.getChild().unassignedBefore(Variable v, BodyDecl b) {
+    if (v.isField()) {
+      boolean skip = !(b instanceof ConstructorDecl);
+      for (int i = getNumBodyDecl() - 1; i >= 0; --i) {
+        BodyDecl decl = getBodyDecl(i);
+        if (skip && b == decl) {
+          skip = false;
+        } else if (!skip) {
+          if (decl instanceof FieldDecl) {
+            FieldDecl f = (FieldDecl) decl;
+            if ((v.isClassVariable() && f.isStatic())
+                || (v.isInstanceVariable() && !f.isStatic())) {
+              return f.unassignedAfter(v);
+            }
+          } else if (decl instanceof StaticInitializer && v.isClassVariable()) {
+            StaticInitializer si = (StaticInitializer) decl;
+            return si.unassignedAfter(v);
+          } else if (decl instanceof InstanceInitializer && v.isInstanceVariable()) {
+            InstanceInitializer ii = (InstanceInitializer) decl;
+            return ii.unassignedAfter(v);
+          }
+        }
+      }
+    }
+    return unassignedBefore(v);
+  }
+
+  eq InstanceInitializer.unassignedAfter(Variable v) = getBlock().unassignedAfter(v);
+
+  eq StaticInitializer.unassignedAfter(Variable v) = getBlock().unassignedAfter(v);
+
+  eq ConstructorDecl.unassignedAfter(Variable v) =
+      getBlock().unassignedAfter(v) && getBlock().unassignedAfterReturn(v);
+
+  eq ConstructorAccess.unassignedAfter(Variable v) = !v.isField();
+
+  eq SuperConstructorAccess.unassignedAfter(Variable v) =
+      v.isInstanceVariable() ? unassignedBefore(v) : !v.isClassVariable();
+
+  eq ConstructorDecl.getBlock().unassignedBefore(Variable v) =
+      getConstructorInvocation().unassignedAfter(v);
+
+  syn boolean Block.unassignedAfterReturn(Variable v) circular [true] {
+    Collection<Stmt> branches = new HashSet<Stmt>();
+    collectBranches(branches);
+    for (Stmt branch : branches) {
+      if (branch instanceof ReturnStmt) {
+        ReturnStmt stmt = (ReturnStmt) branch;
+        if (!stmt.unassignedAfterReachedFinallyBlocks(v)) {
+          return false;
+        }
+      }
+    }
+    return true;
+  }
+
+  eq FieldDeclarator.unassignedAfter(Variable v) =
+      hasInit()
+      ? v != this && getInit().unassignedAfter(v)
+      : v == this || unassignedBefore(v);
+
+  eq Stmt.unassignedAfter(Variable v) {
+    throw new Error("unassignedAfter in " + getClass().getName());
+  }
+
+  // JLSv3 16.1.7
+  eq Expr.unassignedAfterFalse(Variable v) = isTrue() || unassignedAfter(v);
+
+  eq Expr.unassignedAfterTrue(Variable v) = isFalse() || unassignedAfter(v);
+
+  eq Dot.unassignedAfterTrue(Variable v) = unassignedAfter(v);
+
+  eq Dot.unassignedAfterFalse(Variable v) = unassignedAfter(v);
+
+  eq Expr.unassignedAfter(Variable v) = unassignedBefore(v);
+
+  eq ParExpr.unassignedAfterTrue(Variable v) = getExpr().unassignedAfterTrue(v);
+
+  eq ParExpr.unassignedAfterFalse(Variable v) = getExpr().unassignedAfterFalse(v);
+
+  // JLSv3 16.1.2
+  eq AndLogicalExpr.unassignedAfterTrue(Variable v) = getRightOperand().unassignedAfterTrue(v);
+
+  eq AndLogicalExpr.unassignedAfterFalse(Variable v) =
+      getLeftOperand().unassignedAfterFalse(v) && getRightOperand().unassignedAfterFalse(v);
+
+  eq AndLogicalExpr.getLeftOperand().unassignedBefore(Variable v) = unassignedBefore(v);
+
+  eq AndLogicalExpr.getRightOperand().unassignedBefore(Variable v) =
+      getLeftOperand().unassignedAfterTrue(v);
+
+  eq AndLogicalExpr.unassignedAfter(Variable v) = unassignedAfterTrue(v) && unassignedAfterFalse(v);
+
+  eq OrLogicalExpr.unassignedAfterTrue(Variable v) =
+      getLeftOperand().unassignedAfterTrue(v) && getRightOperand().unassignedAfterTrue(v);
+
+  eq OrLogicalExpr.unassignedAfterFalse(Variable v) = getRightOperand().unassignedAfterFalse(v);
+
+  eq OrLogicalExpr.getLeftOperand().unassignedBefore(Variable v) = unassignedBefore(v);
+
+  eq OrLogicalExpr.getRightOperand().unassignedBefore(Variable v) =
+      getLeftOperand().unassignedAfterFalse(v);
+
+  eq OrLogicalExpr.unassignedAfter(Variable v) = unassignedAfterTrue(v) && unassignedAfterFalse(v);
+
+  eq LogNotExpr.unassignedAfterTrue(Variable v) = getOperand().unassignedAfterFalse(v);
+
+  eq LogNotExpr.unassignedAfterFalse(Variable v) = getOperand().unassignedAfterTrue(v);
+
+  eq LogNotExpr.getOperand().unassignedBefore(Variable v) = unassignedBefore(v);
+
+  eq LogNotExpr.unassignedAfter(Variable v) = unassignedAfterTrue(v) && unassignedAfterFalse(v);
+
+  eq ConditionalExpr.unassignedAfterTrue(Variable v) =
+      getTrueExpr().unassignedAfterTrue(v) && getFalseExpr().unassignedAfterTrue(v);
+
+  eq ConditionalExpr.unassignedAfterFalse(Variable v) =
+      getTrueExpr().unassignedAfterFalse(v) && getFalseExpr().unassignedAfterFalse(v);
+
+  eq ConditionalExpr.getCondition().unassignedBefore(Variable v) = unassignedBefore(v);
+
+  eq ConditionalExpr.getTrueExpr().unassignedBefore(Variable v) =
+      getCondition().unassignedAfterTrue(v);
+
+  eq ConditionalExpr.getFalseExpr().unassignedBefore(Variable v) =
+      getCondition().unassignedAfterFalse(v);
+
+  eq ConditionalExpr.unassignedAfter(Variable v) =
+      booleanOperator()
+      ? unassignedAfterTrue(v) && unassignedAfterFalse(v)
+      : getTrueExpr().unassignedAfter(v) && getFalseExpr().unassignedAfter(v);
+
+	/**
+   * <a href="http://docs.oracle.com/javase/specs/jls/se7/html/jls-16.html#jls-16.1.8">JLSv7 $16.1.8</a>
+   */
+  eq AssignExpr.unassignedAfter(Variable v) {
+    if (getDest().isVariable() && getDest().varDecl() == v) {
+      return false;
+    } else {
+      return getSource().unassignedAfter(v);
+    }
+  }
+
+  eq AssignExpr.getSource().unassignedBefore(Variable v) = getDest().unassignedAfter(v);
+
+  eq AssignExpr.getDest().unassignedBefore(Variable v) = unassignedBefore(v);
+
+  eq AssignExpr.unassignedAfterTrue(Variable v) = unassignedAfter(v);
+
+  eq AssignExpr.unassignedAfterFalse(Variable v) = unassignedAfter(v);
+
+  eq VarAccess.unassignedAfter(Variable v) = unassignedBefore(v);
+
+  eq Dot.getRight().unassignedBefore(Variable v) = getLeft().unassignedAfter(v);
+
+  eq Dot.unassignedAfter(Variable v) = lastAccess().unassignedAfter(v);
+
+  eq ArrayAccess.unassignedAfter(Variable v) = getExpr().unassignedAfter(v);
+
+  eq ArrayTypeAccess.unassignedAfter(Variable v) = getAccess().unassignedAfter(v);
+
+  eq ArrayTypeWithSizeAccess.unassignedAfter(Variable v) = getExpr().unassignedAfter(v);
+
+  eq ArrayTypeWithSizeAccess.getExpr().unassignedBefore(Variable v) =
+      getAccess().unassignedAfter(v);
+
+  eq ParExpr.unassignedAfter(Variable v) = getExpr().unassignedAfter(v);
+
+  eq Unary.unassignedAfter(Variable v) = getOperand().unassignedAfter(v);
+
+  eq CastExpr.unassignedAfter(Variable v) = getExpr().unassignedAfter(v);
+
+  eq Binary.unassignedAfter(Variable v) = getRightOperand().unassignedAfter(v);
+
+  eq Binary.getRightOperand().unassignedBefore(Variable v) = getLeftOperand().unassignedAfter(v);
+
+  eq InstanceOfExpr.unassignedAfter(Variable v) = getExpr().unassignedAfter(v);
+
+  /**
+   * <a href="http://docs.oracle.com/javase/specs/jls/se7/html/jls-16.html#jls-16.1.10">JLSv7 $16.1.10</a>
+   */
+  eq MethodAccess.getArg(int i).unassignedBefore(Variable v) = computeDUbefore(i, v);
+
+  syn boolean MethodAccess.computeDUbefore(int i, Variable v) circular [true] =
+      i == 0 ? unassignedBefore(v) : getArg(i-1).unassignedAfter(v);
+
+  eq MethodAccess.unassignedAfter(Variable v) =
+      getNumArg() == 0 ? unassignedBefore(v) : getArg(getNumArg()-1).unassignedAfter(v);
+
+  eq MethodAccess.unassignedAfterTrue(Variable v) =
+      isFalse()
+      || (getNumArg() == 0 ? unassignedBefore(v) : getArg(getNumArg()-1).unassignedAfter(v));
+
+  eq MethodAccess.unassignedAfterFalse(Variable v) =
+      isTrue()
+      || (getNumArg() == 0 ? unassignedBefore(v) : getArg(getNumArg()-1).unassignedAfter(v));
+
+  syn boolean ClassInstanceExpr.unassignedAfterInstance(Variable v) circular [true] {
+    if (getNumArg() == 0) {
+      return unassignedBefore(v);
+    } else {
+      return getArg(getNumArg()-1).unassignedAfter(v);
+    }
+  }
+
+  eq ClassInstanceExpr.unassignedAfter(Variable v) = unassignedAfterInstance(v);
+
+  eq ClassInstanceExpr.getArg(int i).unassignedBefore(Variable v) = computeDUbefore(i, v);
+
+  syn boolean ClassInstanceExpr.computeDUbefore(int i, Variable v) circular [true] =
+      i == 0 ? unassignedBefore(v) : getArg(i-1).unassignedAfter(v);
+
+  syn boolean ArrayCreationExpr.unassignedAfterCreation(Variable v) circular [true] =
+      getTypeAccess().unassignedAfter(v);
+
+  eq ArrayCreationExpr.unassignedAfter(Variable v) =
+      hasArrayInit() ? getArrayInit().unassignedAfter(v) : unassignedAfterCreation(v);
+
+  eq ArrayCreationExpr.getArrayInit().unassignedBefore(Variable v) = unassignedAfterCreation(v);
+
+  eq EmptyStmt.unassignedAfter(Variable v) = unassignedBefore(v);
+
+  eq AssertStmt.unassignedAfter(Variable v) = getCondition().unassignedAfter(v);
+
+  eq MethodDecl.getBlock().unassignedBefore(Variable v) = !v.isField();
+
+  eq Block.unassignedAfter(Variable v) =
+      getNumStmt() == 0 ? unassignedBefore(v) : getStmt(getNumStmt() - 1).unassignedAfter(v);
+
+  eq Block.getStmt(int index).unassignedBefore(Variable v) =
+      index == 0 ? unassignedBefore(v) : getStmt(index - 1).unassignedAfter(v);
+
+  eq VarDeclStmt.getDeclarator(int index).unassignedBefore(Variable v) =
+      index == 0 ? unassignedBefore(v) : getDeclarator(index - 1).unassignedAfter(v);
+
+  eq FieldDecl.getDeclarator(int index).unassignedBefore(Variable v) =
+      index == 0 ? unassignedBefore(v) : getDeclarator(index - 1).unassignedAfter(v);
+
+  eq LocalClassDeclStmt.unassignedAfter(Variable v) = unassignedBefore(v);
+
+  eq VarDeclStmt.unassignedAfter(Variable v) =
+      getDeclarator(getNumDeclarator() - 1).unassignedAfter(v);
+
+  eq FieldDecl.unassignedAfter(Variable v) =
+      getDeclarator(getNumDeclarator() - 1).unassignedAfter(v);
+
+  syn boolean Declarator.unassignedAfter(Variable v) circular [true] {
+    if (v == this) {
+      return !hasInit();
+    } else {
+      return hasInit() ? getInit().unassignedAfter(v) : unassignedBefore(v);
+    }
+  }
+
+  eq Declarator.getInit().unassignedBefore(Variable v) = unassignedBefore(v);
+
+  eq ArrayInit.unassignedAfter(Variable v) =
+      getNumInit() == 0 ? unassignedBefore(v) : getInit(getNumInit()-1).unassignedAfter(v);
+
+  eq ArrayInit.getInit().unassignedBefore(Variable v) = computeDUbefore(childIndex, v);
+
+  syn boolean ArrayInit.computeDUbefore(int childIndex, Variable v) circular [true] {
+    if (childIndex == 0) {
+      return unassignedBefore(v);
+    }
+    int index = childIndex-1;
+    while (index > 0 && getInit(index).isConstant()) {
+      index--;
+    }
+    return getInit(childIndex-1).unassignedAfter(v);
+  }
+
+  eq LabeledStmt.getStmt().unassignedBefore(Variable v) = unassignedBefore(v);
+
+  eq LabeledStmt.unassignedAfter(Variable v) {
+    if (!getStmt().unassignedAfter(v)) {
+      return false;
+    }
+    for (BreakStmt stmt : targetBreaks()) {
+      if (!stmt.unassignedAfterReachedFinallyBlocks(v)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  interface FinallyHost {
+    public boolean unassignedAfterFinally(Variable v);
+    public boolean assignedAfterFinally(Variable v);
+    public FinallyHost enclosingFinally(Stmt branch);
+    public Block getFinallyBlock();
+  }
+
+  TryStmt implements FinallyHost;
+
+  SynchronizedStmt implements FinallyHost;
+
+  public Block TryStmt.getFinallyBlock() {
+    return getFinally();
+  }
+
+  public Block SynchronizedStmt.getFinallyBlock() {
+    return getMonitorExit();
+  }
+
+  syn boolean TryStmt.unassignedAfterFinally(Variable v) circular [true] =
+      getFinally().unassignedAfter(v);
+
+  syn boolean SynchronizedStmt.unassignedAfterFinally(Variable v) = true;
+
+  syn boolean TryStmt.assignedAfterFinally(Variable v) circular [true] =
+      getFinally().assignedAfter(v);
+
+  syn boolean SynchronizedStmt.assignedAfterFinally(Variable v) = false;
+
+
+  syn boolean BreakStmt.unassignedAfterReachedFinallyBlocks(Variable v) circular [true] {
+    Iterator<FinallyHost> iter = finallyIterator();
+    if (!unassignedBefore(v) && !iter.hasNext()) {
+      return false;
+    }
+    while (iter.hasNext()) {
+      FinallyHost f = iter.next();
+      if (!f.unassignedAfterFinally(v)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  syn boolean ContinueStmt.unassignedAfterReachedFinallyBlocks(Variable v) circular [true] {
+    Iterator<FinallyHost> iter = finallyIterator();
+    if (!unassignedBefore(v) && !iter.hasNext()) {
+      return false;
+    }
+    while (iter.hasNext()) {
+      FinallyHost f = iter.next();
+      if (!f.unassignedAfterFinally(v)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  syn boolean ReturnStmt.unassignedAfterReachedFinallyBlocks(Variable v) circular [true] {
+    Iterator<FinallyHost> iter = finallyIterator();
+    if (!unassignedBefore(v) && !iter.hasNext()) {
+      return false;
+    }
+    while (iter.hasNext()) {
+      FinallyHost f = iter.next();
+      if (!f.unassignedAfterFinally(v)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  syn boolean BreakStmt.assignedAfterReachedFinallyBlocks(Variable v) circular [true] {
+    if (assignedBefore(v)) {
+      return true;
+    }
+    Iterator<FinallyHost> iter = finallyIterator();
+    if (!iter.hasNext()) {
+      return false;
+    }
+    while (iter.hasNext()) {
+      FinallyHost f = iter.next();
+      if (!f.assignedAfterFinally(v)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  syn boolean ContinueStmt.assignedAfterReachedFinallyBlocks(Variable v) circular [true] {
+    if (assignedBefore(v)) {
+      return true;
+    }
+    Iterator<FinallyHost> iter = finallyIterator();
+    if (!iter.hasNext()) {
+      return false;
+    }
+    while (iter.hasNext()) {
+      FinallyHost f = iter.next();
+      if (!f.assignedAfterFinally(v)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  syn boolean ReturnStmt.assignedAfterReachedFinallyBlocks(Variable v) circular [true] {
+    if (hasResult() ? getResult().assignedAfter(v) : assignedBefore(v)) {
+      return true;
+    }
+    Iterator<FinallyHost> iter = finallyIterator();
+    if (!iter.hasNext()) {
+      return false;
+    }
+    while (iter.hasNext()) {
+      FinallyHost f = iter.next();
+      if (!f.assignedAfterFinally(v)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  eq ExprStmt.unassignedAfter(Variable v) = getExpr().unassignedAfter(v);
+
+  eq ExprStmt.getExpr().unassignedBefore(Variable v) = unassignedBefore(v);
+
+  eq IfStmt.unassignedAfter(Variable v) =
+      hasElse()
+      ? getThen().unassignedAfter(v) && getElse().unassignedAfter(v)
+      : getThen().unassignedAfter(v) && getCondition().unassignedAfterFalse(v);
+
+  eq IfStmt.getCondition().unassignedBefore(Variable v) = unassignedBefore(v);
+
+  eq IfStmt.getThen().unassignedBefore(Variable v) = getCondition().unassignedAfterTrue(v);
+
+  eq IfStmt.getElse().unassignedBefore(Variable v) = getCondition().unassignedAfterFalse(v);
+
+  // 16.2.9 1st bullet
+  eq SwitchStmt.unassignedAfter(Variable v) {
+    if (!(!noDefaultLabel() || getExpr().unassignedAfter(v))) {
+      return false;
+    }
+    if (!(!switchLabelEndsBlock() || getExpr().unassignedAfter(v))) {
+      return false;
+    }
+    if (!unassignedAfterLastStmt(v)) {
+      return false;
+    }
+    for (BreakStmt stmt : targetBreaks()) {
+      if (!stmt.unassignedAfterReachedFinallyBlocks(v)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  syn boolean SwitchStmt.unassignedAfterLastStmt(Variable v) circular [true] =
+      getBlock().unassignedAfter(v);
+
+  syn boolean SwitchStmt.switchLabelEndsBlock() =
+      getBlock().getNumStmt() > 0
+      && getBlock().getStmt(getBlock().getNumStmt()-1) instanceof ConstCase;
+
+  // 16.2.8 2nd bullet
+  eq SwitchStmt.getExpr().unassignedBefore(Variable v) = unassignedBefore(v);
+
+  eq SwitchStmt.getBlock().unassignedBefore(Variable v) = getExpr().unassignedAfter(v);
+
+  syn boolean Case.unassignedBefore(Variable v) =
+      getParent().getParent() instanceof Block
+      && ((Block) getParent().getParent()).unassignedBefore(v)
+      && super.unassignedBefore(v);
+
+  eq Case.unassignedAfter(Variable v) = unassignedBefore(v);
+
+  // 16.2.10 1st bullet
+  eq WhileStmt.unassignedAfter(Variable v) {
+    if (!unassignedBeforeCondition(v)) { // Starts a circular evaluation here.
+      return false;
+    }
+    if (!getCondition().unassignedAfterFalse(v)) {
+      return false;
+    }
+    for (BreakStmt stmt : targetBreaks()) {
+      if (!stmt.unassignedAfterReachedFinallyBlocks(v)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  // 16.2.10 3rd bullet
+  eq WhileStmt.getCondition().unassignedBefore(Variable v) = unassignedBeforeCondition(v);
+
+  // 16.2.10 3rd bullet
+  syn boolean WhileStmt.unassignedBeforeCondition(Variable v) circular [true] {
+    // 1st
+    if (!unassignedBefore(v)) {
+      return false;
+    } else if (!getStmt().unassignedAfter(v)) {
+      return false;
+    } else {
+      for (ContinueStmt stmt : targetContinues()) {
+        if (!stmt.unassignedAfterReachedFinallyBlocks(v)) {
+          return false;
+        }
+      }
+    }
+    return true;
+  }
+
+  // 16.2.10 4th bullet
+  eq WhileStmt.getStmt().unassignedBefore(Variable v) = getCondition().unassignedAfterTrue(v);
+
+  eq DoStmt.unassignedAfter(Variable v) {
+    if (!unassignedBeforeCondition(v)) { // Starts a circular evaluation here.
+      return false;
+    }
+    if (!getCondition().unassignedAfterFalse(v)) {
+      return false;
+    }
+    for (BreakStmt stmt : targetBreaks()) {
+      if (!stmt.unassignedAfterReachedFinallyBlocks(v)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  eq DoStmt.getStmt().unassignedBefore(Variable v) =
+      unassignedBefore(v) && getCondition().unassignedAfterTrue(v);
+
+  eq DoStmt.getCondition().unassignedBefore(Variable v) = unassignedBeforeCondition(v);
+
+  syn boolean DoStmt.unassignedBeforeCondition(Variable v) circular [true] {
+    if (!getStmt().unassignedAfter(v)) {
+      return false;
+    } else {
+      for (ContinueStmt stmt : targetContinues()) {
+        if (!stmt.unassignedAfterReachedFinallyBlocks(v)) {
+          return false;
+        }
+      }
+    }
+    return true;
+  }
+
+  // 16.2.11 1st bullet
+  eq ForStmt.unassignedAfter(Variable v) {
+    if (!unassignedBeforeCondition(v)) { // Start a circular evaluation here.
+      return false;
+    }
+    if (!(!hasCondition() || getCondition().unassignedAfterFalse(v))) {
+      return false;
+    }
+    for (BreakStmt stmt : targetBreaks()) {
+      if (!stmt.unassignedAfterReachedFinallyBlocks(v)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  // 16.2.11 2nd  bullet
+  eq ForStmt.getInitStmt().unassignedBefore(Variable v) =
+      childIndex == 0 ? unassignedBefore(v) : getInitStmt(childIndex-1).unassignedAfter(v);
+
+  // 16.2.11 3rd bullet
+  eq ForStmt.getCondition().unassignedBefore(Variable v) = unassignedBeforeCondition(v);
+
+  // 16.2.11 3rd bullet
+  syn boolean ForStmt.unassignedAfterInit(Variable v) circular [true] =
+      getNumInitStmt() == 0
+      ? unassignedBefore(v)
+      : getInitStmt(getNumInitStmt()-1).unassignedAfter(v);
+
+  // 16.2.11 4th bullet
+  syn boolean ForStmt.unassignedBeforeCondition(Variable v) circular [true] {
+    if (!unassignedAfterInit(v)) {
+      return false;
+    } else if (!unassignedAfterUpdate(v)) {
+      return false;
+    }
+    return true;
+  }
+
+  // 16.2.11 5th bullet
+  eq ForStmt.getStmt().unassignedBefore(Variable v) =
+      unassignedBeforeCondition(v) && (hasCondition()
+      ? getCondition().unassignedAfterTrue(v)
+      : unassignedAfterInit(v));
+
+  syn boolean ForStmt.unassignedAfterUpdate(Variable v) circular [true] {
+    if (!unassignedBeforeCondition(v)) { // Starts a circular evaluation here.
+      return false;
+    }
+    if (getNumUpdateStmt() > 0) {
+      return getUpdateStmt(getNumUpdateStmt() - 1).unassignedAfter(v);
+    }
+    if (!getStmt().unassignedAfter(v)) {
+      return false;
+    }
+    for (ContinueStmt stmt : targetContinues()) {
+      if (!stmt.unassignedAfterReachedFinallyBlocks(v)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  // 16.2.11 6th bullet
+  eq ForStmt.getUpdateStmt(int i).unassignedBefore(Variable v) {
+    if (!unassignedBeforeCondition(v)) { // Starts a circular evaluation here.
+      return false;
+    }
+    if (i == 0) {
+      if (!getStmt().unassignedAfter(v)) {
+        return false;
+      }
+      for (ContinueStmt stmt : targetContinues()) {
+        if (!stmt.unassignedAfterReachedFinallyBlocks(v)) {
+          return false;
+        }
+      }
+      return true;
+    } else {
+      return getUpdateStmt(i - 1).unassignedAfter(v);
+    }
+  }
+
+  eq BreakStmt.unassignedAfter(Variable v) = true;
+
+  eq ContinueStmt.unassignedAfter(Variable v) = true;
+
+  eq ReturnStmt.unassignedAfter(Variable v) = true;
+
+  eq ThrowStmt.unassignedAfter(Variable v) = true;
+
+  eq ReturnStmt.getResult().unassignedBefore(Variable v) = unassignedBefore(v);
+
+  eq ThrowStmt.getExpr().unassignedBefore(Variable v) = unassignedBefore(v);
+
+  eq SynchronizedStmt.unassignedAfter(Variable v) = getBlock().unassignedAfter(v);
+
+  eq SynchronizedStmt.getExpr().unassignedBefore(Variable v) = unassignedBefore(v);
+
+  eq SynchronizedStmt.getBlock().unassignedBefore(Variable v) = getExpr().unassignedAfter(v);
+
+  // 16.2.15 1st bullet
+  eq TryStmt.getBlock().unassignedBefore(Variable v) = unassignedBefore(v);
+
+  syn boolean TryStmt.unassignedBefore(Variable v) circular [true] = super.unassignedBefore(v);
+
+  // 16.2.15 3rd bullet
+  eq TryStmt.getCatchClause().unassignedBefore(Variable v) {
+    if (!getBlock().unassignedAfter(v)) {
+      return false;
+    }
+    if (!getBlock().unassignedEverywhere(v)) {
+      return false;
+    }
+    return true;
+  }
+
+  // 16.2.14 6th bullet
+  eq TryStmt.getFinally().unassignedBefore(Variable v) {
+    if (!getBlock().unassignedEverywhere(v)) {
+      return false;
+	}
+    for (int i = 0; i < getNumCatchClause(); i++) {
+      if (!getCatchClause(i).getBlock().checkDUeverywhere(v)) {
+        return false;
+	  }
+	}
+    return true;
+  }
+
+  eq TryStmt.unassignedAfter(Variable v) {
+    // 16.2.14 4th bullet
+    if (!hasNonEmptyFinally()) {
+      if (!getBlock().unassignedAfter(v)) {
+        return false;
+      }
+      for (int i = 0; i < getNumCatchClause(); i++) {
+        if (!getCatchClause(i).getBlock().unassignedAfter(v)) {
+          return false;
+        }
+      }
+      return true;
+    } else {
+      return getFinally().unassignedAfter(v);
+    }
+  }
+}

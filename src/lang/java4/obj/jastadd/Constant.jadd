@@ -1,0 +1,110 @@
+/* Copyright (c) 2005-2008, Torbjorn Ekman
+ *               2011-2017  Jesper Öqvist <jesper.oqvist@cs.lth.se>
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice,
+ * this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ * this list of conditions and the following disclaimer in the documentation
+ * and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its
+ * contributors may be used to endorse or promote products derived from this
+ * software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+
+aspect Constant {
+  public class Constant {
+    static class ConstantInt extends Constant {
+      private int value;
+      public ConstantInt(int i) { this.value = i; }
+      @Override public int intValue() { return value; }
+      @Override public long longValue() { return value; }
+      @Override public float floatValue() { return value; }
+      @Override public double doubleValue() { return value; }
+      @Override public String stringValue() { return new Integer(value).toString(); }
+    }
+    static class ConstantLong extends Constant {
+      private long value;
+      public ConstantLong(long l) { this.value = l; }
+      @Override public int intValue() { return (int)value; }
+      @Override public long longValue() { return value; }
+      @Override public float floatValue() { return value; }
+      @Override public double doubleValue() { return value; }
+      @Override public String stringValue() { return new Long(value).toString(); }
+    }
+    static class ConstantFloat extends Constant {
+      private float value;
+      public ConstantFloat(float f) { this.value = f; }
+      @Override public int intValue() { return (int)value; }
+      @Override public long longValue() { return (long)value; }
+      @Override public float floatValue() { return value; }
+      @Override public double doubleValue() { return value; }
+      @Override public String stringValue() { return new Float(value).toString(); }
+    }
+    static class ConstantDouble extends Constant {
+      private double value;
+      public ConstantDouble(double d) { this.value = d; }
+      @Override public int intValue() { return (int)value; }
+      @Override public long longValue() { return (long)value; }
+      @Override public float floatValue() { return (float)value; }
+      @Override public double doubleValue() { return value; }
+      @Override public String stringValue() { return new Double(value).toString(); }
+    }
+    static class ConstantChar extends Constant {
+      private char value;
+      public ConstantChar(char c) { this.value = c; }
+      @Override public int intValue() { return value; }
+      @Override public long longValue() { return value; }
+      @Override public float floatValue() { return value; }
+      @Override public double doubleValue() { return value; }
+      @Override public String stringValue() { return new Character(value).toString(); }
+    }
+    static class ConstantBoolean extends Constant {
+      private boolean value;
+      public ConstantBoolean(boolean b) { this.value = b; }
+      @Override public boolean booleanValue() { return value; }
+      @Override public String stringValue() { return new Boolean(value).toString(); }
+    }
+    static class ConstantString extends Constant {
+      private String value;
+      public ConstantString(String s) { this.value = s; }
+      @Override public String stringValue() { return value; }
+    }
+
+    public int intValue() { throw new UnsupportedOperationException(); }
+    public long longValue() { throw new UnsupportedOperationException(); }
+    public float floatValue() { throw new UnsupportedOperationException(); }
+    public double doubleValue() { throw new UnsupportedOperationException(); }
+    public boolean booleanValue() { throw new UnsupportedOperationException(getClass().getName()); }
+    public String stringValue() { throw new UnsupportedOperationException(); }
+
+    protected Constant() { }
+
+    public boolean error = false;
+
+    static Constant create(int i) { return new ConstantInt(i); }
+    static Constant create(long l) { return new ConstantLong(l); }
+    static Constant create(float f) { return new ConstantFloat(f); }
+    static Constant create(double d) { return new ConstantDouble(d); }
+    static Constant create(boolean b) { return new ConstantBoolean(b); }
+    static Constant create(char c) { return new ConstantChar(c); }
+    static Constant create(String s) { return new ConstantString(s); }
+  }
+}

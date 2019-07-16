@@ -48,7 +48,7 @@ dependencies {
 
 // This specifies where the source code is located:
 sourceSets {
-    main.java.srcDirs = [ 'src/java', 'src/gen' ]
+    main.java.srcDirs = [ 'src/java', 'src/gen', 'src/lang/java4/util' ]
     test.java.srcDirs = [ 'src/test' ]
 }
 
@@ -109,7 +109,8 @@ jar {
 
 // Before compiling, we should generate some Java code:
 compileJava.dependsOn 'generateJava', 'generateScanner', 'generateParser',
-    'genMetadlLang', //'genJava4Lang',
+    'genMetadlLang',
+    'genJava4Lang',
     'generateConfig', 'generateScannerConfig', 'generateParserConfig'
 
 
@@ -162,7 +163,7 @@ void makeGenerateParserTask(String name, String outDir, String srcFile) {
 
 	// Options to Beaver (http://beaver.sourceforge.net/):
 	args '-d', file(outDir).path,
-	    '-t', '-c', '-w',
+	    '-t', '-c', '-w', '-a',
 	    file(srcFile).path
     }
 }
@@ -187,7 +188,7 @@ void makeGenerateBeaverTask(String name, String outFile, String srcFile, boolean
     }
 }
 
-void makeGenerateLangTask(String taskName, String outDir, String srcLang, ArrayList<String> lexOrder) {
+void makeGenerateLangTask(String taskName, String outDir, String srcLang, ArrayList<String> lexOrder, boolean patlang = true) {
     tasks.create('MkDirs' + taskName) {
 	doFirst {
 	    file(outDir + '/lang/' + srcLang + '/obj/ast').mkdirs()
@@ -237,11 +238,13 @@ void makeGenerateLangTask(String taskName, String outDir, String srcLang, ArrayL
     // an empty task to depend on everything here
     tasks.create(taskName)
 
-    tasks.getByName(taskName).dependsOn tasks.getByName('generateBeaverPatlang' + taskName)
-    tasks.getByName(taskName).dependsOn tasks.getByName('generateParserPatlang' + taskName)
-
-    tasks.getByName(taskName).dependsOn tasks.getByName('generateScannerPatlang' + taskName)
-    tasks.getByName(taskName).dependsOn tasks.getByName('generateJavaPatlang' + taskName)
+    if (patlang) {
+	// Disable the pattern lang while bringing up a new language
+	tasks.getByName(taskName).dependsOn tasks.getByName('generateBeaverPatlang' + taskName)
+	tasks.getByName(taskName).dependsOn tasks.getByName('generateParserPatlang' + taskName)
+	tasks.getByName(taskName).dependsOn tasks.getByName('generateScannerPatlang' + taskName)
+	tasks.getByName(taskName).dependsOn tasks.getByName('generateJavaPatlang' + taskName)
+    }
 
     tasks.getByName(taskName).dependsOn tasks.getByName('generateBeaverObjlang' + taskName)
     tasks.getByName(taskName).dependsOn tasks.getByName('generateParserObjlang' + taskName)
@@ -283,11 +286,6 @@ def metadlLexOrder = ['scanner.flex']
 makeGenerateLangTask('genMetadlLang', 'src/gen/', 'metadl', metadlLexOrder)
 makeGenerateLangTask('genJava4Lang', 'src/gen/', 'java4', java4LexOrder)
 
-
-
-
-genJava4Lang.dependsOn 'catJava4ObjlangParser', 'catJava4PatlangParser',
-    'catJava4ObjScanner', 'catJava4PatScanner'
 
 makeGenerateBeaverTask('generateBeaver', 'src/gen/LangParser.beaver', 'src/parser/metadl.parser')
 makeGenerateParserTask('generateParser', 'src/gen/lang/ast', 'src/gen/LangParser.beaver')

@@ -1,0 +1,99 @@
+/* Copyright (c) 2005-2008, Torbjorn Ekman
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice,
+ * this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ * this list of conditions and the following disclaimer in the documentation
+ * and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its
+ * contributors may be used to endorse or promote products derived from this
+ * software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+
+aspect NodeConstructors {
+  public ParameterDeclaration.ParameterDeclaration(Access type, String name) {
+    this(new Modifiers(new List()), type, name);
+  }
+
+  public ParameterDeclaration.ParameterDeclaration(TypeDecl type, String name) {
+    this(new Modifiers(new List()), type.createQualifiedAccess(), name);
+  }
+
+  public PackageAccess.PackageAccess(String name, int start, int end) {
+    this(name);
+    this.start = this.Packagestart = start;
+    this.end = this.Packageend = end;
+  }
+
+  public TypeAccess.TypeAccess(String name, int start, int end) {
+    this(name);
+    this.start = this.IDstart = start;
+    this.end = this.IDend = end;
+  }
+
+  public VarAccess.VarAccess(String name, int start, int end) {
+    this(name);
+    this.start = this.IDstart = start;
+    this.end = this.IDend = end;
+  }
+
+  public TypeAccess.TypeAccess(String typeName) {
+    this("", typeName);
+  }
+
+  public IntegerLiteral.IntegerLiteral(int i) {
+    this(Integer.toString(i));
+  }
+
+  public BooleanLiteral.BooleanLiteral(boolean b) {
+    this(b ? "true" : "false");
+  }
+
+  public MethodAccess.MethodAccess(String name, List args, int start, int end) {
+    this(name, args);
+    setStart(start);
+    setEnd(end);
+  }
+
+  public ReturnStmt.ReturnStmt(Expr expr) {
+    this(new Opt(expr));
+  }
+
+  public IfStmt.IfStmt(Expr cond, Stmt thenBranch) {
+    this(cond, thenBranch, new Opt());
+  }
+
+  public IfStmt.IfStmt(Expr cond, Stmt thenBranch, Stmt elseBranch) {
+    this(cond, thenBranch, new Opt(elseBranch));
+  }
+
+  public ClassInstanceExpr.ClassInstanceExpr(Access type, List args) {
+    this(type, args, new Opt());
+  }
+
+  public PrimitiveTypeAccess.PrimitiveTypeAccess(String name) {
+    this(PRIMITIVE_PACKAGE_NAME, name);
+  }
+
+  public static Stmt AssignExpr.asStmt(Expr left, Expr right) {
+    return new ExprStmt(new AssignSimpleExpr(left, right));
+  }
+}

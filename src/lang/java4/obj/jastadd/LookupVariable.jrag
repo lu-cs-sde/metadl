@@ -1,0 +1,548 @@
+/* Copyright (c) 2005-2008, Torbjorn Ekman
+ *                    2016, Jesper Öqvist <jesper.oqvist@cs.lth.se>
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice,
+ * this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ * this list of conditions and the following disclaimer in the documentation
+ * and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its
+ * contributors may be used to endorse or promote products derived from this
+ * software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+
+import java.util.*;
+
+aspect VariableScope {
+  /**
+   * Finds the variables in the current scope with the given name.
+   */
+  inh lazy SimpleSet<Variable> TypeDecl.lookupVariable(String name);
+  inh lazy SimpleSet<Variable> BodyDecl.lookupVariable(String name);
+  inh SimpleSet<Variable> Stmt.lookupVariable(String name);
+  inh lazy SimpleSet<Variable> Block.lookupVariable(String name);
+  inh lazy SimpleSet<Variable> ForStmt.lookupVariable(String name);
+  inh SimpleSet<Variable> Expr.lookupVariable(String name);
+  inh lazy SimpleSet<Variable> CatchClause.lookupVariable(String name);
+  inh SimpleSet<Variable> Declarator.lookupVariable(String name);
+  inh SimpleSet<Variable> ParameterDeclaration.lookupVariable(String name);
+
+  eq Program.getChild().lookupVariable(String name) = emptySet();
+
+  // 6.5.6.1
+  eq TypeDecl.getBodyDecl(int i).lookupVariable(String name) {
+    SimpleSet<Variable> list = memberFields(name);
+    if (!list.isEmpty()) {
+      return list;
+    }
+    list = lookupVariable(name);
+    if (inStaticContext() || isStatic()) {
+      list = removeInstanceVariables(list);
+    }
+    return list;
+  }
+
+  // The scope of a parameter of a method is the entire body of the method.
+  eq MethodDecl.getBlock().lookupVariable(String name) {
+    SimpleSet<Variable> result = parameterDeclaration(name);
+    // A declaration of a method parameter name shadows any other variable declarations.
+    if (!result.isEmpty()) {
+      return result;
+    }
+    // Delegate to other declarations in scope.
+    return lookupVariable(name);
+  }
+
+  // A method declaration may only declare one parameter named name.
+  // This is enforced by a check that the declaration in scope for a declaration is itself.
+  eq MethodDecl.getParameter().lookupVariable(String name) = parameterDeclaration(name);
+
+  eq ConstructorDecl.getBlock().lookupVariable(String name) {
+    SimpleSet<Variable> result = parameterDeclaration(name);
+    if (!result.isEmpty()) {
+      return result;
+    }
+    return lookupVariable(name);
+  }
+
+  eq ConstructorDecl.getParsedConstructorInvocation().lookupVariable(String name) {
+    SimpleSet<Variable> result = parameterDeclaration(name);
+    if (!result.isEmpty()) {
+      return result;
+    }
+    for (Variable v : lookupVariable(name)) {
+      if (!hostType().memberFields(name).contains(v) || v.isStatic()) {
+        result = result.add(v);
+      }
+    }
+    return result;
+  }
+
+  eq ConstructorDecl.getImplicitConstructorInvocation().lookupVariable(String name) {
+    SimpleSet<Variable> result = parameterDeclaration(name);
+    if (!result.isEmpty()) {
+      return result;
+    }
+    for (Variable v : lookupVariable(name)) {
+      if (!hostType().memberFields(name).contains(v) || v.isStatic()) {
+        result = result.add(v);
+      }
+    }
+    return result;
+  }
+
+  eq ConstructorDecl.getParameter().lookupVariable(String name) = parameterDeclaration(name);
+
+  eq VarDeclStmt.getDeclarator(int index).lookupVariable(String name) {
+    for (int i = index - 1; i >= 0; i -= 1) {
+      if (getDeclarator(i).declaresVariable(name)) {
+        return getDeclarator(i);
+      }
+    }
+    return lookupVariable(name);
+  }
+
+  /**
+   * The scope of a local variable declaration in a block is the rest of
+   * the block in which the declaration appears.
+   */
+  eq Block.getStmt(int index).lookupVariable(String name) {
+    VariableDeclarator v = localVariableDeclaration(name);
+    // Declare before use and shadowing.
+    if (v != null && declaredBeforeUse(v, index)) {
+      return v;
+    }
+    return lookupVariable(name);
+  }
+
+  // The scope of the parameter of an exception handler that is declared in a
+  // catch clause of a try statement is the entire block associated with the catch
+  eq CatchClause.getBlock().lookupVariable(String name) {
+    SimpleSet<Variable> result = parameterDeclaration(name);
+    if (!result.isEmpty()) {
+      return result;
+    }
+    return lookupVariable(name);
+  }
+  eq BasicCatch.getParameter().lookupVariable(String name) = parameterDeclaration(name);
+
+  // The scope of a local variable declared in the ForInit part of the for
+  // statement includes all of the following:
+  eq ForStmt.getInitStmt(int index).lookupVariable(String name) {
+    for (int i = index - 1; i >= 0; i -= 1) {
+      VariableDeclarator decl = getInitStmt(i).variableDeclaration(name);
+      if (decl != null) {
+        return decl;
+      }
+    }
+    return lookupVariable(name);
+  }
+
+  eq ForStmt.getCondition().lookupVariable(String name) = localLookup(name);
+
+  eq ForStmt.getUpdateStmt().lookupVariable(String name) = localLookup(name);
+
+  eq ForStmt.getStmt().lookupVariable(String name) = localLookup(name);
+
+  syn lazy SimpleSet<Variable> ForStmt.localLookup(String name) {
+    VariableDeclarator v = localVariableDeclaration(name);
+    if (v != null) {
+      return v;
+    }
+    return lookupVariable(name);
+  }
+
+  /** @return the first variable declaration with the given name. */
+  syn lazy SimpleSet<Variable> MethodDecl.parameterDeclaration(String name) {
+    for (int i = 0; i < getNumParameter(); i++) {
+      if (getParameter(i).name().equals(name)) {
+        return (ParameterDeclaration) getParameter(i);
+      }
+    }
+    return emptySet();
+  }
+
+  syn lazy SimpleSet<Variable> ConstructorDecl.parameterDeclaration(String name) {
+    for (int i = 0; i < getNumParameter(); i++) {
+      if (getParameter(i).name().equals(name)) {
+        return (ParameterDeclaration) getParameter(i);
+      }
+    }
+    return emptySet();
+  }
+
+  syn lazy SimpleSet<Variable> CatchClause.parameterDeclaration(String name) = emptySet();
+
+  eq BasicCatch.parameterDeclaration(String name) =
+      getParameter().name().equals(name)
+      ? getParameter()
+      : ASTNode.<Variable>emptySet();
+
+  syn lazy VariableDeclarator Block.localVariableDeclaration(String name) {
+    for (Stmt stmt : getStmtList()) {
+      VariableDeclarator decl = stmt.variableDeclaration(name);
+      if (decl != null) {
+        return decl;
+      }
+    }
+    return null;
+  }
+
+  syn lazy VariableDeclarator ForStmt.localVariableDeclaration(String name) {
+    for (Stmt stmt : getInitStmtList()) {
+      VariableDeclarator decl = stmt.variableDeclaration(name);
+      if (decl != null) {
+        return decl;
+      }
+    }
+    return null;
+  }
+
+  syn VariableDeclarator Stmt.variableDeclaration(String name) = null;
+
+  eq VarDeclStmt.variableDeclaration(String name) {
+    for (VariableDeclarator decl : getDeclaratorList()) {
+      if (decl.declaresVariable(name)) {
+        return decl;
+      }
+    }
+    return null;
+  }
+
+  eq VariableDeclarator.getInit().lookupVariable(String name) {
+    if (declaresVariable(name)) {
+      return this;
+    }
+    return lookupVariable(name);
+  }
+
+  /** @return {@code true} if this declarator declares a local variable with the given name. */
+  syn boolean VariableDeclarator.declaresVariable(String name) = getID().equals(name);
+
+  eq MethodAccess.getChild().lookupVariable(String name) = unqualifiedScope().lookupVariable(name);
+
+  eq ConstructorAccess.getArg().lookupVariable(String name) =
+      unqualifiedScope().lookupVariable(name);
+
+  eq SuperConstructorAccess.getArg().lookupVariable(String name) =
+      unqualifiedScope().lookupVariable(name);
+
+  eq ArrayAccess.getExpr().lookupVariable(String name) =
+      unqualifiedScope().lookupVariable(name);
+
+  eq ArrayTypeWithSizeAccess.getExpr().lookupVariable(String name) =
+      unqualifiedScope().lookupVariable(name);
+
+  eq ClassInstanceExpr.getArg().lookupVariable(String name) =
+      unqualifiedScope().lookupVariable(name);
+
+  eq Dot.getRight().lookupVariable(String name) = getLeft().qualifiedLookupVariable(name);
+
+  eq ParseName.qualifiedLookupVariable(String name) = emptySet();
+
+  // Access control specifies the part of a program where a declared entity can
+  // be referred to by a qualified name, field access expression, method
+  // invocation expression without a simple name.
+  syn SimpleSet<Variable> Expr.qualifiedLookupVariable(String name) {
+    if (type().accessibleFrom(hostType())) {
+      return keepAccessibleFields(type().memberFields(name));
+    }
+    return emptySet();
+  }
+
+  eq PackageAccess.qualifiedLookupVariable(String name) = emptySet();
+
+  eq TypeAccess.qualifiedLookupVariable(String name) {
+    if (type().accessibleFrom(hostType())) {
+      SimpleSet<Variable> c = type().memberFields(name);
+      c = keepAccessibleFields(c);
+      if (type().isClassDecl() && c.isSingleton()) {
+        c = removeInstanceVariables(c);
+      }
+      return c;
+    }
+    return emptySet();
+  }
+
+  /**
+   * Remove fields that are not accessible when using this Expr as qualifier.
+   *
+   * @return a set containing the accessible fields
+   */
+  public SimpleSet<Variable> Expr.keepAccessibleFields(SimpleSet<Variable> fields) {
+    return hostType().keepAccessibleFields(type(), fields);
+  }
+
+  public SimpleSet<Variable> SuperAccess.keepAccessibleFields(SimpleSet<Variable> fields) {
+    return hostType().keepAccessibleFields(hostType(), fields);
+  }
+
+  /**
+   * Remove fields that are not accessible when accessed by the given qualifier type
+   * from this type.
+   *
+   * @param qualifier the qualifying expression type.
+   * @param fields the visible fields.
+   * @return a set containing the accessible fields.
+   */
+  public SimpleSet<Variable> TypeDecl.keepAccessibleFields(TypeDecl qualifier,
+      SimpleSet<Variable> fields) {
+    SimpleSet<Variable> newSet = emptySet();
+    for (Variable f : fields) {
+      if (mayAccess(qualifier, f)) {
+        newSet = newSet.add(f);
+      }
+    }
+    return newSet;
+  }
+
+  public SimpleSet<Variable> ASTNode.removeInstanceVariables(SimpleSet<Variable> vars) {
+    SimpleSet<Variable> newSet = emptySet();
+    for (Variable v : vars) {
+      if (!v.isInstanceVariable()) {
+        newSet = newSet.add(v);
+      }
+    }
+    return newSet;
+  }
+
+  /**
+   * Test if this expression may access the given field.
+   *
+   * @see <a href="https://docs.oracle.com/javase/specs/jls/se6/html/names.html#6.6.1">JLS6 §6.6.1</a>
+   * @return true if the expression may access the given field
+   */
+  syn boolean Expr.mayAccess(Variable f) = hostType().mayAccess(type(), f);
+
+  eq SuperAccess.mayAccess(Variable f) = hostType().mayAccess(hostType(), f);
+
+  /**
+   * Test if a qualified field access in this type may access the given field.
+   *
+   * @param qualifier the type of the qualifying expression.
+   * @param field the field being accessed.
+   * @see <a href="https://docs.oracle.com/javase/specs/jls/se6/html/names.html#6.6.1">JLS6 §6.6.1</a>
+   * @return true if the expression may access the given field
+   */
+  syn boolean TypeDecl.mayAccess(TypeDecl qualifier, Variable field) {
+    if (field.isPublic()) {
+      return true;
+    }
+    if (field.isPrivate()) {
+      return field.hostType().topLevelType() == hostType().topLevelType();
+    }
+
+    if (field.hostPackage().equals(hostPackage())) {
+      // Protected and package-private access is allowed from any type inside the same package
+      // (JLS6 §6.6.1, bullet 4.2.1).
+      return true;
+    }
+
+    TypeDecl C = field.hostType(); // C is the type in which the field is declared.
+    if (field.isProtected()) {
+      // Test protected field access according to JLS6 §6.6.2.1.
+      // We need to iterate over enclosing types since each enclosing type is a
+      // candidate for accessing the field.
+      for (TypeDecl S = this; S != null; S = S.isNestedType() ? S.enclosingType() : null) {
+        if (S.subtype(C)) {
+          if (!field.isInstanceVariable() || qualifier.subtype(S)) {
+            return true;
+          }
+        }
+      }
+    }
+    return false;
+  }
+}
+
+aspect VariableScopePropagation {
+  interface VariableScope {
+    public SimpleSet<Variable> lookupVariable(String name);
+  }
+
+  CatchClause implements VariableScope;
+  Block implements VariableScope;
+  TypeDecl implements VariableScope;
+  ForStmt implements VariableScope;
+
+  inh Variable Access.unknownField();
+
+  syn lazy SimpleSet<Variable> VarAccess.decls() {
+    SimpleSet<Variable> result = lookupVariable(name());
+    if (result.isSingleton()) {
+      Variable v = result.singletonValue();
+      if (!isQualified() && inStaticContext()) {
+        if (v.isInstanceVariable() && !hostType().memberFields(v.name()).isEmpty()) {
+          return emptySet();
+        }
+      } else if (isQualified() && qualifier().staticContextQualifier()) {
+        if (v.isInstanceVariable()) {
+          return emptySet();
+        }
+      }
+    }
+    return result;
+  }
+
+  syn lazy Variable VarAccess.decl() {
+    SimpleSet<Variable> decls = decls();
+    if (decls.isSingleton()) {
+      return decls.singletonValue();
+    }
+    return unknownField();
+  }
+}
+
+aspect Fields {
+
+  syn lazy SimpleSet<Variable> TypeDecl.localFields(String name) =
+      localFieldsMap().containsKey(name)
+      ? localFieldsMap().get(name)
+      : ASTNode.<Variable>emptySet();
+
+  syn lazy Map<String, SimpleSet<Variable>> TypeDecl.localFieldsMap() {
+    Map<String, SimpleSet<Variable>> map = new HashMap<String, SimpleSet<Variable>>();
+    for (BodyDecl decl : getBodyDeclList()) {
+      if (decl instanceof FieldDecl) {
+        for (FieldDeclarator field : ((FieldDecl) decl).getDeclaratorList()) {
+          putSimpleSetElement(map, field.name(), field);
+        }
+      }
+    }
+    return map;
+  }
+
+  syn lazy Map<String, SimpleSet<Variable>> TypeDecl.memberFieldsMap() = localFieldsMap();
+
+  eq ClassDecl.memberFieldsMap() {
+    Map<String, SimpleSet<Variable>> map =
+        new HashMap<String, SimpleSet<Variable>>(localFieldsMap());
+    if (hasSuperclass()) {
+      Iterator<Variable> iter = superclass().fieldsIterator();
+      while (iter.hasNext()) {
+        Variable decl = iter.next();
+        if (!decl.isPrivate() && decl.accessibleFrom(this)
+            && !localFieldsMap().containsKey(decl.name())) {
+          putSimpleSetElement(map, decl.name(), decl);
+        }
+      }
+    }
+    for (InterfaceDecl iface : superInterfaces()) {
+      Iterator<Variable> iter = iface.fieldsIterator();
+      while (iter.hasNext()) {
+        Variable decl = iter.next();
+        if (!decl.isPrivate() && decl.accessibleFrom(this)
+            && !localFieldsMap().containsKey(decl.name())) {
+          putSimpleSetElement(map, decl.name(), decl);
+        }
+      }
+    }
+    return map;
+  }
+
+  eq InterfaceDecl.memberFieldsMap() {
+    Map<String, SimpleSet<Variable>> map =
+        new HashMap<String, SimpleSet<Variable>>(localFieldsMap());
+    for (InterfaceDecl iface : superInterfaces()) {
+      Iterator<Variable> iter = iface.fieldsIterator();
+      while (iter.hasNext()) {
+        Variable f = iter.next();
+        if (f.accessibleFrom(this) && !f.isPrivate() && !localFieldsMap().containsKey(f.name())) {
+          putSimpleSetElement(map, f.name(), f);
+        }
+      }
+    }
+    return map;
+  }
+
+  public Iterator<Variable> TypeDecl.fieldsIterator() {
+    return new Iterator<Variable>() {
+      private Iterator<SimpleSet<Variable>> outer = memberFieldsMap().values().iterator();
+
+      private Iterator<Variable> inner = null;
+
+      @Override
+      public boolean hasNext() {
+        if ((inner == null || !inner.hasNext()) && outer.hasNext()) {
+          inner = outer.next().iterator();
+        }
+        return inner != null ? inner.hasNext() : false;
+      }
+
+      @Override
+      public FieldDeclarator next() {
+        return (FieldDeclarator) inner.next();
+      }
+
+      @Override
+      public void remove() {
+        throw new UnsupportedOperationException();
+      }
+    };
+  }
+
+  syn lazy SimpleSet<Variable> TypeDecl.memberFields(String name) = localFields(name);
+
+  // Class member fields.
+  eq ClassDecl.memberFields(String name) {
+    SimpleSet<Variable> fields = localFields(name);
+    if (!fields.isEmpty()) {
+      return fields; // This causes hiding of fields in superclass and interfaces.
+    }
+    if (hasSuperclass()) {
+      Iterator<Variable> iter = superclass().memberFields(name).iterator();
+      while (iter.hasNext()) {
+        Variable decl = iter.next();
+        if (!decl.isPrivate() && decl.accessibleFrom(this)) {
+          fields = fields.add(decl);
+        }
+      }
+    }
+    for (InterfaceDecl iface : superInterfaces()) {
+      Iterator<Variable> iter = iface.memberFields(name).iterator();
+      while (iter.hasNext()) {
+        Variable decl = iter.next();
+        if (!decl.isPrivate() && decl.accessibleFrom(this)) {
+          fields = fields.add(decl);
+        }
+      }
+    }
+    return fields;
+  }
+
+  eq InterfaceDecl.memberFields(String name) {
+    SimpleSet<Variable> fields = localFields(name);
+    if (!fields.isEmpty()) {
+      return fields;
+    }
+    for (InterfaceDecl iface : superInterfaces()) {
+      Iterator<Variable> iter = iface.memberFields(name).iterator();
+      while (iter.hasNext()) {
+        Variable f = iter.next();
+        if (f.accessibleFrom(this) && !f.isPrivate()) {
+          fields = fields.add(f);
+        }
+      }
+    }
+    return fields;
+  }
+}
+

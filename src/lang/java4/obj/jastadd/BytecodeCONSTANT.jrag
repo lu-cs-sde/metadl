@@ -1,0 +1,305 @@
+/* Copyright (c) 2005-2008, Torbjorn Ekman
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice,
+ * this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ * this list of conditions and the following disclaimer in the documentation
+ * and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its
+ * contributors may be used to endorse or promote products derived from this
+ * software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+
+aspect BytecodeCONSTANT {
+  class CONSTANT_Class_Info extends CONSTANT_Info {
+    public int name_index;
+
+    public CONSTANT_Class_Info(AbstractClassfileParser parser) throws IOException {
+      super(parser);
+      name_index = p.u2();
+    }
+
+    @Override
+    public String toString() {
+      return "ClassInfo: " + name();
+    }
+
+    public String name() {
+      String name = ((CONSTANT_Utf8_Info) p.constantPool[name_index]).string();
+      name = name.replace('/', '.');
+      return name;
+    }
+
+    public String simpleName() {
+      String name = name();
+      int pos = name.lastIndexOf('.');
+      return name.substring(pos + 1, name.length());
+    }
+
+    public String packageDecl() {
+      String name = name();
+      int pos = name.lastIndexOf('.');
+      if (pos == -1) {
+        return "";
+      }
+      return name.substring(0, pos);
+    }
+
+    public Access access() {
+      String name = name();
+      int pos = name.lastIndexOf('.');
+      String typeName = name.substring(pos + 1, name.length());
+      String packageName = pos == -1 ? "" : name.substring(0, pos);
+      if (typeName.indexOf('$') != -1) {
+        return new BytecodeTypeAccess(packageName, typeName);
+      } else {
+        return new TypeAccess(packageName, typeName);
+      }
+    }
+  }
+
+  // Refineable methods for literal building.
+  public static Literal Literal.buildDoubleLiteral(double value) {
+    return new DoubleLiteral(Double.toString(value));
+  }
+
+  public static Literal Literal.buildFloatLiteral(float value) {
+    return new FloatingPointLiteral(Double.toString(value));
+  }
+
+  public static Literal Literal.buildIntegerLiteral(int value) {
+    return new IntegerLiteral("0x"+Integer.toHexString(value));
+  }
+
+  public static Literal Literal.buildLongLiteral(long value) {
+    return new LongLiteral("0x"+Long.toHexString(value));
+  }
+
+  public static Literal Literal.buildBooleanLiteral(boolean value) {
+    return new BooleanLiteral(value ? "true" : "false");
+  }
+
+  public static Literal Literal.buildStringLiteral(String value) {
+    return new StringLiteral(value);
+  }
+
+  class CONSTANT_Double_Info extends CONSTANT_Info {
+    public double value;
+
+    public CONSTANT_Double_Info(AbstractClassfileParser parser) throws IOException {
+      super(parser);
+      value = p.readDouble();
+    }
+
+    @Override
+    public String toString() {
+      return "DoubleInfo: " + Double.toString(value);
+    }
+
+    public Expr expr() {
+      return Literal.buildDoubleLiteral(value);
+    }
+  }
+
+  class CONSTANT_Fieldref_Info extends CONSTANT_Info {
+    public int class_index;
+    public int name_and_type_index;
+
+    public CONSTANT_Fieldref_Info(AbstractClassfileParser parser) throws IOException {
+      super(parser);
+      class_index = p.u2();
+      name_and_type_index = p.u2();
+    }
+
+    @Override
+    public String toString() {
+      return "FieldRefInfo: " + p.constantPool[class_index] + " "
+        + p.constantPool[name_and_type_index];
+    }
+  }
+
+  class CONSTANT_Float_Info extends CONSTANT_Info {
+    public float value;
+
+    public CONSTANT_Float_Info(AbstractClassfileParser parser) throws IOException {
+      super(parser);
+      value = p.readFloat();
+    }
+
+    @Override
+    public String toString() {
+      return "FloatInfo: " + Float.toString(value);
+    }
+
+    public Expr expr() {
+      return Literal.buildFloatLiteral(value);
+    }
+  }
+
+  class CONSTANT_Info {
+    protected AbstractClassfileParser p;
+
+    public CONSTANT_Info(AbstractClassfileParser parser) {
+      p = parser;
+    }
+
+    public Expr expr() {
+      throw new Error("CONSTANT_info.expr() should not be computed for " + getClass().getName());
+    }
+
+    public Expr exprAsBoolean() {
+      return expr();
+    }
+  }
+
+  class CONSTANT_Integer_Info extends CONSTANT_Info {
+    public int value;
+
+    public CONSTANT_Integer_Info(AbstractClassfileParser parser) throws IOException {
+      super(parser);
+      value = p.readInt();
+    }
+
+    @Override
+    public String toString() {
+      return "IntegerInfo: " + Integer.toString(value);
+    }
+
+    @Override
+    public Expr expr() {
+      return Literal.buildIntegerLiteral(value);
+    }
+
+    @Override
+    public Expr exprAsBoolean() {
+      return Literal.buildBooleanLiteral(value == 0);
+    }
+  }
+  class CONSTANT_InterfaceMethodref_Info extends CONSTANT_Info {
+    public int class_index;
+    public int name_and_type_index;
+
+    public CONSTANT_InterfaceMethodref_Info(AbstractClassfileParser parser) throws IOException {
+      super(parser);
+      class_index = p.u2();
+      name_and_type_index = p.u2();
+    }
+
+    @Override
+    public String toString() {
+      return "InterfaceMethodRefInfo: " + p.constantPool[class_index] + " "
+        + p.constantPool[name_and_type_index];
+    }
+  }
+  class CONSTANT_Long_Info extends CONSTANT_Info {
+    public long value;
+
+    public CONSTANT_Long_Info(AbstractClassfileParser parser) throws IOException {
+      super(parser);
+      value = p.readLong();
+    }
+
+    @Override
+    public String toString() {
+      return "LongInfo: " + Long.toString(value);
+    }
+
+    @Override
+    public Expr expr() {
+      return Literal.buildLongLiteral(value);
+    }
+  }
+  class CONSTANT_Methodref_Info extends CONSTANT_Info {
+    public int class_index;
+    public int name_and_type_index;
+
+    public CONSTANT_Methodref_Info(AbstractClassfileParser parser) throws IOException {
+      super(parser);
+      class_index = p.u2();
+      name_and_type_index = p.u2();
+    }
+
+    @Override
+    public String toString() {
+      return "MethodRefInfo: " + class_index + " " + name_and_type_index;
+    }
+  }
+
+  class CONSTANT_NameAndType_Info extends CONSTANT_Info {
+    public int name_index;
+    public int descriptor_index;
+
+    public CONSTANT_NameAndType_Info(AbstractClassfileParser parser) throws IOException {
+      super(parser);
+      name_index = p.u2();
+      descriptor_index = p.u2();
+    }
+
+    @Override
+    public String toString() {
+      return "NameAndTypeInfo: " + name_index + " " + descriptor_index;
+    }
+  }
+
+  class CONSTANT_String_Info extends CONSTANT_Info {
+    public int string_index;
+
+    public CONSTANT_String_Info(AbstractClassfileParser parser) throws IOException {
+      super(parser);
+      string_index = p.u2();
+    }
+
+    @Override
+    public Expr expr() {
+      CONSTANT_Utf8_Info i = (CONSTANT_Utf8_Info) p.constantPool[string_index];
+      return Literal.buildStringLiteral(i.string);
+    }
+
+    @Override
+    public String toString() {
+      return "StringInfo: " + p.constantPool[string_index];
+    }
+  }
+
+  class CONSTANT_Utf8_Info extends CONSTANT_Info {
+    public String string;
+
+    public CONSTANT_Utf8_Info(AbstractClassfileParser parser) throws IOException {
+      super(parser);
+      string = p.readUTF();
+    }
+
+    @Override
+    public String toString() {
+      return "Utf8Info: " + string;
+    }
+
+    @Override
+    public Expr expr() {
+      return Literal.buildStringLiteral(string);
+    }
+
+    public String string() {
+      return string;
+    }
+  }
+
+}

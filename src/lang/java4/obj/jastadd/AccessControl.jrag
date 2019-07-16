@@ -1,0 +1,241 @@
+/* Copyright (c) 2005-2008, Torbjorn Ekman
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice,
+ * this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ * this list of conditions and the following disclaimer in the documentation
+ * and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its
+ * contributors may be used to endorse or promote products derived from this
+ * software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+
+/**
+ * This aspect implements access control. See section 6.6 in the Java language
+ * specification.
+ */
+aspect AccessControl {
+
+  syn lazy boolean ArrayDecl.accessibleFrom(TypeDecl type) = elementType().accessibleFrom(type);
+
+  syn lazy boolean TypeDecl.accessibleFromPackage(String packageName) =
+      !isPrivate() && (isPublic() || hostPackage().equals(packageName));
+
+  eq UnknownType.accessibleFromPackage(String packageName) = false;
+
+  syn lazy boolean TypeDecl.accessibleFromExtend(TypeDecl type) {
+    if (type == this) {
+      return true;
+    }
+    if (isInnerType()) {
+      if (!enclosingType().accessibleFrom(type)) {
+        return false;
+      }
+    }
+    if (isPublic()) {
+      return true;
+    } else if (isProtected()) {
+      // If isProtected == true it implies a nested type.
+      if (hostPackage().equals(type.hostPackage())) {
+        return true;
+      }
+      if (type.isNestedType()
+          && type.enclosingType().withinBodyThatSubclasses(enclosingType()) != null) {
+        return true;
+      }
+      return false;
+    } else if (isPrivate()) {
+      return topLevelType() == type.topLevelType();
+    } else {
+      return hostPackage().equals(type.hostPackage());
+    }
+  }
+
+  syn lazy boolean TypeDecl.accessibleFrom(TypeDecl type) {
+    if (type == this) {
+      return true;
+    }
+    if (isInnerType()) {
+      if (!enclosingType().accessibleFrom(type)) {
+        return false;
+      }
+    }
+    if (isPublic()) {
+      return true;
+    } else if (isProtected()) {
+      if (hostPackage().equals(type.hostPackage())) {
+        return true;
+      }
+      if (isMemberType()) {
+        TypeDecl typeDecl = type;
+        while (typeDecl != null && !typeDecl.subtype(enclosingType())) {
+          typeDecl = typeDecl.enclosingType();
+        }
+        if (typeDecl != null) {
+          return true;
+        }
+      }
+      return false;
+    } else if (isPrivate()) {
+      return topLevelType() == type.topLevelType();
+    } else {
+      return hostPackage().equals(type.hostPackage());
+    }
+  }
+
+  syn lazy boolean MethodDecl.accessibleFrom(TypeDecl type) {
+    if (isPublic()) {
+      return true;
+    } else if (isProtected()) {
+      if (hostPackage().equals(type.hostPackage())) {
+        return true;
+      }
+      if (type.withinBodyThatSubclasses(hostType()) != null) {
+        return true;
+      }
+      return false;
+    } else if (isPrivate()) {
+      return hostType().topLevelType() == type.topLevelType();
+    } else {
+      return hostPackage().equals(type.hostPackage());
+    }
+  }
+
+  syn lazy boolean ConstructorDecl.accessibleFrom(TypeDecl type) {
+    if (!hostType().accessibleFrom(type)) {
+      return false;
+    } else if (isPublic()) {
+      return true;
+    } else if (isProtected()) {
+      return true;
+    } else if (isPrivate()) {
+      return hostType().topLevelType() == type.topLevelType();
+    } else {
+      return hostPackage().equals(type.hostPackage());
+    }
+  }
+
+  syn boolean Declarator.accessibleFrom(TypeDecl type) = false;
+
+  syn lazy boolean FieldDeclarator.accessibleFrom(TypeDecl type) {
+    if (isPublic()) {
+      return true;
+    } else if (isProtected()) {
+      if (hostPackage().equals(type.hostPackage())) {
+        return true;
+      }
+      if (type.withinBodyThatSubclasses(hostType()) != null) {
+        return true;
+      }
+      return false;
+    } else if (isPrivate()) {
+      return hostType().topLevelType() == type.topLevelType();
+    } else {
+      return hostPackage().equals(type.hostPackage());
+    }
+  }
+
+  TypeAccess contributes each accessControlProblems() to CompilationUnit.problems();
+
+  syn Collection<Problem> TypeAccess.accessControlProblems() {
+    Collection<Problem> problems = new LinkedList<Problem>();
+    TypeDecl hostType = hostType();
+    if (hostType != null && !hostType.isUnknown() && !type().accessibleFrom(hostType)) {
+      problems.add(errorf("%s in %s can not access type %s",
+          this.prettyPrint(), hostType().fullName(), type().fullName()));
+    } else if ((hostType == null || hostType.isUnknown())
+        && !type().accessibleFromPackage(hostPackage())
+        && !type().isUnknown()) {
+      problems.add(errorf("%s can not access type %s", this.prettyPrint(), type().fullName()));
+    }
+    return problems;
+  }
+
+  ClassInstanceExpr contributes each accessControlProblems() to CompilationUnit.problems();
+
+  syn Collection<Problem> ClassInstanceExpr.accessControlProblems() {
+    Collection<Problem> problems = new LinkedList<Problem>();
+    if (type().isAbstract()) {
+      problems.add(errorf("Can not instantiate abstract class %s", type().fullName()));
+    }
+    if (!decl().accessibleFrom(hostType())) {
+      problems.add(errorf("constructor %s is not accessible", decl().signature()));
+    }
+    return problems;
+  }
+
+  ClassDecl contributes each accessControlProblems() to CompilationUnit.problems();
+
+  syn Collection<Problem> ClassDecl.accessControlProblems() {
+    Collection<Problem> problems = new LinkedList<Problem>();
+
+    // 8.1.1.2 final Classes
+    TypeDecl typeDecl = superclass();
+    if (!typeDecl.isUnknown() && !typeDecl.accessibleFromExtend(this)) {
+      problems.add(errorf("class %s may not extend non accessible type %s",
+          fullName(), typeDecl.fullName()));
+    }
+
+    if (hasSuperclass() && !superclass().accessibleFrom(this)) {
+      problems.add(errorf("a superclass must be accessible which %s is not",
+          superclass().name()));
+    }
+
+    // 8.1.4
+    for (int i = 0; i < getNumImplements(); i++) {
+      TypeDecl decl = getImplements(i).type();
+      if (!decl.isCircular() && !decl.accessibleFrom(this)) {
+        problems.add(errorf("class %s can not implement non accessible type %s",
+            fullName(), decl.fullName()));
+      }
+    }
+    return problems;
+  }
+
+  InterfaceDecl contributes each accessControlProblems() to CompilationUnit.problems();
+
+  syn Collection<Problem> InterfaceDecl.accessControlProblems() {
+    Collection<Problem> problems = new LinkedList<Problem>();
+
+    if (!isCircular()) {
+      // 9.1.2
+      Collection<TypeDecl> interfaces = new HashSet<TypeDecl>();
+      for (Access access : getSuperInterfaceList()) {
+        TypeDecl decl = access.type();
+        if (!decl.isInterfaceDecl() && !decl.isUnknown()) {
+          problems.add(errorf("interface %s can not extend non interface type %s",
+              fullName(), decl.fullName()));
+        }
+        if (!decl.isCircular() && !decl.accessibleFrom(this)) {
+          problems.add(errorf("interface %s can not extend non accessible type %s",
+              fullName(), decl.fullName()));
+        }
+        if (interfaces.contains(decl)) {
+          problems.add(errorf(
+              "extended interface %s is mentionened multiple times in extends clause",
+              decl.fullName()));
+        }
+        interfaces.add(decl);
+      }
+    }
+    return problems;
+  }
+}

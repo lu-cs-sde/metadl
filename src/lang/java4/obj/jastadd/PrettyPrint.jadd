@@ -1,0 +1,641 @@
+/* Copyright (c) 2015-2016, Jesper Öqvist <jesper.oqvist@cs.lth.se>
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice,
+ * this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ * this list of conditions and the following disclaimer in the documentation
+ * and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its
+ * contributors may be used to endorse or promote products derived from this
+ * software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+
+/**
+ * This is a generated aspect for pretty-printing Java programs.
+ */
+aspect Java4PrettyPrint {
+  public void ArrayAccess.prettyPrint(PrettyPrinter out) {
+    out.print("[");
+    out.print(getExpr());
+    out.print("]");
+  }
+  public void ArrayCreationExpr.prettyPrint(PrettyPrinter out) {
+    out.print("new ");
+    out.print(getTypeAccess());
+    if (hasArrayInit()) {
+      out.print(" ");
+      out.print(getArrayInit());
+    }
+  }
+  public void ArrayInit.prettyPrint(PrettyPrinter out) {
+    out.print("{ ");
+    out.join(getInitList(), new PrettyPrinter.Joiner() {
+      @Override
+      public void printSeparator(PrettyPrinter out) {
+        out.print(", ");
+      }
+    });
+    out.print(" }");
+  }
+  public void ArrayTypeAccess.prettyPrint(PrettyPrinter out) {
+    out.print(getAccess());
+    out.print("[]");
+  }
+  public void ArrayTypeWithSizeAccess.prettyPrint(PrettyPrinter out) {
+    out.print(getAccess());
+    out.print("[");
+    out.print(getExpr());
+    out.print("]");
+  }
+  public void AssertStmt.prettyPrint(PrettyPrinter out) {
+    if (hasMessage()) {
+      out.print("assert ");
+      out.print(getCondition());
+      out.print(" : ");
+      out.print(getMessage());
+      out.print(";");
+    } else {
+      out.print("assert ");
+      out.print(getCondition());
+      out.print(";");
+    }
+  }
+  public void AssignExpr.prettyPrint(PrettyPrinter out) {
+    out.print(getDest());
+    out.print(" ");
+    out.print(printOp());
+    out.print(" ");
+    out.print(getSource());
+  }
+  public void BasicCatch.prettyPrint(PrettyPrinter out) {
+    out.print("catch (");
+    out.print(getParameter());
+    out.print(") ");
+    out.print(getBlock());
+  }
+  public void Binary.prettyPrint(PrettyPrinter out) {
+    out.print(getLeftOperand());
+    out.print(" ");
+    out.print(printOp());
+    out.print(" ");
+    out.print(getRightOperand());
+  }
+  public void Block.prettyPrint(PrettyPrinter out) {
+    out.print("{");
+    out.println();
+    out.indent(1);
+    out.join(getStmtList(), new PrettyPrinter.Joiner() {
+      @Override
+      public void printSeparator(PrettyPrinter out) {
+        out.println();
+      }
+    });
+    if (!out.isNewLine()) {
+      out.println();
+    }
+    out.print("}");
+  }
+  public void BooleanType.prettyPrint(PrettyPrinter out) {
+    out.print("boolean");
+  }
+  public void BreakStmt.prettyPrint(PrettyPrinter out) {
+    out.print("break");
+    if (hasLabel()) {
+      out.print(" ");
+      out.print(getLabel());
+    }
+    out.print(";");
+  }
+  public void ByteType.prettyPrint(PrettyPrinter out) {
+    out.print("byte");
+  }
+  public void CastExpr.prettyPrint(PrettyPrinter out) {
+    out.print("(");
+    out.print(getTypeAccess());
+    out.print(") ");
+    out.print(getExpr());
+  }
+  public void CharType.prettyPrint(PrettyPrinter out) {
+    out.print("char");
+  }
+  public void CharacterLiteral.prettyPrint(PrettyPrinter out) {
+    out.print("'");
+    out.print(escapedLiteral());
+    out.print("'");
+  }
+  public void ClassAccess.prettyPrint(PrettyPrinter out) {
+    out.print("class");
+  }
+  public void ClassDecl.prettyPrint(PrettyPrinter out) {
+    if (hasDocComment()) {
+      out.print(docComment());
+    }
+    if (!out.isNewLine()) {
+      out.println();
+    }
+    out.print(getModifiers());
+    out.print("class ");
+    out.print(getID());
+    if (hasSuperClass()) {
+      out.print(" extends ");
+      out.print(getSuperClass());
+    }
+    if (hasImplements()) {
+      out.print(" implements ");
+      out.join(getImplementss(), new PrettyPrinter.Joiner() {
+        @Override
+        public void printSeparator(PrettyPrinter out) {
+          out.print(", ");
+        }
+      });
+    }
+    out.print(" {");
+    out.println();
+    out.indent(1);
+    out.join(getBodyDecls(), new PrettyPrinter.Joiner() {
+      @Override
+      public void printSeparator(PrettyPrinter out) {
+        out.println();
+        out.println();
+      }
+    });
+    if (!out.isNewLine()) {
+      out.println();
+    }
+    out.print("}");
+  }
+  public void ClassInstanceExpr.prettyPrint(PrettyPrinter out) {
+    out.print("new ");
+    out.print(getAccess());
+    out.print("(");
+    out.join(getArgList(), new PrettyPrinter.Joiner() {
+      @Override
+      public void printSeparator(PrettyPrinter out) {
+        out.print(", ");
+      }
+    });
+    out.print(")");
+    if (hasTypeDecl()) {
+      if (hasPrintableBodyDecl()) {
+        out.print(" {");
+        out.println();
+        out.indent(1);
+        out.join(bodyDecls(), new PrettyPrinter.Joiner() {
+          @Override
+          public void printSeparator(PrettyPrinter out) {
+            out.println();
+          }
+        });
+        out.print("}");
+      } else {
+        out.print(" { }");
+      }
+    }
+  }
+  public void CompilationUnit.prettyPrint(PrettyPrinter out) {
+    if (hasPackageDecl()) {
+      out.print("package ");
+      out.print(getPackageDecl());
+      out.print(";");
+      out.println();
+    }
+    if (!out.isNewLine()) {
+      out.println();
+    }
+    out.print(getImportDeclList());
+    if (!out.isNewLine()) {
+      out.println();
+    }
+    out.println();
+    out.join(getTypeDecls(), new PrettyPrinter.Joiner() {
+      @Override
+      public void printSeparator(PrettyPrinter out) {
+        out.println();
+        out.println();
+      }
+    });
+  }
+  public void ConditionalExpr.prettyPrint(PrettyPrinter out) {
+    out.print(getCondition());
+    out.print(" ? ");
+    out.print(getTrueExpr());
+    out.print(" : ");
+    out.print(getFalseExpr());
+  }
+  public void ConstCase.prettyPrint(PrettyPrinter out) {
+    out.print("case ");
+    out.print(getValue());
+    out.print(":");
+  }
+  public void ConstructorAccess.prettyPrint(PrettyPrinter out) {
+    out.print(getID());
+    out.print("(");
+    out.join(getArgList(), new PrettyPrinter.Joiner() {
+      @Override
+      public void printSeparator(PrettyPrinter out) {
+        out.print(", ");
+      }
+    });
+    out.print(")");
+  }
+  public void ConstructorDecl.prettyPrint(PrettyPrinter out) {
+    if (!isImplicitConstructor()) {
+      if (hasDocComment()) {
+        out.print(docComment());
+      }
+      if (!out.isNewLine()) {
+        out.println();
+      }
+      out.print(getModifiers());
+      out.print(getID());
+      out.print("(");
+      out.join(getParameterList(), new PrettyPrinter.Joiner() {
+        @Override
+        public void printSeparator(PrettyPrinter out) {
+          out.print(", ");
+        }
+      });
+      out.print(")");
+      if (hasExceptions()) {
+        out.print(" throws ");
+        out.join(getExceptionList(), new PrettyPrinter.Joiner() {
+          @Override
+          public void printSeparator(PrettyPrinter out) {
+            out.print(", ");
+          }
+        });
+      }
+      out.print(" {");
+      out.println();
+      out.indent(1);
+      out.print(getParsedConstructorInvocationOpt());
+      if (!out.isNewLine()) {
+        out.println();
+      }
+      out.indent(1);
+      out.join(blockStmts(), new PrettyPrinter.Joiner() {
+        @Override
+        public void printSeparator(PrettyPrinter out) {
+          out.println();
+        }
+      });
+      if (!out.isNewLine()) {
+        out.println();
+      }
+      out.print("}");
+    }
+  }
+  public void ContinueStmt.prettyPrint(PrettyPrinter out) {
+    out.print("continue");
+    if (hasLabel()) {
+      out.print(" ");
+      out.print(getLabel());
+    }
+    out.print(";");
+  }
+  public void Declarator.prettyPrint(PrettyPrinter out) {
+    out.print(getID());
+    out.print(getDimsList());
+    if (hasInit()) {
+      out.print(" = ");
+      out.print(getInit());
+    }
+  }
+  public void DefaultCase.prettyPrint(PrettyPrinter out) {
+    out.print("default:");
+  }
+  public void Dims.prettyPrint(PrettyPrinter out) {
+    out.print("[");
+    out.print(getExprOpt());
+    out.print("]");
+  }
+  public void DoStmt.prettyPrint(PrettyPrinter out) {
+    out.print("do ");
+    out.print(getStmt());
+    out.print(" while(");
+    out.print(getCondition());
+    out.print(");");
+  }
+  public void Dot.prettyPrint(PrettyPrinter out) {
+    if (needsDot()) {
+      out.print(getLeft());
+      out.print(".");
+      out.print(getRight());
+    } else {
+      out.print(getLeft());
+      out.print(getRight());
+    }
+  }
+  public void DoubleLiteral.prettyPrint(PrettyPrinter out) {
+    out.print(getLITERAL());
+  }
+  public void DoubleType.prettyPrint(PrettyPrinter out) {
+    out.print("double");
+  }
+  public void EmptyStmt.prettyPrint(PrettyPrinter out) {
+    out.print(";");
+  }
+  public void ExprStmt.prettyPrint(PrettyPrinter out) {
+    out.print(getExpr());
+    out.print(";");
+  }
+  public void FieldDecl.prettyPrint(PrettyPrinter out) {
+    if (!isSynthetic()) {
+      if (hasDocComment()) {
+        out.print(docComment());
+      }
+      if (!out.isNewLine()) {
+        out.println();
+      }
+      out.print(getModifiers());
+      out.print(getTypeAccess());
+      out.print(" ");
+      out.join(getDeclarators(), new PrettyPrinter.Joiner() {
+        @Override
+        public void printSeparator(PrettyPrinter out) {
+          out.print(", ");
+        }
+      });
+      out.print(";");
+    }
+  }
+  public void FloatType.prettyPrint(PrettyPrinter out) {
+    out.print("float");
+  }
+  public void FloatingPointLiteral.prettyPrint(PrettyPrinter out) {
+    out.print(getLITERAL());
+  }
+  public void InstanceInitializer.prettyPrint(PrettyPrinter out) {
+    if (!blockIsEmpty()) {
+      out.print(getBlock());
+    }
+  }
+  public void InstanceOfExpr.prettyPrint(PrettyPrinter out) {
+    out.print(getExpr());
+    out.print(" instanceof ");
+    out.print(getTypeAccess());
+  }
+  public void IntType.prettyPrint(PrettyPrinter out) {
+    out.print("int");
+  }
+  public void InterfaceDecl.prettyPrint(PrettyPrinter out) {
+    if (hasDocComment()) {
+      out.print(docComment());
+    }
+    if (!out.isNewLine()) {
+      out.println();
+    }
+    out.print(getModifiers());
+    out.print("interface ");
+    out.print(getID());
+    if (hasSuperInterface()) {
+      out.print(" extends ");
+      out.join(getSuperInterfaceList(), new PrettyPrinter.Joiner() {
+        @Override
+        public void printSeparator(PrettyPrinter out) {
+          out.print(", ");
+        }
+      });
+    }
+    out.print(" {");
+    out.println();
+    out.indent(1);
+    out.join(getBodyDecls(), new PrettyPrinter.Joiner() {
+      @Override
+      public void printSeparator(PrettyPrinter out) {
+        out.println();
+        out.println();
+      }
+    });
+    if (!out.isNewLine()) {
+      out.println();
+    }
+    out.print("}");
+  }
+  public void LabeledStmt.prettyPrint(PrettyPrinter out) {
+    out.print(getLabel());
+    out.print(":");
+    out.println();
+    out.print(getStmt());
+  }
+  public void Literal.prettyPrint(PrettyPrinter out) {
+    out.print(getLITERAL());
+  }
+  public void LocalClassDeclStmt.prettyPrint(PrettyPrinter out) {
+    out.print(getClassDecl());
+  }
+  public void LongLiteral.prettyPrint(PrettyPrinter out) {
+    out.print(getLITERAL());
+  }
+  public void LongType.prettyPrint(PrettyPrinter out) {
+    out.print("long");
+  }
+  public void MemberClassDecl.prettyPrint(PrettyPrinter out) {
+    out.print(getClassDecl());
+  }
+  public void MemberInterfaceDecl.prettyPrint(PrettyPrinter out) {
+    out.print(getInterfaceDecl());
+  }
+  public void MethodAccess.prettyPrint(PrettyPrinter out) {
+    out.print(getID());
+    out.print("(");
+    out.join(getArgList(), new PrettyPrinter.Joiner() {
+      @Override
+      public void printSeparator(PrettyPrinter out) {
+        out.print(", ");
+      }
+    });
+    out.print(")");
+  }
+  public void MethodDecl.prettyPrint(PrettyPrinter out) {
+    if (!isSynthetic()) {
+      if (hasDocComment()) {
+        out.print(docComment());
+      }
+      if (!out.isNewLine()) {
+        out.println();
+      }
+      out.print(getModifiers());
+      out.print(getTypeAccess());
+      out.print(" ");
+      out.print(getID());
+      out.print("(");
+      out.join(getParameterList(), new PrettyPrinter.Joiner() {
+        @Override
+        public void printSeparator(PrettyPrinter out) {
+          out.print(", ");
+        }
+      });
+      out.print(")");
+      if (hasExceptions()) {
+        out.print(" throws ");
+        out.join(getExceptionList(), new PrettyPrinter.Joiner() {
+          @Override
+          public void printSeparator(PrettyPrinter out) {
+            out.print(", ");
+          }
+        });
+      }
+      if (hasBlock()) {
+        out.print(" ");
+        out.print(getBlock());
+      } else {
+        out.print(";");
+      }
+    }
+  }
+  public void Modifier.prettyPrint(PrettyPrinter out) {
+    out.print(getID());
+  }
+  public void Modifiers.prettyPrint(PrettyPrinter out) {
+    if (hasModifier()) {
+      out.join(getModifierList(), new PrettyPrinter.Joiner() {
+        @Override
+        public void printSeparator(PrettyPrinter out) {
+          out.print(" ");
+        }
+      });
+      out.print(" ");
+    }
+  }
+  public void NullType.prettyPrint(PrettyPrinter out) {
+    out.print("null");
+  }
+  public void PackageAccess.prettyPrint(PrettyPrinter out) {
+    out.print(getPackage());
+  }
+  public void ParExpr.prettyPrint(PrettyPrinter out) {
+    out.print("(");
+    out.print(getExpr());
+    out.print(")");
+  }
+  public void ParameterDeclaration.prettyPrint(PrettyPrinter out) {
+    out.print(getModifiers());
+    out.print(getTypeAccess());
+    out.print(" ");
+    out.print(getID());
+  }
+  public void ParseName.prettyPrint(PrettyPrinter out) {
+    out.print(name());
+  }
+  public void ReturnStmt.prettyPrint(PrettyPrinter out) {
+    out.print("return");
+    if (hasResult()) {
+      out.print(" ");
+      out.print(getResult());
+    }
+    out.print(";");
+  }
+  public void ShortType.prettyPrint(PrettyPrinter out) {
+    out.print("short");
+  }
+  public void SingleTypeImportDecl.prettyPrint(PrettyPrinter out) {
+    out.print("import ");
+    out.print(getAccess());
+    out.print(";");
+    out.println();
+  }
+  public void StaticInitializer.prettyPrint(PrettyPrinter out) {
+    if (!blockIsEmpty()) {
+      out.print("static ");
+      out.print(getBlock());
+    }
+  }
+  public void StringLiteral.prettyPrint(PrettyPrinter out) {
+    out.print("\"");
+    out.print(escapedLiteral());
+    out.print("\"");
+  }
+  public void SuperAccess.prettyPrint(PrettyPrinter out) {
+    out.print("super");
+  }
+  public void SwitchStmt.prettyPrint(PrettyPrinter out) {
+    out.print("switch (");
+    out.print(getExpr());
+    out.print(") ");
+    out.print(getBlock());
+  }
+  public void SynchronizedStmt.prettyPrint(PrettyPrinter out) {
+    out.print("synchronized (");
+    out.print(getExpr());
+    out.print(") ");
+    out.print(getBlock());
+  }
+  public void ThisAccess.prettyPrint(PrettyPrinter out) {
+    out.print("this");
+  }
+  public void ThrowStmt.prettyPrint(PrettyPrinter out) {
+    out.print("throw ");
+    out.print(getExpr());
+    out.print(";");
+  }
+  public void TryStmt.prettyPrint(PrettyPrinter out) {
+    out.print("try ");
+    out.print(getBlock());
+    out.print(" ");
+    out.join(getCatchClauseList(), new PrettyPrinter.Joiner() {
+      @Override
+      public void printSeparator(PrettyPrinter out) {
+        out.print(" ");
+      }
+    });
+    if (hasFinally()) {
+      out.print(" finally ");
+      out.print(getFinally());
+    }
+  }
+  public void TypeAccess.prettyPrint(PrettyPrinter out) {
+    if (hasPackage()) {
+      out.print(getPackage());
+      out.print(".");
+    }
+    out.print(getID());
+  }
+  public void TypeImportOnDemandDecl.prettyPrint(PrettyPrinter out) {
+    out.print("import ");
+    out.print(getAccess());
+    out.print(".*;");
+    out.println();
+  }
+  public void Unary.prettyPrint(PrettyPrinter out) {
+    out.print(printPreOp());
+    out.print(getOperand());
+    out.print(printPostOp());
+  }
+  public void VarAccess.prettyPrint(PrettyPrinter out) {
+    out.print(getID());
+  }
+  public void VarDeclStmt.prettyPrint(PrettyPrinter out) {
+    out.print(getModifiers());
+    out.print(getTypeAccess());
+    out.print(" ");
+    out.join(getDeclaratorList(), new PrettyPrinter.Joiner() {
+      @Override
+      public void printSeparator(PrettyPrinter out) {
+        out.print(", ");
+      }
+    });
+    out.print(";");
+  }
+  public void VoidType.prettyPrint(PrettyPrinter out) {
+    out.print("void");
+  }
+}

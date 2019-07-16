@@ -1,0 +1,347 @@
+/* Copyright (c) 2005-2008, Torbjorn Ekman
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice,
+ * this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ * this list of conditions and the following disclaimer in the documentation
+ * and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its
+ * contributors may be used to endorse or promote products derived from this
+ * software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+
+aspect BytecodeDescriptor {
+
+  class FieldDescriptor {
+    private AbstractClassfileParser p;
+    String typeDescriptor;
+
+    public FieldDescriptor(AbstractClassfileParser parser, String name) throws IOException {
+      p = parser;
+      int descriptor_index = p.u2();
+      typeDescriptor = ((CONSTANT_Utf8_Info) p.constantPool[descriptor_index]).string();
+      if (AbstractClassfileParser.VERBOSE) {
+        p.println("  Field: " + name + ", " + typeDescriptor);
+      }
+    }
+
+    public Access type() {
+      return new TypeDescriptor(p, typeDescriptor).type();
+    }
+
+    public boolean isBoolean() {
+      return new TypeDescriptor(p, typeDescriptor).isBoolean();
+    }
+  }
+
+  class FieldInfo {
+    private AbstractClassfileParser p;
+    String name;
+    int flags;
+    private FieldDescriptor fieldDescriptor;
+    private Attributes attributes;
+
+    public FieldInfo(AbstractClassfileParser parser) throws IOException {
+      p = parser;
+      flags = p.u2();
+      if (AbstractClassfileParser.VERBOSE) {
+        p.print("Flags: " + flags);
+      }
+      int name_index = p.u2();
+      name = ((CONSTANT_Utf8_Info) p.constantPool[name_index]).string();
+      fieldDescriptor = new FieldDescriptor(p, name);
+      attributes = new Attributes(p);
+    }
+
+    public BodyDecl bodyDecl() {
+      FieldDeclarator decl = new FieldDeclarator(name, new List<Dims>(), new Opt<Expr>());
+      if (attributes.constantValue() != null) {
+        if (fieldDescriptor.isBoolean()) {
+          decl.setInit(attributes.constantValue().exprAsBoolean());
+        } else {
+          decl.setInit(attributes.constantValue().expr());
+        }
+      }
+      return new FieldDecl(
+          AbstractClassfileParser.modifiers(flags),
+          fieldDescriptor.type(),
+          new List<FieldDeclarator>(decl));
+    }
+
+    public boolean isSynthetic() {
+      return attributes.isSynthetic();
+    }
+
+  }
+
+
+  class MethodDescriptor {
+    private AbstractClassfileParser p;
+    private String parameterDescriptors;
+    private String typeDescriptor;
+
+    public MethodDescriptor(AbstractClassfileParser parser, String name) throws IOException {
+      p = parser;
+      int descriptor_index = p.u2();
+      String descriptor = ((CONSTANT_Utf8_Info) p.constantPool[descriptor_index]).string();
+      if (AbstractClassfileParser.VERBOSE) {
+        p.println("  Method: " + name + ", " + descriptor);
+      }
+      int pos = descriptor.indexOf(')');
+      parameterDescriptors = descriptor.substring(1, pos);
+      typeDescriptor = descriptor.substring(pos+1, descriptor.length());
+    }
+
+    public List parameterList() {
+      TypeDescriptor d = new TypeDescriptor(p, parameterDescriptors);
+      return d.parameterList();
+    }
+    public List parameterListSkipFirst() {
+      TypeDescriptor d = new TypeDescriptor(p, parameterDescriptors);
+      return d.parameterListSkipFirst();
+    }
+
+    public Access type() {
+      TypeDescriptor d = new TypeDescriptor(p, typeDescriptor);
+      return d.type();
+    }
+  }
+
+  class MethodInfo {
+    private AbstractClassfileParser p;
+    String name;
+    int flags;
+    private MethodDescriptor methodDescriptor;
+    private Attributes attributes;
+
+    public MethodInfo(AbstractClassfileParser parser) throws IOException {
+      p = parser;
+      flags = p.u2();
+      if (AbstractClassfileParser.VERBOSE) {
+        p.print("  Flags: " + Integer.toBinaryString(flags));
+      }
+      int name_index = p.u2();
+      CONSTANT_Info info = p.constantPool[name_index];
+      if (info == null || !(info instanceof CONSTANT_Utf8_Info)) {
+        System.err.println("Expected CONSTANT_Utf8_Info but found: " + info.getClass().getName());
+      }
+      name = ((CONSTANT_Utf8_Info) info).string();
+      methodDescriptor = new MethodDescriptor(p, name);
+      attributes = new Attributes(p);
+    }
+
+    public BodyDecl bodyDecl() {
+      if (isConstructor()) {
+        return new ConstructorDecl(
+            AbstractClassfileParser.modifiers(flags),
+            name,
+            methodDescriptor.parameterList(),
+            attributes.exceptionList(),
+            new Opt(),
+            new Block()
+            );
+      } else {
+        return new MethodDecl(
+            AbstractClassfileParser.modifiers(flags),
+            methodDescriptor.type(),
+            name,
+            methodDescriptor.parameterList(),
+            attributes.exceptionList(),
+            new Opt(new Block())
+            );
+      }
+
+    }
+
+    private boolean isConstructor() {
+      return name.equals("<init>");
+    }
+
+    public boolean isSynthetic() {
+      return attributes.isSynthetic() || (flags & 0x1000) != 0;
+    }
+
+  }
+
+  class TypeDescriptor {
+    private AbstractClassfileParser p;
+    private String descriptor;
+    public TypeDescriptor(AbstractClassfileParser parser, String descriptor) {
+      p = parser;
+      this.descriptor = descriptor;
+    }
+
+    public boolean isBoolean() {
+      return descriptor.charAt(0) == 'Z';
+    }
+
+    public Access type() {
+      return type(descriptor);
+    }
+
+    public Access type(String s) {
+      char c = s.charAt(0);
+      switch (c) {
+        case 'B':
+          return new PrimitiveTypeAccess("byte");
+        case 'C':
+          return new PrimitiveTypeAccess("char");
+        case 'D':
+          return new PrimitiveTypeAccess("double");
+        case 'F':
+          return new PrimitiveTypeAccess("float");
+        case 'I':
+          return new PrimitiveTypeAccess("int");
+        case 'J':
+          return new PrimitiveTypeAccess("long");
+        case 'S':
+          return new PrimitiveTypeAccess("short");
+        case 'Z':
+          return new PrimitiveTypeAccess("boolean");
+        case 'L':
+          return BytecodeParser.fromClassName(s.substring(1, s.length() - 1));
+        case '[':
+          return new ArrayTypeAccess(type(s.substring(1)));
+        case 'V':
+          return new PrimitiveTypeAccess("void");
+        default:
+          throw new Error("Error: unknown Type in TypeDescriptor: " + s);
+      }
+    }
+
+    public List parameterList() {
+      List list = new List();
+      String s = descriptor;
+      while (!s.equals("")) {
+        s = typeList(s, list);
+      }
+      return list;
+    }
+    public List parameterListSkipFirst() {
+      List list = new List();
+      String s = descriptor;
+      if (!s.equals("")) {
+        s = typeList(s, new List()); // skip first
+      }
+      while (!s.equals("")) {
+        s = typeList(s, list);
+      }
+      return list;
+    }
+
+    public String typeList(String s, List l) {
+      char c = s.charAt(0);
+      switch (c) {
+        case 'B':
+          l.add(new ParameterDeclaration(new Modifiers(),
+              new PrimitiveTypeAccess("byte"), "p" + l.getNumChild()));
+          return s.substring(1);
+        case 'C':
+          l.add(new ParameterDeclaration(new Modifiers(),
+              new PrimitiveTypeAccess("char"), "p" + l.getNumChild()));
+          return s.substring(1);
+        case 'D':
+          l.add(new ParameterDeclaration(new Modifiers(),
+              new PrimitiveTypeAccess("double"), "p" + l.getNumChild()));
+          return s.substring(1);
+        case 'F':
+          l.add(new ParameterDeclaration(new Modifiers(),
+              new PrimitiveTypeAccess("float"), "p" + l.getNumChild()));
+          return s.substring(1);
+        case 'I':
+          l.add(new ParameterDeclaration(new Modifiers(),
+              new PrimitiveTypeAccess("int"), "p" + l.getNumChild()));
+          return s.substring(1);
+        case 'J':
+          l.add(new ParameterDeclaration(new Modifiers(),
+              new PrimitiveTypeAccess("long"), "p" + l.getNumChild()));
+          return s.substring(1);
+        case 'S':
+          l.add(new ParameterDeclaration(new Modifiers(),
+              new PrimitiveTypeAccess("short"), "p" + l.getNumChild()));
+          return s.substring(1);
+        case 'Z':
+          l.add(new ParameterDeclaration(new Modifiers(),
+                new PrimitiveTypeAccess("boolean"), "p" + l.getNumChild()));
+          return s.substring(1);
+        case 'L':
+          int pos = s.indexOf(';');
+          String s1 = s.substring(1, pos);
+          String s2 = s.substring(pos+1, s.length());
+          l.add(new ParameterDeclaration(new Modifiers(),
+              BytecodeParser.fromClassName(s1),
+              "p" + l.getNumChild()));
+          return s2;
+        case '[':
+          int i = 1;
+          while (s.charAt(i) == '[') i++;
+          // Dummy child will be replaced:
+          ArrayTypeAccess bottom = new ArrayTypeAccess(new ParseName());
+          ArrayTypeAccess top = bottom;
+          for (int j = 0; j < i - 1; j++) {
+            top = new ArrayTypeAccess(top);
+          }
+          l.add(new ParameterDeclaration(new Modifiers(), top, "p" + l.getNumChild()));
+          return arrayTypeList(s.substring(i), bottom);
+        default:
+          throw new Error("Error: unknown Type in TypeDescriptor: " + s);
+      }
+    }
+
+    public String arrayTypeList(String s, ArrayTypeAccess typeAccess) {
+      char c = s.charAt(0);
+      switch (c) {
+        case 'B':
+          typeAccess.setAccess(new PrimitiveTypeAccess("byte"));
+          return s.substring(1);
+        case 'C':
+          typeAccess.setAccess(new PrimitiveTypeAccess("char"));
+          return s.substring(1);
+        case 'D':
+          typeAccess.setAccess(new PrimitiveTypeAccess("double"));
+          return s.substring(1);
+        case 'F':
+          typeAccess.setAccess(new PrimitiveTypeAccess("float"));
+          return s.substring(1);
+        case 'I':
+          typeAccess.setAccess(new PrimitiveTypeAccess("int"));
+          return s.substring(1);
+        case 'J':
+          typeAccess.setAccess(new PrimitiveTypeAccess("long"));
+          return s.substring(1);
+        case 'S':
+          typeAccess.setAccess(new PrimitiveTypeAccess("short"));
+          return s.substring(1);
+        case 'Z':
+          typeAccess.setAccess(new PrimitiveTypeAccess("boolean"));
+          return s.substring(1);
+        case 'L':
+          int pos = s.indexOf(';');
+          String s1 = s.substring(1, pos);
+          String s2 = s.substring(pos+1, s.length());
+          typeAccess.setAccess(BytecodeParser.fromClassName(s1));
+          return s2;
+        default:
+          throw new Error("Error: unknown Type in TypeDescriptor: " + s);
+      }
+    }
+  }
+}

@@ -1,0 +1,371 @@
+/* Copyright (c) 2005-2008, Torbjorn Ekman
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice,
+ * this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ * this list of conditions and the following disclaimer in the documentation
+ * and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its
+ * contributors may be used to endorse or promote products derived from this
+ * software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+
+import java.util.*;
+import java.util.ArrayList;
+
+aspect ConstructScope {
+  inh Collection<ConstructorDecl> ConstructorAccess.lookupConstructor();
+
+  eq Program.getChild().lookupConstructor() = Collections.emptyList();
+
+  eq TypeDecl.getChild().lookupConstructor() = constructors();
+
+  eq Dot.getRight().lookupConstructor() = getLeft().type().constructors();
+
+  inh Collection<ConstructorDecl> SuperConstructorAccess.lookupSuperConstructor();
+
+  eq TypeDecl.getChild().lookupSuperConstructor() = lookupSuperConstructor();
+
+  syn Collection<ConstructorDecl> TypeDecl.lookupSuperConstructor() = Collections.emptyList();
+
+  eq ClassDecl.lookupSuperConstructor() =
+      hasSuperclass() ? superclass().constructors() : Collections.<ConstructorDecl>emptyList();
+
+  eq InterfaceDecl.lookupSuperConstructor() = typeObject().constructors();
+
+  eq Program.getChild().lookupSuperConstructor() = Collections.emptyList();
+
+  eq Dot.getRight().lookupSuperConstructor() = getLeft().type().lookupSuperConstructor();
+
+  inh TypeDecl ClassInstanceExpr.typeObject();
+
+  /**
+   * Compute the most specific constructor in a collection.
+   * The constructor is invoked with the arguments specified in argList.
+   * The curent context (this) is used to evaluate the hostType for accessibility.
+   */
+  syn SimpleSet<ConstructorDecl> Expr.mostSpecificConstructor(
+      Collection<ConstructorDecl> constructors) {
+    SimpleSet<ConstructorDecl> maxSpecific = emptySet();
+    for (ConstructorDecl decl : constructors) {
+      if (applicableAndAccessible(decl)) {
+        if (maxSpecific.isEmpty()) {
+          maxSpecific = maxSpecific.add(decl);
+        } else {
+          ConstructorDecl other = maxSpecific.iterator().next();
+          if (decl.moreSpecificThan(other)) {
+            maxSpecific = ASTNode.<ConstructorDecl>emptySet().add(decl);
+          } else if (!other.moreSpecificThan(decl)) {
+            maxSpecific = maxSpecific.add(decl);
+          }
+        }
+      }
+    }
+    return maxSpecific;
+  }
+
+  syn boolean Expr.applicableAndAccessible(ConstructorDecl decl) = false;
+
+  eq ConstructorAccess.applicableAndAccessible(ConstructorDecl decl) =
+      decl.applicable(getArgList()) && decl.accessibleFrom(hostType());
+
+  eq ClassInstanceExpr.applicableAndAccessible(ConstructorDecl decl) =
+      decl.applicable(getArgList()) && decl.accessibleFrom(hostType())
+      && (!decl.isProtected() || hasTypeDecl() || decl.hostPackage().equals(hostPackage()));
+
+  syn lazy SimpleSet<ConstructorDecl> ConstructorAccess.decls() =
+      mostSpecificConstructor(lookupConstructor());
+
+  syn lazy SimpleSet<ConstructorDecl> SuperConstructorAccess.decls() =
+      mostSpecificConstructor(hasPrevExpr() && !prevExpr().isTypeAccess()
+          ? hostType().lookupSuperConstructor()
+          : lookupSuperConstructor());
+
+  syn lazy ConstructorDecl ConstructorAccess.decl() {
+    SimpleSet<ConstructorDecl> decls = decls();
+    if (decls.isSingleton()) {
+      return decls.singletonValue();
+    }
+    return unknownConstructor();
+  }
+
+  inh ConstructorDecl ConstructorAccess.unknownConstructor();
+
+  syn lazy SimpleSet<ConstructorDecl> ClassInstanceExpr.decls() {
+    TypeDecl typeDecl = hasTypeDecl() ? getTypeDecl() : getAccess().type();
+    return mostSpecificConstructor(typeDecl.constructors());
+  }
+
+  syn lazy ConstructorDecl ClassInstanceExpr.decl() {
+    SimpleSet<ConstructorDecl> decls = decls();
+    if (decls.isSingleton()) {
+      return decls.singletonValue();
+    } else {
+      return unknownConstructor();
+    }
+  }
+
+  inh ConstructorDecl ClassInstanceExpr.unknownConstructor();
+}
+
+aspect ConstructorLookup {
+  public ConstructorDecl TypeDecl.lookupConstructor(ConstructorDecl signature) {
+    for (ConstructorDecl decl : constructors()) {
+      if (decl.sameSignature(signature)) {
+        return decl;
+      }
+    }
+    return null;
+  }
+
+  syn lazy Collection<ConstructorDecl> TypeDecl.constructors() {
+    Collection<ConstructorDecl> c = new ArrayList<ConstructorDecl>();
+    for (int i = 0; i < getNumBodyDecl(); i++) {
+      if (getBodyDecl(i) instanceof ConstructorDecl) {
+        c.add((ConstructorDecl) getBodyDecl(i));
+      }
+    }
+    return c;
+  }
+
+  eq ClassDecl.constructors() {
+    Collection<ConstructorDecl> c = new ArrayList<ConstructorDecl>(super.constructors());
+    if (hasImplicitConstructor()) {
+      c.add(getImplicitConstructor());
+    }
+    return c;
+  }
+}
+
+aspect ConstructorDecl {
+  syn lazy String ConstructorDecl.name() = getID();
+  // 8.8.2
+  syn lazy String ConstructorDecl.signature() {
+    StringBuilder s = new StringBuilder();
+    s.append(name() + "(");
+    for (int i = 0; i < getNumParameter(); i++) {
+      s.append(getParameter(i).type().typeName());
+      if (i != getNumParameter() - 1) {
+        s.append(", ");
+      }
+    }
+    s.append(")");
+    return s.toString();
+  }
+
+  // 8.8.2
+  syn lazy boolean ConstructorDecl.sameSignature(ConstructorDecl c) {
+    if (!name().equals(c.name())) {
+      return false;
+    }
+    if (c.getNumParameter() != getNumParameter()) {
+      return false;
+    }
+    for (int i = 0; i < getNumParameter(); i++) {
+      if (!c.getParameter(i).type().equals(getParameter(i).type())) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  syn boolean ConstructorDecl.moreSpecificThan(ConstructorDecl m) =
+      m.lessSpecificThan(this) && !this.lessSpecificThan(m);
+
+  syn lazy boolean ConstructorDecl.lessSpecificThan(ConstructorDecl m) {
+    for (int i = 0; i < getNumParameter(); i++) {
+      if (!getParameter(i).type().subtype(m.getParameter(i).type())) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  public boolean ConstructorDecl.applicable(List<Expr> argList) {
+    if (getNumParameter() != argList.getNumChild()) {
+      return false;
+    }
+    for (int i = 0; i < getNumParameter(); i++) {
+      TypeDecl arg = argList.getChild(i).type();
+      TypeDecl parameter = getParameter(i).type();
+      if (!arg.subtype(parameter)) {
+        return false;
+      }
+    }
+    return true;
+  }
+}
+
+aspect ImplicitConstructor {
+
+  /**
+   * A class declaration requires an implicit constructor if it has no
+   * explicit constructor.
+   * @return <code>true</code> if this class requires an implicit default
+   * contstructor.
+   */
+  syn boolean ClassDecl.needsImplicitConstructor() =
+      compilationUnit().fromSource() && !hasExplicitConstructor();
+
+  /**
+   * Flag to indicate if this constructor is an auto-generated
+   * default constructor. Implicit constructors are not pretty
+   * printed.
+   */
+  private boolean ConstructorDecl.isImplicitConstructor = false;
+
+  /**
+   * Set the default constructor flag. Causes this constructor
+   * to not be pretty printed.
+   */
+  public void ConstructorDecl.setImplicitConstructor() {
+    isImplicitConstructor = true;
+  }
+
+  /**
+   * @return true if this is an auto-generated default constructor
+   */
+  syn boolean ConstructorDecl.isImplicitConstructor() = isImplicitConstructor;
+
+  syn lazy Opt<ConstructorDecl> ClassDecl.getImplicitConstructorOpt() {
+    if (needsImplicitConstructor()) {
+      Modifiers modifiers = new Modifiers();
+      if (isPublic()) {
+        modifiers.addModifier(new Modifier("public"));
+      } else if (isProtected()) {
+        modifiers.addModifier(new Modifier("protected"));
+      } else if (isPrivate()) {
+        modifiers.addModifier(new Modifier("private"));
+      }
+      ConstructorDecl constructor = new ConstructorDecl(
+          modifiers,
+          name(),
+          new List(),
+          new List(),
+          new Opt(),
+          new Block());
+      constructor.setParsedConstructorInvocation(new ExprStmt(
+          new SuperConstructorAccess("super", new List())));
+      constructor.setImplicitConstructor();
+      return new Opt<ConstructorDecl>(constructor);
+    } else {
+      return new Opt<ConstructorDecl>();
+    }
+  }
+
+  syn lazy Opt<ConstructorDecl> AnonymousDecl.getImplicitConstructorOpt() {
+    if (needsImplicitConstructor()) {
+      ConstructorDecl decl = constructorDecl();
+      Modifiers modifiers = new Modifiers();
+      String anonName = "Anonymous" + nextAnonymousIndex();
+
+      ConstructorDecl constructor = new ConstructorDecl(modifiers, anonName,
+          constructorParameterList(decl), new List(), new Opt(), new Block());
+
+      setID(anonName);
+
+      List argList = new List();
+      for (int i = 0; i < constructor.getNumParameter(); i++) {
+        argList.add(new VarAccess(constructor.getParameter(i).name()));
+      }
+
+      constructor.setParsedConstructorInvocation(
+        new ExprStmt(
+          new SuperConstructorAccess("super", argList)
+        )
+      );
+
+      Collection<TypeDecl> set = new HashSet<TypeDecl>();
+
+      // Add initializer and field declaration exceptions.
+      for (int i = 0; i < getNumBodyDecl(); i++) {
+        if (getBodyDecl(i) instanceof InstanceInitializer) {
+          InstanceInitializer init = (InstanceInitializer) getBodyDecl(i);
+          set.addAll(init.exceptions());
+        } else if (getBodyDecl(i) instanceof FieldDecl) {
+          FieldDecl f = (FieldDecl) getBodyDecl(i);
+          for (FieldDeclarator field : f.getDeclaratorList()) {
+            if (field.isInstanceVariable()) {
+              set.addAll(field.exceptions());
+            }
+          }
+        }
+      }
+
+      // Add superconstructor exceptions.
+      for (int i = 0; i < decl.getNumException(); ++i) {
+        set.add(decl.getException(i).type());
+      }
+
+      List<Access> exceptionList = new List<Access>();
+      for (TypeDecl exceptionType : set) {
+        if (exceptionType.isNull()) {
+          exceptionType = typeNullPointerException();
+        }
+        exceptionList.add(exceptionType.createQualifiedAccess());
+      }
+      constructor.setExceptionList(exceptionList);
+      return new Opt<ConstructorDecl>(constructor);
+    } else {
+      return new Opt<ConstructorDecl>();
+    }
+  }
+
+  syn boolean ClassDecl.hasExplicitConstructor() {
+    for (int i = 0; i < getNumBodyDecl(); i++) {
+      if (getBodyDecl(i) instanceof ConstructorDecl) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  // Java language specification, section 8.8.5.
+
+  /**
+   * Nonterminal attribute for implicit constructor invocation.
+   * This is used when an explicit constructor invocation is missing
+   * in a constructor declaration.
+   *
+   * The implicit constructor invocation used to be inserted in the
+   * same node where the parsed constructor declaration was stored.
+   * This meant that it was impossible to distinguish a parsed constructor
+   * from an implicit one.
+   */
+  syn lazy Stmt ConstructorDecl.getImplicitConstructorInvocation() =
+      new ExprStmt(new SuperConstructorAccess("super", new List<Expr>()));
+
+  /**
+   * Test if there is an explicit or implicit constructor invocation available.
+   * This should be false only if the host type is java.lang.Object.
+   * @return {@code true} if there is a constructor invocation.
+   */
+  syn boolean ConstructorDecl.hasConstructorInvocation() =
+      hasParsedConstructorInvocation() || !hostType().isObject();
+
+  syn Stmt ConstructorDecl.getConstructorInvocation() {
+    if (hasParsedConstructorInvocation()) {
+      return getParsedConstructorInvocation();
+    } else {
+      return getImplicitConstructorInvocation();
+    }
+  }
+}

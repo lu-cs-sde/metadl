@@ -1,0 +1,156 @@
+/* Copyright (c) 2005-2008, Torbjorn Ekman
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice,
+ * this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ * this list of conditions and the following disclaimer in the documentation
+ * and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its
+ * contributors may be used to endorse or promote products derived from this
+ * software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+
+aspect BoundNames {
+  /** Create an access to this field. */
+  public Access FieldDeclarator.createBoundAccess() {
+    if (isStatic()) {
+      return hostType().createQualifiedAccess().qualifiesAccess(new BoundFieldAccess(this));
+    } else {
+      return new ThisAccess().qualifiesAccess(new BoundFieldAccess(this));
+    }
+  }
+
+  public ConstructorDecl TypeDecl.addConstructor(ConstructorDecl c) {
+    addBodyDecl(c);
+    return (ConstructorDecl) getBodyDecl(getNumBodyDecl()-1);
+  }
+
+  public ClassDecl TypeDecl.addMemberClass(ClassDecl c) {
+    addBodyDecl(new MemberClassDecl(c));
+    return ((MemberClassDecl) getBodyDecl(getNumBodyDecl()-1)).getClassDecl();
+  }
+
+  /**
+   * Adds a new field to this type declaration.
+   * It is an error if the new field is not unique.
+   */
+  public FieldDecl TypeDecl.addMemberField(FieldDecl f) {
+    addBodyDecl(f);
+    return (FieldDecl) getBodyDecl(getNumBodyDecl() - 1);
+  }
+
+  /**
+   * A BoundMethodAccess is a MethodAccess where the name analysis is bypassed
+   * by explicitly setting the desired binding. This is useful when name
+   * binding is cached and recomputation is undesired.
+   *
+   * <p>Specifying the hostType changes the target qualifier type which is used
+   * to invoke the bound method.
+   */
+  public BoundMethodAccess.BoundMethodAccess(String name, List args, MethodDecl methodDecl,
+      TypeDecl hostType) {
+    this(name, args);
+    this.methodDecl = methodDecl;
+    this.boundHostType = hostType;
+  }
+
+  public BoundMethodAccess.BoundMethodAccess(String name, List args, MethodDecl methodDecl) {
+    this(name, args, methodDecl, methodDecl.hostType());
+  }
+
+  private MethodDecl BoundMethodAccess.methodDecl;
+
+  private TypeDecl BoundMethodAccess.boundHostType;
+
+  eq BoundMethodAccess.decl() = methodDecl;
+
+  public BoundFieldAccess.BoundFieldAccess(FieldDeclarator f) {
+    this(f.name(), f);
+  }
+
+  eq BoundFieldAccess.decl() = getFieldDeclarator();
+
+  public boolean BoundFieldAccess.isExactVarAccess() {
+    return false;
+  }
+
+  public Access MethodDecl.createBoundAccess(List<Expr> args) {
+    return createBoundAccess(args, hostType());
+  }
+
+  public Access MethodDecl.createBoundAccess(List<Expr> args, TypeDecl hostType) {
+    if (isStatic()) {
+      return hostType().createQualifiedAccess().qualifiesAccess(
+          new BoundMethodAccess(name(), args, this, hostType));
+    } else {
+      return new BoundMethodAccess(name(), args, this, hostType);
+    }
+  }
+
+  /**
+   * Creates a bound access to this type.
+   *
+   * <p>Note: this a helper method - not an NTA. The result is not attached to
+   * the AST. To get an access that exists in the AST, use the boundAccess()
+   * attribute instead.
+   */
+  public TypeAccess TypeDecl.createBoundAccess() {
+    return new BoundTypeAccess("", name(), this);
+  }
+
+  /** Creates a type access bound to this type. */
+  syn nta Access TypeDecl.boundAccess() = createBoundAccess();
+
+  // TODO(joqvist): use getTypeDecl().asSet() here?
+  eq BoundTypeAccess.decls() = getTypeDecl();
+
+  rewrite BytecodeTypeAccess {
+    to Access {
+      if (name().indexOf("$") == -1) {
+        return new TypeAccess(packageName(), name());
+      } else {
+        String[] names = name().split("\\$");
+        Access a = null; // The resulting access.
+        String newName = null; // The subname to try.
+        TypeDecl type = null; // Qualifying type if one.
+        for (int i = 0; i < names.length; i++) {
+          newName = (newName == null) ? names[i] : (newName + "$" + names[i]);
+          SimpleSet<TypeDecl> set;
+          if (type != null) {
+            set = type.memberTypes(newName);
+          } else if (packageName().equals("")) {
+            set = lookupType(newName);
+          } else {
+            set = toSet(lookupType(packageName(), newName));
+          }
+          if (set.isSingleton()) {
+            a = (a == null)
+                ? new TypeAccess(packageName(), newName)
+                : a.qualifiesAccess(new TypeAccess(newName));
+            type = set.singletonValue();
+            newName = null; // Reset subname.
+          }
+        }
+        return (a != null) ? a : new TypeAccess(packageName(), name());
+      }
+    }
+  }
+}

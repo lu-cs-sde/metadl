@@ -1,0 +1,102 @@
+/* Copyright (c) 2005-2008, Torbjorn Ekman
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice,
+ * this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ * this list of conditions and the following disclaimer in the documentation
+ * and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its
+ * contributors may be used to endorse or promote products derived from this
+ * software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+
+aspect Arrays {
+  /**
+   * Dimension of this type, if it is an array type.
+   * @return 0 for non-array types, and the array dimension for an array type.
+   */
+  syn lazy int TypeDecl.dimension() = 0;
+
+  eq ArrayDecl.dimension() = componentType().dimension() + 1;
+
+  /**
+   * @return the base type that the array is based on. For example, returns int
+   * for an int[][] array type.
+   */
+  syn lazy TypeDecl TypeDecl.elementType() = this;
+
+  eq ArrayDecl.elementType() = componentType().elementType();
+
+  /**
+   * @return the type of the elements in the array. For example, returns int[]
+   * for an int[][] array type.
+   */
+  eq Program.getChild().componentType() = unknownType();
+
+  eq TypeDecl.arrayType().componentType() = this;
+
+  inh lazy TypeDecl TypeDecl.componentType();
+
+  /**
+   * Nonterminal that builds an array type out of this type.
+   */
+  syn nta TypeDecl TypeDecl.arrayType() {
+    String name = name() + "[]";
+    FieldDeclarator length = new FieldDeclarator(
+        "length", new List<Dims>(), new Opt<Expr>());
+    TypeDecl typeDecl = new ArrayDecl(
+        new Modifiers(new List().add(new Modifier("public"))),
+        name,
+        new Opt(typeObject().createQualifiedAccess()), // [SuperClass]
+        new List().add(typeCloneable().createQualifiedAccess()).add(typeSerializable().createQualifiedAccess()), // Implements*
+        new List<BodyDecl>(
+            new FieldDecl(
+                new Modifiers(new List<Modifier>(
+                    new Modifier("public"),
+                    new Modifier("final"))),
+                new PrimitiveTypeAccess("int"),
+                new List<FieldDeclarator>(length)),
+            new MethodDecl(
+                new Modifiers(new List<Modifier>(new Modifier("public"))),
+                typeObject().createQualifiedAccess(),
+                "clone",
+                new List(),
+                new List(),
+                new Opt(new Block()))));
+    return typeDecl;
+  }
+
+  inh TypeDecl TypeDecl.typeCloneable();
+
+  inh TypeDecl TypeDecl.typeSerializable();
+
+  eq ArrayDecl.name() = fullName();
+
+  eq ArrayDecl.fullName() = getID();
+
+  syn lazy String ArrayTypeAccess.getPackage() = getAccess().type().packageName();
+
+  syn lazy String ArrayTypeAccess.getID() = getAccess().type().name();
+
+  public Access ArrayDecl.createQualifiedAccess() {
+    return new ArrayTypeAccess(componentType().createQualifiedAccess());
+  }
+}

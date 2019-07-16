@@ -1,0 +1,322 @@
+/* Copyright (c) 2005-2008, Torbjorn Ekman
+ *               2015-2016, Jesper Öqvist <jesper.oqvist@cs.lth.se>
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice,
+ * this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ * this list of conditions and the following disclaimer in the documentation
+ * and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its
+ * contributors may be used to endorse or promote products derived from this
+ * software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+
+aspect ErrorCheck {
+
+  protected String ASTNode.sourceFile() {
+    ASTNode node = this;
+    while (node != null && !(node instanceof CompilationUnit)) {
+      node = node.getParent();
+    }
+    if (node == null) {
+      return "Unknown file";
+    }
+    CompilationUnit u = (CompilationUnit) node;
+    return u.relativeName();
+  }
+
+  syn int ASTNode.lineNumber() {
+    ASTNode n = this;
+    while (n.getParent() != null && n.getStart() == 0) {
+      n = n.getParent();
+    }
+    return getLine(n.getStart());
+  }
+
+  eq ClassDecl.lineNumber() = getLine(IDstart);
+
+  eq MethodDecl.lineNumber() = getLine(IDstart);
+
+  // Set start and end position to the same as the argument and return self.
+  public ASTNode ASTNode.setLocation(ASTNode node) {
+    setStart(node.getStart());
+    setEnd(node.getEnd());
+    return this;
+  }
+
+  public ASTNode ASTNode.setStart(int i) {
+    start = i;
+    return this;
+  }
+
+  public int ASTNode.start() {
+    return start;
+  }
+
+  public ASTNode ASTNode.setEnd(int i) {
+    end = i;
+    return this;
+  }
+
+  public int ASTNode.end() {
+    return end;
+  }
+
+  public String ASTNode.location() {
+    return "" + lineNumber();
+  }
+
+  /** @return the source location of this node in the format "filename:line" */
+  public String ASTNode.sourceLocation() {
+    return sourceFile() + ":" + lineNumber();
+  }
+
+  public String ASTNode.errorPrefix() {
+    return sourceLocation() + ":\n" + "  *** Semantic Error: ";
+  }
+
+  public String ASTNode.warningPrefix() {
+    return sourceLocation() + ":\n" + "  *** WARNING: ";
+  }
+
+  public Collection<Problem> CompilationUnit.parseErrors() {
+    return parseErrors;
+  }
+
+  public void CompilationUnit.addParseError(Problem msg) {
+    parseErrors.add(msg);
+  }
+
+  protected Collection<Problem> CompilationUnit.parseErrors = new ArrayList<Problem>();
+
+  public class Problem implements Comparable {
+    public static class Severity {
+      public static final Severity ERROR = new Severity("error");
+      public static final Severity WARNING = new Severity("warning");
+
+      private final String name;
+
+      private Severity(String name) {
+        this.name = name;
+      }
+
+      @Override
+      public String toString() {
+        return name;
+      }
+    }
+
+    public static class Kind {
+      public static final Kind OTHER = new Kind();
+      public static final Kind LEXICAL = new Kind();
+      public static final Kind SYNTACTIC = new Kind();
+      public static final Kind SEMANTIC = new Kind();
+      private Kind() { }
+    }
+
+    protected int line = -1;
+
+    protected int column = -1;
+
+    protected int endLine = -1;
+
+    protected int endColumn = -1;
+
+    protected String fileName;
+
+    protected final String message;
+
+    protected Severity severity = Severity.ERROR;
+
+    protected Kind kind = Kind.OTHER;
+
+    public Problem(String fileName, String message, int line, Severity severity, Kind kind) {
+      this.fileName = fileName;
+      this.message = message;
+      this.line = line;
+      this.kind = kind;
+      this.severity = severity;
+    }
+
+    public Problem(String fileName, String message, int line, int column,
+        Severity severity, Kind kind) {
+      this.fileName = fileName;
+      this.message = message;
+      this.line = line;
+      this.column = column;
+      this.kind = kind;
+      this.severity = severity;
+    }
+
+    public Problem(String fileName, String message, int line, int column, int endLine,
+        int endColumn, Severity severity, Kind kind) {
+      this.fileName = fileName;
+      this.message = message;
+      this.line = line;
+      this.column = column;
+      this.endLine = endLine;
+      this.endColumn = endColumn;
+      this.kind = kind;
+      this.severity = severity;
+    }
+
+    public int line() {
+      return line;
+    }
+
+    public int column() {
+      return column;
+    }
+
+    public int endLine() {
+      return endLine;
+    }
+
+    public int endColumn() {
+      return endColumn;
+    }
+
+    public String fileName() {
+      return fileName;
+    }
+
+    public void setFileName(String fileName) {
+      this.fileName = fileName;
+    }
+
+    public String message() {
+      return message;
+    }
+
+    public Severity severity() {
+      return severity;
+    }
+
+    public Kind kind() {
+      return kind;
+    }
+
+    @Override
+    public String toString() {
+      String location = "";
+      if (line != -1 && column != -1) {
+        location = line + "," + column + ":";
+      } else if (line != -1) {
+        location = line + ":";
+      }
+      return String.format("%s:%s %s: %s", fileName, location, severity, message);
+    }
+
+    @Override
+    public int compareTo(Object o) {
+      if (o instanceof Problem) {
+        Problem other = (Problem) o;
+        if (!fileName.equals(other.fileName)) {
+          return fileName.compareTo(other.fileName);
+        } else if (line != other.line) {
+          // Using Integer.compare(int, int) breaks Java 6 builds.
+          return Integer.valueOf(line).compareTo(other.line);
+        } else {
+          return message.compareTo(other.message);
+        }
+      }
+      return 0;
+    }
+  }
+
+  public Problem ASTNode.errorf(String messagefmt, Object... args) {
+    return error(String.format(messagefmt, args));
+  }
+
+  public Problem ASTNode.error(String message) {
+    ASTNode node = this;
+    while (node != null && !(node instanceof CompilationUnit)) {
+      node = node.getParent();
+    }
+    CompilationUnit cu = (CompilationUnit) node;
+    if (getNumChild() == 0 && getStart() != 0 && getEnd() != 0) {
+      int line = getLine(getStart());
+      int column = getColumn(getStart());
+      int endLine = getLine(getEnd());
+      int endColumn = getColumn(getEnd());
+      return new Problem(sourceFile(), message, line, column, endLine, endColumn,
+          Problem.Severity.ERROR, Problem.Kind.SEMANTIC);
+    } else {
+      return new Problem(sourceFile(), message, lineNumber(), Problem.Severity.ERROR,
+          Problem.Kind.SEMANTIC);
+    }
+  }
+
+  public Problem ASTNode.warning(String message) {
+    ASTNode node = this;
+    while (node != null && !(node instanceof CompilationUnit)) {
+      node = node.getParent();
+    }
+    CompilationUnit cu = (CompilationUnit) node;
+    return new Problem(sourceFile(), message, lineNumber(),
+        Problem.Severity.WARNING, Problem.Kind.SEMANTIC);
+  }
+
+  /**
+   * Collects semantic errors in the AST.
+   *
+   * <p>Separate error checks are added using individual contribution statements.
+   */
+  coll LinkedList<Problem> CompilationUnit.problems() root CompilationUnit;
+
+  syn Collection<Problem> CompilationUnit.errors() {
+    Collection<Problem> errors = new LinkedList<Problem>();
+    for (Problem problem : problems()) {
+      if (problem.severity() == Problem.Severity.ERROR) {
+        errors.add(problem);
+      }
+    }
+    return errors;
+  }
+
+  syn Collection<Problem> CompilationUnit.warnings() {
+    Collection<Problem> warnings = new LinkedList<Problem>();
+    for (Problem problem : problems()) {
+      if (problem.severity() == Problem.Severity.WARNING) {
+        warnings.add(problem);
+      }
+    }
+    return warnings;
+  }
+
+  // Add problem contributions from the implicit constructor invocation NTA.
+  ConstructorDecl contributes {
+    if (checkImplicitConstructorInvocation()) {
+      getImplicitConstructorInvocation().collectContributions();
+    }
+    super.collectContributions();
+  } to CompilationUnit.problems();
+
+  /**
+   * Attribute to determine if the implicit constructor invocation should
+   * be checked for semantic errors.
+   *
+   * @return {@code true} if this constructor declaration has an implicit
+   * constructor invocation
+   */
+  syn boolean ConstructorDecl.checkImplicitConstructorInvocation() =
+      !hasParsedConstructorInvocation() && !hostType().isObject();
+}

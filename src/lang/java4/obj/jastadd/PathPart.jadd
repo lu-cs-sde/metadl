@@ -1,0 +1,628 @@
+/* Copyright (c) 2005-2008, Torbjorn Ekman
+ *               2013-2015, Jesper Öqvist <jesper.oqvist@cs.lth.se>
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice,
+ * this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ * this list of conditions and the following disclaimer in the documentation
+ * and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its
+ * contributors may be used to endorse or promote products derived from this
+ * software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+
+/**
+ * PathPart classes are used to represent parts of the bootclasspath and user
+ * classpath.
+ */
+aspect PathPart {
+
+  /**
+   * Represents a compilation unit/class source file. A ClassSource can be used
+   * to parse a compilation unit containing the class.
+   */
+  public abstract class ClassSource {
+    protected final PathPart sourcePath;
+
+    /**
+     * Used to represent an non-existent compilation unit source file.
+     *
+     * <p>This class source should never be used to attempt to load a class, it
+     * is simply used as a marker to indicate failure to find a compilation
+     * unit.
+     */
+    public static final ClassSource NONE = new ClassSource(null) {
+      @Override
+      public long lastModified() {
+        return 0;
+      }
+      @Override
+      public InputStream openInputStream() {
+        throw new UnsupportedOperationException(
+            "ClassSource.NONE can not open an input stream!");
+      }
+      @Override
+      public String pathName() {
+        return "<Unknown Source>";
+      }
+    };
+
+    public ClassSource(PathPart sourcePath) {
+      this.sourcePath = sourcePath;
+    }
+
+    public PathPart getSourcePath() {
+      return sourcePath;
+    }
+
+    /**
+     * @return Last modification time of the class source.
+     */
+    abstract public long lastModified();
+
+    /**
+     * @return Input stream pointing to the class source.
+     */
+    abstract public InputStream openInputStream() throws IOException;
+
+    /**
+     * It is sufficient to only overload pathName if sourceName=pathName
+     * @return the full name of the class source (e.g. file path).
+     */
+    public String sourceName() {
+      return pathName();
+    }
+
+    /**
+     * @return the path to the source file or the enclosing jar file
+     */
+    abstract public String pathName();
+
+    /**
+     * It is sufficient to only overload pathName if relativeName = pathName
+     * @return the path to the source file, or the path to the file inside a
+     * jar file
+     */
+    public String relativeName() {
+      return pathName();
+    }
+
+    @Override
+    public String toString() {
+      return sourceName();
+    }
+
+    /**
+     * Parses the compilation unit from this class source.
+     *
+     * NB only call this once! The input stream is closed after the compilation
+     * unit is parsed.
+     *
+     * @return parsed compilation unit, or {@code null} if something failed
+     */
+    public CompilationUnit parseCompilationUnit(Program program) throws IOException {
+      InputStream is = openInputStream();
+      try {
+        if (program.options().verbose()) {
+          System.out.print("Loading " + sourceName());
+        }
+
+        long start = System.nanoTime();
+        CompilationUnit u = program.javaParser.parse(is, sourceName());
+        long elapsed = System.nanoTime() - start;
+        program.javaParseTime += elapsed;
+        program.numJavaFiles += 1;
+
+        u.setFromSource(true);
+        u.setClassSource(this);
+
+        if (program.options().verbose()) {
+          System.out.println(" in " + (elapsed / 1000000) + " ms");
+        }
+        return u;
+      } catch (Exception e) {
+        System.err.println("Unexpected error of kind " + e.getClass().getName());
+        throw new Error(sourceName() + ": " + e.getMessage(), e);
+      } finally {
+        if (is != null) {
+          try {
+            is.close();
+          } catch (IOException e) {
+          }
+        }
+      }
+    }
+  }
+
+  public class FileClassSource extends ClassSource {
+    private final String filePath;
+
+    public FileClassSource(PathPart sourcePath, String path) {
+      super(sourcePath);
+      this.filePath = path;
+    }
+
+    @Override
+    public long lastModified() {
+      // last modification time computed only if needed
+      File file = new File(filePath);
+      return file.lastModified();
+    }
+
+    @Override
+    public InputStream openInputStream() throws IOException {
+      File file = new File(filePath);
+      return new FileInputStream(file);
+    }
+
+    @Override
+    public String pathName() {
+      return filePath;
+    }
+  }
+
+  /**
+   * Represents a bytecode class source (.class file).
+   */
+  public abstract class BytecodeClassSource extends ClassSource {
+    public BytecodeClassSource(PathPart sourcePath) {
+      super(sourcePath);
+    }
+
+    @Override
+    public CompilationUnit parseCompilationUnit(Program program) throws IOException {
+      InputStream is = openInputStream();
+      try {
+        if (program.options().verbose()) {
+          System.out.print("Loading " + sourceName());
+        }
+
+        long start = System.nanoTime();
+        CompilationUnit u = program.bytecodeReader.read(is, sourceName(), program);
+        long elapsed = System.nanoTime() - start;
+        program.bytecodeParseTime += elapsed;
+        program.numClassFiles += 1;
+
+        u.setFromSource(false);
+        u.setClassSource(this);
+
+        if (program.options().verbose()) {
+          System.out.println(" in " + (elapsed / 1000000) + " ms");
+        }
+        return u;
+      } catch (AbstractClassfileParser.ClassfileFormatError e) {
+        throw new AbstractClassfileParser.ClassfileFormatError(
+            String.format("Error loading classfile %s: %s\n", sourceName(), e.getMessage()));
+      } catch (Exception e) {
+        throw new Error("Error loading classfile " + sourceName(), e);
+      } finally {
+        if (is != null) {
+          try {
+            is.close();
+          } catch (IOException e) {
+          }
+        }
+      }
+    }
+  }
+
+  public class FileBytecodeClassSource extends BytecodeClassSource {
+    private final String filePath;
+
+    public FileBytecodeClassSource(PathPart sourcePath, String path) {
+      super(sourcePath);
+      this.filePath = path;
+    }
+
+    @Override
+    public long lastModified() {
+      // last modification time computed only when needed
+      File file = new File(filePath);
+      return file.lastModified();
+    }
+
+    @Override
+    public InputStream openInputStream() throws IOException {
+      File file = new File(filePath);
+      return new FileInputStream(file);
+    }
+
+    @Override
+    public String pathName() {
+      return filePath;
+    }
+  }
+
+  public class JarClassSource extends BytecodeClassSource {
+    private final ZipFile jar;
+    private final ZipEntry entry;
+    private final String jarPath;
+
+    public JarClassSource(PathPart sourcePath, ZipFile jar, ZipEntry entry,
+        String jarPath) {
+      super(sourcePath);
+      this.jar = jar;
+      this.entry = entry;
+      this.jarPath = jarPath;
+    }
+
+    public String jarFilePath() {
+      return entry.getName();
+    }
+
+    @Override
+    public long lastModified() {
+      return entry.getTime();
+    }
+
+    @Override
+    public InputStream openInputStream() throws IOException {
+      return jar.getInputStream(entry);
+    }
+
+    @Override
+    public String pathName() {
+      return jarPath;
+    }
+
+    @Override
+    public String relativeName() {
+      return entry.getName();
+    }
+
+    @Override
+    public String sourceName() {
+      return pathName() + ":" + relativeName();
+    }
+  }
+
+  /**
+   * Abstract representation of a collection of class sources.
+   */
+  public abstract class PathPart {
+    /**
+     * This is {@code true} if this path part represents a source path, {@code
+     * true} if this path part represents a bytecode class path.
+     */
+    protected final boolean isSource;
+
+    /**
+     * The file suffix of source files in this path part.
+     */
+    protected final String fileSuffix;
+
+    protected PathPart(boolean isSource) {
+      this.isSource = isSource;
+      this.fileSuffix = isSource ? ".java" : ".class";
+    }
+
+    /**
+     * @return the path which this path part represents
+     */
+    abstract public String getPath();
+
+    /**
+     * Test if a package is available in this path part.
+     *
+     * <p>The implementations of this method may use caching to improve the
+     * efficiency of subsequent calls to the method.
+     *
+     * @return {@code true} if the given package name exists in this path part
+     */
+    abstract public boolean hasPackage(String name);
+
+    public static PathPart createSourcePath(String fileName) {
+      return createPathPart(fileName, true);
+    }
+
+    public static PathPart createClassPath(String fileName) {
+      return createPathPart(fileName, false);
+    }
+
+    private static PathPart createPathPart(String path, boolean fromSource) {
+      try {
+        File file = new File(path);
+        if (file.isDirectory()) {
+          if (fromSource) {
+            return new SourceFolderPath(path);
+          } else {
+            return new ClassFolderPath(path);
+          }
+        } else if (file.isFile()) {
+          return new JarFilePath(path);
+        }
+      } catch (IOException e) {
+        System.err.println("Warning: can not open class path " + path);
+      }
+      return null;
+    }
+
+    /**
+     * Retrieves a compilation unit based on the canonical name.
+     * @param name the canonical name of the class to lookup
+     * @return {@code null} if a compilation unit with the given name is not
+     * available in this PathPart.
+     */
+    public ClassSource findSource(String name) {
+      return ClassSource.NONE;
+    }
+
+    /**
+     * Load the compilation unit of a class.
+     * @param program
+     * @param name The canonical name of the class.
+     */
+    public CompilationUnit getCompilationUnit(Program program, String name) throws IOException {
+      ClassSource source = findSource(name);
+      if (source == ClassSource.NONE) {
+        throw new IOException(String.format("%s file not found: %s",
+              isSource ? "Source" : "Class", name));
+      }
+      return source.parseCompilationUnit(program);
+    }
+  }
+
+  /**
+   * A folder path listed in the classpath. Can contain many .java or .class
+   * files.
+   */
+  public abstract class FolderPath extends PathPart {
+    /**
+     * The root folder of this path part.
+     */
+    private final File folder;
+    private final String folderPath;
+
+    protected FolderPath(String folderPath, boolean isSource) {
+      super(isSource);
+      this.folder = new File(folderPath);
+      this.folderPath = folderPath;
+    }
+
+    protected FolderPath(File folder, boolean isSource) {
+      super(isSource);
+      this.folder = folder;
+      this.folderPath = folder.getPath();
+    }
+
+    @Override
+    public String getPath() {
+      return folderPath;
+    }
+
+    /**
+     * Check if the package exists as a subdirectory.
+     *
+     * <p>We need to use getCanonicalFile in order to get the case-sensitive
+     * package name on case-insensitive file systems or we might incorrectly
+     * report a package name conflict.
+     *
+     * <p>NB: This does not work well with symlinks!
+     *
+     * @param name The qualified name of the package
+     * @return {@code true} if the subdirectory matching the package exists
+     * and contains at least one source or class file.
+     */
+    @Override
+    public boolean hasPackage(String name) {
+      boolean packageIsEmpty = true;
+      int index = name.lastIndexOf('.');
+      String basePackageName = name.substring(index == -1 ? 0 : index+1);
+      String subdir = name.replace('.', File.separatorChar);
+      File pkgFolder = new File(folder, subdir);
+      Collection<String> fileSet = Collections.emptyList();
+      try {
+        // Make sure that there exists a directory with the same name
+        // (case-sensitive) as the requested package
+        File canonical = pkgFolder.getCanonicalFile();
+        if (canonical.isDirectory() && (name.isEmpty() ||
+              canonical.getName().equals(basePackageName))) {
+          File[] files = canonical.listFiles();
+          for (File file: files) {
+            if (file.isFile() && file.getName().endsWith(fileSuffix)) {
+              // found one source file in the package
+              packageIsEmpty = false;
+              break;
+            }
+          }
+        }
+      } catch (Exception e) {
+        // If an exception is thrown then packageIsEmpty will be false
+        // which indicates that the package does not exist.
+        // The likely cause of the exception would be getCanonicalFile.
+      }
+      return !packageIsEmpty;
+    }
+
+    @Override
+    public ClassSource findSource(String name) {
+      String filePath = name.replace('.', File.separatorChar) + fileSuffix;
+      File classFile = new File(folder, filePath);
+      if (classFile.isFile() && classFile.canRead()) {
+        String pathName = classFile.getPath();
+        if (isSource) {
+          return new FileClassSource(this, pathName);
+        } else {
+          return new FileBytecodeClassSource(this, pathName);
+        }
+      }
+      return ClassSource.NONE;
+    }
+
+    @Override
+    public String toString() {
+      return folder.getPath();
+    }
+  }
+
+  /**
+   * Concrete subclass of FolderPath. Represents a source file folder.
+   */
+  public class SourceFolderPath extends FolderPath {
+    /**
+     * Construct a new source file folder path.
+     * @param path
+     */
+    public SourceFolderPath(String path) {
+      super(path, true);
+    }
+  }
+
+  /**
+   * Concrete subclass of FolderPath. Represents a classfile folder.
+   */
+  public class ClassFolderPath extends FolderPath {
+    /**
+     * Construct a new classfile folder path.
+     * @param path
+     */
+    public ClassFolderPath(String path) {
+      super(path, false);
+    }
+  }
+
+  /**
+   * A Jar file path listed in the classpath. Can contain many .class files.
+   * This PathPart lazily initializes its package set and entry set.
+   */
+  public class JarFilePath extends PathPart {
+    private Collection<String> packageIndex = null;
+    private final ZipFile jar;
+    private final String jarPath;
+
+    public JarFilePath(String jarPath) throws IOException {
+      super(false);
+      this.jar = new ZipFile(jarPath);
+      this.jarPath = jarPath;
+    }
+
+    public JarFilePath(File jarFile) throws IOException {
+      super(false);
+      this.jar = new ZipFile(jarFile);
+      this.jarPath = jarFile.getPath();
+    }
+
+    @Override
+    public String getPath() {
+      return jarPath;
+    }
+
+    private static void scanJar(ZipFile jar, Collection<String> packages,
+        String fileSuffix) {
+      // Add all zip entries to a set so that we can quickly check if the Jar
+      // contains a given class.
+      for (Enumeration entries = jar.entries(); entries.hasMoreElements(); ) {
+        ZipEntry entry = (ZipEntry) entries.nextElement();
+        String path = entry.getName();
+        if (path.endsWith(fileSuffix)) {
+          addPackages(packages, path);
+        }
+      }
+    }
+
+    private static void addPackages(Collection<String> packages, String path) {
+      String name = path.replace('/', '.');
+      int index = path.length();
+      do {
+        index = path.lastIndexOf('/', index-1);
+      } while (index >= 0 && packages.add(name.substring(0, index)));
+    }
+
+    /**
+     * Caches the package index from the Jar file so that subsequent calls to
+     * this method are quicker.
+     */
+    @Override
+    public boolean hasPackage(String name) {
+      synchronized (this) {
+        if (packageIndex == null) {
+          packageIndex = new HashSet<String>();
+          scanJar(jar, packageIndex, fileSuffix);
+        }
+      }
+      return packageIndex.contains(name);
+    }
+
+    @Override
+    public ClassSource findSource(String name) {
+      // ZipFiles always use '/' as separator
+      String jarName = name.replace('.', '/') + fileSuffix;
+      ZipEntry entry = jar.getEntry(jarName);
+      if (entry != null) {
+        return new JarClassSource(this, jar, entry, jarPath);
+      } else {
+        return ClassSource.NONE;
+      }
+    }
+
+    @Override
+    public String toString() {
+      return "jar:" + jarPath;
+    }
+  }
+
+  /**
+   * A file specified explicitly on the commandline as a source file.
+   * Must point to a .java file.
+   */
+  public class SourceFilePath extends PathPart {
+    private final String filePath;
+
+    public SourceFilePath(String path) {
+      super(true);
+      this.filePath = path;
+    }
+
+    @Override
+    public String getPath() {
+      return filePath;
+    }
+
+    /**
+     * <b>Use the parsed CompilationUnit to find the package name of the file!</b>
+     */
+    @Override
+    public boolean hasPackage(String name) {
+      return false;
+    }
+
+    @Override
+    public ClassSource findSource(String name) {
+      if (filePath.equals(name)) {
+        File file = new File(filePath);
+        if (file.isFile() && file.canRead()) {
+          return new FileClassSource(this, filePath);
+        }
+      }
+      return ClassSource.NONE;
+    }
+
+    @Override
+    public String toString() {
+      return filePath;
+    }
+  }
+
+}

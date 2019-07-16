@@ -143,8 +143,8 @@ ClassDecl class_declaration =
     modifiers.m? CLASS IDENTIFIER super.s? interfaces.i? class_body.b
                             {: return new ClassDecl(new Modifiers(m), IDENTIFIER, s, i, b); :}
   ;
-Opt super =
-    EXTENDS class_type      {: return new Opt(class_type); :}
+Access super =
+    EXTENDS class_type      {: return class_type; :}
   ;
 List interfaces =
     IMPLEMENTS interface_type_list.i              {: return i; :}
@@ -200,7 +200,8 @@ Expr variable_initializer =
   | array_initializer
   ;
 MethodDecl method_declaration =
-    method_header.m method_body.b              {: m.setBlockOpt(b); return m; :}
+    method_header.m block.b              {: m.setBlockOpt(new Opt(b)); return m; :}
+  | method_header.m SEMICOLON                  {: m.setBlockOpt(new Opt()); return m; :}
   ;
 
 MethodDecl method_header =
@@ -224,10 +225,7 @@ List class_type_list =
     class_type.c                               {: return new List().add(c); :}
   | class_type_list.l COMMA class_type.c       {: return l.add(c); :}
   ;
-Opt method_body =
-    block                                      {: return new Opt(block); :}
-  | SEMICOLON                                  {: return new Opt(); :}
-  ;
+
 StaticInitializer static_initializer =
     STATIC block                               {: return new StaticInitializer(block); :}
   ;
@@ -472,8 +470,8 @@ AssertStmt assert_statement =
   ;
 Expr primary =
     primary_no_new_array @BOTTOM
-  | array_creation_init 
-  | array_creation_uninit 
+  | array_creation_init
+  | array_creation_uninit
   ;
 
 ClassAccess class_literal =
@@ -512,21 +510,18 @@ Expr class_instance_creation_expression =
        e.setStart(NEW.getStart());
        e.setEnd(RPAREN.getEnd());
        return n.qualifiesAccess(e); :}
-  | NEW class_or_interface_type.t LPAREN argument_list.l? RPAREN subclass_body.b
-    {: return new ClassInstanceExpr(t, l, b); :}
-  | primary.n DOT NEW simple_name.id LPAREN argument_list.l? RPAREN subclass_body.b
-    {: ClassInstanceExpr e = new ClassInstanceExpr(id, l, b);
+  | NEW class_or_interface_type.t LPAREN argument_list.l? RPAREN class_body.b
+    {: return new ClassInstanceExpr(t, l, new Opt(new AnonymousDecl(new Modifiers(), "Anonymous", b))); :}
+  | primary.n DOT NEW simple_name.id LPAREN argument_list.l? RPAREN class_body.b
+    {: ClassInstanceExpr e = new ClassInstanceExpr(id, l, new Opt(new AnonymousDecl(new Modifiers(), "Anonymous", b)));
        e.setStart(NEW.getStart());
        e.setEnd(b.getEnd());
        return n.qualifiesAccess(e); :}
-  | name.n DOT NEW simple_name.id LPAREN argument_list.l? RPAREN subclass_body.b
-    {: ClassInstanceExpr e = new ClassInstanceExpr(id, l, b);
+  | name.n DOT NEW simple_name.id LPAREN argument_list.l? RPAREN class_body.b
+    {: ClassInstanceExpr e = new ClassInstanceExpr(id, l, new Opt(new AnonymousDecl(new Modifiers(), "Anonymous", b)));
        e.setStart(NEW.getStart());
        e.setEnd(b.getEnd());
        return n.qualifiesAccess(e); :}
-  ;
-Opt subclass_body =
-    class_body.b                               {: return new Opt(new AnonymousDecl(new Modifiers(), "Anonymous", b)); :}
   ;
 
 List argument_list =
@@ -601,12 +596,12 @@ Access method_invocation =
      return name.qualifiesAccess(s).qualifiesAccess(m); :}
   ;
 Access array_access =
-  name LBRACK expression.e RBRACK 
+  name LBRACK expression.e RBRACK
   {: ArrayAccess a = new ArrayAccess(e);
      a.setStart(LBRACK.getStart());
      a.setEnd(RBRACK.getEnd());
      return name.qualifiesAccess(a); :}
-  | primary_no_new_array.p LBRACK expression.e RBRACK 
+  | primary_no_new_array.p LBRACK expression.e RBRACK
   {: ArrayAccess a = new ArrayAccess(e);
      a.setStart(LBRACK.getStart());
      a.setEnd(RBRACK.getEnd());
@@ -667,7 +662,7 @@ Expr shift_expression =
   | shift_expression.e1 URSHIFT additive_expression.e2  {: return new URShiftExpr(e1, e2); :}
   ;
 Expr relational_expression =
-    shift_expression 
+    shift_expression
   | relational_expression.e1 LT shift_expression.e2     {: return new LTExpr(e1, e2); :}
   | relational_expression.e1 GT shift_expression.e2     {: return new GTExpr(e1, e2); :}
   | relational_expression.e1 LTEQ shift_expression.e2   {: return new LEExpr(e1, e2); :}

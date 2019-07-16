@@ -1,0 +1,154 @@
+import java.util.Collection;
+import java.util.LinkedList;
+import java.util.ArrayList;
+import beaver.Symbol;
+
+aspect Copied {
+  public Access Access.addArrayDims(List list) {
+    Access a = this;
+    for (int i = 0; i < list.getNumChildNoTransform(); i++) {
+      Dims dims = (Dims) list.getChildNoTransform(i);
+      Opt<Expr> opt = dims.getExprOpt();
+      if (opt.getNumChildNoTransform() == 1) {
+        a = new ArrayTypeWithSizeAccess(a, (Expr) opt.getChildNoTransform(0));
+      } else {
+        a = new ArrayTypeAccess(a);
+      }
+      a.setStart(dims.start());
+      a.setEnd(dims.end());
+    }
+    return a;
+  }
+
+
+  public Access Expr.qualifiesAccess(Access access) {
+    Dot dot = new Dot(this, access);
+    dot.setStart(this.getStart());
+    dot.setEnd(access.getEnd());
+    return dot;
+  }
+
+  public Access Dot.qualifiesAccess(Access access) {
+    Dot lastDot = lastDot();
+    Expr last = lastDot.getRightNoTransform();
+    Access qualified = last.qualifiesAccess(access);
+    qualified.setEnd(access.getEnd());
+    lastDot.setRight(qualified);
+    return this;
+  }
+
+  public Access ParseName.qualifiesAccess(Access access) {
+    if (access instanceof ParseName) {
+      ParseName name = (ParseName) access;
+      ArrayList<NamePart> parts = new ArrayList<NamePart>(nameParts);
+      parts.addAll(name.nameParts);
+      return new ParseName(parts);
+    } else {
+      Access result = new Dot(this, access);
+      result.setStart(getStart());
+      result.setEnd(access.getEnd());
+      return result;
+    }
+  }
+
+  public Dot Dot.lastDot() {
+    Dot node = this;
+    while (node.getRightNoTransform() instanceof Dot) {
+      node = (Dot) node.getRightNoTransform();
+    }
+    return node;
+  }
+
+  private ArrayList<NamePart> ParseName.nameParts = new ArrayList<NamePart>();
+
+  public ParseName.ParseName(ArrayList<NamePart> nameParts) {
+    this.nameParts.addAll(nameParts);
+  }
+
+  public ParseName.ParseName(Symbol name) {
+    nameParts.add(new NamePart(name));
+  }
+
+  /**
+   * A part of a paritally classified parse name.
+   */
+  class NamePart {
+    public static final NamePart EMPTY = new NamePart() {
+      @Override
+      public boolean isPackageQualifier() {
+        return true;
+      }
+
+      @Override
+      public String toString() {
+        return "";
+      }
+    };
+
+    protected NamePart pred = EMPTY;
+    protected String name;
+    protected int start;
+    protected int end;
+
+    protected NamePart() {
+    }
+
+    public NamePart(Symbol sym) {
+      name = (String) sym.value;
+      start = sym.getStart();
+      end = sym.getEnd();
+    }
+
+    public TypeDecl lookupType(Expr context) {
+      return null;
+    }
+
+    public boolean hasType(Expr context, NamePart typeName) {
+      return false;
+    }
+
+    public Access buildAccess() {
+      throw new Error("Can not build access from unclassified name part.");
+    }
+
+    /**
+     * @return {@code true} if this name part can precede a package name.
+     */
+    public boolean isPackageQualifier() {
+      return false;
+    }
+
+    @Override
+    public String toString() {
+      return name;
+    }
+  }
+
+  public String BodyDecl.docComment = "";
+  public String TypeDecl.docComment = "";
+
+  protected static final String ASTNode.PRIMITIVE_PACKAGE_NAME = "@primitive";
+
+  public Access ParseName.buildMethodAccess(List<Expr> arguments) {
+    if (nameParts.isEmpty()) {
+      throw new Error("Can not build method access using empty parse name!");
+    }
+    int num = nameParts.size();
+    NamePart methodName = nameParts.get(nameParts.size() - 1);
+    ArrayList<NamePart> head = new ArrayList<NamePart>();
+    for (int i = 0; i < nameParts.size() - 1; ++i) {
+      head.add(nameParts.get(i));
+    }
+    MethodAccess call = new MethodAccess(methodName.toString(), arguments);
+    if (head.isEmpty()) {
+      return call;
+    } else {
+      return new Dot(new ParseName(head), call);
+    }
+  }
+
+  public Access Access.buildMethodAccess(List<Expr> arguments) {
+    throw new Error("Can not build method access from access of type "
+        + getClass().getSimpleName());
+  }
+}

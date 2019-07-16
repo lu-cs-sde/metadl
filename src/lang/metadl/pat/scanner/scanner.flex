@@ -56,7 +56,6 @@ String  = \"[^\"]*\"
 "-"        {  return  sym(Terminals.SUB);            }
 "*"        {  return  sym(Terminals.MUL);            }
 "/"        {  return  sym(Terminals.DIV);            }
-":"        {  return  sym(Terminals.COLON);          }
 "EQ"       {  return  sym(Terminals.EQ);             }
 "NEQ"      {  return  sym(Terminals.NEQ);            }
 "LT"       {  return  sym(Terminals.LT);             }

@@ -68,7 +68,7 @@ Atom atom = pred_sym.pred LPARA term_list.terms RPARA                      {: re
 EDBLiteral edb_literal =
       EDB LPARA pred_ref.pred COMMA term.filelocs RPARA {: return new EDBLiteral(new PredicateSymbol("EDB"), pred, filelocs); :};
 OUTPUTLiteral output_literal = OUTPUT LPARA term.t RPARA {: return new OUTPUTLiteral(new PredicateSymbol("OUTPUT"), t); :};
-import_literal =
+IMPORTLiteral import_literal =
       IMPORT LPARA term.file_loc COMMA pred_ref.program_ref RPARA {: return new IMPORTLiteral(new PredicateSymbol("IMPORT"), file_loc, program_ref); :};
 
 List lit_list = common_literal.lit {: return new List().add(lit); :}

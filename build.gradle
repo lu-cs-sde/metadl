@@ -109,7 +109,7 @@ jar {
 
 // Before compiling, we should generate some Java code:
 compileJava.dependsOn 'generateJava', 'generateScanner', 'generateParser',
-    'genMetadlLang', 'genJava4Lang',
+    'genMetadlLang', //'genJava4Lang',
     'generateConfig', 'generateScannerConfig', 'generateParserConfig'
 
 
@@ -132,7 +132,9 @@ void makeConcatenateTask(String name, String outFile, FileCollection sources) {
 	doFirst {
 	    file(file(outFile).getParent()).mkdirs()
 	}
-	(new File(outFile)).text = sources.collect{it.getText()}.join('\n')
+	doLast {
+	    (new File(outFile)).text = sources.collect{it.getText()}.join('\n')
+	}
     }
 }
 
@@ -178,7 +180,6 @@ void makeGenerateBeaverTask(String name, String outFile, String srcFile, boolean
 	classpath = configurations.jastaddparser
 	main = 'org.jastadd.jastaddparser.Main'
 
-	// Options to Beaver (http://beaver.sourceforge.net/):
 	if (patternGrammar)
 	    args '--pattern_grammar', file(srcFile).path, file(outFile).path
 	else
@@ -186,7 +187,7 @@ void makeGenerateBeaverTask(String name, String outFile, String srcFile, boolean
     }
 }
 
-void makeGenerateLangTask(String taskName, String outDir, String srcLang) {
+void makeGenerateLangTask(String taskName, String outDir, String srcLang, ArrayList<String> lexOrder) {
     tasks.create('MkDirs' + taskName) {
 	doFirst {
 	    file(outDir + '/lang/' + srcLang + '/obj/ast').mkdirs()
@@ -194,25 +195,46 @@ void makeGenerateLangTask(String taskName, String outDir, String srcLang) {
 	}
     }
 
+    makeConcatenateTask('catObjScanner' + taskName,
+			outDir + '/lang/' + srcLang + '/obj/scanner/scanner.flex',
+			files(lexOrder.collect({'src/lang/' + srcLang + '/obj/scanner/' + it})))
+
+    makeConcatenateTask('catPatScanner' + taskName,
+			outDir + '/lang/' + srcLang + '/pat/scanner/scanner.flex',
+			files(lexOrder.collect({'src/lang/' + srcLang + '/pat/scanner/' + it})))
+
+    makeConcatenateTask('catObjlangParser' + taskName,
+			outDir + '/lang/' + srcLang + '/obj/parser/lang.parser',
+			fileTree(dir : 'src/lang/' + srcLang + '/obj/parser', includes : ['**/*.parser']))
+    makeConcatenateTask('catPatlangParser' + taskName,
+			outDir + '/lang/' + srcLang + '/pat/parser/lang.parser',
+			fileTree(dir : 'src/lang/' + srcLang + '/pat/parser', includes : ['**/*.parser']))
+
+    // .parser -> .beaver
     makeGenerateBeaverTask('generateBeaverPatlang' + taskName, outDir + '/lang/' + srcLang + '/PatLangParser.beaver',
-			   'src/lang/' + srcLang + '/pat/parser/lang.parser',
+			   outDir + '/lang/' + srcLang + '/pat/parser/lang.parser',
 			   true)
     makeGenerateBeaverTask('generateBeaverObjlang' + taskName, outDir + '/lang/' + srcLang + '/ObjLangParser.beaver',
-			   'src/lang/' + srcLang + '/obj/parser/lang.parser',
+			   outDir + '/lang/' + srcLang + '/obj/parser/lang.parser',
 			   false)
+    // .beaver -> .java
     makeGenerateParserTask('generateParserPatlang' + taskName, outDir + '/lang/' + srcLang + '/pat/ast',
 			   outDir + '/lang/' + srcLang + '/PatLangParser.beaver')
     makeGenerateParserTask('generateParserObjlang' + taskName, outDir + '/lang/' + srcLang + '/obj/ast',
 			   outDir + '/lang/' + srcLang + '/ObjLangParser.beaver')
+    // .flex -> .java
     makeGenerateScannerTask('generateScannerPatlang' + taskName, outDir + '/lang/' + srcLang + '/pat/ast',
-			    'src/lang/' + srcLang + '/pat/scanner/scanner.flex')
+			    outDir + '/lang/' + srcLang + '/pat/scanner/scanner.flex')
     makeGenerateScannerTask('generateScannerObjlang' + taskName, outDir + '/lang/' + srcLang + '/obj/ast',
-			    'src/lang/' + srcLang + '/obj/scanner/scanner.flex')
+			    outDir + '/lang/' + srcLang + '/obj/scanner/scanner.flex')
+    // .ast, .jrag -> .java
     makeGenerateJavaTask('generateJavaPatlang' + taskName, outDir,
 			 'src/lang/' + srcLang + '/pat/jastadd', 'lang.' + srcLang + '.pat.ast', true)
     makeGenerateJavaTask('generateJavaObjlang' + taskName, outDir,
 			 'src/lang/' + srcLang + '/obj/jastadd', 'lang.' + srcLang + '.obj.ast', false)
 
+
+    // an empty task to depend on everything here
     tasks.create(taskName)
 
     tasks.getByName(taskName).dependsOn tasks.getByName('generateBeaverPatlang' + taskName)
@@ -229,27 +251,18 @@ void makeGenerateLangTask(String taskName, String outDir, String srcLang) {
     tasks.getByName('generateParserPatlang' + taskName).dependsOn tasks.getByName('generateBeaverPatlang' + taskName)
     tasks.getByName('generateParserObjlang' + taskName).dependsOn tasks.getByName('generateBeaverObjlang' + taskName)
 
-    tasks.getByName('generateBeaverObjlang' + taskName).dependsOn tasks.getByName('MkDirs' + taskName)
-    tasks.getByName('generateBeaverPatlang' + taskName).dependsOn tasks.getByName('MkDirs' + taskName)
+    tasks.getByName('generateBeaverObjlang' + taskName).dependsOn tasks.getByName('MkDirs' + taskName), tasks.getByName('catObjlangParser' + taskName)
+    tasks.getByName('generateBeaverPatlang' + taskName).dependsOn tasks.getByName('MkDirs' + taskName), tasks.getByName('catPatlangParser' + taskName)
 
-    tasks.getByName('generateScannerObjlang' + taskName).dependsOn tasks.getByName('MkDirs' + taskName)
-    tasks.getByName('generateScannerPatlang' + taskName).dependsOn tasks.getByName('MkDirs' + taskName)
+    tasks.getByName('generateScannerObjlang' + taskName).dependsOn tasks.getByName('MkDirs' + taskName), tasks.getByName('catObjScanner' + taskName)
+    tasks.getByName('generateScannerPatlang' + taskName).dependsOn tasks.getByName('MkDirs' + taskName), tasks.getByName('catPatScanner' + taskName)
 
     tasks.getByName('generateJavaObjlang' + taskName).dependsOn tasks.getByName('MkDirs' + taskName)
     tasks.getByName('generateJavaPatlang' + taskName).dependsOn tasks.getByName('MkDirs' + taskName)
 }
 
-makeGenerateLangTask('genMetadlLang', 'src/gen/', 'metadl')
-makeGenerateLangTask('genJava4Lang', 'src/gen/', 'java4')
-
-makeConcatenateTask('catJava4ObjlangParser',
-		    'src/lang/java4/obj/parser/lang.parser',
-		    fileTree(dir : 'src/lang/java4/obj/parser', includes : ['**/*.parser']))
-makeConcatenateTask('catJava4PatlangParser',
-		    'src/lang/java4/pat/parser/lang.parser',
-		    fileTree(dir : 'src/lang/java4/obj/parser', includes : ['**/*.parser']))
-
-def javaParserOrder = [
+// The order in which the lex files are concatenated
+def java4LexOrder = [
     "Header.flex",
     "Preamble.flex",
     "Macros.flex",
@@ -261,16 +274,16 @@ def javaParserOrder = [
     "Operators.flex",
     "Separators.flex",
     "Identifiers.flex",
-    "Postamble.flex"]
+    "Postamble.flex"
+]
+
+def metadlLexOrder = ['scanner.flex']
 
 
-makeConcatenateTask('catJava4ObjScanner',
-		    'src/lang/java4/obj/scanner/scanner.flex',
-		    files(javaParserOrder.collect({'src/lang/java4/obj/scanner/' + it})))
+makeGenerateLangTask('genMetadlLang', 'src/gen/', 'metadl', metadlLexOrder)
+makeGenerateLangTask('genJava4Lang', 'src/gen/', 'java4', java4LexOrder)
 
-makeConcatenateTask('catJava4PatScanner',
-		    'src/lang/java4/pat/scanner/scanner.flex',
-		    files(javaParserOrder.collect({'src/lang/java4/pat/scanner/' + it})))
+
 
 
 genJava4Lang.dependsOn 'catJava4ObjlangParser', 'catJava4PatlangParser',

@@ -5,8 +5,8 @@
 IMPORT("tests/evaluation/withimport/evalTest_7_input.mdl", 'Program).
 
 analyze ('Program) {
-  InputVar($p, $i, v) :- <: ... :- ..., $p(..., $i:$x, ...), ... .:>, ID($x, v).
-  InputVar($p, $i, v) :- <: ... :- ..., NOT($p(..., $i:$x, ...)), ... .:>, ID($x, v).
+  InputVar($p, $i, v) :- <: ... :- ..., $p(..., $x, ...), ... .:>, INDEX($x, $i), ID($x, v).
+  InputVar($p, $i, v) :- <: ... :- ..., NOT($p(..., $x, ...)), ... .:>, INDEX($x, $i), ID($x, v).
 
   InRHSOfSameRule($p, $p2) :- <: ... :- ..., $p(...), ..., $p2(...), ... . :>.
   InRHSOfSameRule($p, $p2) :- <: ... :- ..., $p(...), ..., NOT($p2(...)), ... . :>.
@@ -14,7 +14,7 @@ analyze ('Program) {
   InRHSOfSameRule($p, $p2) :- <: ... :- ..., NOT($p(...)), ..., NOT($p2(...)), ... . :>.
   InRHSOfSameRule($p2, $p) :- InRHSOfSameRule($p, $p2).
 
-  InputVarFrom($q, $i, $p, $k, v) :- <: ..., $q(..., $i:$x, ...), ... :- ..., $p(...), ... .:>, InputVar($p, $k, v), ID($x, v), ID($y, v).
+  InputVarFrom($q, $i, $p, $k, v) :- <: ..., $q(..., $x, ...), ... :- ..., $p(...), ... .:>, INDEX($x, $i), InputVar($p, $k, v), ID($x, v), ID($y, v).
 
   InputVarsFrom(q, $i, p, $k) :- InputVarFrom($q, $i, $p, $k, v), ID($q, q), ID($p, p).
 

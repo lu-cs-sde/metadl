@@ -5,9 +5,9 @@
 IMPORT("tests/evaluation/withimport/evalTest_8_input.mdl", 'Program).
 
 analyze ('Program) {
-  Arity(pname, arity, l, c) :- <: ... :- ..., $p(...,$i:$x), ... .:>, BIND(arity, $i+1), ID($p, pname), SRC($p, l, c).
-  Arity(pname, arity, l, c) :- <: ... :- ..., NOT($p(...,$i:$x)), ... .:>, BIND(arity, $i+1), ID($p, pname), SRC($p, l, c).
-  Arity(pname, arity, l, c) :- <: ..., $p(...,$i:$x), ... :- ... .:>, BIND(arity, $i+1), ID($p, pname), SRC($p, l, c).
+  Arity(pname, arity, l, c) :- <: ... :- ..., $p(...,$x), ... .:>, INDEX($x, $i), BIND(arity, $i+1), ID($p, pname), SRC($p, l, c).
+  Arity(pname, arity, l, c) :- <: ... :- ..., NOT($p(...,$x)), ... .:>, INDEX($x, $i), BIND(arity, $i+1), ID($p, pname), SRC($p, l, c).
+  Arity(pname, arity, l, c) :- <: ..., $p(...,$x), ... :- ... .:>, INDEX($x, $i), BIND(arity, $i+1), ID($p, pname), SRC($p, l, c).
 }
 
 OUTPUT('Arity).

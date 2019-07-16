@@ -280,15 +280,23 @@ aspect Pattern {
 		// An add-hoc way of implementing parameterized collection attributes
 		ArrayList<lang.ast.Literal> list = new ArrayList<>();
 		list.addAll(asLiterals(ctx, root));
-		for (ASTNode c : astChildren())
-			list.addAll(c.literals(ctx, null));
+		for (ASTNode c : astChildren()) {
+			// Gaps might have null children, because the inherit from
+			// the original AST node, skip them
+			if (c != null)
+				list.addAll(c.literals(ctx, null));
+		}
 		return list;
 	}
 
 	syn TreeSet<lang.ast.Variable> ASTNode.metavariables() {
 		TreeSet<lang.ast.Variable> vars = new TreeSet<>(lang.ast.Term.termComparator);
-		for (ASTNode c : astChildren())
-			vars.addAll(c.metavariables());
+		for (ASTNode c : astChildren()) {
+			if (c != null)
+				// Gaps might have null children, because the inherit from
+				// the original AST node, skip them
+				vars.addAll(c.metavariables());
+		}
 		return vars;
 	}
 
@@ -385,6 +393,27 @@ aspect AnalyzeBlock {
 			return new lang.ast.Rule(headList, bodyList);
 		}
 
+
+		public static lang.ast.Rule makeIndexRule(AnalyzeContext ctx) {
+			lang.ast.List<lang.ast.CommonLiteral> headList = new lang.ast.List<>();
+			lang.ast.List<lang.ast.CommonLiteral> bodyList = new  lang.ast.List<>();
+
+			// The INDEX relation maps a node to its position inside a list
+			// INDEX(n, i) :- P("List", _, i, n, _)
+			headList.add(new lang.ast.Atom(new lang.ast.PredicateSymbol(ctx.scopePrefix + "INDEX"),
+										   new lang.ast.List<lang.ast.Term>()
+										   .add(new lang.ast.Variable("n"))
+										   .add(new lang.ast.Variable("i"))));
+			bodyList.add(new lang.ast.Atom(new lang.ast.PredicateSymbol(ctx.progRelName),
+									   new lang.ast.List<lang.ast.Term>()
+										   .add(new lang.ast.StringConstant("List"))
+										   .add(new lang.ast.Wildcard())
+										   .add(new lang.ast.Variable("i"))
+										   .add(new lang.ast.Variable("n"))
+										   .add(new lang.ast.Wildcard())));
+			return new lang.ast.Rule(headList, bodyList);
+		}
+
 		public static lang.ast.List<lang.ast.Clause> generateHelperRelations(AnalyzeContext ctx) {
 			lang.ast.List<lang.ast.Clause> ret = new lang.ast.List<>();
 
@@ -403,6 +432,9 @@ aspect AnalyzeBlock {
 			// represented by a metavariable
 			ret.add(makeSrcInfoRule(ctx));
 
+			// Insert a relation to map nodes to their position inside a list
+			ret.add(makeIndexRule(ctx));
+
 			return ret;
 		}
 
@@ -414,6 +446,7 @@ aspect AnalyzeBlock {
 			case "ID":
 			case "REF":
 			case "SRC":
+			case "INDEX":
 				s = predName; break;
 			case "EXPR": s = "EXPR"; break;
 			default: return null;

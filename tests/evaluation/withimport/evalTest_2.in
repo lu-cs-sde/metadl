@@ -1,13 +1,13 @@
 IMPORT("./tests/evaluation/withimport/input_1.in", 'Program1).
 
 analyze ('Program1) {
-	Arity($i) :- <:$p(...,$i:$v).:>.
+	Arity(i) :- <:$p(...,$v).:>, INDEX($v, i).
 }
 
 OUTPUT('Arity).
 
 analyze ('Program1) {
-	MoreThan3(v) :- <:$p($v1, $v2, ..., $i:$v).:>, BIND(v, $i + 1).
+	MoreThan3(v) :- <:$p($v1, $v2, ..., $v).:>, INDEX($v, i), BIND(v, i + 1).
 }
 
 OUTPUT('MoreThan3).

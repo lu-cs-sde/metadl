@@ -1,0 +1,8 @@
+IMPORT('P, "tests/evaluation/withimport/evalTest_12_input.java", "java4").
+
+analyze ('P, "java4") {
+	IsClass("A") :- <: class A {  } :>.
+	IsClass("D") :- <: class D {  } :>.
+}
+
+OUTPUT('IsClass).

@@ -40,7 +40,9 @@ aspect ErrorCheck {
       return "Unknown file";
     }
     CompilationUnit u = (CompilationUnit) node;
-    return u.relativeName();
+	// alexdura: modified
+    // return u.relativeName();
+	return null;
   }
 
   syn int ASTNode.lineNumber() {
@@ -302,21 +304,4 @@ aspect ErrorCheck {
     return warnings;
   }
 
-  // Add problem contributions from the implicit constructor invocation NTA.
-  ConstructorDecl contributes {
-    if (checkImplicitConstructorInvocation()) {
-      getImplicitConstructorInvocation().collectContributions();
-    }
-    super.collectContributions();
-  } to CompilationUnit.problems();
-
-  /**
-   * Attribute to determine if the implicit constructor invocation should
-   * be checked for semantic errors.
-   *
-   * @return {@code true} if this constructor declaration has an implicit
-   * constructor invocation
-   */
-  syn boolean ConstructorDecl.checkImplicitConstructorInvocation() =
-      !hasParsedConstructorInvocation() && !hostType().isObject();
 }

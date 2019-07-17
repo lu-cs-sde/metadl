@@ -33,10 +33,6 @@ aspect NodeConstructors {
     this(new Modifiers(new List()), type, name);
   }
 
-  public ParameterDeclaration.ParameterDeclaration(TypeDecl type, String name) {
-    this(new Modifiers(new List()), type.createQualifiedAccess(), name);
-  }
-
   public PackageAccess.PackageAccess(String name, int start, int end) {
     this(name);
     this.start = this.Packagestart = start;

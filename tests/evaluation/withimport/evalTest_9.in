@@ -1,4 +1,4 @@
-IMPORT("tests/evaluation/withimport/evalTest_9_input.in", 'Program).
+IMPORT( 'Program, "tests/evaluation/withimport/evalTest_9_input.in", "metadl").
 
 analyze('Program) {
 	Expr($p, 0, $q, "+"), Expr($p, 1, $r, "+") :- $p <:$q + $r:>.

@@ -2,7 +2,7 @@
 # CartesianProjectionWarning(P, i, Q): Field i in predicate P is always a projection of the same field in Q, without any filtering of Q's records.
 # FIXME: include the offending rule (is that possible?)
 
-IMPORT("tests/evaluation/withimport/evalTest_7_input.mdl", 'Program).
+IMPORT( 'Program, "tests/evaluation/withimport/evalTest_7_input.mdl", "metadl").
 
 analyze ('Program) {
   InputVar($p, $i, v) :- <: ... :- ..., $p(..., $x, ...), ... .:>, INDEX($x, $i), ID($x, v).

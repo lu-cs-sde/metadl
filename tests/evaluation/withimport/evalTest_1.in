@@ -1,7 +1,6 @@
 # An incomplete type check/inference  for DatalogM
 
-IMPORT("tests/evaluation/withimport/evalTest_1.in", 'Program1).
-
+IMPORT( 'Program1, "./tests/evaluation/withimport/evalTest_1.in", "metadl").
 
 # For the purpose of type inference, provide a clauses that contain ground instances of all the predicates.
 Program(0, 0, 0),

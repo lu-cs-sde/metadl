@@ -25,7 +25,7 @@ OUTPUTLiteral:Literal ::= Term;
 NEGLiteral:Literal    ::= Literal;
 
 BINDLiteral:Literal ::= Variable:CommonVariable Right:Expr;
-IMPORTLiteral:Literal ::= FileLoc:Term ProgramRef:PredicateRef;
+IMPORTLiteral:Literal ::= ProgramRef:PredicateRef FileLoc:StringConstant Lang:StringConstant ;
 
 EQLiteral:BinaryExclusiveTermLiteral;
 NEQLiteral:BinaryExclusiveTermLiteral;

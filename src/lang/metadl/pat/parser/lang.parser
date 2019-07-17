@@ -69,7 +69,7 @@ EDBLiteral edb_literal =
       EDB LPARA pred_ref.pred COMMA term.filelocs RPARA {: return new EDBLiteral(new PredicateSymbol("EDB"), pred, filelocs); :};
 OUTPUTLiteral output_literal = OUTPUT LPARA term.t RPARA {: return new OUTPUTLiteral(new PredicateSymbol("OUTPUT"), t); :};
 IMPORTLiteral import_literal =
-      IMPORT LPARA term.file_loc COMMA pred_ref.program_ref RPARA {: return new IMPORTLiteral(new PredicateSymbol("IMPORT"), file_loc, program_ref); :};
+      IMPORT LPARA pred_ref.program_ref COMMA string_constant.file_loc COMMA string_constant.lang RPARA {: return new IMPORTLiteral(new PredicateSymbol("IMPORT"), program_ref, file_loc, lang); :};
 
 List lit_list = common_literal.lit {: return new List().add(lit); :}
               | lit_list.list COMMA common_literal.c {: return list.add(c); :}

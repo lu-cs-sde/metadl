@@ -1,4 +1,4 @@
-IMPORT("./tests/evaluation/withimport/evalTest_3_input.mdl", 'Program).
+IMPORT( 'Program, "./tests/evaluation/withimport/evalTest_3_input.mdl", "metadl").
 
 analyze ('Program) {
    Positive(name) :- <:... :- ..., $p(...) , ... .:>, ID($p, name).

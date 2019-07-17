@@ -4,7 +4,7 @@ MetaDL is a Datalog language extension that enables analysis of Datalog
 programs inside Datalog.
 
 #+BEGIN_SRC prolog
-IMPORT("p/t0.mdl", 'Program).
+IMPORT('Program, "p/t0.mdl", "metadl").
 
 analyze ('Program) {
   Arity(pname, arity) :- <: ... :- ..., $p(...,$i:$x), ... .:>, BIND(arity, $i+1), ID($p, pname).
@@ -25,7 +25,7 @@ with roots in logic programming. Relations between tables are expressed as Horn 
 Current supported Meta-Literals:
 - ~EDB('P, "facts.csv").~ add the facts in ~facts.csv~ to the relation ~P~
 - ~OUTPUT('P).~ output the tuples in relation ~P~ to ~P.csv~
-- ~IMPORT("program.mdl", 'P)~ generate a program representation relation
+- ~IMPORT('P, "program.mdl", "metadl")~ generate a program representation relation
 from ~program.mdl~ and add its tuples to the relation ~P~
 
 Additional Supported features:
@@ -65,7 +65,7 @@ Special metapredicates are permitted only inside ~analyze~ blocks.
 #+BEGIN_SRC
 #Import a program that contains BIND(t, x*y + ((1 + 2*3) - 1) / 2)
 
-IMPORT("bpatterns.in", 'P).
+IMPORT('P, "bpatterns.in", "metadl").
 
 analyze('P) {
 	    Expr($p, 0, $q, "+"), Expr($p, 1, $r, "+") :- $p <:$q + $r:>.

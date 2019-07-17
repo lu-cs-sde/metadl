@@ -1,4 +1,4 @@
-IMPORT("tests/evaluation/withimport/evalTest_1.in", 'Program).
+IMPORT( 'Program, "./tests/evaluation/withimport/evalTest_1.in", "metadl").
 
 analyze ('Program) {
 	# Constants

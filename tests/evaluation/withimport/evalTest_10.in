@@ -1,4 +1,4 @@
-IMPORT("tests/evaluation/withimport/evalTest_10_input.mdl", 'Program).
+IMPORT( 'Program, "tests/evaluation/withimport/evalTest_10_input.mdl", "metadl").
 
 # Extract predicates referred in the deprecated relation
 

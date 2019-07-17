@@ -88,9 +88,11 @@ aspect PretyPrinting {
     public void IMPORTLiteral.prettyPrint(PrettyPrinter pr) {
 		pr.prettyPrint(getPredicate());
 		pr.out.print("(");
+		pr.prettyPrint(getProgramRef());
+		pr.out.print(",");
 		pr.prettyPrint(getFileLoc());
 		pr.out.print(",");
-		pr.prettyPrint(getProgramRef());
+		pr.prettyPrint(getLang());
 		pr.out.print(")");
 	}
 

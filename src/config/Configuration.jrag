@@ -26,7 +26,7 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
-
+import java.util.AbstractMap;
 
 aspect Configuration {
     syn String Description.inputFile() = getInput().getPath();
@@ -139,24 +139,25 @@ aspect Souffle {
 		if (meta_import != null) {
 			// map predicate name to program source files, to handle the case when multiple
 			// files are imported to the same program relation.
-			HashMap<String, ArrayList<String>> predicateSrcFiles = new HashMap<>();
+			HashMap<String, ArrayList<Map.Entry<String, String>>> predicateSrcFiles = new HashMap<>();
 			for (PredicateSymbol psym : meta_import.predicates()) {
 				IMPORTLiteral imp = (IMPORTLiteral) psym.literal();
 				String progFileLoc = ((StringConstant)imp.getFileLoc()).getSTRING();
+				String lang = ((StringConstant)imp.getLang()).getSTRING();
 				PredicateRef predref = (PredicateRef)(imp.getProgramRef());
 				String predName = predref.getPRED_ID();
 
-				ArrayList<String> files = predicateSrcFiles.get(predName);
+				ArrayList<Map.Entry<String, String>> files = predicateSrcFiles.get(predName);
 				if (files != null) {
-					files.add(progFileLoc);
+					files.add(new AbstractMap.SimpleEntry<String, String>(progFileLoc, lang));
 				} else {
 					files = new ArrayList<>();
-					files.add(progFileLoc);
+					files.add(new AbstractMap.SimpleEntry<String, String>(progFileLoc, lang));
 					predicateSrcFiles.put(predName, files);
 				}
 			}
 
-			for (Map.Entry<String, ArrayList<String>> predicateSrcFile : predicateSrcFiles.entrySet()) {
+			for (Map.Entry<String, ArrayList<Map.Entry<String, String>>> predicateSrcFile : predicateSrcFiles.entrySet()) {
 				String predName = predicateSrcFile.getKey();
 				File output_fp = new File(factsDir() + "/" + predName + ".csv");
 				if(output_fp.exists() && !output_fp.isDirectory()) {
@@ -168,17 +169,28 @@ aspect Souffle {
 				}
 
 				boolean append = false;
-				for (String progFileLoc : predicateSrcFile.getValue()) {
-					lang.metadl.obj.ast.Program importedProgram = null;
+				for (Map.Entry<String, String> progFileLang : predicateSrcFile.getValue()) {
+					Relation programRel = null;
 					try {
-						importedProgram = lang.metadl.obj.ast.Program.fromFileLoc(progFileLoc);
+						switch (progFileLang.getValue()) {
+						case "metadl" :
+							programRel = lang.metadl.obj.ast.Program.fromFileLoc(progFileLang.getKey()).asRelation();
+							break;
+						case "java4" :
+							programRel = lang.java4.obj.ast.Program.fromFileLoc(progFileLang.getKey()).asRelation();
+							break;
+						default:
+							SimpleLogger.logger().log("Unknown language to IMPORT: " + progFileLang.getValue(),
+													  SimpleLogger.LogLevel.Level.ERROR);
+							System.exit(1);
+						}
 					} catch(Exception e) {
 						SimpleLogger.logger().log("Could not open file for IMPORT: "
-												  + progFileLoc, SimpleLogger.LogLevel.Level.ERROR);
+												  + progFileLang, SimpleLogger.LogLevel.Level.ERROR);
 						System.exit(1);
 					}
 
-					Relation programRel = importedProgram.asRelation();
+
 					CSVUtil.dumpFileInto(programRel, output_fp, append);
 					append = true;
 				}

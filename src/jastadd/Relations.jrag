@@ -12,7 +12,7 @@ aspect Arity {
     eq OUTPUTLiteral.arity() = 1;
     eq BINDLiteral.arity()   = 2;
     eq BinaryExclusiveTermLiteral.arity() = 2;
-    eq IMPORTLiteral.arity() = 2;
+    eq IMPORTLiteral.arity() = 3;
     eq Atom.arity() = getNumTerms();
 
     syn int PredicateSymbol.arity() = literal().arity();
@@ -58,7 +58,7 @@ aspect Relation {
 	eq BinaryExclusiveTermLiteral.toTuple()  = new PseudoTuple(0);
 	eq BINDLiteral.toTuple()   = new PseudoTuple(0);
 	eq NEGLiteral.toTuple() = ((Literal)getLiteral()).toTuple();
-	eq IMPORTLiteral.toTuple() = new PseudoTuple(getFileLoc(), getProgramRef());
+	eq IMPORTLiteral.toTuple() = new PseudoTuple(getProgramRef(), getFileLoc(), getLang());
 }
 
 aspect Rules {

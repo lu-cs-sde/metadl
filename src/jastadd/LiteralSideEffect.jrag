@@ -69,21 +69,33 @@ aspect LiteralSideEffect {
 	public void IMPORTLiteral.sideEffect(Program program, Description descr, Relation delta) {
 		SimpleLogger.logger().log("Computing side effects of loading program...", SimpleLogger.LogLevel.Level.DEBUG);
 		for (PseudoTuple t : delta.tuples()) {
-			SimpleLogger.logger().log("Loading program " + t.coord(0), SimpleLogger.LogLevel.Level.DEBUG);
-			lang.metadl.obj.ast.Program importedProgram = null;
+			SimpleLogger.logger().log("Loading program " + t.coord(1), SimpleLogger.LogLevel.Level.DEBUG);
+			Relation importedProgramRel = null;
+			String srcLang = t.coord(2).toString();
 			try {
-				importedProgram = lang.metadl.obj.ast.Program.fromFileLoc(t.coord(0).toString());
+				switch (srcLang) {
+				case "metadl":
+					importedProgramRel = lang.metadl.obj.ast.Program.fromFileLoc(t.coord(1).toString()).asRelation();
+					break;
+				case "java4:":
+					importedProgramRel = lang.java4.obj.ast.Program.fromFileLoc(t.coord(1).toString()).asRelation();
+					break;
+				default:
+					SimpleLogger.logger().log("Unknown language to IMPORT: " + srcLang,
+											  SimpleLogger.LogLevel.Level.ERROR);
+					System.exit(1);
+				}
 			} catch (beaver.Parser.Exception e) {
-				SimpleLogger.logger().log("Error while parsing imported file: " + t.coord(0).toString(),
+				SimpleLogger.logger().log("Error while parsing imported file: " + t.coord(1).toString(),
 										  SimpleLogger.LogLevel.Level.ERROR);
 				SimpleLogger.logger().log(e.toString());
 				System.exit(1);
 			} catch(Exception e) {
-				SimpleLogger.logger().log("Could not open file for IMPORT: " + t.coord(0).toString(), SimpleLogger.LogLevel.Level.ERROR);
+				SimpleLogger.logger().log("Could not open file for IMPORT: " + t.coord(1).toString(), SimpleLogger.LogLevel.Level.ERROR);
 				System.exit(1);
 			}
 
-			Relation importedProgramRel = importedProgram.asRelation();
+
 			FormalPredicate fp = program.formalPredicateMap().get(getProgramRef().getPRED_ID());
 			fp.relation.addAll(importedProgramRel);
 		}

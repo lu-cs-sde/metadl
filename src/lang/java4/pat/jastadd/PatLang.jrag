@@ -400,9 +400,6 @@ aspect LanguageSpecific {
 	eq Literal.tokens() {
 		return Collections.singletonList(getLITERAL());
 	}
-	// eq Variable.tokens() {
-	// 	return Collections.singletonList(getVAR_ID());
-	// }
 	eq CompilationUnit.tokens() {
 		return Collections.singletonList(getPackageDecl());
 	}

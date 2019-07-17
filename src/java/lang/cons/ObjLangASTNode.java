@@ -1,5 +1,8 @@
 package lang.cons;
 
+import lang.ast.AnalyzeContext;
+import java.util.TreeSet;
+import java.util.ArrayList;
 /**
    Interface implemented by ASTNode subclasses that can be
    replaced by metavariables.
@@ -31,5 +34,9 @@ public interface ObjLangASTNode {
 	 */
 	String getRelation();
 
-
+	/**
+	   Common interface for relational pattern representation
+	 */
+	TreeSet<lang.ast.Variable> metavariables();
+	ArrayList<lang.ast.Literal> literals(AnalyzeContext ctx, lang.ast.CommonVariable root);
 }

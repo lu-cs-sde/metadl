@@ -325,7 +325,7 @@ aspect TypeCheck {
 		if (getProgramRef().type() != PredicateRefType.get())
 			return new TypeError(this) {
 				public String report() {
-					return "Second argument to IMPORT must have type " +
+					return "First argument to IMPORT must have type " +
 						PredicateRefType.get() + ", but got " + getProgramRef().type() + ".";
 				}
 			};
@@ -333,7 +333,7 @@ aspect TypeCheck {
 		if (getFileLoc().type() != StringType.get())
 			return new TypeError(this) {
 				public String report() {
-					return "First argument to IMPORT must have type " +
+					return "Second argument to IMPORT must have type " +
 						StringType.get() + ", but got " + getFileLoc().type() + ".";
 				}
 			};
@@ -358,12 +358,13 @@ aspect TypeInference {
 	eq Literal.getChild().indexInLiteral() = -1;
 	eq Expr.getChild().indexInLiteral() = -1;
 	eq AnalyzeBlock.getProgramRef().indexInLiteral() = -1;
+	eq AnalyzeBlock.getLang().indexInLiteral() = -1;
 	// explicit rules for special literals
 	eq EDBLiteral.getPredicateRef().indexInLiteral() = 0;
 	eq EDBLiteral.getFileLoc().indexInLiteral() = 1;
 	eq OUTPUTLiteral.getTerm().indexInLiteral() = 0;
-	eq IMPORTLiteral.getFileLoc().indexInLiteral() = 0;
-	eq IMPORTLiteral.getProgramRef().indexInLiteral() = 1;
+	eq IMPORTLiteral.getFileLoc().indexInLiteral() = 1;
+	eq IMPORTLiteral.getProgramRef().indexInLiteral() = 0;
 
 
 	IntConstant contributes (new PredicateType.Index(indexInLiteral(), IntegerType.get()))

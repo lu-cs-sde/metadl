@@ -78,7 +78,7 @@ aspect LiteralSideEffect {
 					importedProgramRel = lang.metadl.obj.ast.Program.fromFileLoc(t.coord(1).toString()).asRelation();
 					break;
 				case "java4:":
-					importedProgramRel = lang.java4.obj.ast.Program.fromFileLoc(t.coord(1).toString()).asRelation();
+					importedProgramRel = lang.java4.obj.ast.CompilationUnit.fromFileLoc(t.coord(1).toString()).asRelation();
 					break;
 				default:
 					SimpleLogger.logger().log("Unknown language to IMPORT: " + srcLang,

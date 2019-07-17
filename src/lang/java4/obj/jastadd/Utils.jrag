@@ -1,0 +1,12 @@
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.File;
+import beaver.Parser;
+
+aspect Utils {
+	static public CompilationUnit CompilationUnit.fromFileLoc(String loc) throws IOException, beaver.Parser.Exception {
+		ObjLangScanner scanner = new ObjLangScanner(new FileReader(new File(loc)));
+		ObjLangParser parser = new ObjLangParser();
+		return (CompilationUnit) parser.parse(scanner);
+	}
+}

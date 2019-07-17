@@ -1,6 +1,7 @@
 import lang.cons.Constraint;
 import java.io.StringReader;
-
+import java.util.Arrays;
+import lang.cons.ObjLangASTNode;
 
 aspect MetaLang {
 	/**
@@ -63,30 +64,54 @@ aspect MetaLang {
 		return literals;
 	}
 
-	syn lang.metadl.pat.ast.ASTNode Pattern.patternAST() {
-		lang.metadl.pat.ast.ASTNode node = null;
+	syn ObjLangASTNode Pattern.patternAST() {
+		ObjLangASTNode node = null;
 
-		short[] AltGoals = new short[]{
-			lang.metadl.pat.ast.PatLangParser.AltGoals.clause,
-			lang.metadl.pat.ast.PatLangParser.AltGoals.common_literal,
-			lang.metadl.pat.ast.PatLangParser.AltGoals.expr
-		};
+
+		String srcLang = enclosingAnalyzeBlock().getLang().getSTRING();
 
 		java.util.List<Exception> exceptions = new java.util.ArrayList<>();
 
 		ByteArrayOutputStream errStream = new ByteArrayOutputStream();
 
+		java.util.List<Short> altGoals = null;
+		switch (srcLang) {
+		case "metadl":
+			altGoals = Arrays.asList(lang.metadl.pat.ast.PatLangParser.AltGoals.clause,
+									 lang.metadl.pat.ast.PatLangParser.AltGoals.common_literal,
+									 lang.metadl.pat.ast.PatLangParser.AltGoals.expr);
+			break;
+		case "java4":
+			altGoals = Arrays.asList(lang.java4.pat.ast.PatLangParser.AltGoals.class_declaration);
+			break;
+		}
 
 		// Try all the goals until one succeeds. Also collect the errors to report them
 		// in case none of the parsing attempts is successful.
-		for (short g : AltGoals) {
+		for (short g : altGoals) {
+			beaver.Scanner scanner = null;
+			beaver.Parser parser = null;
+
+
+			switch (srcLang) {
+			case "metadl":
+				scanner = new lang.metadl.pat.ast.LangScanner(new StringReader(getPATTERN()));
+				parser = new lang.metadl.pat.ast.PatLangParser();
+				break;
+			case "java4":
+				scanner = new lang.java4.pat.ast.PatLangScanner(new StringReader(getPATTERN()));
+				parser = new lang.java4.pat.ast.PatLangParser();
+				break;
+			default:
+				SimpleLogger.logger().log("Unknown language in analyze block: " + srcLang);
+				System.exit(1);
+			}
+
 			try {
-				lang.metadl.pat.ast.LangScanner scanner = new lang.metadl.pat.ast.LangScanner(new StringReader(getPATTERN()));
-				lang.metadl.pat.ast.PatLangParser parser = new lang.metadl.pat.ast.PatLangParser();
 				// the parsers writes directly to System.err so we capture it
 				PrintStream oldErr = System.err;
 				System.setErr(new PrintStream(errStream));
-				node = (lang.metadl.pat.ast.ASTNode) parser.parse(scanner, g);
+				node = (ObjLangASTNode) parser.parse(scanner, g);
 				System.setErr(oldErr);
 				break;
 			} catch (Exception e) {

@@ -31,7 +31,7 @@ aspect DatalogProject {
 		return UID;
 	}
 
-	coll Relation Program.datalogProjection() [new Relation(5)] with addTuples root Program;
+	coll Relation CompilationUnit.datalogProjection() [new Relation(5)] with addTuples root CompilationUnit;
 
 	syn java.util.List<PseudoTuple> ASTNode.toTuples() {
 		String relName = getRelation();
@@ -103,9 +103,9 @@ aspect DatalogProject {
 		return Collections.emptyList();
 	}
 
-	ASTNode contributes toTuples() to Program.datalogProjection() ;
+	ASTNode contributes toTuples() to CompilationUnit.datalogProjection() ;
 
-	syn Relation Program.asRelation() = datalogProjection();
+	syn Relation CompilationUnit.asRelation() = datalogProjection();
 }
 
 aspect LanguageSpecific {

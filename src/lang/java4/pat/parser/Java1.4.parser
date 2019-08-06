@@ -139,9 +139,13 @@ Modifier modifier =
   | VOLATILE                {: return new Modifier("volatile"); :}
   | STRICTFP                {: return new Modifier("strictfp"); :}
   ;
+
+IdWrapper wrapped_name =
+    IDENTIFIER {: return new IdWrapper(IDENTIFIER); :}
+  ;
 ClassDecl class_declaration =
-    modifiers.m? CLASS IDENTIFIER super.s? interfaces.i? class_body.b
-                            {: return new ClassDecl(new Modifiers(m), IDENTIFIER, s, i, b); :}
+    modifiers.m? CLASS wrapped_name super.s? interfaces.i? class_body.b
+                            {: return new ClassDecl(new Modifiers(m), wrapped_name, s, i, b); :}
   ;
 Access super =
     EXTENDS class_type      {: return class_type; :}
@@ -193,7 +197,7 @@ FieldDeclarator field_declarator =
   | field_declarator_id.v EQ variable_initializer.i {: v.setInit(i); return v; :}
   ;
 FieldDeclarator field_declarator_id =
-    IDENTIFIER dims.d?                       {: return new FieldDeclarator(IDENTIFIER, d, new Opt()); :}
+    wrapped_name dims.d?                       {: return new FieldDeclarator(wrapped_name, d, new Opt()); :}
   ;
 Expr variable_initializer =
     expression
@@ -205,10 +209,10 @@ MethodDecl method_declaration =
   ;
 
 MethodDecl method_header =
-    modifiers.m? type.t IDENTIFIER LPAREN formal_parameter_list.l? RPAREN dims.d? throws.tl?
-    {: return new MethodDecl(new Modifiers(m), t.addArrayDims(d), IDENTIFIER, l, tl, new Opt()); :}
-  | modifiers.m? VOID   IDENTIFIER LPAREN formal_parameter_list.l? RPAREN throws.tl?
-    {: return new MethodDecl(new Modifiers(m), new PrimitiveTypeAccess("void"), IDENTIFIER, l, tl, new Opt()); :}
+    modifiers.m? type.t wrapped_name LPAREN formal_parameter_list.l? RPAREN dims.d? throws.tl?
+    {: return new MethodDecl(new Modifiers(m), t.addArrayDims(d), wrapped_name, l, tl, new Opt()); :}
+  | modifiers.m? VOID   wrapped_name LPAREN formal_parameter_list.l? RPAREN throws.tl?
+    {: return new MethodDecl(new Modifiers(m), new PrimitiveTypeAccess("void"), wrapped_name, l, tl, new Opt()); :}
   ;
 
 List formal_parameter_list =
@@ -216,7 +220,7 @@ List formal_parameter_list =
   | formal_parameter_list.l COMMA formal_parameter.f    {: return l.add(f); :}
   ;
 ParameterDeclaration formal_parameter =
-  modifiers.m? type.t IDENTIFIER dims.d?       {: return new ParameterDeclaration(new Modifiers(m), t.addArrayDims(d), IDENTIFIER); :}
+  modifiers.m? type.t wrapped_name dims.d?       {: return new ParameterDeclaration(new Modifiers(m), t.addArrayDims(d), wrapped_name); :}
   ;
 List throws =
     THROWS class_type_list.l                   {: return l; :}
@@ -233,35 +237,35 @@ InstanceInitializer instance_initializer =
     block                                      {: return new InstanceInitializer(block); :}
   ;
 ConstructorDecl constructor_declaration =
-    modifiers.m? IDENTIFIER LPAREN formal_parameter_list.pl? RPAREN throws.tl?
+    modifiers.m? wrapped_name LPAREN formal_parameter_list.pl? RPAREN throws.tl?
     LBRACE explicit_constructor_invocation.c? block_statements.l? RBRACE
     {: Block b = new Block(l); l.setStart(LBRACE.getStart() + 1); b.setStart(LBRACE.getStart()); b.setEnd(RBRACE.getEnd());
-       return new ConstructorDecl(new Modifiers(m), IDENTIFIER, pl, tl, c, b); :}
+       return new ConstructorDecl(new Modifiers(m), wrapped_name, pl, tl, c, b); :}
   ;
 ExprStmt explicit_constructor_invocation =
     THIS LPAREN argument_list.l? RPAREN SEMICOLON
-    {: ConstructorAccess c = new ConstructorAccess("this", l);
+    {: ConstructorAccess c = new ConstructorAccess(new IdWrapper("this"), l);
        c.setStart(THIS.getStart());
        c.setEnd(RPAREN.getEnd());
        return new ExprStmt(c); :}
   | SUPER LPAREN argument_list.l? RPAREN SEMICOLON
-    {: SuperConstructorAccess c = new SuperConstructorAccess("super", l);
+    {: SuperConstructorAccess c = new SuperConstructorAccess(new IdWrapper("super"), l);
        c.setStart(SUPER.getStart());
        c.setEnd(RPAREN.getEnd());
        return new ExprStmt(c); :}
   | primary.p DOT SUPER LPAREN argument_list.l? RPAREN SEMICOLON
-    {: SuperConstructorAccess c = new SuperConstructorAccess("super", l);
+    {: SuperConstructorAccess c = new SuperConstructorAccess(new IdWrapper("super"), l);
        c.setStart(SUPER.getStart());
        c.setEnd(RPAREN.getEnd());
        return new ExprStmt(p.qualifiesAccess(c)); :}
   | name.n DOT SUPER LPAREN argument_list.l? RPAREN SEMICOLON
-    {: SuperConstructorAccess c = new SuperConstructorAccess("super", l);
+    {: SuperConstructorAccess c = new SuperConstructorAccess(new IdWrapper("super"), l);
        c.setStart(SUPER.getStart());
        c.setEnd(RPAREN.getEnd());
        return new ExprStmt(n.qualifiesAccess(c)); :}
   ;
 InterfaceDecl interface_declaration =
-  modifiers.m? INTERFACE IDENTIFIER extends_interfaces.i? interface_body.b {: return new InterfaceDecl(new Modifiers(m), IDENTIFIER, i, b); :}
+  modifiers.m? INTERFACE wrapped_name extends_interfaces.i? interface_body.b {: return new InterfaceDecl(new Modifiers(m), wrapped_name, i, b); :}
   ;
 List extends_interfaces =
     EXTENDS interface_type.i                    {: return new List().add(i); :}
@@ -330,7 +334,7 @@ VariableDeclarator variable_declarator =
   | variable_declarator_id.v EQ variable_initializer.i {: v.setInit(i); return v; :}
   ;
 VariableDeclarator variable_declarator_id =
-    IDENTIFIER dims.d?                       {: return new VariableDeclarator(IDENTIFIER, d, new Opt()); :}
+    wrapped_name dims.d?                       {: return new VariableDeclarator(wrapped_name, d, new Opt()); :}
   ;
 Stmt statement =
     statement_without_trailing_substatement
@@ -511,14 +515,14 @@ Expr class_instance_creation_expression =
        e.setEnd(RPAREN.getEnd());
        return n.qualifiesAccess(e); :}
   | NEW class_or_interface_type.t LPAREN argument_list.l? RPAREN class_body.b
-    {: return new ClassInstanceExpr(t, l, new Opt(new AnonymousDecl(new Modifiers(), "Anonymous", b))); :}
+    {: return new ClassInstanceExpr(t, l, new Opt(new AnonymousDecl(new Modifiers(), new IdWrapper("Anonymous"), b))); :}
   | primary.n DOT NEW simple_name.id LPAREN argument_list.l? RPAREN class_body.b
-    {: ClassInstanceExpr e = new ClassInstanceExpr(id, l, new Opt(new AnonymousDecl(new Modifiers(), "Anonymous", b)));
+    {: ClassInstanceExpr e = new ClassInstanceExpr(id, l, new Opt(new AnonymousDecl(new Modifiers(), new IdWrapper("Anonymous"), b)));
        e.setStart(NEW.getStart());
        e.setEnd(b.getEnd());
        return n.qualifiesAccess(e); :}
   | name.n DOT NEW simple_name.id LPAREN argument_list.l? RPAREN class_body.b
-    {: ClassInstanceExpr e = new ClassInstanceExpr(id, l, new Opt(new AnonymousDecl(new Modifiers(), "Anonymous", b)));
+    {: ClassInstanceExpr e = new ClassInstanceExpr(id, l, new Opt(new AnonymousDecl(new Modifiers(), new IdWrapper("Anonymous"), b)));
        e.setStart(NEW.getStart());
        e.setEnd(b.getEnd());
        return n.qualifiesAccess(e); :}
@@ -573,25 +577,25 @@ Access method_invocation =
       result.setEnd(RPAREN.getEnd());
       return result;
   :}
-  | primary.p DOT IDENTIFIER LPAREN argument_list.l? RPAREN
-  {: MethodAccess m = new MethodAccess(IDENTIFIER, l);
-     m.setStart(IDENTIFIER.getStart()); // add location information
+  | primary.p DOT wrapped_name LPAREN argument_list.l? RPAREN
+  {: MethodAccess m = new MethodAccess(wrapped_name, l);
+     m.setStart(wrapped_name.getStart()); // add location information
      m.setEnd(RPAREN.getEnd()); // add location information
      return p.qualifiesAccess(m); :}
-  | SUPER DOT IDENTIFIER LPAREN argument_list.l? RPAREN
+  | SUPER DOT wrapped_name LPAREN argument_list.l? RPAREN
   {: SuperAccess s = new SuperAccess();
      s.setStart(SUPER.getStart());
      s.setEnd(SUPER.getEnd());
-     MethodAccess m = new MethodAccess(IDENTIFIER, l);
-     m.setStart(IDENTIFIER.getStart());
+     MethodAccess m = new MethodAccess(wrapped_name, l);
+     m.setStart(wrapped_name.getStart());
      m.setEnd(RPAREN.getEnd());
      return s.qualifiesAccess(m); :}
-  | name DOT SUPER DOT IDENTIFIER LPAREN argument_list.l? RPAREN
+  | name DOT SUPER DOT wrapped_name LPAREN argument_list.l? RPAREN
   {: SuperAccess s = new SuperAccess();
      s.setStart(SUPER.getStart());
      s.setEnd(SUPER.getEnd());
-     MethodAccess m = new MethodAccess(IDENTIFIER, l);
-     m.setStart(IDENTIFIER.getStart());
+     MethodAccess m = new MethodAccess(wrapped_name, l);
+     m.setStart(wrapped_name.getStart());
      m.setEnd(RPAREN.getEnd());
      return name.qualifiesAccess(s).qualifiesAccess(m); :}
   ;

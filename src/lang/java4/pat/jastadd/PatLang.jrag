@@ -403,41 +403,11 @@ aspect LanguageSpecific {
 	eq CompilationUnit.tokens() {
 		return Collections.singletonList(getPackageDecl());
 	}
-	eq VarAccess.tokens() {
+	eq IdWrapper.tokens() {
 		return Collections.singletonList(getID());
-	}
-	eq MethodAccess.tokens() {
-		return Collections.singletonList(getID());
-	}
-	eq ConstructorAccess.tokens() {
-		return Collections.singletonList(getID());
-	}
-	eq TypeAccess.tokens() {
-		return Arrays.asList(getPackage(), getID());
-	}
-	eq PrimitiveTypeAccess.tokens() {
-		return Arrays.asList(getPackage(), getID());
 	}
 	eq PackageAccess.tokens() {
 		return Collections.singletonList(getPackage());
-	}
-	eq TypeDecl.tokens() {
-		return Collections.singletonList(getID());
-	}
-	eq ClassDecl.tokens() {
-		return Collections.singletonList(getID());
-	}
-	eq InterfaceDecl.tokens() {
-		return Collections.singletonList(getID());
-	}
-	eq AnonymousDecl.tokens() {
-		return Collections.singletonList(getID());
-	}
-	eq Declarator.tokens() {
-		return Collections.singletonList(getID());
-	}
-	eq MethodDecl.tokens() {
-		return Collections.singletonList(getID());
 	}
 	eq IdUse.tokens() {
 		return Collections.singletonList(getID());

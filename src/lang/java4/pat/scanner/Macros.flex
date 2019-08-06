@@ -43,3 +43,5 @@ OctalEscape = \\ {OctalDigit}
 OctalDigit = [0-7]
 ZeroToThree = [0-3]
 
+/* Pattern language */
+MetaIdentifier = "`"{Identifier}

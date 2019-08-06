@@ -30,29 +30,29 @@
 
 aspect NodeConstructors {
   public ParameterDeclaration.ParameterDeclaration(Access type, String name) {
-    this(new Modifiers(new List()), type, name);
+    this(new Modifiers(new List()), type, new IdWrapper(name));
   }
 
-  public PackageAccess.PackageAccess(String name, int start, int end) {
+  public PackageAccess.PackageAccess(IdWrapper name, int start, int end) {
     this(name);
     this.start = this.Packagestart = start;
     this.end = this.Packageend = end;
   }
 
-  public TypeAccess.TypeAccess(String name, int start, int end) {
+  public TypeAccess.TypeAccess(IdWrapper name, int start, int end) {
     this(name);
-    this.start = this.IDstart = start;
-    this.end = this.IDend = end;
+    this.start = start;
+    this.end = end;
   }
 
-  public VarAccess.VarAccess(String name, int start, int end) {
+  public VarAccess.VarAccess(IdWrapper name, int start, int end) {
     this(name);
-    this.start = this.IDstart = start;
-    this.end = this.IDend = end;
+    this.start = start;
+    this.end = end;
   }
 
-  public TypeAccess.TypeAccess(String typeName) {
-    this("", typeName);
+  public TypeAccess.TypeAccess(IdWrapper typeName) {
+    this(new IdWrapper(""), typeName);
   }
 
   public IntegerLiteral.IntegerLiteral(int i) {
@@ -63,7 +63,7 @@ aspect NodeConstructors {
     this(b ? "true" : "false");
   }
 
-  public MethodAccess.MethodAccess(String name, List args, int start, int end) {
+  public MethodAccess.MethodAccess(IdWrapper name, List args, int start, int end) {
     this(name, args);
     setStart(start);
     setEnd(end);
@@ -86,7 +86,7 @@ aspect NodeConstructors {
   }
 
   public PrimitiveTypeAccess.PrimitiveTypeAccess(String name) {
-    this(PRIMITIVE_PACKAGE_NAME, name);
+    this(new IdWrapper(PRIMITIVE_PACKAGE_NAME), new IdWrapper(name));
   }
 
   public static Stmt AssignExpr.asStmt(Expr left, Expr right) {

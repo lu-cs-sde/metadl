@@ -139,7 +139,7 @@ aspect Copied {
     for (int i = 0; i < nameParts.size() - 1; ++i) {
       head.add(nameParts.get(i));
     }
-    MethodAccess call = new MethodAccess(methodName.toString(), arguments);
+    MethodAccess call = new MethodAccess(new IdWrapper(methodName.toString()), arguments);
     if (head.isEmpty()) {
       return call;
     } else {

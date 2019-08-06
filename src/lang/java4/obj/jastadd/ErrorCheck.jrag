@@ -53,9 +53,9 @@ aspect ErrorCheck {
     return getLine(n.getStart());
   }
 
-  eq ClassDecl.lineNumber() = getLine(IDstart);
+  eq ClassDecl.lineNumber() = getLine(start);
 
-  eq MethodDecl.lineNumber() = getLine(IDstart);
+  eq MethodDecl.lineNumber() = getLine(start);
 
   // Set start and end position to the same as the argument and return self.
   public ASTNode ASTNode.setLocation(ASTNode node) {

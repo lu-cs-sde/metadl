@@ -139,12 +139,16 @@ Modifier modifier =
   | VOLATILE                {: return new Modifier("volatile"); :}
   | STRICTFP                {: return new Modifier("strictfp"); :}
   ;
-ClassDecl class_declaration =
-    modifiers.m? CLASS IDENTIFIER super.s? interfaces.i? class_body.b
-                            {: return new ClassDecl(new Modifiers(m), IDENTIFIER, s, i, b); :}
+
+IdWrapper wrapped_name =
+    IDENTIFIER {: return new IdWrapper(IDENTIFIER); :}
   ;
-Opt super =
-    EXTENDS class_type      {: return new Opt(class_type); :}
+ClassDecl class_declaration =
+    modifiers.m? CLASS wrapped_name super.s? interfaces.i? class_body.b
+                            {: return new ClassDecl(new Modifiers(m), wrapped_name, s, i, b); :}
+  ;
+Access super =
+    EXTENDS class_type      {: return class_type; :}
   ;
 List interfaces =
     IMPLEMENTS interface_type_list.i              {: return i; :}
@@ -193,21 +197,22 @@ FieldDeclarator field_declarator =
   | field_declarator_id.v EQ variable_initializer.i {: v.setInit(i); return v; :}
   ;
 FieldDeclarator field_declarator_id =
-    IDENTIFIER dims.d?                       {: return new FieldDeclarator(IDENTIFIER, d, new Opt()); :}
+    wrapped_name dims.d?                       {: return new FieldDeclarator(wrapped_name, d, new Opt()); :}
   ;
 Expr variable_initializer =
     expression
   | array_initializer
   ;
 MethodDecl method_declaration =
-    method_header.m method_body.b              {: m.setBlockOpt(b); return m; :}
+    method_header.m block.b              {: m.setBlockOpt(new Opt(b)); return m; :}
+  | method_header.m SEMICOLON                  {: m.setBlockOpt(new Opt()); return m; :}
   ;
 
 MethodDecl method_header =
-    modifiers.m? type.t IDENTIFIER LPAREN formal_parameter_list.l? RPAREN dims.d? throws.tl?
-    {: return new MethodDecl(new Modifiers(m), t.addArrayDims(d), IDENTIFIER, l, tl, new Opt()); :}
-  | modifiers.m? VOID   IDENTIFIER LPAREN formal_parameter_list.l? RPAREN throws.tl?
-    {: return new MethodDecl(new Modifiers(m), new PrimitiveTypeAccess("void"), IDENTIFIER, l, tl, new Opt()); :}
+    modifiers.m? type.t wrapped_name LPAREN formal_parameter_list.l? RPAREN dims.d? throws.tl?
+    {: return new MethodDecl(new Modifiers(m), t.addArrayDims(d), wrapped_name, l, tl, new Opt()); :}
+  | modifiers.m? VOID   wrapped_name LPAREN formal_parameter_list.l? RPAREN throws.tl?
+    {: return new MethodDecl(new Modifiers(m), new PrimitiveTypeAccess("void"), wrapped_name, l, tl, new Opt()); :}
   ;
 
 List formal_parameter_list =
@@ -215,7 +220,7 @@ List formal_parameter_list =
   | formal_parameter_list.l COMMA formal_parameter.f    {: return l.add(f); :}
   ;
 ParameterDeclaration formal_parameter =
-  modifiers.m? type.t IDENTIFIER dims.d?       {: return new ParameterDeclaration(new Modifiers(m), t.addArrayDims(d), IDENTIFIER); :}
+  modifiers.m? type.t wrapped_name dims.d?       {: return new ParameterDeclaration(new Modifiers(m), t.addArrayDims(d), wrapped_name); :}
   ;
 List throws =
     THROWS class_type_list.l                   {: return l; :}
@@ -224,10 +229,7 @@ List class_type_list =
     class_type.c                               {: return new List().add(c); :}
   | class_type_list.l COMMA class_type.c       {: return l.add(c); :}
   ;
-Opt method_body =
-    block                                      {: return new Opt(block); :}
-  | SEMICOLON                                  {: return new Opt(); :}
-  ;
+
 StaticInitializer static_initializer =
     STATIC block                               {: return new StaticInitializer(block); :}
   ;
@@ -235,35 +237,35 @@ InstanceInitializer instance_initializer =
     block                                      {: return new InstanceInitializer(block); :}
   ;
 ConstructorDecl constructor_declaration =
-    modifiers.m? IDENTIFIER LPAREN formal_parameter_list.pl? RPAREN throws.tl?
+    modifiers.m? wrapped_name LPAREN formal_parameter_list.pl? RPAREN throws.tl?
     LBRACE explicit_constructor_invocation.c? block_statements.l? RBRACE
     {: Block b = new Block(l); l.setStart(LBRACE.getStart() + 1); b.setStart(LBRACE.getStart()); b.setEnd(RBRACE.getEnd());
-       return new ConstructorDecl(new Modifiers(m), IDENTIFIER, pl, tl, c, b); :}
+       return new ConstructorDecl(new Modifiers(m), wrapped_name, pl, tl, c, b); :}
   ;
 ExprStmt explicit_constructor_invocation =
     THIS LPAREN argument_list.l? RPAREN SEMICOLON
-    {: ConstructorAccess c = new ConstructorAccess("this", l);
+    {: ConstructorAccess c = new ConstructorAccess(new IdWrapper("this"), l);
        c.setStart(THIS.getStart());
        c.setEnd(RPAREN.getEnd());
        return new ExprStmt(c); :}
   | SUPER LPAREN argument_list.l? RPAREN SEMICOLON
-    {: SuperConstructorAccess c = new SuperConstructorAccess("super", l);
+    {: SuperConstructorAccess c = new SuperConstructorAccess(new IdWrapper("super"), l);
        c.setStart(SUPER.getStart());
        c.setEnd(RPAREN.getEnd());
        return new ExprStmt(c); :}
   | primary.p DOT SUPER LPAREN argument_list.l? RPAREN SEMICOLON
-    {: SuperConstructorAccess c = new SuperConstructorAccess("super", l);
+    {: SuperConstructorAccess c = new SuperConstructorAccess(new IdWrapper("super"), l);
        c.setStart(SUPER.getStart());
        c.setEnd(RPAREN.getEnd());
        return new ExprStmt(p.qualifiesAccess(c)); :}
   | name.n DOT SUPER LPAREN argument_list.l? RPAREN SEMICOLON
-    {: SuperConstructorAccess c = new SuperConstructorAccess("super", l);
+    {: SuperConstructorAccess c = new SuperConstructorAccess(new IdWrapper("super"), l);
        c.setStart(SUPER.getStart());
        c.setEnd(RPAREN.getEnd());
        return new ExprStmt(n.qualifiesAccess(c)); :}
   ;
 InterfaceDecl interface_declaration =
-  modifiers.m? INTERFACE IDENTIFIER extends_interfaces.i? interface_body.b {: return new InterfaceDecl(new Modifiers(m), IDENTIFIER, i, b); :}
+  modifiers.m? INTERFACE wrapped_name extends_interfaces.i? interface_body.b {: return new InterfaceDecl(new Modifiers(m), wrapped_name, i, b); :}
   ;
 List extends_interfaces =
     EXTENDS interface_type.i                    {: return new List().add(i); :}
@@ -332,7 +334,7 @@ VariableDeclarator variable_declarator =
   | variable_declarator_id.v EQ variable_initializer.i {: v.setInit(i); return v; :}
   ;
 VariableDeclarator variable_declarator_id =
-    IDENTIFIER dims.d?                       {: return new VariableDeclarator(IDENTIFIER, d, new Opt()); :}
+    wrapped_name dims.d?                       {: return new VariableDeclarator(wrapped_name, d, new Opt()); :}
   ;
 Stmt statement =
     statement_without_trailing_substatement
@@ -472,8 +474,8 @@ AssertStmt assert_statement =
   ;
 Expr primary =
     primary_no_new_array @BOTTOM
-  | array_creation_init 
-  | array_creation_uninit 
+  | array_creation_init
+  | array_creation_uninit
   ;
 
 ClassAccess class_literal =
@@ -512,21 +514,18 @@ Expr class_instance_creation_expression =
        e.setStart(NEW.getStart());
        e.setEnd(RPAREN.getEnd());
        return n.qualifiesAccess(e); :}
-  | NEW class_or_interface_type.t LPAREN argument_list.l? RPAREN subclass_body.b
-    {: return new ClassInstanceExpr(t, l, b); :}
-  | primary.n DOT NEW simple_name.id LPAREN argument_list.l? RPAREN subclass_body.b
-    {: ClassInstanceExpr e = new ClassInstanceExpr(id, l, b);
+  | NEW class_or_interface_type.t LPAREN argument_list.l? RPAREN class_body.b
+    {: return new ClassInstanceExpr(t, l, new Opt(new AnonymousDecl(new Modifiers(), new IdWrapper("Anonymous"), b))); :}
+  | primary.n DOT NEW simple_name.id LPAREN argument_list.l? RPAREN class_body.b
+    {: ClassInstanceExpr e = new ClassInstanceExpr(id, l, new Opt(new AnonymousDecl(new Modifiers(), new IdWrapper("Anonymous"), b)));
        e.setStart(NEW.getStart());
        e.setEnd(b.getEnd());
        return n.qualifiesAccess(e); :}
-  | name.n DOT NEW simple_name.id LPAREN argument_list.l? RPAREN subclass_body.b
-    {: ClassInstanceExpr e = new ClassInstanceExpr(id, l, b);
+  | name.n DOT NEW simple_name.id LPAREN argument_list.l? RPAREN class_body.b
+    {: ClassInstanceExpr e = new ClassInstanceExpr(id, l, new Opt(new AnonymousDecl(new Modifiers(), new IdWrapper("Anonymous"), b)));
        e.setStart(NEW.getStart());
        e.setEnd(b.getEnd());
        return n.qualifiesAccess(e); :}
-  ;
-Opt subclass_body =
-    class_body.b                               {: return new Opt(new AnonymousDecl(new Modifiers(), "Anonymous", b)); :}
   ;
 
 List argument_list =
@@ -578,35 +577,35 @@ Access method_invocation =
       result.setEnd(RPAREN.getEnd());
       return result;
   :}
-  | primary.p DOT IDENTIFIER LPAREN argument_list.l? RPAREN
-  {: MethodAccess m = new MethodAccess(IDENTIFIER, l);
-     m.setStart(IDENTIFIER.getStart()); // add location information
+  | primary.p DOT wrapped_name LPAREN argument_list.l? RPAREN
+  {: MethodAccess m = new MethodAccess(wrapped_name, l);
+     m.setStart(wrapped_name.getStart()); // add location information
      m.setEnd(RPAREN.getEnd()); // add location information
      return p.qualifiesAccess(m); :}
-  | SUPER DOT IDENTIFIER LPAREN argument_list.l? RPAREN
+  | SUPER DOT wrapped_name LPAREN argument_list.l? RPAREN
   {: SuperAccess s = new SuperAccess();
      s.setStart(SUPER.getStart());
      s.setEnd(SUPER.getEnd());
-     MethodAccess m = new MethodAccess(IDENTIFIER, l);
-     m.setStart(IDENTIFIER.getStart());
+     MethodAccess m = new MethodAccess(wrapped_name, l);
+     m.setStart(wrapped_name.getStart());
      m.setEnd(RPAREN.getEnd());
      return s.qualifiesAccess(m); :}
-  | name DOT SUPER DOT IDENTIFIER LPAREN argument_list.l? RPAREN
+  | name DOT SUPER DOT wrapped_name LPAREN argument_list.l? RPAREN
   {: SuperAccess s = new SuperAccess();
      s.setStart(SUPER.getStart());
      s.setEnd(SUPER.getEnd());
-     MethodAccess m = new MethodAccess(IDENTIFIER, l);
-     m.setStart(IDENTIFIER.getStart());
+     MethodAccess m = new MethodAccess(wrapped_name, l);
+     m.setStart(wrapped_name.getStart());
      m.setEnd(RPAREN.getEnd());
      return name.qualifiesAccess(s).qualifiesAccess(m); :}
   ;
 Access array_access =
-  name LBRACK expression.e RBRACK 
+  name LBRACK expression.e RBRACK
   {: ArrayAccess a = new ArrayAccess(e);
      a.setStart(LBRACK.getStart());
      a.setEnd(RBRACK.getEnd());
      return name.qualifiesAccess(a); :}
-  | primary_no_new_array.p LBRACK expression.e RBRACK 
+  | primary_no_new_array.p LBRACK expression.e RBRACK
   {: ArrayAccess a = new ArrayAccess(e);
      a.setStart(LBRACK.getStart());
      a.setEnd(RBRACK.getEnd());
@@ -667,7 +666,7 @@ Expr shift_expression =
   | shift_expression.e1 URSHIFT additive_expression.e2  {: return new URShiftExpr(e1, e2); :}
   ;
 Expr relational_expression =
-    shift_expression 
+    shift_expression
   | relational_expression.e1 LT shift_expression.e2     {: return new LTExpr(e1, e2); :}
   | relational_expression.e1 GT shift_expression.e2     {: return new GTExpr(e1, e2); :}
   | relational_expression.e1 LTEQ shift_expression.e2   {: return new LEExpr(e1, e2); :}

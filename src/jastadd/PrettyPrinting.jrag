@@ -260,7 +260,7 @@ aspect SoufflePrinting {
     }
 
 	public void Variable.soufflePrint(PrettyPrinter pr) {
-		pr.out.print(getVAR_ID().replace("$", "?"));
+		pr.out.print(getVAR_ID().replaceAll("[$`]", "?"));
 	}
 
     public void Literal.artificalInput(PrettyPrinter pr) {

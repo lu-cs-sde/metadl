@@ -26,7 +26,7 @@ aspect MetaLang {
 
 	syn nta List<Clause> AnalyzeBlock.getExpandedClauseList() {
 		List<Clause> cls = new List<>();
-		cls.addAll(lang.metadl.pat.ast.PatLang.generateHelperRelations(getContext()));
+		cls.addAll(generateHelperRelations());
 		for (Clause c : getClauses())
 			cls.add(c.treeCopy());
 		return cls;
@@ -34,21 +34,39 @@ aspect MetaLang {
 
 	AnalyzeBlock contributes nta getExpandedClauses() to Program.predicateSymbols();
 
+	public String AnalyzeBlock.translatePredicateName(String predName) {
+		switch (getLang().getSTRING()) {
+		case "metadl":
+			return lang.metadl.pat.ast.PatLang.translatePredicateName(getContext(), predName);
+		case "java4":
+			return lang.java4.pat.ast.PatLang.translatePredicateName(getContext(), predName);
+		}
+		return null;
+	}
+
+	public java.util.List<lang.ast.Clause> AnalyzeBlock.generateHelperRelations() {
+		switch (getLang().getSTRING()) {
+		case "metadl":
+			return lang.metadl.pat.ast.PatLang.generateHelperRelations(getContext());
+		case "java4":
+			return lang.java4.pat.ast.PatLang.generateHelperRelations(getContext());
+		}
+		return null;
+	}
+
 	rewrite PredicateSymbol {
 		when (enclosingAnalyzeBlock() != null &&
-			  lang.metadl.pat.ast.PatLang.translatePredicateName(enclosingAnalyzeBlock().getContext(), getPRED_ID()) != null)
+			  enclosingAnalyzeBlock().translatePredicateName(getPRED_ID()) != null)
 			to PredicateSymbol {
-			return new PredicateSymbol(lang.metadl.pat.ast.PatLang.translatePredicateName(enclosingAnalyzeBlock().getContext(),
-																				  getPRED_ID()));
+			return new PredicateSymbol(enclosingAnalyzeBlock().translatePredicateName(getPRED_ID()));
 		}
 	}
 
 	rewrite PredicateRef {
 		when (enclosingAnalyzeBlock() != null &&
-			  lang.metadl.pat.ast.PatLang.translatePredicateName(enclosingAnalyzeBlock().getContext(), getPRED_ID()) != null)
+			  enclosingAnalyzeBlock().translatePredicateName(getPRED_ID()) != null)
 			to PredicateRef {
-			return new PredicateRef(lang.metadl.pat.ast.PatLang.translatePredicateName(enclosingAnalyzeBlock().getContext(),
-																			   getPRED_ID()));
+			return new PredicateRef(enclosingAnalyzeBlock().translatePredicateName(getPRED_ID()));
 		}
 	}
 

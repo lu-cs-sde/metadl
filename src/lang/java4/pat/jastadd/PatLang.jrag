@@ -41,24 +41,29 @@ aspect LanguageSpecific {
 		return Collections.singletonList(getLabel());
 	}
 
-	public static lang.ast.List<lang.ast.Clause> PatLang.generateHelperRelations(AnalyzeContext ctx) {
-		lang.ast.List<lang.ast.Clause> ret = new lang.ast.List<>();
+	public static java.util.List<lang.ast.Clause> PatLang.generateHelperRelations(AnalyzeContext ctx) {
+		java.util.List<lang.ast.Clause> ret = new java.util.ArrayList<>();
 
 		// Add two new rules, to map variables and predicates to their predicates
-		ret.add(makeIdentifierRule(ctx, "Variable", "ID", 0, null));
-		ret.add(makeIdentifierRule(ctx, "PredicateSymbol", "ID", 0, null));
-		ret.add(makeIdentifierRule(ctx, "FunctorSymbol", "ID", 0, null));
-		ret.add(makeIdentifierRule(ctx, "IntConstant", "INT", 0, "to_number"));
-		ret.add(makeIdentifierRule(ctx, "StringConstant", "STR", 0, null));
-		ret.add(makeIdentifierRule(ctx, "PredicateRef", "REF", 0, null));
-
+		// Identifiers
+		ret.add(makeIdentifierRule(ctx, "IdUse", "ID", 0, null));
+		ret.add(makeIdentifierRule(ctx, "IdWrapper", "ID", 0, null));
+		// Modifiers
+		ret.add(makeIdentifierRule(ctx, "Modifier", "MOD", 0, null));
+		// Literals
+		ret.add(makeIdentifierRule(ctx, "CharacterLiteral", "CHAR", 0, null));
+		ret.add(makeIdentifierRule(ctx, "BooleanLiteral", "BOOLEAN", 0, null));
+		ret.add(makeIdentifierRule(ctx, "StringLiteral", "STRING", 0, null));
+		ret.add(makeIdentifierRule(ctx, "NullLiteral", "NULL", 0, null));
+		ret.add(makeIdentifierRule(ctx, "IntegerLiteral", "INT", 0, null));
+		ret.add(makeIdentifierRule(ctx, "LongLiteral", "LONG", 0, null));
+		ret.add(makeIdentifierRule(ctx, "FloatingPointLiteral", "FLOAT", 0, null));
+		ret.add(makeIdentifierRule(ctx, "DoubleLiteral", "DOUBLE", 0, null));
 		// Insert an implicit type declaration for the program relation
 		ret.add(implicitTypeDecl(ctx));
-
 		// Insert a relation to represent the source location of the node
 		// represented by a metavariable
 		ret.add(makeSrcInfoRule(ctx));
-
 		// Insert a relation to map nodes to their position inside a list
 		ret.add(makeIndexRule(ctx));
 
@@ -68,14 +73,19 @@ aspect LanguageSpecific {
 	public static String PatLang.translatePredicateName(AnalyzeContext ctx, String predName) {
 		String s = null;
 		switch (predName) {
-		case "INT":
-		case "STR":
 		case "ID":
-		case "REF":
+		case "MOD":
+		case "CHAR":
+		case "BOOLEAN":
+		case "STRING":
+		case "NULL":
+		case "INT":
+		case "LONG":
+		case "FLOAT":
+		case "DOUBLE":
 		case "SRC":
 		case "INDEX":
 			s = predName; break;
-		case "EXPR": s = "EXPR"; break;
 		default: return null;
 		}
 		return ctx. scopePrefix + s;

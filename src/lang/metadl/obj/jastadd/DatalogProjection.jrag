@@ -1,0 +1,35 @@
+import lang.relation.Relation;
+import lang.relation.PseudoTuple;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Collections;
+import java.lang.reflect.ParameterizedType;
+import lang.io.StringUID;
+
+aspect LanguageSpecific {
+	coll Relation Program.datalogProjection() [new Relation(5)] with addTuples root Program;
+	ASTNode contributes toTuples() to Program.datalogProjection() ;
+	syn Relation Program.asRelation() = datalogProjection();
+
+	// Identical defintion to PatLang.jrag
+	syn java.util.List<String> ASTNode.tokens() = Collections.emptyList();
+
+	eq IntConstant.tokens() {
+		return Collections.singletonList(getNUMERAL());
+	}
+	eq StringConstant.tokens() {
+		return Collections.singletonList(getSTRING());
+	}
+	eq PredicateRef.tokens() {
+		return Collections.singletonList(getPRED_ID());
+	}
+	eq PredicateSymbol.tokens() {
+		return Collections.singletonList(getPRED_ID());
+	}
+	eq FunctorSymbol.tokens() {
+		return Collections.singletonList(getFUNC_ID());
+	}
+	eq Variable.tokens() {
+		return Collections.singletonList(getVAR_ID());
+	}
+}

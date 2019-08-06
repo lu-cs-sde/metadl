@@ -5,9 +5,8 @@ import java.util.HashMap;
 import java.util.Collections;
 import java.lang.reflect.ParameterizedType;
 import lang.io.StringUID;
-import java.util.Arrays;
 
-aspect DatalogProject {
+aspect DatalogProjection {
 	/**
 	   Build the name of the relation from the dynamic type of the
 	   node.
@@ -30,8 +29,6 @@ aspect DatalogProject {
 		}
 		return UID;
 	}
-
-	coll Relation CompilationUnit.datalogProjection() [new Relation(5)] with addTuples root CompilationUnit;
 
 	syn java.util.List<PseudoTuple> ASTNode.toTuples() {
 		String relName = getRelation();
@@ -99,44 +96,7 @@ aspect DatalogProject {
 		return ret;
 	}
 
-    eq Opt.toTuples() {
+	eq Opt.toTuples() {
 		return Collections.emptyList();
-	}
-
-	ASTNode contributes toTuples() to CompilationUnit.datalogProjection() ;
-
-	syn Relation CompilationUnit.asRelation() = datalogProjection();
-}
-
-aspect LanguageSpecific {
-	// Identical definition to PatLang.jrag
-	syn java.util.List<String> ASTNode.tokens() = Collections.emptyList();
-
-	eq Literal.tokens() {
-		return Collections.singletonList(getLITERAL());
-	}
-	eq CompilationUnit.tokens() {
-		return Collections.singletonList(getPackageDecl());
-	}
-	eq IdWrapper.tokens() {
-		return Collections.singletonList(getID());
-	}
-	eq PackageAccess.tokens() {
-		return Collections.singletonList(getPackage());
-	}
-	eq IdUse.tokens() {
-		return Collections.singletonList(getID());
-	}
-	eq Modifier.tokens() {
-		return Collections.singletonList(getID());
-	}
-	eq LabeledStmt.tokens() {
-		return Collections.singletonList(getLabel());
-	}
-	eq BreakStmt.tokens() {
-		return Collections.singletonList(getLabel());
-	}
-	eq ContinueStmt.tokens() {
-		return Collections.singletonList(getLabel());
 	}
 }

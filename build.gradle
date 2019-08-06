@@ -114,11 +114,15 @@ compileJava.dependsOn 'generateJava', 'generateScanner', 'generateParser',
     'generateConfig', 'generateScannerConfig', 'generateParserConfig'
 
 
-void makeGenerateJavaTask(String name, String outDir, String srcDir, String pkg, boolean patternGrammar = false) {
+void makeGenerateJavaTask(String name, String outDir, String srcDir, String pkg,
+			  boolean patternGrammar = false,
+			  FileTree commonSources = null) {
     tasks.create(name, org.jastadd.JastAddTask) {
 	description 'Generates the compiler AST classes from JastAdd specifications.'
 	outputDir = file(outDir)
 	sources = fileTree(dir: srcDir, includes: [ '**/*.jrag', '**/*.jadd', '**/*.ast' ])
+	if (commonSources != null)
+	    sources = sources + commonSources
 	options = [ '--package=' + pkg, '--beaver' , '--rewrite=cnta' ]
 	if (patternGrammar)
 	    options << '--pattern_grammar'
@@ -229,10 +233,15 @@ void makeGenerateLangTask(String taskName, String outDir, String srcLang, ArrayL
     makeGenerateScannerTask('generateScannerObjlang' + taskName, outDir + '/lang/' + srcLang + '/obj/ast',
 			    outDir + '/lang/' + srcLang + '/obj/scanner/scanner.flex')
     // .ast, .jrag -> .java
+    def commonPatAspectFiles = fileTree(dir : 'src/lang/common/pat/jastadd', includes : ['**/*.jrag'])
+
     makeGenerateJavaTask('generateJavaPatlang' + taskName, outDir,
-			 'src/lang/' + srcLang + '/pat/jastadd', 'lang.' + srcLang + '.pat.ast', true)
+			 'src/lang/' + srcLang + '/pat/jastadd', 'lang.' + srcLang + '.pat.ast', true, commonPatAspectFiles)
+
+    def commonObjAspectFiles = fileTree(dir : 'src/lang/common/obj/jastadd', includes : ['**/*.jrag'])
+
     makeGenerateJavaTask('generateJavaObjlang' + taskName, outDir,
-			 'src/lang/' + srcLang + '/obj/jastadd', 'lang.' + srcLang + '.obj.ast', false)
+			 'src/lang/' + srcLang + '/obj/jastadd', 'lang.' + srcLang + '.obj.ast', false, commonObjAspectFiles)
 
 
     // an empty task to depend on everything here

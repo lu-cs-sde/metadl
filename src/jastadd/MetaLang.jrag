@@ -100,7 +100,11 @@ aspect MetaLang {
 									 lang.metadl.pat.ast.PatLangParser.AltGoals.expr);
 			break;
 		case "java4":
-			altGoals = Arrays.asList(lang.java4.pat.ast.PatLangParser.AltGoals.class_declaration);
+			altGoals = Arrays.asList(lang.java4.pat.ast.PatLangParser.AltGoals.class_declaration,
+									 lang.java4.pat.ast.PatLangParser.AltGoals.interface_declaration,
+									 lang.java4.pat.ast.PatLangParser.AltGoals.method_declaration,
+									 lang.java4.pat.ast.PatLangParser.AltGoals.statement
+									 );
 			break;
 		}
 

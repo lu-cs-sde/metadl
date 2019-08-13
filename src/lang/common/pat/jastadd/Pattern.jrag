@@ -9,6 +9,7 @@ import java.lang.ReflectiveOperationException;
 import lang.ast.AnalyzeContext;
 import lang.io.StringUID;
 import java.util.Arrays;
+import java.io.PrintStream;
 
 aspect Pattern {
 
@@ -40,13 +41,33 @@ aspect Pattern {
 		return nodeName;
 	}
 
+	public void ASTNode.debugPrintInternal(int offset, PrintStream ps) {
+		for (int i = 0; i < offset; ++i)
+			ps.print('_');
+		ps.println(name());
+		for (int i = 0; i < getNumChildNoTransform(); ++i) {
+			if (getChildNoTransform(i) != null)
+				getChildNoTransform(i).debugPrintInternal(offset + 2, ps);
+		}
+	}
+
+	public void ASTNode.debugPrint(PrintStream ps) {
+		debugPrintInternal(0, ps);
+	}
+
 	syn String ASTNode.getRelation() = name();
 
 	syn boolean ASTNode.isIndexMetaVar() {
 		return name().startsWith(INDEX_METAVARIABLE);
 	}
 
+	// ASTNode:s that only wrap other node types
+	syn boolean ASTNode.isWrapperNode() = false;
+
 	syn boolean ASTNode.isGap() {
+		if (isWrapperNode()) {
+			return getChild(0).isGap();
+		}
 		return name().startsWith(GAP);
 	}
 
@@ -242,11 +263,14 @@ aspect Pattern {
 	}
 
 	eq List.asLiterals(AnalyzeContext ctx, lang.ast.CommonVariable root) {
+		ArrayList<lang.ast.Literal> lits = new ArrayList<>();
+		if (getNumChild() == 1 && getChild(0).isGap())
+			return lits;
+
 		ArrayList<Constraint> cons = constraints();
 		if (cons.isEmpty())
 			return super.asLiterals(ctx, null);
 
-		ArrayList<lang.ast.Literal> lits = new ArrayList<>();
 		for (Constraint c : cons)
 			lits.addAll(c.generateLiterals(ctx));
 		return lits;

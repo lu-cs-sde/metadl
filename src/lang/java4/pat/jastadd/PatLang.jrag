@@ -90,4 +90,9 @@ aspect LanguageSpecific {
 		}
 		return ctx. scopePrefix + s;
 	}
+
+	eq MemberClassDecl.isWrapperNode() = true;
+	eq MemberInterfaceDecl.isWrapperNode() = true;
+	eq InstanceInitializer.isWrapperNode() = true;
+	eq ExprStmt.isWrapperNode() = true;
 }

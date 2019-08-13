@@ -2,6 +2,7 @@ package lang.cons;
 
 import lang.ast.AnalyzeContext;
 import java.util.TreeSet;
+import java.io.PrintStream;
 import java.util.ArrayList;
 /**
    Interface implemented by ASTNode subclasses that can be
@@ -39,4 +40,9 @@ public interface ObjLangASTNode {
 	 */
 	TreeSet<lang.ast.Variable> metavariables();
 	ArrayList<lang.ast.Literal> literals(AnalyzeContext ctx, lang.ast.CommonVariable root);
+
+	/**
+	   Debug printing
+	*/
+	void debugPrint(PrintStream ps);
 }

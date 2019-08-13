@@ -2,6 +2,7 @@ import lang.cons.Constraint;
 import java.io.StringReader;
 import java.util.Arrays;
 import lang.cons.ObjLangASTNode;
+import java.io.ByteArrayOutputStream;
 
 aspect MetaLang {
 	/**
@@ -82,7 +83,7 @@ aspect MetaLang {
 		return literals;
 	}
 
-	syn ObjLangASTNode Pattern.patternAST() {
+	syn lazy ObjLangASTNode Pattern.patternAST() {
 		ObjLangASTNode node = null;
 
 
@@ -113,7 +114,7 @@ aspect MetaLang {
 		for (short g : altGoals) {
 			beaver.Scanner scanner = null;
 			beaver.Parser parser = null;
-
+			node = null;
 
 			switch (srcLang) {
 			case "metadl":
@@ -125,7 +126,7 @@ aspect MetaLang {
 				parser = new lang.java4.pat.ast.PatLangParser();
 				break;
 			default:
-				SimpleLogger.logger().log("Unknown language in analyze block: " + srcLang);
+				SimpleLogger.logger().log("Unknown language in analyze block: " + srcLang, SimpleLogger.LogLevel.Level.ERROR);
 				System.exit(1);
 			}
 
@@ -134,17 +135,29 @@ aspect MetaLang {
 				PrintStream oldErr = System.err;
 				System.setErr(new PrintStream(errStream));
 				node = (ObjLangASTNode) parser.parse(scanner, g);
+
+				ByteArrayOutputStream bstream = new ByteArrayOutputStream();
+				PrintStream ps = new PrintStream(bstream);
+				ps.println("Parsed pattern: " + getPATTERN());
+				node.debugPrint(ps);
+
+				SimpleLogger.logger().log(bstream.toString(), SimpleLogger.LogLevel.Level.DEBUG);
+
 				System.setErr(oldErr);
 				break;
 			} catch (Exception e) {
 				exceptions.add(e);
 			}
+
+			if (node != null)
+				break;
 		}
 
 		if (node == null) {
 			// None of the parsing attempts succeeded. Print the errors
 			for (Exception e : exceptions)
-				SimpleLogger.logger().log("Error while parsing pattern: " + getPATTERN() + "\n" + e.toString());
+				SimpleLogger.logger().log("Error while parsing pattern: " + getPATTERN() + "\n" + e.toString(),
+										  SimpleLogger.LogLevel.Level.ERROR );
 			System.out.println(errStream.toString());
 			System.exit(1);
 		}

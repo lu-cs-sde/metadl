@@ -94,5 +94,6 @@ aspect LanguageSpecific {
 	eq MemberClassDecl.isWrapperNode() = true;
 	eq MemberInterfaceDecl.isWrapperNode() = true;
 	eq InstanceInitializer.isWrapperNode() = true;
+	eq LocalClassDeclStmt.isWrapperNode() = true;
 	eq ExprStmt.isWrapperNode() = true;
 }

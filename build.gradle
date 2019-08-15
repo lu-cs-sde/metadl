@@ -37,7 +37,7 @@ dependencies {
     testCompile('org.junit.jupiter:junit-jupiter-params:5.3.1')
 
     jflex 'de.jflex:jflex:1.6.1'
-    beaver 'net.sf.beaver:beaver-cc:0.9.11'
+    beaver files('deps/jar/beaver-cc-0.9.11.jar') //'net.sf.beaver:beaver-cc:0.9.11'
 
     // fictive versions for jastadd and jastaddparser - they
     // are substituted in settings.gradle

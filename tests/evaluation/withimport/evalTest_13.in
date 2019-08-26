@@ -2,7 +2,7 @@ IMPORT('P, "tests/evaluation/withimport/evalTest_13_input.java", "java4").
 
 analyze ('P, "java4") {
 	IsVoidMethod(cname, mname) :- <: class `c { .. void `md () { .. } .. } :>, ID(`c, cname), ID(`md, mname).
-	IsPublicMethod(mname) :- <: public .. `m (..) {..} :>, ID(`m, mname).
+	IsPublicMethod(mname) :- <: public `t `m (..) {..} :>, ID(`m, mname).
 }
 
 OUTPUT('IsVoidMethod).

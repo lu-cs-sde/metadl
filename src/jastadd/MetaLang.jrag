@@ -4,6 +4,7 @@ import java.util.Arrays;
 import lang.cons.ObjLangASTNode;
 import java.io.ByteArrayOutputStream;
 import edu.osu.ling.pep.*;
+import beaver.Symbol;
 
 aspect MetaLang {
 	/**
@@ -84,9 +85,69 @@ aspect MetaLang {
 		return literals;
 	}
 
+
+	private static void Pattern.collectLeafNodes(java.util.List<ParseTree> leaves, ParseTree current) {
+		if (current.getChildren() == null) {
+			leaves.add(current);
+		} else {
+			for (ParseTree c : current.getChildren())
+				collectLeafNodes(leaves, c);
+		}
+	}
+
+	private static void Pattern.transform(Map<ParseTree, Symbol> pt2s, ParseTree current, String srcLang) {
+		if (pt2s.containsKey(current))
+			return;
+		for (ParseTree c : current.getChildren()) {
+			transform(pt2s, c, srcLang);
+		}
+		Symbol s = null;
+		switch (srcLang) {
+		case "metadl":
+			s = lang.metadl.pat.ast.PatLangParserPEP.visit(pt2s, current);
+			break;
+		case "java4":
+			s = lang.java4.pat.ast.PatLangParserPEP.visit(pt2s, current);
+			break;
+		}
+		if (s == null) {
+			SimpleLogger.logger().log("Unable to translate parse tree: " + current.toString(),
+									  SimpleLogger.LogLevel.Level.ERROR);
+			throw new RuntimeException();
+		}
+		pt2s.put(current, s);
+	}
+
+	public ObjLangASTNode Pattern.transformParseTreeToAST(java.util.List<Symbol> tokens, ParseTree root) {
+		ArrayList<ParseTree> leaves = new ArrayList<ParseTree>();
+		String srcLang = enclosingAnalyzeBlock().getLang().getSTRING();
+
+		collectLeafNodes(leaves, root);
+		if (leaves.size() != tokens.size()) {
+			SimpleLogger.logger().log("Mismatch between the number of leaves in the " +
+									  "parse tree and the number of tokens in the parsed string",
+									  SimpleLogger.LogLevel.Level.ERROR);
+			throw new RuntimeException();
+		}
+
+		HashMap<ParseTree, Symbol> pt2s = new HashMap<ParseTree, Symbol>();
+
+		// now seed the ParseTree to Symbol map
+		for (int i = 0; i < leaves.size(); ++i) {
+			Symbol s = tokens.get(i);
+			ParseTree pt = leaves.get(i);
+			pt2s.put(pt, s);
+		}
+
+		transform(pt2s, root, srcLang);
+
+		return (ObjLangASTNode) pt2s.get(root);
+	}
+
 	public void Pattern.altParse() {
 		String srcLang = enclosingAnalyzeBlock().getLang().getSTRING();
 		java.util.List<String> tokens = new ArrayList<String>();
+		java.util.List<Symbol> symbols = new ArrayList<Symbol>();
 		String[] tokenNames = null;
 		beaver.Scanner scanner = null;
 
@@ -109,8 +170,10 @@ aspect MetaLang {
 				System.out.println(e);
 				break;
 			}
-			if (sym.getId() != 0)
+			if (sym.getId() != 0 /*EOF*/) {
 				tokens.add(tokenNames[sym.getId()]);
+				symbols.add(sym);
+			}
 			else
 				break;
 		} while (true);
@@ -155,7 +218,11 @@ aspect MetaLang {
 		parseTrees = parse.getParseTrees();
 		System.out.println(parseTrees.size());
 		for (ParseTree t : parseTrees) {
-			System.out.println(t);
+			ObjLangASTNode n = transformParseTreeToAST(symbols, t);
+			ByteArrayOutputStream bstream = new ByteArrayOutputStream();
+			PrintStream ps = new PrintStream(bstream);
+			n.debugPrint(ps);
+			SimpleLogger.logger().log(bstream.toString(), SimpleLogger.LogLevel.Level.DEBUG);
 		}
 	}
 

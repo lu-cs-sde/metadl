@@ -3,6 +3,7 @@ import java.io.StringReader;
 import java.util.Arrays;
 import lang.cons.ObjLangASTNode;
 import java.io.ByteArrayOutputStream;
+import edu.osu.ling.pep.*;
 
 aspect MetaLang {
 	/**
@@ -83,9 +84,85 @@ aspect MetaLang {
 		return literals;
 	}
 
-	syn lazy ObjLangASTNode Pattern.patternAST() {
-		ObjLangASTNode node = null;
+	public void Pattern.altParse() {
+		String srcLang = enclosingAnalyzeBlock().getLang().getSTRING();
+		java.util.List<String> tokens = new ArrayList<String>();
+		String[] tokenNames = null;
+		beaver.Scanner scanner = null;
 
+		switch (srcLang) {
+			case "metadl":
+				scanner = new lang.metadl.pat.ast.LangScanner(new StringReader(getPATTERN()));
+				tokenNames = lang.metadl.pat.ast.PatLangParser.Terminals.NAMES;
+				break;
+			case "java4":
+				scanner = new lang.java4.pat.ast.PatLangScanner(new StringReader(getPATTERN()));
+				tokenNames = lang.java4.pat.ast.PatLangParser.Terminals.NAMES;
+				break;
+		}
+
+		do {
+			beaver.Symbol sym;
+			try {
+				sym = scanner.nextToken();
+			} catch (Exception e) {
+				System.out.println(e);
+				break;
+			}
+			if (sym.getId() != 0)
+				tokens.add(tokenNames[sym.getId()]);
+			else
+				break;
+		} while (true);
+
+
+		System.out.println(tokens);
+
+		Set<ParseTree> parseTrees = null;
+		Parse parse = null;
+
+		Grammar javaGrammar = new Grammar("java4");
+		lang.java4.pat.ast.PatLangParserPEP.addRules(javaGrammar);
+		Grammar metadlGrammar = new Grammar("metadl");
+		lang.metadl.pat.ast.PatLangParserPEP.addRules(metadlGrammar);
+
+		EarleyParser parser = new EarleyParser(javaGrammar);
+
+		try {
+			switch (srcLang) {
+			case "java4": {
+				parser.setGrammar(javaGrammar);
+				parse = parser.parse(tokens, lang.java4.pat.ast.PatLangParserPEP.n_class_declaration);
+				break;
+			}
+			case "metadl": {
+				parser.setGrammar(metadlGrammar);
+				parse = parser.parse(tokens, lang.metadl.pat.ast.PatLangParserPEP.n_inner_clause);
+				break;
+			}
+			}
+		}
+		catch (PepException e) {
+				System.out.println(e);
+				System.exit(1);
+		}
+
+		if (parse.getStatus() == Status.ERROR) {
+			System.out.println("Error while parsing.");
+		} else if (parse.getStatus() == Status.REJECT) {
+			System.out.println("Token list rejected.");
+		}
+		parseTrees = parse.getParseTrees();
+		System.out.println(parseTrees.size());
+		for (ParseTree t : parseTrees) {
+			System.out.println(t);
+		}
+	}
+
+	syn lazy ObjLangASTNode Pattern.patternAST() {
+		altParse();
+
+		ObjLangASTNode node = null;
 
 		String srcLang = enclosingAnalyzeBlock().getLang().getSTRING();
 

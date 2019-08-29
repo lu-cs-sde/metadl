@@ -13,7 +13,11 @@
 %goal program;
 
 
-Program program =  clause.clauses+ {: return new Program(clauses); :};
+Program program =  clause_list.clauses {: return new Program(clauses); :};
+
+List clause_list = clause {: return new List(clause); :}
+                 | clause_list clause {: return clause_list.add(clause); :}
+                 ;
 
 Clause inner_clause = rule
                     | fact
@@ -24,7 +28,11 @@ CommonClause clause = inner_clause
                     ;
 
 AnalyzeBlock analyze_block =
-         ANALYZE LPARA pred_ref.prog_ref RPARA LBRACE inner_clause.clauses+ RBRACE {: return new AnalyzeBlock(prog_ref, clauses); :};
+         ANALYZE LPARA pred_ref.prog_ref RPARA LBRACE inner_clause_list.clauses RBRACE {: return new AnalyzeBlock(prog_ref, clauses); :};
+
+List inner_clause_list = inner_clause {: return new List().add(inner_clause); :}
+                       | inner_clause_list inner_clause {: return inner_clause_list.add(inner_clause); :}
+                       ;
 
 Rule rule = lit_list.heads IMPLIED_BY lit_list.body DOT {: return new Rule(heads, body); :};
 Fact fact = lit_list.heads DOT {: return new Fact(heads); :};

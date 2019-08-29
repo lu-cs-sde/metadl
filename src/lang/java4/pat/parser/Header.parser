@@ -3,5 +3,6 @@
 
  import lang.java4.pat.ast.*;
  import lang.java4.pat.ast.PatLangScanner;
+ import static lang.java4.pat.ast.PatLangParser.Terminals;
  // import org.extendj.scanner.UnicodeEscapeReader;
 :};

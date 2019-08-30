@@ -8,14 +8,14 @@ public class SimpleLogger {
 	public static SimpleLogger logger() {
 		return logger;
 	}
-	
+
 	private static boolean isDebugMode() {
 		String mode = System.getenv("DebugMode");
 		if(mode == null) return false;
-		if(!mode.equals("true")) return false; 
+		if(!mode.equals("true")) return false;
 		return true;
 	}
-	
+
 	private SimpleLogger log(String msg, LogLevel.Level level, String classname, String methodname) {
 		lastMode = level;
 		if(level == LogLevel.Level.DEBUG && !isDebugMode()) return logger;
@@ -29,13 +29,22 @@ public class SimpleLogger {
 		log(msg, level, prev.getClassName(), prev.getMethodName());
 		return logger;
 	}
-	
+
 	public SimpleLogger log(String msg) {
 		StackTraceElement[] stackTraceElements = Thread.currentThread().getStackTrace();
 		StackTraceElement prev = stackTraceElements[2];
 		log(msg, lastMode, prev.getClassName(), prev.getMethodName());
 		return logger;
 	}
+
+	public SimpleLogger error(String msg) {
+		return log(msg, LogLevel.Level.ERROR);
+	}
+
+	public SimpleLogger info(String msg) {
+		return log(msg, LogLevel.Level.INFO);
+	}
+
 
 	public static class LogLevel {
 

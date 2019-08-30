@@ -5,6 +5,9 @@ import lang.cons.ObjLangASTNode;
 import java.io.ByteArrayOutputStream;
 import edu.osu.ling.pep.*;
 import beaver.Symbol;
+import java.security.MessageDigest;
+import static lang.io.SimpleLogger.*;
+import java.util.IdentityHashMap;
 
 aspect MetaLang {
 	/**
@@ -27,11 +30,17 @@ aspect MetaLang {
 		return new AnalyzeContext(getScopePrefix(), getProgramRef().getPRED_ID());
 	}
 
+	coll ArrayList<Pattern> AnalyzeBlock.patterns() [new ArrayList<Pattern>()] root AnalyzeBlock;
+	Pattern contributes this to AnalyzeBlock.patterns();
+
 	syn nta List<Clause> AnalyzeBlock.getExpandedClauseList() {
 		List<Clause> cls = new List<>();
 		cls.addAll(generateHelperRelations());
 		for (Clause c : getClauses())
 			cls.add(c.treeCopy());
+		for (Pattern p : patterns()) {
+			cls.addAll(p.getClauses());
+		}
 		return cls;
 	}
 
@@ -73,17 +82,67 @@ aspect MetaLang {
 		}
 	}
 
-	syn nta List<Literal> Pattern.getLiterals() {
-		List<Literal> literals = new List<>();
-		literals.addAll(patternAST().literals(enclosingAnalyzeBlock().getContext(), null));
-		return literals;
+	syn lazy java.util.List<Clause> Pattern.getClauses() = getClausesHelper(null);
+	eq BoundedPattern.getClauses() = getClausesHelper(getCommonVariable());
+
+	public java.util.List<Clause> Pattern.getClausesHelper(CommonVariable bindVar) {
+		AnalyzeContext ctx = enclosingAnalyzeBlock().getContext();
+		ArrayList<Clause> ret = new ArrayList<>();
+		for (ObjLangASTNode n : altParse()) {
+			Atom head = getLiteralHelper(bindVar);
+			Rule r = new Rule(new List<CommonLiteral>().add(head),
+							  new List<CommonLiteral>().addAll(n.literals(ctx, bindVar)));
+			ret.add(r);
+		}
+		return ret;
 	}
 
-	syn nta List<Literal> BoundedPattern.getLiterals() {
-		List<Literal> literals = new List<>();
-		literals.addAll(patternAST().literals(enclosingAnalyzeBlock().getContext(), getCommonVariable()));
-		return literals;
+	public static String Pattern.hash(String s) {
+		try {
+			MessageDigest md = MessageDigest.getInstance("SHA-1");
+			byte[] md5 = md.digest(s.getBytes("UTF-8"));
+			StringBuffer sb = new StringBuffer();
+			// Take the first 6 bytes only, to avoid long predicate names
+			for (int i = 0; i < md5.length; i++) {
+				sb.append(String.format("%02x", md5[i]));
+			}
+			return sb.toString();
+		}
+		catch (Exception e) {}
+		return null;
 	}
+
+	public Atom Pattern.getLiteralHelper(CommonVariable bindVar) {
+		AnalyzeContext ctx = enclosingAnalyzeBlock().getContext();
+		List<Term> headVars = new List<>();
+		// The assumption is that any parse tree of a pattern contains
+		// the same metavariables
+		ObjLangASTNode n = altParse().iterator().next();
+		if (bindVar != null)
+			headVars.add(bindVar);
+		headVars.addAll(n.metavariables());
+		// we're using a String hash  here; fingers crossed for no collisions in
+		// the same analyze block
+		Atom head = new Atom(new PredicateSymbol(ctx.scopePrefix + hash(getPATTERN())),
+							 headVars);
+		return head;
+	}
+
+	syn nta Literal Pattern.getLiteral() = getLiteralHelper(null);
+	eq BoundedPattern.getLiteral() = getLiteralHelper(getCommonVariable());
+
+	syn nta List<Literal> Pattern.getLiterals() {
+		return new List<Literal>().add(getLiteral());
+		// List<Literal> literals = new
+		// literals.addAll(patternAST().literals(enclosingAnalyzeBlock().getContext(), null));
+		// return literals;
+	}
+
+	// syn nta List<Literal> BoundedPattern.getLiterals() {
+		// List<Literal> literals = new List<>();
+		// literals.addAll(patternAST().literals(enclosingAnalyzeBlock().getContext(), getCommonVariable()));
+		// return literals;
+	// }
 
 
 	private static void Pattern.collectLeafNodes(java.util.List<ParseTree> leaves, ParseTree current) {
@@ -130,7 +189,9 @@ aspect MetaLang {
 			throw new RuntimeException();
 		}
 
-		HashMap<ParseTree, Symbol> pt2s = new HashMap<ParseTree, Symbol>();
+		// Use reference equality instead of tree comparison. Otherwise, subtrees with
+		// the same structure will compare equal.
+		IdentityHashMap<ParseTree, Symbol> pt2s = new IdentityHashMap<ParseTree, Symbol>();
 
 		// now seed the ParseTree to Symbol map
 		for (int i = 0; i < leaves.size(); ++i) {
@@ -144,7 +205,7 @@ aspect MetaLang {
 		return (ObjLangASTNode) pt2s.get(root);
 	}
 
-	public void Pattern.altParse() {
+	syn lazy java.util.List<ObjLangASTNode> Pattern.altParse() {
 		String srcLang = enclosingAnalyzeBlock().getLang().getSTRING();
 		java.util.List<String> tokens = new ArrayList<String>();
 		java.util.List<Symbol> symbols = new ArrayList<Symbol>();
@@ -178,56 +239,66 @@ aspect MetaLang {
 				break;
 		} while (true);
 
-
-		System.out.println(tokens);
-
-		Set<ParseTree> parseTrees = null;
-		Parse parse = null;
-
-		Grammar javaGrammar = new Grammar("java4");
-		lang.java4.pat.ast.PatLangParserPEP.addRules(javaGrammar);
-		Grammar metadlGrammar = new Grammar("metadl");
-		lang.metadl.pat.ast.PatLangParserPEP.addRules(metadlGrammar);
-
-		EarleyParser parser = new EarleyParser(javaGrammar);
-
-		try {
-			switch (srcLang) {
-			case "java4": {
-				parser.setGrammar(javaGrammar);
-				parse = parser.parse(tokens, lang.java4.pat.ast.PatLangParserPEP.n_class_declaration);
-				break;
-			}
-			case "metadl": {
-				parser.setGrammar(metadlGrammar);
-				parse = parser.parse(tokens, lang.metadl.pat.ast.PatLangParserPEP.n_inner_clause);
-				break;
-			}
-			}
+		Grammar grammar = new Grammar("metadl");
+		EarleyParser parser = new EarleyParser(grammar);
+		java.util.List<Category> parseGoals = null;
+		switch (srcLang) {
+		case "java4":
+			lang.java4.pat.ast.PatLangParserPEP.addRules(grammar);
+			parseGoals = Arrays.asList(lang.java4.pat.ast.PatLangParserPEP.n_class_declaration,
+									   lang.java4.pat.ast.PatLangParserPEP.n_interface_declaration,
+									   lang.java4.pat.ast.PatLangParserPEP.n_method_declaration,
+									   lang.java4.pat.ast.PatLangParserPEP.n_statement);
+			break;
+		case "metadl":
+			lang.metadl.pat.ast.PatLangParserPEP.addRules(grammar);
+			parseGoals = Arrays.asList(lang.metadl.pat.ast.PatLangParserPEP.n_clause,
+									   lang.metadl.pat.ast.PatLangParserPEP.n_common_literal,
+									   lang.metadl.pat.ast.PatLangParserPEP.n_expr);
+			break;
 		}
-		catch (PepException e) {
-				System.out.println(e);
+
+		ArrayList<ObjLangASTNode> ret = new ArrayList<>();
+		for (Category goal : parseGoals) {
+			Parse parse = null;
+			try {
+				parse = parser.parse(tokens, goal);
+			} catch (PepException e) {
+				logger().error("Error while parsing pattern " + getPATTERN());
+				logger().error(e.toString());
 				System.exit(1);
+			}
+			if (parse.getStatus() == Status.ACCEPT) {
+				for (ParseTree t : parse.getParseTrees()) {
+					ObjLangASTNode n = transformParseTreeToAST(symbols, t);
+					ret.add(n);
+				}
+			} else if (parse.getStatus() == Status.ERROR) {
+				logger().error("Error while parsing pattern " + getPATTERN());
+				System.exit(1);
+			}
 		}
 
-		if (parse.getStatus() == Status.ERROR) {
-			System.out.println("Error while parsing.");
-		} else if (parse.getStatus() == Status.REJECT) {
-			System.out.println("Token list rejected.");
+		if (ret.isEmpty()) {
+			logger().error("Pattern rejected by the parser " + getPATTERN());
+			System.exit(1);
 		}
-		parseTrees = parse.getParseTrees();
-		System.out.println(parseTrees.size());
-		for (ParseTree t : parseTrees) {
-			ObjLangASTNode n = transformParseTreeToAST(symbols, t);
-			ByteArrayOutputStream bstream = new ByteArrayOutputStream();
-			PrintStream ps = new PrintStream(bstream);
-			n.debugPrint(ps);
-			SimpleLogger.logger().log(bstream.toString(), SimpleLogger.LogLevel.Level.DEBUG);
+
+		if (ret.size() != 1) {
+			logger().info("Ambiguous pattern " + getPATTERN() + " generates " + ret.size() + " parse trees");
+			for (ObjLangASTNode n : ret) {
+				ByteArrayOutputStream bstream = new ByteArrayOutputStream();
+				PrintStream ps = new PrintStream(bstream);
+				n.debugPrint(ps);
+				logger().info(bstream.toString());
+			}
 		}
+
+		return ret;
 	}
 
 	syn lazy ObjLangASTNode Pattern.patternAST() {
-		altParse();
+		//altParse();
 
 		ObjLangASTNode node = null;
 

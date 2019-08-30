@@ -51,6 +51,12 @@ aspect Pattern {
 		}
 	}
 
+	public void MetaVariable.debugPrintInternal(int offset, PrintStream ps) {
+		for (int i = 0; i < offset; ++i)
+			ps.print('_');
+		ps.println(name() + ":" + getID());
+	}
+
 	public void ASTNode.debugPrint(PrintStream ps) {
 		debugPrintInternal(0, ps);
 	}

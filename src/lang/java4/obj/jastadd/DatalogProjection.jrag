@@ -42,4 +42,11 @@ aspect LanguageSpecific {
 	eq ContinueStmt.tokens() {
 		return Collections.singletonList(getLabel());
 	}
+	eq ParseName.tokens() {
+		java.util.List<String>  tokenList = new ArrayList<>();
+		for (NamePart np : nameParts)
+			tokenList.add(np.toString());
+		return tokenList;
+	}
+
 }

@@ -59,7 +59,7 @@ aspect Copied {
     return node;
   }
 
-  private ArrayList<NamePart> ParseName.nameParts = new ArrayList<NamePart>();
+  public ArrayList<NamePart> ParseName.nameParts = new ArrayList<NamePart>();
 
   public ParseName.ParseName(ArrayList<NamePart> nameParts) {
     this.nameParts.addAll(nameParts);

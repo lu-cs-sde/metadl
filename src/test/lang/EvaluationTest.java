@@ -164,7 +164,9 @@ public class EvaluationTest {
 	@ValueSource(strings = { "evalTest_2", "evalTest_3", "evalTest_4",
 							 "evalTest_5", "evalTest_6", "evalTest_7",
 							 "evalTest_8", "evalTest_9", "evalTest_10",
-							 "evalTest_11", "evalTest_12", "evalTest_13"})
+							 "evalTest_11", "evalTest_12", "evalTest_13",
+							 // "evalTest_14", takes too long to run, disabled
+							 "evalTest_15"})
 	void evaluationTestSoufflePatterns(String fileName) throws Exception {
 		Description d1 = FileUtil.parseDescription(
 		   "eval::souffle -OUT ./tests/output/souffle -FACTS ./tests/evaluation/withimport/facts ./tests/evaluation/withimport/"

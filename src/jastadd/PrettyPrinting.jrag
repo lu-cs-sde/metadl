@@ -234,6 +234,7 @@ aspect SoufflePrinting {
     }
 
 	public void Pattern.soufflePrint(PrettyPrinter pr) {
+		pr.out.print("/* " + getPATTERN() + "*/");
 		printCollection(getLiterals(), "", "", ", ", pr);
 	}
 

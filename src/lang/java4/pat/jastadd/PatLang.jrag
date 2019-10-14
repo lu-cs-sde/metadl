@@ -40,6 +40,13 @@ aspect LanguageSpecific {
 	eq ContinueStmt.tokens() {
 		return Collections.singletonList(getLabel());
 	}
+	eq ParseName.tokens() {
+		java.util.List<String>  tokenList = new ArrayList<>();
+		for (NamePart np : nameParts)
+			tokenList.add(np.toString());
+		return tokenList;
+	}
+
 
 	public static java.util.List<lang.ast.Clause> PatLang.generateHelperRelations(AnalyzeContext ctx) {
 		java.util.List<lang.ast.Clause> ret = new java.util.ArrayList<>();
@@ -48,6 +55,7 @@ aspect LanguageSpecific {
 		// Identifiers
 		ret.add(makeIdentifierRule(ctx, "IdUse", "ID", 0, null));
 		ret.add(makeIdentifierRule(ctx, "IdWrapper", "ID", 0, null));
+		ret.add(makeIdentifierRule(ctx, "ParseName", "ID", 0, null));
 		// Modifiers
 		ret.add(makeIdentifierRule(ctx, "Modifier", "MOD", 0, null));
 		// Literals

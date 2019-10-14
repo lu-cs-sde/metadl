@@ -1,0 +1,8 @@
+IMPORT('P, "tests/evaluation/withimport/evalTest_14_input.mdl", "metadl").
+
+analyze ('P, "metadl") {
+	IsNeq(pname, qname) :- <: ... :- ..., $p(..., $x, ... ), ..., NEQ($x, $y), ..., $q(..., $y, ...). :>,
+		     ID($p, pname), ID($q, qname).
+}
+
+OUTPUT('IsNeq).

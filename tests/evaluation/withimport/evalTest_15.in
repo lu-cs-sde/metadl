@@ -5,7 +5,7 @@ analyze ('P, "java4") {
 		<: class `c implements .., `i, .. { .. } :>,
 		ID(`c, c), ID(`i, i).
 	InterfaceExtendsInterface(i, j) :-
-		<: interface `i extends `j { .. } :>,
+		<: interface `i extends .., `j, .. { .. } :>,
 		ID(`i, i), ID(`j, j).
 	ClassExtendsClass(c, d) :-
 		<: class `c extends `d { .. } :>,

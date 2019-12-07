@@ -24,6 +24,11 @@ configurations {
     jastaddparser
 }
 
+// Import the pep project
+ant.importBuild('deps/pep/build.xml') {
+    antTargetName -> 'pep_' + antTargetName
+}
+
 // Dependencies are Jar files needed to compile and generate the compiler.
 dependencies {
     compile 'net.sf.beaver:beaver-rt:0.9.11'
@@ -38,8 +43,7 @@ dependencies {
 
     jflex 'de.jflex:jflex:1.6.1'
     beaver files('deps/jar/beaver-cc-0.9.11.jar') //'net.sf.beaver:beaver-cc:0.9.11'
-    compile files('deps/jar/pep.jar')
-
+    compile fileTree('deps/pep/package/pep.jar')
     // fictive versions for jastadd and jastaddparser - they
     // are substituted in settings.gradle
     jastaddparser 'org.jastadd:jastaddparser:100.100.100'
@@ -112,7 +116,7 @@ jar {
 compileJava.dependsOn 'generateJava', 'generateScanner', 'generateParser',
     'genMetadlLang',
     'genJava4Lang',
-    'generateConfig', 'generateScannerConfig', 'generateParserConfig'
+    'generateConfig', 'generateScannerConfig', 'generateParserConfig', 'pep_package'
 
 
 void makeGenerateJavaTask(String name, String outDir, String srcDir, String pkg,

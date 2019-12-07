@@ -4,3 +4,6 @@
 [submodule "deps/metajastadd2"]
 	path = deps/metajastadd2
 	url = git@git.cs.lth.se:al7330du/metajastadd2.git
+[submodule "deps/pep"]
+	path = deps/pep
+	url = git@github.com:coffeeblack/pep.git

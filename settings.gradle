@@ -11,3 +11,9 @@ includeBuild('./deps/metajastadd2') {
 	substitute module('org.jastadd:jastadd:100.100.100') with project(':')
     }
 }
+
+includeBuild('./deps/sppf-earley-parser/') {
+    dependencySubstitution {
+	substitute module('se.lth:sep:100.100.100') with project(':')
+    }
+}

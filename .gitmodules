@@ -7,3 +7,6 @@
 [submodule "deps/pep"]
 	path = deps/pep
 	url = git@github.com:coffeeblack/pep.git
+[submodule "deps/sppf-earley-parser"]
+	path = deps/sppf-earley-parser
+	url = git@git.cs.lth.se:al7330du/sppf-earley-parser.git

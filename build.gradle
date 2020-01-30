@@ -44,6 +44,7 @@ dependencies {
     jflex 'de.jflex:jflex:1.6.1'
     beaver files('deps/jar/beaver-cc-0.9.11.jar') //'net.sf.beaver:beaver-cc:0.9.11'
     compile fileTree('deps/pep/package/pep.jar')
+    compile 'se.lth:sep:100.100.100'
     // fictive versions for jastadd and jastaddparser - they
     // are substituted in settings.gradle
     jastaddparser 'org.jastadd:jastaddparser:100.100.100'
@@ -212,6 +213,21 @@ void makeGeneratePEPTask(String name, String outFile, String srcFile) {
     }
 }
 
+void makeGenerateSEPTask(String name, String outFile, String srcFile) {
+    tasks.create(name, JavaExec) {
+	doFirst {
+            file('src/gen').mkdirs()
+	}
+
+	description 'Generates the parser with Beaver.'
+	classpath = configurations.jastaddparser
+	main = 'org.jastadd.jastaddparser.Main'
+
+
+	args '--sep', file(srcFile).path, file(outFile).path
+    }
+}
+
 void makeGenerateLangTask(String taskName, String outDir, String srcLang, ArrayList<String> lexOrder, boolean patlang = true) {
     tasks.create('MkDirs' + taskName) {
 	doFirst {
@@ -242,8 +258,13 @@ void makeGenerateLangTask(String taskName, String outDir, String srcLang, ArrayL
     makeGenerateBeaverTask('generateBeaverObjlang' + taskName, outDir + '/lang/' + srcLang + '/ObjLangParser.beaver',
 			   outDir + '/lang/' + srcLang + '/obj/parser/lang.parser',
 			   false)
+    // TODO: remove once the SEP parser is in place
     // .parser -> .java file describing a PEP grammar
     makeGeneratePEPTask('generatePEP' + taskName, outDir + '/lang/' + srcLang + '/pat/ast/PatLangParserPEP.java',
+			outDir + '/lang/' + srcLang + '/pat/parser/lang.parser')
+
+    // .parser -> .java file describing a SEP grammar
+    makeGenerateSEPTask('generateSEP' + taskName, outDir + '/lang/' + srcLang + '/pat/ast/PatLangParserSEP.java',
 			outDir + '/lang/' + srcLang + '/pat/parser/lang.parser')
 
     // .beaver -> .java
@@ -278,6 +299,7 @@ void makeGenerateLangTask(String taskName, String outDir, String srcLang, ArrayL
 	tasks.getByName(taskName).dependsOn tasks.getByName('generateScannerPatlang' + taskName)
 	tasks.getByName(taskName).dependsOn tasks.getByName('generateJavaPatlang' + taskName)
 	tasks.getByName(taskName).dependsOn tasks.getByName('generatePEP' + taskName)
+	tasks.getByName(taskName).dependsOn tasks.getByName('generateSEP' + taskName)
     }
 
     tasks.getByName(taskName).dependsOn tasks.getByName('generateBeaverObjlang' + taskName)

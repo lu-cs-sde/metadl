@@ -3,11 +3,11 @@ import java.io.StringReader;
 import java.util.Arrays;
 import lang.cons.ObjLangASTNode;
 import java.io.ByteArrayOutputStream;
-import edu.osu.ling.pep.*;
 import beaver.Symbol;
 import java.security.MessageDigest;
 import static lang.io.SimpleLogger.*;
 import java.util.IdentityHashMap;
+import se.lth.sep.EarleyParser;
 
 aspect MetaLang {
 	/**
@@ -144,82 +144,25 @@ aspect MetaLang {
 		// return literals;
 	// }
 
-
-	private static void Pattern.collectLeafNodes(java.util.List<ParseTree> leaves, ParseTree current) {
-		if (current.getChildren() == null) {
-			leaves.add(current);
-		} else {
-			for (ParseTree c : current.getChildren())
-				collectLeafNodes(leaves, c);
-		}
-	}
-
-	private static void Pattern.transform(Map<ParseTree, Symbol> pt2s, ParseTree current, String srcLang) {
-		if (pt2s.containsKey(current))
-			return;
-		for (ParseTree c : current.getChildren()) {
-			transform(pt2s, c, srcLang);
-		}
-		Symbol s = null;
-		switch (srcLang) {
-		case "metadl":
-			s = lang.metadl.pat.ast.PatLangParserPEP.visit(pt2s, current);
-			break;
-		case "java4":
-			s = lang.java4.pat.ast.PatLangParserPEP.visit(pt2s, current);
-			break;
-		}
-		if (s == null) {
-			SimpleLogger.logger().log("Unable to translate parse tree: " + current.toString(),
-									  SimpleLogger.LogLevel.Level.ERROR);
-			throw new RuntimeException();
-		}
-		pt2s.put(current, s);
-	}
-
-	public ObjLangASTNode Pattern.transformParseTreeToAST(java.util.List<Symbol> tokens, ParseTree root) {
-		ArrayList<ParseTree> leaves = new ArrayList<ParseTree>();
-		String srcLang = enclosingAnalyzeBlock().getLang().getSTRING();
-
-		collectLeafNodes(leaves, root);
-		if (leaves.size() != tokens.size()) {
-			SimpleLogger.logger().log("Mismatch between the number of leaves in the " +
-									  "parse tree and the number of tokens in the parsed string",
-									  SimpleLogger.LogLevel.Level.ERROR);
-			throw new RuntimeException();
-		}
-
-		// Use reference equality instead of tree comparison. Otherwise, subtrees with
-		// the same structure will compare equal.
-		IdentityHashMap<ParseTree, Symbol> pt2s = new IdentityHashMap<ParseTree, Symbol>();
-
-		// now seed the ParseTree to Symbol map
-		for (int i = 0; i < leaves.size(); ++i) {
-			Symbol s = tokens.get(i);
-			ParseTree pt = leaves.get(i);
-			pt2s.put(pt, s);
-		}
-
-		transform(pt2s, root, srcLang);
-
-		return (ObjLangASTNode) pt2s.get(root);
-	}
-
 	syn lazy java.util.List<ObjLangASTNode> Pattern.altParse() {
 		String srcLang = enclosingAnalyzeBlock().getLang().getSTRING();
-		java.util.List<String> tokens = new ArrayList<String>();
+		java.util.List<Category> tokens = new ArrayList<Category>();
 		java.util.List<Symbol> symbols = new ArrayList<Symbol>();
+
 		String[] tokenNames = null;
 		beaver.Scanner scanner = null;
+		Grammar grammar = new Grammar();
 
 		switch (srcLang) {
 			case "metadl":
 				scanner = new lang.metadl.pat.ast.LangScanner(new StringReader(getPATTERN()));
 				tokenNames = lang.metadl.pat.ast.PatLangParser.Terminals.NAMES;
+				lang.metadl.pat.ast.PatLangParserSEP.addRules(grammar);
 				break;
 			case "java4":
 				scanner = new lang.java4.pat.ast.PatLangScanner(new StringReader(getPATTERN()));
 				tokenNames = lang.java4.pat.ast.PatLangParser.Terminals.NAMES;
+				lang.java4.pat.ast.PatLangParserSEP.addRules(grammar);
 				break;
 		}
 
@@ -232,69 +175,28 @@ aspect MetaLang {
 				break;
 			}
 			if (sym.getId() != 0 /*EOF*/) {
-				tokens.add(tokenNames[sym.getId()]);
+				tokens.add(grammar.getCategory(tokenNames[sym.getId()]));
 				symbols.add(sym);
 			}
 			else
 				break;
 		} while (true);
 
-		Grammar grammar = new Grammar("metadl");
 		EarleyParser parser = new EarleyParser(grammar);
-		java.util.List<Category> parseGoals = null;
-		switch (srcLang) {
-		case "java4":
-			lang.java4.pat.ast.PatLangParserPEP.addRules(grammar);
-			parseGoals = Arrays.asList(lang.java4.pat.ast.PatLangParserPEP.n_class_declaration,
-									   lang.java4.pat.ast.PatLangParserPEP.n_interface_declaration,
-									   lang.java4.pat.ast.PatLangParserPEP.n_method_declaration,
-									   lang.java4.pat.ast.PatLangParserPEP.n_statement);
-			break;
-		case "metadl":
-			lang.metadl.pat.ast.PatLangParserPEP.addRules(grammar);
-			parseGoals = Arrays.asList(lang.metadl.pat.ast.PatLangParserPEP.n_clause,
-									   lang.metadl.pat.ast.PatLangParserPEP.n_common_literal,
-									   lang.metadl.pat.ast.PatLangParserPEP.n_expr);
-			break;
-		}
-
-		ArrayList<ObjLangASTNode> ret = new ArrayList<>();
-		for (Category goal : parseGoals) {
-			Parse parse = null;
-			try {
-				parse = parser.parse(tokens, goal);
-			} catch (PepException e) {
-				logger().error("Error while parsing pattern " + getPATTERN());
-				logger().error(e.toString());
-				System.exit(1);
-			}
-			if (parse.getStatus() == Status.ACCEPT) {
-				for (ParseTree t : parse.getParseTrees()) {
-					ObjLangASTNode n = transformParseTreeToAST(symbols, t);
-					ret.add(n);
-				}
-			} else if (parse.getStatus() == Status.ERROR) {
-				logger().error("Error while parsing pattern " + getPATTERN());
-				System.exit(1);
-			}
-		}
-
-		if (ret.isEmpty()) {
-			logger().error("Pattern rejected by the parser " + getPATTERN());
+		Category[] tokenArray = tokens.toArray(new Category[1]);
+		SPPFNode root = parser.parse(tokenArray, lang.metadl.pat.ast.PatLangParserSEP.n_rule);
+		if (root == null) {
+			SimpleLogger.logger().log("Error while parsing pattern: " + getPATTERN() + "\n",
+										  SimpleLogger.LogLevel.Level.ERROR );
 			System.exit(1);
 		}
 
-		if (ret.size() != 1) {
-			logger().info("Ambiguous pattern " + getPATTERN() + " generates " + ret.size() + " parse trees");
-			for (ObjLangASTNode n : ret) {
-				ByteArrayOutputStream bstream = new ByteArrayOutputStream();
-				PrintStream ps = new PrintStream(bstream);
-				n.debugPrint(ps);
-				logger().info(bstream.toString());
-			}
-		}
+		TranslateToASTVisitor visitor = new TranslateToASTVisitor(symbols, grammar);
+		root.accept(visitor);
 
-		return ret;
+		System.exit(0);
+
+		return null;
 	}
 
 	syn lazy ObjLangASTNode Pattern.patternAST() {

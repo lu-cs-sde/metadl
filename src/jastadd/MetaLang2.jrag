@@ -1,0 +1,101 @@
+import se.lth.sep.SPPFNode;
+import se.lth.sep.ItemLabel;
+import se.lth.sep.SymbolLabel;
+import se.lth.sep.SPPFNodeVisitor;
+import se.lth.sep.Grammar;
+import se.lth.sep.Category;
+
+
+aspect MetaLang2 {
+	public class TranslateToASTVisitor implements SPPFNodeVisitor {
+		private Map<SPPFNode, ASTNode> nodeMap = new IdentityHashMap<SPPFNode, ASTNode>();
+		private java.util.List<Symbol> tokens;
+		private Grammar grammar;
+
+		public TranslateToASTVisitor(java.util.List<Symbol> tokens, Grammar g) {
+			this.nodeMap = nodeMap;
+			this.grammar = g;
+			this.tokens = tokens;
+		}
+
+		private String makeSignature(SPPFNode node) {
+			if (node.getLabel() instanceof SymbolLabel) {
+				Category c = ((SymbolLabel)node.getLabel()).getSymbol(grammar);
+				return c.getName();
+			} else {
+				StringBuilder sb = new StringBuilder();
+				se.lth.sep.Rule r = ((ItemLabel)node.getLabel()).getRule(grammar);
+				int dotPos = ((ItemLabel)node.getLabel()).getDotPosition();
+				for (int i = 0; i < dotPos; i++) {
+					if (i != 0) {
+						sb.append(".");
+					}
+					Category c = r.getBody().get(i);
+					sb.append(c.getName());
+				}
+				return sb.toString();
+			}
+		}
+
+		private String makeSignature(SPPFNode.FamilyNode fnode) {
+			if (fnode.getChild(0) == null) {
+				return "";
+			}
+
+			StringBuilder sb = new StringBuilder();
+			if (fnode.getChild(0) != null) {
+				sb.append(makeSignature(fnode.getChild(0)));
+			}
+
+			if (fnode.getChild(1) != null) {
+				sb.append(".");
+				sb.append(makeSignature(fnode.getChild(1)));
+			}
+
+			return sb.toString();
+		}
+
+		private lang.metadl.pat.ast.ASTNode visitSymbolNode(SPPFNode node) {
+			assert node.getLabel() instanceof SymbolLabel;
+			SymbolLabel label = (SymbolLabel) node.getLabel();
+			Category c = label.getSymbol(grammar);
+			if (c.isTerminal()) {
+				// c is a terminal, wrap the terminals for now
+				assert label.getStart() + 1 == label.getEnd();
+				return new lang.metadl.pat.ast.MetaTerminalWrapper(tokens.get(label.getStart()));
+			} else {
+				// apply a semantic action for every family
+				for (SPPFNode.FamilyNode f : node.getChildren()) {
+					String sig = label.getSymbol(grammar).getName() + "." + makeSignature(f);
+					System.out.println(sig);
+				}
+				return null;
+			}
+		}
+
+		@Override public void visit(SPPFNode node) {
+			if (nodeMap.containsKey(node))
+				return;
+			nodeMap.put(node, null);
+
+			if (node.getLabel() instanceof SymbolLabel) {
+				visitSymbolNode(node);
+			} else {
+				assert node.getLabel() instanceof ItemLabel;
+			}
+
+			// TODO: visiting code, needs update
+			for (SPPFNode.FamilyNode f : node.getChildren()) {
+				f.accept(this);
+			}
+		}
+
+		@Override public void visit(SPPFNode.FamilyNode node) {
+			// TODO: move to the children
+			if (node.getChild(0) != null)
+				node.getChild(0).accept(this);
+			if (node.getChild(1) != null)
+				node.getChild(1).accept(this);
+		}
+	}
+}

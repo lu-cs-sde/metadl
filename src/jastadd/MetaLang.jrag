@@ -193,7 +193,7 @@ aspect MetaLang {
 
 		TranslateToASTVisitor visitor = new TranslateToASTVisitor(symbols, grammar);
 		root.accept(visitor);
-
+		assert visitor.getTranslation(root) != null;
 		System.exit(0);
 
 		return null;

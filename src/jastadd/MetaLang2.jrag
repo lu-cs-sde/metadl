@@ -8,14 +8,26 @@ import se.lth.sep.Category;
 
 aspect MetaLang2 {
 	public class TranslateToASTVisitor implements SPPFNodeVisitor {
-		private Map<SPPFNode, ASTNode> nodeMap = new IdentityHashMap<SPPFNode, ASTNode>();
+		/**
+		   This class produces two sorts of alternatives when traversing the SPPF
+		   - FinalOr nodes, that are not to be further processed
+		   - Or nodes that are to be simplified:
+		   (Seq (Or A, B, C), S2, S3, ...) becomes (Or (Seq A, S2, S3), (Seq B, S2, S3), (Seq C, S2, S3)
+		   (Seq (Seq A, B,...), C, ...) becomes (Seq A, B, ..., C, ...)
+		 */
+
+		private Map<SPPFNode, lang.metadl.pat.ast.ASTNode> nodeMap = new IdentityHashMap<>();
+		private Map<SPPFNode.FamilyNode, lang.metadl.pat.ast.ASTNode> familyNodeMap = new IdentityHashMap<>();
 		private java.util.List<Symbol> tokens;
 		private Grammar grammar;
 
 		public TranslateToASTVisitor(java.util.List<Symbol> tokens, Grammar g) {
-			this.nodeMap = nodeMap;
 			this.grammar = g;
 			this.tokens = tokens;
+		}
+
+		public lang.metadl.pat.ast.ASTNode getTranslation(SPPFNode n) {
+			return nodeMap.get(n);
 		}
 
 		private String makeSignature(SPPFNode node) {
@@ -59,43 +71,213 @@ aspect MetaLang2 {
 			assert node.getLabel() instanceof SymbolLabel;
 			SymbolLabel label = (SymbolLabel) node.getLabel();
 			Category c = label.getSymbol(grammar);
+
 			if (c.isTerminal()) {
 				// c is a terminal, wrap the terminals for now
 				assert label.getStart() + 1 == label.getEnd();
 				return new lang.metadl.pat.ast.MetaTerminalWrapper(tokens.get(label.getStart()));
 			} else {
-				// apply a semantic action for every family
+				lang.metadl.pat.ast.MetaFinalOr or = new lang.metadl.pat.ast.MetaFinalOr();
 				for (SPPFNode.FamilyNode f : node.getChildren()) {
+					// visit the chidlren first
+					f.accept(this);
+					// compute the signature of this node, needed to lookup the
+					// semantic action
 					String sig = label.getSymbol(grammar).getName() + "." + makeSignature(f);
+
 					System.out.println(sig);
+
+					// figure out what we computed for this family
+					lang.metadl.pat.ast.ASTNode root = familyNodeMap.get(f);
+
+					if (root instanceof lang.metadl.pat.ast.MetaOr) {
+						// if it's an Or node, apply the semantic rule for all its operands
+						for (lang.metadl.pat.ast.ASTNode orOperand : ((lang.metadl.pat.ast.MetaOr)root).getOperands()) {
+							java.util.List<Symbol> astChildren = new java.util.ArrayList<>();
+							contributeToProduction(orOperand, astChildren);
+							lang.metadl.pat.ast.ASTNode tmp = (lang.metadl.pat.ast.ASTNode)
+								lang.metadl.pat.ast.PatLangParserSEP.doAction(astChildren, sig);
+							assert tmp != null;
+							or.addOperand(tmp);
+						}
+					} else {
+						// this is a single node or a sequence
+						java.util.List<Symbol> astChildren = new java.util.ArrayList<>();
+						// build the right hand side of the rule
+						contributeToProduction(root, astChildren);
+						// apply the semantic rule
+						lang.metadl.pat.ast.ASTNode tmp = (lang.metadl.pat.ast.ASTNode)
+							lang.metadl.pat.ast.PatLangParserSEP.doAction(astChildren, sig);
+						assert tmp != null;
+						or.addOperand(tmp);
+					}
 				}
-				return null;
+				return simplify(or);
 			}
+		}
+
+		private lang.metadl.pat.ast.ASTNode visitItemNode(SPPFNode node) {
+			assert node.getLabel() instanceof ItemLabel;
+			ItemLabel label = (ItemLabel) node.getLabel();
+
+			lang.metadl.pat.ast.MetaOr or = new lang.metadl.pat.ast.MetaOr();
+
+			for (SPPFNode.FamilyNode f : node.getChildren()) {
+				f.accept(this);
+
+				// figure out what we computed for this family
+				lang.metadl.pat.ast.ASTNode root = familyNodeMap.get(f);
+				or.addOperand(root);
+			}
+
+			return simplify(or);
 		}
 
 		@Override public void visit(SPPFNode node) {
 			if (nodeMap.containsKey(node))
 				return;
-			nodeMap.put(node, null);
 
+			lang.metadl.pat.ast.ASTNode astNode = null;
 			if (node.getLabel() instanceof SymbolLabel) {
-				visitSymbolNode(node);
+				astNode = visitSymbolNode(node);
 			} else {
 				assert node.getLabel() instanceof ItemLabel;
+				astNode = visitItemNode(node);
 			}
 
-			// TODO: visiting code, needs update
-			for (SPPFNode.FamilyNode f : node.getChildren()) {
-				f.accept(this);
-			}
+			assert astNode != null;
+			nodeMap.put(node, astNode);
 		}
 
 		@Override public void visit(SPPFNode.FamilyNode node) {
-			// TODO: move to the children
-			if (node.getChild(0) != null)
+			if (familyNodeMap.containsKey(node))
+				return;
+
+			lang.metadl.pat.ast.ASTNode ret;
+			if (node.getChild(0) != null && node.getChild(1) != null) {
 				node.getChild(0).accept(this);
-			if (node.getChild(1) != null)
 				node.getChild(1).accept(this);
+				ret = new lang.metadl.pat.ast.MetaSeq().addOperand(nodeMap.get(node.getChild(0)))
+					.addOperand(nodeMap.get(node.getChild(1)));
+			} else if (node.getChild(0) != null) {
+				node.getChild(0).accept(this);
+				ret = nodeMap.get(node.getChild(0));
+			} else {
+				assert node.getChild(0) == null;
+				assert node.getChild(1) == null;
+				ret = new lang.metadl.pat.ast.MetaEpsilon();
+			}
+
+			ret = simplify(ret);
+			familyNodeMap.put(node, ret);
+		}
+
+		static void contributeToProduction(lang.metadl.pat.ast.ASTNode ast, java.util.List<Symbol> prod) {
+			if (ast instanceof lang.metadl.pat.ast.MetaTerminalWrapper) {
+				prod.add(ast.getChild(0));
+			} else if (ast instanceof lang.metadl.pat.ast.MetaSeq) {
+				lang.metadl.pat.ast.MetaSeq seq = (lang.metadl.pat.ast.MetaSeq) ast;
+				for (lang.metadl.pat.ast.ASTNode op : seq.getOperands())
+					prod.add(op);
+			} else if (ast instanceof lang.metadl.pat.ast.MetaEpsilon) {
+				// do nothing
+			} else {
+				prod.add(ast);
+			}
+		}
+
+		static lang.metadl.pat.ast.ASTNode simplify(lang.metadl.pat.ast.ASTNode n) {
+			// Implement node simplification here
+			if (n instanceof lang.metadl.pat.ast.MetaFinalOr) {
+				lang.metadl.pat.ast.MetaFinalOr or = (lang.metadl.pat.ast.MetaFinalOr) n;
+				if (or.getNumOperand() == 1)
+					return or.getOperand(0);
+			} else if (n instanceof lang.metadl.pat.ast.Seq) {
+				lang.metadl.pat.ast.MetaSeq seq = (lang.metadl.pat.ast.MetaSeq) n;
+
+				// sequences of a single element are reduced
+				if (seq.getNumOperand() == 1)
+					return seq.getOperand(0);
+
+				// seq(seq(a,b), c) -> seq(a, b, c)
+				boolean hasInnerSeq = false;
+				for (lang.metadl.pat.ast.ASTNode opd : seq.getOperands()) {
+					if (opd instanceof lang.metadl.pat.ast.MetaSeq) {
+						hasInnerSeq = true;
+						break;
+					}
+				}
+
+				if (hasInnerSeq) {
+					lang.metadl.pat.ast.MetaSeq ret = new lang.metadl.pat.ast.MetaSeq();
+					for (lang.metadl.pat.ast.ASTNode n1 : seq.getOperands()) {
+						if (n1 instanceof lang.metadl.pat.ast.MetaSeq) {
+							for (lang.metadl.pat.ast.ASTNode n2 : ((lang.metadl.pat.ast.MetaSeq)n1).getOperands()) {
+								ret.addOperand(n2);
+							}
+						} else {
+							ret.addOperand(n1);
+						}
+					}
+					return simplify(ret);
+				}
+
+				// seq(or(a, b), c) -> or(seq(a, c), seq(b, c))
+				lang.metadl.pat.ast.MetaOr or = null;
+				for (lang.metadl.pat.ast.ASTNode n1 : seq.getOperands()) {
+					if (n1 instanceof lang.metadl.pat.ast.MetaOr) {
+						or = (lang.metadl.pat.ast.MetaOr) n1;
+						break;
+					}
+				}
+
+				if (or != null) {
+					lang.metadl.pat.ast.MetaOr ret = new lang.metadl.pat.ast.MetaOr();
+					for (lang.metadl.pat.ast.ASTNode n1 : or.getOperands()) {
+						lang.metadl.pat.ast.MetaSeq newSeq = new lang.metadl.pat.ast.MetaSeq();
+						for (lang.metadl.pat.ast.ASTNode n2 : seq.getOperands()) {
+							if (n2 == or) {
+								newSeq.addOperand(n1);
+							} else {
+								newSeq.addOperand(n2);
+							}
+						}
+						ret.addOperand(newSeq);
+					}
+					return simplify(ret);
+				}
+			} else if (n instanceof lang.metadl.pat.ast.MetaOr) {
+				lang.metadl.pat.ast.MetaOr or = (lang.metadl.pat.ast.MetaOr) n;
+
+				// or of a single element is reduced
+				if (or.getNumOperand() == 1)
+					return or.getOperand(0);
+
+
+				// or(or(a,b), c) -> or(a, b, c)
+				boolean hasInnerOr = false;
+				for (lang.metadl.pat.ast.ASTNode opd : or.getOperands()) {
+					if (opd instanceof lang.metadl.pat.ast.MetaOr) {
+						hasInnerOr = true;
+						break;
+					}
+				}
+
+				if (hasInnerOr) {
+					lang.metadl.pat.ast.MetaOr ret = new lang.metadl.pat.ast.MetaOr();
+					for (lang.metadl.pat.ast.ASTNode n1 : or.getOperands()) {
+						if (n1 instanceof lang.metadl.pat.ast.MetaOr) {
+							for (lang.metadl.pat.ast.ASTNode n2 : ((lang.metadl.pat.ast.MetaOr)n1).getOperands()) {
+								ret.addOperand(n2);
+							}
+						} else {
+							ret.addOperand(n1);
+						}
+					}
+					return simplify(ret);
+				}
+			}
+			return n;
 		}
 	}
 }

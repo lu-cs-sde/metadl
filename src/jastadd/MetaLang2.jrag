@@ -78,6 +78,7 @@ aspect MetaLang2 {
 				return new lang.metadl.pat.ast.MetaTerminalWrapper(tokens.get(label.getStart()));
 			} else {
 				lang.metadl.pat.ast.MetaFinalOr or = new lang.metadl.pat.ast.MetaFinalOr();
+				// TODO: use reflection to build the proper type here
 				for (SPPFNode.FamilyNode f : node.getChildren()) {
 					// visit the chidlren first
 					f.accept(this);
@@ -174,7 +175,7 @@ aspect MetaLang2 {
 
 		static void contributeToProduction(lang.metadl.pat.ast.ASTNode ast, java.util.List<Symbol> prod) {
 			if (ast instanceof lang.metadl.pat.ast.MetaTerminalWrapper) {
-				prod.add(ast.getChild(0));
+				prod.add(((lang.metadl.pat.ast.MetaTerminalWrapper)ast).getSYM());
 			} else if (ast instanceof lang.metadl.pat.ast.MetaSeq) {
 				lang.metadl.pat.ast.MetaSeq seq = (lang.metadl.pat.ast.MetaSeq) ast;
 				for (lang.metadl.pat.ast.ASTNode op : seq.getOperands())

@@ -12,16 +12,16 @@ eval: FORCE
 	java -jar compiler.jar eval::bottomupnaive -OUT ./out -FACTS ./facts $(EVAL)
 
 souffle: FORCE
-	java -jar compiler.jar eval::souffle -OUT ./out -FACTS ./facts $(EVAL)
+	java -ea -jar compiler.jar eval::souffle -OUT ./out -FACTS ./facts $(EVAL)
 
 profilesouffle: FORCE
-	java -jar compiler.jar eval::souffle -OUT ./out -FACTS ./facts $(EVAL)
+	java -ea -jar compiler.jar eval::souffle -OUT ./out -FACTS ./facts $(EVAL)
 
 prettyinternal: FORCE
 	java -jar compiler.jar pretty::bottomupnaive -OUT ./out -FACTS ./facts $(EVAL)
 
 prettysouffle: FORCE
-	java -jar compiler.jar pretty::souffle -OUT ./out -FACTS ./facts $(EVAL)
+	java -ea -jar compiler.jar pretty::souffle -OUT ./out -FACTS ./facts $(EVAL)
 
 preprint: FORCE
 	java -jar compiler.jar preprint -OUT ./out -FACTS ./facts $(EVAL)

@@ -153,20 +153,31 @@ aspect MetaLang {
 
 		String[] tokenNames = null;
 		beaver.Scanner scanner = null;
-		Grammar grammar = new Grammar();
+		ASTBuilder astBuilder = null;
+		java.util.List<Category> startSymbols = null;
+
 
 		switch (srcLang) {
 			case "metadl":
 				scanner = new lang.metadl.pat.ast.LangScanner(new StringReader(getPATTERN()));
 				tokenNames = lang.metadl.pat.ast.PatLangParser.Terminals.NAMES;
-				lang.metadl.pat.ast.PatLangParserSEP.addRules(grammar);
+				astBuilder = lang.metadl.pat.ast.ASTBuilder.getInstance();
+				startSymbols = Arrays.asList(lang.metadl.pat.ast.PatLangParserSEP.n_clause,
+											 lang.metadl.pat.ast.PatLangParserSEP.n_common_literal,
+											 lang.metadl.pat.ast.PatLangParserSEP.n_expr);
 				break;
 			case "java4":
 				scanner = new lang.java4.pat.ast.PatLangScanner(new StringReader(getPATTERN()));
 				tokenNames = lang.java4.pat.ast.PatLangParser.Terminals.NAMES;
-				lang.java4.pat.ast.PatLangParserSEP.addRules(grammar);
+				astBuilder = lang.java4.pat.ast.ASTBuilder.getInstance();
+				startSymbols = Arrays.asList(lang.java4.pat.ast.PatLangParserSEP.n_class_declaration,
+											 lang.java4.pat.ast.PatLangParserSEP.n_interface_declaration,
+											 lang.java4.pat.ast.PatLangParserSEP.n_method_declaration,
+											 lang.java4.pat.ast.PatLangParserSEP.n_statement);
 				break;
 		}
+
+		Grammar grammar = astBuilder.getGrammar();
 
 		do {
 			beaver.Symbol sym;
@@ -184,18 +195,52 @@ aspect MetaLang {
 			}
 		} while (true);
 
-		EarleyParser parser = new EarleyParser(grammar);
 		Category[] tokenArray = tokens.toArray(new Category[1]);
-		SPPFNode root = parser.parse(tokenArray, lang.metadl.pat.ast.PatLangParserSEP.n_rule);
-		if (root == null) {
-			SimpleLogger.logger().log("Error while parsing pattern: " + getPATTERN() + "\n",
-										  SimpleLogger.LogLevel.Level.ERROR );
+		EarleyParser parser = astBuilder.getParser();
+
+		SPPFTrivialProductionRemover tpr = new SPPFTrivialProductionRemover(grammar) {
+				@Override public boolean isBubleUpChild(Category c) {
+					if (c.getName().equals("METAVARID"))
+						return true;
+					if (c.getName().equals("GAP"))
+						return true;
+					return false;
+				}
+			};
+
+		ArrayList<ObjLangASTNode> ret = new ArrayList<>();
+
+		for (Category startSymbol : startSymbols) {
+			SPPFNode root = parser.parse(tokenArray, startSymbol);
+			if (root == null) {
+				continue;
+			}
+			{
+				boolean assertionsEnabled = false;
+				// check if assertion are enabled
+				assert assertionsEnabled = true;
+				if (assertionsEnabled)
+					Util.dumpParseResult("parse-tree-orig.dot", root, grammar);
+			}
+			java.util.List<ParseTree> pts = Util.enumerateParseTrees(root, grammar, tpr);
+			for (ParseTree pt : pts) {
+				try {
+					ObjLangASTNode astRoot = (ObjLangASTNode) astBuilder.buildAST(pt, symbols);
+					ret.add(astRoot);
+				} catch (Exception e) {
+					Util.dumpParseTree("parse-tree.dot", pt);
+					Util.dumpParseResult("parse-graph.dot", root, grammar);
+					throw e;
+				}
+			}
+		}
+
+		if (ret.isEmpty()) {
+			logger().error("Error while parsing pattern: " + getPATTERN());
 			System.exit(1);
 		}
 
-		dumpParseResult("sppf.dot", root, grammar);
-
-		return null;
+		return ret;
 	}
 
 	syn lazy ObjLangASTNode Pattern.patternAST() {
@@ -302,5 +347,11 @@ aspect MetaLang {
 			this.scopePrefix = scopePrefix;
 			this.progRelName = progRelName;
 		}
+	}
+
+	public interface ASTBuilder {
+		Symbol buildAST(final ParseTree t, final java.util.List<Symbol> symbols);
+		Grammar getGrammar();
+		EarleyParser getParser();
 	}
 }

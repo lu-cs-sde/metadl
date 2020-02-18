@@ -7,7 +7,9 @@ import beaver.Symbol;
 import java.security.MessageDigest;
 import static lang.io.SimpleLogger.*;
 import java.util.IdentityHashMap;
-import se.lth.sep.EarleyParser;
+
+import se.lth.sep.*;
+import static se.lth.sep.Util.*;
 
 aspect MetaLang {
 	/**
@@ -177,9 +179,9 @@ aspect MetaLang {
 			if (sym.getId() != 0 /*EOF*/) {
 				tokens.add(grammar.getCategory(tokenNames[sym.getId()]));
 				symbols.add(sym);
-			}
-			else
+			} else {
 				break;
+			}
 		} while (true);
 
 		EarleyParser parser = new EarleyParser(grammar);
@@ -191,10 +193,7 @@ aspect MetaLang {
 			System.exit(1);
 		}
 
-		TranslateToASTVisitor visitor = new TranslateToASTVisitor(symbols, grammar);
-		root.accept(visitor);
-		assert visitor.getTranslation(root) != null;
-		System.exit(0);
+		dumpParseResult("sppf.dot", root, grammar);
 
 		return null;
 	}

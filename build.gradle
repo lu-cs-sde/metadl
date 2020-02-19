@@ -24,11 +24,6 @@ configurations {
     jastaddparser
 }
 
-// Import the pep project
-ant.importBuild('deps/pep/build.xml') {
-    antTargetName -> 'pep_' + antTargetName
-}
-
 // Dependencies are Jar files needed to compile and generate the compiler.
 dependencies {
     compile 'net.sf.beaver:beaver-rt:0.9.11'
@@ -43,7 +38,6 @@ dependencies {
 
     jflex 'de.jflex:jflex:1.6.1'
     beaver files('deps/jar/beaver-cc-0.9.11.jar') //'net.sf.beaver:beaver-cc:0.9.11'
-    compile fileTree('deps/pep/package/pep.jar')
     compile 'se.lth:sep:100.100.100'
     // fictive versions for jastadd and jastaddparser - they
     // are substituted in settings.gradle
@@ -117,7 +111,7 @@ jar {
 compileJava.dependsOn 'generateJava', 'generateScanner', 'generateParser',
     'genMetadlLang',
     'genJava4Lang',
-    'generateConfig', 'generateScannerConfig', 'generateParserConfig', 'pep_package'
+    'generateConfig', 'generateScannerConfig', 'generateParserConfig'
 
 
 void makeGenerateJavaTask(String name, String outDir, String srcDir, String pkg,
@@ -198,21 +192,6 @@ void makeGenerateBeaverTask(String name, String outFile, String srcFile, boolean
     }
 }
 
-void makeGeneratePEPTask(String name, String outFile, String srcFile) {
-    tasks.create(name, JavaExec) {
-	doFirst {
-            file('src/gen').mkdirs()
-	}
-
-	description 'Generates the parser with Beaver.'
-	classpath = configurations.jastaddparser
-	main = 'org.jastadd.jastaddparser.Main'
-
-
-	args '--pep', file(srcFile).path, file(outFile).path
-    }
-}
-
 void makeGenerateSEPTask(String name, String outFile, String srcFile) {
     tasks.create(name, JavaExec) {
 	doFirst {
@@ -258,11 +237,6 @@ void makeGenerateLangTask(String taskName, String outDir, String srcLang, ArrayL
     makeGenerateBeaverTask('generateBeaverObjlang' + taskName, outDir + '/lang/' + srcLang + '/ObjLangParser.beaver',
 			   outDir + '/lang/' + srcLang + '/obj/parser/lang.parser',
 			   false)
-    // TODO: remove once the SEP parser is in place
-    // .parser -> .java file describing a PEP grammar
-    makeGeneratePEPTask('generatePEP' + taskName, outDir + '/lang/' + srcLang + '/pat/ast/PatLangParserPEP.java',
-			outDir + '/lang/' + srcLang + '/pat/parser/lang.parser')
-
     // .parser -> .java file describing a SEP grammar
     makeGenerateSEPTask('generateSEP' + taskName, outDir + '/lang/' + srcLang + '/pat/ast/PatLangParserSEP.java',
 			outDir + '/lang/' + srcLang + '/pat/parser/lang.parser')
@@ -298,7 +272,6 @@ void makeGenerateLangTask(String taskName, String outDir, String srcLang, ArrayL
 	tasks.getByName(taskName).dependsOn tasks.getByName('generateParserPatlang' + taskName)
 	tasks.getByName(taskName).dependsOn tasks.getByName('generateScannerPatlang' + taskName)
 	tasks.getByName(taskName).dependsOn tasks.getByName('generateJavaPatlang' + taskName)
-	tasks.getByName(taskName).dependsOn tasks.getByName('generatePEP' + taskName)
 	tasks.getByName(taskName).dependsOn tasks.getByName('generateSEP' + taskName)
     }
 

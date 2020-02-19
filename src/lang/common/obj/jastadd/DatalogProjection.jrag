@@ -40,15 +40,7 @@ aspect DatalogProjection {
 			ASTNode child = getChild(i);
 
 			lang.ast.StringConstant Kind = new lang.ast.StringConstant(relName);
-			lang.ast.IntConstant ChildId;
-			if (child instanceof Opt) {
-				if (child.getNumChild() == 0)
-					ChildId = new lang.ast.IntConstant("0");
-				else
-					ChildId = new lang.ast.IntConstant("" + child.getChild(0).getNodeId());
-			} else {
-				ChildId = new lang.ast.IntConstant("" + child.getNodeId());
-			}
+			lang.ast.IntConstant ChildId  = new lang.ast.IntConstant("" + child.getNodeId());
 			lang.ast.IntConstant CurrentNodeId = new lang.ast.IntConstant("" + getNodeId());
 			lang.ast.IntConstant ChildIdx = new lang.ast.IntConstant("" + childIndex++);
 			lang.ast.StringConstant Token = new lang.ast.StringConstant("");
@@ -94,9 +86,5 @@ aspect DatalogProjection {
 		}
 
 		return ret;
-	}
-
-	eq Opt.toTuples() {
-		return Collections.emptyList();
 	}
 }

@@ -142,16 +142,7 @@ aspect Pattern {
 
 			lang.ast.List<lang.ast.Term> terms = new lang.ast.List<>();
 			lang.ast.StringConstant Kind = new lang.ast.StringConstant(relName);
-			lang.ast.Term ChildId;
-			if (child instanceof Opt) {
-				if (child.getNumChild() == 0)
-					// TODO: semantics around optionals
-					ChildId = new lang.ast.IntConstant("0");
-				else
-					ChildId = new lang.ast.Variable(child.getChild(0).varName());
-			} else {
-				ChildId = new lang.ast.Variable(child.varName());
-			}
+			lang.ast.Term ChildId = new lang.ast.Variable(child.varName());
 			lang.ast.CommonVariable CurrentNodeId = root != null ? root : new lang.ast.Variable(varName());
 			lang.ast.IntConstant ChildIdx = new lang.ast.IntConstant("" + childIndex++);
 			lang.ast.StringConstant Token = new lang.ast.StringConstant("");
@@ -256,6 +247,9 @@ aspect Pattern {
 
 	syn ArrayList<lang.ast.Clause> ASTNode.asClauses(AnalyzeContext ctx) = new ArrayList<>();
 	eq List.asClauses(AnalyzeContext ctx) {
+		// TODO: this is not used currently used, because none of the
+		// constraints implements the generateClause method.
+		// Remove maybe?
 		ArrayList<Constraint> cons = constraints();
 		if (cons.isEmpty())
 			return new ArrayList<>();
@@ -270,6 +264,23 @@ aspect Pattern {
 
 	eq List.asLiterals(AnalyzeContext ctx, lang.ast.CommonVariable root) {
 		ArrayList<lang.ast.Literal> lits = new ArrayList<>();
+
+		if (getNumChild() == 0) {
+			// The list is empty, assert that the List relation does not
+			// contain anything with this node ID
+			lang.ast.List<lang.ast.Term> terms = new lang.ast.List<>();
+			lang.ast.StringConstant Kind = new lang.ast.StringConstant(getRelation());
+			lang.ast.Wildcard ChildId = new lang.ast.Wildcard();
+			lang.ast.CommonVariable CurrentNodeId = root != null ? root : new lang.ast.Variable(varName());
+			lang.ast.Wildcard ChildIdx = new lang.ast.Wildcard();
+			lang.ast.Wildcard Token = new lang.ast.Wildcard();
+
+			terms.add(Kind).add(CurrentNodeId).add(ChildIdx).add(ChildId).add(Token);
+			lits.add(new lang.ast.NEGLiteral(new lang.ast.PredicateSymbol("NOT"),
+											 new lang.ast.Atom(new lang.ast.PredicateSymbol(ctx.progRelName), terms)));
+			return lits;
+		}
+
 		if (getNumChild() == 1 && getChild(0).isGap())
 			return lits;
 
@@ -283,8 +294,26 @@ aspect Pattern {
 	}
 
 	// eq MetaVariable.asLiterals(String scopePrefix) = new ArrayList<>();
-	eq Opt.asLiterals(AnalyzeContext ctx, lang.ast.CommonVariable root) = new ArrayList<>();
-	// eq MetaVariable.varName() = "$" + getMETAVAR_ID();
+	eq Opt.asLiterals(AnalyzeContext ctx, lang.ast.CommonVariable root) {
+
+
+		if (getNumChild() == 0) {
+			ArrayList<lang.ast.Literal> lits = new ArrayList<>();
+			lang.ast.List<lang.ast.Term> terms = new lang.ast.List<>();
+			lang.ast.StringConstant Kind = new lang.ast.StringConstant(getRelation());
+			lang.ast.Wildcard ChildId = new lang.ast.Wildcard();
+			lang.ast.CommonVariable CurrentNodeId = root != null ? root : new lang.ast.Variable(varName());
+			lang.ast.Wildcard ChildIdx = new lang.ast.Wildcard();
+			lang.ast.Wildcard Token = new lang.ast.Wildcard();
+
+			terms.add(Kind).add(CurrentNodeId).add(ChildIdx).add(ChildId).add(Token);
+			lits.add(new lang.ast.NEGLiteral(new lang.ast.PredicateSymbol("NOT"),
+											 new lang.ast.Atom(new lang.ast.PredicateSymbol(ctx.progRelName), terms)));
+			return lits;
+		}
+		return super.asLiterals(ctx, root);
+	}
+
 
 	syn ArrayList<lang.ast.Literal> ASTNode.literals(AnalyzeContext ctx, lang.ast.CommonVariable root) {
 		// An add-hoc way of implementing parameterized collection attributes

@@ -1,0 +1,40 @@
+IMPORT('P, "tests/evaluation/withimport/evalTest_16_input.java", "java4").
+
+analyze ('P,  "java4") {
+	Class1(c) :- <: class `c implements `a, .. { .. } :>, ID(`c, c).
+	Class2(c) :- <: class `c extends `a implements `b, .. { .. } :>, ID(`c, c).
+	Class3(c) :- <: class `c { .. } :>, ID(`c, c).
+	Class4(c) :- <: class `c extends `a { .. } :>, ID(`c, c).
+
+	Class1_public(c) :- <: public class `c implements `a, .. { .. } :>, ID(`c, c).
+	Class2_public(c) :- <: public class `c extends `a implements `b, .. { .. } :>, ID(`c, c).
+	Class3_public(c) :- <: public class `c { .. } :>, ID(`c, c).
+	Class4_public(c) :- <: public class `c extends `a { .. } :>, ID(`c, c).
+
+	Class1_abstract(c) :- <: abstract class `c implements `a, .. { .. } :>, ID(`c, c).
+	Class2_abstract(c) :- <: abstract class `c extends `a implements `b, .. { .. } :>, ID(`c, c).
+	Class3_abstract(c) :- <: abstract class `c { .. } :>, ID(`c, c).
+	Class4_abstract(c) :- <: abstract class `c extends `a { .. } :>, ID(`c, c).
+
+	Class1_public_abstract(c) :- <: public abstract class `c implements `a, .. { .. } :>, ID(`c, c).
+	Class2_public_abstract(c) :- <: public abstract class `c extends `a implements `b, .. { .. } :>, ID(`c, c).
+	Class3_public_abstract(c) :- <: public abstract class `c { .. } :>, ID(`c, c).
+	Class4_public_abstract(c) :- <: public abstract class `c extends `a { .. } :>, ID(`c, c).
+}
+
+OUTPUT('Class1).
+OUTPUT('Class2).
+OUTPUT('Class3).
+OUTPUT('Class4).
+OUTPUT('Class1_public).
+OUTPUT('Class2_public).
+OUTPUT('Class3_public).
+OUTPUT('Class4_public).
+OUTPUT('Class1_abstract).
+OUTPUT('Class2_abstract).
+OUTPUT('Class3_abstract).
+OUTPUT('Class4_abstract).
+OUTPUT('Class1_public_abstract).
+OUTPUT('Class2_public_abstract).
+OUTPUT('Class3_public_abstract).
+OUTPUT('Class4_public_abstract).

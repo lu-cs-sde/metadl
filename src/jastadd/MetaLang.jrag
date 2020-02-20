@@ -173,7 +173,8 @@ aspect MetaLang {
 				startSymbols = Arrays.asList(lang.java4.pat.ast.PatLangParserSEP.n_class_declaration,
 											 lang.java4.pat.ast.PatLangParserSEP.n_interface_declaration,
 											 lang.java4.pat.ast.PatLangParserSEP.n_method_declaration,
-											 lang.java4.pat.ast.PatLangParserSEP.n_statement);
+											 lang.java4.pat.ast.PatLangParserSEP.n_block_statement,
+											 lang.java4.pat.ast.PatLangParserSEP.n_expression);
 				break;
 		}
 
@@ -227,6 +228,9 @@ aspect MetaLang {
 				try {
 					ObjLangASTNode astRoot = (ObjLangASTNode) astBuilder.buildAST(pt, symbols);
 					ret.add(astRoot);
+					// Util.dumpParseTree("parse-tree.dot", pt);
+					// Util.dumpParseResult("parse-graph.dot", root, grammar);
+					// astRoot.debugPrint(System.out);
 				} catch (Exception e) {
 					Util.dumpParseTree("parse-tree.dot", pt);
 					Util.dumpParseResult("parse-graph.dot", root, grammar);
@@ -243,96 +247,16 @@ aspect MetaLang {
 		return ret;
 	}
 
-	syn lazy ObjLangASTNode Pattern.patternAST() {
-		//altParse();
-
-		ObjLangASTNode node = null;
-
-		String srcLang = enclosingAnalyzeBlock().getLang().getSTRING();
-
-		java.util.List<Exception> exceptions = new java.util.ArrayList<>();
-
-		ByteArrayOutputStream errStream = new ByteArrayOutputStream();
-
-		java.util.List<Short> altGoals = null;
-		switch (srcLang) {
-		case "metadl":
-			altGoals = Arrays.asList(lang.metadl.pat.ast.PatLangParser.AltGoals.clause,
-									 lang.metadl.pat.ast.PatLangParser.AltGoals.common_literal,
-									 lang.metadl.pat.ast.PatLangParser.AltGoals.expr);
-			break;
-		case "java4":
-			altGoals = Arrays.asList(lang.java4.pat.ast.PatLangParser.AltGoals.class_declaration,
-									 lang.java4.pat.ast.PatLangParser.AltGoals.interface_declaration,
-									 lang.java4.pat.ast.PatLangParser.AltGoals.method_declaration,
-									 lang.java4.pat.ast.PatLangParser.AltGoals.statement
-									 );
-			break;
-		}
-
-		// Try all the goals until one succeeds. Also collect the errors to report them
-		// in case none of the parsing attempts is successful.
-		for (short g : altGoals) {
-			beaver.Scanner scanner = null;
-			beaver.Parser parser = null;
-			node = null;
-
-			switch (srcLang) {
-			case "metadl":
-				scanner = new lang.metadl.pat.ast.LangScanner(new StringReader(getPATTERN()));
-				parser = new lang.metadl.pat.ast.PatLangParser();
-				break;
-			case "java4":
-				scanner = new lang.java4.pat.ast.PatLangScanner(new StringReader(getPATTERN()));
-				parser = new lang.java4.pat.ast.PatLangParser();
-				break;
-			default:
-				SimpleLogger.logger().log("Unknown language in analyze block: " + srcLang, SimpleLogger.LogLevel.Level.ERROR);
-				System.exit(1);
-			}
-
-			try {
-				// the parsers writes directly to System.err so we capture it
-				PrintStream oldErr = System.err;
-				System.setErr(new PrintStream(errStream));
-				node = (ObjLangASTNode) parser.parse(scanner, g);
-
-				ByteArrayOutputStream bstream = new ByteArrayOutputStream();
-				PrintStream ps = new PrintStream(bstream);
-				ps.println("Parsed pattern: " + getPATTERN());
-				node.debugPrint(ps);
-
-				SimpleLogger.logger().log(bstream.toString(), SimpleLogger.LogLevel.Level.DEBUG);
-
-				System.setErr(oldErr);
-				break;
-			} catch (Exception e) {
-				exceptions.add(e);
-			}
-
-			if (node != null)
-				break;
-		}
-
-		if (node == null) {
-			// None of the parsing attempts succeeded. Print the errors
-			for (Exception e : exceptions)
-				SimpleLogger.logger().log("Error while parsing pattern: " + getPATTERN() + "\n" + e.toString(),
-										  SimpleLogger.LogLevel.Level.ERROR );
-			System.out.println(errStream.toString());
-			System.exit(1);
-		}
-
-		return node;
-	}
-
 	eq Pattern.variables() {
-		return patternAST().metavariables();
+		TreeSet<lang.ast.Variable> vars = new TreeSet<>(lang.ast.Term.termComparator);
+		for (ObjLangASTNode ast : altParse()) {
+			vars.addAll(ast.metavariables());
+		}
+		return vars;
 	}
 
 	eq BoundedPattern.variables() {
-		TreeSet<lang.ast.Variable> vars = new TreeSet<>(lang.ast.Term.termComparator);
-		vars.addAll(patternAST().metavariables());
+		TreeSet<lang.ast.Variable> vars = super.variables();
 		vars.add((Variable)getCommonVariable());
 		return vars;
 	}

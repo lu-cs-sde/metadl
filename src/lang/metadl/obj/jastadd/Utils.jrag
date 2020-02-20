@@ -7,6 +7,8 @@ aspect Utils {
 	static public Program Program.fromFileLoc(String loc) throws IOException, beaver.Parser.Exception {
 		ObjLangScanner scanner = new ObjLangScanner(new FileReader(new File(loc)));
 		ObjLangParser parser = new ObjLangParser();
-		return (Program) parser.parse(scanner);
+		Program p = (Program) parser.parse(scanner);
+		p.assignIds(new MutableInt(1));
+		return p;
 	}
 }

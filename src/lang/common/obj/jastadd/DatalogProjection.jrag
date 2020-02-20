@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.Collections;
 import java.lang.reflect.ParameterizedType;
 import lang.io.StringUID;
+import org.apache.commons.lang3.mutable.MutableInt;
 
 aspect DatalogProjection {
 	/**
@@ -24,10 +25,22 @@ aspect DatalogProjection {
 	public int ASTNode.UID = 0;
 	public static int ASTNode.RunningId = 0;
 	public synchronized int ASTNode.getNodeId() {
-		if (UID == 0) {
-			UID = ++ASTNode.RunningId;
-		}
+		// if (UID == 0) {
+		// 	UID = ++ASTNode.RunningId;
+		// }
 		return UID;
+	}
+
+	public void ASTNode.assignIds(MutableInt count) {
+		// Assign node IDs using a depth first traversal;
+		// this ensures a deterministic order for the nodes
+		// inside the AST.
+		for (ASTNode c : astChildren()) {
+			c.assignIds(count);
+		}
+
+		UID = count.intValue();
+		count.increment();
 	}
 
 	syn java.util.List<PseudoTuple> ASTNode.toTuples() {

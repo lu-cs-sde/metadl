@@ -139,7 +139,6 @@ aspect Pattern {
 		java.util.ArrayList<lang.ast.Literal> ret = new ArrayList<>();
 
 		// the children in the tree
-		int childIndex = 0;
 		for (int i = 0; i < getNumChild(); ++i) {
 			ASTNode child = getChild(i);
 			if (child == null || child instanceof MetaVariable) {
@@ -154,14 +153,16 @@ aspect Pattern {
 				new lang.ast.StringConstant(relName) : new lang.ast.Wildcard();
 			lang.ast.Term ChildId = new lang.ast.Variable(child.varName());
 			lang.ast.CommonVariable CurrentNodeId = root != null ? root : new lang.ast.Variable(varName());
-			lang.ast.IntConstant ChildIdx = new lang.ast.IntConstant("" + childIndex++);
+			lang.ast.IntConstant ChildIdx = new lang.ast.IntConstant("" + i);
 			lang.ast.StringConstant Token = new lang.ast.StringConstant("");
 
 			terms.add(Kind).add(CurrentNodeId).add(ChildIdx).add(ChildId).add(Token);
 			ret.add(new lang.ast.Atom(new lang.ast.PredicateSymbol(ctx.progRelName), terms));
 		}
 
+
 		if (!isMetaVar()) {
+			int childIndex = getNumChild();
 			// other tokens attached to the node
 			for (String t : tokens()) {
 				// For every token, we generate two tuples

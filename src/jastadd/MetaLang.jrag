@@ -200,7 +200,7 @@ aspect MetaLang {
 		EarleyParser parser = astBuilder.getParser();
 
 		SPPFTrivialProductionRemover tpr = new SPPFTrivialProductionRemover(grammar) {
-				@Override public boolean isBubleUpChild(Category c) {
+				@Override public boolean isBubleUpChild(Category p, Category c) {
 					if (c.getName().equals("METAVARID"))
 						return true;
 					if (c.getName().equals("GAP"))

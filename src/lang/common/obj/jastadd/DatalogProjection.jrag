@@ -100,4 +100,16 @@ aspect DatalogProjection {
 
 		return ret;
 	}
+
+	syn java.util.List<PseudoTuple> List.toTuples() {
+		if (getNumChild() == 0)
+			return Collections.emptyList();
+		return super.toTuples();
+	}
+
+	syn java.util.List<PseudoTuple> Opt.toTuples() {
+		if (getNumChild() == 0)
+			return Collections.emptyList();
+		return super.toTuples();
+	}
 }

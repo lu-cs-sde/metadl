@@ -147,19 +147,17 @@ aspect Pattern {
 				continue;
 			}
 
-
 			lang.ast.List<lang.ast.Term> terms = new lang.ast.List<>();
 			lang.ast.Term Kind = relName != null ?
 				new lang.ast.StringConstant(relName) : new lang.ast.Wildcard();
 			lang.ast.Term ChildId = new lang.ast.Variable(child.varName());
 			lang.ast.CommonVariable CurrentNodeId = root != null ? root : new lang.ast.Variable(varName());
 			lang.ast.IntConstant ChildIdx = new lang.ast.IntConstant("" + i);
-			lang.ast.StringConstant Token = new lang.ast.StringConstant("");
+			lang.ast.Term Token = new lang.ast.Wildcard();
 
 			terms.add(Kind).add(CurrentNodeId).add(ChildIdx).add(ChildId).add(Token);
 			ret.add(new lang.ast.Atom(new lang.ast.PredicateSymbol(ctx.progRelName), terms));
 		}
-
 
 		if (!isMetaVar()) {
 			int childIndex = getNumChild();
@@ -379,10 +377,48 @@ aspect Pattern {
 			return new lang.ast.Rule(head, body);
 		}
 
+		/**
+		   Build a rule of the shape:
+		   $name(n_id, v) :- P($nodeKind, n_id, $idx, c_id, _), $name(c_id, v).
+		 */
+		public static lang.ast.Rule associateIdentifierToParentNode(AnalyzeContext ctx,
+																	String nodeKind,
+																	String name,
+																	int idx) {
+			lang.ast.List<lang.ast.CommonLiteral> headList = new lang.ast.List<>();
+			lang.ast.List<lang.ast.CommonLiteral> bodyList = new  lang.ast.List<>();
+
+			lang.ast.List<lang.ast.Term> headVars = new lang.ast.List<>();
+			headVars.add(new lang.ast.Variable("n_id"));
+			headVars.add(new lang.ast.Variable("v"));
+			headList.add(new lang.ast.Atom(new lang.ast.PredicateSymbol(ctx.scopePrefix + name),
+										   headVars));
+
+			// ID(n_id, v) :- P(nodeKind, n_id, idx, c_id, _), ID(c_id, v).
+			lang.ast.List<lang.ast.Term> body0Vars = new lang.ast.List<lang.ast.Term>()
+				.add(new lang.ast.StringConstant(nodeKind))
+				.add(new lang.ast.Variable("n_id"))
+				.add(new lang.ast.IntConstant("" + idx))
+				.add(new lang.ast.Variable("c_id"))
+				.add(new lang.ast.Wildcard());
+
+			lang.ast.List<lang.ast.Term> body1Vars = new lang.ast.List<lang.ast.Term>()
+				.add(new lang.ast.Variable("c_id"))
+				.add(new lang.ast.Variable("v"));
+
+
+			bodyList.add(new lang.ast.Atom(new lang.ast.PredicateSymbol(ctx.progRelName), body0Vars))
+				.add(new lang.ast.Atom(new lang.ast.PredicateSymbol(ctx.scopePrefix + name), body1Vars));
+
+
+			return new lang.ast.Rule(headList, bodyList);
+		}
 
 		/**
-		   For every analyze block, insert relations that provide the
-		   context for evaluating the expanded patterns.
+		   Build a rule of the shape:
+		   $name(n_id, v) :- P($nodeKind, n_id, idx, t_id, _), P("Terminal", t_id, _, _, v).
+		   or, if converFunctor != null:
+		   $name(n_id, v) :- P($nodeKind, n_id, idx, t_id, _), P("Terminal", t_id, _, _, w), BIND(v, $converFunctor(w)).
 		*/
 		public static lang.ast.Rule makeIdentifierRule(AnalyzeContext ctx,
 													   String nodeKind,

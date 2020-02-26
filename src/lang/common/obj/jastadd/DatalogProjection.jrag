@@ -87,6 +87,16 @@ aspect DatalogProjection {
 			}
 		}
 
+		if (childIndex == 0) {
+			// This node has no children, emit that
+			lang.ast.StringConstant Kind = new lang.ast.StringConstant(relName);
+			lang.ast.IntConstant ChildId  = new lang.ast.IntConstant("-1");
+			lang.ast.IntConstant CurrentNodeId = new lang.ast.IntConstant("" + getNodeId());
+			lang.ast.IntConstant ChildIdx = new lang.ast.IntConstant("-1");
+			lang.ast.StringConstant Token = new lang.ast.StringConstant("");
+			ret.add(new PseudoTuple(Kind, CurrentNodeId, ChildIdx, ChildId, Token));
+		}
+
 		{
 			// record the source location
 			// ("SourceInfo, CurrentNodeId, Line, Col, "")

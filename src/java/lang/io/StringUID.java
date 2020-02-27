@@ -10,13 +10,13 @@ public class StringUID {
 		return instance;
 	}
 
-	private int counter = 1;
+	private int counter = Integer.MAX_VALUE;
 	private Map<String, Integer> uids = new HashMap<>();
 	public synchronized int uid(String s) {
 		Integer u = uids.get(s);
 		if (u == null) {
 			uids.put(s, counter);
-			return counter++;
+			return counter--;
 		}
 		return u;
 	}

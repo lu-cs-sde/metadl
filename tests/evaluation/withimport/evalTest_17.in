@@ -1,0 +1,29 @@
+IMPORT('P, "debug.java", "java4").
+
+Val("", 0, 0) :- NEQ(0, 0).
+EvalE(0, 0) :- NEQ(0, 0).
+
+analyze('P, "java4") {
+	    Val(var, loc, val) :- loc <: `x = `c :>, ID(`x, var), INT(`c, sval), BIND(val, to_number(sval)).
+	    AssignVar(var, loc) :- loc <: `x = `c :>, ID(`x, var).
+
+	    Val(var, loc1, val) :- NOT(AssignVar(var, loc1)), Val(var, loc, val),
+	                           BIND(loc1, loc + 1), P(_, loc1, _, _, _).
+
+            Val(var, loc, val) :- loc <: `x = `e :>, ID(`x, var), EvalE(`e, val).
+
+	    # Variable reference
+	    EvalE(`e, val) :- <: `e :>, ID(`e, var), Val(var, `e, val).
+	    EvalE(`c, val) :- <: `c :>, INT(`c, sval), BIND(val, to_number(sval)).
+
+	    EvalE(e, val) :- e <: `l + `r :>, EvalE(`l, vl), EvalE(`r, vr), BIND(val, vl + vr).
+	    EvalE(e, val) :- e <: `l * `r :>, EvalE(`l, vl), EvalE(`r, vr), BIND(val, vl * vr).
+	    EvalE(e, val) :- e <: `l = `r :>, EvalE(`r, val).
+	    EvalE(e, val) :- e <: (`l) :>, EvalE(`l, val).
+
+	    Ret(fname, val) :- <: int `f(..) { ..  return `r; } :>, EvalE(`r, val), ID(`f, fname).
+	    ValLoc(var, val, line) :- Val(var, loc, val), SRC(loc, line, _).
+}
+OUTPUT('Val).
+OUTPUT('ValLoc).
+OUTPUT('Ret).

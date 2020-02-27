@@ -115,19 +115,16 @@ aspect Pattern {
 		}
 	}
 
-	/**
-	   The asLiterals() equations are isomorphic to toTuples()
-	   equations in the DatalogProject aspect. The common parts should be
-	   factored out to ensure that the relational
-	   representation of a program matches the code generated for a pattern.
-	 */
 	syn ArrayList<lang.ast.Literal> ASTNode.asLiterals(AnalyzeContext ctx, lang.ast.CommonVariable root);
 
 	public ArrayList<lang.ast.Literal> ASTNode.metaVarAsLiterals(AnalyzeContext ctx, lang.ast.CommonVariable root) {
 		assert isMetaVar();
 		ArrayList<lang.ast.Literal> literals = new ArrayList<>();
-
 		java.util.ArrayList<lang.ast.Literal> ret = new ArrayList<>();
+
+		assert getRelation().startsWith(ASTNode.METAVARIABLE);
+		String relName = getRelation().substring(ASTNode.METAVARIABLE.length());
+		String predName = ctx.scopePrefix + "METAVAR";
 
 		for (int i = 0; i < getNumChild(); ++i) {
 			ASTNode child = getChild(i);
@@ -135,18 +132,57 @@ aspect Pattern {
 				continue;
 
 			lang.ast.List<lang.ast.Term> terms = new lang.ast.List<>();
-			lang.ast.Term Kind = new lang.ast.Wildcard();
+			lang.ast.Term Kind = new lang.ast.StringConstant(relName);
 			lang.ast.Term ChildId = new lang.ast.Variable(child.varName());
-			lang.ast.CommonVariable CurrentNodeId = root != null ? root : new lang.ast.Variable(varName());
+			lang.ast.CommonVariable CurrentNodeId = new lang.ast.Variable(varName());
 			lang.ast.IntConstant ChildIdx = new lang.ast.IntConstant("" + i);
 			lang.ast.Term Token = new lang.ast.Wildcard();
 
 			terms.add(Kind).add(CurrentNodeId).add(ChildIdx).add(ChildId).add(Token);
-			ret.add(new lang.ast.Atom(new lang.ast.PredicateSymbol(ctx.progRelName), terms));
+			ret.add(new lang.ast.Atom(new lang.ast.PredicateSymbol(predName), terms));
+		}
+
+		if (ret.isEmpty()) {
+			// This metavariable node has no children. Just ensure that is bound to
+			// the correct AST node type
+			lang.ast.List<lang.ast.Term> terms = new lang.ast.List<>();
+			lang.ast.StringConstant Kind = new lang.ast.StringConstant(relName);
+			lang.ast.Term ChildId  = new lang.ast.Wildcard();
+			lang.ast.CommonVariable CurrentNodeId = new lang.ast.Variable(varName());
+			lang.ast.Term ChildIdx = new lang.ast.Wildcard();
+			lang.ast.Term Token = new lang.ast.Wildcard();
+
+			terms.add(Kind).add(CurrentNodeId).add(ChildIdx).add(ChildId).add(Token);
+			ret.add(new lang.ast.Atom(new lang.ast.PredicateSymbol(predName), terms));
+		}
+
+
+		if (root != null) {
+			// This is an a <: `b :> pattern. In this case, we need to ensure that a == b.
+			lang.ast.List<lang.ast.Term> terms = new lang.ast.List<>();
+			lang.ast.StringConstant Kind = new lang.ast.StringConstant(relName);
+			lang.ast.Term ChildId  = new lang.ast.Wildcard();
+			lang.ast.CommonVariable CurrentNodeId = root;
+			lang.ast.Term ChildIdx = new lang.ast.Wildcard();
+			lang.ast.Term Token = new lang.ast.Wildcard();
+
+			terms.add(Kind).add(CurrentNodeId).add(ChildIdx).add(ChildId).add(Token);
+			ret.add(new lang.ast.Atom(new lang.ast.PredicateSymbol(predName), terms));
+
+			ret.add(new lang.ast.EQLiteral(new lang.ast.PredicateSymbol("EQ"),
+										   new lang.ast.Variable(varName()),
+										   root.treeCopyNoTransform()));
 		}
 
 		return ret;
 	}
+
+	/**
+	   The asLiterals() equations are isomorphic to toTuples()
+	   equations in the DatalogProject aspect. The common parts should be
+	   factored out to ensure that the relational
+	   representation of a program matches the code generated for a pattern.
+	 */
 
 	eq ASTNode.asLiterals(AnalyzeContext ctx, lang.ast.CommonVariable root) {
 		ArrayList<lang.ast.Literal> literals = new ArrayList<>();
@@ -530,6 +566,61 @@ aspect Pattern {
 										   .add(new lang.ast.Variable("n"))
 										   .add(new lang.ast.Wildcard())));
 			return new lang.ast.Rule(headList, bodyList);
+		}
+
+		public static void makeMetaVariableRelation(AnalyzeContext ctx,
+													String nodeKind,
+													java.util.List<lang.ast.Rule> ret) {
+			// no metavariables for List and Opt
+			if (nodeKind.equals("List") ||
+				nodeKind.equals("Opt") ||
+				nodeKind.equals("ASTNode"))
+				return;
+
+			// METAVAR($nodeKind, node_id, child_idx, child_id, aux) :- P($nodeKind, node_id, child_idx, child_id, aux)
+			ret.add(new lang.ast.Rule(
+							 new lang.ast.List<lang.ast.CommonLiteral>().add(new lang.ast.Atom(new lang.ast.PredicateSymbol(ctx.scopePrefix + "METAVAR"),
+																		new lang.ast.List<lang.ast.Term>()
+																		.add(new lang.ast.StringConstant(nodeKind))
+																		.add(new lang.ast.Variable("node_id"))
+																		.add(new lang.ast.Variable("child_idx"))
+																		.add(new lang.ast.Variable("child_id"))
+																		.add(new lang.ast.Variable("aux")))),
+							 new lang.ast.List<lang.ast.CommonLiteral>().add(new lang.ast.Atom(new lang.ast.PredicateSymbol(ctx.progRelName),
+																		 new lang.ast.List<lang.ast.Term>()
+																		 .add(new lang.ast.StringConstant(nodeKind))
+																		 .add(new lang.ast.Variable("node_id"))
+																		 .add(new lang.ast.Variable("child_idx"))
+																		 .add(new lang.ast.Variable("child_id"))
+																		 .add(new lang.ast.Variable("aux"))))));
+
+			// METAVAR(supertype($nodeKind), node_id, child_idx, child_id, aux) :- METAVAR($nodeKind, node_id, child_idx, child_id, aux)
+			String nodeSuperType = PatternGrammarInfo.getNodeSuperType(nodeKind);
+			if (nodeSuperType != null && !nodeSuperType.equals("ASTNode")) {
+				ret.add(new lang.ast.Rule(
+								 new lang.ast.List<lang.ast.CommonLiteral>().add(new lang.ast.Atom(new lang.ast.PredicateSymbol(ctx.scopePrefix + "METAVAR"),
+																			 new lang.ast.List<lang.ast.Term>()
+																			 .add(new lang.ast.StringConstant(nodeSuperType))
+																			 .add(new lang.ast.Variable("node_id"))
+																			 .add(new lang.ast.Variable("child_idx"))
+																			 .add(new lang.ast.Variable("child_id"))
+																			 .add(new lang.ast.Variable("aux")))),
+								 new lang.ast.List<lang.ast.CommonLiteral>().add(new lang.ast.Atom(new lang.ast.PredicateSymbol(ctx.scopePrefix + "METAVAR"),
+																			 new lang.ast.List<lang.ast.Term>()
+																			 .add(new lang.ast.StringConstant(nodeKind))
+																			 .add(new lang.ast.Variable("node_id"))
+																			 .add(new lang.ast.Variable("child_idx"))
+																			 .add(new lang.ast.Variable("child_id"))
+																			 .add(new lang.ast.Variable("aux"))))));
+			}
+		}
+
+		public static java.util.List<lang.ast.Rule> makeMetaVariableRelations(AnalyzeContext ctx) {
+			java.util.List<lang.ast.Rule> ret = new java.util.ArrayList<>();
+			for (String nodeType : PatternGrammarInfo.getNodeType()) {
+				makeMetaVariableRelation(ctx, nodeType, ret);
+			}
+			return ret;
 		}
 	}
 }

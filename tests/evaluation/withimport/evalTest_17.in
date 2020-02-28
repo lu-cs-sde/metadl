@@ -1,4 +1,4 @@
-IMPORT('P, "debug.java", "java4").
+IMPORT('P, "tests/evaluation/withimport/evalTest_17.java", "java4").
 
 Val("", 0, 0) :- NEQ(0, 0).
 EvalE(0, 0) :- NEQ(0, 0).
@@ -24,6 +24,7 @@ analyze('P, "java4") {
 	    Ret(fname, val) :- <: int `f(..) { ..  return `r; } :>, EvalE(`r, val), ID(`f, fname).
 	    ValLoc(var, val, line) :- Val(var, loc, val), SRC(loc, line, _).
 }
+
 OUTPUT('Val).
 OUTPUT('ValLoc).
 OUTPUT('Ret).

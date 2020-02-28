@@ -45,6 +45,9 @@ public class SimpleLogger {
 		return log(msg, LogLevel.Level.INFO);
 	}
 
+	public SimpleLogger debug(String msg) {
+		return log(msg, LogLevel.Level.DEBUG);
+	}
 
 	public static class LogLevel {
 

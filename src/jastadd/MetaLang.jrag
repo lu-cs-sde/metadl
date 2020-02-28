@@ -1,5 +1,7 @@
 import lang.cons.Constraint;
 import java.io.StringReader;
+import java.io.OutputStream;
+import java.io.ByteArrayOutputStream;
 import java.util.Arrays;
 import lang.cons.ObjLangASTNode;
 import java.io.ByteArrayOutputStream;
@@ -211,6 +213,8 @@ aspect MetaLang {
 
 		ArrayList<ObjLangASTNode> ret = new ArrayList<>();
 
+		SimpleLogger.logger().debug("Parsing pattern " + toString());
+
 		for (Category startSymbol : startSymbols) {
 			SPPFNode root = parser.parse(tokenArray, startSymbol);
 			if (root == null) {
@@ -230,7 +234,9 @@ aspect MetaLang {
 					ret.add(astRoot);
 					// Util.dumpParseTree("parse-tree.dot", pt);
 					// Util.dumpParseResult("parse-graph.dot", root, grammar);
-					// astRoot.debugPrint(System.out);
+					OutputStream ps = new ByteArrayOutputStream();
+					astRoot.debugPrint(new PrintStream(ps));
+					SimpleLogger.logger().debug(ps.toString());
 				} catch (Exception e) {
 					Util.dumpParseTree("parse-tree.dot", pt);
 					Util.dumpParseResult("parse-graph.dot", root, grammar);

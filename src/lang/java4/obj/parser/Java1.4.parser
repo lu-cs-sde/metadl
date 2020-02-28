@@ -495,7 +495,6 @@ Expr primary_no_new_array =
                                                      t.setStart(THIS.getStart()); t.setEnd(THIS.getEnd());
                                                      return name.qualifiesAccess(t); :}
   | LPAREN expression RPAREN                      {: return new ParExpr(expression); :}
-  | LPAREN name RPAREN                            {: return new ParExpr(name); :}
   | class_instance_creation_expression
   | field_access
   | method_invocation

@@ -101,7 +101,7 @@ aspect MetaLang {
 		return ret;
 	}
 
-	public static String Pattern.hash(String s) {
+	protected static String Pattern.hash(String s) {
 		try {
 			MessageDigest md = MessageDigest.getInstance("SHA-1");
 			byte[] md5 = md.digest(s.getBytes("UTF-8"));
@@ -116,6 +116,10 @@ aspect MetaLang {
 		return null;
 	}
 
+	syn String Pattern.predName() = hash(getPATTERN());
+	eq BoundedPattern.predName() = hash(getPATTERN() + "bounded");
+
+
 	public Atom Pattern.getLiteralHelper(CommonVariable bindVar) {
 		AnalyzeContext ctx = enclosingAnalyzeBlock().getContext();
 		List<Term> headVars = new List<>();
@@ -127,7 +131,7 @@ aspect MetaLang {
 		headVars.addAll(n.metavariables());
 		// we're using a String hash  here; fingers crossed for no collisions in
 		// the same analyze block
-		Atom head = new Atom(new PredicateSymbol(ctx.scopePrefix + hash(getPATTERN())),
+		Atom head = new Atom(new PredicateSymbol(ctx.scopePrefix + predName()),
 							 headVars);
 		return head;
 	}
@@ -173,8 +177,8 @@ aspect MetaLang {
 				tokenNames = lang.java4.pat.ast.PatLangParser.Terminals.NAMES;
 				astBuilder = lang.java4.pat.ast.ASTBuilder.getInstance();
 				startSymbols = Arrays.asList(lang.java4.pat.ast.PatLangParserSEP.n_class_declaration,
-											 lang.java4.pat.ast.PatLangParserSEP.n_interface_declaration,
-											 lang.java4.pat.ast.PatLangParserSEP.n_method_declaration,
+											 lang.java4.pat.ast.PatLangParserSEP.n_type_declaration,
+											 lang.java4.pat.ast.PatLangParserSEP.n_class_member_declaration,
 											 lang.java4.pat.ast.PatLangParserSEP.n_block_statement,
 											 lang.java4.pat.ast.PatLangParserSEP.n_expression);
 				break;

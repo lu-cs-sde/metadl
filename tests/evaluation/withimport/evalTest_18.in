@@ -1,0 +1,47 @@
+IMPORT('Q, "debug.java", "java4").
+
+Scope(0, 0) :- NEQ(0, 0).
+NameDef("", 0) :- NEQ(0, 0).
+
+analyze('Q, "java4") {
+	Scope(p, `c) :- p <: class `n { .. `c .. } :>.
+	Scope(p, `b) :- p <: .. `t `f (..) `b :>.
+	Scope(p, `t) :- p <: .. `t `f (..,`t,..) { .. } :>.
+	Scope(p, `c) :- p <: { .. `c  .. } :>.
+	Scope(p, `c), Scope(p, `x) :- p <: while (`x) { .. `c .. } :>.
+	Scope(p, `c), Scope(p, `a), Scope(p, `b), Scope(p, `c) :- p <: for (`a;`b;`c) { .. `d .. } :>.
+	Scope(p, `c) :- p <: do { .. `c .. } while (`x); :>.
+
+	Scope(p, `e1), Scope(p, `e2) :- c <: `e1 = `e2; :>, Scope(p, c).
+	Scope(p, `e1) :- c <: return `e1; :>, Scope(p, c).
+	Scope(p, `e1), Scope(p, `e2) :- e <: `e1 + `e2 :>, Scope(p, e).
+	Scope(p, `e1), Scope(p, `e2) :- e <: `e1 * `e2 :>, Scope(p, e).
+	Scope(p, `e1), Scope(p, `e2) :- e <: `e1 = `e2 :>, Scope(p, e).
+
+	NameDef(name, `n) :- <: int ..,`n, .. ; :>, ID(`n, name).
+	NameDef("unknown", `n) :- <: int ..,`n, .. ; :>, NOT(ID(`n, _)).
+	Scope(s, `n) :- p <: int ..,`n, .. ; :>, Scope(s, p).
+	NameUse(name, `n) :- <: `n :>, ID(`n, name).
+
+	ScopeT(p, c) :- Scope(p, c).
+	ScopeT(p, c) :- ScopeT(p, s), Scope(s, c).
+
+	NameDefInScope(name, s) :- Scope(s, d), NameDef(name, d).
+	NameDefBetweenScopes(name, wider_scope, narrower_scope) :-
+		ScopeT(wider_scope, s), ScopeT(s, narrower_scope), NEQ(wider_scope, s),
+		NEQ(s, narrower_scope), NameDef(name, d), Scope(s, d).
+
+	UseScope(name, su) :- NameUse(name, u), Scope(su, u).
+	DefScope(name, sd) :- NameDef(name, d), Scope(sd, d).
+
+	DefUse(d, u) :- NameDef(name, d), NameUse(name, u), Scope(sd, d), Scope(su, u), EQ(sd, su).
+
+	DefUse(d, u) :- NameDef(name, d), NameUse(name, u), Scope(sd, d), Scope(su, u),
+			NOT(NameDefBetweenScopes(name, sd, su)), NOT(DefScope(name, su)), ScopeT(sd, su).
+
+	DefUseDetail(name, ld, cd, lu, cu) :-
+			   DefUse(d, u), NameUse(name, u), SRC(d, ld, cd), SRC(u, lu, cu).
+}
+
+
+OUTPUT('DefUseDetail).

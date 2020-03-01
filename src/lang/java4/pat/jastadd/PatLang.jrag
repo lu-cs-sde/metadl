@@ -64,9 +64,10 @@ aspect LanguageSpecific {
 		ret.add(makeIdentifierRule(ctx, "LongLiteral", "LONG", 0, null));
 		ret.add(makeIdentifierRule(ctx, "FloatingPointLiteral", "FLOAT", 0, null));
 		ret.add(makeIdentifierRule(ctx, "DoubleLiteral", "DOUBLE", 0, null));
-		// VariableDeclarators inherit their name from their first child,
+		// VariableDeclarators and FieldDeclarators inherit their name from their first child,
 		// which is and IdWrapper node
 		ret.add(associateIdentifierToParentNode(ctx, "VariableDeclarator", "ID", 0));
+		ret.add(associateIdentifierToParentNode(ctx, "FieldDeclarator", "ID", 0));
 		// Insert an implicit type declaration for the program relation
 		ret.add(implicitTypeDecl(ctx));
 		// Insert a relation to represent the source location of the node

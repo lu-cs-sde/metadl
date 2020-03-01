@@ -340,6 +340,9 @@ aspect Pattern {
 	eq List.asLiterals(AnalyzeContext ctx, lang.ast.CommonVariable root) {
 		ArrayList<lang.ast.Literal> lits = new ArrayList<>();
 
+		if (getParent().isMetaVar())
+			return lits;
+
 		if (getNumChild() == 0) {
 			// The list is empty, assert that the List relation does not
 			// contain anything with this node ID
@@ -370,10 +373,11 @@ aspect Pattern {
 
 	eq MetaVariable.asLiterals(AnalyzeContext ctx, lang.ast.CommonVariable root) = new ArrayList<>();
 	eq Opt.asLiterals(AnalyzeContext ctx, lang.ast.CommonVariable root) {
-
+		ArrayList<lang.ast.Literal> lits = new ArrayList<>();
+		if (getParent().isMetaVar())
+			return lits;
 
 		if (getNumChild() == 0) {
-			ArrayList<lang.ast.Literal> lits = new ArrayList<>();
 			lang.ast.List<lang.ast.Term> terms = new lang.ast.List<>();
 			lang.ast.StringConstant Kind = new lang.ast.StringConstant(getRelation());
 			lang.ast.Wildcard ChildId = new lang.ast.Wildcard();

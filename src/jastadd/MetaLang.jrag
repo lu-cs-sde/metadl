@@ -9,6 +9,8 @@ import beaver.Symbol;
 import java.security.MessageDigest;
 import static lang.io.SimpleLogger.*;
 import java.util.IdentityHashMap;
+import org.apache.commons.lang3.time.StopWatch;
+
 
 import se.lth.sep.*;
 import static se.lth.sep.Util.*;
@@ -41,6 +43,8 @@ aspect MetaLang {
 		List<Clause> cls = new List<>();
 		cls.addAll(generateHelperRelations());
 		for (Clause c : getClauses())
+			// TODO: this makes the parser run twice for each pattern;
+			// try to cache this.
 			cls.add(c.treeCopy());
 		for (Pattern p : patterns()) {
 			cls.addAll(p.getClauses());
@@ -219,28 +223,38 @@ aspect MetaLang {
 
 		SimpleLogger.logger().debug("Parsing pattern " + toString());
 
+		StopWatch parsePatternTimer = StopWatch.createStarted();
+
 		for (Category startSymbol : startSymbols) {
 			SPPFNode root = parser.parse(tokenArray, startSymbol);
 			if (root == null) {
 				continue;
 			}
+
 			{
+				// exclude this debug print from timing
+				parsePatternTimer.suspend();
 				boolean assertionsEnabled = false;
 				// check if assertion are enabled
 				assert assertionsEnabled = true;
 				if (assertionsEnabled)
 					Util.dumpParseResult("parse-tree-orig.dot", root, grammar);
+				// continue measuring the time
+				parsePatternTimer.resume();
 			}
+
 			java.util.List<ParseTree> pts = Util.enumerateParseTrees(root, grammar, tpr);
 			for (ParseTree pt : pts) {
 				try {
 					ObjLangASTNode astRoot = (ObjLangASTNode) astBuilder.buildAST(pt, symbols);
 					ret.add(astRoot);
+					parsePatternTimer.suspend();
 					// Util.dumpParseTree("parse-tree.dot", pt);
 					// Util.dumpParseResult("parse-graph.dot", root, grammar);
 					OutputStream ps = new ByteArrayOutputStream();
 					astRoot.debugPrint(new PrintStream(ps));
 					SimpleLogger.logger().debug(ps.toString());
+					parsePatternTimer.resume();
 				} catch (Exception e) {
 					Util.dumpParseTree("parse-tree.dot", pt);
 					Util.dumpParseResult("parse-graph.dot", root, grammar);
@@ -248,6 +262,9 @@ aspect MetaLang {
 				}
 			}
 		}
+
+		parsePatternTimer.stop();
+		SimpleLogger.logger().time("Parsing pattern " + toString() + ": " + parsePatternTimer.getTime() + "ms");
 
 		if (ret.isEmpty()) {
 			logger().error("Error while parsing pattern: " + getPATTERN());

@@ -202,12 +202,6 @@ aspect ExtensionablePrinting {
     }
 }
 
-aspect MetaPrinting {
-    public static String Program.transformPredefinedName(String l) {
-    	return l + "METAPREDICATE0000011111";
-    }
-}
-
 aspect SoufflePrinting {
     public void ASTNode.soufflePrint(String path) throws IOException {
         File file = new File(path);

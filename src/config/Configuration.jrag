@@ -27,6 +27,8 @@ import java.io.FileReader;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.AbstractMap;
+import org.apache.commons.lang3.time.StopWatch;
+
 
 aspect Configuration {
     syn String Description.inputFile() = getInput().getPath();
@@ -110,9 +112,12 @@ aspect Task {
 aspect Internal {
     public Program EvalBottomUpNaive.perform()  throws Exception {
         SimpleLogger.logger().log(description().debugInfo(), SimpleLogger.LogLevel.Level.DEBUG);
+		StopWatch totalTime = StopWatch.createStarted();
         Program program = getProgramWithChecks();
         BottomUpNaiveIterative bit = new BottomUpNaiveIterative();
         bit.evaluate(program, description());
+		totalTime.stop();
+		SimpleLogger.logger().time("Total: " + totalTime.getTime() + "ms ");
         return program;
     }
 
@@ -136,7 +141,11 @@ aspect Souffle {
 		// Add IMPORT to the formal predicate map. The facts produced by the IMPORT statement
 		// will be exported in the generated souffle file.
 		FormalPredicate meta_import = program.formalPredicateMap().get(GlobalNames.IMPORT_NAME);
+
 		if (meta_import != null) {
+			// Define a time to measure the speed of the import
+			StopWatch progRelTimer = StopWatch.createStarted();
+
 			// map predicate name to program source files, to handle the case when multiple
 			// files are imported to the same program relation.
 			HashMap<String, ArrayList<Map.Entry<String, String>>> predicateSrcFiles = new HashMap<>();
@@ -158,6 +167,9 @@ aspect Souffle {
 			}
 
 			for (Map.Entry<String, ArrayList<Map.Entry<String, String>>> predicateSrcFile : predicateSrcFiles.entrySet()) {
+				// exclude this file movement from the counting
+				progRelTimer.suspend();
+
 				String predName = predicateSrcFile.getKey();
 				File output_fp = new File(factsDir() + "/" + predName + ".csv");
 				if(output_fp.exists() && !output_fp.isDirectory()) {
@@ -167,6 +179,9 @@ aspect Souffle {
 					Files.move(output_fp.toPath(), mv_file.toPath(), StandardCopyOption.REPLACE_EXISTING);
 					moved.add(mv_file);
 				}
+
+				// include the program parse
+				progRelTimer.resume();
 
 				boolean append = false;
 				for (Map.Entry<String, String> progFileLang : predicateSrcFile.getValue()) {
@@ -184,6 +199,8 @@ aspect Souffle {
 													  SimpleLogger.LogLevel.Level.ERROR);
 							System.exit(1);
 						}
+
+
 					} catch(Exception e) {
 						SimpleLogger.logger().log("Could not open file for IMPORT: "
 												  + progFileLang + "\n" + e.toString(), SimpleLogger.LogLevel.Level.ERROR);
@@ -194,6 +211,10 @@ aspect Souffle {
 					CSVUtil.dumpFileInto(programRel, output_fp, append);
 					append = true;
 				}
+
+				// stop the timer and report
+				progRelTimer.stop();
+				SimpleLogger.logger().time("Evaluate IMPORT statements: " + progRelTimer.getTime() + "ms");
 			}
 		}
         return program;
@@ -207,18 +228,24 @@ aspect Souffle {
     }
 
     public Program EvalSouffle.perform()  throws Exception {
+		StopWatch totalTime = StopWatch.createStarted();
         HashSet<File> moved  = new HashSet<File>();
         Program program;
         try {
             program = preEvaluate(moved);
             String soufflePath = outputDir() + "/" + outputFileName();
             SimpleLogger.logger().log("PrettyPrint to: " + soufflePath, SimpleLogger.LogLevel.Level.DEBUG);
+
+			StopWatch souffleGenTimer = StopWatch.createStarted();
             program.soufflePrint(new SoufflePrettyPrinter<Program>(new PrintStream(new FileOutputStream(new File(soufflePath)))));
+			souffleGenTimer.stop();
+			SimpleLogger.logger().time("Generate Souffle program: " + souffleGenTimer.getTime() + "ms");
 
 			// Disable warnings in souffle
             String cmd = "souffle -w -D " + outputDir() + " " + soufflePath + " -F " + factsDir();
             SimpleLogger.logger().log("Run souffle with: " + cmd, SimpleLogger.LogLevel.Level.DEBUG);
 
+			StopWatch souffleRunTimer = StopWatch.createStarted();
             Process p = Runtime.getRuntime().exec(cmd);
 
 			BufferedReader brerr = new BufferedReader(new InputStreamReader(p.getErrorStream()));
@@ -232,12 +259,18 @@ aspect Souffle {
 			}
 
 			p.waitFor();
+			souffleRunTimer.stop();
+			SimpleLogger.logger().time("Run Souffle program: " + souffleRunTimer.getTime() + "ms");
 
             br.close();
             brerr.close();
         } finally {
             postEvaluate(moved);
         }
+
+		totalTime.stop();
+		SimpleLogger.logger().time("Total: " + totalTime.getTime() + "ms ");
+
         return program;
     }
 

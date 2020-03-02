@@ -30,7 +30,7 @@ dependencies {
     compile 'com.opencsv:opencsv:4.3.2'
     compile 'org.junit.jupiter:junit-jupiter-api:5.3.1'
     compile 'org.junit.jupiter:junit-jupiter-engine:5.3.1'
-    compile 'org.javatuples:javatuples:1.2'
+    compile 'org.apache.commons:commons-lang3:3.8'
 
     testCompile('org.junit.jupiter:junit-jupiter-api:5.3.1')
     testRuntime('org.junit.jupiter:junit-jupiter-engine:5.3.1')

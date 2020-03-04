@@ -536,21 +536,34 @@ aspect Pattern {
 			lang.ast.List<lang.ast.CommonLiteral> headList = new lang.ast.List<>();
 			lang.ast.List<lang.ast.CommonLiteral> bodyList = new  lang.ast.List<>();
 
+			/* SRC(n, startLine, startCol, endLine, endCol, file) :- P("SrcLocStart", n, startLine, startCol, file),
+			   P("SrcLocEnd", n, endLine, endCol, _). */
+
 			headList.add(new lang.ast.Atom(new lang.ast.PredicateSymbol(ctx.scopePrefix + "SRC"),
 										   new lang.ast.List<lang.ast.Term>()
 										   .add(new lang.ast.Variable("n"))
-										   .add(new lang.ast.Variable("l"))
-										   .add(new lang.ast.Variable("c"))));
+										   .add(new lang.ast.Variable("sl"))
+										   .add(new lang.ast.Variable("sc"))
+										   .add(new lang.ast.Variable("el"))
+										   .add(new lang.ast.Variable("ec"))
+										   .add(new lang.ast.Variable("f"))
+										   ));
 			bodyList.add(new lang.ast.Atom(new lang.ast.PredicateSymbol(ctx.progRelName),
 										   new lang.ast.List<lang.ast.Term>()
-										   .add(new lang.ast.StringConstant("SourceInfo"))
+										   .add(new lang.ast.StringConstant("SrcLocStart"))
 										   .add(new lang.ast.Variable("n"))
-										   .add(new lang.ast.Variable("l"))
-										   .add(new lang.ast.Variable("c"))
+										   .add(new lang.ast.Variable("sl"))
+										   .add(new lang.ast.Variable("sc"))
+										   .add(new lang.ast.Variable("f"))));
+			bodyList.add(new lang.ast.Atom(new lang.ast.PredicateSymbol(ctx.progRelName),
+										   new lang.ast.List<lang.ast.Term>()
+										   .add(new lang.ast.StringConstant("SrcLocEnd"))
+										   .add(new lang.ast.Variable("n"))
+										   .add(new lang.ast.Variable("el"))
+										   .add(new lang.ast.Variable("ec"))
 										   .add(new lang.ast.Wildcard())));
 			return new lang.ast.Rule(headList, bodyList);
 		}
-
 
 		public static lang.ast.Rule makeIndexRule(AnalyzeContext ctx) {
 			lang.ast.List<lang.ast.CommonLiteral> headList = new lang.ast.List<>();

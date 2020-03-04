@@ -22,7 +22,7 @@ analyze('P, "java4") {
 	    EvalE(e, val) :- e <: (`l) :>, EvalE(`l, val).
 
 	    Ret(fname, val) :- <: int `f(..) { ..  return `r; } :>, EvalE(`r, val), ID(`f, fname).
-	    ValLoc(var, val, line) :- Val(var, loc, val), SRC(loc, line, _).
+	    ValLoc(var, val, line) :- Val(var, loc, val), SRC(loc, line, _, _, _, _).
 }
 
 OUTPUT('Val).

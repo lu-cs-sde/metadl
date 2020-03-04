@@ -40,7 +40,7 @@ analyze('Q, "java4") {
 			NOT(NameDefBetweenScopes(name, sd, su)), NOT(DefScope(name, su)), ScopeT(sd, su).
 
 	DefUseDetail(name, ld, cd, lu, cu) :-
-			   DefUse(d, u), NameUse(name, u), SRC(d, ld, cd), SRC(u, lu, cu).
+			   DefUse(d, u), NameUse(name, u), SRC(d, ld, cd, _, _, _), SRC(u, lu, cu, _, _, _).
 }
 
 

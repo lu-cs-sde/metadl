@@ -99,13 +99,26 @@ aspect DatalogProjection {
 
 		{
 			// record the source location
-			// ("SourceInfo, CurrentNodeId, Line, Col, "")
-			lang.ast.StringConstant Kind = new lang.ast.StringConstant("SourceInfo");
-			lang.ast.IntConstant CurrentNodeId = new lang.ast.IntConstant("" + getNodeId());
-			lang.ast.IntConstant Line = new lang.ast.IntConstant("" + getLine(getStart()));
-			lang.ast.IntConstant Col = new lang.ast.IntConstant("" + getColumn(getStart()));
-			lang.ast.StringConstant SrcFile = new lang.ast.StringConstant(getSourceFile());
-			ret.add(new PseudoTuple(Kind, CurrentNodeId, Line, Col, SrcFile));
+			{
+				// ("SourceInfo, CurrentNodeId, StartLine, StartCol, FileName)
+				lang.ast.StringConstant Kind = new lang.ast.StringConstant("SrcLocStart");
+				lang.ast.IntConstant CurrentNodeId = new lang.ast.IntConstant("" + getNodeId());
+				lang.ast.IntConstant Line = new lang.ast.IntConstant("" + getLine(getStart()));
+				lang.ast.IntConstant Col = new lang.ast.IntConstant("" + getColumn(getStart()));
+				lang.ast.StringConstant SrcFile = new lang.ast.StringConstant(getSourceFile());
+				ret.add(new PseudoTuple(Kind, CurrentNodeId, Line, Col, SrcFile));
+			}
+
+			{
+				// ("SourceInfo, CurrentNodeId, EndLine, EndCol, "")
+				lang.ast.StringConstant Kind = new lang.ast.StringConstant("SrcLocEnd");
+				lang.ast.IntConstant CurrentNodeId = new lang.ast.IntConstant("" + getNodeId());
+				lang.ast.IntConstant Line = new lang.ast.IntConstant("" + getLine(getEnd()));
+				lang.ast.IntConstant Col = new lang.ast.IntConstant("" + getColumn(getEnd()));
+				// avoid printing the source file once again to avoid bloating the output table
+				lang.ast.StringConstant SrcFile = new lang.ast.StringConstant("");
+				ret.add(new PseudoTuple(Kind, CurrentNodeId, Line, Col, SrcFile));
+			}
 		}
 
 		return ret;

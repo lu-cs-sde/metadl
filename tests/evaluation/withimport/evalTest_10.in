@@ -5,13 +5,13 @@ IMPORT( 'Program, "tests/evaluation/withimport/evalTest_10_input.mdl", "metadl")
 analyze('Program) {
  Deprecated(p) :- <: $d($p) . :>, ID($d, "Deprecated"), REF($p, p).
  Warning(p, l, c) :- <: ... :- ..., $p(...), ... . :>,
-                  ID($p, p), Deprecated(p), SRC($p, l, c).
+                  ID($p, p), Deprecated(p), SRC($p, l, c, _, _, _).
 
  Warning(p, l, c) :- <: ..., $p(...), ... :- ... . :>,
-                  ID($p, p), Deprecated(p), SRC($p, l, c).
+                  ID($p, p), Deprecated(p), SRC($p, l, c, _, _, _).
 
  Warning(p, l, c) :- <: ..., $p(...), ... . :>,
-                  ID($p, p), Deprecated(p), SRC($p, l, c).
+                  ID($p, p), Deprecated(p), SRC($p, l, c, _, _, _).
 }
 
 

@@ -1,0 +1,12 @@
+IMPORT('P, "tests/evaluation/metadl-java/src/bad-covariant-equals", "java4").
+
+GoodEquals(0, 0, 0), BadEquals(0, 0, 0) :- NEQ(0, 0).
+
+
+analyze ('P, "java4") {
+	GoodEquals(n, l, c) :- n <: public boolean equals(Object o) { .. } :>, SRC(n, l, c).
+	BadEquals(n, l, c) :- n <: public boolean equals(`t o) { .. } :>, ID(`t, t), NEQ(t, "Object"), SRC(n, l, c).
+}
+
+OUTPUT('GoodEquals).
+OUTPUT('BadEquals).

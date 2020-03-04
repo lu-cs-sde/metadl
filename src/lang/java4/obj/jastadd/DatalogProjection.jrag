@@ -8,9 +8,23 @@ import lang.io.StringUID;
 import java.util.Arrays;
 
 aspect LanguageSpecific {
-	coll Relation CompilationUnit.datalogProjection() [new Relation(5)] with addTuples root CompilationUnit;
-	ASTNode contributes toTuples() to CompilationUnit.datalogProjection() ;
-	syn Relation CompilationUnit.asRelation() = datalogProjection();
+	coll Relation Program.datalogProjection() [new Relation(5)] with addTuples root Program;
+	ASTNode contributes toTuples() to Program.datalogProjection() ;
+	syn Relation Program.asRelation() = datalogProjection();
+
+	private String CompilationUnit.sourceFile = "";
+	public void CompilationUnit.setSourceFile(String srcFile) {
+		sourceFile = srcFile;
+	}
+
+	inh String ASTNode.getSourceFileInternal();
+	eq CompilationUnit.getChild().getSourceFileInternal() = getSourceFile();
+
+	syn String ASTNode.getSourceFile() = getSourceFileInternal();
+	eq CompilationUnit.getSourceFile() = sourceFile;
+	eq Program.getSourceFile() = "";
+	eq List.getSourceFile() = "";
+	eq Opt.getSourceFile() = "";
 
 	// Identical definition to PatLang.jrag
 	syn java.util.List<String> ASTNode.tokens() = Collections.emptyList();

@@ -2,13 +2,46 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.File;
 import beaver.Parser;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.filefilter.IOFileFilter;
+import org.apache.commons.io.filefilter.FileFilterUtils;
+import org.apache.commons.io.filefilter.WildcardFileFilter;
+import org.apache.commons.io.filefilter.TrueFileFilter;
+import java.util.Iterator;
 
 aspect Utils {
-	static public CompilationUnit CompilationUnit.fromFileLoc(String loc) throws IOException, beaver.Parser.Exception {
-		ObjLangScanner scanner = new ObjLangScanner(new FileReader(new File(loc)));
+	public static CompilationUnit CompilationUnit.fromFileLoc(String loc) throws IOException, beaver.Parser.Exception {
+		return fromFileLoc(new File(loc));
+	}
+
+	public static CompilationUnit CompilationUnit.fromFileLoc(File loc) throws IOException, beaver.Parser.Exception {
+		ObjLangScanner scanner = new ObjLangScanner(new FileReader(loc));
 		ObjLangParser parser = new ObjLangParser();
 		CompilationUnit cu = (CompilationUnit) parser.parse(scanner);
-		cu.assignIds(new MutableInt(1));
+		cu.setSourceFile(loc.getName());
 		return cu;
+	}
+
+	public static Program Program.fromFileLoc(String loc) throws IOException, beaver.Parser.Exception {
+		ObjLangParser parser = new ObjLangParser();
+		File fileOrDir = new File(loc);
+		Program p = new Program();
+
+		if (fileOrDir.isDirectory()) {
+			IOFileFilter ff = new WildcardFileFilter("*.java");
+			Iterator<File> it = FileUtils.iterateFiles(fileOrDir, ff, TrueFileFilter.INSTANCE);
+
+			while (it.hasNext()) {
+				File f = it.next();
+				CompilationUnit cu = CompilationUnit.fromFileLoc(f);
+				p.addCompilationUnit(cu);
+			}
+
+		} else {
+			CompilationUnit cu = CompilationUnit.fromFileLoc(fileOrDir);
+			p.addCompilationUnit(cu);
+		}
+
+		return p;
 	}
 }

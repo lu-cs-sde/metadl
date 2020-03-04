@@ -11,6 +11,9 @@ aspect LanguageSpecific {
 	ASTNode contributes toTuples() to Program.datalogProjection() ;
 	syn Relation Program.asRelation() = datalogProjection();
 
+	// TODO: implement this as for the Java language
+	syn String ASTNode.getSourceFile() = "";
+
 	// Identical defintion to PatLang.jrag
 	syn java.util.List<String> ASTNode.tokens() = Collections.emptyList();
 

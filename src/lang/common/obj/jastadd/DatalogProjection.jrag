@@ -104,8 +104,8 @@ aspect DatalogProjection {
 			lang.ast.IntConstant CurrentNodeId = new lang.ast.IntConstant("" + getNodeId());
 			lang.ast.IntConstant Line = new lang.ast.IntConstant("" + getLine(getStart()));
 			lang.ast.IntConstant Col = new lang.ast.IntConstant("" + getColumn(getStart()));
-			lang.ast.StringConstant Token = new lang.ast.StringConstant("");
-			ret.add(new PseudoTuple(Kind, CurrentNodeId, Line, Col, Token));
+			lang.ast.StringConstant SrcFile = new lang.ast.StringConstant(getSourceFile());
+			ret.add(new PseudoTuple(Kind, CurrentNodeId, Line, Col, SrcFile));
 		}
 
 		return ret;

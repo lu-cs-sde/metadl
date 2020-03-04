@@ -8,7 +8,6 @@ aspect Utils {
 		ObjLangScanner scanner = new ObjLangScanner(new FileReader(new File(loc)));
 		ObjLangParser parser = new ObjLangParser();
 		Program p = (Program) parser.parse(scanner);
-		p.assignIds(new MutableInt(1));
 		return p;
 	}
 }

@@ -175,4 +175,30 @@ public class EvaluationTest {
 			assertEquals(expectedRel, rel.getValue(), msg);
 		}
 	}
+
+
+	@DisplayName("Evaluate MetaDL-Java programs")
+	@ParameterizedTest(name = "MetaDL-Java programs")
+	@ValueSource(strings = {"bad-covariant-equals"})
+	void evaluationTestMetaDLJava(String fileName) throws Exception {
+		Description d1 = FileUtil.parseDescription(
+		   "eval::souffle -OUT ./tests/output/souffle -FACTS ./tests/evaluation/metadl-java/facts ./tests/evaluation/metadl-java/"
+		   + fileName + ".mdl");
+
+		Map<String, Relation> outRelations = doSingleEvaluation(d1);
+		for (Map.Entry<String, Relation> rel : outRelations.entrySet()) {
+			File expectedF = new File ("./tests/evaluation/metadl-java/expected/" + fileName + "/" + rel.getKey() + ".csv");
+			Relation expectedRel = CSVUtil.readRelationFrom(null, expectedF, rel.getValue().arity());
+			if (!expectedRel.equals(rel.getValue())) {
+				System.out.println(rel.getKey() + " expects ");
+				System.out.println(expectedRel);
+				System.out.println(rel.getKey() + " actual ");
+				System.out.println(rel.getValue());
+
+			}
+			String msg = "Mismatch in test " + fileName + ", relation " + rel.getKey();
+			assertEquals(expectedRel, rel.getValue(), msg);
+		}
+	}
+
 }

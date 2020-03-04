@@ -28,7 +28,7 @@ import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.AbstractMap;
 import org.apache.commons.lang3.time.StopWatch;
-
+import org.apache.commons.lang3.mutable.MutableInt;
 
 aspect Configuration {
     syn String Description.inputFile() = getInput().getPath();
@@ -188,22 +188,27 @@ aspect Souffle {
 					Relation programRel = null;
 					try {
 						switch (progFileLang.getValue()) {
-						case "metadl" :
-							programRel = lang.metadl.obj.ast.Program.fromFileLoc(progFileLang.getKey()).asRelation();
+						case "metadl": {
+							lang.metadl.obj.ast.Program prog = lang.metadl.obj.ast.Program.fromFileLoc(progFileLang.getKey());
+							prog.assignIds(new MutableInt(1));
+							programRel = prog.asRelation();
 							break;
-						case "java4" :
-							programRel = lang.java4.obj.ast.CompilationUnit.fromFileLoc(progFileLang.getKey()).asRelation();
+						}
+						case "java4": {
+							lang.java4.obj.ast.Program prog = lang.java4.obj.ast.Program.fromFileLoc(progFileLang.getKey());
+							prog.assignIds(new MutableInt(1));
+							programRel = prog.asRelation();
 							break;
+						}
 						default:
 							SimpleLogger.logger().log("Unknown language to IMPORT: " + progFileLang.getValue(),
 													  SimpleLogger.LogLevel.Level.ERROR);
 							System.exit(1);
 						}
-
-
 					} catch(Exception e) {
 						SimpleLogger.logger().log("Could not open file for IMPORT: "
-												  + progFileLang + "\n" + e.toString(), SimpleLogger.LogLevel.Level.ERROR);
+												  + progFileLang.getKey() + ", " + progFileLang.getValue() + "\n"
+												  + e.toString(), SimpleLogger.LogLevel.Level.ERROR);
 						System.exit(1);
 					}
 

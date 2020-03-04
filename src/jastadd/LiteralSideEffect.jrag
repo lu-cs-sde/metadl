@@ -9,6 +9,7 @@ import java.util.TreeSet;
 import java.util.HashMap;
 import java.util.Map;
 import java.io.FileReader;
+import org.apache.commons.lang3.mutable.MutableInt;
 
 aspect LiteralSideEffect {
     public void Literal.sideEffect(Program program, Description descr, Relation delta) {}
@@ -74,12 +75,18 @@ aspect LiteralSideEffect {
 			String srcLang = t.coord(2).toString();
 			try {
 				switch (srcLang) {
-				case "metadl":
-					importedProgramRel = lang.metadl.obj.ast.Program.fromFileLoc(t.coord(1).toString()).asRelation();
+				case "metadl": {
+					lang.metadl.obj.ast.Program prog = lang.metadl.obj.ast.Program.fromFileLoc(t.coord(1).toString());
+					prog.assignIds(new MutableInt(1));
+					importedProgramRel = prog.asRelation();
 					break;
-				case "java4:":
-					importedProgramRel = lang.java4.obj.ast.CompilationUnit.fromFileLoc(t.coord(1).toString()).asRelation();
+				}
+				case "java4:": {
+					lang.java4.obj.ast.Program prog = lang.java4.obj.ast.Program.fromFileLoc(t.coord(1).toString());
+					prog.assignIds(new MutableInt(1));
+					importedProgramRel = prog.asRelation();
 					break;
+				}
 				default:
 					SimpleLogger.logger().log("Unknown language to IMPORT: " + srcLang,
 											  SimpleLogger.LogLevel.Level.ERROR);

@@ -1,7 +1,7 @@
 /** A generic class declaration. */
-GenericClassDecl : ClassDecl ::= Modifiers <ID:String> [SuperClass:Access] Implements:Access*
+GenericClassDecl : ClassDecl ::= Modifiers IdWrapper [SuperClass:Access] Implements:Access*
     BodyDecl* TypeParameter:TypeVariable*;
-GenericInterfaceDecl : InterfaceDecl ::= Modifiers <ID:String> SuperInterface:Access* BodyDecl*
+GenericInterfaceDecl : InterfaceDecl ::= Modifiers IdWrapper SuperInterface:Access* BodyDecl*
     TypeParameter:TypeVariable*;
 
 /**
@@ -47,14 +47,14 @@ RawInterfaceDecl : ParInterfaceDecl;
 ParTypeAccess : Access ::= TypeAccess:Access TypeArgument:Access*;
 
 /** Represents a type variable of a parameterized type. */
-TypeVariable : ReferenceType ::= Modifiers <ID:String> BodyDecl* Bound:Access*;
+TypeVariable : ReferenceType ::= Modifiers IdWrapper BodyDecl* Bound:Access*;
 
 /**
  * A type variable that should have its type bounds substituted during type
  * argument bounds checking.
  */
 SubstitutedTypeVariable : TypeVariable ::=
-    Modifiers <ID:String> BodyDecl* Bound:Access* ;
+    Modifiers IdWrapper BodyDecl* Bound:Access* ;
 
 abstract AbstractWildcard : Access;
 Wildcard : AbstractWildcard;
@@ -111,8 +111,8 @@ GenericInterfaceDeclSubstituted : GenericInterfaceDecl ::= <Original:TypeDecl>;
  * Intersection type.
  * Occurs in, for example, conditional expression type analysis.
  */
-LUBType : ReferenceType ::= Modifiers <ID:String> BodyDecl* TypeBound:Access*;
-GLBType : ReferenceType ::= Modifiers <ID:String> BodyDecl* TypeBound:Access*;
+LUBType : ReferenceType ::= Modifiers IdWrapper BodyDecl* TypeBound:Access*;
+GLBType : ReferenceType ::= Modifiers IdWrapper BodyDecl* TypeBound:Access*;
 
 WildcardsCompilationUnit : CompilationUnit;
 

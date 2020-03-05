@@ -1,6 +1,6 @@
-EnumDecl : ClassDecl ::= Modifiers <ID:String> /[SuperClass:Access]/ Implements:Access* BodyDecl*;
+EnumDecl : ClassDecl ::= Modifiers IdWrapper /[SuperClass:Access]/ Implements:Access* BodyDecl*;
 
-EnumConstant : BodyDecl ::= Modifiers <ID:String> Arg:Expr* [Init:Expr] /TypeAccess:Access/;
+EnumConstant : BodyDecl ::= Modifiers IdWrapper Arg:Expr* [Init:Expr] /TypeAccess:Access/;
 
 EnumInstanceExpr : ClassInstanceExpr ::= /Access/ /Arg:Expr*/ [TypeDecl];
 

@@ -1,0 +1,165 @@
+Expr primary_no_new_array :=
+    literal
+  | primitive_type.n dims.d? DOT class_literal.c
+    {: return n.addArrayDims(d).qualifiesAccess(c); :}
+  | name.n dims.d? DOT class_literal.c
+    {: return n.addArrayDims(d).qualifiesAccess(c); :}
+  | VOID DOT class_literal.c
+    {: PrimitiveTypeAccess v = new PrimitiveTypeAccess("void");
+       v.setStart(VOID.getStart());
+       v.setEnd(VOID.getEnd());
+       return v.qualifiesAccess(c); :}
+  | THIS                                       {: return new ThisAccess(); :}
+  | name.n DOT THIS
+    {: ThisAccess t = new ThisAccess();
+       t.setStart(THIS.getStart()); t.setEnd(THIS.getEnd());
+       return n.qualifiesAccess(t); :}
+  | LPAREN expression_nn.e RPAREN              {: return new ParExpr(e); :}
+  | LPAREN name.n RPAREN                       {: return new ParExpr(n); :}
+  | class_instance_creation_expression
+  | field_access
+  | method_invocation
+  | array_access 
+  ;
+
+Expr postfix_expression_nn =
+    primary
+  | postincrement_expression
+  | postdecrement_expression
+  ;
+Expr unary_expression_nn =
+    preincrement_expression
+  | predecrement_expression
+  | PLUS unary_expression.e  @UNARY                  {: return new PlusExpr(e); :}
+  | MINUS unary_expression.e @UNARY                 {: return new MinusExpr(e); :}
+  | unary_expression_not_plus_minus_nn
+  ;
+Expr unary_expression_not_plus_minus_nn =
+    postfix_expression_nn
+  | COMP unary_expression.e                    {: return new BitNotExpr(e); :}
+  | NOT unary_expression.e                     {: return new LogNotExpr(e); :}
+  | cast_expression
+  ;
+Expr multiplicative_expression_nn =
+    unary_expression_nn
+  | name.e1 MULT unary_expression.e2                          {: return new MulExpr(e1, e2); :}
+  | multiplicative_expression_nn.e1 MULT unary_expression.e2  {: return new MulExpr(e1, e2); :}
+  | name.e1 DIV unary_expression.e2                           {: return new DivExpr(e1, e2); :}
+  | multiplicative_expression_nn.e1 DIV unary_expression.e2   {: return new DivExpr(e1, e2); :}
+  | name.e1 MOD unary_expression.e2                           {: return new ModExpr(e1, e2); :}
+  | multiplicative_expression_nn.e1 MOD unary_expression.e2   {: return new ModExpr(e1, e2); :}
+  ;
+Expr additive_expression_nn =
+    multiplicative_expression_nn
+  | name.e1 PLUS multiplicative_expression.e2                     {: return new AddExpr(e1, e2); :}
+  | additive_expression_nn.e1 PLUS multiplicative_expression.e2   {: return new AddExpr(e1, e2); :}
+  | name.e1 MINUS multiplicative_expression.e2                    {: return new SubExpr(e1, e2); :}
+  | additive_expression_nn.e1 MINUS multiplicative_expression.e2  {: return new SubExpr(e1, e2); :}
+  ;
+Expr shift_expression_nn =
+    additive_expression_nn
+  | name.e1 LSHIFT additive_expression.e2                 {: return new LShiftExpr(e1, e2); :}
+  | shift_expression_nn.e1 LSHIFT additive_expression.e2  {: return new LShiftExpr(e1, e2); :}
+  | name.e1 RSHIFT additive_expression.e2                 {: return new RShiftExpr(e1, e2); :}
+  | shift_expression_nn.e1 RSHIFT additive_expression.e2  {: return new RShiftExpr(e1, e2); :}
+  | name.e1 URSHIFT additive_expression.e2                {: return new URShiftExpr(e1, e2); :}
+  | shift_expression_nn.e1 URSHIFT additive_expression.e2 {: return new URShiftExpr(e1, e2); :}
+  ;
+Expr relational_expression_nn =
+    shift_expression_nn
+  | name.e1 LT shift_expression.e2                          {: return new LTExpr(e1, e2); :}
+  | shift_expression_nn.e1 LT shift_expression.e2           {: return new LTExpr(e1, e2); :}
+  | name.e1 GT shift_expression.e2                          {: return new GTExpr(e1, e2); :}
+  | shift_expression_nn.e1 GT shift_expression.e2           {: return new GTExpr(e1, e2); :}
+  | name.e1 LTEQ shift_expression.e2                        {: return new LEExpr(e1, e2); :}
+  | relational_expression_nn.e1 LTEQ shift_expression.e2    {: return new LEExpr(e1, e2); :}
+  | name.e1 GTEQ shift_expression.e2                        {: return new GEExpr(e1, e2); :}
+  | relational_expression_nn.e1 GTEQ shift_expression.e2    {: return new GEExpr(e1, e2); :}
+  ;
+/**
+ * Relational expressions are in practice non-associative.  Although the JLS
+ * (version 7, section 15.20) states that relational expressions are
+ * left-associative, it also mentions that it is a compile-time error to use
+ * relational expressions on boolean values.
+ *
+ * In order to avoid a shift-reduce conflict between instanceof and less-than
+ * expressions we have chosen to let instanceof expressions have higher
+ * precedence.  This means the grammar here deviates slightly from the JLS, but
+ * with no effect on actual compileable relational expressions. The parse tree
+ * is slightly different - but you will still get the same type of compile
+ * error.
+ *
+ * This was inspired by the way the CUP Java 1.5 grammar handles instanceof
+ * (http://people.csail.mit.edu/jhbrown/javagrammar/index.html)
+ */
+Expr instanceof_expression_nn =
+    relational_expression_nn
+  | name.e INSTANCEOF reference_type.t                        {: return new InstanceOfExpr(e, t); :}
+  | shift_expression_nn.e INSTANCEOF reference_type.t         {: return new InstanceOfExpr(e, t); :}
+  ;
+Expr equality_expression_nn =
+    instanceof_expression_nn
+  | name.e1 EQEQ instanceof_expression.e2                     {: return new EQExpr(e1, e2); :}
+  | equality_expression_nn.e1 EQEQ instanceof_expression.e2   {: return new EQExpr(e1, e2); :}
+  | name.e1 NOTEQ instanceof_expression.e2                    {: return new NEExpr(e1, e2); :}
+  | equality_expression_nn.e1 NOTEQ instanceof_expression.e2  {: return new NEExpr(e1, e2); :}
+  ;
+/**
+ * Rewrites of Java 1.4 productions to use same precedence as described above
+ * for instanceof_expression_nn.
+ */
+Expr relational_expression :=
+    shift_expression @BOTTOM
+  | relational_expression.e1 LT shift_expression.e2     {: return new LTExpr(e1, e2); :}
+  | relational_expression.e1 GT shift_expression.e2     {: return new GTExpr(e1, e2); :}
+  | relational_expression.e1 LTEQ shift_expression.e2   {: return new LEExpr(e1, e2); :}
+  | relational_expression.e1 GTEQ shift_expression.e2   {: return new GEExpr(e1, e2); :}
+  ;
+Expr instanceof_expression =
+    relational_expression @BOTTOM
+  | shift_expression.e INSTANCEOF reference_type.t            {: return new InstanceOfExpr(e, t); :}
+  ;
+Expr equality_expression :=
+    instanceof_expression 
+  | equality_expression.e1 EQEQ relational_expression.e2  {: return new EQExpr(e1, e2); :}
+  | equality_expression.e1 NOTEQ relational_expression.e2 {: return new NEExpr(e1, e2); :}
+  ;
+Expr and_expression_nn =
+    equality_expression_nn
+  | name.e1 AND equality_expression.e2              {: return new AndBitwiseExpr(e1, e2); :}
+  | and_expression_nn.e1 AND equality_expression.e2 {: return new AndBitwiseExpr(e1, e2); :}
+  ;
+Expr exclusive_or_expression_nn =
+    and_expression_nn
+  | name.e1 XOR and_expression.e2                       {: return new XorBitwiseExpr(e1, e2); :}
+  | exclusive_or_expression_nn.e1 XOR and_expression.e2 {: return new XorBitwiseExpr(e1, e2); :}
+  ;
+Expr inclusive_or_expression_nn =
+    exclusive_or_expression_nn
+  | name.e1 OR exclusive_or_expression.e2                       {: return new OrBitwiseExpr(e1, e2); :}
+  | inclusive_or_expression_nn.e1 OR exclusive_or_expression.e2 {: return new OrBitwiseExpr(e1, e2); :}
+  ;
+Expr conditional_and_expression_nn =
+    inclusive_or_expression_nn
+  | name.e1 ANDAND inclusive_or_expression.e2                           {: return new AndLogicalExpr(e1, e2); :}
+  | conditional_and_expression_nn.e1 ANDAND inclusive_or_expression.e2  {: return new AndLogicalExpr(e1, e2); :}
+  ;
+Expr conditional_or_expression_nn =
+    conditional_and_expression_nn.e                                     {: return e; :}
+  | name.e1 OROR conditional_and_expression.e2                          {: return new OrLogicalExpr(e1, e2); :}
+  | conditional_or_expression_nn.e1 OROR conditional_and_expression.e2  {: return new OrLogicalExpr(e1, e2); :}
+  ;
+Expr conditional_expression_nn =
+    conditional_or_expression_nn
+  | name.c QUESTION expression.e1 COLON conditional_expression.e2
+    {: return new ConditionalExpr(c, e1, e2); :}
+  | conditional_or_expression_nn.c QUESTION expression.e1 COLON conditional_expression.e2
+    {: return new ConditionalExpr(c, e1, e2); :}
+  ;
+Expr assignment_expression_nn =
+    conditional_expression_nn
+  | assignment
+  ;
+
+Expr expression_nn = assignment_expression_nn;
+

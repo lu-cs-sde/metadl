@@ -2,5 +2,5 @@
  * Located at end of current state due to rule priority disambiguation
  */
 <YYINITIAL> {
-  {Identifier}  { return sym(Terminals.IDENTIFIER); }
+  ([:jletter:]|[\ud800-\udfff])([:jletterdigit:]|[\ud800-\udfff])* { return sym(Terminals.IDENTIFIER); }
 }

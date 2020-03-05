@@ -37,5 +37,6 @@
   "<<="                          { return sym(Terminals.LSHIFTEQ); }
   ">>="                          { return sym(Terminals.RSHIFTEQ); }
   ">>>="                         { return sym(Terminals.URSHIFTEQ); }
+  "@"                            { return sym(Terminals.AT); }
+  "..."                          { return sym(Terminals.ELLIPSIS); }
 }
-

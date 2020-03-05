@@ -49,7 +49,7 @@ dependencies {
 
 // This specifies where the source code is located:
 sourceSets {
-    main.java.srcDirs = [ 'src/java', 'src/gen', 'src/lang/java4/util' ]
+    main.java.srcDirs = [ 'src/java', 'src/gen', 'src/lang/java4/util', 'src/lang/java5/util' ]
     test.java.srcDirs = [ 'src/test' ]
 }
 
@@ -112,6 +112,7 @@ jar {
 compileJava.dependsOn 'generateJava', 'generateScanner', 'generateParser',
     'genMetadlLang',
     'genJava4Lang',
+    'genJava5Lang',
     'generateConfig', 'generateScannerConfig', 'generateParserConfig'
 
 
@@ -310,12 +311,27 @@ def java4LexOrder = [
     "Postamble.flex"
 ]
 
+def java5LexOrder = [
+    "Header.flex",
+    "Preamble.flex",
+    "Macros.flex",
+    "RulesPreamble.flex",
+    "WhiteSpace.flex",
+    "Comments.flex",
+    "Keywords.flex",
+    "Literals.flex",
+    "Operators.flex",
+    "Separators.flex",
+    "Identifiers.flex",
+    "Postamble.flex"
+]
+
 def metadlLexOrder = ['scanner.flex']
 
 
 makeGenerateLangTask('genMetadlLang', 'src/gen/', 'metadl', metadlLexOrder)
 makeGenerateLangTask('genJava4Lang', 'src/gen/', 'java4', java4LexOrder)
-
+makeGenerateLangTask('genJava5Lang', 'src/gen/', 'java5', java5LexOrder)
 
 makeGenerateBeaverTask('generateBeaver', 'src/gen/LangParser.beaver', 'src/parser/metadl.parser')
 makeGenerateParserTask('generateParser', 'src/gen/lang/ast', 'src/gen/LangParser.beaver')

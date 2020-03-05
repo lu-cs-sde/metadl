@@ -1,0 +1,10 @@
+// A BoundMethodAccess is a method access that bypasses the normal name binding.
+// It receives its corresponding declaration explicitly through the constructor.
+BoundMethodAccess : MethodAccess;
+
+// Explicitly bound access that bypasses name binding.
+BoundFieldAccess : VarAccess ::= <FieldDeclarator:FieldDeclarator>;
+
+BoundTypeAccess : TypeAccess ::= <TypeDecl:TypeDecl>;
+
+BytecodeTypeAccess : TypeAccess;

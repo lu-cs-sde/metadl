@@ -1,4 +1,4 @@
-IMPORT('Q, "debug.java", "java4").
+IMPORT('Q, "tests/evaluation/withimport/evalTest_18_input.java", "java4").
 
 Scope(0, 0) :- NEQ(0, 0).
 NameDef("", 0) :- NEQ(0, 0).

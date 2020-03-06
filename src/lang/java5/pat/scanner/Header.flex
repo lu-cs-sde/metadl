@@ -2,7 +2,7 @@ package lang.java5.pat.ast;
 
 import beaver.Symbol;
 import beaver.Scanner;
-import lang.java5.pat.ast.PatLangParser.Terminals;
+import lang.java5.pat.ast.PatLangParserSEP.Terminals;
 import java.io.*;
 %%
 

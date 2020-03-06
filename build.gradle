@@ -233,9 +233,6 @@ void makeGenerateLangTask(String taskName, String outDir, String srcLang, ArrayL
 			fileTree(dir : 'src/lang/' + srcLang + '/pat/parser', includes : ['**/*.parser']))
 
     // .parser -> .beaver
-    makeGenerateBeaverTask('generateBeaverPatlang' + taskName, outDir + '/lang/' + srcLang + '/PatLangParser.beaver',
-			   outDir + '/lang/' + srcLang + '/pat/parser/lang.parser',
-			   true)
     makeGenerateBeaverTask('generateBeaverObjlang' + taskName, outDir + '/lang/' + srcLang + '/ObjLangParser.beaver',
 			   outDir + '/lang/' + srcLang + '/obj/parser/lang.parser',
 			   false)
@@ -244,8 +241,6 @@ void makeGenerateLangTask(String taskName, String outDir, String srcLang, ArrayL
 			outDir + '/lang/' + srcLang + '/pat/parser/lang.parser')
 
     // .beaver -> .java
-    makeGenerateParserTask('generateParserPatlang' + taskName, outDir + '/lang/' + srcLang + '/pat/ast',
-			   outDir + '/lang/' + srcLang + '/PatLangParser.beaver')
     makeGenerateParserTask('generateParserObjlang' + taskName, outDir + '/lang/' + srcLang + '/obj/ast',
 			   outDir + '/lang/' + srcLang + '/ObjLangParser.beaver')
     // .flex -> .java
@@ -270,8 +265,6 @@ void makeGenerateLangTask(String taskName, String outDir, String srcLang, ArrayL
 
     if (patlang) {
 	// Disable the pattern lang while bringing up a new language
-	tasks.getByName(taskName).dependsOn tasks.getByName('generateBeaverPatlang' + taskName)
-	tasks.getByName(taskName).dependsOn tasks.getByName('generateParserPatlang' + taskName)
 	tasks.getByName(taskName).dependsOn tasks.getByName('generateScannerPatlang' + taskName)
 	tasks.getByName(taskName).dependsOn tasks.getByName('generateJavaPatlang' + taskName)
 	tasks.getByName(taskName).dependsOn tasks.getByName('generateSEP' + taskName)
@@ -282,11 +275,10 @@ void makeGenerateLangTask(String taskName, String outDir, String srcLang, ArrayL
     tasks.getByName(taskName).dependsOn tasks.getByName('generateScannerObjlang' + taskName)
     tasks.getByName(taskName).dependsOn tasks.getByName('generateJavaObjlang' + taskName)
 
-    tasks.getByName('generateParserPatlang' + taskName).dependsOn tasks.getByName('generateBeaverPatlang' + taskName)
     tasks.getByName('generateParserObjlang' + taskName).dependsOn tasks.getByName('generateBeaverObjlang' + taskName)
 
     tasks.getByName('generateBeaverObjlang' + taskName).dependsOn tasks.getByName('MkDirs' + taskName), tasks.getByName('catObjlangParser' + taskName)
-    tasks.getByName('generateBeaverPatlang' + taskName).dependsOn tasks.getByName('MkDirs' + taskName), tasks.getByName('catPatlangParser' + taskName)
+    tasks.getByName('generateSEP' + taskName).dependsOn tasks.getByName('MkDirs' + taskName), tasks.getByName('catPatlangParser' + taskName)
 
     tasks.getByName('generateScannerObjlang' + taskName).dependsOn tasks.getByName('MkDirs' + taskName), tasks.getByName('catObjScanner' + taskName)
     tasks.getByName('generateScannerPatlang' + taskName).dependsOn tasks.getByName('MkDirs' + taskName), tasks.getByName('catPatScanner' + taskName)

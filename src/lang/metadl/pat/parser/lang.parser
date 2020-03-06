@@ -4,10 +4,6 @@
 
 %embed {:
 	static public class SyntaxError extends RuntimeException { public SyntaxError(String msg) {super(msg);}}
-	// Disable syntax error recovery
-	protected void recoverFromError(Symbol token, TokenStream in) {
-		throw new SyntaxError("Cannot recover from the syntax error");
-	}
 :};
 
 %goal program;

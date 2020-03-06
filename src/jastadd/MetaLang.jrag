@@ -170,7 +170,7 @@ aspect MetaLang {
 		switch (srcLang) {
 			case "metadl":
 				scanner = new lang.metadl.pat.ast.LangScanner(new StringReader(getPATTERN()));
-				tokenNames = lang.metadl.pat.ast.PatLangParser.Terminals.NAMES;
+				tokenNames = lang.metadl.pat.ast.PatLangParserSEP.Terminals.NAMES;
 				astBuilder = lang.metadl.pat.ast.ASTBuilder.getInstance();
 				startSymbols = Arrays.asList(lang.metadl.pat.ast.PatLangParserSEP.n_clause,
 											 lang.metadl.pat.ast.PatLangParserSEP.n_common_literal,
@@ -178,7 +178,7 @@ aspect MetaLang {
 				break;
 			case "java4":
 				scanner = new lang.java4.pat.ast.PatLangScanner(new StringReader(getPATTERN()));
-				tokenNames = lang.java4.pat.ast.PatLangParser.Terminals.NAMES;
+				tokenNames = lang.java4.pat.ast.PatLangParserSEP.Terminals.NAMES;
 				astBuilder = lang.java4.pat.ast.ASTBuilder.getInstance();
 				startSymbols = Arrays.asList(lang.java4.pat.ast.PatLangParserSEP.n_class_declaration,
 											 lang.java4.pat.ast.PatLangParserSEP.n_type_declaration,

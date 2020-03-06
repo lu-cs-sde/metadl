@@ -60,6 +60,8 @@ aspect MetaLang {
 			return lang.metadl.pat.ast.PatLang.translatePredicateName(getContext(), predName);
 		case "java4":
 			return lang.java4.pat.ast.PatLang.translatePredicateName(getContext(), predName);
+		case "java5":
+			return lang.java5.pat.ast.PatLang.translatePredicateName(getContext(), predName);
 		}
 		return null;
 	}
@@ -70,6 +72,8 @@ aspect MetaLang {
 			return lang.metadl.pat.ast.PatLang.generateHelperRelations(getContext());
 		case "java4":
 			return lang.java4.pat.ast.PatLang.generateHelperRelations(getContext());
+		case "java5":
+			return lang.java5.pat.ast.PatLang.generateHelperRelations(getContext());
 		}
 		return null;
 	}
@@ -168,24 +172,34 @@ aspect MetaLang {
 
 
 		switch (srcLang) {
-			case "metadl":
-				scanner = new lang.metadl.pat.ast.LangScanner(new StringReader(getPATTERN()));
-				tokenNames = lang.metadl.pat.ast.PatLangParserSEP.Terminals.NAMES;
-				astBuilder = lang.metadl.pat.ast.ASTBuilder.getInstance();
-				startSymbols = Arrays.asList(lang.metadl.pat.ast.PatLangParserSEP.n_clause,
-											 lang.metadl.pat.ast.PatLangParserSEP.n_common_literal,
-											 lang.metadl.pat.ast.PatLangParserSEP.n_expr);
-				break;
-			case "java4":
-				scanner = new lang.java4.pat.ast.PatLangScanner(new StringReader(getPATTERN()));
-				tokenNames = lang.java4.pat.ast.PatLangParserSEP.Terminals.NAMES;
-				astBuilder = lang.java4.pat.ast.ASTBuilder.getInstance();
-				startSymbols = Arrays.asList(lang.java4.pat.ast.PatLangParserSEP.n_class_declaration,
-											 lang.java4.pat.ast.PatLangParserSEP.n_type_declaration,
-											 lang.java4.pat.ast.PatLangParserSEP.n_class_member_declaration,
-											 lang.java4.pat.ast.PatLangParserSEP.n_block_statement,
-											 lang.java4.pat.ast.PatLangParserSEP.n_expression);
-				break;
+		case "metadl":
+			scanner = new lang.metadl.pat.ast.LangScanner(new StringReader(getPATTERN()));
+			tokenNames = lang.metadl.pat.ast.PatLangParserSEP.Terminals.NAMES;
+			astBuilder = lang.metadl.pat.ast.ASTBuilder.getInstance();
+			startSymbols = Arrays.asList(lang.metadl.pat.ast.PatLangParserSEP.n_clause,
+										 lang.metadl.pat.ast.PatLangParserSEP.n_common_literal,
+										 lang.metadl.pat.ast.PatLangParserSEP.n_expr);
+			break;
+		case "java4":
+			scanner = new lang.java4.pat.ast.PatLangScanner(new StringReader(getPATTERN()));
+			tokenNames = lang.java4.pat.ast.PatLangParserSEP.Terminals.NAMES;
+			astBuilder = lang.java4.pat.ast.ASTBuilder.getInstance();
+			startSymbols = Arrays.asList(lang.java4.pat.ast.PatLangParserSEP.n_class_declaration,
+										 lang.java4.pat.ast.PatLangParserSEP.n_type_declaration,
+										 lang.java4.pat.ast.PatLangParserSEP.n_class_member_declaration,
+										 lang.java4.pat.ast.PatLangParserSEP.n_block_statement,
+										 lang.java4.pat.ast.PatLangParserSEP.n_expression);
+			break;
+		case "java5":
+			scanner = new lang.java5.pat.ast.PatLangScanner(new StringReader(getPATTERN()));
+			tokenNames = lang.java5.pat.ast.PatLangParserSEP.Terminals.NAMES;
+			astBuilder = lang.java5.pat.ast.ASTBuilder.getInstance();
+			startSymbols = Arrays.asList(lang.java5.pat.ast.PatLangParserSEP.n_class_declaration,
+										 lang.java5.pat.ast.PatLangParserSEP.n_type_declaration,
+										 lang.java5.pat.ast.PatLangParserSEP.n_class_member_declaration,
+										 lang.java5.pat.ast.PatLangParserSEP.n_block_statement,
+										 lang.java5.pat.ast.PatLangParserSEP.n_expression);
+			break;
 		}
 
 		Grammar grammar = astBuilder.getGrammar();

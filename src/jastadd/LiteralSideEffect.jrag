@@ -87,6 +87,13 @@ aspect LiteralSideEffect {
 					importedProgramRel = prog.asRelation();
 					break;
 				}
+				case "java5:": {
+					lang.java5.obj.ast.Program prog = lang.java5.obj.ast.Program.fromFileLoc(t.coord(1).toString());
+					prog.assignIds(new MutableInt(1));
+					importedProgramRel = prog.asRelation();
+					break;
+				}
+
 				default:
 					SimpleLogger.logger().log("Unknown language to IMPORT: " + srcLang,
 											  SimpleLogger.LogLevel.Level.ERROR);

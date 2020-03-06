@@ -1,4 +1,4 @@
-IMPORT('P, "tests/evaluation/metadl-java/src/bad-covariant-equals", "java4").
+IMPORT('P, "tests/evaluation/metadl-java/src/bad-covariant-equals", "java5").
 
 analyze ('P, "java4") {
 	GoodEquals(f, l, c, le, ce) :- n <: public boolean equals(Object o) { .. } :>, SRC(n, l, c, le, ce, f).

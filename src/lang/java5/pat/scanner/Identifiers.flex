@@ -2,6 +2,6 @@
  * Located at end of current state due to rule priority disambiguation
  */
 <YYINITIAL> {
-  {MetaIdentifier} { return sym(Terminals.METAVARID); }
-  {Identifier}  { return sym(Terminals.IDENTIFIER); }
+  `[:jletter:][:jletterdigit:]* { return sym(Terminals.METAVARID); }
+  ([:jletter:]|[\ud800-\udfff])([:jletterdigit:]|[\ud800-\udfff])* { return sym(Terminals.IDENTIFIER); }
 }

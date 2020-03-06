@@ -4,7 +4,6 @@ import beaver.Symbol;
 import beaver.Scanner;
 import lang.java5.pat.ast.PatLangParser.Terminals;
 import java.io.*;
-
 %%
 
 %public

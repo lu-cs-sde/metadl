@@ -43,5 +43,9 @@ OctalEscape = \\ {OctalDigit}
 OctalDigit = [0-7]
 ZeroToThree = [0-3]
 
-/* Pattern language */
-MetaIdentifier = "`"{Identifier}
+HexadecimalFloatingPointLiteral = {HexSignificand} {BinaryExponent}
+
+HexSignificand = {HexNumeral} [\.]?
+ | 0 [xX] [0-9a-fA-F]* \. [0-9a-fA-F]+
+
+BinaryExponent = [pP] [+-]? {Digits}

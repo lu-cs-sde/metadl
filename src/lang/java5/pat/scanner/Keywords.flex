@@ -15,6 +15,7 @@
   "do"              { return sym(Terminals.DO); }
   "double"          { return sym(Terminals.DOUBLE); }
   "else"            { return sym(Terminals.ELSE); }
+  "enum"            { return sym(Terminals.ENUM); }
   "extends"         { return sym(Terminals.EXTENDS); }
   "final"           { return sym(Terminals.FINAL); }
   "finally"         { return sym(Terminals.FINALLY); }
@@ -50,4 +51,3 @@
   "volatile"        { return sym(Terminals.VOLATILE); }
   "while"           { return sym(Terminals.WHILE); }
 }
-

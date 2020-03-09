@@ -1,9 +1,41 @@
-IMPORT('P, "tests/evaluation/metadl-java/src/bad-covariant-equals", "java5").
+IMPORT('P, "tests/evaluation/metadl-java/src/bad-covariant-equals/", "java5").
 
-analyze ('P, "java4") {
-	GoodEquals(f, l, c, le, ce) :- n <: public boolean equals(Object o) { .. } :>, SRC(n, l, c, le, ce, f).
-	BadEquals(f, l, c, le, ce) :- n <: public boolean equals(`t o) { .. } :>, ID(`t, t), NEQ(t, "Object"), SRC(n, l, c, le, ce, f).
+GoodEquals(0) :- NEQ(0, 0).
+
+analyze ('P, "java5") {
+	# equals method where the class has another correct equals, probably a helper
+	CovariantEquals(`d1) :- <: .. class `k  { .. `d1 ..  } :> ,
+                                `d1 <: .. public .. boolean equals(`t `o) { .. } :>, ID(`t, t), ID(`k, k), EQ(t, k).
+
+	CovariantEquals(`d1) :- <: .. class `k  { .. `d1 ..  } :> ,
+                                `d1 <: .. public .. boolean equals(`t `o) ; :>, ID(`t, t), ID(`k, k), EQ(t, k).
+
+	CovariantEquals(`d1) :- <: .. enum `k  {  .. , `e1 , .. ; ..  `d1  ..    } :> ,
+                                `d1 <: .. public .. boolean equals(`t `o) { .. } :>, ID(`t, t), ID(`k, k), EQ(t, k).
+
+	CovariantEquals(`d1) :- <: .. enum `k  {  .. , `e1 , .. ; ..  `d1  ..    } :> ,
+                                `d1 <: .. public .. boolean equals(`t `o) ; :>, ID(`t, t), ID(`k, k), EQ(t, k).
+
+	# the correct one
+	GoodEquals(n) :- n <: public boolean equals(Object `o) { .. } :>.
+
+	# the correct one
+	GoodEquals(n) :- n <: @Override public boolean equals(Object `o) { .. } :>.
+
+	# the correct one using native methods
+	GoodEquals(n) :- n <: native public boolean equals(Object `o) ; :>.
+
+	# incorrect, but warnings were suppressed
+	SuppressedWarnings(n) :- n <: @SuppressWarnings("CovariantEquals") .. `t `f(..) {..} :>.
+
+	ClassHasGoodEquals(`k) :- <: .. class `k  { .. `d .. } :> , GoodEquals(`d).
+	ClassHasGoodEquals(`k) :- <: .. enum `k  { .. ; .. `d .. } :> , GoodEquals(`d).
+
+	BadEquals(`d) :- <: .. class `k { .. `d .. } :>, CovariantEquals(`d), NOT(ClassHasGoodEquals(`k)).
+	BadEquals(`d) :- <: .. enum `k { .. ; .. `d .. } :>, CovariantEquals(`d), NOT(ClassHasGoodEquals(`k)).
+
+	BadEqualsReport(f, ls, cs, le, ce) :- BadEquals(d), NOT(SuppressedWarnings(d)), SRC(d, ls, cs, le, ce, f).
+
 }
 
-OUTPUT('GoodEquals).
-OUTPUT('BadEquals).
+OUTPUT('BadEqualsReport).

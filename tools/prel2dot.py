@@ -61,7 +61,8 @@ def main():
     nodes = dict()
 
     for row in csv_reader:
-        if row[0] != "SourceInfo" and row[0] != "Terminal":
+        if row[0] != "SrcLocStart" and row[0] != "SrcLocEnd" \
+           and row[0] != "Terminal":
             if row[1] in nodes:
                 n = nodes[row[1]]
             else:

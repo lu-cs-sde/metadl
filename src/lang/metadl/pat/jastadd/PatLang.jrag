@@ -52,6 +52,9 @@ aspect LanguageSpecific {
 		// Insert a relation to map nodes to their position inside a list
 		ret.add(makeIndexRule(ctx));
 
+		// Insert a relation to map nodes to their children
+		ret.add(makeParentRule(ctx));
+
 		// Insert predicates that compute the domain of metavariables
 		ret.addAll(makeMetaVariableRelations(ctx));
 
@@ -67,6 +70,7 @@ aspect LanguageSpecific {
 		case "REF":
 		case "SRC":
 		case "INDEX":
+		case "PARENT":
 			s = predName; break;
 		default: return null;
 		}

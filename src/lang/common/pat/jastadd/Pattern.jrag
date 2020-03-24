@@ -34,6 +34,12 @@ aspect Pattern {
 	public static String ASTNode.INDEX_METAVARIABLE = "IndexMetaVar";
 	public static String ASTNode.INDEX_ACCESSOR_METHOD = "getElement";
 
+	/**
+	   Control strict matching of lists and optionals. When true, a pattern
+	   will assert that missing optional elements do not exist in the program.
+	 */
+	protected static boolean ASTNode.STRICT_MATCH = false;
+
 	syn String ASTNode.name() {
 		String nodeNameFull = this.getClass().getName();
 		String[] splitNodeName = nodeNameFull.split("\\.");
@@ -247,7 +253,7 @@ aspect Pattern {
 			}
 		}
 
-		if (childIndex == 0) {
+		if (STRICT_MATCH && childIndex == 0) {
 			// This node has no children, emit that
 			lang.ast.List<lang.ast.Term> terms = new lang.ast.List<>();
 
@@ -343,7 +349,7 @@ aspect Pattern {
 		if (getParent().isMetaVar())
 			return lits;
 
-		if (getNumChild() == 0) {
+		if (STRICT_MATCH && getNumChild() == 0) {
 			// The list is empty, assert that the List relation does not
 			// contain anything with this node ID
 			lang.ast.List<lang.ast.Term> terms = new lang.ast.List<>();
@@ -377,7 +383,7 @@ aspect Pattern {
 		if (getParent().isMetaVar())
 			return lits;
 
-		if (getNumChild() == 0) {
+		if (STRICT_MATCH && getNumChild() == 0) {
 			lang.ast.List<lang.ast.Term> terms = new lang.ast.List<>();
 			lang.ast.StringConstant Kind = new lang.ast.StringConstant(getRelation());
 			lang.ast.Wildcard ChildId = new lang.ast.Wildcard();
@@ -593,7 +599,7 @@ aspect Pattern {
 			lang.ast.List<lang.ast.CommonLiteral> headList = new lang.ast.List<>();
 			lang.ast.List<lang.ast.CommonLiteral> bodyList = new  lang.ast.List<>();
 			// The PARENT relation maps a node to its children
-			// PARENT(n, c) :- P(x, n, _, c, _), NEQ(t, "SrcLocBegin"), NEQ(t, "SrcLocEnd"), NEQ(x, .
+			// PARENT(n, c) :- P(x, n, _, c, _), NEQ(t, "SrcLocBegin"), NEQ(t, "SrcLocEnd"), NEQ(x, "Terminal").
 			headList.add(new lang.ast.Atom(new lang.ast.PredicateSymbol(ctx.scopePrefix + "PARENT"),
 										   new lang.ast.List<lang.ast.Term>()
 										   .add(new lang.ast.Variable("n"))
@@ -609,6 +615,24 @@ aspect Pattern {
 			bodyList.add(NEQ(new lang.ast.Variable("t"), new lang.ast.StringConstant("SrcLocEnd")));
 			bodyList.add(NEQ(new lang.ast.Variable("t"), new lang.ast.StringConstant("Terminal")));
 
+			return new lang.ast.Rule(headList, bodyList);
+		}
+
+		public static lang.ast.Rule makeExistsRule(AnalyzeContext ctx) {
+			lang.ast.List<lang.ast.CommonLiteral> headList = new lang.ast.List<>();
+			lang.ast.List<lang.ast.CommonLiteral> bodyList = new  lang.ast.List<>();
+			// Predicate to check the existence of a node
+			// EXISTS(n) :- P(_, n, _, _, _).
+			headList.add(new lang.ast.Atom(new lang.ast.PredicateSymbol(ctx.scopePrefix + "EXISTS"),
+										   new lang.ast.List<lang.ast.Term>()
+										   .add(new lang.ast.Variable("n"))));
+			bodyList.add(new lang.ast.Atom(new lang.ast.PredicateSymbol(ctx.progRelName),
+										   new lang.ast.List<lang.ast.Term>()
+										   .add(new lang.ast.Wildcard())
+										   .add(new lang.ast.Variable("n"))
+										   .add(new lang.ast.Wildcard())
+										   .add(new lang.ast.Wildcard())
+										   .add(new lang.ast.Wildcard())));
 			return new lang.ast.Rule(headList, bodyList);
 		}
 

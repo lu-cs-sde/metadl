@@ -5,25 +5,13 @@ GoodEquals(0) :- NEQ(0, 0).
 analyze ('P, "java5") {
 	# equals method where the class has another correct equals, probably a helper
 	CovariantEquals(`d1) :- <: .. class `k  { .. `d1 ..  } :> ,
-                                `d1 <: .. public .. boolean equals(`t `o) { .. } :>, ID(`t, t), ID(`k, k), EQ(t, k).
-
-	CovariantEquals(`d1) :- <: .. class `k  { .. `d1 ..  } :> ,
-                                `d1 <: .. public .. boolean equals(`t `o) ; :>, ID(`t, t), ID(`k, k), EQ(t, k).
+                                `d1 <: .. public .. boolean equals(`t `_) ; :>, ID(`t, t), ID(`k, k), EQ(t, k).
 
 	CovariantEquals(`d1) :- <: .. enum `k  {  .. , `e1 , .. ; ..  `d1  ..    } :> ,
-                                `d1 <: .. public .. boolean equals(`t `o) { .. } :>, ID(`t, t), ID(`k, k), EQ(t, k).
-
-	CovariantEquals(`d1) :- <: .. enum `k  {  .. , `e1 , .. ; ..  `d1  ..    } :> ,
-                                `d1 <: .. public .. boolean equals(`t `o) ; :>, ID(`t, t), ID(`k, k), EQ(t, k).
-
-	# # the correct one
-	# GoodEquals(n) :- n <: public boolean equals(Object `o) { .. } :>.
-
-	# # the correct one
-	# GoodEquals(n) :- n <: .. public boolean equals(Object `o) { .. } :>.
+                                `d1 <: .. public .. boolean equals(`t `_) ; :>, ID(`t, t), ID(`k, k), EQ(t, k).
 
 	# the correct one using native methods
-	GoodEquals(n) :- n <: .. public ..  boolean equals(Object `o) `b :>.
+	GoodEquals(n) :- n <: .. public ..  boolean equals(Object `_) ; :>.
 
 	ClassHasGoodEquals(`k) :- <: .. class `k  { .. `d .. } :> , GoodEquals(`d).
 	ClassHasGoodEquals(`k) :- <: .. enum `k  { .. ; .. `d .. } :> , GoodEquals(`d).
@@ -33,7 +21,6 @@ analyze ('P, "java5") {
 
 
 	BadEqualsReport(f, ls, cs, le, ce) :- BadEquals(d), NOT(d <: @SuppressWarnings("CovariantEquals") .. `_ `_(..) {..} :>), SRC(d, ls, cs, le, ce, f).
-
 }
 
 OUTPUT('BadEqualsReport).

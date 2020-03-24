@@ -57,7 +57,7 @@ aspect Relation {
 	eq OUTPUTLiteral.toTuple() = new PseudoTuple(getTerm());
 	eq BinaryExclusiveTermLiteral.toTuple()  = new PseudoTuple(0);
 	eq BINDLiteral.toTuple()   = new PseudoTuple(0);
-	eq NEGLiteral.toTuple() = ((Literal)getLiteral()).toTuple();
+	eq NEGLiteral.toTuple() = getCommonLiteral().asLiteral().toTuple();
 	eq IMPORTLiteral.toTuple() = new PseudoTuple(getProgramRef(), getFileLoc(), getLang());
 }
 
@@ -91,7 +91,7 @@ aspect Rules {
 			for(CommonLiteral lit : r.flattenedBodyLiterals()) {
 				if(!lit.isNeg()) continue;
 				NEGLiteral nl = (NEGLiteral) lit;
-				if(nl.getLiteral().predicate().getPRED_ID().equals(use.predicateName())) return true;
+				if(nl.getCommonLiteral().predicate().getPRED_ID().equals(use.predicateName())) return true;
 			}
 		}
 		return false;
@@ -123,7 +123,7 @@ aspect DependencyGraph {
 			for (Literal l : r.flattenedBodyLiterals()) {
 				if(l.isNeg()) {
 					NEGLiteral nl = (NEGLiteral) l;
-					defIn.add(nl.getLiteral().predicate().formalpredicate());
+					defIn.add(nl.getCommonLiteral().predicate().formalpredicate());
 				} else if (l.isInclusive()) {
 					defIn.add(l.predicate().formalpredicate());
 				}

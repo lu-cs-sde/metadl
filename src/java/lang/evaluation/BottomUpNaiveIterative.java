@@ -73,7 +73,7 @@ public class BottomUpNaiveIterative extends InternalEvaluation {
 			if (!il.isNeg())
 				return false;
 			NEGLiteral neg = (NEGLiteral) il;
-			if (neg.getLiteral().predicate().formalpredicate().relation.size() != 0)
+			if (neg.getCommonLiteral().predicate().formalpredicate().relation.size() != 0)
 				return false;
 		}
 		return true;

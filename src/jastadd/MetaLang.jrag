@@ -147,19 +147,6 @@ aspect MetaLang {
 	syn nta Literal Pattern.getLiteral() = getLiteralHelper(null);
 	eq BoundedPattern.getLiteral() = getLiteralHelper(getCommonVariable());
 
-	syn nta List<Literal> Pattern.getLiterals() {
-		return new List<Literal>().add(getLiteral());
-		// List<Literal> literals = new
-		// literals.addAll(patternAST().literals(enclosingAnalyzeBlock().getContext(), null));
-		// return literals;
-	}
-
-	// syn nta List<Literal> BoundedPattern.getLiterals() {
-		// List<Literal> literals = new List<>();
-		// literals.addAll(patternAST().literals(enclosingAnalyzeBlock().getContext(), getCommonVariable()));
-		// return literals;
-	// }
-
 	syn lazy java.util.List<ObjLangASTNode> Pattern.altParse() {
 		String srcLang = enclosingAnalyzeBlock().getLang().getSTRING();
 		java.util.List<Category> tokens = new ArrayList<Category>();

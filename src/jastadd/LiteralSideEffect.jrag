@@ -132,7 +132,7 @@ aspect LiteralSelection {
 		return Relation.join(body_rel, r_current);
     }
     public Relation NEGLiteral.accumBody(Relation body_rel) {
-        Relation positive = getLiteral().predicate().formalpredicate().relation.selectNamed(Binding.createBinding(toTuple()));
+        Relation positive = getCommonLiteral().predicate().formalpredicate().relation.selectNamed(Binding.createBinding(toTuple()));
         return Relation.differenceWithBindings(body_rel, positive);
     }
 

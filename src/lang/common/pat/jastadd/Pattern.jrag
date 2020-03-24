@@ -69,10 +69,6 @@ aspect Pattern {
 
 	syn String ASTNode.getRelation() = name();
 
-	syn boolean ASTNode.isIndexMetaVar() {
-		return name().startsWith(INDEX_METAVARIABLE);
-	}
-
 	syn boolean ASTNode.isGap() {
 		return name().startsWith(GAP);
 	}
@@ -81,44 +77,24 @@ aspect Pattern {
 		return name().startsWith(METAVARIABLE) && !name().startsWith("MetaVariable");
 	}
 
-
-
-	syn String ASTNode.indexVarName() {
-		if (isIndexMetaVar()) {
-			// We do not know the dynamic type of this metavariable
-			// and there is no common supertype of all metavariables
-			try {
-				Method m = this.getClass().getMethod("getVar");
-				MetaVariable v = (MetaVariable) m.invoke(this);
-				return v.getID();
-			} catch (ReflectiveOperationException e) {
-				throw new Error(e.toString());
-			}
-		} else {
-			return "i_" + getNodeId();
-		}
-	}
+	syn boolean MetaVariable.isWildcard() = getID().equals("`_");
 
 	syn String ASTNode.varName() {
-		if (isIndexMetaVar()) {
-			try {
-				Method m = this.getClass().getMethod(INDEX_ACCESSOR_METHOD);
-				ASTNode v = (ASTNode) m.invoke(this);
-				return v.varName();
-			} catch (ReflectiveOperationException e) {
-				throw new Error(e.toString());
-			}
-		} else if (isMetaVar()) {
+		if (isMetaVar()) {
 			try {
 				Method m = this.getClass().getMethod("getVar");
 				MetaVariable v = (MetaVariable) m.invoke(this);
-				return v.getID();
+				if (!v.isWildcard())
+					return v.getID();
 			} catch (ReflectiveOperationException e) {
 				throw new Error(e.toString());
 			}
-		} else {
-			return "v_" + getNodeId();
 		}
+		return "v_" + getNodeId();
+	}
+
+	syn String ASTNode.indexVarName() {
+		return "i_" + getNodeId();
 	}
 
 	syn ArrayList<lang.ast.Literal> ASTNode.asLiterals(AnalyzeContext ctx, lang.ast.CommonVariable root);
@@ -192,7 +168,7 @@ aspect Pattern {
 
 	eq ASTNode.asLiterals(AnalyzeContext ctx, lang.ast.CommonVariable root) {
 		ArrayList<lang.ast.Literal> literals = new ArrayList<>();
-		if (isGap() || isIndexMetaVar())
+		if (isGap())
 			return literals;
 		if (isMetaVar())
 			return metaVarAsLiterals(ctx, root);
@@ -430,6 +406,11 @@ aspect Pattern {
 
 	eq MetaVariable.metavariables() {
 		TreeSet<lang.ast.Variable> vars = new TreeSet<>(lang.ast.Term.termComparator);
+		if (isWildcard()) {
+			// This a wildcard, don't add any metavariable for it
+			return vars;
+		}
+
 		vars.add(new lang.ast.Variable(getID()));
 		return vars;
 	}

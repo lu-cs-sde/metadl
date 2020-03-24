@@ -139,14 +139,14 @@ aspect Clause {
 
 	syn HashSet<Literal> Rule.literals() {
 		HashSet<Literal> literals = new HashSet<Literal>();
-		for(CommonLiteral l : getHeadss()) literals.addAll(l.flattenedLiterals());
+		for(CommonLiteral l : getHeadss()) literals.add(l.asLiteral());
 		literals.addAll(flattenedBodyLiterals());
 		return literals;
 	}
 
 	syn HashSet<Literal> Rule.flattenedBodyLiterals() {
 		HashSet<Literal> literals = new HashSet<Literal>();
-		for(CommonLiteral l : getBodys())  literals.addAll(l.flattenedLiterals());
+		for(CommonLiteral l : getBodys()) literals.add(l.asLiteral());
 		return literals;
 	}
 
@@ -279,7 +279,7 @@ aspect Literal {
 
 	eq EDBLiteral.variables()	 = toVarSet(getFileLoc());
 	eq OUTPUTLiteral.variables() = toVarSet(getTerm());
-	eq NEGLiteral.variables()	 = getLiteral().variables();
+	eq NEGLiteral.variables()	 = getCommonLiteral().variables();
 
 	eq BINDLiteral.variables()	{
 		TreeSet<Variable> vars = new TreeSet<Variable>(Term.termComparator);
@@ -309,7 +309,7 @@ aspect Literal {
 	}
 
 	syn TreeSet<Variable> NEGLiteral.freeVars() {
-		TreeSet<Variable> negvars  = getLiteral().variables();
+		TreeSet<Variable> negvars  = getCommonLiteral().variables();
 		TreeSet<Variable> inclbodyvars = ((Rule)clause()).inclusiveBodyVariables();
 		TreeSet<Variable> free = new TreeSet<Variable>(Term.termComparator);
 
@@ -322,18 +322,9 @@ aspect Literal {
 }
 
 aspect CommonLiteral {
-	public HashSet<Literal> CommonLiteral.flattenedLiterals() {
-		HashSet<Literal> list = new HashSet<>();
-		list.add((Literal)this);
-		return list;
-	}
-
-	public HashSet<Literal> Pattern.flattenedLiterals() {
-		HashSet<Literal> list = new HashSet<>();
-		for (CommonLiteral l : getLiterals())
-			list.add((Literal) l);
-		return list;
-	}
+	syn Literal CommonLiteral.asLiteral();
+	eq Pattern.asLiteral() = getLiteral();
+	eq Literal.asLiteral() = this;
 }
 
 aspect Predicate {

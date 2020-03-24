@@ -16,17 +16,14 @@ analyze ('P, "java5") {
 	CovariantEquals(`d1) :- <: .. enum `k  {  .. , `e1 , .. ; ..  `d1  ..    } :> ,
                                 `d1 <: .. public .. boolean equals(`t `o) ; :>, ID(`t, t), ID(`k, k), EQ(t, k).
 
-	# the correct one
-	GoodEquals(n) :- n <: public boolean equals(Object `o) { .. } :>.
+	# # the correct one
+	# GoodEquals(n) :- n <: public boolean equals(Object `o) { .. } :>.
 
-	# the correct one
-	GoodEquals(n) :- n <: @Override public boolean equals(Object `o) { .. } :>.
+	# # the correct one
+	# GoodEquals(n) :- n <: .. public boolean equals(Object `o) { .. } :>.
 
 	# the correct one using native methods
-	GoodEquals(n) :- n <: native public boolean equals(Object `o) ; :>.
-
-	# incorrect, but warnings were suppressed
-	SuppressedWarnings(n) :- n <: @SuppressWarnings("CovariantEquals") .. `t `f(..) {..} :>.
+	GoodEquals(n) :- n <: .. public ..  boolean equals(Object `o) `b :>.
 
 	ClassHasGoodEquals(`k) :- <: .. class `k  { .. `d .. } :> , GoodEquals(`d).
 	ClassHasGoodEquals(`k) :- <: .. enum `k  { .. ; .. `d .. } :> , GoodEquals(`d).
@@ -34,7 +31,8 @@ analyze ('P, "java5") {
 	BadEquals(`d) :- <: .. class `k { .. `d .. } :>, CovariantEquals(`d), NOT(ClassHasGoodEquals(`k)).
 	BadEquals(`d) :- <: .. enum `k { .. ; .. `d .. } :>, CovariantEquals(`d), NOT(ClassHasGoodEquals(`k)).
 
-	BadEqualsReport(f, ls, cs, le, ce) :- BadEquals(d), NOT(SuppressedWarnings(d)), SRC(d, ls, cs, le, ce, f).
+
+	BadEqualsReport(f, ls, cs, le, ce) :- BadEquals(d), NOT(d <: @SuppressWarnings("CovariantEquals") .. `_ `_(..) {..} :>), SRC(d, ls, cs, le, ce, f).
 
 }
 

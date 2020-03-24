@@ -122,7 +122,7 @@ aspect PretyPrinting {
 
     public void NEGLiteral.prettyPrint(PrettyPrinter pr) {
     	pr.out.print("NOT(");
-        pr.prettyPrint(getLiteral());
+        pr.prettyPrint(getCommonLiteral());
         pr.out.print(")");
     }
 
@@ -224,12 +224,12 @@ aspect SoufflePrinting {
 
     public void NEGLiteral.soufflePrint(PrettyPrinter pr) {
     	pr.out.print("!");
-        pr.prettyPrint(getLiteral());
+        pr.prettyPrint(getCommonLiteral());
     }
 
 	public void Pattern.soufflePrint(PrettyPrinter pr) {
 		pr.out.print("/* " + getPATTERN() + "*/");
-		printCollection(getLiterals(), "", "", ", ", pr);
+		pr.prettyPrint(asLiteral());
 	}
 
     public abstract String BinaryExclusiveTermLiteral.souffleOPString();

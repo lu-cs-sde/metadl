@@ -390,7 +390,7 @@ aspect TypeInference {
 
 	AnalyzeBlock contributes nta getExpandedClauses() to Clause.varMap();
 	AnalyzeBlock contributes nta getExpandedClauses() to FormalPredicate.initialType();
-	Pattern contributes nta getLiterals() to Clause.varMap();
+	Pattern contributes nta getLiteral() to Clause.varMap();
 
 	public class VariableMap {
 		private Map<String, java.util.List<Variable>> m = new HashMap<>();

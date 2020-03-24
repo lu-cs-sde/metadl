@@ -22,7 +22,7 @@ abstract BinaryExclusiveTermLiteral:Literal ::= Left:Expr Right:Expr;
 Atom:Literal          ::= Terms:Term*;
 EDBLiteral:Literal    ::= PredicateRef FileLoc:Term;
 OUTPUTLiteral:Literal ::= Term;
-NEGLiteral:Literal    ::= Literal;
+NEGLiteral:Literal    ::= CommonLiteral;
 
 BINDLiteral:Literal ::= Variable:CommonVariable Right:Expr;
 IMPORTLiteral:Literal ::= ProgramRef:PredicateRef FileLoc:StringConstant Lang:StringConstant ;

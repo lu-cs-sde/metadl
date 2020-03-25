@@ -1,0 +1,42 @@
+IMPORT('P, "tests/evaluation/metadl-java/src/switch-no-default/", "java5").
+
+ExpectWarning(0), DesireWarning(0), SwitchWithDefault(0), NoWarning(0), DesireNoWarning(0) :- NEQ(0, 0).
+
+
+analyze('P, "java5") {
+	    ParentT(n, c) :- PARENT(n, c).
+	    ParentT(n, c) :- ParentT(n, t), PARENT(t, c).
+
+	    SwitchWithDefault(s) :- s <: switch (`_) { .. default: .. } :>.
+	    Switch(s) :- s <: switch (`_) { .. } :>.
+	    SwitchWithoutDefault(s) :- Switch(s), NOT(SwitchWithDefault(s)).
+
+	    ExpectWarning(m) :- m <:  @ExpectWarning("SF_SWITCH_NO_DEFAULT") .. `_ `_  (..) { .. } :>.
+	    DesireWarning(m) :- m <:  .. @DesireWarning("SF_SWITCH_NO_DEFAULT") .. `_ `_ (..) { .. } :>.
+	    NoWarning(m) :- m <:  .. @NoWarning("SF_SWITCH_NO_DEFAULT") .. `_ `_ (..) { .. } :>.
+	    DesireNoWarning(m) :- m <:  .. @DesireNoWarning("SF_SWITCH_NO_DEFAULT") .. `_ `_ (..) { .. } :>.
+
+	    Mismatch(s) :- ExpectWarning(m), Switch(s), NOT(SwitchWithoutDefault(s)), ParentT(m, s).
+	    Mismatch(s) :- DesireWarning(m), Switch(s), NOT(SwitchWithoutDefault(s)), ParentT(m, s).
+	    # Mismatch(s) :- NoWarning(m), SwitchWithoutDefault(s), ParentT(m, s).
+	    Mismatch(s) :- Switch(s), SwitchWithoutDefault(s), NoWarning(m), ParentT(m, s).
+	    Mismatch(s) :- Switch(s), SwitchWithoutDefault(s), DesireNoWarning(m), ParentT(m, s).
+
+	    Correct(s) :- ExpectWarning(m), SwitchWithoutDefault(s), ParentT(m, s).
+	    Correct(s) :- DesireWarning(m), SwitchWithoutDefault(s), ParentT(m, s).
+
+	    MismatchDetails(s, file, l, c) :- Mismatch(s), SRC(s, l, c, _, _, file).
+
+	    TestResult("Pass") :- NOT(Mismatch(_)).
+	    TestResult("Fail") :- Mismatch(_).
+}
+
+# OUTPUT('SwitchWithDefault).
+# OUTPUT('SwitchWithoutDefault).
+# OUTPUT('Switch).
+OUTPUT('MismatchDetails).
+OUTPUT('Correct).
+OUTPUT('Mismatch).
+OUTPUT('TestResult).
+OUTPUT('ExpectWarning).
+OUTPUT('DesireWarning).

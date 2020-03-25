@@ -25,6 +25,4 @@ analyze('P, "java4") {
 	    ValLoc(var, val, line) :- Val(var, loc, val), SRC(loc, line, _, _, _, _).
 }
 
-OUTPUT('Val).
-OUTPUT('ValLoc).
 OUTPUT('Ret).

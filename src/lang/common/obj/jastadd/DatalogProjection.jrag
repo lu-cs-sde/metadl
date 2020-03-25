@@ -43,6 +43,35 @@ aspect DatalogProjection {
 		count.increment();
 	}
 
+	syn java.util.List<PseudoTuple> ASTNode.srcLoc() {
+		java.util.List<PseudoTuple> ret = new ArrayList<>();
+		// record the source location
+		{
+			// ("SourceInfo, CurrentNodeId, StartLine, StartCol, FileName)
+			lang.ast.StringConstant Kind = new lang.ast.StringConstant("SrcLocStart");
+			lang.ast.IntConstant CurrentNodeId = new lang.ast.IntConstant("" + getNodeId());
+			lang.ast.IntConstant Line = new lang.ast.IntConstant("" + getLine(getStart()));
+			lang.ast.IntConstant Col = new lang.ast.IntConstant("" + getColumn(getStart()));
+			lang.ast.StringConstant SrcFile = new lang.ast.StringConstant(getSourceFile());
+			ret.add(new PseudoTuple(Kind, CurrentNodeId, Line, Col, SrcFile));
+		}
+
+		{
+			// ("SourceInfo, CurrentNodeId, EndLine, EndCol, "")
+			lang.ast.StringConstant Kind = new lang.ast.StringConstant("SrcLocEnd");
+			lang.ast.IntConstant CurrentNodeId = new lang.ast.IntConstant("" + getNodeId());
+			lang.ast.IntConstant Line = new lang.ast.IntConstant("" + getLine(getEnd()));
+			lang.ast.IntConstant Col = new lang.ast.IntConstant("" + getColumn(getEnd()));
+			// avoid printing the source file once again to avoid bloating the output table
+			lang.ast.StringConstant SrcFile = new lang.ast.StringConstant("");
+			ret.add(new PseudoTuple(Kind, CurrentNodeId, Line, Col, SrcFile));
+		}
+		return ret;
+	}
+
+	eq Opt.srcLoc() = Collections.emptyList();
+	eq List.srcLoc() = Collections.emptyList();
+
 	syn java.util.List<PseudoTuple> ASTNode.toTuples() {
 		String relName = getRelation();
 		java.util.List<PseudoTuple> ret = new ArrayList<>();
@@ -97,42 +126,9 @@ aspect DatalogProjection {
 			ret.add(new PseudoTuple(Kind, CurrentNodeId, ChildIdx, ChildId, Token));
 		}
 
-		{
-			// record the source location
-			{
-				// ("SourceInfo, CurrentNodeId, StartLine, StartCol, FileName)
-				lang.ast.StringConstant Kind = new lang.ast.StringConstant("SrcLocStart");
-				lang.ast.IntConstant CurrentNodeId = new lang.ast.IntConstant("" + getNodeId());
-				lang.ast.IntConstant Line = new lang.ast.IntConstant("" + getLine(getStart()));
-				lang.ast.IntConstant Col = new lang.ast.IntConstant("" + getColumn(getStart()));
-				lang.ast.StringConstant SrcFile = new lang.ast.StringConstant(getSourceFile());
-				ret.add(new PseudoTuple(Kind, CurrentNodeId, Line, Col, SrcFile));
-			}
-
-			{
-				// ("SourceInfo, CurrentNodeId, EndLine, EndCol, "")
-				lang.ast.StringConstant Kind = new lang.ast.StringConstant("SrcLocEnd");
-				lang.ast.IntConstant CurrentNodeId = new lang.ast.IntConstant("" + getNodeId());
-				lang.ast.IntConstant Line = new lang.ast.IntConstant("" + getLine(getEnd()));
-				lang.ast.IntConstant Col = new lang.ast.IntConstant("" + getColumn(getEnd()));
-				// avoid printing the source file once again to avoid bloating the output table
-				lang.ast.StringConstant SrcFile = new lang.ast.StringConstant("");
-				ret.add(new PseudoTuple(Kind, CurrentNodeId, Line, Col, SrcFile));
-			}
-		}
+		// record the source location
+		ret.addAll(srcLoc());
 
 		return ret;
-	}
-
-	syn java.util.List<PseudoTuple> List.toTuples() {
-		if (getNumChild() == 0)
-			return Collections.emptyList();
-		return super.toTuples();
-	}
-
-	syn java.util.List<PseudoTuple> Opt.toTuples() {
-		if (getNumChild() == 0)
-			return Collections.emptyList();
-		return super.toTuples();
 	}
 }

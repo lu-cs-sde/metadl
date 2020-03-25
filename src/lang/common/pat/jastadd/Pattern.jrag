@@ -229,15 +229,15 @@ aspect Pattern {
 			}
 		}
 
-		if (STRICT_MATCH && childIndex == 0) {
+		if (childIndex == 0) {
 			// This node has no children, emit that
 			lang.ast.List<lang.ast.Term> terms = new lang.ast.List<>();
 
 			lang.ast.StringConstant Kind = new lang.ast.StringConstant(relName);
-			lang.ast.IntConstant ChildId  = new lang.ast.IntConstant("-1");
+			lang.ast.Term ChildId  = ASTNode.STRICT_MATCH ? new lang.ast.IntConstant("-1") : new lang.ast.Wildcard();
 			lang.ast.CommonVariable CurrentNodeId = root != null ? root : new lang.ast.Variable(varName());
-			lang.ast.IntConstant ChildIdx = new lang.ast.IntConstant("-1");
-			lang.ast.StringConstant Token = new lang.ast.StringConstant("");
+			lang.ast.Term ChildIdx = ASTNode.STRICT_MATCH ? new lang.ast.IntConstant("-1") : new lang.ast.Wildcard();
+			lang.ast.Term Token = new lang.ast.Wildcard();
 
 			terms.add(Kind).add(CurrentNodeId).add(ChildIdx).add(ChildId).add(Token);
 			ret.add(new lang.ast.Atom(new lang.ast.PredicateSymbol(ctx.progRelName), terms));

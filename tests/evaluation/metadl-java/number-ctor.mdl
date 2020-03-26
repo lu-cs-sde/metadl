@@ -1,0 +1,29 @@
+IMPORT('P, "tests/evaluation/metadl-java/src/number-ctor/", "java5").
+
+NumberCtor(0) :- NEQ(0, 0).
+
+# Enumerate the bad types here
+TypeName("Integer"), TypeName("Long"), TypeName("Short"),
+TypeName("Byte"), TypeName("Float"), TypeName("Double").
+
+
+analyze('P, "java5") {
+	    ParentT(n, c) :- PARENT(n, c).
+	    ParentT(n, c) :- ParentT(n, t), PARENT(t, c).
+
+	    ExpectWarning(m) :- m <:  @ExpectWarning("DM_NUMBER_CTOR") .. `_ `_  (..) { .. } :>.
+
+	    NumberCtor(e) :- e <: new `c(`_) :>, ID(`c, s), TypeName(s).
+	    NumberCtor(e) :- e <: new java.lang.`c(`_) :>, ID(`c, s), TypeName(s).
+
+	    ContainsWarning(m) :- ParentT(m, e), NumberCtor(e).
+	    Mismatch(m) :- ExpectWarning(m), NOT(ContainsWarning(m)).
+
+	    NumberCtorDetail(f, l, c) :- NumberCtor(m), SRC(m, l, c, _, _, f).
+}
+
+Result("Passed") :- NOT(Mismatch(_)).
+Result("Failed") :- Mismatch(_).
+
+OUTPUT('Result).
+OUTPUT('NumberCtorDetail).

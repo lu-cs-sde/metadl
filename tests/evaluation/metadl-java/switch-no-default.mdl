@@ -25,7 +25,7 @@ analyze('P, "java5") {
 	    Correct(s) :- ExpectWarning(m), SwitchWithoutDefault(s), ParentT(m, s).
 	    Correct(s) :- DesireWarning(m), SwitchWithoutDefault(s), ParentT(m, s).
 
-	    MismatchDetails(s, file, l, c) :- Mismatch(s), SRC(s, l, c, _, _, file).
+	    MismatchDetails(file, l, c) :- Mismatch(s), SRC(s, l, c, _, _, file).
 
 	    TestResult("Pass") :- NOT(Mismatch(_)).
 	    TestResult("Fail") :- Mismatch(_).

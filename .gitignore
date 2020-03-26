@@ -13,4 +13,7 @@ tests/**/*.out
 tests/evaluation/bottomupout/*
 /out/
 /tmp/
+/facts/*.csv
+.idea
+*.dot
 *.*~

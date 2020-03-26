@@ -175,7 +175,8 @@ aspect MetaLang {
 										 lang.java4.pat.ast.PatLangParserSEP.n_type_declaration,
 										 lang.java4.pat.ast.PatLangParserSEP.n_class_member_declaration,
 										 lang.java4.pat.ast.PatLangParserSEP.n_block_statement,
-										 lang.java4.pat.ast.PatLangParserSEP.n_expression);
+										 lang.java4.pat.ast.PatLangParserSEP.n_expression,
+										 lang.java4.pat.ast.PatLangParserSEP.n_type);
 			break;
 		case "java5":
 			scanner = new lang.java5.pat.ast.PatLangScanner(new StringReader(getPATTERN()));
@@ -185,7 +186,8 @@ aspect MetaLang {
 										 lang.java5.pat.ast.PatLangParserSEP.n_type_declaration,
 										 lang.java5.pat.ast.PatLangParserSEP.n_class_member_declaration,
 										 lang.java5.pat.ast.PatLangParserSEP.n_block_statement,
-										 lang.java5.pat.ast.PatLangParserSEP.n_expression);
+										 lang.java5.pat.ast.PatLangParserSEP.n_expression,
+										 lang.java5.pat.ast.PatLangParserSEP.n_type);
 			break;
 		}
 

@@ -31,12 +31,5 @@ analyze('P, "java5") {
 	    TestResult("Fail") :- Mismatch(_).
 }
 
-# OUTPUT('SwitchWithDefault).
-# OUTPUT('SwitchWithoutDefault).
-# OUTPUT('Switch).
 OUTPUT('MismatchDetails).
-OUTPUT('Correct).
-OUTPUT('Mismatch).
 OUTPUT('TestResult).
-OUTPUT('ExpectWarning).
-OUTPUT('DesireWarning).

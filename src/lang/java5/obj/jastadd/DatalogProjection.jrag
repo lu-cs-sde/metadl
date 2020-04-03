@@ -3,7 +3,7 @@ import lang.relation.PseudoTuple;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Collections;
-import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Method;
 import lang.io.StringUID;
 import java.util.Arrays;
 
@@ -26,17 +26,22 @@ aspect LanguageSpecific {
 	eq List.getSourceFile() = "";
 	eq Opt.getSourceFile() = "";
 
-	// Identical definition to PatLang.jrag
-	syn java.util.List<String> ASTNode.tokens() = Collections.emptyList();
-
+	// Identical definition to Java5PatterToDatalog.jrag
+	syn java.util.List<String> ASTNode.tokens() {
+		try {
+			Method m = getClass().getMethod("getID");
+			String id = (String)m.invoke(this);
+			assert id != null;
+			return Collections.singletonList(id);
+		} catch (ReflectiveOperationException e) {
+			return Collections.emptyList();
+		}
+	}
 	eq Literal.tokens() {
 		return Collections.singletonList(getLITERAL());
 	}
 	eq CompilationUnit.tokens() {
 		return Collections.singletonList(getPackageDecl());
-	}
-	eq IdWrapper.tokens() {
-		return Collections.singletonList(getID());
 	}
 	eq PackageAccess.tokens() {
 		return Collections.singletonList(getPackage());

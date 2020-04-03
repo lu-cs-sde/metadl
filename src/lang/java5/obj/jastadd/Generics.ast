@@ -1,7 +1,7 @@
 /** A generic class declaration. */
-GenericClassDecl : ClassDecl ::= Modifiers IdWrapper [SuperClass:Access] Implements:Access*
+GenericClassDecl : ClassDecl ::= Modifiers <ID:String> [SuperClass:Access] Implements:Access*
     BodyDecl* TypeParameter:TypeVariable*;
-GenericInterfaceDecl : InterfaceDecl ::= Modifiers IdWrapper SuperInterface:Access* BodyDecl*
+GenericInterfaceDecl : InterfaceDecl ::= Modifiers <ID:String> SuperInterface:Access* BodyDecl*
     TypeParameter:TypeVariable*;
 
 /**
@@ -16,8 +16,11 @@ GenericInterfaceDecl : InterfaceDecl ::= Modifiers IdWrapper SuperInterface:Acce
  */
 ParClassDecl : ClassDecl ::=
     TypeParameter:TypeVariable*
+    /SubstTypeParam:TypeVariable*/
+    <Parameterization:Parameterization>
     [SuperClass:Access]
-	Implements:Access*;
+	Implements:Access*
+	/BodyDecl*/;
 
 /**
  * The superclass and implemented interfaces in a raw type are also raw types.
@@ -36,7 +39,10 @@ RawClassDecl : ParClassDecl;
  */
 ParInterfaceDecl : InterfaceDecl ::=
     TypeParameter:TypeVariable*
-    SuperInterface:Access*;
+    /SubstTypeParam:TypeVariable*/
+    <Parameterization:Parameterization>
+    SuperInterface:Access*
+	/BodyDecl*/;
 
 /**
  * The superclass and implemented interfaces in a raw type are also raw types.
@@ -47,14 +53,14 @@ RawInterfaceDecl : ParInterfaceDecl;
 ParTypeAccess : Access ::= TypeAccess:Access TypeArgument:Access*;
 
 /** Represents a type variable of a parameterized type. */
-TypeVariable : ReferenceType ::= Modifiers IdWrapper BodyDecl* Bound:Access*;
+TypeVariable : ReferenceType ::= Modifiers <ID:String> BodyDecl* Bound:Access*;
 
 /**
  * A type variable that should have its type bounds substituted during type
  * argument bounds checking.
  */
 SubstitutedTypeVariable : TypeVariable ::=
-    Modifiers IdWrapper BodyDecl* Bound:Access* ;
+    Modifiers <ID:String> BodyDecl* Bound:Access* <Parameterization:Parameterization>;
 
 abstract AbstractWildcard : Access;
 Wildcard : AbstractWildcard;
@@ -66,7 +72,7 @@ WildcardType : AbstractWildcardType;
 WildcardExtendsType : AbstractWildcardType ::= Access;
 WildcardSuperType : AbstractWildcardType ::= Access;
 
-SubstitutedBodyDecl : BodyDecl ::= <Original:BodyDecl> ;
+SubstitutedBodyDecl : BodyDecl ::= <Original:BodyDecl> <Parameterization:Parameterization>;
 
 MethodDeclSubstituted : MethodDecl ::= <Original:MethodDecl>;
 GenericMethodDeclSubstituted : GenericMethodDecl ::= <Original:GenericMethodDecl>;
@@ -111,8 +117,8 @@ GenericInterfaceDeclSubstituted : GenericInterfaceDecl ::= <Original:TypeDecl>;
  * Intersection type.
  * Occurs in, for example, conditional expression type analysis.
  */
-LUBType : ReferenceType ::= Modifiers IdWrapper BodyDecl* TypeBound:Access*;
-GLBType : ReferenceType ::= Modifiers IdWrapper BodyDecl* TypeBound:Access*;
+LUBType : ReferenceType ::= Modifiers <ID:String> BodyDecl* TypeBound:Access*;
+GLBType : ReferenceType ::= Modifiers <ID:String> BodyDecl* TypeBound:Access*;
 
 WildcardsCompilationUnit : CompilationUnit;
 

@@ -1,11 +1,11 @@
 ClassDecl class_declaration =
   modifiers.m? CLASS IDENTIFIER type_parameters.p super.s? interfaces.i? class_body.b
-    {:  return new GenericClassDecl(new Modifiers(m), new IdWrapper(IDENTIFIER), s, i, b, p);  :}
+    {:  return new GenericClassDecl(new Modifiers(m), IDENTIFIER, s, i, b, p);  :}
   ;
 
 InterfaceDecl interface_declaration =
   modifiers.m? INTERFACE IDENTIFIER type_parameters.p extends_interfaces.i? interface_body.b
-    {:  return new GenericInterfaceDecl(new Modifiers(m), new IdWrapper(IDENTIFIER), i, b, p);  :}
+    {:  return new GenericInterfaceDecl(new Modifiers(m), IDENTIFIER, i, b, p);  :}
   ;
 
 Access class_or_interface =
@@ -54,41 +54,41 @@ Access wildcard_3 =
 
 Expr class_instance_creation_expression :=
     NEW class_or_interface_type.t LPAREN argument_list.l? RPAREN class_body.b?
-    {: return new ClassInstanceExpr(t, l, new Opt(new AnonymousDecl(new Modifiers(), new IdWrapper("Anonymous"), b))); :}
+    {: return new ClassInstanceExpr(t, l, new Opt(new AnonymousDecl(new Modifiers(), "Anonymous", b))); :}
   | NEW type_arguments.a class_or_interface_type.t LPAREN argument_list.l? RPAREN class_body.b?
-    {:  return new ParClassInstanceExpr(t, l, new Opt(new AnonymousDecl(new Modifiers(), new IdWrapper("Anonymous"), b)), a); :}
+    {:  return new ParClassInstanceExpr(t, l, new Opt(new AnonymousDecl(new Modifiers(), "Anonymous", b)), a); :}
   | primary.n DOT NEW simple_name.id LPAREN argument_list.l? RPAREN class_body.b?
-    {:  ClassInstanceExpr e = new ClassInstanceExpr(id, l, new Opt(new AnonymousDecl(new Modifiers(), new IdWrapper("Anonymous"), b)));
+    {:  ClassInstanceExpr e = new ClassInstanceExpr(id, l, new Opt(new AnonymousDecl(new Modifiers(), "Anonymous", b)));
         e.setStart(NEW.getStart());
         e.setEnd(RPAREN.getEnd());
         return n.qualifiesAccess(e);
     :}
   | primary.n DOT NEW simple_name.id type_arguments.a LPAREN argument_list.l? RPAREN class_body.b?
-    {:  ClassInstanceExpr e = new ClassInstanceExpr(new ParTypeAccess(id, a), l, new Opt(new AnonymousDecl(new Modifiers(), new IdWrapper("Anonymous"), b)));
+    {:  ClassInstanceExpr e = new ClassInstanceExpr(new ParTypeAccess(id, a), l, new Opt(new AnonymousDecl(new Modifiers(), "Anonymous", b)));
         e.setStart(NEW.getStart());
         e.setEnd(RPAREN.getEnd());
         return n.qualifiesAccess(e);
     :}
   | primary.n DOT NEW type_arguments.ca simple_name.id LPAREN argument_list.l? RPAREN class_body.b?
-    {:  return n.qualifiesAccess(new ParClassInstanceExpr(id, l, new Opt(new AnonymousDecl(new Modifiers(), new IdWrapper("Anonymous"), b)), ca)); :}
+    {:  return n.qualifiesAccess(new ParClassInstanceExpr(id, l, new Opt(new AnonymousDecl(new Modifiers(), "Anonymous", b)), ca)); :}
   | primary.n DOT NEW type_arguments.ca simple_name.id type_arguments.ta LPAREN argument_list.l? RPAREN class_body.b?
-    {:  return n.qualifiesAccess(new ParClassInstanceExpr(new ParTypeAccess(id, ta), l, new Opt(new AnonymousDecl(new Modifiers(), new IdWrapper("Anonymous"), b)), ca)); :}
+    {:  return n.qualifiesAccess(new ParClassInstanceExpr(new ParTypeAccess(id, ta), l, new Opt(new AnonymousDecl(new Modifiers(), "Anonymous", b)), ca)); :}
   | name.n DOT NEW simple_name.id LPAREN argument_list.l? RPAREN class_body.b?
-    {:  ClassInstanceExpr e = new ClassInstanceExpr(id, l, new Opt(new AnonymousDecl(new Modifiers(), new IdWrapper("Anonymous"), b)));
+    {:  ClassInstanceExpr e = new ClassInstanceExpr(id, l, new Opt(new AnonymousDecl(new Modifiers(), "Anonymous", b)));
         e.setStart(NEW.getStart());
         e.setEnd(RPAREN.getEnd());
         return n.qualifiesAccess(e);
     :}
   | name.n DOT NEW simple_name.id type_arguments.a LPAREN argument_list.l? RPAREN class_body.b?
-    {:  ClassInstanceExpr e = new ClassInstanceExpr(new ParTypeAccess(id, a), l, new Opt(new AnonymousDecl(new Modifiers(), new IdWrapper("Anonymous"), b)));
+    {:  ClassInstanceExpr e = new ClassInstanceExpr(new ParTypeAccess(id, a), l, new Opt(new AnonymousDecl(new Modifiers(), "Anonymous", b)));
         e.setStart(NEW.getStart());
         e.setEnd(RPAREN.getEnd());
         return n.qualifiesAccess(e);
     :}
   | name.n DOT NEW type_arguments.ca simple_name.id LPAREN argument_list.l? RPAREN class_body.b?
-    {:  return n.qualifiesAccess(new ParClassInstanceExpr(id, l, new Opt(new AnonymousDecl(new Modifiers(), new IdWrapper("Anonymous"), b)), ca)); :}
+    {:  return n.qualifiesAccess(new ParClassInstanceExpr(id, l, new Opt(new AnonymousDecl(new Modifiers(), "Anonymous", b)), ca)); :}
   | name.n DOT NEW type_arguments.ca simple_name.id type_arguments.ta LPAREN argument_list.l? RPAREN class_body.b?
-    {:  return n.qualifiesAccess(new ParClassInstanceExpr(new ParTypeAccess(id, ta), l, new Opt(new AnonymousDecl(new Modifiers(), new IdWrapper("Anonymous"), b)), ca)); :}
+    {:  return n.qualifiesAccess(new ParClassInstanceExpr(new ParTypeAccess(id, ta), l, new Opt(new AnonymousDecl(new Modifiers(), "Anonymous", b)), ca)); :}
   ;
 
 List type_argument_list =
@@ -166,13 +166,13 @@ List type_parameter_list_1 =
   ;
 
 TypeVariable type_parameter =
-    IDENTIFIER              {:  return new TypeVariable(new Modifiers(), new IdWrapper(IDENTIFIER), new List(), new List());  :}
-  | IDENTIFIER type_bound.l {:  return new TypeVariable(new Modifiers(), new IdWrapper(IDENTIFIER), new List(), l); :}
+    IDENTIFIER              {:  return new TypeVariable(new Modifiers(), IDENTIFIER, new List(), new List());  :}
+  | IDENTIFIER type_bound.l {:  return new TypeVariable(new Modifiers(), IDENTIFIER, new List(), l); :}
   ;
 
 TypeVariable type_parameter_1 =
-    IDENTIFIER GT             {:  return new TypeVariable(new Modifiers(), new IdWrapper(IDENTIFIER), new List(), new List());  :}
-  | IDENTIFIER type_bound_1.l {:  return new TypeVariable(new Modifiers(), new IdWrapper(IDENTIFIER), new List(), l);  :}
+    IDENTIFIER GT             {:  return new TypeVariable(new Modifiers(), IDENTIFIER, new List(), new List());  :}
+  | IDENTIFIER type_bound_1.l {:  return new TypeVariable(new Modifiers(), IDENTIFIER, new List(), l);  :}
   ;
 
 List type_bound =

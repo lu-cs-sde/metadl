@@ -9,7 +9,7 @@ BodyDecl class_member_declaration =
   ;
 
 EnumDecl enum_declaration =
-  modifiers.m? ENUM wrapped_name.id interfaces.i? enum_body.b {: return new EnumDecl(new Modifiers(m), id, i, b); :}
+  modifiers.m? ENUM IDENTIFIER.id interfaces.i? enum_body.b {: return new EnumDecl(new Modifiers(m), id, i, b); :}
   ;
 
 List enum_body =
@@ -31,9 +31,9 @@ List enum_constants =
   ;
 
 BodyDecl enum_constant =
-    annotations? wrapped_name.id arguments? class_body
+    annotations? IDENTIFIER.id arguments? class_body
   {: return new EnumConstant(new Modifiers(annotations), id, arguments, new Opt(class_body)); :}
-  | annotations? wrapped_name.id arguments?
+  | annotations? IDENTIFIER.id arguments?
   {: return new EnumConstant(new Modifiers(annotations), id, arguments, new Opt()); :}
   ;
 

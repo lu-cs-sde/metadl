@@ -14,5 +14,5 @@ Stmt enhanced_for_statement_no_short_if =
 
 VariableDeclarator enhanced_for_parameter =
   IDENTIFIER dims.d?
-  {: return new VariableDeclarator(new IdWrapper(IDENTIFIER), d, new Opt()); :}
+  {: return new VariableDeclarator(IDENTIFIER, d, new Opt()); :}
   ;

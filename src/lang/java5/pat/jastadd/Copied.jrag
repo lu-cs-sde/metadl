@@ -141,7 +141,7 @@ aspect Copied {
     for (int i = 0; i < nameParts.size() - 1; ++i) {
       head.add(nameParts.get(i));
     }
-    MethodAccess call = new MethodAccess(new IdWrapper(methodName.toString()), arguments);
+    MethodAccess call = new MethodAccess(methodName.toString(), arguments);
     if (head.isEmpty()) {
       return call;
     } else {
@@ -154,7 +154,7 @@ aspect Copied {
 	  // Disabled for now. We may want to implement this as a rewrite.
 	  ParseName methodName = (ParseName) lastDot().getRightNoTransform();
 	  assert methodName.nameParts.size() == 1;
-	  MethodAccess call = new MethodAccess(new IdWrapper(methodName.nameParts.get(0).toString()), arguments);
+	  MethodAccess call = new MethodAccess(methodName.nameParts.get(0).toString(), arguments);
 	  lastDot().setRight(call);
 	  return this;
   }
@@ -163,4 +163,11 @@ aspect Copied {
     throw new Error("Can not build method access from access of type "
         + getClass().getSimpleName());
   }
+
+  public class Parameterization {
+
+  }
+
+  syn nta List<TypeVariable> ParClassDecl.getSubstTypeParamList() { return null; }
+  syn nta List<TypeVariable> ParInterfaceDecl.getSubstTypeParamList() { return null; }
 }

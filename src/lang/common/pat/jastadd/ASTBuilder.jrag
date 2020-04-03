@@ -25,7 +25,7 @@ aspect ASTBuilder {
 				if (actual.getName().equals("METAVARID")) {
 					// this child is a metavariable, wrap it up in a MetaVariable node
 					// with proper type
-					Symbol mv = PatLangParserSEP.buildMetaVar(staticCat, new MetaVariable(astChild));
+					Symbol mv = PatLangParserSEP.buildMetaVar(staticCat, astChild);
 					assert mv != null;
 					astChildren.add(mv);
 				} else if (actual.getName().equals("GAP")) {

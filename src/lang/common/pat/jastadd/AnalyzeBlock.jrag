@@ -116,6 +116,35 @@ aspect AnalyzeBlock {
 			return new lang.ast.Rule(headList, bodyList);
 		}
 
+		/**
+		   Build a rule ID(t_id, s) :- P("Terminal", t_id, _, _, s).
+		 */
+		public static lang.ast.Rule makeTerminalToIdentifierRule(AnalyzeContext ctx,
+																 String name) {
+			lang.ast.List<lang.ast.CommonLiteral> headList = new lang.ast.List<>();
+			lang.ast.List<lang.ast.CommonLiteral> bodyList = new  lang.ast.List<>();
+
+			lang.ast.List<lang.ast.Term> headVars = new lang.ast.List<>();
+			headVars.add(new lang.ast.Variable("t_id"));
+			headVars.add(new lang.ast.Variable("v"));
+			lang.ast.CommonLiteral head = new lang.ast.Atom(new lang.ast.PredicateSymbol(ctx.scopePrefix + name),
+															headVars);
+
+			lang.ast.List<lang.ast.Term> bodyVars = new lang.ast.List<lang.ast.Term>()
+				.add(new lang.ast.StringConstant("Terminal"))
+				.add(new lang.ast.Variable("t_id"))
+				.add(new lang.ast.Wildcard())
+				.add(new lang.ast.Wildcard())
+				.add(new lang.ast.Variable("v"));
+
+			headList.add(head);
+			bodyList.add(new lang.ast.Atom(new lang.ast.PredicateSymbol(ctx.progRelName), bodyVars));
+
+			return new lang.ast.Rule(headList, bodyList);
+		}
+
+
+
 		public static lang.ast.Rule makeSrcInfoRule(AnalyzeContext ctx) {
 			lang.ast.List<lang.ast.CommonLiteral> headList = new lang.ast.List<>();
 			lang.ast.List<lang.ast.CommonLiteral> bodyList = new  lang.ast.List<>();

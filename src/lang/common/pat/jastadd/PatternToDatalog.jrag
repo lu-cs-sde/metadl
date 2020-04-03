@@ -77,7 +77,11 @@ aspect PatternToDatalog {
 		return name().startsWith(METAVARIABLE) && !name().startsWith("MetaVariable");
 	}
 
-	syn boolean MetaVariable.isWildcard() = getID().equals("`_");
+	public static boolean ASTNode.isWildcardToken(String s) {
+		return s.equals("`_");
+	}
+
+	syn boolean MetaVariable.isWildcard() = isWildcardToken(getID());
 
 	syn String ASTNode.varName() {
 		if (isMetaVar()) {
@@ -159,13 +163,16 @@ aspect PatternToDatalog {
 		return ret;
 	}
 
+	static boolean ASTNode.isMetaVarToken(String token) {
+		return java.util.regex.Pattern.matches("`[\\p{Alpha}_][\\p{Alnum}_]*", token);
+	}
+
 	/**
 	   The asLiterals() equations are isomorphic to toTuples()
 	   equations in the DatalogProject aspect. The common parts should be
 	   factored out to ensure that the relational
 	   representation of a program matches the code generated for a pattern.
 	 */
-
 	eq ASTNode.asLiterals(AnalyzeContext ctx, lang.ast.CommonVariable root) {
 		ArrayList<lang.ast.Literal> literals = new ArrayList<>();
 		if (isGap())
@@ -197,15 +204,17 @@ aspect PatternToDatalog {
 		for (String t : tokens()) {
 			// For every token, we generate two tuples
 			// ("NodeKind", CurrentNodeId, ChildIdx, ChildId, "")
-			// ("Token", ChildId, 0, 0, "TokenAsString")
+			// ("Token", ChildId, _, _, "TokenAsString")
 			int tokenUID = StringUID.getInstance().uid(t);
+			String varName = isMetaVarToken(t) ? t : ("t_" + tokenUID);
+
 			{
 				lang.ast.List<lang.ast.Term> terms = new lang.ast.List<>();
 
 				// Add a tuple to the current node relation
 				lang.ast.Term Kind = relName != null ?
 					new lang.ast.StringConstant(relName) : new lang.ast.Wildcard();
-				lang.ast.Variable ChildId = new lang.ast.Variable("t_" + tokenUID);
+				lang.ast.Variable ChildId = new lang.ast.Variable(varName);
 				lang.ast.CommonVariable CurrentNodeId = root != null ? root : new lang.ast.Variable(varName());
 				lang.ast.IntConstant ChildIdx = new lang.ast.IntConstant("" + childIndex++);
 				lang.ast.Wildcard Token = new lang.ast.Wildcard();
@@ -220,10 +229,13 @@ aspect PatternToDatalog {
 
 				lang.ast.StringConstant Kind = new lang.ast.StringConstant("Terminal");
 				lang.ast.Wildcard ChildId = new lang.ast.Wildcard();
-				lang.ast.Variable CurrentNodeId = new lang.ast.Variable("t_" + tokenUID);
+				lang.ast.Variable CurrentNodeId = new lang.ast.Variable(varName);
 				lang.ast.Wildcard ChildIdx = new lang.ast.Wildcard();
-				lang.ast.StringConstant Token = new lang.ast.StringConstant(t);
-
+				lang.ast.Term Token;
+				if (isMetaVarToken(t))
+					Token = new lang.ast.Wildcard();
+				else
+					Token = new lang.ast.StringConstant(t);
 				terms.add(Kind).add(CurrentNodeId).add(ChildIdx).add(ChildId).add(Token);
 				ret.add(new lang.ast.Atom(new lang.ast.PredicateSymbol(ctx.progRelName), terms));
 			}
@@ -400,6 +412,11 @@ aspect PatternToDatalog {
 				// Gaps might have null children, because the inherit from
 				// the original AST node, skip them
 				vars.addAll(c.metavariables());
+		}
+		for (String t : tokens()) {
+			// Collect any tokens that are a metavariable
+			if (isMetaVarToken(t) && !isWildcardToken(t))
+				vars.add(new lang.ast.Variable(t));
 		}
 		return vars;
 	}

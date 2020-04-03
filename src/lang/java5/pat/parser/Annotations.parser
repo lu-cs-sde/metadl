@@ -21,7 +21,7 @@ BodyDecl class_member_declaration =
 AnnotationDecl annotation_type_declaration =
   modifiers.m? AT INTERFACE IDENTIFIER annotation_type_body.b
   {:
-   AnnotationDecl a = new AnnotationDecl(new Modifiers(m), new IdWrapper(IDENTIFIER), b);
+   AnnotationDecl a = new AnnotationDecl(new Modifiers(m), IDENTIFIER, b);
    a.setStart(m.getStart());
    a.setEnd(b.getEnd());
    return a;
@@ -39,7 +39,7 @@ List annotation_type_element_declarations =
 
 BodyDecl annotation_type_element_declaration =
     modifiers.m? type.t IDENTIFIER LPAREN RPAREN default_value? SEMICOLON
-    {: AnnotationMethodDecl a = new AnnotationMethodDecl(new Modifiers(m), t, new IdWrapper(IDENTIFIER), new List(), new List(), new Opt(), default_value);
+    {: AnnotationMethodDecl a = new AnnotationMethodDecl(new Modifiers(m), t, IDENTIFIER, new List(), new List(), new Opt(), default_value);
        a.setStart(m.getStart());
        a.setEnd(SEMICOLON.getEnd());
        return a;

@@ -12,15 +12,21 @@ import java.util.Arrays;
 
 aspect LanguageSpecific {
 	// TODO: the token list should be generated
-	syn java.util.List<String> ASTNode.tokens() = Collections.emptyList();
+	syn java.util.List<String> ASTNode.tokens() {
+		try {
+			Method m = getClass().getMethod("getID");
+			String id = (String)m.invoke(this);
+			assert id != null;
+			return Collections.singletonList(id);
+		} catch (ReflectiveOperationException e) {
+			return Collections.emptyList();
+		}
+	}
 	eq Literal.tokens() {
 		return Collections.singletonList(getLITERAL());
 	}
 	eq CompilationUnit.tokens() {
 		return Collections.singletonList(getPackageDecl());
-	}
-	eq IdWrapper.tokens() {
-		return Collections.singletonList(getID());
 	}
 	eq PackageAccess.tokens() {
 		return Collections.singletonList(getPackage());
@@ -53,6 +59,7 @@ aspect LanguageSpecific {
 		ret.add(makeIdentifierRule(ctx, "IdUse", "ID", 0, null));
 		ret.add(makeIdentifierRule(ctx, "IdWrapper", "ID", 0, null));
 		ret.add(makeIdentifierRule(ctx, "ParseName", "ID", 0, null));
+		ret.add(makeTerminalToIdentifierRule(ctx, "ID"));
 		// Modifiers
 		ret.add(makeIdentifierRule(ctx, "Modifier", "MOD", 0, null));
 		// Literals

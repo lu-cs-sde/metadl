@@ -13,7 +13,8 @@ public class StringUID {
 	private int counter = Integer.MAX_VALUE;
 	private Map<String, Integer> uids = new HashMap<>();
 	public synchronized int uid(String s) {
-		Integer u = uids.get(s);
+		// Integer u = uids.get(s);
+		Integer u = null;
 		if (u == null) {
 			uids.put(s, counter);
 			return counter--;

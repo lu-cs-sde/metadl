@@ -13,10 +13,10 @@ analyze('P, "java5") {
 	    BadCloneReport(f, ls, cs, le, ce, "CN_IDIOM_NO_SUPER_CALL") :- CloneMethod(c),
                                        NOT(GoodCloneMethod(c)), SRC(c, ls, cs, le, ce, f).
 
-	    Iface(`k, iname) :- <: .. class `k implements .. ,`i , .. { .. } :>, ID(`i, iname).
-	    ImplementsClone(`k) :- <: .. class `k implements .. { .. `d .. } :>,
+	    Iface(k, iname) :- k <: .. class `_ implements .. ,`i , .. { .. } :>, ID(`i, iname).
+	    ImplementsClone(k) :- k <: .. class `_ implements .. { .. `d .. } :>,
             			   CloneMethod(d).
-	    ImplementsClone(`k) :- <: .. class `k { .. `d .. } :>,
+	    ImplementsClone(k) :- k <: .. class `_ { .. `d .. } :>,
             			   CloneMethod(d).
 
 	    BadCloneReport(f, ls, cs, le, ce, "CN_IMPLEMENTS_CLONE_BUT_NOT_CLONEABLE") :- ImplementsClone(c),

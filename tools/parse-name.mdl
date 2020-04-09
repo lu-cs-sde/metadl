@@ -1,0 +1,46 @@
+IMPORT('P, "tests/evaluation/metadl-java/src/number-ctor/Test.java", "java5").
+
+# Q(a, b, c, d, e) :- P(a, b, c, d, e).
+Q("", 0, 0, 0, "") :- NEQ(0, 0).
+P("", 0, 0, 0, "") :- NEQ(0, 0).
+
+Q(a, b, c, d, e) :- P(a, b, c, d, e), NEQ("ParseName", a).
+Q("ParseName", id, 0, d, e) :- P("ParseName", id, 0, d, e), NOT(P("ParseName", id, 1, _, _)).
+
+# id -> (id * 26544 + 0)  * 26544) is just a hash function
+# This needs to be replaced with a built-in function that maps every pair
+# (n, i) to a fresh value k.
+
+# Rule for child 0 of a ParseName with n children
+Q("ParseName", h, 0, t, "") :- P("ParseName", id, 0, t, _), P("ParseName", id, 1, _, _),
+	       	       BIND(h, (id * 26544 + 0)  * 26544).
+
+# Rule for any children [1, n-2] of a ParseName with n children
+Q("Dot", h1, 0, l, ""), Q("Dot", h1, 1, r, ""), Q("ParseName", r, 0, t, "") :-
+		     P("ParseName", id, i, t, _), P("ParseName", id, i_minus_1, _, _), BIND(i_minus_1, i - 1),
+		     P("ParseName", id, i_plus_1, _, _), BIND(i_plus_1, i + 1),
+		     BIND(r, (id * 26544 + i) * 26544 + 1000),
+		     BIND(l, (id *  26544 + (i - 1)) * 26544),
+		     BIND(h1, (id * 26544 + i) * 26544).
+
+# Rule for child n-1 of a ParseName with n children
+Q("Dot", id, 0, l, ""), Q("Dot", id, 1, r, ""), Q("ParseName", r, 0, t, "") :-
+		     P("ParseName", id, i, t, _), P("ParseName", id, i_minus_1, _, _), BIND(i_minus_1, i - 1),
+		     NOT(P("ParseName", id, i_plus_1, _, _)), BIND(i_plus_1, i + 1),
+		     BIND(r, (id * 26544 + i) * 26544 + 1000),
+		     BIND(l, (id *  26544 + (i - 1)) * 26544).
+
+
+ParseNameOld("ParseName", a, b, c, d) :- P("ParseName", a, b, c, d).
+ParseNameNew("ParseName", a, b, c, d) :- Q("ParseName", a, b, c, d).
+
+DotOld("Dot", a, b, c, d) :- P("Dot", a, b, c, d).
+DotNew("Dot", a, b, c, d) :- Q("Dot", a, b, c, d).
+
+
+OUTPUT('Q).
+OUTPUT('ParseNameOld).
+OUTPUT('ParseNameNew).
+OUTPUT('DotOld).
+OUTPUT('DotNew).
+OUTPUT('P).

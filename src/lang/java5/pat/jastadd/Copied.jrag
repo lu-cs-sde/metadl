@@ -152,11 +152,16 @@ aspect Copied {
   public Access Dot.buildMethodAccess(List<Expr> arguments) {
 	  // TODO: MetaDL cannot handle cases where semantic actions use introspection.
 	  // Disabled for now. We may want to implement this as a rewrite.
-	  ParseName methodName = (ParseName) lastDot().getRightNoTransform();
-	  assert methodName.nameParts.size() == 1;
-	  MethodAccess call = new MethodAccess(methodName.nameParts.get(0).toString(), arguments);
+	  Access rightmostAccess = lastDot().getRightNoTransform();
+	  Access call = rightmostAccess.buildMethodAccess(arguments);
 	  lastDot().setRight(call);
 	  return this;
+  }
+
+  public Access MetaVarAccess.buildMethodAccess(List<Expr> arguments) {
+	  String metavarID = getVar().getID();
+	  MethodAccess call = new MethodAccess(metavarID, arguments);
+	  return call;
   }
 
   public Access Access.buildMethodAccess(List<Expr> arguments) {

@@ -38,9 +38,7 @@ aspect Copied {
   }
 
   public Access ParseName.qualifiesAccess(Access access) {
-	  // TODO: MetaDL cannot handle cases where semantic actions use introspection.
-	  // Disabled for now. We may want to implement this as a rewrite.
-    if (false && access instanceof ParseName) {
+    if (access instanceof ParseName) {
       ParseName name = (ParseName) access;
       ArrayList<NamePart> parts = new ArrayList<NamePart>(nameParts);
       parts.addAll(name.nameParts);
@@ -147,16 +145,6 @@ aspect Copied {
     } else {
       return new Dot(new ParseName(head), call);
     }
-  }
-
-  public Access Dot.buildMethodAccess(List<Expr> arguments) {
-	  // TODO: MetaDL cannot handle cases where semantic actions use introspection.
-	  // Disabled for now. We may want to implement this as a rewrite.
-	  ParseName methodName = (ParseName) lastDot().getRightNoTransform();
-	  assert methodName.nameParts.size() == 1;
-	  MethodAccess call = new MethodAccess(methodName.nameParts.get(0).toString(), arguments);
-	  lastDot().setRight(call);
-	  return this;
   }
 
   public Access Access.buildMethodAccess(List<Expr> arguments) {

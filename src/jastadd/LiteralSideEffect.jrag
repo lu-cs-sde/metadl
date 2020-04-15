@@ -10,6 +10,12 @@ import java.util.HashMap;
 import java.util.Map;
 import java.io.FileReader;
 import org.apache.commons.lang3.mutable.MutableInt;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.filefilter.IOFileFilter;
+import org.apache.commons.io.filefilter.FileFilterUtils;
+import org.apache.commons.io.filefilter.WildcardFileFilter;
+import org.apache.commons.io.filefilter.TrueFileFilter;
+
 
 aspect LiteralSideEffect {
     public void Literal.sideEffect(Program program, Description descr, Relation delta) {}
@@ -67,6 +73,29 @@ aspect LiteralSideEffect {
         }
     }
 
+	public static  Relation IMPORTLiteral.loadJava5Program(String loc) throws IOException {
+		File fileOrDir = new File(loc);
+		org.extendj.ast.Program p = new org.extendj.ast.Program();
+
+		if (fileOrDir.isDirectory()) {
+			IOFileFilter ff = new WildcardFileFilter("*.java");
+			Iterator<File> it = FileUtils.iterateFiles(fileOrDir, ff, TrueFileFilter.INSTANCE);
+			while (it.hasNext()) {
+				File f = it.next();
+				p.addSourceFile(f.getPath());
+			}
+		} else {
+			p.addSourceFile(fileOrDir.getPath());
+		}
+
+		lang.java5.obj.DatalogProjection2 proj2 = new lang.java5.obj.DatalogProjection2();
+		proj2.visit(p);
+
+		Relation ret = proj2.getRelation();
+
+		return ret;
+	}
+
 	public void IMPORTLiteral.sideEffect(Program program, Description descr, Relation delta) {
 		SimpleLogger.logger().log("Computing side effects of loading program...", SimpleLogger.LogLevel.Level.DEBUG);
 		for (PseudoTuple t : delta.tuples()) {
@@ -89,8 +118,7 @@ aspect LiteralSideEffect {
 				}
 				case "java5:": {
 					lang.java5.obj.ast.Program prog = lang.java5.obj.ast.Program.fromFileLoc(t.coord(1).toString());
-					prog.assignIds(new MutableInt(1));
-					importedProgramRel = prog.asRelation();
+					importedProgramRel = loadJava5Program(t.coord(1).toString());
 					break;
 				}
 

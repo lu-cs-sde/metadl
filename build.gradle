@@ -32,6 +32,7 @@ dependencies {
     compile 'org.junit.jupiter:junit-jupiter-engine:5.3.1'
     compile 'org.apache.commons:commons-lang3:3.8'
     compile group: 'commons-io', name: 'commons-io', version: '2.6'
+    compile files('deps/extendj-java5/extendj.jar')
 
     testCompile('org.junit.jupiter:junit-jupiter-api:5.3.1')
     testRuntime('org.junit.jupiter:junit-jupiter-engine:5.3.1')
@@ -49,7 +50,7 @@ dependencies {
 
 // This specifies where the source code is located:
 sourceSets {
-    main.java.srcDirs = [ 'src/java', 'src/gen', 'src/lang/java4/util', 'src/lang/java5/util' ]
+    main.java.srcDirs = [ 'src/java', 'src/gen', 'src/lang/java4/util']
     test.java.srcDirs = [ 'src/test' ]
 }
 

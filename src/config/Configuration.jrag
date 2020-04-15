@@ -9,6 +9,7 @@ import lang.ast.StringConstant;
 import lang.ast.IMPORTLiteral;
 import lang.ast.TypeError;
 import lang.ast.PredicateSymbol;
+import lang.ast.IMPORTLiteral;
 import lang.relation.PseudoTuple;
 import lang.relation.Relation;
 import lang.io.FileUtil;
@@ -201,9 +202,7 @@ aspect Souffle {
 							break;
 						}
 						case "java5": {
-							lang.java5.obj.ast.Program prog = lang.java5.obj.ast.Program.fromFileLoc(progFileLang.getKey());
-							prog.assignIds(new MutableInt(1));
-							programRel = prog.asRelation();
+							programRel = IMPORTLiteral.loadJava5Program(progFileLang.getKey());
 							break;
 						}
 						default:

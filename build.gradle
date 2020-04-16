@@ -210,6 +210,53 @@ void makeGenerateSEPTask(String name, String outFile, String srcFile) {
     }
 }
 
+void makeGeneratePatLangTask(String taskName, String outDir, String srcLang, ArrayList<String> lexOrder) {
+    tasks.create('MkDirs' + taskName) {
+	doFirst {
+	    file(outDir + '/lang/' + srcLang + '/pat/ast').mkdirs()
+	}
+    }
+
+    makeConcatenateTask('catPatScanner' + taskName,
+			outDir + '/lang/' + srcLang + '/pat/scanner/scanner.flex',
+			files(lexOrder.collect({'src/lang/' + srcLang + '/pat/scanner/' + it})))
+
+    makeConcatenateTask('catPatlangParser' + taskName,
+			outDir + '/lang/' + srcLang + '/pat/parser/lang.parser',
+			fileTree(dir : 'src/lang/' + srcLang + '/pat/parser', includes : ['**/*.parser']))
+
+    // .parser -> .java file describing a SEP grammar
+    makeGenerateSEPTask('generateSEP' + taskName, outDir + '/lang/' + srcLang + '/pat/ast/PatLangParserSEP.java',
+			outDir + '/lang/' + srcLang + '/pat/parser/lang.parser')
+
+    // .flex -> .java
+    makeGenerateScannerTask('generateScannerPatlang' + taskName, outDir + '/lang/' + srcLang + '/pat/ast',
+			    outDir + '/lang/' + srcLang + '/pat/scanner/scanner.flex')
+
+    // .ast, .jrag -> .java
+    def commonPatAspectFiles = fileTree(dir : 'src/lang/common/pat/jastadd', includes : ['**/*.jrag'])
+
+    makeGenerateJavaTask('generateJavaPatlang' + taskName, outDir,
+			 'src/lang/' + srcLang + '/pat/jastadd', 'lang.' + srcLang + '.pat.ast', true, commonPatAspectFiles)
+
+    // an empty task to depend on everything here
+    tasks.create(taskName)
+
+
+
+    tasks.getByName(taskName).dependsOn tasks.getByName('generateScannerPatlang' + taskName)
+    tasks.getByName(taskName).dependsOn tasks.getByName('generateJavaPatlang' + taskName)
+    tasks.getByName(taskName).dependsOn tasks.getByName('generateSEP' + taskName)
+
+    tasks.getByName('generateSEP' + taskName).dependsOn tasks.getByName('MkDirs' + taskName),
+	tasks.getByName('catPatlangParser' + taskName)
+
+    tasks.getByName('generateScannerPatlang' + taskName).dependsOn tasks.getByName('MkDirs' + taskName),
+	tasks.getByName('catPatScanner' + taskName)
+
+    tasks.getByName('generateJavaPatlang' + taskName).dependsOn tasks.getByName('MkDirs' + taskName)
+}
+
 void makeGenerateLangTask(String taskName, String outDir, String srcLang, ArrayList<String> lexOrder, boolean patlang = true) {
     tasks.create('MkDirs' + taskName) {
 	doFirst {
@@ -324,7 +371,7 @@ def metadlLexOrder = ['scanner.flex']
 
 makeGenerateLangTask('genMetadlLang', 'src/gen/', 'metadl', metadlLexOrder)
 makeGenerateLangTask('genJava4Lang', 'src/gen/', 'java4', java4LexOrder)
-makeGenerateLangTask('genJava5Lang', 'src/gen/', 'java5', java5LexOrder)
+makeGeneratePatLangTask('genJava5Lang', 'src/gen/', 'java5', java5LexOrder)
 
 makeGenerateBeaverTask('generateBeaver', 'src/gen/LangParser.beaver', 'src/parser/metadl.parser')
 makeGenerateParserTask('generateParser', 'src/gen/lang/ast', 'src/gen/LangParser.beaver')

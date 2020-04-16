@@ -117,7 +117,6 @@ aspect LiteralSideEffect {
 					break;
 				}
 				case "java5:": {
-					lang.java5.obj.ast.Program prog = lang.java5.obj.ast.Program.fromFileLoc(t.coord(1).toString());
 					importedProgramRel = loadJava5Program(t.coord(1).toString());
 					break;
 				}

@@ -24,7 +24,7 @@ abstract class ASTNodeTraversalPostorder {
 		visit(n);
     }
 
-    public abstract void visit(ASTNode<?> n);
+    protected abstract void visit(ASTNode<?> n);
 }
 
 public class DatalogProjection2 extends ASTNodeTraversalPostorder {
@@ -41,9 +41,8 @@ public class DatalogProjection2 extends ASTNodeTraversalPostorder {
 		return datalogProjection;
 	}
 
-
 	@Override
-	public void visit(ASTNode<?> n) {
+	protected void visit(ASTNode<?> n) {
 		currentNumber++;
 		assert !nodeNumber.containsKey(n);
 		nodeNumber.put(n, currentNumber);
@@ -104,7 +103,7 @@ public class DatalogProjection2 extends ASTNodeTraversalPostorder {
 		}
 		<T> CastWrapper bind(Consumer<T> f) {
 			if (o == null)
-				return null;
+				return this;
 			try {
 				f.accept((T)o);
 				return new CastWrapper(null);
@@ -136,7 +135,7 @@ public class DatalogProjection2 extends ASTNodeTraversalPostorder {
 			.bind((org.extendj.ast.ASTNode nn) -> {
 					try {
 						Method m = nn.getClass().getMethod("getID");
-						String id = (String)m.invoke(this);
+						String id = (String)m.invoke(n);
 						assert id != null;
 						r.add(id);
 					} catch (ReflectiveOperationException e) {

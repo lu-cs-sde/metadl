@@ -7,3 +7,6 @@
 [submodule "deps/sppf-earley-parser"]
 	path = deps/sppf-earley-parser
 	url = git@git.cs.lth.se:al7330du/sppf-earley-parser.git
+[submodule "deps/extendj"]
+	path = deps/extendj
+	url = https://bitbucket.org/extendj/extendj.git

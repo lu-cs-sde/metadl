@@ -89,7 +89,7 @@ aspect LiteralSideEffect {
 		}
 
 		lang.java5.obj.DatalogProjection2 proj2 = new lang.java5.obj.DatalogProjection2();
-		proj2.visit(p);
+		proj2.traverse(p);
 
 		Relation ret = proj2.getRelation();
 

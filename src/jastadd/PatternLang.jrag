@@ -241,7 +241,7 @@ aspect PatternLang {
 				boolean assertionsEnabled = false;
 				// check if assertion are enabled
 				assert assertionsEnabled = true;
-				if (assertionsEnabled)
+				if (false && assertionsEnabled)
 					Util.dumpParseResult("parse-tree-orig.dot", root, grammar);
 				// continue measuring the time
 				parsePatternTimer.resume();
@@ -253,8 +253,8 @@ aspect PatternLang {
 					ObjLangASTNode astRoot = (ObjLangASTNode) astBuilder.buildAST(pt, symbols);
 					ret.add(astRoot);
 					parsePatternTimer.suspend();
-					Util.dumpParseTree("parse-tree" + pt.hashCode() + ".dot", pt);
-					Util.dumpParseResult("parse-graph" + root.hashCode() + ".dot", root, grammar);
+					// Util.dumpParseTree("parse-tree" + pt.hashCode() + ".dot", pt);
+					// Util.dumpParseResult("parse-graph" + root.hashCode() + ".dot", root, grammar);
 					OutputStream ps = new ByteArrayOutputStream();
 					astRoot.debugPrint(new PrintStream(ps));
 					SimpleLogger.logger().debug(ps.toString());

@@ -32,7 +32,7 @@ dependencies {
     compile 'org.junit.jupiter:junit-jupiter-engine:5.3.1'
     compile 'org.apache.commons:commons-lang3:3.8'
     compile group: 'commons-io', name: 'commons-io', version: '2.6'
-    compile files('deps/extendj-java5/extendj.jar')
+    compile 'org.extendj:java5:100.100.100'
 
     testCompile('org.junit.jupiter:junit-jupiter-api:5.3.1')
     testRuntime('org.junit.jupiter:junit-jupiter-engine:5.3.1')

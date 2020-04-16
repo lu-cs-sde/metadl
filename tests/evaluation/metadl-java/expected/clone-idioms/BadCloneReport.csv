@@ -1,3 +1,3 @@
-CloneIdiom3.java,2,5,5,5,CN_IDIOM_NO_SUPER_CALL
-Clone1.java,1,1,6,1,CN_IMPLEMENTS_CLONE_BUT_NOT_CLONEABLE
-Clone1.java,9,1,15,1,CN_IMPLEMENTS_CLONE_BUT_NOT_CLONEABLE
+tests/evaluation/metadl-java/src/clone-idioms/CloneIdiom3.java,2,5,5,5,CN_IDIOM_NO_SUPER_CALL
+tests/evaluation/metadl-java/src/clone-idioms/Clone1.java,1,1,6,1,CN_IMPLEMENTS_CLONE_BUT_NOT_CLONEABLE
+tests/evaluation/metadl-java/src/clone-idioms/Clone1.java,9,1,15,1,CN_IMPLEMENTS_CLONE_BUT_NOT_CLONEABLE

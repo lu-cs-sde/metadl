@@ -1,20 +1,42 @@
 package lang.java5.obj;
 
 import java.lang.reflect.Method;
-import java.net.IDN;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
+import java.util.Deque;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.Supplier;
 
 import org.extendj.ast.ASTNode;
-import lang.relation.Relation;
+
 import lang.io.StringUID;
 import lang.relation.PseudoTuple;
+import lang.relation.Relation;
+
+
+// abstract class ASTNodeTraversal {
+// 	private HashMap<ASTNode<?>, Integer> nodeNumber = new HashMap<>();
+// 	private Deque<ASTNode<?>> worklist = new LinkedList<>();
+
+// 	public ASTNodeTraversal(ASTNode<?> root) {
+// 		worklist.addFirst(root);
+// 	}
+
+// 	private boolean visited(ASTNode<?> n) {
+// 		return nodeNumber.containsKey(n);
+// 	}
+
+// 	public void traverse(ASTNode<?> node) {
+// 		while (!worklist.isEmpty()) {
+
+// 		}
+// 	}
+// }
+
 
 abstract class ASTNodeTraversalPostorder {
     public void traverse(ASTNode<?> n) {
@@ -24,31 +46,124 @@ abstract class ASTNodeTraversalPostorder {
 		visit(n);
     }
 
+	public void traverseRewrite(ASTNode<?> n) {
+		for (int i = 0; i < n.getNumChild(); ++i) {
+			traverseRewrite(n.getChild(i));
+		}
+		visitRewrite(n);
+	}
+
     protected abstract void visit(ASTNode<?> n);
+	protected abstract void visitRewrite(ASTNode<?> n);
 }
 
-public class DatalogProjection2 extends ASTNodeTraversalPostorder {
-	HashMap<ASTNode<?>, Integer> nodeNumber = new HashMap<>();
-	int currentNumber = 0;
-	Relation datalogProjection = new Relation(5);
+abstract class ASTNodeRewriteTraversalPostorder {
+	public void traverse(ASTNode<?> n) {
+		for (int i = 0; i < n.getNumChild(); ++i) {
+			traverse(n.getChild(i));
+		}
+		visit(n);
+    }
+
+	protected abstract void visit(ASTNode<?> n);
+}
+
+public class DatalogProjection2 {
+	private ASTNode<?> root;
+	private Map<ASTNode<?>, Integer> nodeNumber = new HashMap<>();
+
+	private int currentNumber = 0;
+	private Relation datalogProjection = new Relation(5);
+
+	public DatalogProjection2(ASTNode<?> root) {
+		this.root = root;
+	}
 
 	private int nodeId(ASTNode<?> n) {
-		assert nodeNumber.containsKey(n);
-		return nodeNumber.get(n);
+		if (nodeNumber.containsKey(n)) {
+			return nodeNumber.get(n);
+		} else {
+			currentNumber++;
+			nodeNumber.put(n, currentNumber);
+			return currentNumber;
+		}
+	}
+
+	public void generate() {
+		// traverse the tree
+		traverse(root);
+		mapAttributes();
+	}
+
+	public void mapAttributes() {
+		Set<ASTNode<?>> currentNodes = new HashSet<>(nodeNumber.keySet());
+		do {
+			// take a snapshot of the already visited nodes
+			Set<ASTNode<?>> existingNodes = new HashSet<>(nodeNumber.keySet());
+
+			for (ASTNode<?> n : currentNodes) {
+				// TODO: this is hardcoded to the type attribute, but it should
+				// be able to process other attributes too.
+				ASTNode<?> r = nodeAttribute(n, "type");
+				if (r == null)
+					continue;
+				if (!nodeNumber.containsKey(r)) {
+					// attributes may refer to NTAs, that were not visited, visit
+					// them
+					traverse(r);
+				}
+				datalogProjection.addTuple(makeTuple("ATTR_type", n, -1, r, ""));
+			}
+
+			// in the traversal of the NTAs we may have encountered new nodes,
+			// compute any eventual attributes for them too.
+			currentNodes = new HashSet<>(nodeNumber.keySet());
+			currentNodes.removeAll(existingNodes);
+		} while (!currentNodes.isEmpty());
+	}
+
+	private void traverse(ASTNode<?> n) {
+		assert n.getNumChild() == n.getNumChildNoTransform();
+		for (int i = 0; i < n.getNumChildNoTransform(); ++i) {
+			ASTNode<?> childNT = n.getChildNoTransform(i);
+			traverse(childNT);
+			if (childNT.mayHaveRewrite()) {
+				ASTNode<?> child = n.getChild(i);
+				if (child != childNT) {
+					traverse(child);
+					recordRewrittenNode(childNT, child);
+				}
+			}
+		}
+
+		nodeId(n);
+		datalogProjection.addTuples(toTuples(n));
+		datalogProjection.addTuples(srcLoc(n));
+	}
+
+	private PseudoTuple makeTuple(Object ...args) {
+		List<lang.ast.Term> elems = new ArrayList<>(args.length);
+		for (Object o : args) {
+			if (o instanceof ASTNode) {
+				elems.add(new lang.ast.IntConstant("" + nodeId((ASTNode<?>)o)));
+			} else if (o instanceof String) {
+				elems.add(new lang.ast.StringConstant((String)o));
+			} else if (o instanceof Integer) {
+				elems.add(new lang.ast.IntConstant("" + (Integer)o));
+			} else {
+				throw new RuntimeException("Can't add an element of type " + o.getClass() + " to a tuple.");
+			}
+		}
+
+		return new PseudoTuple(elems);
+	}
+
+	private void recordRewrittenNode(ASTNode<?> original, ASTNode<?> target) {
+		datalogProjection.addTuple(makeTuple("REWRITE", original, -1, target, ""));
 	}
 
 	public Relation getRelation() {
 		return datalogProjection;
-	}
-
-	@Override
-	protected void visit(ASTNode<?> n) {
-		currentNumber++;
-		assert !nodeNumber.containsKey(n);
-		nodeNumber.put(n, currentNumber);
-
-		datalogProjection.addTuples(toTuples(n));
-		datalogProjection.addTuples(srcLoc(n));
 	}
 
 	private static String getRelation(ASTNode<?> n) {
@@ -110,6 +225,21 @@ public class DatalogProjection2 extends ASTNodeTraversalPostorder {
 			} catch (ClassCastException e) {
 				return this;
 			}
+		}
+	}
+
+	private ASTNode<?> nodeAttribute(ASTNode<?> n, String attrName) {
+		try {
+			Method m = n.getClass().getMethod(attrName);
+			Object o = m.invoke(n);
+			if (o == null)
+				return null;
+			if (!ASTNode.class.isInstance(o))
+				return null;
+			return (ASTNode<?>)o;
+		} catch (ReflectiveOperationException e) {
+			// do nothing, the node may be missing the attribute
+			return null;
 		}
 	}
 

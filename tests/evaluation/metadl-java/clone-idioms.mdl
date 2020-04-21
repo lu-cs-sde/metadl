@@ -21,7 +21,9 @@ analyze('P, "java5") {
 
 	    BadCloneReport(f, ls, cs, le, ce, "CN_IMPLEMENTS_CLONE_BUT_NOT_CLONEABLE") :- ImplementsClone(c),
 	                                    NOT(Iface(c, "Cloneable")),
-                                            SRC(c, ls, cs, le, ce, f).
+                                            SRC(c, ls, cs, le, ce, f),
+					    # Exclude classes
+					    NEQ(ls, 0).
 
 	    GoodCloneMethodReport(c, f, ls, cs, le, ce) :- GoodCloneMethod(c), SRC(c, ls, cs, le, ce, f).
 }

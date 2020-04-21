@@ -74,8 +74,15 @@ aspect LiteralSideEffect {
     }
 
 	public static  Relation IMPORTLiteral.loadJava5Program(String loc) throws IOException {
-		File fileOrDir = new File(loc);
 		org.extendj.ast.Program p = new org.extendj.ast.Program();
+
+		// Set the path to the Java runtime
+		String bootCP = System.getenv().get("METADL_JAVA_RT");
+		if (bootCP != null)
+			p.options().setValueForOption(bootCP, "-bootclasspath");
+
+		// Walk all the java files in the directory and add them to the program
+		File fileOrDir = new File(loc);
 
 		if (fileOrDir.isDirectory()) {
 			IOFileFilter ff = new WildcardFileFilter("*.java");
@@ -88,9 +95,17 @@ aspect LiteralSideEffect {
 			p.addSourceFile(fileOrDir.getPath());
 		}
 
-		lang.java5.obj.DatalogProjection2 proj2 = new lang.java5.obj.DatalogProjection2();
-		proj2.traverse(p);
+		org.extendj.ast.TypeDecl object = p.lookupType("java.lang", "Object");
+		if (object.isUnknown()) {
+			// If we try to continue without java.lang.Object, we'll just get a stack overflow
+			// in member lookups because the unknown (Object) type would be treated as circular.
+			throw new RuntimeException("Error: java.lang.Object is missing."
+									   + " The Java standard library was not found.");
+		}
 
+
+		lang.java5.obj.DatalogProjection2 proj2 = new lang.java5.obj.DatalogProjection2(p);
+		proj2.generate();
 		Relation ret = proj2.getRelation();
 
 		return ret;

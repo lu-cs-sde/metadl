@@ -11,62 +11,13 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 
+import org.apache.commons.lang3.time.StopWatch;
 import org.extendj.ast.ASTNode;
 
+import lang.io.SimpleLogger;
 import lang.io.StringUID;
 import lang.relation.PseudoTuple;
 import lang.relation.Relation;
-
-
-// abstract class ASTNodeTraversal {
-// 	private HashMap<ASTNode<?>, Integer> nodeNumber = new HashMap<>();
-// 	private Deque<ASTNode<?>> worklist = new LinkedList<>();
-
-// 	public ASTNodeTraversal(ASTNode<?> root) {
-// 		worklist.addFirst(root);
-// 	}
-
-// 	private boolean visited(ASTNode<?> n) {
-// 		return nodeNumber.containsKey(n);
-// 	}
-
-// 	public void traverse(ASTNode<?> node) {
-// 		while (!worklist.isEmpty()) {
-
-// 		}
-// 	}
-// }
-
-
-abstract class ASTNodeTraversalPostorder {
-    public void traverse(ASTNode<?> n) {
-		for (int i = 0; i < n.getNumChildNoTransform(); ++i) {
-			traverse(n.getChildNoTransform(i));
-		}
-		visit(n);
-    }
-
-	public void traverseRewrite(ASTNode<?> n) {
-		for (int i = 0; i < n.getNumChild(); ++i) {
-			traverseRewrite(n.getChild(i));
-		}
-		visitRewrite(n);
-	}
-
-    protected abstract void visit(ASTNode<?> n);
-	protected abstract void visitRewrite(ASTNode<?> n);
-}
-
-abstract class ASTNodeRewriteTraversalPostorder {
-	public void traverse(ASTNode<?> n) {
-		for (int i = 0; i < n.getNumChild(); ++i) {
-			traverse(n.getChild(i));
-		}
-		visit(n);
-    }
-
-	protected abstract void visit(ASTNode<?> n);
-}
 
 public class DatalogProjection2 {
 	private ASTNode<?> root;
@@ -91,11 +42,17 @@ public class DatalogProjection2 {
 
 	public void generate() {
 		// traverse the tree
+		StopWatch traverseTime = StopWatch.createStarted();
 		traverse(root);
+		traverseTime.stop();
+		StopWatch attributeMapTime = StopWatch.createStarted();
 		mapAttributes();
+		attributeMapTime.stop();
+		SimpleLogger.logger().time("Object AST initial traversal: " + traverseTime.getTime() + "ms");
+		SimpleLogger.logger().time("Attribute tabulation: " + attributeMapTime.getTime() + "ms");
 	}
 
-	public void mapAttributes() {
+	private void mapAttributes() {
 		Set<ASTNode<?>> currentNodes = new HashSet<>(nodeNumber.keySet());
 		do {
 			// take a snapshot of the already visited nodes
@@ -119,6 +76,11 @@ public class DatalogProjection2 {
 			// compute any eventual attributes for them too.
 			currentNodes = new HashSet<>(nodeNumber.keySet());
 			currentNodes.removeAll(existingNodes);
+
+			// TODO: run this only once, otherwise we dive into rt.jar which takes
+			// a long time and produces a very big relation.
+			// Look into ways of caching the results from rt.jar.
+			break;
 		} while (!currentNodes.isEmpty());
 	}
 
@@ -211,7 +173,7 @@ public class DatalogProjection2 {
 	   Helper class to match the type of the object and apply
 	   an action.
 	 */
-	static class CastWrapper {
+	private static class CastWrapper {
 		private Object o;
 		CastWrapper(Object o) {
 			this.o = o;

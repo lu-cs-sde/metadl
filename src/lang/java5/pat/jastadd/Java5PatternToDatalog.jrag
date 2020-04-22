@@ -62,6 +62,16 @@ aspect LanguageSpecific {
 					);
 	}
 
+	public static lang.ast.Rule PatLang.makeDeclRule(AnalyzeContext ctx) {
+		return rule(
+					atom(ctx.prefix("DECL"), "$n", "$t"), // DECL(n, t) :-
+					atom(ctx.prefix("REWRITE_MAP"), "$n", "$n_rw"),
+					atom(ctx.progRelName, "ATTR_decl", "$n_rw", "_", "$t_rw", "_"), // P("ATTR_decl", n, _, t, _)
+					atom(ctx.prefix("REWRITE_MAP"), "$t_rw", "$t")
+					);
+	}
+
+
 	public static java.util.List<lang.ast.Clause> PatLang.makeRewriteMap(AnalyzeContext ctx) {
 		java.util.List<lang.ast.Clause> ret = new java.util.ArrayList<>();
 		// REWRITE_MAP(n, n) :- P(_, n, _ , _, _), NOT(P("REWRITE", n, _, _, _)).
@@ -82,6 +92,7 @@ aspect LanguageSpecific {
 		ret.add(makeIdentifierRule(ctx, "IdUse", "ID", 0, null));
 		ret.add(makeIdentifierRule(ctx, "IdWrapper", "ID", 0, null));
 		ret.add(makeIdentifierRule(ctx, "ParseName", "ID", 0, null));
+		ret.add(makeIdentifierRule(ctx, "EnumConstant", "ID", 3, null));
 		ret.add(makeTerminalToIdentifierRule(ctx, "ID"));
 		// Modifiers
 		ret.add(makeIdentifierRule(ctx, "Modifier", "MOD", 0, null));
@@ -113,8 +124,10 @@ aspect LanguageSpecific {
 		ret.addAll(makeMetaVariableRelations(ctx));
 		// Insert predicates that expose ExtendJ attributes
 		ret.addAll(makeRewriteMap(ctx));
+		// Insert the TYPE relation
 		ret.add(makeTypeRule(ctx));
-
+		// Insert the DECL relation
+		ret.add(makeDeclRule(ctx));
 		return ret;
 	}
 
@@ -136,6 +149,7 @@ aspect LanguageSpecific {
 		case "PARENT":
 		case "EXISTS":
 		case "TYPE":
+		case "DECL":
 			s = predName; break;
 		default: return null;
 		}

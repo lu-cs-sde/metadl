@@ -14,6 +14,8 @@ import java.util.function.Consumer;
 import org.apache.commons.lang3.time.StopWatch;
 import org.extendj.ast.ASTNode;
 
+import org.apache.commons.lang3.tuple.Pair;
+
 import lang.io.SimpleLogger;
 import lang.io.StringUID;
 import lang.relation.PseudoTuple;
@@ -46,13 +48,14 @@ public class DatalogProjection2 {
 		traverse(root);
 		traverseTime.stop();
 		StopWatch attributeMapTime = StopWatch.createStarted();
-		mapAttributes();
+		mapAttributes(Pair.of("type", "ATTR_type"), Pair.of("decl", "ATTR_decl"));
 		attributeMapTime.stop();
 		SimpleLogger.logger().time("Object AST initial traversal: " + traverseTime.getTime() + "ms");
 		SimpleLogger.logger().time("Attribute tabulation: " + attributeMapTime.getTime() + "ms");
 	}
 
-	private void mapAttributes() {
+	@SafeVarargs
+	private void mapAttributes(Pair<String, String> ...attrs) {
 		Set<ASTNode<?>> currentNodes = new HashSet<>(nodeNumber.keySet());
 		do {
 			// take a snapshot of the already visited nodes
@@ -61,15 +64,19 @@ public class DatalogProjection2 {
 			for (ASTNode<?> n : currentNodes) {
 				// TODO: this is hardcoded to the type attribute, but it should
 				// be able to process other attributes too.
-				ASTNode<?> r = nodeAttribute(n, "type");
-				if (r == null)
-					continue;
-				if (!nodeNumber.containsKey(r)) {
-					// attributes may refer to NTAs, that were not visited, visit
-					// them
-					traverse(r);
+				for (Pair<String, String> attrRelPair : attrs) {
+					String attributeName = attrRelPair.getLeft();
+					String relName = attrRelPair.getRight();
+					ASTNode<?> r = nodeAttribute(n, attributeName);
+					if (r == null)
+						continue;
+					if (!nodeNumber.containsKey(r)) {
+						// attributes may refer to NTAs, that were not visited, visit
+						// them
+						traverse(r);
+					}
+					datalogProjection.addTuple(makeTuple(relName, n, -1, r, ""));
 				}
-				datalogProjection.addTuple(makeTuple("ATTR_type", n, -1, r, ""));
 			}
 
 			// in the traversal of the NTAs we may have encountered new nodes,

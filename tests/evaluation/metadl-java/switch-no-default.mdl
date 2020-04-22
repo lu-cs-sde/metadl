@@ -1,7 +1,8 @@
 IMPORT('P, "tests/evaluation/metadl-java/src/switch-no-default/", "java5").
 
 ExpectWarning(0), DesireWarning(0), SwitchWithDefault(0), NoWarning(0), DesireNoWarning(0) :- NEQ(0, 0).
-
+SwitchCases(0, 0) :- NEQ(0, 0).
+EnumMembers(0, 0), SwitchOnEnum(0, 0, 0) :- NEQ(0, 0).
 
 analyze('P, "java5") {
 	    ParentT(n, c) :- PARENT(n, c).
@@ -9,7 +10,16 @@ analyze('P, "java5") {
 
 	    SwitchWithDefault(s) :- s <: switch (`_) { .. default: .. } :>.
 	    Switch(s) :- s <: switch (`_) { .. } :>.
-	    SwitchWithoutDefault(s) :- Switch(s), NOT(SwitchWithDefault(s)).
+
+	    SwitchCases(s, d) :- s <: switch (`_) { .. case `c : .. } :>, DECL(`c, d).
+	    SwitchOnEnum(s, e, d) :- s <: switch (`v) { .. case `c : .. } :>, TYPE(`v, e), e <: enum `_ { .. } :>, DECL(`c, d).
+	    # `m can be either an enum member or an enum constant, use ID to discriminate between the two
+	    EnumMember(e, `m) :- e <: enum `_  { .., `m , .. ; .. } :>,  ID(`m, _).
+
+	    SwitchWithoutEnumMember(s, e) :- SwitchOnEnum(s, e, _), EnumMember(e, m), NOT(SwitchOnEnum(s, e, m)).
+	    SwitchOnAllEnumMembers(s) :- SwitchOnEnum(s, e, _), NOT(SwitchWithoutEnumMember(s, e)).
+
+	    SwitchWithoutDefault(s) :- Switch(s), NOT(SwitchWithDefault(s)), NOT(SwitchOnAllEnumMembers(s)).
 
 	    ExpectWarning(m) :- m <:  @ExpectWarning("SF_SWITCH_NO_DEFAULT") .. `_ `_  (..) { .. } :>.
 	    DesireWarning(m) :- m <:  .. @DesireWarning("SF_SWITCH_NO_DEFAULT") .. `_ `_ (..) { .. } :>.
@@ -18,6 +28,7 @@ analyze('P, "java5") {
 
 	    Mismatch(s) :- ExpectWarning(m), Switch(s), NOT(SwitchWithoutDefault(s)), ParentT(m, s).
 	    Mismatch(s) :- DesireWarning(m), Switch(s), NOT(SwitchWithoutDefault(s)), ParentT(m, s).
+
 	    # Mismatch(s) :- NoWarning(m), SwitchWithoutDefault(s), ParentT(m, s).
 	    Mismatch(s) :- Switch(s), SwitchWithoutDefault(s), NoWarning(m), ParentT(m, s).
 	    Mismatch(s) :- Switch(s), SwitchWithoutDefault(s), DesireNoWarning(m), ParentT(m, s).

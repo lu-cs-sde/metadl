@@ -302,6 +302,11 @@ aspect PatternLang {
 			this.scopePrefix = scopePrefix;
 			this.progRelName = progRelName;
 		}
+
+		// TODO: make scopePrefix private and fix all uses
+		public String prefix(String name) {
+			return scopePrefix + name;
+		}
 	}
 
 	public interface ASTBuilder {

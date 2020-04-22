@@ -134,8 +134,6 @@ aspect Internal {
 aspect Souffle {
 	protected Program SouffleTask.preEvaluate(HashSet<File> moved) throws Exception {
 		SimpleLogger.logger().log(description().debugInfo(), SimpleLogger.LogLevel.Level.DEBUG);
-		File tmp_dir_2 = new File("tmp/tmp2");
-		tmp_dir_2.mkdirs();
 
 		Program program = getProgramWithChecks();;
 
@@ -173,13 +171,6 @@ aspect Souffle {
 
 				String predName = predicateSrcFile.getKey();
 				File output_fp = new File(factsDir() + "/" + predName + ".csv");
-				if(output_fp.exists() && !output_fp.isDirectory()) {
-					SimpleLogger.logger().log("Move: " + output_fp.getName() + " from  " + factsDir() + " to " + tmp_dir_2.getPath(),
-											  SimpleLogger.LogLevel.Level.DEBUG);
-					File mv_file = new File(tmp_dir_2.getPath() + "/" + output_fp.getName());
-					Files.move(output_fp.toPath(), mv_file.toPath(), StandardCopyOption.REPLACE_EXISTING);
-					moved.add(mv_file);
-				}
 
 				// include the program parse
 				progRelTimer.resume();

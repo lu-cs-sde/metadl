@@ -53,6 +53,29 @@ aspect LanguageSpecific {
 		return tokenList;
 	}
 
+	public static lang.ast.Rule PatLang.makeTypeRule(AnalyzeContext ctx) {
+		return rule(
+					atom(ctx.prefix("TYPE"), "$n", "$t"), // TYPE(n, t) :-
+					atom(ctx.prefix("REWRITE_MAP"), "$n", "$n_rw"),
+					atom(ctx.progRelName, "ATTR_type", "$n_rw", "_", "$t_rw", "_"), // P("ATTR_type", n, _, t, _)
+					atom(ctx.prefix("REWRITE_MAP"), "$t_rw", "$t")
+					);
+	}
+
+	public static java.util.List<lang.ast.Clause> PatLang.makeRewriteMap(AnalyzeContext ctx) {
+		java.util.List<lang.ast.Clause> ret = new java.util.ArrayList<>();
+		// REWRITE_MAP(n, n) :- P(_, n, _ , _, _), NOT(P("REWRITE", n, _, _, _)).
+		ret.add(rule(
+					 atom(ctx.prefix("REWRITE_MAP"), "$n", "$n"),
+					 atom(ctx.progRelName, "_", "$n", "_", "_", "_"),
+					 NOT(atom(ctx.progRelName, "REWRITE", "$n", "_", "_", "_"))));
+		// REWRITE_MAP(n, m) :- P("REWRITE", n, _, m, _).
+		ret.add(rule(
+					 atom(ctx.prefix("REWRITE_MAP"), "$n", "$m"),
+					 atom(ctx.progRelName, "REWRITE", "$n", "_", "$m", "_")));
+		return ret;
+	}
+
 	public static java.util.List<lang.ast.Clause> PatLang.generateHelperRelations(AnalyzeContext ctx) {
 		java.util.List<lang.ast.Clause> ret = new java.util.ArrayList<>();
 		// Identifiers
@@ -88,6 +111,9 @@ aspect LanguageSpecific {
 		ret.add(makeExistsRule(ctx));
 		// Insert predicates that compute the domain of metavariables
 		ret.addAll(makeMetaVariableRelations(ctx));
+		// Insert predicates that expose ExtendJ attributes
+		ret.addAll(makeRewriteMap(ctx));
+		ret.add(makeTypeRule(ctx));
 
 		return ret;
 	}
@@ -109,6 +135,7 @@ aspect LanguageSpecific {
 		case "INDEX":
 		case "PARENT":
 		case "EXISTS":
+		case "TYPE":
 			s = predName; break;
 		default: return null;
 		}

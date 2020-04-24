@@ -272,7 +272,7 @@ aspect PatternLang {
 
 		if (ret.isEmpty()) {
 			logger().error("Error while parsing pattern: " + getPATTERN());
-			System.exit(1);
+			throw new RuntimeException("Errow while parsing pattern");
 		}
 
 		return ret;

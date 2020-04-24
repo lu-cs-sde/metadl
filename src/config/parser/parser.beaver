@@ -11,7 +11,7 @@
 
 %terminals FILEPATH, SEP, BOTTOMUPNAIVE, SOUFFLE, OUTDIR, FACTSDIR, SOUFFLEOUT,
            PRETTYPRINT, EVAL, SEMANTIC_CHECK, TYPE_CHECK,
-	   CSVSEPARATOR, SEP_CHAR;
+	   CSVSEPARATOR, SEP_CHAR, IMPORT;
 
 %typeof  descr                    =  "Description";
 %typeof  pretty                   =  "Task";
@@ -53,10 +53,12 @@ pretty_task = BOTTOMUPNAIVE config_params.params {: return new PrettyBottomUpNai
 
 eval_task = BOTTOMUPNAIVE config_params.params {: return new EvalBottomUpNaive(params); :}
           | SOUFFLE config_params.params souffle_params.s_params {: return new EvalSouffle(params, s_params); :}
+          | IMPORT config_params.params {: return new EvalImport(params); :}
           ;
 
 semantic_check     =  SEMANTIC_CHECK config_params.params {: return new SemanticCheck(params); :};
 type_check         =  TYPE_CHECK config_params.params {: return new TypeCheck(params); :};
+
 souffle_params = souffle_params_no_empty
           | /* epsilon */ {: return new List(); :}
           ;

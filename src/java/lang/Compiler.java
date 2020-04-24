@@ -3,6 +3,8 @@ package lang;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.apache.commons.lang3.time.StopWatch;
+
 import lang.ast.config.Description;
 import lang.io.FileUtil;
 import lang.io.SimpleLogger;
@@ -31,7 +33,7 @@ public class Compiler {
     public static void main(String[] args) {
 		Logger log = Logger.getLogger("lang.io");
 		log.setLevel(Level.FINEST);
-
+		StopWatch totalTime = StopWatch.createStarted();
 
         if (args.length == 0) {
             printUsage();
@@ -40,15 +42,19 @@ public class Compiler {
 
         try {
             StringBuilder sb = new StringBuilder();
-            for(int i = 0; i != args.length; ++i) sb.append(args[i]).append(" ");
+            for(int i = 0; i != args.length; ++i)
+				sb.append(args[i]).append(" ");
             descr = FileUtil.parseDescription(sb.toString());
             descr.getTask().perform();
         } catch (Exception e) {
 			e.printStackTrace();
 		}
+
+		totalTime.stop();
+		SimpleLogger.logger().time("Total: " + totalTime.getTime() + "ms ");
     }
 
     private static void printUsage() {
-        SimpleLogger.logger().log("(pretty|eval)::(bottomupnaive|souffle) [-OUT <OUT_DIR>] [-FACTS <FACT_DIR>] <INPUT_FILE>", SimpleLogger.LogLevel.Level.ERROR);
+        SimpleLogger.logger().log("(pretty|eval)::(bottomupnaive|souffle|import) [-OUT <OUT_DIR>] [-FACTS <FACT_DIR>] <INPUT_FILE>", SimpleLogger.LogLevel.Level.ERROR);
     }
 }

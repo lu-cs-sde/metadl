@@ -108,41 +108,14 @@ aspect Task {
         new TypeCheck(getParamss()).perform(program, description());
         return program;
     }
-}
 
-aspect Internal {
-    public Program EvalBottomUpNaive.perform()  throws Exception {
-        SimpleLogger.logger().log(description().debugInfo(), SimpleLogger.LogLevel.Level.DEBUG);
-		StopWatch totalTime = StopWatch.createStarted();
-        Program program = getProgramWithChecks();
-        BottomUpNaiveIterative bit = new BottomUpNaiveIterative();
-        bit.evaluate(program, description());
-		totalTime.stop();
-		SimpleLogger.logger().time("Total: " + totalTime.getTime() + "ms ");
-        return program;
-    }
-
-    public Program PrettyBottomUpNaive.perform()  throws Exception {
-        Program program = (Program) FileUtil.parse(new File(description().getInput().getPath()));
-        Compiler.DrAST_root_node = program; // Enable debugging with DrAST
-        StandardPrettyPrinter spp = new StandardPrettyPrinter<Program>(new PrintStream(System.out));
-        spp.prettyPrint(program);
-        return program;
-    }
-}
-
-aspect Souffle {
-	protected Program SouffleTask.preEvaluate() throws Exception {
-		SimpleLogger.logger().log(description().debugInfo(), SimpleLogger.LogLevel.Level.DEBUG);
-
-		Program program = getProgramWithChecks();
-
+	public void Task.generateObjectProgramRelations(Program program) throws Exception {
 		// Add IMPORT to the formal predicate map. The facts produced by the IMPORT statement
 		// will be exported in the generated souffle file.
 		FormalPredicate formalImport = program.formalPredicateMap().get(GlobalNames.IMPORT_NAME);
 
 		if (formalImport == null)
-			return program;
+			return;
 
 		// At least one IMPORT predicate used in the program, process it.
 
@@ -219,18 +192,53 @@ aspect Souffle {
 
 			// stop the timer and report
 			progRelTimer.stop();
-			SimpleLogger.logger().time("Evaluate IMPORT statements: " + progRelTimer.getTime() + "ms");
 		}
 
+		SimpleLogger.logger().time("Evaluate IMPORT statements: " + progRelTimer.getTime() + "ms");
+	}
+}
+
+aspect Import {
+	public Program EvalImport.perform() throws Exception {
+		Program program = getProgramWithChecks();
+		generateObjectProgramRelations(program);
+		return program;
+	}
+}
+
+aspect Internal {
+    public Program EvalBottomUpNaive.perform()  throws Exception {
+        SimpleLogger.logger().log(description().debugInfo(), SimpleLogger.LogLevel.Level.DEBUG);
+        Program program = getProgramWithChecks();
+        BottomUpNaiveIterative bit = new BottomUpNaiveIterative();
+        bit.evaluate(program, description());
         return program;
+    }
+
+    public Program PrettyBottomUpNaive.perform()  throws Exception {
+        Program program = (Program) FileUtil.parse(new File(description().getInput().getPath()));
+        Compiler.DrAST_root_node = program; // Enable debugging with DrAST
+        StandardPrettyPrinter spp = new StandardPrettyPrinter<Program>(new PrintStream(System.out));
+        spp.prettyPrint(program);
+        return program;
+    }
+}
+
+aspect Souffle {
+	protected Program SouffleTask.preEvaluate() throws Exception {
+		SimpleLogger.logger().log(description().debugInfo(), SimpleLogger.LogLevel.Level.DEBUG);
+
+		Program program = getProgramWithChecks();
+
+		generateObjectProgramRelations(program);
+
+		return program;
     }
 
     protected void SouffleTask.postEvaluate() throws Exception {
     }
 
     public Program EvalSouffle.perform()  throws Exception {
-		StopWatch totalTime = StopWatch.createStarted();
-
         Program program;
         try {
             program = preEvaluate();
@@ -268,9 +276,6 @@ aspect Souffle {
         } finally {
             postEvaluate();
         }
-
-		totalTime.stop();
-		SimpleLogger.logger().time("Total: " + totalTime.getTime() + "ms ");
 
         return program;
     }

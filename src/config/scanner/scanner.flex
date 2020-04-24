@@ -48,6 +48,7 @@ Separator = , | \\t | ;
 "-SEP"             {  return  sym(Terminals.CSVSEPARATOR);       }
 "pretty"           {  return  sym(Terminals.PRETTYPRINT);        }
 "eval"             {  return  sym(Terminals.EVAL);               }
+"import"           {  return  sym(Terminals.IMPORT);             }
 "semanticcheck"    {  return  sym(Terminals.SEMANTIC_CHECK);     }
 "typecheck"        {  return  sym(Terminals.TYPE_CHECK);         }
 "::"               {  return  sym(Terminals.SEP);                }

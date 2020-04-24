@@ -12,6 +12,8 @@ import com.opencsv.CSVReader;
 import com.opencsv.CSVReaderBuilder;
 import com.opencsv.CSVWriter;
 
+import org.apache.commons.lang3.time.StopWatch;
+
 import lang.ast.FormalPredicate;
 import lang.ast.IntConstant;
 import lang.ast.PredicateRef;
@@ -130,6 +132,8 @@ public class CSVUtil {
 	}
 
 	public static void dumpFileInto(Relation r, File f, boolean append) {
+		StopWatch timer = StopWatch.createStarted();
+
 		try (CSVWriter writer = new CSVWriter(new OutputStreamWriter(new FileOutputStream(f, append)),
 											  Compiler.getCSVSeparator(),
 											  CSVWriter.NO_QUOTE_CHARACTER,
@@ -143,6 +147,9 @@ public class CSVUtil {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+
+		timer.stop();
+		SimpleLogger.logger().time("Writing CSV file: " + timer.getTime() + "ms ");
 	}
 
 	public static void dumpFileInto(FormalPredicate sp, File f) {

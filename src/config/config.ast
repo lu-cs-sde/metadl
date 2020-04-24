@@ -5,6 +5,7 @@ SemanticCheck:Task;
 TypeCheck:Task;
 EvalBottomUpNaive:Task;
 PrettyBottomUpNaive:Task;
+EvalImport:Task;
 
 abstract SouffleTask:Task ::= SouffleSpecificParams:SouffleParam*;
 EvalSouffle:SouffleTask;

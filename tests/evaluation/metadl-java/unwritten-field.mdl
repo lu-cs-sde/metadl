@@ -1,0 +1,42 @@
+IMPORT('P, "tests/evaluation/metadl-java/src/unwritten-field/", "java5").
+
+FieldInClassWithInit(0, 0, 0, 0) :- NEQ(0, 0).
+FieldInClass(0, 0, 0, 0) :- NEQ(0, 0).
+
+analyze('P, "java5") {
+### Analysis
+	    FieldInClassWithInit(c, `t, `f, `i) :- c <: class `_ { ..  .. `t .. , `f = `i, .. ; .. } :>, SRC(c, l, col, _,_,_), NEQ(col, 0).
+	    FieldInClass(c, `t, `f, `m) :- c <: class `_ { .. .. `m .. `t .. , `f , .. ; .. } :>, SRC(c, l, col, _,_,_), NEQ(col, 0).
+	    Field(f) :- FieldInClass(_, _, f, _).
+
+	    FieldRead(f) :- <: `f :>, DECL(`f, f), Field(f).
+	    FieldWrite(f) :- <: `f = `_ :>, DECL(`f, f), Field(f).
+
+	    Warning(f) :- Field(f), FieldRead(f), NOT(FieldWrite(f)), NOT(FieldInClassWithInit(_, _, f, _)).
+	    WarningDetails(l, c, src) :- Warning(f), SRC(f, l, c, _, _, src).
+
+	    IsPublicOrProtected(f) :- FieldInClass(_, _, f, m), MOD(m, "public").
+	    IsPublicOrProtected(f) :- FieldInClass(_, _, f, m), MOD(m, "protected").
+
+	    Warn_UWF_UNWRITTEN_FIELD(f) :- Warning(f), NOT(IsPublicOrProtected(f)).
+	    Warn_UWF_UNWRITTEN_PUBLIC_OR_PROTECTED_FIELD(f) :- Warning(f), IsPublicOrProtected(f).
+
+### Test
+	    Expect_UWF_UNWRITTEN_FIELD(`f) :-
+	        <: class `_ { .. .. @ExpectWarning("UWF_UNWRITTEN_FIELD") .. `t .. , `f , .. ; .. } :>.
+	    Expect_UWF_UNWRITTEN_PUBLIC_OR_PROTECTED_FIELD(`f) :-
+	        <: class `_ { .. .. @ExpectWarning("UWF_UNWRITTEN_PUBLIC_OR_PROTECTED_FIELD") .. `t .. , `f , .. ; .. } :>.
+            ExpectNoWarning(`f) :-
+	        <: class `_ { .. .. @NoWarning(`_) .. `t .. , `f , .. ; .. } :>.
+
+	    Mismatch(f) :- Expect_UWF_UNWRITTEN_FIELD(f), NOT(Warn_UWF_UNWRITTEN_FIELD(f)).
+	    Mismatch(f) :- Expect_UWF_UNWRITTEN_PUBLIC_OR_PROTECTED_FIELD(f), NOT(Warn_UWF_UNWRITTEN_PUBLIC_OR_PROTECTED_FIELD(f)).
+	    Mismatch(f) :- Warn_UWF_UNWRITTEN_FIELD(f), ExpectNoWarning(f).
+	    Mismatch(f) :- Warn_UWF_UNWRITTEN_PUBLIC_OR_PROTECTED_FIELD(f), ExpectNoWarning(f).
+
+	    Result("pass") :- NOT(Mismatch(_)).
+	    Result("fail") :- Mismatch(_).
+}
+
+OUTPUT('WarningDetails).
+OUTPUT('Result).

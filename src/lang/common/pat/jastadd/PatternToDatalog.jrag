@@ -334,8 +334,8 @@ aspect PatternToDatalog {
 	eq List.asLiterals(AnalyzeContext ctx, lang.ast.CommonVariable root) {
 		ArrayList<lang.ast.Literal> lits = new ArrayList<>();
 
-		if (getParent().isMetaVar())
-			return lits;
+		// if (getParent().isMetaVar())
+		// 	return lits;
 
 		if (STRICT_MATCH && getNumChild() == 0) {
 			// The list is empty, assert that the List relation does not
@@ -368,8 +368,8 @@ aspect PatternToDatalog {
 	eq MetaVariable.asLiterals(AnalyzeContext ctx, lang.ast.CommonVariable root) = new ArrayList<>();
 	eq Opt.asLiterals(AnalyzeContext ctx, lang.ast.CommonVariable root) {
 		ArrayList<lang.ast.Literal> lits = new ArrayList<>();
-		if (getParent().isMetaVar())
-			return lits;
+		// if (getParent().isMetaVar())
+		// 	return lits;
 
 		if (STRICT_MATCH && getNumChild() == 0) {
 			lang.ast.List<lang.ast.Term> terms = new lang.ast.List<>();

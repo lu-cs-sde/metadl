@@ -9,8 +9,10 @@ analyze('P, "java5") {
 	    FieldInClass(c, `t, `f, `m) :- c <: class `_ { .. .. `m .. `t .. , `f , .. ; .. } :>, SRC(c, l, col, _,_,_), NEQ(col, 0).
 	    Field(f) :- FieldInClass(_, _, f, _).
 
-	    FieldRead(f) :- <: `f :>, DECL(`f, f), Field(f).
+	    FieldAccess(f) :- <: `f :>, DECL(`f, f), Field(f).
 	    FieldWrite(f) :- <: `f = `_ :>, DECL(`f, f), Field(f).
+	    FieldWrite(f) :- <: `this.`f = `_ :>, DECL(`f, f), Field(f).
+	    FieldRead(f) :- FieldAccess(f), NOT(FieldWrite(f)).
 
 	    Warning(f) :- Field(f), FieldRead(f), NOT(FieldWrite(f)), NOT(FieldInClassWithInit(_, _, f, _)).
 	    WarningDetails(l, c, src) :- Warning(f), SRC(f, l, c, _, _, src).

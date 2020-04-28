@@ -232,7 +232,7 @@ aspect SoufflePrinting {
 		pr.prettyPrint(asLiteral());
 	}
 
-    public abstract String BinaryExclusiveTermLiteral.souffleOPString();
+    public String BinaryExclusiveTermLiteral.souffleOPString() { throw new RuntimeException("Not implemented"); }
     public String EQLiteral.souffleOPString()  { return  "="; }
 	public String NEQLiteral.souffleOPString() { return "!="; }
 	public String LTLiteral.souffleOPString()  { return "<";  }
@@ -247,6 +247,14 @@ aspect SoufflePrinting {
         pr.out.print(" ");
         pr.prettyPrint(getRight());
     }
+
+	public void MATCHLiteral.soufflePrint(PrettyPrinter pr) {
+		pr.out.print("match(");
+		pr.prettyPrint(getLeft());
+		pr.out.print(", ");
+		pr.prettyPrint(getRight());
+		pr.out.print(")");
+	}
 
     public void PredicateRef.soufflePrint(PrettyPrinter pr) {
         pr.out.print("\"");

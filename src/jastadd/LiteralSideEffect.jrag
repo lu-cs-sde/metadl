@@ -185,6 +185,11 @@ aspect LiteralSelection {
     public boolean LTELiteral.binaryTest(Term t1, Term t2) { return Term.termComparator.compare(t1, t2) <= 0; }
     public boolean GTLiteral.binaryTest(Term t1, Term t2)  { return Term.termComparator.compare(t1, t2)  > 0; }
     public boolean GTELiteral.binaryTest(Term t1, Term t2) { return Term.termComparator.compare(t1, t2) >= 0; }
+    public boolean MATCHLiteral.binaryTest(Term t1, Term t2) {
+		StringConstant s1 = (StringConstant) t1;
+		StringConstant s2 = (StringConstant) t2;
+		return java.util.regex.Pattern.matches(s1.getSTRING(), s2.getSTRING());
+	}
 
     public abstract Term Expr.eval(Instantiation inst);
 

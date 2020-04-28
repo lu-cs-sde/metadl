@@ -469,6 +469,10 @@ aspect TypeInference {
 		return IntegerType.get();
 	}
 
+	eq MATCHLiteral.getChild().itype() {
+		return StringType.get();
+	}
+
 	// For an expression, return the other expression that
 	// has the same type
 	inh Expr Expr.sibling();

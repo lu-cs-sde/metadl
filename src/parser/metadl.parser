@@ -47,6 +47,7 @@ Literal literal = edb_literal
                 | lte_literal
                 | gt_literal
                 | gte_literal
+                | match_literal
                 ;
 
 Pattern pattern = PATTERN.pat {: return new Pattern(pat); :};
@@ -63,6 +64,7 @@ LTLiteral lt_literal = LT  LPARA expr.left COMMA expr.right RPARA {: return new 
 LTELiteral lte_literal = LTE LPARA expr.left COMMA expr.right RPARA {: return new LTELiteral(new PredicateSymbol("LTE"), left, right); :};
 GTLiteral gt_literal = GT  LPARA expr.left COMMA expr.right RPARA {: return new GTLiteral(new PredicateSymbol("GT"),   left, right); :};
 GTELiteral gte_literal = GTE LPARA expr.left COMMA expr.right RPARA {: return new GTELiteral(new PredicateSymbol("GTE"), left, right); :};
+MATCHLiteral match_literal = MATCH LPARA expr.left COMMA expr.right RPARA {: return new MATCHLiteral(new PredicateSymbol("MATCH"), left, right); :};
 
 
 Atom atom = pred_sym.pred LPARA term_list.terms RPARA                      {: return new Atom(pred, terms); :};

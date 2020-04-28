@@ -1,0 +1,23 @@
+IMPORT('P, "tests/evaluation/metadl-java/src/naming-convention/", "java5").
+
+analyze('P, "java5") {
+	    NotLibrary(n) :- SRC(n, l, _, _, _, _), NEQ(l, 0).
+
+	    Decl(`d), Type(c, name) :- c <: class `name { .. `d .. } :>, ID(`name, name).
+	    Decl(`d), Type(e, name) :- e <: enum `name { .. ,`d, .. ; .. } :>, ID(`name, name).
+	    Decl(`d), Type(i, name) :- i <: interface `name { .. `d .. } :>, ID(`name, name).
+
+	    # Type names should start with uppercase
+	    WarningTypeName(l, c, file, name) :- Type(t, name), NOT(MATCH("[A-Z].*", name)), SRC(t, l, c, _, _, file), NotLibrary(t).
+
+	    Field(`f, name) :- Decl(d), d <: .. `t .. , `f , .. ; :>, ID(`f, name), NotLibrary(d).
+	    Method(d, name) :- Decl(d), d <: `t `m ( .. ) ; :>, ID(`m, name), NotLibrary(d).
+
+	    WarningFieldName(l, c, file, name) :- Field(f, name), NOT(MATCH("[a-z].*", name)), SRC(f, l, c, _, _, file).
+	    WarningMethodName(l, c, file, name) :- Method(m, name), NOT(MATCH("[a-z].*", name)), SRC(m, l, c, _, _, file).
+
+}
+
+OUTPUT('WarningTypeName).
+OUTPUT('WarningFieldName).
+OUTPUT('WarningMethodName).

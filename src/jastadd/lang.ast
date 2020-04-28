@@ -33,6 +33,7 @@ LTLiteral:BinaryExclusiveTermLiteral;
 LTELiteral:BinaryExclusiveTermLiteral;
 GTLiteral:BinaryExclusiveTermLiteral;
 GTELiteral:BinaryExclusiveTermLiteral;
+MATCHLiteral:BinaryExclusiveTermLiteral;
 
 /**
 	Expressions

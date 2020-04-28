@@ -61,6 +61,7 @@ String  = \"[^\"]*\"
 "LTE"      {  return  sym(Terminals.LTE);            }
 "GT"       {  return  sym(Terminals.GT);             }
 "GTE"      {  return  sym(Terminals.GTE);            }
+"MATCH"    {  return  sym(Terminals.MATCH);          }
 "EDB"      {  return  sym(Terminals.EDB);            }
 "OUTPUT"   {  return  sym(Terminals.OUTPUT);         }
 "NOT"      {  return  sym(Terminals.NOT);            }

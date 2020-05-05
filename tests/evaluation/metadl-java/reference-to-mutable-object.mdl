@@ -33,8 +33,6 @@ analyze('P, "java5") {
 	    NonPublicFieldReturn(s, f) :- s <: return `f ; :>, DECL(`f, f), FieldInClass(_, _, f, m), NOT(IsPublic(f)).
 	    NonPublicFieldReturn(s, f) :- s <: return this.`f; :>, DECL(`f, f), FieldInClass(_, _, f, m), NOT(IsPublic(f)).
 	    NonPublicFieldReturnDetail(l, c, file) :- NonPublicFieldReturn(s, _), SRC(s, l, c, _, _, file).
-	    Type(t) :- NonPublicFieldReturn(_, f), TYPE(f, t).
-	    OUTPUT('Type).
 
 	    ParamToVariable(m, `p, `v) :- m <: .. `_ `_(.., `p, ..) { .. } :>, <: `v = `p2 :>, DECL(`p2, `p).
 	    ParamToVariable(m, `p, `v) :- m <: .. `_ `_(.., `p, ..) { .. } :>, <: `v = `p2 :>, DECL(`p2, `p).

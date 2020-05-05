@@ -1,4 +1,4 @@
-* MetaDL: Datalog analyzing Datalog, Java or any language of your choice
+#+TITLE: MetaDL: Datalog analyzing Datalog, Java or any language of your choice
 
 MetaDL is a Datalog language extension that enables analysis of Datalog, Java (and potentially other languages)
 programs inside Datalog. In addition, the subset of the metalanguage that depends on the analyzed language is mechanically generated from a description of the abstract and concrete grammars of the analyzed language.
@@ -15,13 +15,24 @@ analyze ('Program) {
 OUTPUT('Arity).
 #+END_SRC
 
-*THIS IS WORK IN PROGRESS. IT MAY FAIL TO BUILD, RUN OR TERMINATE.*
+* Building
+MetaDL depends on modified versions of [[http://jastadd.org/web/][JastAdd]] and [[https://bitbucket.org/jastadd/jastaddparser/][JastAddParser]]. These dependencies are packaged as submodules, so run ~git submodule update --init --recursive~ to fetch them.
 
-** Datalog
+Ensure that the ~souffle~ executable is available in your ~$PATH~.
+
+For analyzing Java, MetaDL need access to a Java 7 runtime library (you can download it [[https://www.oracle.com/java/technologies/javase/javase7-archive-downloads.html#license-lightbox][here]]). Set ~METADL_JAVA_RT=/path/to/jre/lib/rt.jr~ in your environment to let MetaDL know where to find this library.
+
+[[https://gradle.org/][Gradle]] is used as a build tool. Additionally, a Makefile summarizes the common build and run commands:
+- Package: ~./gradlew :jar~
+- Test: ~./gradlew :test~
+- Evaluate using the internal engine: ~make eval EVAL=<Input File>~
+- Evaluate using the Souffle back-end: ~make souffle EVAL=<Input File>~
+
+* Datalog
 
 [[https://en.wikipedia.org/wiki/Datalog][Datalog]] is a declarative query language, with roots in logic programming. Relations between tables are expressed as Horn clauses.
 
-** Language description
+* Language description
 
 Current supported Meta-Literals:
 - ~EDB('P, "facts.csv").~ add the facts in ~facts.csv~ to the relation ~P~
@@ -32,31 +43,31 @@ from ~program.mdl~ and add its tuples to the relation ~P~
 from ~program.java~ Java 1.4 program
 
 Additional Supported features:
-- Stratified negation ~NEG(P(x1,...,xn))~
+- Stratified negation ~NOT(P(x1,...,xn))~
 - Filtering ~LT(expr1, expr2)~, ~GT(expr1, expr2)~
 - Object creation ~BIND(v, expr)~ binds a variable to the result of an expression
 - Arithmetic expressions ( ~+~, ~-~, ~*~, ~/~) and string concatenation (~cat~) inside ~BIND~ and filtering predicates
 - Type inference
 
-** Metalanguage description
-*** Analyze blocks
+* Metalanguage description
+** Analyze blocks
 Datalog:  ~analyze ('P, "metadl") { }~ or Java:  ~analyze('P, "java4")~
 
 The only blocks that are allowed to contain patterns, metavariables and gaps. All the patterns and special predicates inside these blocks refer to the analyzed program, ~\'P~.
 
-*** Patterns
+** Patterns
 Datalog: ~<:$p(x, 1) :- ..., $q(..., $i:$v, ...) , ... .:>~ or Java ~<: class `c implements .., `i, .. { .. } :>~
 
 Patterns are a mechanism to match rules and bind metavariables to terms, expressions and predicate symbols.
-**** Bounded patterns
+** Bounded patterns
 The root node of a pattern can be accessed by using a bounded pattern ~$p <:$x + $y:>~.
 
-*** Gaps
+** Gaps
 Datalog ~...~ or Java ~..~
 
 Gaps express missing elements inside a list.
 
-*** Metavariables
+** Metavariables
 Datalog:  ~$x~, ~$p~  or Java: ~`c, `i~
 
 Variables used inside analyze blocks to connect patterns with other literals in the rule
@@ -65,14 +76,14 @@ Variables used inside analyze blocks to connect patterns with other literals in 
 - Arithmetic expressions: ~$x + $y~
 - Index metavariables ~p(..., $i:$v, ...)~
 
-*** Special metapredicates
+** Special metapredicates
 Special metapredicates are permitted only inside ~analyze~ blocks.
 - ~STR(c, "value")~, ~INT($c, value)~ - relate constants to their value
 - ~ID(v, "name")~ - relate identifiers to their name
 - ~SRC(n, l, c)~ - relate an AST node to its source location
 
-** Examples
-*** Constant folding for Datalog
+* Examples
+** Constant folding for Datalog
 #+BEGIN_SRC
 #Import a program that contains BIND(t, x*y + ((1 + 2*3) - 1) / 2)
 
@@ -97,7 +108,7 @@ analyze('P) {
 OUTPUT('OurExprEval).
 #+END_SRC
 
-*** Type hierarchy for Java
+** Type hierarchy for Java
 #+BEGIN_SRC
 IMPORT('P, "tests/evaluation/withimport/evalTest_15_input.java", "java4").
 
@@ -131,26 +142,23 @@ OUTPUT('SuperClass).
 OUTPUT('SuperInterface).
 #+END_SRC
 
-** License
+* License
 
 This repository is covered by the license BSD 2-clause, see
 [[./LICENSE][LICENSE]].
 
-** Dependencies
-*** JFlex
 
-[[http://jflex.de/][JFlex]] is a lexical analyzer generator.
 
-*** Beaver
+* Debugging
+The following commands are useful when debugging MetaDL:
+- Pretty-print desugared MetaDL code: ~make prettyinternal EVAL=<InputFile>~.
+- Pretty-print the program generated for Souffl\"e: ~make prettysouffle EVAL=<InputFile>~.
+- Enable internal debug printouts by setting ~DebugMode=true~ in the environment.
 
-[[http://beaver.sourceforge.net/][Beaver]] is a LALR(1) parser
-generator. The parser descriptions are written in EBNF-form.
-
-*** PEP
-
-[[https://github.com/coffeeblack/pep][PEP]] is an Earley parser implementation. We use it to parse the patterns.
-
-*** JastAdd
+* Dependencies
+** SEP
+[[https://git.cs.lth.se/al7330du/sppf-earley-parser][SEP]] is an Earley parser implementation. We use it to parse the patterns.
+** JastAdd
 
 [[http://jastadd.org/web/][JastAdd]] is a meta-compilation system that
 supports Reference Attribute Grammars (RAGs). It uses the parser
@@ -158,29 +166,23 @@ generated from Beaver. In addition it takes an AST-description file as
 input. The AST-description is used to generate and populate the
 corresponding classes that represent the dynamic AST.
 
-*** JUnit
-
-[[https://junit.org/junit5/][JUnit]] is a unit testing framework.
-
-*** Souffle
+** Souffle
 [[https://souffle-lang.github.io/][Souffl\'e]] is a high performance Datalog
 engine that MetaDL uses as backend for evaluating complex queries that
 are too slow for the internal evaluator.
 
-** Building
-MetaDL depends on modified versions of [[http://jastadd.org/web/][JastAdd]] and [[https://bitbucket.org/jastadd/jastaddparser/][JastAddParser]]. These dependencies are packaged as submodules, so run ~git submodule update --init --recursive~ to fetch them.
+** JUnit
 
-[[https://gradle.org/][Gradle]] is used as a build tool. Additionally, a Makefile summarizes the common build and run commands:
-- Package: ~./gradlew :jar~ or ~make jar~
-- Test: ~./gradlew :test~ or ~make test~
-- Evaluate using the internal engine: ~make eval EVAL=<Input File>~
-- Evaluate using the Souffle back-end: ~make souffle EVAL=<Input File>~
+[[https://junit.org/junit5/][JUnit]] is a unit testing framework.
 
-** Debugging
-The following commands are useful when debugging MetaDL:
-- Pretty-print desugared MetaDL code: ~make prettyinternal EVAL=<InputFile>~.
-- Pretty-print the program generated for Souffl\"e: ~make prettysouffle EVAL=<InputFile>~.
-- Enable internal debug printouts by setting ~DebugMode=true~ in the environment.
+** JFlex
 
-** Credits
+[[http://jflex.de/][JFlex]] is a lexical analyzer generator.
+
+** Beaver
+
+[[http://beaver.sourceforge.net/][Beaver]] is a LALR(1) parser
+generator. The parser descriptions are written in EBNF-form.
+
+* Credits
 Based on the Datalog implementation developed by Hampus Balldin for the Project Course in Computer Science, Faculty of Engineering LTH, Lund University.

@@ -181,7 +181,7 @@ public class EvaluationTest {
 	@DisplayName("Evaluate MetaDL-Java programs")
 	@ParameterizedTest(name = "MetaDL-Java programs")
 	@ValueSource(strings = {"bad-covariant-equals", "switch-no-default", "clone-idioms", "number-ctor",
-							"unwritten-field", "naming-convention"})
+							"unwritten-field", "naming-convention", "reference-to-mutable-object"})
 	void evaluationTestMetaDLJava(String fileName) throws Exception {
 		Description d1 = FileUtil.parseDescription(
 		   "eval::souffle -OUT ./tests/output/souffle -FACTS ./tests/evaluation/metadl-java/facts ./tests/evaluation/metadl-java/"

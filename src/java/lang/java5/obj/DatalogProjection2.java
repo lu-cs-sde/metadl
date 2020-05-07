@@ -82,9 +82,9 @@ public class DatalogProjection2 {
 			currentNodes = new HashSet<>(nodeNumber.keySet());
 			currentNodes.removeAll(existingNodes);
 
-			// TODO: run this only once, otherwise we dive into rt.jar which takes
-			// a long time and produces a very big relation.
-			// Look into ways of caching the results from rt.jar.
+			// TODO: prevent the analysis from dinving into rt.jar, which
+			// takes a long (O(minutes)) time.
+			currentNodes.removeIf(n -> isLibraryNode(n));
 		} while (!currentNodes.isEmpty());
 	}
 
@@ -137,6 +137,13 @@ public class DatalogProjection2 {
 		String[] splitNodeName = nodeName.split("\\.");
 		String relName = splitNodeName[splitNodeName.length - 1];
 		return relName;
+	}
+
+	private static boolean isLibraryNode(ASTNode<?> n) {
+		String src = getSourceFile(n);
+		if (src.endsWith(".class"))
+			return true;
+		return false;
 	}
 
 	private static String getSourceFile(ASTNode<?> n) {

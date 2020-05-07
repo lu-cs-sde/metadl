@@ -266,6 +266,7 @@ aspect AnalyzeBlock {
 			// TODO: The following two relations are Java 5 specific. This method should be parameterized.
 			bodyList.add(NEQ(new lang.ast.Variable("t"), new lang.ast.StringConstant("ATTR_type")));
 			bodyList.add(NEQ(new lang.ast.Variable("t"), new lang.ast.StringConstant("ATTR_decl")));
+			bodyList.add(NEQ(new lang.ast.Variable("t"), new lang.ast.StringConstant("ATTR_generic_decl")));
 			bodyList.add(NEQ(new lang.ast.Variable("t"), new lang.ast.StringConstant("REWRITE")));
 
 			return new lang.ast.Rule(headList, bodyList);

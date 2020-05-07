@@ -1,0 +1,123 @@
+IMPORT('P, "tests/evaluation/metadl-java/src/reference-equality/", "java5").
+
+# Code for extracting the type hierarchy
+analyze('P, "java5") {
+	    SuperClass1(c, d) :- c <: class `_ extends `d { .. } :>, DECL(`d, d).
+	    SuperClass1(c, d) :- c <: class `_ <.. extends `d { .. } :>, DECL(`d, d).
+
+	    # Lookup the declaration for Object
+	    ObjectDecl(o) :- u <: Object :>, DECL(u, o).
+
+	    # If the class does not extend any other class, then it extends Object
+	    SuperClass(c, o) :- c <: class `_ { .. } :>, NOT(SuperClass1(c, _)), ObjectDecl(o).
+	    SuperClass(c, o) :- c <: class `_ <.. { .. } :>, NOT(SuperClass1(c, _)), ObjectDecl(o).
+
+	    SuperClass(c, d) :- SuperClass1(c, d).
+
+	    SuperInterface(c, d) :- c <: class `_ implements .., `i, .. { .. } :>, DECL(`i, d).
+	    SuperInterface(c, d) :- c <: class `_ <.. implements .., `i, .. { .. } :>, DECL(`i, d).
+
+	    SuperInterface(c, d) :- c <: enum `_ implements .., `i, .. { .. } :>, DECL(`i, d).
+	    SuperInterface(c, d) :- c <: interface `_ extends .. ,`i, .. { .. } :>, DECL(`i, d).
+	    SuperInterface(c, d) :- c <: interface `_ <.. extends .. ,`i, .. { .. } :>, DECL(`i, d).
+
+
+	    SuperType(t, s) :- SuperClass(t, s).
+	    SuperType(t, s) :- SuperInterface(t, s).
+
+
+	    TSuperType(t, s) :- SuperType(t, s).
+	    TSuperType(t, s) :- TSuperType(t, s1), SuperType(s1, s).
+}
+
+# Code for finding if a method overrides another method
+analyze('P, "java5") {
+	    MethodSig2(m, i, pt) :- m <: `rett `name(.., `pt `_, ..) ; :>,
+	    		  DECL(`pt, pt), PARENT(param, `pt), INDEX(param, i).
+	    # TODO: The MethodSig1 relation will not contain Object.equals(Object o), since the DECL attribute
+	    # is not exported for Object because it is an NTA.
+	    MethodSig1(m, name, ret) :- m <: `rett `name(..) ; :>,
+	    		  DECL(`rett, ret), ID(`name, name).
+
+	    DiffNumParams(m1, m2), DiffNumParams(m2, m1) :- MethodSig2(m1, i, _), MethodSig2(m2, _, _), NOT(MethodSig2(m2, i, _)).
+	    DiffParamTypes(m1, m2), DiffParamTypes(m2, m1) :- MethodSig2(m1, i, t1), MethodSig2(m2, i, t2), NEQ(t1, t2).
+
+	    SameSig(m1, m2) :- MethodSig1(m1, n, ret), MethodSig1(m2, n, ret), NOT(DiffNumParams(m1, m2)), NOT(DiffParamTypes(m1, m2)).
+
+
+	    GrandParent(g, c) :- PARENT(g, p), PARENT(p, c).
+
+	    # Covariant return type
+	    Override(m, super) :- MethodSig1(m, n, ret), MethodSig1(super, n, ret_super), TSuperType(ret, ret_super),
+                                  GrandParent(c1, m), GrandParent(c2, super), TSuperType(c1, c2).
+	    # Equal return type
+	    Override(m, super) :- MethodSig1(m, n, ret), MethodSig1(super, n, ret),
+                                  GrandParent(c1, m), GrandParent(c2, super), TSuperType(c1, c2).
+
+}
+
+analyze('P, "java5") {
+	    ClassEq(0, 0) :- NEQ(0, 0).
+	    ClassEq(c, `d) :- c <: class `_ { .. `d .. } :>, `d <: .. public .. boolean equals(`t `o) ;:>.
+	    ClassEq(c, `d) :- c <: class `_ <.. { .. `d .. } :>, `d <: .. public .. boolean equals(`t `o) ;:>.
+
+	    ClassEqDetail(l, c, file) :- ClassEq(cl, d), SRC(cl, l, c, _, _, file).
+	    # OUTPUT('ClassEqDetail).
+
+	    # RealType - the most precise type known for the term
+	    # - in case of generic type instances, this is the generic type declaration they instantiate
+	    RealType(t, r) :- TYPE(t, r), NOT(GENERIC(r, _)), NOT(TypeVariableUpperBound(r, _)).
+	    RealType(t, r) :- TYPE(t, r1), GENERIC(r1, r).
+	    # - in case of bounded types, the upper bound of the type
+	    RealType(t, u) :- TYPE(t, tv), TypeVariableUpperBound(tv, u).
+
+	    EqualityTest(`t1, `t2) :- <: `t1 == `t2 :>.
+	    EqualityTest(`t1, `t2) :- <: `t1 != `t2 :>.
+
+	    BadEq(`t1, `t2) :- EqualityTest(`t1, `t2), RealType(`t1, t1), RealType(`t2, t2), MustUseEquals(t1), MustUseEquals(t2),
+	    	       NOT(IsExcludedThis(`t1)), NOT(IsExcludedThis(`t2)).
+
+	    DebugEq(t1, t2) :- EqualityTest(`t1, `t2), RealType(`t1, t1), RealType(`t2, t2).
+	    # OUTPUT('DebugEq).
+
+	    BadEqDetail(l, c, file) :- BadEq(t1, _), SRC(t1, l, c, _, _, file).
+	    # OUTPUT('BadEq).
+	    OUTPUT('BadEqDetail).
+
+	    MethodIsAbstract(0) :- NEQ(0, 0).
+	    MethodIsAbstract(m) :- m <: .. abstract .. `t `m(..) ; :>.
+
+
+	    # A object of type T must use equals if any supertype of T, including T, excluding Object,
+	    # defines the equals method.
+	    MustUseEquals(c) :- ClassEq(c, e), NOT(MethodIsAbstract(e)), NOT(ObjectDecl(c)).
+	    MustUseEquals(c) :- TSuperType(c, s), ClassEq(s, e), NOT(ObjectDecl(s)).
+
+	    # TODO: Idiosyncrasies in the parser make patterns with generics look very weird.
+	    # These are mostly related to the ">>" vs ">"">" lexing problem introduced by generics.
+	    # We're using PARENT, because in concrete grammar `t is a token, but we actually we need
+	    # the type parameter node in DECL
+	    TypeVariableUpperBound(t, u) :- <: class `_ <.. ,`t extends `w .. & `u .. , ..    { .. } :>, PARENT(t, `t), DECL(`u, u).
+
+	    MustUseEqualsDetail(l, c, file) :- MustUseEquals(cl), SRC(cl, l, c, _, _, file).
+
+	    # OUTPUT('MustUseEqualsDetail).
+
+	    # OUTPUT('ClassEq).
+	    # OUTPUT('MustUseEquals).
+
+	    TSuperTypeDetail(f1, f2) :- TSuperType(s1, s2), SRC(s1, _, _, _, _, f1), SRC(s2, _, _, _, _, f2).
+	    # OUTPUT('TSuperTypeDetail).
+	    # OUTPUT('ObjectDecl).
+
+	    # Exclude all the comparisons with this is compareTo and equals methods
+	    ExcludedMethods(`m) :- <: class `_ implements Comparable<`t> { .. `m .. } :>, `m <: public int compareTo(..) ; :>.
+	    ExcludedMethods(`m) :- `m <: public boolean equals(Object `o); :>.
+	    ExcludedTerms(t) :- ExcludedMethods(m), PARENT(m, t).
+	    ExcludedTerms(c) :- ExcludedTerms(p), NOT(p <: `_ _ ( .. ) ; :>), PARENT(p, c).
+	    IsThis(`t) :- `t <: this :>.
+	    IsExcludedThis(t) :- IsThis(t), ExcludedTerms(t).
+	    # OUTPUT('IsThis).
+	    # OUTPUT('ExcludedMethods).
+	    # OUTPUT('IsExcludedThis).
+}

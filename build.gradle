@@ -57,6 +57,7 @@ sourceSets {
 // Configuration for the test running.
 test {
     maxParallelForks = Runtime.runtime.availableProcessors()
+    maxHeapSize = "2048m"
 
     useJUnitPlatform()
     // {

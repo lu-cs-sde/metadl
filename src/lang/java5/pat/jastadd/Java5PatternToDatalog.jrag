@@ -71,6 +71,14 @@ aspect LanguageSpecific {
 					);
 	}
 
+	public static lang.ast.Rule PatLang.makeGenericRule(AnalyzeContext ctx) {
+		return rule(
+					atom(ctx.prefix("GENERIC"), "$t", "$g"),
+					atom(ctx.prefix("REWRITE_MAP"), "$t", "$t_rw"),
+					atom(ctx.progRelName, "ATTR_generic_decl", "$t_rw", "_", "$g_rw", "_"),
+					atom(ctx.prefix("REWRITE_MAP"), "$g_rw", "$g"));
+	}
+
 
 	public static java.util.List<lang.ast.Clause> PatLang.makeRewriteMap(AnalyzeContext ctx) {
 		java.util.List<lang.ast.Clause> ret = new java.util.ArrayList<>();
@@ -126,6 +134,9 @@ aspect LanguageSpecific {
 		ret.add(makeTypeRule(ctx));
 		// Insert the DECL relation
 		ret.add(makeDeclRule(ctx));
+		// Insert the GENERIC rule, map a concrete instance of a generic type
+		// to the declaration of the generic type.
+		ret.add(makeGenericRule(ctx));
 		return ret;
 	}
 
@@ -148,6 +159,7 @@ aspect LanguageSpecific {
 		case "EXISTS":
 		case "TYPE":
 		case "DECL":
+		case "GENERIC":
 			s = predName; break;
 		default: return null;
 		}

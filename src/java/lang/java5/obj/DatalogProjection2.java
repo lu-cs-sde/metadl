@@ -48,7 +48,7 @@ public class DatalogProjection2 {
 		traverse(root);
 		traverseTime.stop();
 		StopWatch attributeMapTime = StopWatch.createStarted();
-		mapAttributes(Pair.of("type", "ATTR_type"), Pair.of("decl", "ATTR_decl"));
+		mapAttributes(Pair.of("type", "ATTR_type"), Pair.of("decl", "ATTR_decl"), Pair.of("genericDecl", "ATTR_generic_decl"));
 		attributeMapTime.stop();
 		SimpleLogger.logger().time("Object AST initial traversal: " + traverseTime.getTime() + "ms");
 		SimpleLogger.logger().time("Attribute tabulation: " + attributeMapTime.getTime() + "ms");
@@ -62,8 +62,6 @@ public class DatalogProjection2 {
 			Set<ASTNode<?>> existingNodes = new HashSet<>(nodeNumber.keySet());
 
 			for (ASTNode<?> n : currentNodes) {
-				// TODO: this is hardcoded to the type attribute, but it should
-				// be able to process other attributes too.
 				for (Pair<String, String> attrRelPair : attrs) {
 					String attributeName = attrRelPair.getLeft();
 					String relName = attrRelPair.getRight();
@@ -87,7 +85,6 @@ public class DatalogProjection2 {
 			// TODO: run this only once, otherwise we dive into rt.jar which takes
 			// a long time and produces a very big relation.
 			// Look into ways of caching the results from rt.jar.
-			break;
 		} while (!currentNodes.isEmpty());
 	}
 
@@ -197,17 +194,18 @@ public class DatalogProjection2 {
 		}
 	}
 
-	private ASTNode<?> nodeAttribute(ASTNode<?> n, String attrName) {
+	private static<T> T nodeAttribute(ASTNode<?> n, String attrName) {
 		try {
 			Method m = n.getClass().getMethod(attrName);
 			Object o = m.invoke(n);
 			if (o == null)
 				return null;
-			if (!ASTNode.class.isInstance(o))
-				return null;
-			return (ASTNode<?>)o;
+
+			return (T)o;
 		} catch (ReflectiveOperationException e) {
 			// do nothing, the node may be missing the attribute
+			return null;
+		} catch (ClassCastException e) {
 			return null;
 		}
 	}

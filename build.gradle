@@ -26,7 +26,8 @@ configurations {
 
 // Dependencies are Jar files needed to compile and generate the compiler.
 dependencies {
-    compile 'net.sf.beaver:beaver-rt:0.9.11'
+    // compile 'net.sf.beaver:beaver-rt:0.9.11' - this is included by ExtendJ
+    // and duplicating it confuses the runtime when calling beaver.Symbol.clone(), for example.
     compile 'com.opencsv:opencsv:4.3.2'
     compile 'org.junit.jupiter:junit-jupiter-api:5.3.1'
     compile 'org.junit.jupiter:junit-jupiter-engine:5.3.1'
@@ -34,9 +35,6 @@ dependencies {
     compile group: 'commons-io', name: 'commons-io', version: '2.6'
     compile 'org.extendj:java5:100.100.100'
 
-    testCompile('org.junit.jupiter:junit-jupiter-api:5.3.1')
-    testRuntime('org.junit.jupiter:junit-jupiter-engine:5.3.1')
-    testCompile('org.junit.jupiter:junit-jupiter-params:5.3.1')
 
     jflex 'de.jflex:jflex:1.6.1'
     beaver 'net.sf.beaver:beaver-cc:0.9.11'
@@ -45,6 +43,10 @@ dependencies {
     // are substituted in settings.gradle
     jastaddparser 'org.jastadd:jastaddparser:100.100.100'
     jastadd2 'org.jastadd:jastadd:100.100.100'
+
+    testCompile('org.junit.jupiter:junit-jupiter-api:5.3.1')
+    testRuntime('org.junit.jupiter:junit-jupiter-engine:5.3.1')
+    testCompile('org.junit.jupiter:junit-jupiter-params:5.3.1')
 }
 
 

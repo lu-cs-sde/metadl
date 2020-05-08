@@ -3,7 +3,7 @@
 %right NEW, CAST;
 %left MULT, DIV, MOD;
 %left PLUS, MINUS;
-%left LSHIFT, RSHIFT, URSHIFT;
+%left LSHIFT;
 %left INSTANCEOF;
 %left LT, GT, LTEQ, GTEQ;
 %left EQEQ, NOTEQ;

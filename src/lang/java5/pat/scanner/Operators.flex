@@ -24,8 +24,6 @@
   "^"                            { return sym(Terminals.XOR); }
   "%"                            { return sym(Terminals.MOD); }
   "<<"                           { return sym(Terminals.LSHIFT); }
-  ">>"                           { return sym(Terminals.RSHIFT); }
-  ">>>"                          { return sym(Terminals.URSHIFT); }
   "+="                           { return sym(Terminals.PLUSEQ); }
   "-="                           { return sym(Terminals.MINUSEQ); }
   "*="                           { return sym(Terminals.MULTEQ); }

@@ -19,7 +19,7 @@ Expr primary_no_new_array :=
   | class_instance_creation_expression
   | field_access
   | method_invocation
-  | array_access 
+  | array_access
   ;
 
 Expr postfix_expression_nn =
@@ -60,10 +60,10 @@ Expr shift_expression_nn =
     additive_expression_nn
   | name.e1 LSHIFT additive_expression.e2                 {: return new LShiftExpr(e1, e2); :}
   | shift_expression_nn.e1 LSHIFT additive_expression.e2  {: return new LShiftExpr(e1, e2); :}
-  | name.e1 RSHIFT additive_expression.e2                 {: return new RShiftExpr(e1, e2); :}
-  | shift_expression_nn.e1 RSHIFT additive_expression.e2  {: return new RShiftExpr(e1, e2); :}
-  | name.e1 URSHIFT additive_expression.e2                {: return new URShiftExpr(e1, e2); :}
-  | shift_expression_nn.e1 URSHIFT additive_expression.e2 {: return new URShiftExpr(e1, e2); :}
+  | name.e1 GT GT additive_expression.e2                 {: return new RShiftExpr(e1, e2); :}
+  | shift_expression_nn.e1 GT GT additive_expression.e2  {: return new RShiftExpr(e1, e2); :}
+  | name.e1 GT GT GT additive_expression.e2                {: return new URShiftExpr(e1, e2); :}
+  | shift_expression_nn.e1 GT GT GT additive_expression.e2 {: return new URShiftExpr(e1, e2); :}
   ;
 Expr relational_expression_nn =
     shift_expression_nn
@@ -120,7 +120,7 @@ Expr instanceof_expression =
   | shift_expression.e INSTANCEOF reference_type.t            {: return new InstanceOfExpr(e, t); :}
   ;
 Expr equality_expression :=
-    instanceof_expression 
+    instanceof_expression
   | equality_expression.e1 EQEQ relational_expression.e2  {: return new EQExpr(e1, e2); :}
   | equality_expression.e1 NOTEQ relational_expression.e2 {: return new NEExpr(e1, e2); :}
   ;
@@ -162,4 +162,3 @@ Expr assignment_expression_nn =
   ;
 
 Expr expression_nn = assignment_expression_nn;
-

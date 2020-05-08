@@ -657,8 +657,8 @@ Expr additive_expression =
 Expr shift_expression =
     additive_expression @BOTTOM
   | shift_expression.e1 LSHIFT additive_expression.e2   {: return new LShiftExpr(e1, e2); :}
-  | shift_expression.e1 RSHIFT additive_expression.e2   {: return new RShiftExpr(e1, e2); :}
-  | shift_expression.e1 URSHIFT additive_expression.e2  {: return new URShiftExpr(e1, e2); :}
+  | shift_expression.e1 GT GT additive_expression.e2   {: return new RShiftExpr(e1, e2); :}
+  | shift_expression.e1 GT GT GT additive_expression.e2  {: return new URShiftExpr(e1, e2); :}
   ;
 Expr relational_expression =
     shift_expression

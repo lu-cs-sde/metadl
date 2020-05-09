@@ -31,19 +31,17 @@ class Foo {
     }
 }
 
-
 // public void positive_extendsAbstract_equals()
 abstract class Sup {
     public abstract boolean equals(Object o);
 }
 
 abstract class Test1 extends Sup {
-    boolean f(Test a, Test b) {
+    boolean f(Test1 a, Test1 b) {
 	// BUG: Diagnostic contains: a.equals(b),
 	return a == b;
     }
 }
-
 
 // public void positive_equal() {
 class Optional<T> {
@@ -83,7 +81,6 @@ class Test4 {
     }
 }
 
-
 // public void positive_notEqual()
 class Test5 {
     boolean f(Optional<Integer> a, Optional<Integer> b) {
@@ -122,11 +119,11 @@ class Test7<T extends ClassWithEquals, X> {
 }
 
 //  public void likeCompareToButDifferentName()
-class Test8 implements Comparable<Test> {
-    public int compareTo(Test o) {
+class Test8 implements Comparable<Test8> {
+    public int compareTo(Test8 o) {
 	return this == o ? 0 : -1;
     }
-    public int notCompareTo(Test o) {
+    public int notCompareTo(Test8 o) {
 	// BUG: Diagnostic contains:
 	return this == o ? 0 : -1;
     }
@@ -137,7 +134,6 @@ class Test8 implements Comparable<Test> {
 	return 1;
     }
 }
-
 
 //  public void positive_compareTo()
 class Test9 implements Comparable<String> {

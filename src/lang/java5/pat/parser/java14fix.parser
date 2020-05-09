@@ -14,12 +14,16 @@ Expr primary_no_new_array :=
     {: ThisAccess t = new ThisAccess();
        t.setStart(THIS.getStart()); t.setEnd(THIS.getEnd());
        return n.qualifiesAccess(t); :}
-  | LPAREN expression_nn.e RPAREN              {: return new ParExpr(e); :}
-  | LPAREN name.n RPAREN                       {: return new ParExpr(n); :}
+  | LPAREN expression_nn_or_name_fix.e RPAREN              {: return new ParExpr(e); :}
   | class_instance_creation_expression
   | field_access
   | method_invocation
   | array_access
+  ;
+
+Expr expression_nn_or_name_fix =
+    expression_nn
+  | name
   ;
 
 Expr postfix_expression_nn =

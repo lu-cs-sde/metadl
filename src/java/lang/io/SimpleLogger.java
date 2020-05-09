@@ -9,7 +9,7 @@ public class SimpleLogger {
 		return logger;
 	}
 
-	private static boolean isDebugMode() {
+	public static boolean isDebugMode() {
 		String mode = System.getenv("METADL_LOG");
 		if(mode == null) return false;
 		if(!mode.contains("debug")) return false;

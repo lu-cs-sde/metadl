@@ -188,7 +188,9 @@ aspect PatternLang {
 										 lang.java5.pat.ast.PatLangParserSEP.n_interface_member_declaration,
 										 lang.java5.pat.ast.PatLangParserSEP.n_block_statement,
 										 lang.java5.pat.ast.PatLangParserSEP.n_expression,
-										 lang.java5.pat.ast.PatLangParserSEP.n_type);
+										 lang.java5.pat.ast.PatLangParserSEP.n_type,
+										 lang.java5.pat.ast.PatLangParserSEP.n_type_parameter,
+										 lang.java5.pat.ast.PatLangParserSEP.n_type_argument);
 			break;
 		}
 

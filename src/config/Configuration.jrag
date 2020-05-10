@@ -295,7 +295,13 @@ aspect Souffle {
         Program program;
         try {
             program = preEvaluate();
-            program.soufflePrint(new SoufflePrettyPrinter<Program>(new PrintStream(System.out)));
+            String soufflePath = outputDir() + "/" + outputFileName();
+            SimpleLogger.logger().log("PrettyPrint to: " + soufflePath, SimpleLogger.LogLevel.Level.DEBUG);
+
+			StopWatch souffleGenTimer = StopWatch.createStarted();
+            program.soufflePrint(new SoufflePrettyPrinter<Program>(new PrintStream(new FileOutputStream(new File(soufflePath)))));
+			souffleGenTimer.stop();
+			SimpleLogger.logger().time("Generate Souffle program: " + souffleGenTimer.getTime() + "ms");
         } finally {
             postEvaluate();
         }

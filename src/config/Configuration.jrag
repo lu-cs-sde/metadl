@@ -149,6 +149,9 @@ aspect Task {
 			String predName = predicateSrcFile.getKey();
 			File output_fp = new File(factsDir() + "/" + predName + ".csv");
 
+			MutableInt nodeCounter = new MutableInt(1);
+			java.util.List<String> java5Srcs = new ArrayList<>();
+
 			// include the program parse
 			progRelTimer.resume();
 
@@ -159,18 +162,18 @@ aspect Task {
 					switch (progFileLang.getValue()) {
 					case "metadl": {
 						lang.metadl.obj.ast.Program prog = lang.metadl.obj.ast.Program.fromFileLoc(progFileLang.getKey());
-						prog.assignIds(new MutableInt(1));
+						prog.assignIds(nodeCounter);
 						programRel = prog.asRelation();
 						break;
 					}
 					case "java4": {
 						lang.java4.obj.ast.Program prog = lang.java4.obj.ast.Program.fromFileLoc(progFileLang.getKey());
-						prog.assignIds(new MutableInt(1));
+						prog.assignIds(nodeCounter);
 						programRel = prog.asRelation();
 						break;
 					}
 					case "java5": {
-						programRel = IMPORTLiteral.loadJava5Program(progFileLang.getKey());
+						java5Srcs.add(progFileLang.getKey());
 						break;
 					}
 					default:
@@ -185,9 +188,17 @@ aspect Task {
 					throw new RuntimeException("Could not open file for IMPORT");
 				}
 
+				if (programRel != null) {
+					CSVUtil.dumpFileInto(programRel, output_fp, append);
+					append = true;
+				}
+			}
 
-				CSVUtil.dumpFileInto(programRel, output_fp, append);
-				append = true;
+			if (!java5Srcs.isEmpty()) {
+				// TODO: This assumes that all imports to this predicate are Java programs. This might
+				// not be the case, but this should be checked in another place...
+				Relation programRel = IMPORTLiteral.loadJava5Sources(java5Srcs);
+				CSVUtil.dumpFileInto(programRel, output_fp, false);
 			}
 
 			// stop the timer and report

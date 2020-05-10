@@ -73,7 +73,7 @@ aspect LiteralSideEffect {
         }
     }
 
-	public static  Relation IMPORTLiteral.loadJava5Program(String loc) throws IOException {
+	public static Relation IMPORTLiteral.loadJava5Sources(java.util.List<String> locs) throws IOException {
 		org.extendj.ast.Program p = new org.extendj.ast.Program();
 
 		// Set the path to the Java runtime
@@ -81,20 +81,22 @@ aspect LiteralSideEffect {
 		if (bootCP != null)
 			p.options().setValueForOption(bootCP, "-bootclasspath");
 
-		// Walk all the java files in the directory and add them to the program
-		File fileOrDir = new File(loc);
-
-		if (fileOrDir.isDirectory()) {
-			IOFileFilter ff = new WildcardFileFilter("*.java");
-			Iterator<File> it = FileUtils.iterateFiles(fileOrDir, ff, TrueFileFilter.INSTANCE);
-			while (it.hasNext()) {
-				File f = it.next();
-				p.addSourceFile(f.getPath());
+		for (String loc : locs) {
+			// Walk all the java files in the directory and add them to the program
+			File fileOrDir = new File(loc);
+			if (fileOrDir.isDirectory()) {
+				IOFileFilter ff = new WildcardFileFilter("*.java");
+				Iterator<File> it = FileUtils.iterateFiles(fileOrDir, ff, TrueFileFilter.INSTANCE);
+				while (it.hasNext()) {
+					File f = it.next();
+					p.addSourceFile(f.getPath());
+				}
+			} else {
+				p.addSourceFile(fileOrDir.getPath());
 			}
-		} else {
-			p.addSourceFile(fileOrDir.getPath());
 		}
 
+		// Some sanity check
 		org.extendj.ast.TypeDecl object = p.lookupType("java.lang", "Object");
 		if (object.isUnknown()) {
 			// If we try to continue without java.lang.Object, we'll just get a stack overflow
@@ -103,7 +105,7 @@ aspect LiteralSideEffect {
 									   + " The Java standard library was not found.");
 		}
 
-
+		// Generate the program relation
 		lang.java5.obj.DatalogProjection2 proj2 = new lang.java5.obj.DatalogProjection2(p);
 		proj2.generate();
 		Relation ret = proj2.getRelation();
@@ -132,7 +134,8 @@ aspect LiteralSideEffect {
 					break;
 				}
 				case "java5:": {
-					importedProgramRel = loadJava5Program(t.coord(1).toString());
+					// TODO: for Java 5, this means only one IMPORT for each relation
+					importedProgramRel = loadJava5Sources(Collections.singletonList(t.coord(1).toString()));
 					break;
 				}
 

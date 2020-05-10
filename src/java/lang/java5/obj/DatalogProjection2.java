@@ -55,7 +55,7 @@ public class DatalogProjection2 {
 	}
 
 	@SafeVarargs
-	private void mapAttributes(Pair<String, String> ...attrs) {
+	final private void mapAttributes(Pair<String, String> ...attrs) {
 		Set<ASTNode<?>> currentNodes = new HashSet<>(nodeNumber.keySet());
 		do {
 			// take a snapshot of the already visited nodes

@@ -255,6 +255,12 @@ public class DatalogProjection2 {
 		return r;
 	}
 
+	private String cleanTerminal(String s) {
+		// TODO: Souffle assumes that [ or ] are used in the CSV
+		// for encoding a record.
+		return s.replace('[', '(').replace(']', ')');
+	}
+
 	private List<PseudoTuple> toTuples(ASTNode<?> n) {
 		String relName = getRelation(n);
 		java.util.List<PseudoTuple> ret = new ArrayList<>();
@@ -294,7 +300,7 @@ public class DatalogProjection2 {
 				lang.ast.IntConstant ChildId = new lang.ast.IntConstant("0");
 				lang.ast.IntConstant CurrentNodeId = new lang.ast.IntConstant("" + tokenUID);
 				lang.ast.IntConstant ChildIdx = new lang.ast.IntConstant("0");
-				lang.ast.StringConstant Token = new lang.ast.StringConstant(t);
+				lang.ast.StringConstant Token = new lang.ast.StringConstant(cleanTerminal(t));
 				ret.add(new PseudoTuple(Kind, CurrentNodeId, ChildIdx, ChildId, Token));
 			}
 		}

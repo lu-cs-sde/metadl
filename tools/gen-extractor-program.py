@@ -22,6 +22,9 @@ def main() :
     for src_path in src_paths.split(":"):
         mdl_prog += 'IMPORT(\'{}, "{}", "{}").\n'.format(prog_pred, src_path, lang)
 
+    # Provide a type for the program relation
+    mdl_prog += '{}(0, 0, 0, 0, "") :- NEQ(0, 0).\n'.format(prog_pred)
+
     mdl_prog += "OUTPUT('{}).\n".format(prog_pred)
 
     print(mdl_prog, file = output_file)

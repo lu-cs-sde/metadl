@@ -28,6 +28,11 @@ public class DatalogProjection2 {
 	private int currentNumber = 0;
 	private Relation datalogProjection = new Relation(5);
 
+	// TODO: It's just easier to add environment variable than command-line arguments.
+	// This should be removed once we move to a traditional command line parser,
+	// that is easier to modify.
+	private boolean deepAnalysis = System.getenv().get("METADL_ANALYSIS") != null;
+
 	public DatalogProjection2(ASTNode<?> root) {
 		this.root = root;
 	}
@@ -84,7 +89,8 @@ public class DatalogProjection2 {
 
 			// TODO: prevent the analysis from dinving into rt.jar, which
 			// takes a long (O(minutes)) time.
-			currentNodes.removeIf(n -> isLibraryNode(n));
+			if (!deepAnalysis)
+				currentNodes.removeIf(n -> isLibraryNode(n));
 		} while (!currentNodes.isEmpty());
 	}
 

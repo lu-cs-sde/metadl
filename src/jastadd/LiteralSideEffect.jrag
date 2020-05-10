@@ -80,6 +80,9 @@ aspect LiteralSideEffect {
 		String bootCP = System.getenv().get("METADL_JAVA_RT");
 		if (bootCP != null)
 			p.options().setValueForOption(bootCP, "-bootclasspath");
+		String CP = System.getenv().get("METADL_JAVA_CP");
+		if (CP != null)
+			p.options().setValueForOption(CP, "-classpath");
 
 		for (String loc : locs) {
 			// Walk all the java files in the directory and add them to the program

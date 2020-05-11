@@ -160,6 +160,9 @@ PrimitiveCtor(0) :- NEQ(0, 0).
 analyze('P, "java5") {
 	    PrimitiveCtor(e) :- e <: new `c(`_) :>, DECL(`c, c), c <: class `name { .. } :>, ID(`name, t), TypeName(t).
 	    PrimitiveCtorDetail(l, c, file) :- PrimitiveCtor(e), SRC(e, l, c, _, _, file).
+	    PrimitiveStringCtor(e) :- e <: new `c(`_) :>, DECL(`c, c), c <: class `name { .. } :>, ID(`name, "String").
+	    PrimitiveStringCtorDetail(l, c, file) :- PrimitiveStringCtor(e), SRC(e, l, c, _, _, file), GT(l, 0).
 }
 
 OUTPUT('PrimitiveCtorDetail).
+OUTPUT('PrimitiveStringCtorDetail).

@@ -1,0 +1,165 @@
+# Top 5 warnings, as reported by How many of all bugs do we find? a study of static bug detectors [Habib & Pradel]
+
+# Load the program relation from a file
+EDB('P, "__INPUT.csv").
+
+
+####################################################################################################
+
+# NM_METHOD_NAMING_CONVENTION, NM_FIELD_NAMING_CONVENTION, NM_CLASS_NAMING_CONVENTION
+
+analyze('P, "java5") {
+	    NotLibrary(n) :- SRC(n, l, _, _, _, _), NEQ(l, 0).
+
+	    Decl(`d), Type(c, name) :- c <: class `name { .. `d .. } :>, ID(`name, name).
+	    Decl(`d), Type(e, name) :- e <: enum `name { .. ,`d, .. ; .. } :>, ID(`name, name).
+	    Decl(`d), Type(i, name) :- i <: interface `name { .. `d .. } :>, ID(`name, name).
+
+	    # Type names should start with uppercase
+	    WarningTypeName(l, c, file, name) :- Type(t, name), NOT(MATCH("[A-Z].*", name)), SRC(t, l, c, _, _, file), NotLibrary(t).
+
+	    Field1(`f, name) :- Decl(d), d <: .. `t .. , `f , .. ; :>, ID(`f, name), NotLibrary(d).
+	    Method(d, name) :- Decl(d), d <: `t `m ( .. ) ; :>, ID(`m, name), NotLibrary(d).
+
+	    WarningFieldName(l, c, file, name) :- Field1(f, name), NOT(MATCH("[a-z].*", name)), SRC(f, l, c, _, _, file).
+	    WarningMethodName(l, c, file, name) :- Method(m, name), NOT(MATCH("[a-z].*", name)), SRC(m, l, c, _, _, file).
+
+}
+
+OUTPUT('WarningTypeName).
+OUTPUT('WarningFieldName).
+OUTPUT('WarningMethodName).
+
+
+####################################################################################################
+
+# SF_SWITCH_NO_DEFAULT
+
+analyze('P, "java5") {
+	    SwitchWithDefault(s) :- s <: switch (`_) { .. default: .. } :>.
+	    Switch(s) :- s <: switch (`_) { .. } :>.
+
+	    CaseOnEnum(s, e, d) :- s <: switch (`v) { .. case `c : .. } :>, TYPE(`v, e), e <: enum `_ { .. } :>, DECL(`c, d).
+	    # `m can be either an enum member or an enum constant, use ID to discriminate between the two
+	    EnumMember(e, `m) :- e <: enum `_  { .., `m , .. ; .. } :>,  ID(`m, _).
+
+	    SwitchWithoutEnumMember(s, e) :- CaseOnEnum(s, e, _), EnumMember(e, m), NOT(CaseOnEnum(s, e, m)).
+	    SwitchOnAllEnumMembers(s) :- CaseOnEnum(s, e, _), NOT(SwitchWithoutEnumMember(s, e)).
+
+	    SwitchWithoutDefault(s) :- Switch(s), NOT(SwitchWithDefault(s)), NOT(SwitchOnAllEnumMembers(s)).
+
+	    SwitchWithoutDefaultDetail(l, c, file) :- SwitchWithoutDefault(s), SRC(s, l, c, _, _, file), GT(l, 0).
+}
+
+OUTPUT('SwitchWithoutDefaultDetail).
+
+
+####################################################################################################
+
+# EI_EXPOSE_REP, MS_EXPOSE_REP, EI_EXPOSE_REP2, EI_EXPOSE_STATIC_REP2, EI2
+# aka  Reference to mutable object
+
+FieldInClassWithInit(0, 0, 0, 0) :- NEQ(0, 0).
+FieldInClass(0, 0, 0, 0) :- NEQ(0, 0).
+
+NonPublicFieldReturn(0, 0) :- NEQ(0, 0).
+ParamToVariable(0, 0, 0) :- NEQ(0, 0).
+
+
+analyze('P, "java5") {
+### Analysis
+	    FieldInClass(c, `t, `f, `m) :- c <: class `_ { .. .. `m .. `t .. , `f , .. ; .. } :>, NOT(FundamentalTypeUse(`t)),
+	                                   SRC(c, l, col, _,_,_), NEQ(col, 0).
+	    FieldInClass(c, `t, `f, `m) :- c <: enum `_ { .. ; .. .. `m .. `t .. , `f , .. ; .. } :>,
+	                                   NOT(FundamentalTypeUse(`t)),
+	                                   SRC(c, l, col, _,_,_), NEQ(col, 0).
+
+	    Field(f) :- FieldInClass(_, _, f, _).
+
+	    FundamentalTypeUse(t) :- t <: int :>.
+	    FundamentalTypeUse(t) :- t <: char :>.
+	    FundamentalTypeUse(t) :- t <: byte :>.
+	    FundamentalTypeUse(t) :- t <: long :>.
+	    FundamentalTypeUse(t) :- t <: short :>.
+	    FundamentalTypeUse(t) :- t <: float :>.
+	    FundamentalTypeUse(t) :- t <: double :>.
+	    FundamentalTypeUse(t) :- t <: boolean :>.
+
+
+	    IsPublic(f) :- FieldInClass(_, _, f, m), MOD(m, "public").
+	    IsStatic(f) :- FieldInClass(_, _, f, m), MOD(m, "static").
+
+	    NonPublicFieldReturn(s, f) :- s <: return `f ; :>, DECL(`f, f), FieldInClass(_, _, f, m), NOT(IsPublic(f)).
+	    NonPublicFieldReturn(s, f) :- s <: return this.`f; :>, DECL(`f, f), FieldInClass(_, _, f, m), NOT(IsPublic(f)).
+	    NonPublicFieldReturnDetail(l, c, file) :- NonPublicFieldReturn(s, _), SRC(s, l, c, _, _, file).
+
+	    ParamToVariable(m, `p, `v) :- m <: .. `_ `_(.., `p, ..) { .. } :>, <: `v = `p2 :>, DECL(`p2, `p).
+	    ParamToVariable(m, `p, `v) :- m <: .. `_ `_(.., `p, ..) { .. } :>, <: `v = `p2 :>, DECL(`p2, `p).
+	    ParamToVariable(m, `p, `v) :- m <: .. `_ `_(.., `p, ..) { .. } :>, <: `v = `_ ? `_ : `p2  :>, DECL(`p2, `p).
+	    ParamToVariable(m, `p, `v) :- m <: .. `_ `_(.., `p, ..) { .. } :>, <: `v = `_ ? `p2 : `_  :>, DECL(`p2, `p).
+	    ParamToVariable(m, `p, `v) :- m <: .. `_ `_(.., `p, ..) { .. } :>, <: this.`v = `p2 :>, DECL(`p2, `p).
+	    ParamToVariable(m, `p, `v) :- m <: .. `_ `_(.., `p, ..) { .. } :>, <: this.`v = `p2 :>, DECL(`p2, `p).
+	    ParamToVariable(m, `p, `v) :- m <: .. `_ `_(.., `p, ..) { .. } :>, <: this.`v = `_ ? `_ : `p2  :>, DECL(`p2, `p).
+	    ParamToVariable(m, `p, `v) :- m <: .. `_ `_(.., `p, ..) { .. } :>, <: this.`v = `_ ? `p2 : `_  :>, DECL(`p2, `p).
+
+
+	    ParamToNonPublicField(m) :- ParamToVariable(m, p, v), DECL(v, f), FieldInClass(_, _, f, _), NOT(IsPublic(f)).
+	    ParamToNonPublicFieldDetail(l, c, file) :- ParamToNonPublicField(m), SRC(m, l, c, _, _, file).
+}
+
+OUTPUT('ParamToNonPublicFieldDetail).
+OUTPUT('NonPublicFieldReturnDetail).
+
+####################################################################################################
+
+# UWF_UNWRITTEN_FIELD, UWF_UNWRITTEN_PUBLIC_OR_PROTECTED_FIELD
+# aka Read of unwritten field
+
+FieldInClassWithInit(0, 0, 0, 0) :- NEQ(0, 0).
+FieldInClass(0, 0, 0, 0) :- NEQ(0, 0).
+
+analyze('P, "java5") {
+### Analysis
+	    FieldInClassWithInit(c, `t, `f, `i) :- c <: class `_ { ..  .. `t .. , `f = `i, .. ; .. } :>, SRC(c, l, col, _,_,_), NEQ(col, 0).
+	    FieldInClass(c, `t, `f, `m) :- c <: class `_ { .. .. `m .. `t .. , `f , .. ; .. } :>, SRC(c, l, col, _,_,_), NEQ(col, 0).
+	    Field(f) :- FieldInClass(_, _, f, _).
+
+	    FieldAccess(f) :- <: `f :>, DECL(`f, f), Field(f).
+	    FieldWrite(f) :- <: `f = `_ :>, DECL(`f, f), Field(f).
+	    FieldWrite(f) :- <: `this.`f = `_ :>, DECL(`f, f), Field(f).
+	    FieldRead(f) :- FieldAccess(f), NOT(FieldWrite(f)).
+
+	    Warning(f) :- Field(f), FieldRead(f), NOT(FieldWrite(f)), NOT(FieldInClassWithInit(_, _, f, _)).
+	    WarningDetails(l, c, src) :- Warning(f), SRC(f, l, c, _, _, src).
+
+	    IsPublicOrProtected(f) :- FieldInClass(_, _, f, m), MOD(m, "public").
+	    IsPublicOrProtected(f) :- FieldInClass(_, _, f, m), MOD(m, "protected").
+
+	    Warn_UWF_UNWRITTEN_FIELD(f) :- Warning(f), NOT(IsPublicOrProtected(f)).
+	    Warn_UWF_UNWRITTEN_PUBLIC_OR_PROTECTED_FIELD(f) :- Warning(f), IsPublicOrProtected(f).
+
+	    Warn_UWF_UNWRITTEN_PUBLIC_OR_PROTECTED_FIELD_Detail(l, c, file) :- Warn_UWF_UNWRITTEN_PUBLIC_OR_PROTECTED_FIELD(f),
+							   SRC(f, l, c, _, _, file), GT(l, 0).
+	    Warn_UWF_UNWRITTEN_FIELD_Detail(l, c, file) :- Warn_UWF_UNWRITTEN_FIELD(f),
+	    				       	  SRC(f, l, c, _, _, file), GT(l, 0).
+}
+
+OUTPUT('Warn_UWF_UNWRITTEN_PUBLIC_OR_PROTECTED_FIELD_Detail).
+OUTPUT('Warn_UWF_UNWRITTEN_FIELD_Detail).
+
+####################################################################################################
+
+# DM_NUMBER_CTOR, DM_STRING_CTOR
+# same as the one for ErrorProne
+
+TypeName("Character"), TypeName("Integer"), TypeName("Long"), TypeName("Short"),
+TypeName("Byte"), TypeName("Float"), TypeName("Double"), TypeName("Boolean").
+
+PrimitiveCtor(0) :- NEQ(0, 0).
+
+analyze('P, "java5") {
+	    PrimitiveCtor(e) :- e <: new `c(`_) :>, DECL(`c, c), c <: class `name { .. } :>, ID(`name, t), TypeName(t).
+	    PrimitiveCtorDetail(l, c, file) :- PrimitiveCtor(e), SRC(e, l, c, _, _, file).
+}
+
+OUTPUT('PrimitiveCtorDetail).

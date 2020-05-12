@@ -83,18 +83,19 @@ aspect PatternToDatalog {
 
 	syn boolean MetaVariable.isWildcard() = isWildcardToken(getID());
 
-	syn String ASTNode.varName() {
+	syn String ASTNode.varName() = varName("");
+	syn String ASTNode.varName(String suffix) {
 		if (isMetaVar()) {
 			try {
 				Method m = this.getClass().getMethod("getVar");
 				MetaVariable v = (MetaVariable) m.invoke(this);
 				if (!v.isWildcard())
-					return v.getID();
+					return v.getID() + suffix;
 			} catch (ReflectiveOperationException e) {
 				throw new Error(e.toString());
 			}
 		}
-		return "v_" + getNodeId();
+		return "v_" + getNodeId() + suffix;
 	}
 
 	syn String ASTNode.indexVarName() {
@@ -105,12 +106,19 @@ aspect PatternToDatalog {
 
 	public ArrayList<lang.ast.Literal> ASTNode.metaVarAsLiterals(AnalyzeContext ctx, lang.ast.CommonVariable root) {
 		assert isMetaVar();
-		ArrayList<lang.ast.Literal> literals = new ArrayList<>();
 		java.util.ArrayList<lang.ast.Literal> ret = new ArrayList<>();
 
 		assert getRelation().startsWith(ASTNode.METAVARIABLE);
 		String relName = getRelation().substring(ASTNode.METAVARIABLE.length());
-		String predName = ctx.scopePrefix + "METAVAR";
+		String predName = ctx.progRelName;
+
+		{
+			// bound the type of node that can be matched
+			lang.ast.List<lang.ast.Term> terms = new lang.ast.List<>();
+			terms.add(new lang.ast.Variable(varName("_kind")));
+			terms.add(new lang.ast.StringConstant(relName));
+			ret.add(new lang.ast.Atom(new lang.ast.PredicateSymbol(ctx.prefix("SUPERTYPE")), terms));
+		}
 
 		for (int i = 0; i < getNumChild(); ++i) {
 			ASTNode child = getChild(i);
@@ -118,7 +126,7 @@ aspect PatternToDatalog {
 				continue;
 
 			lang.ast.List<lang.ast.Term> terms = new lang.ast.List<>();
-			lang.ast.Term Kind = new lang.ast.StringConstant(relName);
+			lang.ast.Term Kind = new lang.ast.Variable(varName("_kind"));
 			lang.ast.Term ChildId = new lang.ast.Variable(child.varName());
 			lang.ast.CommonVariable CurrentNodeId = new lang.ast.Variable(varName());
 			lang.ast.IntConstant ChildIdx = new lang.ast.IntConstant("" + i);
@@ -128,11 +136,11 @@ aspect PatternToDatalog {
 			ret.add(new lang.ast.Atom(new lang.ast.PredicateSymbol(predName), terms));
 		}
 
-		if (ret.isEmpty()) {
+		if (ret.size() == 1) {
 			// This metavariable node has no children. Just ensure that is bound to
 			// the correct AST node type
 			lang.ast.List<lang.ast.Term> terms = new lang.ast.List<>();
-			lang.ast.StringConstant Kind = new lang.ast.StringConstant(relName);
+			lang.ast.Term Kind = new lang.ast.Variable(varName("_kind"));
 			lang.ast.Term ChildId  = new lang.ast.Wildcard();
 			lang.ast.CommonVariable CurrentNodeId = new lang.ast.Variable(varName());
 			lang.ast.Term ChildIdx = new lang.ast.Wildcard();
@@ -146,7 +154,7 @@ aspect PatternToDatalog {
 		if (root != null) {
 			// This is an a <: `b :> pattern. In this case, we need to ensure that a == b.
 			lang.ast.List<lang.ast.Term> terms = new lang.ast.List<>();
-			lang.ast.StringConstant Kind = new lang.ast.StringConstant(relName);
+			lang.ast.Term Kind = new lang.ast.Variable(varName("_kind"));
 			lang.ast.Term ChildId  = new lang.ast.Wildcard();
 			lang.ast.CommonVariable CurrentNodeId = root;
 			lang.ast.Term ChildIdx = new lang.ast.Wildcard();

@@ -137,6 +137,8 @@ aspect LanguageSpecific {
 		// Insert the GENERIC rule, map a concrete instance of a generic type
 		// to the declaration of the generic type.
 		ret.add(makeGenericRule(ctx));
+		// Insert a rule for declaring a node's supertypes
+		ret.addAll(makeSuperTypeRelation(ctx));
 		return ret;
 	}
 

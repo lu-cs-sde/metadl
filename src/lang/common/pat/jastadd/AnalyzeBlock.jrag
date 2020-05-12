@@ -290,6 +290,38 @@ aspect AnalyzeBlock {
 			return new lang.ast.Rule(headList, bodyList);
 		}
 
+		public static java.util.List<lang.ast.Rule>  makeSuperTypeRelation(AnalyzeContext ctx) {
+			java.util.List<lang.ast.Rule> ret = new ArrayList<>();
+
+			// Add facts SUPERTYPE(nodeType, nodeSuperType)
+			for (String nodeType : PatternGrammarInfo.getNodeType()) {
+				if (nodeType.equals("List") ||
+					nodeType.equals("Opt") ||
+					nodeType.equals("ASTNode"))
+					continue;
+
+				// SUPERTYPE is reflexive
+				// SUPERTYPE(nodeType, nodeType) :- EQ(0, 0).
+				ret.add(rule(atom(ctx.scopePrefix + "SUPERTYPE", nodeType, nodeType),
+							 EQ(new lang.ast.IntConstant("0"), new lang.ast.IntConstant("0"))));
+
+				String nodeSuperType = PatternGrammarInfo.getNodeSuperType(nodeType);
+				if (nodeSuperType == null || nodeSuperType.equals("ASTNode"))
+					continue;
+
+				// SUPERTYPE(nodeType, nodeSuperType) :- EQ(0, 0).
+				ret.add(rule(atom(ctx.scopePrefix + "SUPERTYPE", nodeType, nodeSuperType),
+							 EQ(new lang.ast.IntConstant("0"), new lang.ast.IntConstant("0"))));
+			}
+
+			// Rule to compute the transitive closure of SUPERTYPE
+			ret.add(rule(atom(ctx.prefix("SUPERTYPE"), "$t", "$s"),
+						 atom(ctx.prefix("SUPERTYPE"), "$t", "$s1"),
+						 atom(ctx.prefix("SUPERTYPE"), "$s1", "$s")));
+
+			return ret;
+		}
+
 		public static void makeMetaVariableRelation(AnalyzeContext ctx,
 													String nodeKind,
 													java.util.List<lang.ast.Rule> ret) {

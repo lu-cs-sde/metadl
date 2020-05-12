@@ -186,6 +186,26 @@ public class DatalogProjection2 {
 		return ret;
 	}
 
+
+	private Map<Pair<Class<?>, String>, Method>  reflectCache = new HashMap<>();
+	private Set<Pair<Class<?>, String>> noSuchMethodCache = new HashSet<>();
+	private Method getMethodForClass(Class<?> c, String name) {
+		if (noSuchMethodCache.contains(Pair.of(c, name)))
+			return null;
+		Method m = reflectCache.get(Pair.of(c, name));
+		if (m != null)
+			return m;
+		try {
+			m = c.getMethod(name);
+			reflectCache.put(Pair.of(c, name), m);
+			return m;
+		} catch (NoSuchMethodException e) {
+			noSuchMethodCache.add(Pair.of(c, name));
+			return null;
+		}
+	}
+
+
 	/**
 	   Helper class to match the type of the object and apply
 	   an action.
@@ -207,13 +227,14 @@ public class DatalogProjection2 {
 		}
 	}
 
-	private static<T> T nodeAttribute(ASTNode<?> n, String attrName) {
+	private <T> T nodeAttribute(ASTNode<?> n, String attrName) {
 		try {
-			Method m = n.getClass().getMethod(attrName);
+			Method m = getMethodForClass(n.getClass(), attrName);
+			if (m == null)
+				return null;
 			Object o = m.invoke(n);
 			if (o == null)
 				return null;
-
 			return (T)o;
 		} catch (ReflectiveOperationException e) {
 			// do nothing, the node may be missing the attribute
@@ -244,10 +265,14 @@ public class DatalogProjection2 {
 				})
 			.bind((org.extendj.ast.ASTNode nn) -> {
 					try {
-						Method m = nn.getClass().getMethod("getID");
-						String id = (String)m.invoke(n);
-						assert id != null;
-						r.add(id);
+						Method m = getMethodForClass(nn.getClass(), "getID");
+						if (m == null) {
+							// do nothing
+						} else {
+							String id = (String)m.invoke(n);
+							assert id != null;
+							r.add(id);
+						}
 					} catch (ReflectiveOperationException e) {
 						// do nothing
 					}

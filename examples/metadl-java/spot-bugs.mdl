@@ -24,7 +24,7 @@ analyze('P, "java5") {
 	    WarningFieldName(l, c, file, name) :- Field1(f, name), NOT(MATCH("[a-z].*", name)), SRC(f, l, c, _, _, file).
 	    WarningMethodName(l, c, file, name) :- Method(m, name), NOT(MATCH("[a-z].*", name)), SRC(m, l, c, _, _, file).
 
-}
+
 
 OUTPUT('WarningTypeName).
 OUTPUT('WarningFieldName).
@@ -35,7 +35,6 @@ OUTPUT('WarningMethodName).
 
 # SF_SWITCH_NO_DEFAULT
 
-analyze('P, "java5") {
 	    SwitchWithDefault(s) :- s <: switch (`_) { .. default: .. } :>.
 	    Switch(s) :- s <: switch (`_) { .. } :>.
 
@@ -49,7 +48,7 @@ analyze('P, "java5") {
 	    SwitchWithoutDefault(s) :- Switch(s), NOT(SwitchWithDefault(s)), NOT(SwitchOnAllEnumMembers(s)).
 
 	    SwitchWithoutDefaultDetail(l, c, file) :- SwitchWithoutDefault(s), SRC(s, l, c, _, _, file), GT(l, 0).
-}
+
 
 OUTPUT('SwitchWithoutDefaultDetail).
 
@@ -66,7 +65,7 @@ NonPublicFieldReturn(0, 0) :- NEQ(0, 0).
 ParamToVariable(0, 0, 0) :- NEQ(0, 0).
 
 
-analyze('P, "java5") {
+
 ### Analysis
 	    FieldInClass(c, `t, `f, `m) :- c <: class `_ { .. .. `m .. `t .. , `f , .. ; .. } :>, NOT(FundamentalTypeUse(`t)),
 	                                   SRC(c, l, col, _,_,_), NEQ(col, 0).
@@ -105,7 +104,7 @@ analyze('P, "java5") {
 
 	    ParamToNonPublicField(m) :- ParamToVariable(m, p, v), DECL(v, f), FieldInClass(_, _, f, _), NOT(IsPublic(f)).
 	    ParamToNonPublicFieldDetail(l, c, file) :- ParamToNonPublicField(m), SRC(m, l, c, _, _, file).
-}
+
 
 OUTPUT('ParamToNonPublicFieldDetail).
 OUTPUT('NonPublicFieldReturnDetail).
@@ -118,7 +117,7 @@ OUTPUT('NonPublicFieldReturnDetail).
 FieldInClassWithInit(0, 0, 0, 0) :- NEQ(0, 0).
 FieldInClass(0, 0, 0, 0) :- NEQ(0, 0).
 
-analyze('P, "java5") {
+
 ### Analysis
 	    FieldInClassWithInit(c, `t, `f, `i) :- c <: class `_ { ..  .. `t .. , `f = `i, .. ; .. } :>, SRC(c, l, col, _,_,_), NEQ(col, 0).
 	    FieldInClass(c, `t, `f, `m) :- c <: class `_ { .. .. `m .. `t .. , `f , .. ; .. } :>, SRC(c, l, col, _,_,_), NEQ(col, 0).
@@ -142,7 +141,7 @@ analyze('P, "java5") {
 							   SRC(f, l, c, _, _, file), GT(l, 0).
 	    Warn_UWF_UNWRITTEN_FIELD_Detail(l, c, file) :- Warn_UWF_UNWRITTEN_FIELD(f),
 	    				       	  SRC(f, l, c, _, _, file), GT(l, 0).
-}
+
 
 OUTPUT('Warn_UWF_UNWRITTEN_PUBLIC_OR_PROTECTED_FIELD_Detail).
 OUTPUT('Warn_UWF_UNWRITTEN_FIELD_Detail).
@@ -157,12 +156,14 @@ TypeName("Byte"), TypeName("Float"), TypeName("Double"), TypeName("Boolean").
 
 PrimitiveCtor(0) :- NEQ(0, 0).
 
-analyze('P, "java5") {
+
 	    PrimitiveCtor(e) :- e <: new `c(`_) :>, DECL(`c, c), c <: class `name { .. } :>, ID(`name, t), TypeName(t).
 	    PrimitiveCtorDetail(l, c, file) :- PrimitiveCtor(e), SRC(e, l, c, _, _, file).
 	    PrimitiveStringCtor(e) :- e <: new `c(`_) :>, DECL(`c, c), c <: class `name { .. } :>, ID(`name, "String").
 	    PrimitiveStringCtorDetail(l, c, file) :- PrimitiveStringCtor(e), SRC(e, l, c, _, _, file), GT(l, 0).
-}
+
 
 OUTPUT('PrimitiveCtorDetail).
 OUTPUT('PrimitiveStringCtorDetail).
+
+}

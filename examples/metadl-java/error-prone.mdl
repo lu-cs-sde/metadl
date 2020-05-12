@@ -38,7 +38,7 @@ analyze('P, "java5") {
 	    TypeUnusedInFormals(t1) :- GenericMethodVoid(m, t1, r), NOT(TypeForTypeBound(t1)), NOT(TypeForReturn(t1)).
 
 	    TypeUnusedInFormalsDetail(l, c, file) :- TypeUnusedInFormals(t), SRC(t, l, c, _, _, file), GT(l, 0).
-}
+
 
 OUTPUT('TypeUnusedInFormalsDetail).
 
@@ -46,7 +46,7 @@ OUTPUT('TypeUnusedInFormalsDetail).
 
 
 # ReferenceEquality
-analyze('P, "java5") {
+
 	    SuperClass1(c, d) :- c <: class `_ extends `d { .. } :>, DECL(`d, d).
 	    SuperClass1(c, d) :- c <: class `_ <..> extends `d { .. } :>, DECL(`d, d).
 
@@ -73,10 +73,10 @@ analyze('P, "java5") {
 
 	    TSuperType(t, s) :- SuperType(t, s).
 	    TSuperType(t, s) :- TSuperType(t, s1), SuperType(s1, s).
-}
+
 
 # Code for finding if a method overrides another method
-analyze('P, "java5") {
+
 	    MethodSig2(m, i, pt) :- m <: `rett `name(.., `pt `_, ..) ; :>,
 	    		  DECL(`pt, pt), PARENT(param, `pt), INDEX(param, i).
 	    # TODO: The MethodSig1 relation will not contain Object.equals(Object o), since the DECL attribute
@@ -99,9 +99,8 @@ analyze('P, "java5") {
 	    Override(m, super) :- MethodSig1(m, n, ret), MethodSig1(super, n, ret),
                                   GrandParent(c1, m), GrandParent(c2, super), TSuperType(c1, c2).
 
-}
 
-analyze('P, "java5") {
+
 	    ClassEq(0, 0) :- NEQ(0, 0).
 	    ClassEq(c, `d) :- c <: class `_ { .. `d .. } :>, `d <: .. public .. boolean equals(`t `o) ;:>.
 	    ClassEq(c, `d) :- c <: class `_ <..> { .. `d .. } :>, `d <: .. public .. boolean equals(`t `o) ;:>.
@@ -165,17 +164,17 @@ analyze('P, "java5") {
 	    # OUTPUT('IsThis).
 	    # OUTPUT('ExcludedMethods).
 	    # OUTPUT('IsExcludedThis).
-}
+
 
 ####################################################################################################
 
 
 # Missing override
-analyze('P, "java5") {
+
 	    HasOverride(m) :- m <: .. @Override .. `t `n(..) ; :>.
 	    MissingOverride(m) :- Override(m, _), NOT(HasOverride(m)).
 	    MissingOverrideDetail(l, c, file) :- MissingOverride(m), SRC(m, l, c, _, _, file), GT(l, 0).
-}
+
 
 OUTPUT('MissingOverrideDetail).
 
@@ -184,11 +183,11 @@ OUTPUT('MissingOverrideDetail).
 
 
 # Boxed primitive constructor
-analyze('P, "java5") {
+
 	    PrimitiveCtor(e) :- e <: new `c(`_) :>, DECL(`c, c), c <: class `name { .. } :>, ID(`name, t), TypeName(t).
 	    PrimitiveCtorDetail(l, c, file) :- PrimitiveCtor(e), SRC(e, l, c, _, _, file), GT(l, 0).
 	    OUTPUT('PrimitiveCtorDetail).
-}
+
 
 
 ####################################################################################################
@@ -197,7 +196,7 @@ analyze('P, "java5") {
 # Operator precedence
 Conditional(0, 0, 0), Shift(0, 0, 0), Arithmetic(0, 0, 0), SafeAssoc(0, 0, 0) :- NEQ(0, 0).
 
-analyze('P, "java5") {
+
 	    Conditional(e, `l, `r), Prec(e, "cand") :- e <: `l && `r :>.
 	    Conditional(e, `l, `r), Prec(e, "cor") :- e <: `l || `r :>.
 	    Conditional(e, `l, `r), Prec(e, "xor") :- e <: `l ^ `r :>.
@@ -235,7 +234,9 @@ analyze('P, "java5") {
 	    SafePrec("cand"), SafePrec("cor"), SafePrec("xor"), SafePrec("and"), SafePrec("or").
 	    ExtraParen(parent, child) :- Paren(parent, child), PARENT(gparent, parent), Prec(gparent, p), Prec(child, p), SafePrec(p).
 	    ExtraParenDetail(l, c, file) :- ExtraParen(p, _), SRC(p, l, c, _, _, file), GT(l, 0).
-}
+
 
 OUTPUT('ConfusingDetail).
 OUTPUT('ExtraParenDetail).
+
+}

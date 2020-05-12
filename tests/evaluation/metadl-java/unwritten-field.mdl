@@ -11,10 +11,56 @@ analyze('P, "java5") {
 
 	    FieldAccess(f) :- <: `f :>, DECL(`f, f), Field(f).
 	    FieldWrite(f) :- <: `f = `_ :>, DECL(`f, f), Field(f).
-	    # FieldWrite(f) :- <: `this.`f = `_ :>, DECL(`f, f), Field(f).
 	    FieldWrite(f) :- <: `base.`f = `_ :>, DECL(`f, f), Field(f).
+	    FieldWrite(f) :- FieldUpdate(f).
+
+	    FieldUpdate(f) :- <: ++`f :>, DECL(`f, f), Field(f).
+	    FieldUpdate(f) :- <: ++`base.`f :>, DECL(`f, f), Field(f).
+	    FieldUpdate(f) :- <: `f ++ :>, DECL(`f, f), Field(f).
+	    FieldUpdate(f) :- <: `base.`f ++ :>, DECL(`f, f), Field(f).
+
+
+	    FieldUpdate(f) :- <: --`f :>, DECL(`f, f), Field(f).
+	    FieldUpdate(f) :- <: --`base.`f :>, DECL(`f, f), Field(f).
+	    FieldUpdate(f) :- <: `f -- :>, DECL(`f, f), Field(f).
+	    FieldUpdate(f) :- <: `base.`f -- :>, DECL(`f, f), Field(f).
+
+	    FieldUpdate(f) :- <: `f += `_ :>, DECL(`f, f), Field(f).
+	    FieldUpdate(f) :- <: `base.`f += `_ :>, DECL(`f, f), Field(f).
+
+	    FieldUpdate(f) :- <: `f -= `_ :>, DECL(`f, f), Field(f).
+	    FieldUpdate(f) :- <: `base.`f -= `_ :>, DECL(`f, f), Field(f).
+
+
+	    FieldUpdate(f) :- <: `f *= `_ :>, DECL(`f, f), Field(f).
+	    FieldUpdate(f) :- <: `base.`f *= `_ :>, DECL(`f, f), Field(f).
+
+	    FieldUpdate(f) :- <: `f /= `_ :>, DECL(`f, f), Field(f).
+	    FieldUpdate(f) :- <: `base.`f /= `_ :>, DECL(`f, f), Field(f).
+
+	    FieldUpdate(f) :- <: `f %= `_ :>, DECL(`f, f), Field(f).
+	    FieldUpdate(f) :- <: `base.`f %= `_ :>, DECL(`f, f), Field(f).
+
+	    FieldUpdate(f) :- <: `f <<= `_ :>, DECL(`f, f), Field(f).
+	    FieldUpdate(f) :- <: `base.`f <<= `_ :>, DECL(`f, f), Field(f).
+
+	    FieldUpdate(f) :- <: `f >>= `_ :>, DECL(`f, f), Field(f).
+	    FieldUpdate(f) :- <: `base.`f >>= `_ :>, DECL(`f, f), Field(f).
+
+	    FieldUpdate(f) :- <: `f >>>= `_ :>, DECL(`f, f), Field(f).
+	    FieldUpdate(f) :- <: `base.`f >>>= `_ :>, DECL(`f, f), Field(f).
+
+	    FieldUpdate(f) :- <: `f &= `_ :>, DECL(`f, f), Field(f).
+	    FieldUpdate(f) :- <: `base.`f &= `_ :>, DECL(`f, f), Field(f).
+
+	    FieldUpdate(f) :- <: `f |= `_ :>, DECL(`f, f), Field(f).
+	    FieldUpdate(f) :- <: `base.`f |= `_ :>, DECL(`f, f), Field(f).
+
+	    FieldUpdate(f) :- <: `f ^= `_ :>, DECL(`f, f), Field(f).
+	    FieldUpdate(f) :- <: `base.`f ^= `_ :>, DECL(`f, f), Field(f).
 
 	    FieldRead(f) :- FieldAccess(f), NOT(FieldWrite(f)).
+	    FieldRead(f) :- FieldUpdate(f).
 
 	    Warning(f) :- Field(f), FieldRead(f), NOT(FieldWrite(f)), NOT(FieldInClassWithInit(_, _, f, _)).
 	    WarningDetails(l, c, src) :- Warning(f), SRC(f, l, c, _, _, src).

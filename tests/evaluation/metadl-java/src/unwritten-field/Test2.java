@@ -14,3 +14,25 @@ class D {
 		c.externalObject = null;
 	}
 }
+
+
+class F {
+	@NoWarning("UWF_UNWRITTEN_FIELD")
+	int x;
+	@NoWarning("UWF_UNWRITTEN_FIELD")
+	int y;
+	@ExpectWarning("UWF_UNWRITTEN_FIELD")
+	int z;
+
+	void f() {
+		x++;
+	}
+
+	void g() {
+		--this.y;
+	}
+
+	void h() {
+		x <<= z;
+	}
+}

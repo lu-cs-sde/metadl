@@ -34,14 +34,18 @@ analyze('P, "java5") {
 	    NonPublicFieldReturn(s, f) :- s <: return this.`f; :>, DECL(`f, f), FieldInClass(_, _, f, m), NOT(IsPublic(f)).
 	    NonPublicFieldReturnDetail(l, c, file) :- NonPublicFieldReturn(s, _), SRC(s, l, c, _, _, file).
 
-	    ParamToVariable(m, `p, `v) :- m <: .. `_ `_(.., `p, ..) { .. } :>, <: `v = `p2 :>, DECL(`p2, `p).
-	    ParamToVariable(m, `p, `v) :- m <: .. `_ `_(.., `p, ..) { .. } :>, <: `v = `p2 :>, DECL(`p2, `p).
-	    ParamToVariable(m, `p, `v) :- m <: .. `_ `_(.., `p, ..) { .. } :>, <: `v = `_ ? `_ : `p2  :>, DECL(`p2, `p).
-	    ParamToVariable(m, `p, `v) :- m <: .. `_ `_(.., `p, ..) { .. } :>, <: `v = `_ ? `p2 : `_  :>, DECL(`p2, `p).
-	    ParamToVariable(m, `p, `v) :- m <: .. `_ `_(.., `p, ..) { .. } :>, <: this.`v = `p2 :>, DECL(`p2, `p).
-	    ParamToVariable(m, `p, `v) :- m <: .. `_ `_(.., `p, ..) { .. } :>, <: this.`v = `p2 :>, DECL(`p2, `p).
-	    ParamToVariable(m, `p, `v) :- m <: .. `_ `_(.., `p, ..) { .. } :>, <: this.`v = `_ ? `_ : `p2  :>, DECL(`p2, `p).
-	    ParamToVariable(m, `p, `v) :- m <: .. `_ `_(.., `p, ..) { .. } :>, <: this.`v = `_ ? `p2 : `_  :>, DECL(`p2, `p).
+	    # This matches only constructors
+	    # IsConstructor(m) :- m <: `_ (..) { .. } :>.
+
+	    # The patterns below can match both a constructor and a method
+	    ParamToVariable(m, `p, `v) :- m <: .. `_ `_(.., `p, ..) { .. } :>, NOT(IsConstructor(m)), <: `v = `p2 :>, DECL(`p2, `p).
+	    ParamToVariable(m, `p, `v) :- m <: .. `_ `_(.., `p, ..) { .. } :>, NOT(IsConstructor(m)), <: `v = `p2 :>, DECL(`p2, `p).
+	    ParamToVariable(m, `p, `v) :- m <: .. `_ `_(.., `p, ..) { .. } :>, NOT(IsConstructor(m)), <: `v = `_ ? `_ : `p2  :>, DECL(`p2, `p).
+	    ParamToVariable(m, `p, `v) :- m <: .. `_ `_(.., `p, ..) { .. } :>, NOT(IsConstructor(m)), <: `v = `_ ? `p2 : `_  :>, DECL(`p2, `p).
+	    ParamToVariable(m, `p, `v) :- m <: .. `_ `_(.., `p, ..) { .. } :>, NOT(IsConstructor(m)), <: this.`v = `p2 :>, DECL(`p2, `p).
+	    ParamToVariable(m, `p, `v) :- m <: .. `_ `_(.., `p, ..) { .. } :>, NOT(IsConstructor(m)), <: this.`v = `p2 :>, DECL(`p2, `p).
+	    ParamToVariable(m, `p, `v) :- m <: .. `_ `_(.., `p, ..) { .. } :>, NOT(IsConstructor(m)), <: this.`v = `_ ? `_ : `p2  :>, DECL(`p2, `p).
+	    ParamToVariable(m, `p, `v) :- m <: .. `_ `_(.., `p, ..) { .. } :>, NOT(IsConstructor(m)), <: this.`v = `_ ? `p2 : `_  :>, DECL(`p2, `p).
 
 
 	    ParamToNonPublicField(m) :- ParamToVariable(m, p, v), DECL(v, f), FieldInClass(_, _, f, _), NOT(IsPublic(f)).

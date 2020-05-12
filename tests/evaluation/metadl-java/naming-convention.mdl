@@ -11,9 +11,10 @@ analyze('P, "java5") {
 	    WarningTypeName(l, c, file, name) :- Type(t, name), NOT(MATCH("[A-Z].*", name)), SRC(t, l, c, _, _, file), NotLibrary(t).
 
 	    Field(`f, name) :- Decl(d), d <: .. `t .. , `f , .. ; :>, ID(`f, name), NotLibrary(d).
+	    FinalField(`f) :- Decl(d), d <: .. final .. `t .. , `f, .. ; :>.
 	    Method(d, name) :- Decl(d), d <: `t `m ( .. ) ; :>, ID(`m, name), NotLibrary(d).
 
-	    WarningFieldName(l, c, file, name) :- Field(f, name), NOT(MATCH("[a-z].*", name)), SRC(f, l, c, _, _, file).
+	    WarningFieldName(l, c, file, name) :- Field(f, name), NOT(FinalField(f)), NOT(MATCH("[a-z].*", name)), SRC(f, l, c, _, _, file).
 	    WarningMethodName(l, c, file, name) :- Method(m, name), NOT(MATCH("[a-z].*", name)), SRC(m, l, c, _, _, file).
 
 }

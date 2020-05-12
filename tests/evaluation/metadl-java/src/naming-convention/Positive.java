@@ -6,4 +6,6 @@ class Positive {
     }
 
     public native void goodNative();
+
+	final String FINALString = "final";
 }

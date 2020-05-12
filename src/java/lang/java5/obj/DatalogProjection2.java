@@ -295,12 +295,21 @@ public class DatalogProjection2 {
 		for (int i = 0; i < n.getNumChildNoTransform(); ++i) {
 			ASTNode<?> child = n.getChildNoTransform(i);
 
-			lang.ast.StringConstant Kind = new lang.ast.StringConstant(relName);
-			lang.ast.IntConstant ChildId  = new lang.ast.IntConstant("" + nodeId(child));
-			lang.ast.IntConstant CurrentNodeId = new lang.ast.IntConstant("" + nodeId(n));
-			lang.ast.IntConstant ChildIdx = new lang.ast.IntConstant("" + childIndex++);
-			lang.ast.StringConstant Token = new lang.ast.StringConstant("");
-			ret.add(new PseudoTuple(Kind, CurrentNodeId, ChildIdx, ChildId, Token));
+			ret.add(makeTuple(relName, nodeId(n), childIndex, nodeId(child), ""));
+
+			if (child.mayHaveRewrite()) {
+				ASTNode<?> childT = n.getChild(i);
+				ret.add(makeTuple(relName, nodeId(n), childIndex, nodeId(childT), ""));
+			}
+
+			childIndex++;
+
+			// lang.ast.StringConstant Kind = new lang.ast.StringConstant(relName);
+			// lang.ast.IntConstant ChildId  = new lang.ast.IntConstant("" + nodeId(child));
+			// lang.ast.IntConstant CurrentNodeId = new lang.ast.IntConstant("" + nodeId(n));
+			// lang.ast.IntConstant ChildIdx = new lang.ast.IntConstant("" + childIndex++);
+			// lang.ast.StringConstant Token = new lang.ast.StringConstant("");
+			// ret.add(new PseudoTuple(Kind, CurrentNodeId, ChildIdx, ChildId, Token));
 		}
 
 		// other tokens attached to the node

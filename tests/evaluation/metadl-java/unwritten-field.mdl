@@ -11,7 +11,9 @@ analyze('P, "java5") {
 
 	    FieldAccess(f) :- <: `f :>, DECL(`f, f), Field(f).
 	    FieldWrite(f) :- <: `f = `_ :>, DECL(`f, f), Field(f).
-	    FieldWrite(f) :- <: `this.`f = `_ :>, DECL(`f, f), Field(f).
+	    # FieldWrite(f) :- <: `this.`f = `_ :>, DECL(`f, f), Field(f).
+	    FieldWrite(f) :- <: `base.`f = `_ :>, DECL(`f, f), Field(f).
+
 	    FieldRead(f) :- FieldAccess(f), NOT(FieldWrite(f)).
 
 	    Warning(f) :- Field(f), FieldRead(f), NOT(FieldWrite(f)), NOT(FieldInClassWithInit(_, _, f, _)).

@@ -258,7 +258,7 @@ public class DatalogProjection2 {
 	private String cleanTerminal(String s) {
 		// TODO: Souffle assumes that [ or ] are used in the CSV
 		// for encoding a record.
-		return s.replace('[', '(').replace(']', ')');
+		return s.replace('[', '(').replace(']', ')').replace('\'', '_').replace('"', '_').replace('\n', '_');
 	}
 
 	private List<PseudoTuple> toTuples(ASTNode<?> n) {

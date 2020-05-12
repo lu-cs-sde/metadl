@@ -38,3 +38,12 @@ class C4 extends C3 {
 		return false;
 	}
 }
+
+class C5 extends C3 {
+	void foo1(int x) {
+	}
+
+	public boolean equals(Object other, Object arg2) {
+		return false;
+	}
+}

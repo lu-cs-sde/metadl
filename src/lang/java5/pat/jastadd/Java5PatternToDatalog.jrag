@@ -126,8 +126,6 @@ aspect LanguageSpecific {
 		ret.add(makeParentRule(ctx));
 		// Insert a relation to check existence of nodes
 		ret.add(makeExistsRule(ctx));
-		// Insert predicates that compute the domain of metavariables
-		ret.addAll(makeMetaVariableRelations(ctx));
 		// Insert predicates that expose ExtendJ attributes
 		ret.addAll(makeRewriteMap(ctx));
 		// Insert the TYPE relation

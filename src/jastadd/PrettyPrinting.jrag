@@ -288,6 +288,28 @@ aspect SoufflePrinting {
 		printCollection(nonIncl, "", " :- true.\n", ", ", pr);
 	}
 
+	private boolean FormalPredicate.isSouffleInline() {
+		// TODO: set an attribute on the FormalPredicate to handle this.
+		// The commented relations can't be inlined because they may appear
+		// negated.
+		String n = predicateName();
+		// if (n.endsWith("_SRC"))
+		// 	return true;
+		// if (n.endsWith("_PARENT"))
+		// 	return true;
+		if (n.endsWith("_REWRITE_MAP"))
+			return true;
+		// if (n.endsWith("_DECL"))
+		// 	return true;
+		// if (n.endsWith("_TYPE"))
+		// 	return true;
+		// if (n.endsWith("_ID"))
+		// 	return true;
+		// if (n.endsWith("_GENERIC"))
+		// 	return true;
+		return false;
+	}
+
     public void FormalPredicate.soufflePrint(PrettyPrinter pr) {
         if(!literal().isInclusive()) return;
         pr.out.print(".decl " + predicateName() + "(");
@@ -299,6 +321,8 @@ aspect SoufflePrinting {
         }
         printCollection(constants, "", "", ", ", pr);
         pr.out.print(")");
+		if (isSouffleInline())
+			pr.out.print(" inline");
     }
 
     private void Program.soufflePrintEDBDecl(PrettyPrinter pr) {

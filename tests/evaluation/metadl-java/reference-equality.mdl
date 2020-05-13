@@ -110,7 +110,7 @@ analyze('P, "java5") {
 	    # OUTPUT('TSuperTypeDetail).
 	    # OUTPUT('ObjectDecl).
 
-	    # Exclude all the comparisons with this is compareTo and equals methods
+	    # Exclude all the comparisons with this in compareTo and equals methods
 	    ExcludedMethods(`m) :- <: class `_ implements Comparable<`t> { .. `m .. } :>, `m <: public int compareTo(..) ; :>.
 	    ExcludedMethods(`m) :- `m <: public boolean equals(Object `o); :>.
 	    ExcludedTerms(t) :- ExcludedMethods(m), PARENT(m, t).

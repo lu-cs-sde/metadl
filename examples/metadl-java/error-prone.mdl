@@ -196,8 +196,8 @@ OUTPUT('MissingOverrideDetail).
             TypeName("Byte"), TypeName("Float"), TypeName("Double"), TypeName("Boolean").
 
 	    PrimitiveCtor(e) :- e <: new `c(`_) :>, DECL(`c, c), c <: class `name { .. } :>, ID(`name, t), TypeName(t).
-	    PrimitiveCtorDetail(l, c, file) :- PrimitiveCtor(e), SRC(e, l, c, _, _, file), GT(l, 0).
-	    OUTPUT('PrimitiveCtorDetail).
+	    PrimitiveCtorDetailEP(l, c, file) :- PrimitiveCtor(e), SRC(e, l, c, _, _, file), GT(l, 0).
+	    OUTPUT('PrimitiveCtorDetailEP).
 
 
 

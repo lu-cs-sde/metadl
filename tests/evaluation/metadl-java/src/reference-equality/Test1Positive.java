@@ -46,8 +46,8 @@ abstract class Test1 extends Sup {
 // public void positive_equal() {
 class Optional<T> {
     T t;
-    public static T makeJust(T t) { Optional<T> o = new Optional(); o.t = t; }
-    public static T makeNothing() { Optional<T> o = new Optional(); o.t = null; }
+    public static <T> Optional<T> makeJust(T t) { Optional<T> o = new Optional(); o.t = t; return o;}
+    public static <T> Optional<T> makeNothing() { Optional<T> o = new Optional(); o.t = null; return o;}
 
     public boolean equals(Object o) {
 	if (o == this) return true;
@@ -75,7 +75,7 @@ class Test3 {
 class Test4 {
     boolean f(Optional<Integer> a, Optional<Integer> b) {
 	// BUG
-	boolean eq = a == b || Objects.equal(a, b);
+	boolean eq = a == b || java.util.Objects.equals(a, b);
 	// BUG
 	return a == b || (java.util.Objects.equals(a, b));
     }
@@ -90,13 +90,13 @@ class Test5 {
 }
 
 // public void transitiveEquals()
-public class Super6 {
+class Super6 {
     public boolean equals(Object o) {
 	return false;
     }
 }
-public class Mid6 extends Super6 { }
-public class Sub6 extends Mid6 { }
+class Mid6 extends Super6 { }
+class Sub6 extends Mid6 { }
 abstract class Test6 {
     boolean f(Sub6 a, Sub6 b) {
 	// BUG: Diagnostic contains: a.equals(b)
@@ -128,7 +128,7 @@ class Test8 implements Comparable<Test8> {
 	return this == o ? 0 : -1;
     }
     public boolean equals(Object obj) {
-	return obj instanceof Test;
+	return obj instanceof Test8;
     }
     public int hashCode() {
 	return 1;

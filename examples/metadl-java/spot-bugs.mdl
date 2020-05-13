@@ -87,10 +87,10 @@ ParamToVariable(0, 0, 0) :- NEQ(0, 0).
 
 
 	    IsPublic(f) :- FieldInClass(_, _, f, m), MOD(m, "public").
-	    IsStatic(f) :- FieldInClass(_, _, f, m), MOD(m, "static").
+	    IsFinal(f) :- FieldInClass(_, _, f, m), MOD(m, "final").
 
-	    NonPublicFieldReturn(s, f) :- s <: return `f ; :>, DECL(`f, f), FieldInClass(_, _, f, m), NOT(IsPublic(f)).
-	    NonPublicFieldReturn(s, f) :- s <: return this.`f; :>, DECL(`f, f), FieldInClass(_, _, f, m), NOT(IsPublic(f)).
+	    NonPublicFieldReturn(s, f) :- s <: return `f ; :>, DECL(`f, f), FieldInClass(_, _, f, m), NOT(IsPublic(f)), NOT(IsFinal(f)).
+	    NonPublicFieldReturn(s, f) :- s <: return this.`f; :>, DECL(`f, f), FieldInClass(_, _, f, m), NOT(IsPublic(f)), NOT(IsFinal(f)).
 	    NonPublicFieldReturnDetail(l, c, file) :- NonPublicFieldReturn(s, _), SRC(s, l, c, _, _, file).
 
 	    ParamToVariable(m, `p, `v) :- m <: .. `_ `_(.., `p, ..) { .. } :>, <: `v = `p2 :>, DECL(`p2, `p).

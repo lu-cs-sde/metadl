@@ -28,10 +28,10 @@ analyze('P, "java5") {
 
 
 	    IsPublic(f) :- FieldInClass(_, _, f, m), MOD(m, "public").
-	    IsStatic(f) :- FieldInClass(_, _, f, m), MOD(m, "static").
+	    IsFinal(f) :- FieldInClass(_, _, f, m), MOD(m, "final").
 
-	    NonPublicFieldReturn(s, f) :- s <: return `f ; :>, DECL(`f, f), FieldInClass(_, _, f, m), NOT(IsPublic(f)).
-	    NonPublicFieldReturn(s, f) :- s <: return this.`f; :>, DECL(`f, f), FieldInClass(_, _, f, m), NOT(IsPublic(f)).
+	    NonPublicFieldReturn(s, f) :- s <: return `f ; :>, DECL(`f, f), FieldInClass(_, _, f, m), NOT(IsPublic(f)), NOT(IsFinal(f)).
+	    NonPublicFieldReturn(s, f) :- s <: return this.`f; :>, DECL(`f, f), FieldInClass(_, _, f, m), NOT(IsPublic(f)), NOT(IsFinal(f)).
 	    NonPublicFieldReturnDetail(l, c, file) :- NonPublicFieldReturn(s, _), SRC(s, l, c, _, _, file).
 
 	    # This matches only constructors
@@ -48,7 +48,7 @@ analyze('P, "java5") {
 	    ParamToVariable(m, `p, `v) :- m <: .. `_ `_(.., `p, ..) { .. } :>, NOT(IsConstructor(m)), <: this.`v = `_ ? `p2 : `_  :>, DECL(`p2, `p).
 
 
-	    ParamToNonPublicField(m) :- ParamToVariable(m, p, v), DECL(v, f), FieldInClass(_, _, f, _), NOT(IsPublic(f)).
+	    ParamToNonPublicField(m) :- ParamToVariable(m, p, v), DECL(v, f), FieldInClass(_, _, f, _), NOT(IsPublic(f)), NOT(IsFinal(f)).
 	    ParamToNonPublicFieldDetail(l, c, file) :- ParamToNonPublicField(m), SRC(m, l, c, _, _, file).
 
 ### Test

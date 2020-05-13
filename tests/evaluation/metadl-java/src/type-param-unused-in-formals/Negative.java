@@ -1,3 +1,7 @@
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Target;
+import java.util.List;
+
 //  public void okFBound()
 class Test {
 	interface Foo<T> {}
@@ -38,11 +42,16 @@ abstract class Test6<T> {
 }
 
 // public void typeAnnotation()
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Target;
 @Target(ElementType.TYPE_USE) @interface A {}
 class Test7 {
 	<T> T f(@A T x) {
 		return x;
+	}
+}
+
+
+class Test8 {
+	public <T extends Object> int f(java.util.List<T>  l) {
+		return l.size();
 	}
 }

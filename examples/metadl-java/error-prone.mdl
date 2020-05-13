@@ -22,6 +22,7 @@ analyze('P, "java5") {
 
 	    # Type qualifies parameter
 	    TypeForParam(`t1) :- GenericMethod(m, `t1, `t2, `pt), DECL(`pt, `t1).
+	    TypeForParam(`t1) :- GenericMethod(m, `t1, `t2, `pt), IsTypeParam(`pt, t), DECL(t, `t1).
 
 	    GenericMethod3(m, t1, t2) :- GenericMethod(m, t1, t2, _).
 	    GenericMethod3(m, t1, t2) :- GenericMethodVoid(m, t1, t2).
@@ -174,8 +175,13 @@ OUTPUT('TypeUnusedInFormalsDetail).
 
 # Missing override
 
+	    OverrideInBetween(m1, m2, p) :- Override(m1, p), Override(p, m2), NEQ(p, m1), NEQ(p, m2).
+	    ClosestOverride(m1, m2) :- Override(m1, m2), NOT(OverrideInBetween(m1, m2, _)).
+	    ClosestOverrideIsAbstract(m1) :- ClosestOverride(m1, m2), m2 <: .. abstract .. `t `n (..) ; :>.
+	    ClosestOverrideIsAbstract(m1) :- ClosestOverride(m1, `m2), <: interface `_ { .. `m2 .. } :>.
+
 	    HasOverride(m) :- m <: .. @Override .. `t `n(..) ; :>.
-	    MissingOverride(m) :- Override(m, _), NOT(HasOverride(m)).
+	    MissingOverride(m) :- Override(m, _), NOT(HasOverride(m)), NOT(ClosestOverrideIsAbstract(m)).
 	    MissingOverrideDetail(l, c, file) :- MissingOverride(m), SRC(m, l, c, _, _, file), GT(l, 0).
 
 
@@ -186,6 +192,8 @@ OUTPUT('MissingOverrideDetail).
 
 
 # Boxed primitive constructor
+            TypeName("Character"), TypeName("Integer"), TypeName("Long"), TypeName("Short"),
+            TypeName("Byte"), TypeName("Float"), TypeName("Double"), TypeName("Boolean").
 
 	    PrimitiveCtor(e) :- e <: new `c(`_) :>, DECL(`c, c), c <: class `name { .. } :>, ID(`name, t), TypeName(t).
 	    PrimitiveCtorDetail(l, c, file) :- PrimitiveCtor(e), SRC(e, l, c, _, _, file), GT(l, 0).

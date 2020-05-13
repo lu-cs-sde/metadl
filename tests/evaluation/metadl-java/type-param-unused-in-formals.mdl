@@ -19,6 +19,7 @@ analyze('P, "java5") {
 
 	    # Type qualifies parameter
 	    TypeForParam(`t1) :- GenericMethod(m, `t1, `t2, `pt), DECL(`pt, `t1).
+	    TypeForParam(`t1) :- GenericMethod(m, `t1, `t2, `pt), IsTypeParam(`pt, t), DECL(t, `t1).
 
 	    GenericMethod3(m, t1, t2) :- GenericMethod(m, t1, t2, _).
 	    GenericMethod3(m, t1, t2) :- GenericMethodVoid(m, t1, t2).
@@ -34,7 +35,7 @@ analyze('P, "java5") {
 	    TypeUnusedInFormals(t1) :- GenericMethod(m, t1, r, _), NOT(TypeForParam(t1)), NOT(TypeForTypeBound(t1)), NOT(TypeForReturn(t1)).
 	    TypeUnusedInFormals(t1) :- GenericMethodVoid(m, t1, r), NOT(TypeForTypeBound(t1)), NOT(TypeForReturn(t1)).
 
-	    TypeUnusedInFormalsDetail(l, c, file) :- TypeUnusedInFormals(t), SRC(t, l, c, _, _, file).
+	    TypeUnusedInFormalsDetail(l, c, file) :- TypeUnusedInFormals(t), SRC(t, l, c, _, _, file), GT(l, 0).
 }
 
 OUTPUT('TypeUnusedInFormalsDetail).

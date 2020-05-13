@@ -17,7 +17,9 @@ class C2 extends C1 {
 }
 
 class C3 extends C2 implements I12 {
-	// Missing override here
+	// Missing override here is OK, since
+	// there will be a compiler error if the class
+	// does not implement the method.
 	void foo1() {
 
 	}

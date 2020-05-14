@@ -22,6 +22,9 @@ aspect LanguageSpecific {
 			return Collections.emptyList();
 		}
 	}
+	eq ArrayTypeAccess.tokens() {
+		return Collections.emptyList();
+	}
 	eq Literal.tokens() {
 		return Collections.singletonList(getLITERAL());
 	}

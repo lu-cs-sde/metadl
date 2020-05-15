@@ -3,6 +3,8 @@ TARGETS=$(patsubst %.mdl,%.run, $(SRCS))
 
 METADL=../../compiler.jar
 
+.PRECIOUS: %.dl
+
 all : $(TARGETS)
 
 %.dl : %.mdl

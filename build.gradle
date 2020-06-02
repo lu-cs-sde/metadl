@@ -117,6 +117,7 @@ compileJava.dependsOn 'generateJava', 'generateScanner', 'generateParser',
     'genMetadlLang',
     'genJava4Lang',
     'genJava5Lang',
+    'genJava7Lang',
     'generateConfig', 'generateScannerConfig', 'generateParserConfig'
 
 void makeGenerateJavaTask(String name, String outDir, String srcDir, String pkg,
@@ -373,20 +374,8 @@ def java4LexOrder = [
     "Postamble.flex"
 ]
 
-def java5LexOrder = [
-    "Header.flex",
-    "Preamble.flex",
-    "Macros.flex",
-    "RulesPreamble.flex",
-    "WhiteSpace.flex",
-    "Comments.flex",
-    "Keywords.flex",
-    "Literals.flex",
-    "Operators.flex",
-    "Separators.flex",
-    "Identifiers.flex",
-    "Postamble.flex"
-]
+def java5LexOrder = java4LexOrder
+def java7LexOrder = java4LexOrder
 
 def metadlLexOrder = ['scanner.flex']
 
@@ -394,6 +383,7 @@ def metadlLexOrder = ['scanner.flex']
 makeGenerateLangTask('genMetadlLang', 'src/gen/', 'metadl', metadlLexOrder)
 makeGenerateLangTask('genJava4Lang', 'src/gen/', 'java4', java4LexOrder)
 makeGeneratePatLangTask('genJava5Lang', 'src/gen/', 'java5', java5LexOrder)
+makeGeneratePatLangTask('genJava7Lang', 'src/gen/', 'java7', java7LexOrder)
 
 makeGenerateBeaverTask('generateBeaver', 'src/gen/LangParser.beaver', 'src/parser/metadl.parser')
 makeGenerateParserTask('generateParser', 'src/gen/lang/ast', 'src/gen/LangParser.beaver')

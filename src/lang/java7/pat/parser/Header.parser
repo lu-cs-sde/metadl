@@ -1,8 +1,8 @@
 %header {:
- package lang.java5.pat.ast;
+ package lang.java7.pat.ast;
 
- import lang.java5.pat.ast.*;
- import lang.java5.pat.ast.PatLangScanner;
+ import lang.java7.pat.ast.*;
+ import lang.java7.pat.ast.PatLangScanner;
 
  // import org.extendj.scanner.UnicodeEscapeReader;
 :};

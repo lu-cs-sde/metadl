@@ -53,3 +53,9 @@ FloatingPointLiteral : Literal;
  */
 DoubleLiteral : Literal;
 
+/**
+ * Literal produced when the compiler tries to parse
+ * a malformed numeric literal.
+ * This literal kind has an associated error message.
+ */
+IllegalLiteral : Literal;

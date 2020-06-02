@@ -134,6 +134,9 @@ void makeGenerateJavaTask(String name, String outDir, String srcDir, String pkg,
 	if (commonSources != null)
 	    sources = sources + commonSources
 
+	outputs.dir(outDir)
+	inputs.files(sources)
+
 	args = [ "--o=" + file(outDir).path, '--package=' + pkg, '--beaver', '--rewrite=cnta'] +
 	    (patternGrammar ? "--pattern_grammar" : []) + sources.files
 	classpath = project.configurations.jastadd2
@@ -160,6 +163,9 @@ void makeGenerateScannerTask(String name, String outDir, String srcFile) {
 	classpath = configurations.jflex
 	main = 'jflex.Main'
 
+	inputs.file(srcFile)
+	outputs.dir(outDir)
+
 	// Options to JFlex (http://jflex.de/manual.html#running-jflex):
 	args '-d', file(outDir).path, file(srcFile).path
     }
@@ -175,6 +181,9 @@ void makeGenerateParserTask(String name, String outDir, String srcFile) {
 	description 'Generates the parser with Beaver.'
 	classpath = configurations.beaver
 	main = 'beaver.comp.run.Make'
+
+	outputs.dir(outDir)
+	inputs.file(srcFile)
 
 	// Options to Beaver (http://beaver.sourceforge.net/):
 	args '-d', file(outDir).path,
@@ -196,6 +205,9 @@ void makeGenerateBeaverTask(String name, String outFile, String srcFile, boolean
 	classpath = configurations.jastaddparser
 	main = 'org.jastadd.jastaddparser.Main'
 
+	inputs.file(srcFile)
+	outputs.file(outFile)
+
 	if (patternGrammar)
 	    args '--pattern_grammar', file(srcFile).path, file(outFile).path
 	else
@@ -213,6 +225,8 @@ void makeGenerateSEPTask(String name, String outFile, String srcFile) {
 	classpath = configurations.jastaddparser
 	main = 'org.jastadd.jastaddparser.Main'
 
+	inputs.file(srcFile)
+	outputs.file(outFile)
 
 	args '--sep', file(srcFile).path, file(outFile).path
     }

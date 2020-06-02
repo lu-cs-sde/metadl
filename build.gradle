@@ -119,19 +119,24 @@ compileJava.dependsOn 'generateJava', 'generateScanner', 'generateParser',
     'genJava5Lang',
     'generateConfig', 'generateScannerConfig', 'generateParserConfig'
 
-
 void makeGenerateJavaTask(String name, String outDir, String srcDir, String pkg,
 			  boolean patternGrammar = false,
 			  FileTree commonSources = null) {
-    tasks.create(name, org.jastadd.JastAddTask) {
+    // A custom implementation of the behaviour of JastAddTask that does not
+    // remove any generated files from the output directory. The removal of generated
+    // files interacts badly with other file-generation task (e.g. makeGenerateParserTask)
+    // that use the same directory
+
+    tasks.create(name, JavaExec) {
 	description 'Generates the compiler AST classes from JastAdd specifications.'
-	outputDir = file(outDir)
-	sources = fileTree(dir: srcDir, includes: [ '**/*.jrag', '**/*.jadd', '**/*.ast' ])
+	main = 'org.jastadd.JastAdd'
+	def sources = fileTree(dir: srcDir, includes: [ '**/*.jrag', '**/*.jadd', '**/*.ast' ])
 	if (commonSources != null)
 	    sources = sources + commonSources
-	options = [ '--package=' + pkg, '--beaver' , '--rewrite=cnta' ]
-	if (patternGrammar)
-	    options << '--pattern_grammar'
+
+	args = [ "--o=" + file(outDir).path, '--package=' + pkg, '--beaver', '--rewrite=cnta'] +
+	    (patternGrammar ? "--pattern_grammar" : []) + sources.files
+	classpath = project.configurations.jastadd2
     }
 }
 

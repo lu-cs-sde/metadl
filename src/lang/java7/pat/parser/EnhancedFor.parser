@@ -1,0 +1,18 @@
+Stmt statement = enhanced_for_statement;
+
+Stmt statement_no_short_if = enhanced_for_statement_no_short_if;
+
+Stmt enhanced_for_statement =
+  FOR LPAREN modifiers.m? type.t enhanced_for_parameter.p COLON expression.e RPAREN statement.s
+  {:  return new EnhancedForStmt(new Modifiers(m), t, p, e, s);  :}
+  ;
+
+Stmt enhanced_for_statement_no_short_if =
+  FOR LPAREN modifiers.m? type.t enhanced_for_parameter.p COLON expression.e RPAREN statement_no_short_if.s
+  {: return new EnhancedForStmt(new Modifiers(m), t, p, e, s);  :}
+  ;
+
+VariableDeclarator enhanced_for_parameter =
+  IDENTIFIER dims.d?
+  {: return new VariableDeclarator(IDENTIFIER, d, new Opt()); :}
+  ;

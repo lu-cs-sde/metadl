@@ -1,0 +1,8 @@
+EnumDecl : ClassDecl ::= Modifiers <ID:String> /[SuperClass:Access]/ Implements:Access* BodyDecl*;
+
+EnumConstant : BodyDecl ::= Modifiers <ID:String> Arg:Expr* [Init:Expr] /TypeAccess:Access/;
+
+EnumInstanceExpr : ClassInstanceExpr ::= /Access/ /Arg:Expr*/ [TypeDecl];
+
+// Explicitly bound access that bypasses name binding.
+BoundEnumConstant : VarAccess ::= <EnumConstant:EnumConstant>;

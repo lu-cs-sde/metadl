@@ -1,0 +1,368 @@
+/* Copyright (c) 2005-2017, ExtendJ Committers
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice,
+ * this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ * this list of conditions and the following disclaimer in the documentation
+ * and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its
+ * contributors may be used to endorse or promote products derived from this
+ * software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+
+/**
+ * The root of a Java AST.
+ *
+ * <p>A Java program consists of multiple compilation units that represent the
+ * source files of the program.
+ */
+Program ::= CompilationUnit*;
+
+/**
+ * A compilation unit.
+ * Each compilation unit represents an input source file.
+ *
+ * <p>See JLS 6 &sect;7.3.
+ */
+CompilationUnit ::= <PackageDecl:String> ImportDecl* TypeDecl*;
+
+/**
+ * A synthetic type of compilation unit containing the
+ * synthetic type declarations for primitive types.
+ */
+PrimitiveCompilationUnit : CompilationUnit;
+
+/**
+ * An abstract import declaration.
+ *
+ * <p>Multiple concrete subclasses exist for different kind of
+ * import declarations. More import declarations were added in Java 5.
+ *
+ * See JLS 6 &sect;7.5.
+ */
+abstract ImportDecl ::= Access;
+SingleTypeImportDecl : ImportDecl;
+TypeImportOnDemandDecl : ImportDecl;
+
+/**
+ * An abstract access.
+ * Concrete subclasses include field, method, and type access.
+ */
+abstract Access : Expr;
+
+/**
+ * A qualified expression.
+ * The left hand side qualifies the right hand side.
+ *
+ * <p>Note: this type can represent more than a simple "dot"
+ * expression. There can be an array access as the right hand side,
+ * e.g., {@code left[3] }.
+ */
+Dot : Access ::= Left:Expr Right:Access;
+
+/**
+ * A reference to a local variable, parameter, or field.
+ */
+VarAccess : Access ::= <ID:String>;
+
+/**
+ * A method invocation/call expression.
+ * The {@code type()} attribute computes the result type.
+ */
+MethodAccess : Access ::= <ID:String> Arg:Expr*;
+
+/** A constructor invocation. */
+ConstructorAccess : Access ::= <ID:String> Arg:Expr*;
+
+/** A superconstructor invocation. */
+SuperConstructorAccess : ConstructorAccess;
+
+TypeAccess : Access ::= <Package:String> <ID:String>;
+PrimitiveTypeAccess : TypeAccess ::= <Package:String> <ID:String>;
+ArrayTypeAccess : TypeAccess ::= /<Package:String>/ /<ID:String>/ Access;
+ArrayTypeWithSizeAccess : ArrayTypeAccess ::= Expr;
+
+/**
+ * Represent explicit and implicit {@code this} references.
+ */
+ThisAccess : Access;
+
+/**
+ * Represent explicit superclass references ({@code super}).
+ */
+SuperAccess : Access;
+
+/**
+ * A package name in an import statement.
+ * This should not occur as part of a qualified typename or expression name (TypeAccess includes
+ * a package name part).
+ */
+PackageAccess : Access ::= <Package:String>;
+
+/**
+ * An array type access.
+ *
+ * <p>Array accesses only occur as suffixes to another qualifying expression,
+ * possibly including other array accesses.  The last array access will be the
+ * innermost nested expression in a Dot chain starting with the array itself.
+ */
+ArrayAccess : Access ::= Expr;
+
+/**
+ * An unclassified parse name.
+ *
+ * <p>Parse names are classified automatically using the JastAdd rewrite
+ * mechanism.
+ */
+ParseName : Access;
+
+/**
+ * A class instance creation expression. Can optionally contain
+ * a class declaration, resulting in an anonymous class.
+ *
+ * <p> The Access child is either the class being constructed, or the supertype
+ * for the anonymous class declaration.
+ */
+ClassInstanceExpr : Access ::= Access Arg:Expr* [TypeDecl];
+
+ClassAccess : Access ::= ;
+
+abstract TypeDecl ::= Modifiers <ID:String> BodyDecl*;
+
+// 4.1 The Kinds of Types and Values
+
+/**
+ * An abstract reference type.
+ *
+ * All reference types are represented by type declarations.
+ * Concrete subclasses include class and interface declarations.
+ */
+abstract ReferenceType : TypeDecl;
+PrimitiveType : TypeDecl;
+
+NullType : TypeDecl;
+VoidType : TypeDecl;
+
+UnknownType : ClassDecl;
+
+// 4.2 Primitive Types and Values
+abstract NumericType : PrimitiveType;
+BooleanType : PrimitiveType;
+abstract IntegralType : NumericType;
+ByteType : IntegralType;
+ShortType : IntegralType;
+IntType : IntegralType;
+LongType : IntegralType;
+CharType : IntegralType;
+FloatingPointType : NumericType;
+FloatType : FloatingPointType;
+DoubleType : FloatingPointType;
+
+// 4.3 Reference Types and Values
+ClassDecl : ReferenceType ::= Modifiers <ID:String> [SuperClass:Access] Implements:Access* BodyDecl* /[ImplicitConstructor:ConstructorDecl]/;
+InterfaceDecl : ReferenceType ::= Modifiers <ID:String> SuperInterface:Access* BodyDecl*;
+ArrayDecl : ClassDecl;
+
+AnonymousDecl : ClassDecl ::= Modifiers <ID:String> /[SuperClass:Access]/ /Implements:Access*/ BodyDecl*;
+
+abstract BodyDecl;
+InstanceInitializer : BodyDecl ::= Block;
+StaticInitializer : BodyDecl ::= Block;
+ConstructorDecl : BodyDecl ::= Modifiers <ID:String> Parameter:ParameterDeclaration* Exception:Access* [ParsedConstructorInvocation:Stmt] Block /ImplicitConstructorInvocation:Stmt/;
+
+abstract MemberDecl : BodyDecl;
+
+FieldDecl : MemberDecl ::= Modifiers TypeAccess:Access Declarator:FieldDeclarator*;
+
+VarDeclStmt : Stmt ::= Modifiers TypeAccess:Access Declarator:VariableDeclarator*;
+
+abstract Declarator ::= /TypeAccess:Access/ <ID:String> Dims* [Init:Expr];
+
+VariableDeclarator : Declarator;
+
+FieldDeclarator : Declarator;
+
+/**
+ * A parameter declaration as used in either method parameter lists
+ * or as a catch clause parameter.
+ */
+ParameterDeclaration ::= Modifiers TypeAccess:Access <ID:String>;
+
+/**
+ * Array initializer list.
+ */
+ArrayInit : Expr ::= Init:Expr*;
+
+MethodDecl : MemberDecl ::= Modifiers TypeAccess:Access <ID:String> Parameter:ParameterDeclaration* Exception:Access* [Block];
+
+// 8.5 Member Type Declarations
+abstract MemberTypeDecl : MemberDecl;
+MemberClassDecl : MemberTypeDecl ::= ClassDecl;
+MemberInterfaceDecl : MemberTypeDecl ::= InterfaceDecl;
+
+IdUse ::= <ID:String>;
+
+abstract Expr;
+
+abstract AssignExpr : Expr ::= Dest:Expr Source:Expr;
+
+AssignSimpleExpr : AssignExpr ;
+
+abstract AssignMultiplicativeExpr : AssignExpr;
+AssignMulExpr : AssignMultiplicativeExpr ;
+AssignDivExpr : AssignMultiplicativeExpr ;
+AssignModExpr : AssignMultiplicativeExpr ;
+
+abstract AssignAdditiveExpr : AssignExpr;
+AssignPlusExpr : AssignAdditiveExpr ;
+AssignMinusExpr : AssignAdditiveExpr ;
+
+abstract AssignShiftExpr : AssignExpr;
+AssignLShiftExpr : AssignShiftExpr ;
+AssignRShiftExpr : AssignShiftExpr ;
+AssignURShiftExpr : AssignShiftExpr ;
+
+abstract AssignBitwiseExpr : AssignExpr;
+AssignAndExpr : AssignBitwiseExpr ;
+AssignXorExpr : AssignBitwiseExpr ;
+AssignOrExpr : AssignBitwiseExpr ;
+
+abstract PrimaryExpr : Expr;
+
+ParExpr : PrimaryExpr ::= Expr;
+
+ArrayCreationExpr : PrimaryExpr ::= TypeAccess:Access [ArrayInit];
+Dims ::= [Expr];
+
+abstract Unary : Expr ::= Operand:Expr;
+PreIncExpr : Unary ;
+PreDecExpr : Unary ;
+MinusExpr : Unary ;
+PlusExpr : Unary ;
+BitNotExpr : Unary ;
+LogNotExpr : Unary ;
+
+CastExpr : Expr ::= TypeAccess:Access Expr;
+
+abstract PostfixExpr : Unary;
+PostIncExpr : PostfixExpr ;
+PostDecExpr : PostfixExpr ;
+
+/**
+ * Abstract AST class for all binary expressions.
+ * Use {@code left()} and {@code right()} to access the left-/right hand side.
+ */
+abstract Binary : Expr ::= LeftOperand:Expr RightOperand:Expr;
+
+abstract ArithmeticExpr : Binary;
+abstract MultiplicativeExpr : ArithmeticExpr;
+MulExpr : MultiplicativeExpr ;
+DivExpr : MultiplicativeExpr ;
+ModExpr : MultiplicativeExpr ;
+abstract AdditiveExpr : ArithmeticExpr;
+AddExpr : AdditiveExpr ;
+SubExpr : AdditiveExpr ;
+
+abstract ShiftExpr : Binary;
+LShiftExpr : ShiftExpr ;
+RShiftExpr : ShiftExpr ;
+URShiftExpr : ShiftExpr ;
+
+abstract BitwiseExpr : Binary;
+AndBitwiseExpr : BitwiseExpr ;
+OrBitwiseExpr : BitwiseExpr ;
+XorBitwiseExpr : BitwiseExpr ;
+
+abstract LogicalExpr : Binary;
+AndLogicalExpr : LogicalExpr ;
+OrLogicalExpr : LogicalExpr ;
+
+abstract RelationalExpr : Binary;
+LTExpr : RelationalExpr ;
+GTExpr : RelationalExpr ;
+LEExpr : RelationalExpr ;
+GEExpr : RelationalExpr ;
+
+abstract EqualityExpr : RelationalExpr;
+EQExpr : EqualityExpr ;
+NEExpr : EqualityExpr ;
+
+InstanceOfExpr : Expr ::= Expr TypeAccess:Access;
+
+ConditionalExpr : Expr ::= Condition:Expr TrueExpr:Expr FalseExpr:Expr;
+
+Modifiers ::= Modifier*;
+Modifier ::= <ID:String>;
+
+// Statements
+
+/**
+ * Abstract supertype for statements.
+ * Subclasses include all the regular imperative statements (for, while, try, etc.).
+ */
+abstract Stmt;
+
+/**
+ * A statement that can be reached by {@code break} or {@code continue}.
+ */
+abstract BranchTargetStmt : Stmt;
+
+/**
+ * A statement block. Contains a list of statements.
+ */
+Block : Stmt ::= Stmt*;
+EmptyStmt : Stmt;
+LabeledStmt : BranchTargetStmt ::= <Label:String> Stmt;
+
+/**
+ * A statement wrapper for expressions, used for expressions that can also be statements
+ * (like method invocations and assignments).
+ */
+ExprStmt : Stmt ::= Expr;
+
+SwitchStmt : BranchTargetStmt ::= Expr Block;
+abstract Case : Stmt;
+ConstCase : Case ::= Value:Expr;
+DefaultCase : Case;
+
+IfStmt : Stmt ::= Condition:Expr Then:Stmt [Else:Stmt];
+WhileStmt : BranchTargetStmt ::= Condition:Expr Stmt;
+DoStmt : BranchTargetStmt ::= Stmt Condition:Expr;
+ForStmt : BranchTargetStmt ::= InitStmt:Stmt* [Condition:Expr] UpdateStmt:Stmt* Stmt;
+
+BreakStmt : Stmt ::= <Label:String> /[Finally:Block]/;
+ContinueStmt : Stmt ::= <Label:String> /[Finally:Block]/;
+ReturnStmt : Stmt ::= [Result:Expr] /[Finally:Block]/;
+ThrowStmt : Stmt ::= Expr;
+
+SynchronizedStmt : Stmt ::= Expr Block /MonitorExit/;
+
+/**
+ * Used in code generation to represent the implicit monitor exit
+ * call at the end of a synchronized block.
+ */
+MonitorExit : Block;
+
+TryStmt : Stmt ::= Block CatchClause* [Finally:Block] /ExceptionHandler:Block/;
+
+AssertStmt : Stmt ::= Condition:Expr [Message:Expr];
+
+LocalClassDeclStmt : Stmt ::= ClassDecl;

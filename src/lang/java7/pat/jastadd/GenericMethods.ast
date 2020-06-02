@@ -1,0 +1,24 @@
+GenericMethodDecl : MethodDecl ::= TypeParameter:TypeVariable*; 
+GenericConstructorDecl : ConstructorDecl ::= TypeParameter:TypeVariable*;
+
+ParMethodDecl : MethodDecl ::= TypeArgument:Access* <GenericMethodDecl:GenericMethodDecl>
+    TypeParameter:TypeVariable*
+    <Parameterization:Parameterization>;
+
+RawMethodDecl : ParMethodDecl;
+
+ParConstructorDecl : ConstructorDecl ::= TypeArgument:Access*
+    <GenericConstructorDecl:GenericConstructorDecl>
+    TypeParameter:TypeVariable*
+    <Parameterization:Parameterization>;
+
+RawConstructorDecl : ParConstructorDecl;
+
+ParMethodAccess : MethodAccess ::= TypeArgument:Access*;
+
+// Access to parameterized constructors.
+ParConstructorAccess : ConstructorAccess ::= TypeArgument:Access*;
+ParSuperConstructorAccess : SuperConstructorAccess ::= TypeArgument:Access*;
+ParClassInstanceExpr : ClassInstanceExpr ::= TypeArgument:Access*;
+
+

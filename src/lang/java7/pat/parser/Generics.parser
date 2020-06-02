@@ -1,0 +1,147 @@
+ClassDecl class_declaration =
+  modifiers.m? CLASS IDENTIFIER type_parameters.p super.s? interfaces.i? class_body.b
+    {:  return new GenericClassDecl(new Modifiers(m), IDENTIFIER, s, i, b, p);  :}
+  ;
+
+InterfaceDecl interface_declaration =
+  modifiers.m? INTERFACE IDENTIFIER type_parameters.p extends_interfaces.i? interface_body.b
+    {:  return new GenericInterfaceDecl(new Modifiers(m), IDENTIFIER, i, b, p);  :}
+  ;
+
+Access class_or_interface =
+    name @BOTTOM
+  | class_or_interface.n type_arguments.l DOT name.end {: return new ParTypeAccess(n, l).qualifiesAccess(end); :}
+  ;
+
+Access class_or_interface_type :=
+    class_or_interface @BOTTOM
+  | class_or_interface.n type_arguments.l {: return new ParTypeAccess(n, l); :}
+  ;
+Access array_type =
+    class_or_interface.t type_arguments.l DOT name.n dims.d
+    {: return new ParTypeAccess(t, l).qualifiesAccess(n).addArrayDims(d); :}
+  | class_or_interface.t type_arguments.l dims.d
+    {: return new ParTypeAccess(t, l).addArrayDims(d); :}
+  ;
+
+List type_arguments =
+    LT type_argument_list.l GT {:  return l;  :}
+  ;
+
+Access wildcard =
+    QUESTION                             {: return new Wildcard(); :}
+    | QUESTION EXTENDS reference_type.t    {: return new WildcardExtends(t); :}
+    | QUESTION SUPER reference_type.t    {: return new WildcardSuper(t); :}
+    ;
+
+Expr class_instance_creation_expression :=
+    NEW class_or_interface_type.t LPAREN argument_list.l? RPAREN
+    {: return new ClassInstanceExpr(t, l, new Opt()); :}
+  | NEW type_arguments.a class_or_interface_type.t LPAREN argument_list.l? RPAREN
+    {:  return new ParClassInstanceExpr(t, l, new Opt(), a); :}
+  | primary.n DOT NEW simple_name.id LPAREN argument_list.l? RPAREN
+    {:  ClassInstanceExpr e = new ClassInstanceExpr(id, l, new Opt());
+        e.setStart(NEW.getStart());
+        e.setEnd(RPAREN.getEnd());
+        return n.qualifiesAccess(e);
+    :}
+  | primary.n DOT NEW simple_name.id type_arguments.a LPAREN argument_list.l? RPAREN
+    {:  ClassInstanceExpr e = new ClassInstanceExpr(new ParTypeAccess(id, a), l, new Opt());
+        e.setStart(NEW.getStart());
+        e.setEnd(RPAREN.getEnd());
+        return n.qualifiesAccess(e);
+    :}
+  | primary.n DOT NEW type_arguments.ca simple_name.id LPAREN argument_list.l? RPAREN
+    {:  return n.qualifiesAccess(new ParClassInstanceExpr(id, l, new Opt(), ca)); :}
+  | primary.n DOT NEW type_arguments.ca simple_name.id type_arguments.ta LPAREN argument_list.l? RPAREN
+    {:  return n.qualifiesAccess(new ParClassInstanceExpr(new ParTypeAccess(id, ta), l, new Opt(), ca)); :}
+  | name.n DOT NEW simple_name.id LPAREN argument_list.l? RPAREN
+    {:  ClassInstanceExpr e = new ClassInstanceExpr(id, l, new Opt());
+        e.setStart(NEW.getStart());
+        e.setEnd(RPAREN.getEnd());
+        return n.qualifiesAccess(e);
+    :}
+  | name.n DOT NEW simple_name.id type_arguments.a LPAREN argument_list.l? RPAREN
+    {:  ClassInstanceExpr e = new ClassInstanceExpr(new ParTypeAccess(id, a), l, new Opt());
+        e.setStart(NEW.getStart());
+        e.setEnd(RPAREN.getEnd());
+        return n.qualifiesAccess(e);
+    :}
+  | name.n DOT NEW type_arguments.ca simple_name.id LPAREN argument_list.l? RPAREN
+    {:  return n.qualifiesAccess(new ParClassInstanceExpr(id, l, new Opt(), ca)); :}
+  | name.n DOT NEW type_arguments.ca simple_name.id type_arguments.ta LPAREN argument_list.l? RPAREN
+    {:  return n.qualifiesAccess(new ParClassInstanceExpr(new ParTypeAccess(id, ta), l, new Opt(), ca)); :}
+// duplicated to avoid subclass_body with Opt type
+  | NEW class_or_interface_type.t LPAREN argument_list.l? RPAREN class_body.b
+    {: return new ClassInstanceExpr(t, l, new Opt(b)); :}
+  | NEW type_arguments.a class_or_interface_type.t LPAREN argument_list.l? RPAREN class_body.b
+    {:  return new ParClassInstanceExpr(t, l, new Opt(b), a); :}
+  | primary.n DOT NEW simple_name.id LPAREN argument_list.l? RPAREN class_body.b
+    {:  ClassInstanceExpr e = new ClassInstanceExpr(id, l, new Opt(b));
+        e.setStart(NEW.getStart());
+        e.setEnd(RPAREN.getEnd());
+        return n.qualifiesAccess(e);
+    :}
+  | primary.n DOT NEW simple_name.id type_arguments.a LPAREN argument_list.l? RPAREN class_body.b
+    {:  ClassInstanceExpr e = new ClassInstanceExpr(new ParTypeAccess(id, a), l, new Opt(b));
+        e.setStart(NEW.getStart());
+        e.setEnd(RPAREN.getEnd());
+        return n.qualifiesAccess(e);
+    :}
+  | primary.n DOT NEW type_arguments.ca simple_name.id LPAREN argument_list.l? RPAREN class_body.b
+    {:  return n.qualifiesAccess(new ParClassInstanceExpr(id, l, new Opt(b), ca)); :}
+  | primary.n DOT NEW type_arguments.ca simple_name.id type_arguments.ta LPAREN argument_list.l? RPAREN class_body.b
+    {:  return n.qualifiesAccess(new ParClassInstanceExpr(new ParTypeAccess(id, ta), l, new Opt(b), ca)); :}
+  | name.n DOT NEW simple_name.id LPAREN argument_list.l? RPAREN class_body.b
+    {:  ClassInstanceExpr e = new ClassInstanceExpr(id, l, new Opt(b));
+        e.setStart(NEW.getStart());
+        e.setEnd(RPAREN.getEnd());
+        return n.qualifiesAccess(e);
+    :}
+  | name.n DOT NEW simple_name.id type_arguments.a LPAREN argument_list.l? RPAREN class_body.b
+    {:  ClassInstanceExpr e = new ClassInstanceExpr(new ParTypeAccess(id, a), l, new Opt(b));
+        e.setStart(NEW.getStart());
+        e.setEnd(RPAREN.getEnd());
+        return n.qualifiesAccess(e);
+    :}
+  | name.n DOT NEW type_arguments.ca simple_name.id LPAREN argument_list.l? RPAREN class_body.b
+    {:  return n.qualifiesAccess(new ParClassInstanceExpr(id, l, new Opt(b), ca)); :}
+  | name.n DOT NEW type_arguments.ca simple_name.id type_arguments.ta LPAREN argument_list.l? RPAREN class_body.b
+    {:  return n.qualifiesAccess(new ParClassInstanceExpr(new ParTypeAccess(id, ta), l, new Opt(b), ca)); :}
+  ;
+
+List type_argument_list =
+    type_argument.a {:  return new List().add(a);  :}
+  | type_argument_list.l COMMA type_argument.a {:  return l.add(a);  :}
+  ;
+
+Access type_argument =
+    reference_type.t {:  return t;  :}
+  | wildcard.w {: return w; :}
+  ;
+
+Expr cast_expression =
+    LPAREN name.n type_arguments.a dims.d? RPAREN unary_expression_not_plus_minus.e @CAST
+    {:  return new CastExpr(new ParTypeAccess(n, a).addArrayDims(d), e);  :}
+  | LPAREN name.n type_arguments.a DOT class_or_interface_type.t dims.d? RPAREN unary_expression_not_plus_minus.e @CAST
+    {:  return new CastExpr(new ParTypeAccess(n, a).qualifiesAccess(t).addArrayDims(d), e);  :}
+  ;
+
+List type_parameters =
+    LT type_parameter_list.l GT {:  return l;  :}
+  ;
+
+List type_parameter_list =
+    type_parameter_list.l COMMA type_parameter.p {:  return l.add(p);  :}
+  | type_parameter.p {:  return new List().add(p);  :}
+  ;
+
+TypeVariable type_parameter =
+    IDENTIFIER              {:  return new TypeVariable(new Modifiers(), IDENTIFIER, new List(), new List());  :}
+  | IDENTIFIER EXTENDS type_bound_list.l {:  return new TypeVariable(new Modifiers(), IDENTIFIER, new List(), l); :}
+  ;
+
+List type_bound_list =
+  | class_or_interface_type.t {: return new List().add(t);  :}
+  | type_bound_list.l AND class_or_interface_type.t {: l.add(t); return l; :}
+  ;

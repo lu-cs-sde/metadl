@@ -15,6 +15,7 @@ Access class_or_interface =
 
 Access class_or_interface_type :=
     class_or_interface @BOTTOM
+  | class_or_interface LT GT {: return new DiamondAccess(class_or_interface); :}
   | class_or_interface.n type_arguments.l {: return new ParTypeAccess(n, l); :}
   ;
 Access array_type =

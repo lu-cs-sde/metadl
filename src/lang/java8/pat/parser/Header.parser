@@ -1,0 +1,8 @@
+%header {:
+ package lang.java8.pat.ast;
+
+ import lang.java8.pat.ast.*;
+ import lang.java8.pat.ast.PatLangScanner;
+
+ // import org.extendj.scanner.UnicodeEscapeReader;
+:};

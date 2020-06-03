@@ -1,0 +1,6 @@
+/**
+ * Used internally during compilation for normalizing TWR statements to a simpler form.
+ *
+ * <p>Basic TWR has only a single resource declaration.
+ */
+BasicTWR : Stmt ::= Resource:ResourceDeclaration Block;

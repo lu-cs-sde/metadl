@@ -1,0 +1,13 @@
+/**
+ * Type access for a generic class with an empty type parameter list.
+ */
+DiamondAccess : Access ::= TypeAccess:Access;
+
+/**
+ * Candidate method for diamond type inference.
+ *
+ * <p>A stand-in method is generated to represent each candidate constructor
+ * for a diamond type access. The ordinary method type inference is used on the
+ * stand-in method to find the diamond type arguments.
+ */
+StandInMethodDecl : GenericMethodDecl;

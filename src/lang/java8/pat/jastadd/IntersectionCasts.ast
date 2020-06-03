@@ -1,0 +1,1 @@
+IntersectionCastExpr : Expr ::= TypeAccess:Access TypeList:Access* Expr;

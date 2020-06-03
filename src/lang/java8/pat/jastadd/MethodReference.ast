@@ -1,0 +1,9 @@
+abstract MethodReference : Expr ::= TypeArgument:Access* <ID:String>;
+
+ExprMethodReference : MethodReference ::= Expr;
+TypeMethodReference : MethodReference ::= TypeAccess:Access;
+AmbiguousMethodReference : MethodReference ::= AmbiguousName:Access;
+
+MethodReferenceAccess : MethodAccess;
+ParMethodReferenceAccess : ParMethodAccess;
+SyntheticTypeAccess : Access;

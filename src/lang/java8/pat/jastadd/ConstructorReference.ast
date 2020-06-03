@@ -1,0 +1,6 @@
+abstract ConstructorReference : Expr ::= TypeAccess:Access;
+
+ClassReference : ConstructorReference ::= TypeArgument:Access*;
+ArrayReference : ConstructorReference;
+ConstructorReferenceAccess : ClassInstanceExpr;
+ParConstructorReferenceAccess : ParClassInstanceExpr;

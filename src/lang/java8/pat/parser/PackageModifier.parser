@@ -1,0 +1,2 @@
+Modifier modifier = PACKAGE			{: return new Modifier("package"); :}
+;

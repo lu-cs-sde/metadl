@@ -1,0 +1,20 @@
+Expr cast_expression =
+    LPAREN name.n LT type_argument_list.a GT dims.d? additional_bound_list.b RPAREN unary_expression_not_plus_minus.e @CAST
+    {:  return new IntersectionCastExpr(new ParTypeAccess(n, a).addArrayDims(d), b, e);  :}
+  | LPAREN name.n LT type_argument_list.a GT DOT class_or_interface_type.t dims.d? additional_bound_list.b RPAREN unary_expression_not_plus_minus.e @CAST
+    {:  return new IntersectionCastExpr(new ParTypeAccess(n, a).qualifiesAccess(t).addArrayDims(d), b, e);  :}
+;
+
+Expr cast_expression =
+   LPAREN name.t dims.d? additional_bound_list.b RPAREN unary_expression_not_plus_minus.e @CAST
+    {: return new IntersectionCastExpr(t.addArrayDims(d), b, e); :}
+;
+
+List additional_bound_list =
+    additional_bound.b additional_bound_list.l {:  l.insertChild(b,0); return l; :}
+  | additional_bound.b {:  return new List().add(b);  :}
+  ;
+
+Access additional_bound =
+    AND interface_type.t {:  return t;  :}
+  ;

@@ -1,0 +1,22 @@
+Access nongeneric_type =
+    primitive_type
+  | nongeneric_reference_type
+;
+
+Access nongeneric_reference_type =
+    nongeneric_class_or_interface_type
+  | nongeneric_array_type
+;
+Access nongeneric_class_or_interface_type =
+    name
+;
+Access nongeneric_array_type =
+    primitive_type.t dims   {: return t.addArrayDims(dims); :}
+  | name dims               {: return name.addArrayDims(dims); :}
+;
+  
+// Formal parameter guaranteeing to not use generics
+ParameterDeclaration nongeneric_formal_parameter =
+   modifiers.m? nongeneric_type.t IDENTIFIER dims.d?       {: return new ParameterDeclaration(new Modifiers(m), t.addArrayDims(d), IDENTIFIER); :}
+ | modifiers.m? nongeneric_type.t ELLIPSIS IDENTIFIER.i {: return new VariableArityParameterDeclaration(new Modifiers(m), t, i); :}
+;

@@ -1,0 +1,13 @@
+LambdaExpr : Expr ::= LambdaParameters LambdaBody;
+
+abstract LambdaParameters;
+
+//Parameter used for inferred parameters
+InferredParameterDeclaration ::= <ID:String>;
+
+InferredLambdaParameters : LambdaParameters ::= Parameter:InferredParameterDeclaration*;
+DeclaredLambdaParameters : LambdaParameters ::= Parameter:ParameterDeclaration*;
+
+abstract LambdaBody;
+BlockLambdaBody : LambdaBody ::= Block;
+ExprLambdaBody : LambdaBody ::= Expr; 

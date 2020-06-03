@@ -1,0 +1,15 @@
+Expr primary_no_new_array = constructor_reference;
+
+Expr constructor_reference =
+	name.n DOUBLECOLON type_arguments.a? NEW
+		{: return new ClassReference(n, a); :}
+	| name.n LT type_argument_list.a1 GT DOUBLECOLON type_arguments.a2? NEW
+		{: return new ClassReference(new ParTypeAccess(n, a1), a2); :}
+;
+
+Expr constructor_reference =
+	nongeneric_array_type.r DOUBLECOLON NEW
+		{: return new ArrayReference(r); :}
+	| name.n LT type_argument_list.a GT dims.d DOUBLECOLON NEW
+		{: return new ArrayReference(new ParTypeAccess(n, a).addArrayDims(d)); :}
+;

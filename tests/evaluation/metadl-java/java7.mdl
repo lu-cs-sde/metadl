@@ -1,7 +1,14 @@
+IMPORT('P, "tests/evaluation/metadl-java/src/java7/", "java7").
+
 analyze('P, "java7") {
-	    SwitchOnString(0) :- <: switch (x) { case "A" : return 1; case "B" : return 2; } :>.
 	    Diamond(0) :-  <: new HashMap<>() :>.
-	    TryWithResources(0) :- <: try (FileOutputStream os = new FileOutputStream("bla")) {  } :>.
+	    TryWithResources(0) :- <: try (..; FileOutputStream os = new FileOutputStream(`_); ..) {  } :>.
 	    NumericLiterals(0) :- <: 1_000_013 :>.
-	    Multicatch(0) :- <: try { } catch (Exception1 | Exception2 e) { System.out.println(e); } :>.
+	    Multicatch(0) :- <: try { .. } catch (.. | `e | ..  `_) { `_.println(e); } :>.
 }
+
+
+OUTPUT('Diamond).
+OUTPUT('TryWithResources).
+OUTPUT('NumericLiterals).
+OUTPUT('Multicatch).

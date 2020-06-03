@@ -73,7 +73,7 @@ aspect LiteralSideEffect {
         }
     }
 
-	public static Relation IMPORTLiteral.loadJava5Sources(java.util.List<String> locs) throws IOException {
+	public static Relation IMPORTLiteral.loadJavaSources(java.util.List<String> locs) throws IOException {
 		org.extendj.ast.Program p = new org.extendj.ast.Program();
 
 		// Set the path to the Java runtime
@@ -109,7 +109,7 @@ aspect LiteralSideEffect {
 		}
 
 		// Generate the program relation
-		lang.java5.obj.DatalogProjection2 proj2 = new lang.java5.obj.DatalogProjection2(p);
+		lang.java.obj.DatalogProjection2 proj2 = new lang.java.obj.DatalogProjection2(p);
 		proj2.generate();
 		Relation ret = proj2.getRelation();
 
@@ -136,9 +136,10 @@ aspect LiteralSideEffect {
 					importedProgramRel = prog.asRelation();
 					break;
 				}
-				case "java5:": {
+				case "java7":
+				case "java5": {
 					// TODO: for Java 5, this means only one IMPORT for each relation
-					importedProgramRel = loadJava5Sources(Collections.singletonList(t.coord(1).toString()));
+					importedProgramRel = loadJavaSources(Collections.singletonList(t.coord(1).toString()));
 					break;
 				}
 

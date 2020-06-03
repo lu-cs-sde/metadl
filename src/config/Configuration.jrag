@@ -172,6 +172,7 @@ aspect Task {
 						programRel = prog.asRelation();
 						break;
 					}
+					case "java7":
 					case "java5": {
 						java5Srcs.add(progFileLang.getKey());
 						break;
@@ -197,7 +198,7 @@ aspect Task {
 			if (!java5Srcs.isEmpty()) {
 				// TODO: This assumes that all imports to this predicate are Java programs. This might
 				// not be the case, but this should be checked in another place...
-				Relation programRel = IMPORTLiteral.loadJava5Sources(java5Srcs);
+				Relation programRel = IMPORTLiteral.loadJavaSources(java5Srcs);
 				CSVUtil.dumpFileInto(programRel, output_fp, false);
 			}
 

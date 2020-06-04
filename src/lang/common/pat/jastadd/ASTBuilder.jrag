@@ -49,7 +49,8 @@ aspect ASTBuilder {
 
 		private ASTBuilder() {
 			grammar = new Grammar();
-			PatLangParserSEP.addRules(grammar);
+			PatLangParserSEP.addRules1(grammar);
+			PatLangParserSEP.addRules2(grammar);
 			parser = new EarleyParser(grammar);
 		}
 

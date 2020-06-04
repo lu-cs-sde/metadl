@@ -172,6 +172,7 @@ aspect Task {
 						programRel = prog.asRelation();
 						break;
 					}
+					case "java8":
 					case "java7":
 					case "java5": {
 						java5Srcs.add(progFileLang.getKey());

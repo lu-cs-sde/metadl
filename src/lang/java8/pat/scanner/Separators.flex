@@ -9,5 +9,5 @@
   ";"   { return sym(Terminals.SEMICOLON); }
   ","   { return sym(Terminals.COMMA); }
   "."   { return sym(Terminals.DOT); }
+  "::"   { return sym(Terminals.DOUBLECOLON); }
 }
-

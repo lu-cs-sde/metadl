@@ -71,6 +71,7 @@ Expr lambda_expression =
 
 
 InferredParameterDeclaration inferred_param_decl = IDENTIFIER.i {: return new InferredParameterDeclaration(i); :}
+;
 
 List inferred_list =
 	 inferred_param_decl.i  {: return new List().add(i); :}

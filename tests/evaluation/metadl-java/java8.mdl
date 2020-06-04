@@ -1,0 +1,10 @@
+IMPORT('P, "tests/evaluation/metadl-java/src/java8/", "java8").
+
+# A first test case for java8
+analyze('P, "java8") {
+	    Lambda1(0) :- <: `p -> `e :>.
+	    MethodRef(0) :- <: this::`m :>.
+}
+
+OUTPUT('Lambda1).
+OUTPUT('MethodRef).

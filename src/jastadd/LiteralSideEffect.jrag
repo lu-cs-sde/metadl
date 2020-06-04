@@ -136,6 +136,7 @@ aspect LiteralSideEffect {
 					importedProgramRel = prog.asRelation();
 					break;
 				}
+				case "java8":
 				case "java7":
 				case "java5": {
 					// TODO: for Java 5, this means only one IMPORT for each relation

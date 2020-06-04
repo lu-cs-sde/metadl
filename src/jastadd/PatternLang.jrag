@@ -64,6 +64,8 @@ aspect PatternLang {
 			return lang.java5.pat.ast.PatLang.translatePredicateName(getContext(), predName);
 		case "java7":
 			return lang.java7.pat.ast.PatLang.translatePredicateName(getContext(), predName);
+		case "java8":
+			return lang.java8.pat.ast.PatLang.translatePredicateName(getContext(), predName);
 		}
 		return null;
 	}
@@ -78,6 +80,8 @@ aspect PatternLang {
 			return lang.java5.pat.ast.PatLang.generateHelperRelations(getContext());
 		case "java7":
 			return lang.java7.pat.ast.PatLang.generateHelperRelations(getContext());
+		case "java8":
+			return lang.java8.pat.ast.PatLang.generateHelperRelations(getContext());
 		}
 		return null;
 	}
@@ -209,6 +213,20 @@ aspect PatternLang {
 										 lang.java7.pat.ast.PatLangParserSEP.n_type,
 										 lang.java7.pat.ast.PatLangParserSEP.n_type_parameter,
 										 lang.java7.pat.ast.PatLangParserSEP.n_type_argument);
+			break;
+		case "java8":
+			scanner = new lang.java8.pat.ast.PatLangScanner(new StringReader(getPATTERN()));
+			tokenNames = lang.java8.pat.ast.PatLangParserSEP.Terminals.NAMES;
+			astBuilder = lang.java8.pat.ast.ASTBuilder.getInstance();
+			startSymbols = Arrays.asList(lang.java8.pat.ast.PatLangParserSEP.n_class_declaration,
+										 lang.java8.pat.ast.PatLangParserSEP.n_type_declaration,
+										 lang.java8.pat.ast.PatLangParserSEP.n_class_body_declaration,
+										 lang.java8.pat.ast.PatLangParserSEP.n_interface_member_declaration,
+										 lang.java8.pat.ast.PatLangParserSEP.n_block_statement,
+										 lang.java8.pat.ast.PatLangParserSEP.n_expression,
+										 lang.java8.pat.ast.PatLangParserSEP.n_type,
+										 lang.java8.pat.ast.PatLangParserSEP.n_type_parameter,
+										 lang.java8.pat.ast.PatLangParserSEP.n_type_argument);
 			break;
 		}
 

@@ -183,7 +183,7 @@ public class EvaluationTest {
 	@ValueSource(strings = {"bad-covariant-equals", "switch-no-default", "clone-idioms", "number-ctor",
 							"unwritten-field", "naming-convention", "reference-to-mutable-object", "missing-override",
 							"reference-equality", "boxed-primitive-constructor", "operator-precedence",
-							"type-param-unused-in-formals", "paper-examples", "java7"})
+							"type-param-unused-in-formals", "paper-examples", "java7", "java8"})
 	void evaluationTestMetaDLJava(String fileName) throws Exception {
 		Description d1 = FileUtil.parseDescription(
 		   "eval::souffle -OUT ./tests/output/souffle -FACTS ./tests/evaluation/metadl-java/facts ./tests/evaluation/metadl-java/"

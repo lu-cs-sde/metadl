@@ -33,7 +33,7 @@ dependencies {
     compile 'org.junit.jupiter:junit-jupiter-engine:5.3.1'
     compile 'org.apache.commons:commons-lang3:3.8'
     compile group: 'commons-io', name: 'commons-io', version: '2.6'
-    compile 'org.extendj:java7:100.100.100'
+    compile 'org.extendj:java8:100.100.100'
 
 
     jflex 'de.jflex:jflex:1.6.1'
@@ -234,7 +234,8 @@ void makeGenerateSEPTask(String name, String outFile, String srcFile) {
     }
 }
 
-void makeGeneratePatLangTask(String taskName, String outDir, String srcLang, ArrayList<String> lexOrder) {
+void makeGeneratePatLangTask(String taskName, String outDir, String srcLang, ArrayList<String> lexOrder,
+			     List<String> parseOrder = []) {
     tasks.create('MkDirs' + taskName) {
 	doFirst {
 	    file(outDir + '/lang/' + srcLang + '/pat/ast').mkdirs()
@@ -245,9 +246,15 @@ void makeGeneratePatLangTask(String taskName, String outDir, String srcLang, Arr
 			outDir + '/lang/' + srcLang + '/pat/scanner/scanner.flex',
 			files(lexOrder.collect({'src/lang/' + srcLang + '/pat/scanner/' + it})))
 
+    def parserFiles = fileTree(dir : 'src/lang/' + srcLang + '/pat/parser', includes : ['**/*.parser'])
+    if (parseOrder) {
+	// Explicit parse order
+	parserFiles = files(parseOrder.collect({'src/lang/' + srcLang + '/pat/parser/' + it}))
+    }
+
     makeConcatenateTask('catPatlangParser' + taskName,
 			outDir + '/lang/' + srcLang + '/pat/parser/lang.parser',
-			fileTree(dir : 'src/lang/' + srcLang + '/pat/parser', includes : ['**/*.parser']))
+			parserFiles)
 
     // .parser -> .java file describing a SEP grammar
     makeGenerateSEPTask('generateSEP' + taskName, outDir + '/lang/' + srcLang + '/pat/ast/PatLangParserSEP.java',
@@ -378,15 +385,43 @@ def java4LexOrder = [
 def java5LexOrder = java4LexOrder
 def java7LexOrder = java4LexOrder
 def java8LexOrder = java4LexOrder
-
 def metadlLexOrder = ['scanner.flex']
+
+// The order in which the parser files are concatenated
+def java8ParseOrder = [
+    "Java1.4.parser",
+    "java14fix.parser",
+    "Literals.parser",
+    "Generics.parser",
+    "Annotations.parser",
+    "ConstructorReference.parser",
+    "Diamond.parser",
+    "EnhancedFor.parser",
+    "Enums.parser",
+    "ErrorRecovery.parser",
+    "GenericMethods.parser",
+    "Goal.parser",
+    "Header.parser",
+    "InterfaceMethods.parser",
+    "IntersectionCasts.parser",
+    "Lambda.parser",
+    "MethodReference.parser",
+    "MultiCatch.parser",
+    "NonGenericTypes.parser",
+    "PackageModifier.parser",
+    "Preamble.parser",
+    "Precedence.parser",
+    "StaticImports.parser",
+    "TryWithResources.parser",
+    "VariableArityParameters.parser"
+]
 
 
 makeGenerateLangTask('genMetadlLang', 'src/gen/', 'metadl', metadlLexOrder)
 makeGenerateLangTask('genJava4Lang', 'src/gen/', 'java4', java4LexOrder)
 makeGeneratePatLangTask('genJava5Lang', 'src/gen/', 'java5', java5LexOrder)
 makeGeneratePatLangTask('genJava7Lang', 'src/gen/', 'java7', java7LexOrder)
-makeGeneratePatLangTask('genJava8Lang', 'src/gen/', 'java8', java8LexOrder)
+makeGeneratePatLangTask('genJava8Lang', 'src/gen/', 'java8', java8LexOrder, java8ParseOrder)
 
 
 makeGenerateBeaverTask('generateBeaver', 'src/gen/LangParser.beaver', 'src/parser/metadl.parser')

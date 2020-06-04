@@ -37,5 +37,6 @@
   ">>>="                         { return sym(Terminals.URSHIFTEQ); }
   "@"                            { return sym(Terminals.AT); }
   "..."                          { return sym(Terminals.ELLIPSIS); }
+  "->"                           { return sym(Terminals.RARROW); }
   ".."                           { return sym(Terminals.GAP); }
 }

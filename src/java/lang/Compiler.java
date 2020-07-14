@@ -225,7 +225,6 @@ public class Compiler {
 		}
 	}
 
-
 	public static void main(String[] args) {
 		Logger log = Logger.getLogger("lang.io");
 		log.setLevel(Level.FINEST);

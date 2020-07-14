@@ -1,6 +1,7 @@
 package lang.java.obj;
 
 import java.lang.reflect.Method;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Deque;
@@ -8,6 +9,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import java.util.Set;
 import java.util.function.Consumer;
 
@@ -23,11 +25,12 @@ import lang.relation.RelationWrapper;
 
 public class DatalogProjection2 {
 	private ASTNode<?> root;
-	private Map<ASTNode<?>, Integer> nodeNumber = new HashMap<>();
 
 	private int currentNumber = 0;
 	private RelationWrapper prel;
 	private int tokenUID = Integer.MAX_VALUE;
+	private Map<ASTNode<?>, Integer> nodeNumber = new HashMap<>();
+
 
 	// TODO: It's just easier to add environment variable than command-line arguments.
 	// This should be removed once we move to a traditional command line parser,
@@ -40,79 +43,80 @@ public class DatalogProjection2 {
 	}
 
 	private int nodeId(ASTNode<?> n) {
-		if (nodeNumber.containsKey(n)) {
+		if (visited(n)) {
 			return nodeNumber.get(n);
 		} else {
-			currentNumber++;
-			nodeNumber.put(n, currentNumber);
-			return currentNumber;
+			 currentNumber++;
+			 nodeNumber.put(n, currentNumber);
+			 return currentNumber;
 		}
+	}
+
+	private boolean visited(ASTNode<?> n) {
+		return nodeNumber.containsKey(n);
 	}
 
 	public void generate() {
 		// traverse the tree
 		StopWatch traverseTime = StopWatch.createStarted();
-		traverse(root);
+		Queue<ASTNode<?>> worklist = new ArrayDeque<>();
+		traverse(root, worklist);
 		traverseTime.stop();
 		StopWatch attributeMapTime = StopWatch.createStarted();
-		mapAttributes(Pair.of("type", "ATTR_type"), Pair.of("decl", "ATTR_decl"), Pair.of("genericDecl", "ATTR_generic_decl"));
+		mapAttributes(worklist, Pair.of("type", "ATTR_type"), Pair.of("decl", "ATTR_decl"), Pair.of("genericDecl", "ATTR_generic_decl"));
 		attributeMapTime.stop();
 		SimpleLogger.logger().time("Object AST initial traversal: " + traverseTime.getTime() + "ms");
 		SimpleLogger.logger().time("Attribute tabulation: " + attributeMapTime.getTime() + "ms");
 	}
 
-	@SafeVarargs
-	final private void mapAttributes(Pair<String, String> ...attrs) {
-		Set<ASTNode<?>> currentNodes = new HashSet<>(nodeNumber.keySet());
-		do {
-			// take a snapshot of the already visited nodes
-			Set<ASTNode<?>> existingNodes = new HashSet<>(nodeNumber.keySet());
 
-			for (ASTNode<?> n : currentNodes) {
-				for (Pair<String, String> attrRelPair : attrs) {
-					String attributeName = attrRelPair.getLeft();
-					String relName = attrRelPair.getRight();
-					ASTNode<?> r = nodeAttribute(n, attributeName);
-					if (r == null)
-						continue;
-					if (!nodeNumber.containsKey(r)) {
-						// attributes may refer to NTAs, that were not visited, visit
-						// them
-						traverse(r);
-					}
-					prel.insertTuple(relName, nodeId(n), -1, nodeId(r), "");
-				}
-			}
+	final private void mapAttributes(Queue<ASTNode<?>> worklist, Pair<String, String> ...attrs) {
+		while (!worklist.isEmpty()) {
+			ASTNode<?> n = worklist.poll();
+			assert visited(n);
 
-			// in the traversal of the NTAs we may have encountered new nodes,
-			// compute any eventual attributes for them too.
-			currentNodes = new HashSet<>(nodeNumber.keySet());
-			currentNodes.removeAll(existingNodes);
-
-			// TODO: prevent the analysis from dinving into rt.jar, which
+			// prevent the analysis from dinving into rt.jar, which
 			// takes a long (O(minutes)) time.
-			if (!deepAnalysis)
-				currentNodes.removeIf(n -> isLibraryNode(n));
-		} while (!currentNodes.isEmpty());
+			if (!deepAnalysis && isLibraryNode(n))
+				continue;
+
+			for (Pair<String, String> attrRelPair : attrs) {
+				String attributeName = attrRelPair.getLeft();
+				String relName = attrRelPair.getRight();
+				ASTNode<?> r = nodeAttribute(n, attributeName);
+
+				if (r == null)
+					continue;
+
+				if (!visited(r)) {
+					// attributes may refer to NTAs, that were not visited in the
+					// initial traversal, visit them now and every node in the
+					// subtree to the worklist, for attribute evaluation
+					traverse(r, worklist);
+				}
+				prel.insertTuple(relName, nodeId(n), -1, nodeId(r), "");
+			}
+		}
 	}
 
-	private void traverse(ASTNode<?> n) {
+	private void traverse(ASTNode<?> n, Queue<ASTNode<?>> worklist) {
+		worklist.add(n);
 		assert n.getNumChild() == n.getNumChildNoTransform();
 		for (int i = 0; i < n.getNumChildNoTransform(); ++i) {
 			ASTNode<?> childNT = n.getChildNoTransform(i);
-			traverse(childNT);
+			traverse(childNT, worklist);
 			if (childNT.mayHaveRewrite()) {
 				ASTNode<?> child = n.getChild(i);
 				if (child != childNT) {
-					traverse(child);
+					traverse(child, worklist);
 					recordRewrittenNode(childNT, child);
 				}
 			}
 		}
 
-		nodeId(n);
-		toTuples(n);
-		srcLoc(n);
+		int nid = nodeId(n);
+		toTuples(n, nid);
+		srcLoc(n, nid);
 	}
 
 	private PseudoTuple makeTuple(Object ...args) {
@@ -158,13 +162,13 @@ public class DatalogProjection2 {
 		return loc[0];
 	}
 
-	private List<PseudoTuple> srcLoc(ASTNode<?> n) {
+	private List<PseudoTuple> srcLoc(ASTNode<?> n, int nid) {
 		java.util.List<PseudoTuple> ret = new ArrayList<>();
 		// record the source location
 		{
 			// ("SourceInfo, CurrentNodeId, StartLine, StartCol, FileName)
 			lang.ast.StringConstant Kind = new lang.ast.StringConstant("SrcLocStart");
-			lang.ast.IntConstant CurrentNodeId = new lang.ast.IntConstant("" + nodeId(n));
+			lang.ast.IntConstant CurrentNodeId = new lang.ast.IntConstant("" + nid);
 			lang.ast.IntConstant Line = new lang.ast.IntConstant("" + beaver.Symbol.getLine(n.getStart()));
 			lang.ast.IntConstant Col = new lang.ast.IntConstant("" + beaver.Symbol.getColumn(n.getStart()));
 			lang.ast.StringConstant SrcFile = new lang.ast.StringConstant(getSourceFile(n));
@@ -175,7 +179,7 @@ public class DatalogProjection2 {
 		{
 			// ("SourceInfo, CurrentNodeId, EndLine, EndCol, "")
 			lang.ast.StringConstant Kind = new lang.ast.StringConstant("SrcLocEnd");
-			lang.ast.IntConstant CurrentNodeId = new lang.ast.IntConstant("" + nodeId(n));
+			lang.ast.IntConstant CurrentNodeId = new lang.ast.IntConstant("" + nid);
 			lang.ast.IntConstant Line = new lang.ast.IntConstant("" + beaver.Symbol.getLine(n.getEnd()));
 			lang.ast.IntConstant Col = new lang.ast.IntConstant("" + beaver.Symbol.getColumn(n.getEnd()));
 			// avoid printing the source file once again to avoid bloating the output table
@@ -286,7 +290,7 @@ public class DatalogProjection2 {
 		return s.replace('[', '(').replace(']', ')').replace('\'', '_').replace('"', '_').replace('\n', '_');
 	}
 
-	private List<PseudoTuple> toTuples(ASTNode<?> n) {
+	private List<PseudoTuple> toTuples(ASTNode<?> n, int nid) {
 		String relName = getRelation(n);
 		java.util.List<PseudoTuple> ret = new ArrayList<>();
 
@@ -316,7 +320,7 @@ public class DatalogProjection2 {
 				// Add a tuple to the current node relation
 				lang.ast.StringConstant Kind = new lang.ast.StringConstant(relName);
 				lang.ast.IntConstant ChildId = new lang.ast.IntConstant("" + tokenUID);
-				lang.ast.IntConstant CurrentNodeId = new lang.ast.IntConstant("" + nodeId(n));
+				lang.ast.IntConstant CurrentNodeId = new lang.ast.IntConstant("" + nid);
 				lang.ast.IntConstant ChildIdx = new lang.ast.IntConstant("" + childIndex++);
 				lang.ast.StringConstant Token = new lang.ast.StringConstant("");
 				ret.add(new PseudoTuple(Kind, CurrentNodeId, ChildIdx, ChildId, Token));
@@ -341,7 +345,7 @@ public class DatalogProjection2 {
 			// This node has no children, emit that
 			lang.ast.StringConstant Kind = new lang.ast.StringConstant(relName);
 			lang.ast.IntConstant ChildId  = new lang.ast.IntConstant("-1");
-			lang.ast.IntConstant CurrentNodeId = new lang.ast.IntConstant("" + nodeId(n));
+			lang.ast.IntConstant CurrentNodeId = new lang.ast.IntConstant("" + nid);
 			lang.ast.IntConstant ChildIdx = new lang.ast.IntConstant("-1");
 			lang.ast.StringConstant Token = new lang.ast.StringConstant("");
 			ret.add(new PseudoTuple(Kind, CurrentNodeId, ChildIdx, ChildId, Token));

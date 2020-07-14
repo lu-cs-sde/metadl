@@ -59,8 +59,7 @@ OUTPUT('SwitchWithoutDefaultDetail).
 # EI_EXPOSE_REP, MS_EXPOSE_REP, EI_EXPOSE_REP2, EI_EXPOSE_STATIC_REP2, EI2
 # aka  Reference to mutable object
 
-FieldInClassWithInit(0, 0, 0, 0) :- NEQ(0, 0).
-FieldInClass(0, 0, 0, 0) :- NEQ(0, 0).
+FieldInClass1(0, 0, 0, 0) :- NEQ(0, 0).
 
 NonPublicFieldReturn(0, 0) :- NEQ(0, 0).
 ParamToVariable(0, 0, 0) :- NEQ(0, 0).
@@ -68,13 +67,7 @@ ParamToVariable(0, 0, 0) :- NEQ(0, 0).
 
 
 ### Analysis
-	    FieldInClass(c, `t, `f, `m) :- c <: class `_ { .. .. `m .. `t .. , `f , .. ; .. } :>, NOT(FundamentalTypeUse(`t)),
-	                                   SRC(c, l, col, _,_,_), NEQ(col, 0).
-	    FieldInClass(c, `t, `f, `m) :- c <: enum `_ { .. ; .. .. `m .. `t .. , `f , .. ; .. } :>,
-	                                   NOT(FundamentalTypeUse(`t)),
-	                                   SRC(c, l, col, _,_,_), NEQ(col, 0).
-
-	    Field(f) :- FieldInClass(_, _, f, _).
+	    FieldInClass1(c, `tt, `ff, `mm) :- FieldInClass(c, `tt, `ff, `mm), NOT(FundamentalTypeUse(`tt)).
 
 	    FundamentalTypeUse(t) :- t <: int :>.
 	    FundamentalTypeUse(t) :- t <: char :>.
@@ -86,24 +79,24 @@ ParamToVariable(0, 0, 0) :- NEQ(0, 0).
 	    FundamentalTypeUse(t) :- t <: boolean :>.
 
 
-	    IsPublic(f) :- FieldInClass(_, _, f, m), MOD(m, "public").
-	    IsFinal(f) :- FieldInClass(_, _, f, m), MOD(m, "final").
+	    IsPublic(f) :- FieldInClass1(_, _, f, m), MOD(m, "public").
+	    IsFinal(f) :- FieldInClass1(_, _, f, m), MOD(m, "final").
 
-	    NonPublicFieldReturn(s, f) :- s <: return `f ; :>, DECL(`f, f), FieldInClass(_, _, f, m), NOT(IsPublic(f)), NOT(IsFinal(f)).
-	    NonPublicFieldReturn(s, f) :- s <: return this.`f; :>, DECL(`f, f), FieldInClass(_, _, f, m), NOT(IsPublic(f)), NOT(IsFinal(f)).
+	    NonPublicFieldReturn(s, f) :- s <: return `f ; :>, DECL(`f, f), FieldInClass1(_, _, f, m), NOT(IsPublic(f)), NOT(IsFinal(f)).
+	    NonPublicFieldReturn(s, f) :- s <: return this.`f; :>, DECL(`f, f), FieldInClass1(_, _, f, m), NOT(IsPublic(f)), NOT(IsFinal(f)).
 	    NonPublicFieldReturnDetail(l, c, file) :- NonPublicFieldReturn(s, _), SRC(s, l, c, _, _, file).
 
-	    ParamToVariable(m, `p, `v) :- m <: .. `_ `_(.., `p, ..) { .. } :>, <: `v = `p2 :>, DECL(`p2, `p).
-	    ParamToVariable(m, `p, `v) :- m <: .. `_ `_(.., `p, ..) { .. } :>, <: `v = `p2 :>, DECL(`p2, `p).
-	    ParamToVariable(m, `p, `v) :- m <: .. `_ `_(.., `p, ..) { .. } :>, <: `v = `_ ? `_ : `p2  :>, DECL(`p2, `p).
-	    ParamToVariable(m, `p, `v) :- m <: .. `_ `_(.., `p, ..) { .. } :>, <: `v = `_ ? `p2 : `_  :>, DECL(`p2, `p).
-	    ParamToVariable(m, `p, `v) :- m <: .. `_ `_(.., `p, ..) { .. } :>, <: this.`v = `p2 :>, DECL(`p2, `p).
-	    ParamToVariable(m, `p, `v) :- m <: .. `_ `_(.., `p, ..) { .. } :>, <: this.`v = `p2 :>, DECL(`p2, `p).
-	    ParamToVariable(m, `p, `v) :- m <: .. `_ `_(.., `p, ..) { .. } :>, <: this.`v = `_ ? `_ : `p2  :>, DECL(`p2, `p).
-	    ParamToVariable(m, `p, `v) :- m <: .. `_ `_(.., `p, ..) { .. } :>, <: this.`v = `_ ? `p2 : `_  :>, DECL(`p2, `p).
+	    ParamToVariable(m, `p, `v) :- m <: .. `_ `_(.., `p, ..) { .. } :>, DECL(`p2, `p), <: `v = `p2 :>.
+	    ParamToVariable(m, `p, `v) :- m <: .. `_ `_(.., `p, ..) { .. } :>, DECL(`p2, `p), <: `v = `p2 :>.
+	    ParamToVariable(m, `p, `v) :- m <: .. `_ `_(.., `p, ..) { .. } :>, DECL(`p2, `p), <: `v = `_ ? `_ : `p2  :>.
+	    ParamToVariable(m, `p, `v) :- m <: .. `_ `_(.., `p, ..) { .. } :>, DECL(`p2, `p), <: `v = `_ ? `p2 : `_  :>.
+	    ParamToVariable(m, `p, `v) :- m <: .. `_ `_(.., `p, ..) { .. } :>, DECL(`p2, `p), <: this.`v = `p2 :>.
+	    ParamToVariable(m, `p, `v) :- m <: .. `_ `_(.., `p, ..) { .. } :>, DECL(`p2, `p), <: this.`v = `p2 :>.
+	    ParamToVariable(m, `p, `v) :- m <: .. `_ `_(.., `p, ..) { .. } :>, DECL(`p2, `p), <: this.`v = `_ ? `_ : `p2  :>.
+	    ParamToVariable(m, `p, `v) :- m <: .. `_ `_(.., `p, ..) { .. } :>, DECL(`p2, `p), <: this.`v = `_ ? `p2 : `_  :>.
 
 
-	    ParamToNonPublicField(m) :- ParamToVariable(m, p, v), DECL(v, f), FieldInClass(_, _, f, _), NOT(IsPublic(f)).
+	    ParamToNonPublicField(m) :- ParamToVariable(m, p, v), DECL(v, f), FieldInClass1(_, _, f, _), NOT(IsPublic(f)).
 	    ParamToNonPublicFieldDetail(l, c, file) :- ParamToNonPublicField(m), SRC(m, l, c, _, _, file).
 
 

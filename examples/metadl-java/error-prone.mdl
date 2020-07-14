@@ -86,24 +86,25 @@ OUTPUT('TypeUnusedInFormalsDetail).
 	    		  DECL(`rett, ret), ID(`name, name).
 
 	    MethodHasNoParams(m) :- MethodSig1(m, _, _), NOT(MethodSig2(m, _, _)).
-	    DiffNumParams(m1, m2), DiffNumParams(m2, m1) :- MethodSig2(m1, i, _), MethodSig2(m2, _, _), NOT(MethodSig2(m2, i, _)), NEQ(m1, m2).
-	    DiffNumParams(m1, m2), DiffNumParams(m2, m1) :- MethodSig2(m1, _, _), MethodHasNoParams(m2).
 
 	    DiffParamTypes(m1, m2), DiffParamTypes(m2, m1) :- MethodSig2(m1, i, t1), MethodSig2(m2, i, t2), NEQ(t1, t2).
-
-	    SameSig(m1, m2) :- MethodSig1(m1, n, ret), MethodSig1(m2, n, ret), NOT(DiffNumParams(m1, m2)), NOT(DiffParamTypes(m1, m2)).
-
 
 	    GrandParent(g, c) :- PARENT(g, p), PARENT(p, c).
 
 	    # Covariant return type
-	    Override(m, super) :- MethodSig1(m, n, ret), MethodSig1(super, n, ret_super), TSuperType(ret, ret_super),
-                                  GrandParent(c1, m), GrandParent(c2, super), TSuperType(c1, c2), NOT(DiffNumParams(m, super)).
+	    OverrideCandidate(m, super) :- MethodSig1(m, n, ret), MethodSig1(super, n, ret_super), TSuperType(ret, ret_super),
+                                  GrandParent(c1, m), GrandParent(c2, super), TSuperType(c1, c2).
 	    # Equal return type
-	    Override(m, super) :- MethodSig1(m, n, ret), MethodSig1(super, n, ret),
-                                  GrandParent(c1, m), GrandParent(c2, super), TSuperType(c1, c2), NOT(DiffNumParams(m, super)).
+	    OverrideCandidate(m, super) :- MethodSig1(m, n, ret), MethodSig1(super, n, ret),
+                                  GrandParent(c1, m), GrandParent(c2, super), TSuperType(c1, c2).
+
+	    DiffNumParams(m1, m2), DiffNumParams(m2, m1) :- OverrideCandidate(m1, m2), MethodSig2(m1, i, _),
+	                                                    MethodSig2(m2, _, _), NOT(MethodSig2(m2, i, _)), NEQ(m1, m2).
+	    DiffNumParams(m1, m2), DiffNumParams(m2, m1) :- OverrideCandidate(m1, m2), MethodSig2(m1, _, _), MethodHasNoParams(m2).
 
 
+	    # Covariant return type
+	    Override(m, super) :- OverrideCandidate(m, super), NOT(DiffNumParams(m, super)).
 
 	    ClassEq(0, 0) :- NEQ(0, 0).
 	    ClassEq(c, `d) :- c <: class `_ { .. `d .. } :>, `d <: .. public .. boolean equals(`t `o) ;:>.

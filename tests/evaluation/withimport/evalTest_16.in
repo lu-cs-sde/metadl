@@ -1,6 +1,6 @@
-IMPORT('P, "tests/evaluation/withimport/evalTest_16_input.java", "java4").
+IMPORT('P, "tests/evaluation/withimport/evalTest_16_input.java", "java8").
 
-analyze ('P,  "java4") {
+analyze ('P,  "java8") {
 	Class1(c) :- <: class `c implements `a, .. { .. } :>, ID(`c, c).
 	Class2(c) :- <: class `c extends `a implements `b, .. { .. } :>, ID(`c, c).
 	Class3(c) :- <: class `c { .. } :>, ID(`c, c).

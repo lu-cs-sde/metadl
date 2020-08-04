@@ -1,8 +1,0 @@
-%header {:
- package lang.java4.pat.ast;
-
- import lang.java4.pat.ast.*;
- import lang.java4.pat.ast.PatLangScanner;
-
- // import org.extendj.scanner.UnicodeEscapeReader;
-:};

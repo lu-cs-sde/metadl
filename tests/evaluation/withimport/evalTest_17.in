@@ -1,9 +1,9 @@
-IMPORT('P, "tests/evaluation/withimport/evalTest_17.java", "java4").
+IMPORT('P, "tests/evaluation/withimport/evalTest_17.java", "java8").
 
 Val("", 0, 0) :- NEQ(0, 0).
 EvalE(0, 0) :- NEQ(0, 0).
 
-analyze('P, "java4") {
+analyze('P, "java8") {
 	    Val(var, loc, val) :- loc <: `x = `c :>, ID(`x, var), INT(`c, sval), BIND(val, to_number(sval)).
 	    AssignVar(var, loc) :- loc <: `x = `c :>, ID(`x, var).
 

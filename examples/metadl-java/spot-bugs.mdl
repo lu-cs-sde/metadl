@@ -8,7 +8,7 @@ EDB('P, "__INPUT.csv").
 
 # NM_METHOD_NAMING_CONVENTION, NM_FIELD_NAMING_CONVENTION, NM_CLASS_NAMING_CONVENTION
 
-analyze('P, "java5") {
+analyze('P, "java8") {
 	    NotLibrary(n) :- SRC(n, l, _, _, _, _), NEQ(l, 0).
 
 	    Decl(`d), Type(c, name) :- c <: class `name { .. `d .. } :>, ID(`name, name).

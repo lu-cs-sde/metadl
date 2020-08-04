@@ -1,8 +1,8 @@
-IMPORT('P, "tests/evaluation/metadl-java/src/bad-covariant-equals/", "java5").
+IMPORT('P, "tests/evaluation/metadl-java/src/bad-covariant-equals/", "java8").
 
 GoodEquals(0) :- NEQ(0, 0).
 
-analyze ('P, "java5") {
+analyze ('P, "java8") {
 	# equals method where the class has another correct equals, probably a helper
 	CovariantEquals(`d1) :- <: .. class `k  { .. `d1 ..  } :> ,
                                 `d1 <: .. public .. boolean equals(`t `_) ; :>, ID(`t, t), ID(`k, k), EQ(t, k).

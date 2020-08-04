@@ -1,6 +1,6 @@
-IMPORT('P, "tests/evaluation/metadl-java/src/clone-idioms/", "java5").
+IMPORT('P, "tests/evaluation/metadl-java/src/clone-idioms/", "java8").
 
-analyze('P, "java5") {
+analyze('P, "java8") {
 	    Contains(n1, n2) :- PARENT(n1, n2).
 	    Contains(n1, n2) :- Contains(n1, t), Contains(t, n2).
 

@@ -14,7 +14,7 @@ def main() :
     else:
         output_file = sys.stdout
 
-    lang = "java5"
+    lang = "java8"
 
     mdl_prog = "# Program generated using gen-extractor-program.py\n"
     prog_pred = output_pred[0].upper() + output_pred[1:]

@@ -1,4 +1,4 @@
-IMPORT('P, "tests/evaluation/metadl-java/src/reference-to-mutable-object/", "java5").
+IMPORT('P, "tests/evaluation/metadl-java/src/reference-to-mutable-object/", "java8").
 
 FieldInClassWithInit(0, 0, 0, 0) :- NEQ(0, 0).
 FieldInClass(0, 0, 0, 0) :- NEQ(0, 0).
@@ -7,7 +7,7 @@ NonPublicFieldReturn(0, 0) :- NEQ(0, 0).
 ParamToVariable(0, 0, 0) :- NEQ(0, 0).
 
 
-analyze('P, "java5") {
+analyze('P, "java8") {
 ### Analysis
 	    FieldInClass(c, `t, `f, `m) :- c <: class `_ { .. .. `m .. `t .. , `f , .. ; .. } :>, NOT(FundamentalTypeUse(`t)),
 	                                   SRC(c, l, col, _,_,_), NEQ(col, 0).

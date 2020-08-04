@@ -1,7 +1,7 @@
-IMPORT('P, "tests/evaluation/metadl-java/src/reference-equality/", "java5").
+IMPORT('P, "tests/evaluation/metadl-java/src/reference-equality/", "java8").
 
 # Code for extracting the type hierarchy
-analyze('P, "java5") {
+analyze('P, "java8") {
 	    SuperClass1(c, d) :- c <: class `_ extends `d { .. } :>, DECL(`d, d).
 	    SuperClass1(c, d) :- c <: class `_ <..> extends `d { .. } :>, DECL(`d, d).
 
@@ -31,7 +31,7 @@ analyze('P, "java5") {
 }
 
 # Code for finding if a method overrides another method
-analyze('P, "java5") {
+analyze('P, "java8") {
 	    MethodSig2(m, i, pt) :- m <: `rett `name(.., `pt `_, ..) ; :>,
 	    		  DECL(`pt, pt), PARENT(param, `pt), INDEX(param, i).
 	    # TODO: The MethodSig1 relation will not contain Object.equals(Object o), since the DECL attribute
@@ -56,7 +56,7 @@ analyze('P, "java5") {
 
 }
 
-analyze('P, "java5") {
+analyze('P, "java8") {
 	    ClassEq(0, 0) :- NEQ(0, 0).
 	    ClassEq(c, `d) :- c <: class `_ { .. `d .. } :>, `d <: .. public .. boolean equals(`t `o) ;:>.
 	    ClassEq(c, `d) :- c <: class `_ <..> { .. `d .. } :>, `d <: .. public .. boolean equals(`t `o) ;:>.

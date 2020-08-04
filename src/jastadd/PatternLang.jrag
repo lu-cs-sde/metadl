@@ -58,10 +58,6 @@ aspect PatternLang {
 		switch (getLang().getSTRING()) {
 		case "metadl":
 			return lang.metadl.pat.ast.PatLang.translatePredicateName(getContext(), predName);
-		case "java5":
-			return lang.java5.pat.ast.PatLang.translatePredicateName(getContext(), predName);
-		case "java7":
-			return lang.java7.pat.ast.PatLang.translatePredicateName(getContext(), predName);
 		case "java8":
 			return lang.java8.pat.ast.PatLang.translatePredicateName(getContext(), predName);
 		}
@@ -72,10 +68,6 @@ aspect PatternLang {
 		switch (getLang().getSTRING()) {
 		case "metadl":
 			return lang.metadl.pat.ast.PatLang.generateHelperRelations(getContext());
-		case "java5":
-			return lang.java5.pat.ast.PatLang.generateHelperRelations(getContext());
-		case "java7":
-			return lang.java7.pat.ast.PatLang.generateHelperRelations(getContext());
 		case "java8":
 			return lang.java8.pat.ast.PatLang.generateHelperRelations(getContext());
 		}
@@ -170,34 +162,6 @@ aspect PatternLang {
 			startSymbols = Arrays.asList(lang.metadl.pat.ast.PatLangParserSEP.n_clause,
 										 lang.metadl.pat.ast.PatLangParserSEP.n_common_literal,
 										 lang.metadl.pat.ast.PatLangParserSEP.n_expr);
-			break;
-		case "java5":
-			scanner = new lang.java5.pat.ast.PatLangScanner(new StringReader(getPATTERN()));
-			tokenNames = lang.java5.pat.ast.PatLangParserSEP.Terminals.NAMES;
-			astBuilder = lang.java5.pat.ast.ASTBuilder.getInstance();
-			startSymbols = Arrays.asList(lang.java5.pat.ast.PatLangParserSEP.n_class_declaration,
-										 lang.java5.pat.ast.PatLangParserSEP.n_type_declaration,
-										 lang.java5.pat.ast.PatLangParserSEP.n_class_body_declaration,
-										 lang.java5.pat.ast.PatLangParserSEP.n_interface_member_declaration,
-										 lang.java5.pat.ast.PatLangParserSEP.n_block_statement,
-										 lang.java5.pat.ast.PatLangParserSEP.n_expression,
-										 lang.java5.pat.ast.PatLangParserSEP.n_type,
-										 lang.java5.pat.ast.PatLangParserSEP.n_type_parameter,
-										 lang.java5.pat.ast.PatLangParserSEP.n_type_argument);
-			break;
-		case "java7":
-			scanner = new lang.java7.pat.ast.PatLangScanner(new StringReader(getPATTERN()));
-			tokenNames = lang.java7.pat.ast.PatLangParserSEP.Terminals.NAMES;
-			astBuilder = lang.java7.pat.ast.ASTBuilder.getInstance();
-			startSymbols = Arrays.asList(lang.java7.pat.ast.PatLangParserSEP.n_class_declaration,
-										 lang.java7.pat.ast.PatLangParserSEP.n_type_declaration,
-										 lang.java7.pat.ast.PatLangParserSEP.n_class_body_declaration,
-										 lang.java7.pat.ast.PatLangParserSEP.n_interface_member_declaration,
-										 lang.java7.pat.ast.PatLangParserSEP.n_block_statement,
-										 lang.java7.pat.ast.PatLangParserSEP.n_expression,
-										 lang.java7.pat.ast.PatLangParserSEP.n_type,
-										 lang.java7.pat.ast.PatLangParserSEP.n_type_parameter,
-										 lang.java7.pat.ast.PatLangParserSEP.n_type_argument);
 			break;
 		case "java8":
 			scanner = new lang.java8.pat.ast.PatLangScanner(new StringReader(getPATTERN()));

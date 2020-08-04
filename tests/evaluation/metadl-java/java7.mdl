@@ -1,6 +1,6 @@
-IMPORT('P, "tests/evaluation/metadl-java/src/java7/", "java7").
+IMPORT('P, "tests/evaluation/metadl-java/src/java7/", "java8").
 
-analyze('P, "java7") {
+analyze('P, "java8") {
 	    Diamond(0) :-  <: new HashMap<>() :>.
 	    TryWithResources(0) :- <: try (..; FileOutputStream os = new FileOutputStream(`_); ..) {  } :>.
 	    NumericLiterals(0) :- <: 1_000_013 :>.

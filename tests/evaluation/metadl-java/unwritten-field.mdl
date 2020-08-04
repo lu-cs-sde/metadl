@@ -1,9 +1,9 @@
-IMPORT('P, "tests/evaluation/metadl-java/src/unwritten-field/", "java5").
+IMPORT('P, "tests/evaluation/metadl-java/src/unwritten-field/", "java8").
 
 FieldInClassWithInit(0, 0, 0, 0) :- NEQ(0, 0).
 FieldInClass(0, 0, 0, 0) :- NEQ(0, 0).
 
-analyze('P, "java5") {
+analyze('P, "java8") {
 ### Analysis
 	    FieldInClassWithInit(c, `t, `f, `i) :- c <: class `_ { ..  .. `t .. , `f = `i, .. ; .. } :>, SRC(c, l, col, _,_,_), NEQ(col, 0).
 	    FieldInClass(c, `t, `f, `m) :- c <: class `_ { .. .. `m .. `t .. , `f , .. ; .. } :>, SRC(c, l, col, _,_,_), NEQ(col, 0).

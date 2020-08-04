@@ -1,4 +1,4 @@
-IMPORT('P, "tests/evaluation/metadl-java/src/number-ctor/", "java5").
+IMPORT('P, "tests/evaluation/metadl-java/src/number-ctor/", "java8").
 
 ### Transform the program P to a program Q that has all the ParseName
 ### node as chains of Dot nodes
@@ -43,7 +43,7 @@ TypeName("Integer"), TypeName("Long"), TypeName("Short"),
 TypeName("Byte"), TypeName("Float"), TypeName("Double").
 
 
-analyze('Q, "java5") {
+analyze('Q, "java8") {
 	    ParentT(n, c) :- PARENT(n, c).
 	    ParentT(n, c) :- ParentT(n, t), PARENT(t, c).
 

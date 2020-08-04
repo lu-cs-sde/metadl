@@ -115,8 +115,6 @@ jar {
 // Before compiling, we should generate some Java code:
 compileJava.dependsOn 'generateJava', 'generateScanner', 'generateParser',
     'genMetadlLang',
-    'genJava5Lang',
-    'genJava7Lang',
     'genJava8Lang',
     'generateConfig', 'generateScannerConfig', 'generateParserConfig'
 
@@ -366,7 +364,7 @@ void makeGenerateLangTask(String taskName, String outDir, String srcLang, ArrayL
 }
 
 // The order in which the lex files are concatenated
-def java5LexOrder = [
+def java8LexOrder = [
     "Header.flex",
     "Preamble.flex",
     "Macros.flex",
@@ -381,8 +379,6 @@ def java5LexOrder = [
     "Postamble.flex"
 ]
 
-def java7LexOrder = java5LexOrder
-def java8LexOrder = java5LexOrder
 def metadlLexOrder = ['scanner.flex']
 
 // The order in which the parser files are concatenated
@@ -416,8 +412,6 @@ def java8ParseOrder = [
 
 
 makeGenerateLangTask('genMetadlLang', 'src/gen/', 'metadl', metadlLexOrder)
-makeGeneratePatLangTask('genJava5Lang', 'src/gen/', 'java5', java5LexOrder)
-makeGeneratePatLangTask('genJava7Lang', 'src/gen/', 'java7', java7LexOrder)
 makeGeneratePatLangTask('genJava8Lang', 'src/gen/', 'java8', java8LexOrder, java8ParseOrder)
 
 

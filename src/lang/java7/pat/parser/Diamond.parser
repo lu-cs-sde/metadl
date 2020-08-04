@@ -1,4 +1,0 @@
-Access class_or_interface_type =
-  class_or_interface LT GT
-  {: return new DiamondAccess(class_or_interface); :}
-  ;

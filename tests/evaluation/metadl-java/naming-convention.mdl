@@ -1,6 +1,6 @@
-IMPORT('P, "tests/evaluation/metadl-java/src/naming-convention/", "java5").
+IMPORT('P, "tests/evaluation/metadl-java/src/naming-convention/", "java8").
 
-analyze('P, "java5") {
+analyze('P, "java8") {
 	    NotLibrary(n) :- SRC(n, l, _, _, _, _), NEQ(l, 0).
 
 	    Decl(`d), Type(c, name) :- c <: class `name { .. `d .. } :>, ID(`name, name).

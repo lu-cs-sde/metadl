@@ -16,7 +16,6 @@ import lang.io.FileUtil;
 import lang.io.CSVUtil;
 import lang.io.SimpleLogger;
 import lang.Compiler;
-import lang.evaluation.BottomUpNaiveIterative;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.HashMap;
@@ -215,8 +214,6 @@ aspect Internal {
     public Program EvalBottomUpNaive.perform()  throws Exception {
         SimpleLogger.logger().log(description().debugInfo(), SimpleLogger.LogLevel.Level.DEBUG);
         Program program = getProgramWithChecks();
-        BottomUpNaiveIterative bit = new BottomUpNaiveIterative();
-        bit.evaluate(program, description());
         return program;
     }
 

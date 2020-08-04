@@ -8,6 +8,8 @@ import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.junit.Ignore;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -86,6 +88,7 @@ public class EvaluationTest {
 		doEvaluationTest(d1, d2);
 	}
 
+	@Ignore
 	@DisplayName("Compare Internal Evaluation to Souffle WithEDB")
 	@ParameterizedTest(name = "Evaluation Tests Valid WithEDB")
 	@ValueSource(strings = { "evalTest_1.in", "evalTest_2.in"})
@@ -100,6 +103,7 @@ public class EvaluationTest {
 		doEvaluationTest(d1, d2);
 	}
 
+	@Ignore
 	@DisplayName("Compare Internal Evaluation to Souffle WithNEG")
 	@ParameterizedTest(name = "Evaluation Tests Valid WithNEG")
 	@ValueSource(strings = { "evalTest_1.in", "evalTest_2.in" })
@@ -114,6 +118,7 @@ public class EvaluationTest {
 		doEvaluationTest(d1, d2);
 	}
 
+	@Ignore
 	@DisplayName("Compare Internal Evaluation to Souffle WithBinPred")
 	@ParameterizedTest(name = "Evaluation Tests Valid")
 	@ValueSource(strings = { "evalTest_1.in", "evalTest_2.in","evalTest_3.in","evalTest_4.in","evalTest_5.in","evalTest_6.in", "evalTest_7.in","evalTest_8.in","evalTest_9.in" })

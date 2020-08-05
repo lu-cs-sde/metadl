@@ -17,6 +17,25 @@ aspect ErrorCollection {
         when !unboundVariables().isEmpty()
         to Program.semanticErrors();
 
+	syn TreeSet<Variable> CommonLiteral.freeVarsInNegativeLiteral() {
+		if (!hasNot())
+			return new TreeSet<>();
+
+		TreeSet<Variable> negvars  = variables();
+		TreeSet<Variable> inclbodyvars = ((Rule)clause()).boundVariables();
+		TreeSet<Variable> free = new TreeSet<Variable>(Term.termComparator);
+
+		for(Variable v : negvars) {
+			if(!inclbodyvars.contains(v))
+				free.add(v);
+		}
+		return free;
+	}
+
+	CommonLiteral contributes "Free variable(s) " + freeVarsInNegativeLiteral() + " in " + this + " in rule " + clause()
+		when !freeVarsInNegativeLiteral().isEmpty()
+		to Program.semanticErrors();
+
     Functor contributes "Free variable(s) " + freeVars() + " in " + this + " in rule " + occuresIn().clause()
         when !freeVars().isEmpty()
         to Program.semanticErrors();

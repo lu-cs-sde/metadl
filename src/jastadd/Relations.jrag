@@ -74,20 +74,4 @@ aspect Rules {
 		}
 		return rules;
 	}
-
-	syn TreeSet<Literal> Rule.inclusiveBodyLiterals() {
-		TreeSet<Literal> literals = new TreeSet<Literal>(Literal.literalComparator);
-		for(Literal l : flattenedBodyLiterals()) {
-			if(l.isInclusive()) literals.add(l);
-		}
-		return literals;
-	}
-
-	syn TreeSet<Literal> Rule.exclusiveBodyLiterals() {
-		TreeSet<Literal> literals = new TreeSet<Literal>(Literal.literalComparator);
-		for(Literal l : flattenedBodyLiterals()) {
-			if(!l.isInclusive()) literals.add(l);
-		}
-		return literals;
-	}
 }

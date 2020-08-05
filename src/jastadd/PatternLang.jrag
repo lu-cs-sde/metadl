@@ -123,7 +123,7 @@ aspect PatternLang {
 	eq BoundedPattern.predName() = hash(getPATTERN() + "bounded");
 
 
-	public Atom Pattern.getLiteralHelper(CommonVariable bindVar) {
+	protected Atom Pattern.getLiteralHelper(CommonVariable bindVar) {
 		AnalyzeContext ctx = enclosingAnalyzeBlock().getContext();
 		List<Term> headVars = new List<>();
 		// The assumption is that any parse tree of a pattern contains
@@ -139,8 +139,18 @@ aspect PatternLang {
 		return head;
 	}
 
-	syn nta Literal Pattern.getLiteral() = getLiteralHelper(null);
-	eq BoundedPattern.getLiteral() = getLiteralHelper(getCommonVariable());
+	syn nta Literal Pattern.getLiteral() {
+		Literal l = getLiteralHelper(null);
+		if (hasNot())
+			l.setNot(new Not());
+		return l;
+	}
+	eq BoundedPattern.getLiteral() {
+		Literal l = getLiteralHelper(getCommonVariable());
+		if (hasNot())
+			l.setNot(new Not());
+		return l;
+	}
 
 	syn lazy java.util.List<ObjLangASTNode> Pattern.altParse() {
 		String srcLang = enclosingAnalyzeBlock().getLang().getSTRING();
@@ -276,6 +286,8 @@ aspect PatternLang {
 		vars.add((Variable)getCommonVariable());
 		return vars;
 	}
+
+	eq Pattern.boundVariables() = getLiteral().boundVariables();
 
 	eq Pattern.isInclusive() = true;
 

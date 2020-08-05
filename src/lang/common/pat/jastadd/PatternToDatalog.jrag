@@ -10,6 +10,7 @@ import lang.ast.AnalyzeContext;
 import lang.io.StringUID;
 import java.util.Arrays;
 import java.io.PrintStream;
+import static lang.ast.Constructors.*;
 
 aspect PatternToDatalog {
 
@@ -356,8 +357,7 @@ aspect PatternToDatalog {
 			lang.ast.Wildcard Token = new lang.ast.Wildcard();
 
 			terms.add(Kind).add(CurrentNodeId).add(ChildIdx).add(ChildId).add(Token);
-			lits.add(new lang.ast.NEGLiteral(new lang.ast.PredicateSymbol("NOT"),
-											 new lang.ast.Atom(new lang.ast.PredicateSymbol(ctx.progRelName), terms)));
+			lits.add(NOT(new lang.ast.Atom(new lang.ast.PredicateSymbol(ctx.progRelName), terms)));
 			return lits;
 		}
 
@@ -388,8 +388,7 @@ aspect PatternToDatalog {
 			lang.ast.Wildcard Token = new lang.ast.Wildcard();
 
 			terms.add(Kind).add(CurrentNodeId).add(ChildIdx).add(ChildId).add(Token);
-			lits.add(new lang.ast.NEGLiteral(new lang.ast.PredicateSymbol("NOT"),
-											 new lang.ast.Atom(new lang.ast.PredicateSymbol(ctx.progRelName), terms)));
+			lits.add(NOT(new lang.ast.Atom(new lang.ast.PredicateSymbol(ctx.progRelName), terms)));
 			return lits;
 		}
 		return super.asLiterals(ctx, root);

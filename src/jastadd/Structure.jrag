@@ -183,9 +183,6 @@ aspect Literal {
 	eq	Literal.isAtom() = false;
 	eq	Atom.isAtom()	 = true;
 
-	syn boolean CommonLiteral.isNeg() = false;
-	eq	NEGLiteral.isNeg()	  = true;
-
 	syn boolean CommonLiteral.isBind() = false;
 	eq	BINDLiteral.isBind()   = true;
 
@@ -226,8 +223,6 @@ aspect Literal {
 		return vars;
 	}
 
-	eq NEGLiteral.variables()	 = getCommonLiteral().variables();
-
 	eq BINDLiteral.variables()	{
 		TreeSet<Variable> vars = new TreeSet<Variable>(Term.termComparator);
 		Variable v;
@@ -248,18 +243,6 @@ aspect Literal {
 		constants.addAll(getLeft().constants());
 		constants.addAll(getRight().constants());
 		return constants;
-	}
-
-	syn TreeSet<Variable> NEGLiteral.freeVars() {
-		TreeSet<Variable> negvars  = getCommonLiteral().variables();
-		TreeSet<Variable> inclbodyvars = ((Rule)clause()).inclusiveBodyVariables();
-		TreeSet<Variable> free = new TreeSet<Variable>(Term.termComparator);
-
-		for(Variable v : negvars) {
-			if(!inclbodyvars.contains(v))
-				free.add(v);
-		}
-		return free;
 	}
 }
 
@@ -290,7 +273,7 @@ aspect Predicate {
 	syn boolean PredicateInterface.isEDB()	 = literal().isEDB();
 	syn boolean PredicateInterface.isUse()	 = literal().isUse();
 	syn boolean PredicateInterface.isDef()	 = literal().isDef();
-	syn boolean PredicateInterface.isNeg()	 = literal().isNeg();
+	syn boolean PredicateInterface.isNeg()	 = literal().hasNot();
 }
 
 aspect Term {

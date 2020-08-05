@@ -1,0 +1,87 @@
+aspect Constructors {
+	public Atom.Atom(PredicateSymbol p, List<Term> ts) {
+		this(new Opt(), p, ts);
+	}
+	public EQLiteral.EQLiteral(PredicateSymbol p, Expr l, Expr r) {
+		this(new Opt(), p, l, r);
+	}
+	public NEQLiteral.NEQLiteral(PredicateSymbol p, Expr l, Expr r) {
+		this(new Opt(), p, l, r);
+	}
+	public GTLiteral.GTLiteral(PredicateSymbol p, Expr l, Expr r) {
+		this(new Opt(), p, l, r);
+	}
+	public LTLiteral.LTLiteral(PredicateSymbol p, Expr l, Expr r) {
+		this(new Opt(), p, l, r);
+	}
+	public GTELiteral.GTELiteral(PredicateSymbol p, Expr l, Expr r) {
+		this(new Opt(), p, l, r);
+	}
+	public LTELiteral.LTELiteral(PredicateSymbol p, Expr l, Expr r) {
+		this(new Opt(), p, l, r);
+	}
+	public BINDLiteral.BINDLiteral(PredicateSymbol p, CommonVariable v, Expr e) {
+		this(new Opt(), p, v, e);
+	}
+	public MATCHLiteral.MATCHLiteral(PredicateSymbol p, Expr e1, Expr e2) {
+		this(new Opt(), p, e1, e2);
+	}
+	public Pattern.Pattern(String s) {
+		this(new Opt(), s);
+	}
+	public BoundedPattern.BoundedPattern(beaver.Symbol s, CommonVariable v) {
+		this(new Opt(), s, v);
+	}
+
+	public class Constructors {
+		public static lang.ast.Atom atom(String pred, Object ...args) {
+			lang.ast.List<lang.ast.Term> terms = new lang.ast.List<>();
+			for (Object o : args) {
+				if (o instanceof Integer) {
+					terms.add(new lang.ast.IntConstant("" + o));
+				} else if (o instanceof String) {
+					String s = (String) o;
+					if (s.startsWith("$"))
+						terms.add(new lang.ast.Variable(s.substring(1)));
+					else if (s.equals("_"))
+						terms.add(new lang.ast.Wildcard());
+					else
+						terms.add(new lang.ast.StringConstant(s));
+				} else {
+					throw new RuntimeException("Can't interpret argument.");
+				}
+			}
+			return new lang.ast.Atom(new lang.ast.PredicateSymbol(pred), terms);
+		}
+
+		public static lang.ast.Rule rule(lang.ast.CommonLiteral ...literals) {
+			lang.ast.List<lang.ast.CommonLiteral> headList = new lang.ast.List<>();
+			headList.add(literals[0]);
+
+			lang.ast.List<lang.ast.CommonLiteral> bodyList = new lang.ast.List<>();
+			for (int i = 1; i < literals.length; ++i)
+				bodyList.add(literals[i]);
+
+			lang.ast.Rule r = new lang.ast.Rule(headList, bodyList);
+
+			return r;
+		}
+
+		public static lang.ast.Literal NEQ(lang.ast.Term t1, lang.ast.Term t2) {
+			return new lang.ast.NEQLiteral(new lang.ast.PredicateSymbol("NEQ"), t1, t2);
+		}
+
+		public static lang.ast.Literal EQ(lang.ast.Term t1, lang.ast.Term t2) {
+			return new lang.ast.EQLiteral(new lang.ast.PredicateSymbol("EQ"), t1, t2);
+		}
+
+		public static lang.ast.CommonLiteral NOT(lang.ast.CommonLiteral l) {
+			return l.setNot(new Not());
+		}
+
+		public static lang.ast.Literal NOT(lang.ast.Literal l) {
+			return l.setNot(new Not());
+		}
+
+	}
+}

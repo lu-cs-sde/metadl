@@ -6,57 +6,13 @@ import lang.cons.ObjLangASTNode;
 import java.lang.reflect.Method;
 import java.lang.ReflectiveOperationException;
 import lang.ast.AnalyzeContext;
+import static lang.ast.Constructors.*;
 import lang.io.StringUID;
 import java.util.Arrays;
 import java.io.PrintStream;
 
 aspect AnalyzeBlock {
 	public class PatLang {
-		public static lang.ast.Atom atom(String pred, Object ...args) {
-			lang.ast.List<lang.ast.Term> terms = new lang.ast.List<>();
-			for (Object o : args) {
-				if (o instanceof Integer) {
-					terms.add(new lang.ast.IntConstant("" + o));
-				} else if (o instanceof String) {
-					String s = (String) o;
-					if (s.startsWith("$"))
-						terms.add(new lang.ast.Variable(s.substring(1)));
-					else if (s.equals("_"))
-						terms.add(new lang.ast.Wildcard());
-					else
-						terms.add(new lang.ast.StringConstant(s));
-				} else {
-					throw new RuntimeException("Can't interpret argument.");
-				}
-			}
-			return new lang.ast.Atom(new lang.ast.PredicateSymbol(pred), terms);
-		}
-
-		public static lang.ast.Rule rule(lang.ast.CommonLiteral ...literals) {
-			lang.ast.List<lang.ast.CommonLiteral> headList = new lang.ast.List<>();
-			headList.add(literals[0]);
-
-			lang.ast.List<lang.ast.CommonLiteral> bodyList = new lang.ast.List<>();
-			for (int i = 1; i < literals.length; ++i)
-				bodyList.add(literals[i]);
-
-			lang.ast.Rule r = new lang.ast.Rule(headList, bodyList);
-
-			return r;
-		}
-
-		public static lang.ast.Literal NEQ(lang.ast.Term t1, lang.ast.Term t2) {
-			return new lang.ast.NEQLiteral(new lang.ast.PredicateSymbol("NEQ"), t1, t2);
-		}
-
-		public static lang.ast.Literal EQ(lang.ast.Term t1, lang.ast.Term t2) {
-			return new lang.ast.EQLiteral(new lang.ast.PredicateSymbol("EQ"), t1, t2);
-		}
-
-		public static lang.ast.Literal NOT(lang.ast.CommonLiteral l) {
-			return new lang.ast.NEGLiteral(new lang.ast.PredicateSymbol("NEG"), l);
-		}
-
 		public static lang.ast.Rule implicitTypeDecl(AnalyzeContext ctx) {
 			lang.ast.List<lang.ast.CommonLiteral> head = new lang.ast.List<>();
 			lang.ast.List<lang.ast.CommonLiteral> body = new lang.ast.List<>();

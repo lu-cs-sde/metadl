@@ -7,7 +7,6 @@ import lang.relation.PseudoTuple;
 
 aspect Arity {
     syn int Literal.arity();
-    eq NEGLiteral.arity()    = 1;
     eq BINDLiteral.arity()   = 2;
     eq BinaryExclusiveTermLiteral.arity() = 2;
     eq Atom.arity() = getNumTerms();
@@ -53,7 +52,6 @@ aspect Relation {
 	eq Atom.toTuple()          = new PseudoTuple(getTermss());
 	eq BinaryExclusiveTermLiteral.toTuple()  = new PseudoTuple(0);
 	eq BINDLiteral.toTuple()   = new PseudoTuple(0);
-	eq NEGLiteral.toTuple() = getCommonLiteral().asLiteral().toTuple();
 }
 
 aspect Rules {
@@ -75,21 +73,6 @@ aspect Rules {
 			}
 		}
 		return rules;
-	}
-
-	public static boolean FormalPredicate.hasNegativeDefUse(FormalPredicate def, FormalPredicate use) {
-		HashSet<Rule> rules_use = use.useInRules();
-		for(Clause c : def.definedIn()) {
-			if(!c.isRule()) continue;
-			Rule r = (Rule)c;
-			if(!rules_use.contains(r)) continue;
-			for(CommonLiteral lit : r.flattenedBodyLiterals()) {
-				if(!lit.isNeg()) continue;
-				NEGLiteral nl = (NEGLiteral) lit;
-				if(nl.getCommonLiteral().predicate().getPRED_ID().equals(use.predicateName())) return true;
-			}
-		}
-		return false;
 	}
 
 	syn TreeSet<Literal> Rule.inclusiveBodyLiterals() {

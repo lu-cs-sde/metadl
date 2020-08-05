@@ -3,6 +3,7 @@ package lang.cons;
 import lang.ast.*;
 import lang.ast.AnalyzeContext;
 import java.util.ArrayList;
+import static lang.ast.Constructors.*;
 
 public abstract class PatternConstraint {
 	public Clause generateClause(AnalyzeContext ctx) {return null;};
@@ -115,11 +116,10 @@ class LastConstraint extends PatternConstraint {
 								   new Variable(boundVarName),
 								   makeAdd(new Variable(node.indexVarName()),
 										   new IntConstant("1"))));
-		result.add(new NEGLiteral(new PredicateSymbol("NEG"),
-								  makeListAtom(ctx,
-											   new Variable(node.getParent().varName()),
-											   new Variable(boundVarName),
-											   new Wildcard())));
+		result.add(NOT(makeListAtom(ctx,
+									new Variable(node.getParent().varName()),
+									new Variable(boundVarName),
+									new Wildcard())));
 		return result;
 	}
 }

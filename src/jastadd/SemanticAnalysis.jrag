@@ -17,10 +17,6 @@ aspect ErrorCollection {
         when !unboundVariables().isEmpty()
         to Program.semanticErrors();
 
-    NEGLiteral contributes "Free variable(s) " + freeVars() + " in " + this + " in rule " + clause()
-        when !freeVars().isEmpty()
-        to Program.semanticErrors();
-
     Functor contributes "Free variable(s) " + freeVars() + " in " + this + " in rule " + occuresIn().clause()
         when !freeVars().isEmpty()
         to Program.semanticErrors();

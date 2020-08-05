@@ -13,17 +13,20 @@ Fact:Clause;
 AnalyzeBlock:CommonClause ::= ProgramRef:PredicateRef Lang:StringConstant Clause* /ExpandedClause:Clause*/;
 
 /**
+   Marker AST node for negated Literals
+**/
+Not;
+
+/**
    Literals
 **/
-abstract CommonLiteral;
+abstract CommonLiteral ::= [Not];
 
 abstract Literal:CommonLiteral ::= Predicate:PredicateSymbol;
 Atom:Literal ::= Terms:Term*;
 Constraint:Literal ::= Expr*;
 
 abstract BinaryExclusiveTermLiteral:Literal ::= Left:Expr Right:Expr;
-
-NEGLiteral:Literal    ::= CommonLiteral;
 
 BINDLiteral:Literal ::= Variable:CommonVariable Right:Expr;
 

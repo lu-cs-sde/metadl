@@ -62,8 +62,12 @@ aspect PretyPrinting {
     }
 
     public void Atom.prettyPrint(PrettyPrinter pr) {
+		if (hasNot())
+			pr.negationPrefix();
         pr.prettyPrint(getPredicate());
         printCollection(getTermss(), "(", ")", ", ", pr);
+		if (hasNot())
+			pr.negationSuffix();
     }
 
     public void Rule.prettyPrint(PrettyPrinter pr) {
@@ -77,12 +81,16 @@ aspect PretyPrinting {
     }
 
     public void BinaryExclusiveTermLiteral.prettyPrint(PrettyPrinter pr) {
+		if (hasNot())
+			pr.negationPrefix();
     	pr.prettyPrint(getPredicate());
         pr.out.print("(");
         pr.prettyPrint(getLeft());
         pr.out.print(",");
         pr.prettyPrint(getRight());
         pr.out.print(")");
+		if (hasNot())
+			pr.negationSuffix();
     }
 
     public void BINDLiteral.prettyPrint(PrettyPrinter pr) {
@@ -93,16 +101,14 @@ aspect PretyPrinting {
         pr.out.print(")");
     }
 
-    public void NEGLiteral.prettyPrint(PrettyPrinter pr) {
-    	pr.out.print("NOT(");
-        pr.prettyPrint(getCommonLiteral());
-        pr.out.print(")");
-    }
-
 	public void Pattern.prettyPrint(PrettyPrinter pr) {
+		if (hasNot())
+			pr.negationPrefix();
 		pr.out.print("<:");
 		pr.out.print(getPATTERN());
 		pr.out.print(":>");
+		if (hasNot())
+			pr.negationSuffix();
 	}
 
 	public void AnalyzeBlock.prettyPrint(PrettyPrinter pr) {
@@ -154,6 +160,14 @@ aspect ExtensionablePrinting {
         public PrettyPrinter(PrintStream out) {
             this.out = out;
         }
+
+		protected void negationPrefix() {
+			out.print("NOT(");
+		}
+
+		protected void negationSuffix() {
+			out.print(")");
+		}
     }
 
     public class StandardPrettyPrinter<T extends ASTNode> extends PrettyPrinter<T> {
@@ -172,6 +186,16 @@ aspect ExtensionablePrinting {
         public SoufflePrettyPrinter(PrintStream out) {
             super(out);
         }
+
+		@Override
+		protected void negationPrefix() {
+			out.print("!(");
+		}
+
+		@Override
+		protected void negationSuffix() {
+			out.print(")");
+		}
     }
 }
 
@@ -195,11 +219,6 @@ aspect SoufflePrinting {
         prettyPrint(pr);
     }
 
-    public void NEGLiteral.soufflePrint(PrettyPrinter pr) {
-    	pr.out.print("!");
-        pr.prettyPrint(getCommonLiteral());
-    }
-
 	public void Pattern.soufflePrint(PrettyPrinter pr) {
 		pr.out.print("/* " + getPATTERN() + "*/");
 		pr.prettyPrint(asLiteral());
@@ -214,19 +233,27 @@ aspect SoufflePrinting {
 	public String GTELiteral.souffleOPString() { return ">="; }
 
     public void BinaryExclusiveTermLiteral.soufflePrint(PrettyPrinter pr) {
+		if (hasNot())
+			pr.negationPrefix();
         pr.prettyPrint(getLeft());
         pr.out.print(" ");
         pr.out.print(souffleOPString());
         pr.out.print(" ");
         pr.prettyPrint(getRight());
+		if (hasNot())
+			pr.negationSuffix();
     }
 
 	public void MATCHLiteral.soufflePrint(PrettyPrinter pr) {
+		if (hasNot())
+			pr.negationPrefix();
 		pr.out.print("match(");
 		pr.prettyPrint(getLeft());
 		pr.out.print(", ");
 		pr.prettyPrint(getRight());
 		pr.out.print(")");
+		if (hasNot())
+			pr.negationSuffix();
 	}
 
     public void PredicateRef.soufflePrint(PrettyPrinter pr) {

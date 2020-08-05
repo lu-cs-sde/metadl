@@ -4,11 +4,11 @@ import lang.ast.*;
 import lang.ast.AnalyzeContext;
 import java.util.ArrayList;
 
-public abstract class Constraint {
+public abstract class PatternConstraint {
 	public Clause generateClause(AnalyzeContext ctx) {return null;};
 	public abstract ArrayList<Literal> generateLiterals(AnalyzeContext ctx);
 	protected ObjLangASTNode node;
-	protected Constraint(ObjLangASTNode node) {
+	protected PatternConstraint(ObjLangASTNode node) {
 		this.node = node;
 	}
 
@@ -37,28 +37,28 @@ public abstract class Constraint {
 		return new Functor(new FunctorSymbol("add"), args);
 	}
 
-	public static Constraint member(ObjLangASTNode n) {
+	public static PatternConstraint member(ObjLangASTNode n) {
 		return new MemberConstraint(n);
 	}
 
-	public static Constraint eq(ObjLangASTNode n1, int pos) {
+	public static PatternConstraint eq(ObjLangASTNode n1, int pos) {
 		return new EqualityConstraint(n1, pos);
 	}
 
-	public static Constraint last(ObjLangASTNode n) {
+	public static PatternConstraint last(ObjLangASTNode n) {
 		return new LastConstraint(n);
 	}
 
-	public static Constraint after(ObjLangASTNode n, ObjLangASTNode after) {
+	public static PatternConstraint after(ObjLangASTNode n, ObjLangASTNode after) {
 		return new AfterConstraint(after, n);
 	}
 
-	public static Constraint next(ObjLangASTNode n, ObjLangASTNode next) {
+	public static PatternConstraint next(ObjLangASTNode n, ObjLangASTNode next) {
 		return new NextConstraint(next, n);
 	}
 }
 
-class EqualityConstraint extends Constraint {
+class EqualityConstraint extends PatternConstraint {
 	private int pos;
 	public EqualityConstraint(ObjLangASTNode node, int pos) {
 		super(node);
@@ -78,7 +78,7 @@ class EqualityConstraint extends Constraint {
 	}
 }
 
-class MemberConstraint extends Constraint {
+class MemberConstraint extends PatternConstraint {
 	ArrayList<Literal> result = new ArrayList<>();
 	final String boundVarName = "b_" + node.getNodeId();
 	public MemberConstraint(ObjLangASTNode node) {
@@ -94,7 +94,7 @@ class MemberConstraint extends Constraint {
 	}
 }
 
-class LastConstraint extends Constraint {
+class LastConstraint extends PatternConstraint {
 	final String newRuleName = node.getParent().getRelation();
 	// This element must be the last one in the list.
 	// Check that the relation List(l, _, i+1) is empty.
@@ -124,7 +124,7 @@ class LastConstraint extends Constraint {
 	}
 }
 
-class AfterConstraint extends Constraint {
+class AfterConstraint extends PatternConstraint {
 	private ObjLangASTNode predecessor;
 
 	public AfterConstraint(ObjLangASTNode node, ObjLangASTNode predecessor) {
@@ -145,7 +145,7 @@ class AfterConstraint extends Constraint {
 	}
 }
 
-class NextConstraint extends Constraint {
+class NextConstraint extends PatternConstraint {
 	private ObjLangASTNode predecessor;
 	public NextConstraint(ObjLangASTNode node, ObjLangASTNode predecessor) {
 		super(node);

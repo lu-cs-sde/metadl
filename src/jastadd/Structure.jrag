@@ -32,19 +32,6 @@ aspect Utility {
 		public abstract S construct();
 	}
 
-	public class TreeSetConstructor<Value> extends SetConstructor<Value, TreeSet<Value>> {
-		private Comparator<Value> comparator;
-		public TreeSetConstructor(Comparator<Value> comparator) {
-			this.comparator = comparator;
-		}
-		public TreeSet<Value> construct() {
-			if(comparator == null)
-				return new TreeSet<Value>();
-			else
-				return new TreeSet<Value>(comparator);
-		}
-	}
-
 	 public class HashSetConstructor<Value> extends SetConstructor<Value, HashSet<Value>> {
 		public HashSet<Value> construct() {
 			return new HashSet<Value>();
@@ -85,16 +72,7 @@ aspect Utility {
 
 aspect Program {
 	inh Program Clause.program();
-    eq Program.getChild().program() = this;
-	eq Program.getChild().hasRecursiveEDB() {
-		FormalPredicate fp_edb = formalPredicateMap().get(GlobalNames.EDB_NAME);
-		if(fp_edb == null) return false;
-		for(PredicateSymbol ps : fp_edb.predicates()) {
-			EDBLiteral lit = (EDBLiteral) ps.literal();
-			if(lit.getPredicateRef().getPRED_ID().equals(GlobalNames.EDB_NAME)) return true;
-		}
-		return false;
-	}
+	eq Program.getChild().program() = this;
 
 	coll HashSet<PredicateInterface> Program.predicateSymbols() [new HashSet<PredicateInterface>()] with add;
 	PredicateSymbol contributes this to Program.predicateSymbols();
@@ -117,7 +95,7 @@ aspect Program {
 		public void add(MapEntry<String, FormalPredicate> me) { put(me.k, me.v); }
 	}
 
-	syn boolean Program.haveFormalPredicate(String name) = formalPredicateMap().get(name) != null;
+
 	coll FormalPredicateMap Program.formalPredicateMap() [new FormalPredicateMap()] with add;
 	Program contributes nta getFormalPredicateList() to Program.formalPredicateMap();
 	FormalPredicate contributes new MapEntry(predicateName(), this) to Program.formalPredicateMap();
@@ -147,22 +125,6 @@ aspect Clause {
 	syn HashSet<Literal> Rule.flattenedBodyLiterals() {
 		HashSet<Literal> literals = new HashSet<Literal>();
 		for(CommonLiteral l : getBodys()) literals.add(l.asLiteral());
-		return literals;
-	}
-
-	syn HashSet<Literal> Rule.inclusiveLiterals() {
-		HashSet<Literal> literals = new HashSet<Literal>();
-		for(Literal l : literals())
-			if(l.isInclusive())
-				literals.add(l);
-		return literals;
-	}
-
-	syn HashSet<Literal> Rule.exclusiveLiterals() {
-		HashSet<Literal> literals = new HashSet<Literal>();
-		for(Literal l : literals())
-			if(!l.isInclusive())
-				literals.add(l);
 		return literals;
 	}
 
@@ -213,14 +175,11 @@ aspect Literal {
 	inh boolean Literal.isFact();
 	eq Clause.getChild().isFact()		 = false;
 	eq Fact.getHeads(int index).isFact() =	true;
-	syn boolean Literal.isEDB();
-	eq	Literal.isEDB()	   = false;
-	eq	EDBLiteral.isEDB() = true;
 
-
-	syn boolean Literal.isOUTPUT();
-	eq	Literal.isOUTPUT()		 = false;
-	eq	OUTPUTLiteral.isOUTPUT() = true;
+	syn boolean Literal.isEDB() = getPredicate().getPRED_ID().equals(GlobalNames.EDB_NAME);
+	syn boolean Literal.isOUTPUT() = getPredicate().getPRED_ID().equals(GlobalNames.OUTPUT_NAME);
+	syn boolean Literal.isIMPORT() = getPredicate().getPRED_ID().equals(GlobalNames.IMPORT_NAME);
+	syn boolean Literal.isPredefined() = isEDB() || isOUTPUT() || isIMPORT();
 
 	syn boolean Literal.isAtom();
 	eq	Literal.isAtom() = false;
@@ -232,9 +191,6 @@ aspect Literal {
 	syn boolean CommonLiteral.isBind() = false;
 	eq	BINDLiteral.isBind()   = true;
 
-	syn boolean Literal.isIMPORT();
-	eq	Literal.isIMPORT() = false;
-	eq	IMPORTLiteral.isIMPORT() = true;
 
 	syn boolean CommonLiteral.isInclusive();
 	eq CommonLiteral.isInclusive() = false;
@@ -254,20 +210,19 @@ aspect Literal {
 
 	syn boolean Literal.isGround() = variables().isEmpty();
 
-	public interface PredefinedLiteral {}
-	EDBLiteral implements PredefinedLiteral;
-	OUTPUTLiteral implements PredefinedLiteral;
-	IMPORTLiteral implements PredefinedLiteral;
-
-	syn boolean CommonLiteral.isPredefined() = false;
-	syn boolean PredefinedLiteral.isPredefined() = true;
-
 	syn TreeSet<Variable> CommonLiteral.variables();
 	eq Atom.variables() {
 		TreeSet<Variable> vars = new TreeSet<Variable>(Term.termComparator);
 		for(Term t : getTermss())
 			if(t.isVariable())
 				vars.addAll(t.variables());
+		return vars;
+	}
+
+	eq Constraint.variables() {
+		TreeSet<Variable> vars = new TreeSet<Variable>(Term.termComparator);
+		for(Expr e : getExprs())
+			vars.addAll(e.variables());
 		return vars;
 	}
 
@@ -415,7 +370,6 @@ aspect FormalPredicate {
 		return list;
 	}
 	inh Program FormalPredicate.program();
-	inh boolean FormalPredicate.hasRecursiveEDB();
 	inh FormalPredicateMap FormalPredicate.formalPredicateMap();
 
 	syn String FormalPredicate.predicateName() = getPRED_ID();

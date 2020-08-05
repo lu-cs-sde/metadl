@@ -1,4 +1,4 @@
-import lang.cons.Constraint;
+import lang.cons.PatternConstraint;
 import java.util.TreeSet;
 import java.util.HashSet;
 import java.util.ArrayList;
@@ -268,12 +268,12 @@ aspect PatternToDatalog {
 
 	ASTNode implements ObjLangASTNode;
 
-	syn ArrayList<Constraint> List.constraints() {
+	syn ArrayList<PatternConstraint> List.constraints() {
 		if (getNumChild() == 0) {
 			return new ArrayList<>();
 		}
 
-		ArrayList<Constraint> cons = new ArrayList<>();
+		ArrayList<PatternConstraint> cons = new ArrayList<>();
 		ASTNode prevNonGap = null;
 		ASTNode prev = null;
 		boolean seenGap = false;
@@ -284,11 +284,11 @@ aspect PatternToDatalog {
 				if (!seenGap) {
 					// no gaps seen from the beginning, then the index variable
 					// is constrained to be equal to the position in the list
-					cons.add(Constraint.eq(c, i));
+					cons.add(PatternConstraint.eq(c, i));
 				} else if (prev == prevNonGap) {
 					// seen gaps, but the predecessor is not a gap
 					// e.g. P(...,$i:t,$j:u,...) -> constrain $i + 1 == $j
-					cons.add(Constraint.next(prev, c));
+					cons.add(PatternConstraint.next(prev, c));
 				} else if (prevNonGap != null) {
 					// seen gaps, but the predecessor is a gap
 					// e.g. P(...,$i:t,...,$j:u,...)
@@ -299,16 +299,16 @@ aspect PatternToDatalog {
 					// ... :- ..., EQ(x, y), ..., $p(...),... . to cover cases
 					// where EQ comes before $p and after $p. If ordering is
 					// required, the user can add explicit indices.
-					cons.add(Constraint.member(c));
+					cons.add(PatternConstraint.member(c));
 				} else if (prevNonGap == null) {
 					// seens only gaps before
-					cons.add(Constraint.member(c));
+					cons.add(PatternConstraint.member(c));
 				}
 
 				if (i + 1 == getNumChild()) {
 					// this is the rightmost element in a list with gaps
 					// e.g. P(...,$i:t) -> constrain $i to be the index of the last element
-					cons.add(Constraint.last(c));
+					cons.add(PatternConstraint.last(c));
 				}
 			}
 
@@ -327,11 +327,11 @@ aspect PatternToDatalog {
 		// TODO: this is not used currently used, because none of the
 		// constraints implements the generateClause method.
 		// Remove maybe?
-		ArrayList<Constraint> cons = constraints();
+		ArrayList<PatternConstraint> cons = constraints();
 		if (cons.isEmpty())
 			return new ArrayList<>();
 		ArrayList<lang.ast.Clause> clauses = new ArrayList<>();
-		for (Constraint c : cons) {
+		for (PatternConstraint c : cons) {
 			lang.ast.Clause cls = c.generateClause(ctx);
 			if (cls != null)
 				clauses.add(cls);
@@ -364,11 +364,11 @@ aspect PatternToDatalog {
 		if (getNumChild() == 1 && getChild(0).isGap())
 			return lits;
 
-		ArrayList<Constraint> cons = constraints();
+		ArrayList<PatternConstraint> cons = constraints();
 		if (cons.isEmpty())
 			return super.asLiterals(ctx, null);
 
-		for (Constraint c : cons)
+		for (PatternConstraint c : cons)
 			lits.addAll(c.generateLiterals(ctx));
 		return lits;
 	}

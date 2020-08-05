@@ -1,7 +1,6 @@
 import java.util.Comparator;
 
 aspect Conversion {
-	syn int IntConstant.intValue() = Integer.parseInt(getNUMERAL());
 	public String StringConstant.toString() { return getSTRING(); }
 	public String IntConstant.toString()    { return getNUMERAL(); }
 
@@ -11,23 +10,6 @@ aspect Conversion {
 	public String FormalPredicate.toString() { return "FP_" + predicateName(); }
 	public String Wildcard.toString()        { return "_"; }
 	public String ASTNode.toString()         { return prettyPrint(); }
-
-
-	syn int Literal.evalOrder();
-
-	eq IMPORTLiteral.evalOrder()  = 0;
-	eq EDBLiteral.evalOrder()     = 1;
-	eq OUTPUTLiteral.evalOrder()  =  5;
-	eq Atom.evalOrder()           =  6;
-	eq BINDLiteral.evalOrder()    =  7;
-	eq NEGLiteral.evalOrder()     =  8;
-	eq EQLiteral.evalOrder()      =  9;
-	eq NEQLiteral.evalOrder()     =  10;
-	eq LTLiteral.evalOrder()      =  11;
-	eq LTELiteral.evalOrder()     =  12;
-	eq GTLiteral.evalOrder()      =  13;
-	eq GTELiteral.evalOrder()     =  14;
-	eq MATCHLiteral.evalOrder()   =  15;
 }
 
 aspect Comparison {
@@ -89,18 +71,7 @@ aspect Comparison {
 	public class CompareLiterals implements Comparator<Literal> {
 		@Override
 		public int compare(Literal l1, Literal l2) {
-			int ev1 = l1.evalOrder();
-			int ev2 = l2.evalOrder();
-			if(ev1 != ev2) return ev1 < ev2 ? -1 : ev1 == ev2 ? 0 : 1;
 			return l1.hashCode() < l2.hashCode() ? -1 : l1.hashCode() == l2.hashCode() ? 0 : 1;
-		}
-	}
-
-	public static final CompareFPLiterals FormalPredicate.fpLiteralComparator = new CompareFPLiterals();
-	public class CompareFPLiterals implements Comparator<FormalPredicate> {
-		@Override
-		public int compare(FormalPredicate fp1, FormalPredicate fp2) {
-			return Literal.literalComparator.compare(fp1.literal(), fp2.literal());
 		}
 	}
 

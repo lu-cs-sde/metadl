@@ -23,8 +23,6 @@ Constraint:Literal ::= Expr*;
 
 abstract BinaryExclusiveTermLiteral:Literal ::= Left:Expr Right:Expr;
 
-EDBLiteral:Literal    ::= PredicateRef FileLoc:Term;
-OUTPUTLiteral:Literal ::= Term;
 NEGLiteral:Literal    ::= CommonLiteral;
 
 BINDLiteral:Literal ::= Variable:CommonVariable Right:Expr;

@@ -8,8 +8,6 @@ import lang.relation.PseudoTuple;
 aspect Arity {
     syn int Literal.arity();
     eq NEGLiteral.arity()    = 1;
-    eq EDBLiteral.arity()    = 2;
-    eq OUTPUTLiteral.arity() = 1;
     eq BINDLiteral.arity()   = 2;
     eq BinaryExclusiveTermLiteral.arity() = 2;
     eq IMPORTLiteral.arity() = 3;
@@ -54,8 +52,6 @@ aspect Relation {
 
 	syn PseudoTuple Literal.toTuple() = null;
 	eq Atom.toTuple()          = new PseudoTuple(getTermss());
-	eq EDBLiteral.toTuple()    = new PseudoTuple(getPredicateRef(), getFileLoc());
-	eq OUTPUTLiteral.toTuple() = new PseudoTuple(getTerm());
 	eq BinaryExclusiveTermLiteral.toTuple()  = new PseudoTuple(0);
 	eq BINDLiteral.toTuple()   = new PseudoTuple(0);
 	eq NEGLiteral.toTuple() = getCommonLiteral().asLiteral().toTuple();

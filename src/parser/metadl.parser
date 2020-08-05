@@ -35,9 +35,7 @@ CommonLiteral common_literal = literal
                              | bounded_pattern
                              ;
 
-Literal literal = edb_literal
-                | output_literal
-                | atom
+Literal literal = atom
                 | import_literal
                 | neg_literal
                 | bind_literal
@@ -68,9 +66,6 @@ MATCHLiteral match_literal = MATCH LPARA expr.left COMMA expr.right RPARA {: ret
 
 
 Atom atom = pred_sym.pred LPARA term_list.terms RPARA                      {: return new Atom(pred, terms); :};
-EDBLiteral edb_literal =
-      EDB LPARA pred_ref.pred COMMA term.filelocs RPARA {: return new EDBLiteral(new PredicateSymbol("EDB"), pred, filelocs); :};
-OUTPUTLiteral output_literal = OUTPUT LPARA term.t RPARA {: return new OUTPUTLiteral(new PredicateSymbol("OUTPUT"), t); :};
 IMPORTLiteral import_literal =
       IMPORT LPARA pred_ref.program_ref COMMA string_constant.file_loc COMMA string_constant.lang RPARA {: return new IMPORTLiteral(new PredicateSymbol("IMPORT"), program_ref, file_loc, lang); :};
 

@@ -76,15 +76,6 @@ aspect PretyPrinting {
         printCollection(getHeadss(), "", ".\n", ", ", pr);
     }
 
-    public void EDBLiteral.prettyPrint(PrettyPrinter pr) {
-        pr.prettyPrint(getPredicate());
-        pr.out.print("(");
-        pr.prettyPrint(getPredicateRef());
-        pr.out.print(",");
-        pr.prettyPrint(getFileLoc());
-        pr.out.print(")");
-    }
-
     public void IMPORTLiteral.prettyPrint(PrettyPrinter pr) {
 		pr.prettyPrint(getPredicate());
 		pr.out.print("(");
@@ -95,13 +86,6 @@ aspect PretyPrinting {
 		pr.prettyPrint(getLang());
 		pr.out.print(")");
 	}
-
-    public void OUTPUTLiteral.prettyPrint(PrettyPrinter pr) {
-        pr.prettyPrint(getPredicate());
-        pr.out.print("(");
-        pr.prettyPrint(getTerm());
-        pr.out.print(")");
-    }
 
     public void BinaryExclusiveTermLiteral.prettyPrint(PrettyPrinter pr) {
     	pr.prettyPrint(getPredicate());
@@ -329,10 +313,10 @@ aspect SoufflePrinting {
         FormalPredicate fp = formalPredicateMap().get(GlobalNames.EDB_NAME);
         if(fp == null) return;
 		for (PredicateSymbol psym : fp.predicates()) {
-			EDBLiteral edb = (EDBLiteral) psym.literal();
+			Atom edb = (Atom) psym.literal();
 
-			PredicateRef predref = edb.getPredicateRef();
-			StringConstant fileloc = (StringConstant) edb.getFileLoc();
+			PredicateRef predref = (PredicateRef) edb.getTerms(0);
+			StringConstant fileloc = (StringConstant) edb.getTerms(1);
 
 			pr.out.print(".input ");
 			pr.out.print(predref.getPRED_ID());
@@ -348,8 +332,8 @@ aspect SoufflePrinting {
         FormalPredicate fp = formalPredicateMap().get(GlobalNames.OUTPUT_NAME);
         if(fp == null) return;
 		for (PredicateSymbol psym : fp.predicates()) {
-			OUTPUTLiteral output = (OUTPUTLiteral) psym.literal();
-			PredicateRef predref = (PredicateRef)output.getTerm();
+			Atom output = (Atom) psym.literal();
+			PredicateRef predref = (PredicateRef) output.getTerms(0);
             pr.out.print(".output " + predref.getPRED_ID() + "(delimiter=\"");
 			pr.out.print(Compiler.getCSVSeparatorEscaped());
 			pr.out.print("\")\n");

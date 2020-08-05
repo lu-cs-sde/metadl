@@ -195,8 +195,6 @@ aspect Literal {
 	syn boolean CommonLiteral.isInclusive();
 	eq CommonLiteral.isInclusive() = false;
 	eq Atom.isInclusive() = true;
-	eq EDBLiteral.isInclusive() = true;
-	eq OUTPUTLiteral.isInclusive() = true;
 	eq IMPORTLiteral.isInclusive() = true;
 
 	inh boolean Literal.isDef();
@@ -232,8 +230,6 @@ aspect Literal {
 		return vars;
 	}
 
-	eq EDBLiteral.variables()	 = toVarSet(getFileLoc());
-	eq OUTPUTLiteral.variables() = toVarSet(getTerm());
 	eq NEGLiteral.variables()	 = getCommonLiteral().variables();
 
 	eq BINDLiteral.variables()	{

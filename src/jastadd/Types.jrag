@@ -236,7 +236,43 @@ aspect TypeCheck {
 	// is well-typed.
 	coll TreeSet<TypeError> Program.typeErrors() [new TreeSet<>()];
 
+	private TypeError Atom.typeErrorOUTPUT() {
+		if (getTerms(0).type() != PredicateRefType.get())
+			return new TypeError(this) {
+				public String report() {
+					return "Argument to OUTPUT must have type " +
+						PredicateRefType.get() + ", but got " + getTerms(0).type() + ".";
+				}
+			};
+		return null;
+	}
+
+	private TypeError Atom.typeErrorEDB() {
+		Term predRef = getTerms(0);
+		if (getTerms(0).type() != PredicateRefType.get())
+			return new TypeError(this) {
+				public String report() {
+					return "First argument to EDB must have type " +
+						PredicateRefType.get() + ", but got " + predRef.type() + ".";
+				}
+			};
+		Term fileLoc = getTerms(1);
+		if (getTerms(1).type() != StringType.get())
+			return new TypeError(this) {
+				public String report() {
+					return "Second argument to EDB must have type " +
+						StringType.get() + ", but got " + fileLoc.type() + ".";
+				}
+			};
+		return null;
+	}
+
 	syn TypeError Atom.typeError() {
+		if (isEDB())
+			return typeErrorEDB();
+		if (isOUTPUT())
+			return typeErrorOUTPUT();
+
 		PredicateTypeError err = null;
 		PredicateType type = getPredicate().formalpredicate().type();
 		for (int i = 0; i < type.arity(); ++i) {
@@ -291,35 +327,6 @@ aspect TypeCheck {
 		return null;
 	}
 
-	syn TypeError OUTPUTLiteral.typeError() {
-		if (getTerm().type() != PredicateRefType.get())
-			return new TypeError(this) {
-				public String report() {
-					return "Argument to OUTPUT must have type " +
-						PredicateRefType.get() + ", but got " + getTerm().type() + ".";
-				}
-			};
-		return null;
-	}
-
-
-	syn TypeError EDBLiteral.typeError() {
-		if (getPredicateRef().type() != PredicateRefType.get())
-			return new TypeError(this) {
-				public String report() {
-					return "First argument to EDB must have type " +
-						PredicateRefType.get() + ", but got " + getPredicateRef().type() + ".";
-				}
-			};
-		if (getFileLoc().type() != StringType.get())
-			return new TypeError(this) {
-				public String report() {
-					return "Second argument to EDB must have type " +
-						StringType.get() + ", but got " + getFileLoc().type() + ".";
-				}
-			};
-		return null;
-	}
 
 	syn TypeError IMPORTLiteral.typeError() {
 		if (getProgramRef().type() != PredicateRefType.get())
@@ -343,8 +350,6 @@ aspect TypeCheck {
 	Functor contributes typeError() when (typeError() != null) to Program.typeErrors();
 	BinaryExclusiveTermLiteral contributes typeError() when (typeError() != null) to Program.typeErrors();
 	BINDLiteral contributes typeError() when (typeError() != null) to Program.typeErrors();
-	OUTPUTLiteral contributes typeError() when (typeError() != null) to Program.typeErrors();
-	EDBLiteral contributes typeError() when (typeError() != null) to Program.typeErrors();
 	IMPORTLiteral contributes typeError() when (typeError() != null) to Program.typeErrors();
 	Atom contributes typeError() when (typeError() != null) to Program.typeErrors();
 }
@@ -359,10 +364,6 @@ aspect TypeInference {
 	eq Expr.getChild().indexInLiteral() = -1;
 	eq AnalyzeBlock.getProgramRef().indexInLiteral() = -1;
 	eq AnalyzeBlock.getLang().indexInLiteral() = -1;
-	// explicit rules for special literals
-	eq EDBLiteral.getPredicateRef().indexInLiteral() = 0;
-	eq EDBLiteral.getFileLoc().indexInLiteral() = 1;
-	eq OUTPUTLiteral.getTerm().indexInLiteral() = 0;
 	eq IMPORTLiteral.getFileLoc().indexInLiteral() = 1;
 	eq IMPORTLiteral.getProgramRef().indexInLiteral() = 0;
 

@@ -26,7 +26,6 @@ abstract BinaryExclusiveTermLiteral:Literal ::= Left:Expr Right:Expr;
 NEGLiteral:Literal    ::= CommonLiteral;
 
 BINDLiteral:Literal ::= Variable:CommonVariable Right:Expr;
-IMPORTLiteral:Literal ::= ProgramRef:PredicateRef FileLoc:StringConstant Lang:StringConstant ;
 
 EQLiteral:BinaryExclusiveTermLiteral;
 NEQLiteral:BinaryExclusiveTermLiteral;

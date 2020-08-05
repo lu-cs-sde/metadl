@@ -36,7 +36,6 @@ CommonLiteral common_literal = literal
                              ;
 
 Literal literal = atom
-                | import_literal
                 | neg_literal
                 | bind_literal
                 | eq_literal
@@ -66,8 +65,6 @@ MATCHLiteral match_literal = MATCH LPARA expr.left COMMA expr.right RPARA {: ret
 
 
 Atom atom = pred_sym.pred LPARA term_list.terms RPARA                      {: return new Atom(pred, terms); :};
-IMPORTLiteral import_literal =
-      IMPORT LPARA pred_ref.program_ref COMMA string_constant.file_loc COMMA string_constant.lang RPARA {: return new IMPORTLiteral(new PredicateSymbol("IMPORT"), program_ref, file_loc, lang); :};
 
 List lit_list = common_literal.lit {: return new List().add(lit); :}
               | lit_list.list COMMA common_literal.c {: return list.add(c); :}

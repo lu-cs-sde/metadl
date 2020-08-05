@@ -6,10 +6,9 @@ import lang.ast.Literal;
 import lang.ast.PredicateRef;
 import lang.ast.GlobalNames;
 import lang.ast.StringConstant;
-import lang.ast.IMPORTLiteral;
 import lang.ast.TypeError;
 import lang.ast.PredicateSymbol;
-import lang.ast.IMPORTLiteral;
+import lang.ast.Atom;
 import lang.relation.PseudoTuple;
 import lang.relation.Relation;
 import lang.io.FileUtil;
@@ -125,10 +124,10 @@ aspect Task {
 		// files are imported to the same program relation.
 		HashMap<String, ArrayList<Map.Entry<String, String>>> predicateSrcFiles = new HashMap<>();
 		for (PredicateSymbol psym : formalImport.predicates()) {
-			IMPORTLiteral imp = (IMPORTLiteral) psym.literal();
-			String progFileLoc = ((StringConstant)imp.getFileLoc()).getSTRING();
-			String lang = ((StringConstant)imp.getLang()).getSTRING();
-			PredicateRef predref = (PredicateRef)(imp.getProgramRef());
+			Atom imp = (Atom) psym.literal();
+			String progFileLoc = ((StringConstant)imp.getTerms(1)).getSTRING();
+			String lang = ((StringConstant)imp.getTerms(2)).getSTRING();
+			PredicateRef predref = (PredicateRef)(imp.getTerms(0));
 			String predName = predref.getPRED_ID();
 
 			ArrayList<Map.Entry<String, String>> files = predicateSrcFiles.get(predName);
@@ -190,7 +189,7 @@ aspect Task {
 			if (!java8Srcs.isEmpty()) {
 				// TODO: This assumes that all imports to this predicate are Java programs. This might
 				// not be the case, but this should be checked in another place...
-				Relation programRel = IMPORTLiteral.loadJavaSources(java8Srcs);
+				Relation programRel = FileUtil.loadJavaSources(java8Srcs);
 				CSVUtil.dumpFileInto(programRel, output_fp, false);
 			}
 

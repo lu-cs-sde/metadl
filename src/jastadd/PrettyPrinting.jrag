@@ -76,17 +76,6 @@ aspect PretyPrinting {
         printCollection(getHeadss(), "", ".\n", ", ", pr);
     }
 
-    public void IMPORTLiteral.prettyPrint(PrettyPrinter pr) {
-		pr.prettyPrint(getPredicate());
-		pr.out.print("(");
-		pr.prettyPrint(getProgramRef());
-		pr.out.print(",");
-		pr.prettyPrint(getFileLoc());
-		pr.out.print(",");
-		pr.prettyPrint(getLang());
-		pr.out.print(")");
-	}
-
     public void BinaryExclusiveTermLiteral.prettyPrint(PrettyPrinter pr) {
     	pr.prettyPrint(getPredicate());
         pr.out.print("(");
@@ -354,11 +343,10 @@ aspect SoufflePrinting {
     private void Program.soufflePrintIMPORTFacts(PrettyPrinter pr) {
 		FormalPredicate fp = formalPredicateMap().get(GlobalNames.IMPORT_NAME);
 		if (fp == null) return;
-		IMPORTLiteral importLiteral = (IMPORTLiteral) fp.literal();
 
 		for (PredicateSymbol psym : fp.predicates()) {
-			IMPORTLiteral imp = (IMPORTLiteral) psym.literal();
-			PredicateRef predref = (PredicateRef) imp.getProgramRef();
+			Atom imp = (Atom) psym.literal();
+			PredicateRef predref = (PredicateRef) imp.getTerms(0);
 			String predName = predref.getPRED_ID();
 			String fileLoc = predName + ".csv";
             pr.out.print(".input ");

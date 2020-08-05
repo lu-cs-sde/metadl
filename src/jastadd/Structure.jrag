@@ -95,7 +95,6 @@ aspect Program {
 		public void add(MapEntry<String, FormalPredicate> me) { put(me.k, me.v); }
 	}
 
-
 	coll FormalPredicateMap Program.formalPredicateMap() [new FormalPredicateMap()] with add;
 	Program contributes nta getFormalPredicateList() to Program.formalPredicateMap();
 	FormalPredicate contributes new MapEntry(predicateName(), this) to Program.formalPredicateMap();
@@ -103,7 +102,6 @@ aspect Program {
 
 	coll TreeSet<Literal> Program.predefinedLiterals() [new TreeSet<Literal>(Literal.literalComparator)] with add;
 	Literal contributes this when isPredefined() to Program.predefinedLiterals();
-
 }
 
 aspect Clause {
@@ -191,11 +189,9 @@ aspect Literal {
 	syn boolean CommonLiteral.isBind() = false;
 	eq	BINDLiteral.isBind()   = true;
 
-
 	syn boolean CommonLiteral.isInclusive();
 	eq CommonLiteral.isInclusive() = false;
 	eq Atom.isInclusive() = true;
-	eq IMPORTLiteral.isInclusive() = true;
 
 	inh boolean Literal.isDef();
 	eq Clause.getChild().isDef() = false;
@@ -237,11 +233,6 @@ aspect Literal {
 		Variable v;
 		vars.addAll(getVariable().variables());
 		vars.addAll(getRight().variables());
-		return vars;
-	}
-
-	eq IMPORTLiteral.variables() {
-		TreeSet<Variable> vars = toVarSet(getFileLoc());
 		return vars;
 	}
 

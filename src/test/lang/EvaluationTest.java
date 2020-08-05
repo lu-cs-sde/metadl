@@ -19,7 +19,6 @@ import lang.ast.GlobalNames;
 import lang.ast.PredicateRef;
 import lang.ast.Program;
 import lang.ast.PredicateSymbol;
-import lang.ast.OUTPUTLiteral;
 import lang.ast.config.Description;
 import lang.ast.Atom;
 import lang.io.CSVUtil;

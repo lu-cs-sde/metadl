@@ -2,6 +2,7 @@ import lang.ast.Term;
 import lang.ast.StringConstant;
 import java.util.Comparator;
 import java.util.Collections;
+import java.util.Map;
 
 aspect Type {
 	public abstract class Type {
@@ -267,11 +268,35 @@ aspect TypeCheck {
 		return null;
 	}
 
+	private TypeError Atom.typeErrorIMPORT() {
+		Term progRef = getTerms(0);
+		if (progRef.type() != PredicateRefType.get())
+			return new TypeError(this) {
+				public String report() {
+					return "First argument to IMPORT must have type " +
+						PredicateRefType.get() + ", but got " + progRef.type() + ".";
+				}
+			};
+
+		Term fileLoc = getTerms(1);
+		if (fileLoc.type() != StringType.get())
+			return new TypeError(this) {
+				public String report() {
+					return "Second argument to IMPORT must have type " +
+						StringType.get() + ", but got " + fileLoc.type() + ".";
+				}
+			};
+		return null;
+	}
+
+
 	syn TypeError Atom.typeError() {
 		if (isEDB())
 			return typeErrorEDB();
 		if (isOUTPUT())
 			return typeErrorOUTPUT();
+		if (isIMPORT())
+			return typeErrorIMPORT();
 
 		PredicateTypeError err = null;
 		PredicateType type = getPredicate().formalpredicate().type();
@@ -327,30 +352,9 @@ aspect TypeCheck {
 		return null;
 	}
 
-
-	syn TypeError IMPORTLiteral.typeError() {
-		if (getProgramRef().type() != PredicateRefType.get())
-			return new TypeError(this) {
-				public String report() {
-					return "First argument to IMPORT must have type " +
-						PredicateRefType.get() + ", but got " + getProgramRef().type() + ".";
-				}
-			};
-
-		if (getFileLoc().type() != StringType.get())
-			return new TypeError(this) {
-				public String report() {
-					return "Second argument to IMPORT must have type " +
-						StringType.get() + ", but got " + getFileLoc().type() + ".";
-				}
-			};
-		return null;
-	}
-
 	Functor contributes typeError() when (typeError() != null) to Program.typeErrors();
 	BinaryExclusiveTermLiteral contributes typeError() when (typeError() != null) to Program.typeErrors();
 	BINDLiteral contributes typeError() when (typeError() != null) to Program.typeErrors();
-	IMPORTLiteral contributes typeError() when (typeError() != null) to Program.typeErrors();
 	Atom contributes typeError() when (typeError() != null) to Program.typeErrors();
 }
 
@@ -364,9 +368,6 @@ aspect TypeInference {
 	eq Expr.getChild().indexInLiteral() = -1;
 	eq AnalyzeBlock.getProgramRef().indexInLiteral() = -1;
 	eq AnalyzeBlock.getLang().indexInLiteral() = -1;
-	eq IMPORTLiteral.getFileLoc().indexInLiteral() = 1;
-	eq IMPORTLiteral.getProgramRef().indexInLiteral() = 0;
-
 
 	IntConstant contributes (new PredicateType.Index(indexInLiteral(), IntegerType.get()))
 		when indexInLiteral() >= 0

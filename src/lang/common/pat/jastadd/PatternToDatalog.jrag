@@ -24,7 +24,7 @@ aspect PatternToDatalog {
 			UID = ++ASTNode.RunningId;
 		}
 		return UID;
-    }
+	}
 
 	/**
 	   Attributes that implement the MetaVariableTraits interface
@@ -103,11 +103,11 @@ aspect PatternToDatalog {
 		return "i_" + getNodeId();
 	}
 
-	syn ArrayList<lang.ast.Literal> ASTNode.asLiterals(AnalyzeContext ctx, lang.ast.CommonVariable root);
+	syn ArrayList<lang.ast.CommonLiteral> ASTNode.asLiterals(AnalyzeContext ctx, lang.ast.CommonVariable root);
 
-	public ArrayList<lang.ast.Literal> ASTNode.metaVarAsLiterals(AnalyzeContext ctx, lang.ast.CommonVariable root) {
+	public ArrayList<lang.ast.CommonLiteral> ASTNode.metaVarAsLiterals(AnalyzeContext ctx, lang.ast.CommonVariable root) {
 		assert isMetaVar();
-		java.util.ArrayList<lang.ast.Literal> ret = new ArrayList<>();
+		java.util.ArrayList<lang.ast.CommonLiteral> ret = new ArrayList<>();
 
 		assert getRelation().startsWith(ASTNode.METAVARIABLE);
 		String relName = getRelation().substring(ASTNode.METAVARIABLE.length());
@@ -164,9 +164,8 @@ aspect PatternToDatalog {
 			terms.add(Kind).add(CurrentNodeId).add(ChildIdx).add(ChildId).add(Token);
 			ret.add(new lang.ast.Atom(new lang.ast.PredicateSymbol(predName), terms));
 
-			ret.add(new lang.ast.EQLiteral(new lang.ast.PredicateSymbol("EQ"),
-										   new lang.ast.Variable(varName()),
-										   root.treeCopyNoTransform()));
+			ret.add(Constructors.EQ(new lang.ast.Variable(varName()),
+									root.treeCopyNoTransform()));
 		}
 
 		return ret;
@@ -183,7 +182,7 @@ aspect PatternToDatalog {
 	   representation of a program matches the code generated for a pattern.
 	 */
 	eq ASTNode.asLiterals(AnalyzeContext ctx, lang.ast.CommonVariable root) {
-		ArrayList<lang.ast.Literal> literals = new ArrayList<>();
+		ArrayList<lang.ast.CommonLiteral> literals = new ArrayList<>();
 		if (isGap())
 			return literals;
 		if (isMetaVar())
@@ -191,7 +190,7 @@ aspect PatternToDatalog {
 
 		String relName = getRelation();
 
-		java.util.ArrayList<lang.ast.Literal> ret = new ArrayList<>();
+		java.util.ArrayList<lang.ast.CommonLiteral> ret = new ArrayList<>();
 
 		// the children in the tree
 		for (int i = 0; i < getNumChild(); ++i) {
@@ -341,7 +340,7 @@ aspect PatternToDatalog {
 	}
 
 	eq List.asLiterals(AnalyzeContext ctx, lang.ast.CommonVariable root) {
-		ArrayList<lang.ast.Literal> lits = new ArrayList<>();
+		ArrayList<lang.ast.CommonLiteral> lits = new ArrayList<>();
 
 		// if (getParent().isMetaVar())
 		// 	return lits;
@@ -375,7 +374,7 @@ aspect PatternToDatalog {
 
 	eq MetaVariable.asLiterals(AnalyzeContext ctx, lang.ast.CommonVariable root) = new ArrayList<>();
 	eq Opt.asLiterals(AnalyzeContext ctx, lang.ast.CommonVariable root) {
-		ArrayList<lang.ast.Literal> lits = new ArrayList<>();
+		ArrayList<lang.ast.CommonLiteral> lits = new ArrayList<>();
 		// if (getParent().isMetaVar())
 		// 	return lits;
 
@@ -395,9 +394,9 @@ aspect PatternToDatalog {
 	}
 
 
-	syn ArrayList<lang.ast.Literal> ASTNode.literals(AnalyzeContext ctx, lang.ast.CommonVariable root) {
+	syn ArrayList<lang.ast.CommonLiteral> ASTNode.literals(AnalyzeContext ctx, lang.ast.CommonVariable root) {
 		// An add-hoc way of implementing parameterized collection attributes
-		ArrayList<lang.ast.Literal> list = new ArrayList<>();
+		ArrayList<lang.ast.CommonLiteral> list = new ArrayList<>();
 		list.addAll(asLiterals(ctx, root));
 		if (isGap())
 			return list;

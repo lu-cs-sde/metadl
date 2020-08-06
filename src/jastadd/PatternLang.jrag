@@ -294,8 +294,6 @@ aspect PatternLang {
 
 	eq Pattern.boundVariables() = getLiteral().boundVariables();
 
-	eq Pattern.isInclusive() = true;
-
 	public class AnalyzeContext {
 		public String scopePrefix;
 		public String progRelName;

@@ -23,20 +23,22 @@ Not;
 abstract CommonLiteral ::= [Not];
 
 abstract Literal:CommonLiteral ::= Predicate:PredicateSymbol;
-Atom:Literal ::= Terms:Term*;
-Constraint:Literal ::= Expr*;
+abstract Constraint:CommonLiteral ::= Expr*;
 
-abstract BinaryExclusiveTermLiteral:Literal ::= Left:Expr Right:Expr;
+abstract BinaryIntegerConstraint : Constraint;
+EQLiteral:BinaryIntegerConstraint;
+NEQLiteral:BinaryIntegerConstraint;
+LTLiteral:BinaryIntegerConstraint;
+LTELiteral:BinaryIntegerConstraint;
+GTLiteral:BinaryIntegerConstraint;
+GTELiteral:BinaryIntegerConstraint;
+MATCHLiteral:Constraint;
+
+Atom:Literal ::= Terms:Term*;
+
 
 BINDLiteral:Literal ::= Variable:CommonVariable Right:Expr;
 
-EQLiteral:BinaryExclusiveTermLiteral;
-NEQLiteral:BinaryExclusiveTermLiteral;
-LTLiteral:BinaryExclusiveTermLiteral;
-LTELiteral:BinaryExclusiveTermLiteral;
-GTLiteral:BinaryExclusiveTermLiteral;
-GTELiteral:BinaryExclusiveTermLiteral;
-MATCHLiteral:BinaryExclusiveTermLiteral;
 
 /**
 	Expressions

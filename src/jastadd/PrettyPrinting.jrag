@@ -80,10 +80,22 @@ aspect PretyPrinting {
         printCollection(getHeadss(), "", ".\n", ", ", pr);
     }
 
-    public void BinaryExclusiveTermLiteral.prettyPrint(PrettyPrinter pr) {
+	syn String Constraint.printName() {
+		throw new RuntimeException("Unknown name for contraint");
+	}
+
+	eq EQLiteral.printName() = "EQ";
+	eq NEQLiteral.printName() = "NEQ";
+	eq LTLiteral.printName() = "LT";
+	eq LTELiteral.printName() = "LTE";
+	eq GTLiteral.printName() = "GT";
+	eq GTELiteral.printName() = "GTE";
+	eq MATCHLiteral.printName() = "MATCH";
+
+    public void BinaryIntegerConstraint.prettyPrint(PrettyPrinter pr) {
 		if (hasNot())
 			pr.negationPrefix();
-    	pr.prettyPrint(getPredicate());
+    	pr.out.print(printName());
         pr.out.print("(");
         pr.prettyPrint(getLeft());
         pr.out.print(",");
@@ -221,10 +233,10 @@ aspect SoufflePrinting {
 
 	public void Pattern.soufflePrint(PrettyPrinter pr) {
 		pr.out.print("/* " + getPATTERN() + "*/");
-		pr.prettyPrint(asLiteral());
+		pr.prettyPrint(getLiteral());
 	}
 
-    public String BinaryExclusiveTermLiteral.souffleOPString() { throw new RuntimeException("Not implemented"); }
+    public String BinaryIntegerConstraint.souffleOPString() { throw new RuntimeException("Not implemented"); }
     public String EQLiteral.souffleOPString()  { return  "="; }
 	public String NEQLiteral.souffleOPString() { return "!="; }
 	public String LTLiteral.souffleOPString()  { return "<";  }
@@ -232,7 +244,7 @@ aspect SoufflePrinting {
 	public String GTLiteral.souffleOPString()  { return ">";  }
 	public String GTELiteral.souffleOPString() { return ">="; }
 
-    public void BinaryExclusiveTermLiteral.soufflePrint(PrettyPrinter pr) {
+    public void BinaryIntegerConstraint.soufflePrint(PrettyPrinter pr) {
 		if (hasNot())
 			pr.negationPrefix();
         pr.prettyPrint(getLeft());
@@ -311,7 +323,6 @@ aspect SoufflePrinting {
 	}
 
     public void FormalPredicate.soufflePrint(PrettyPrinter pr) {
-        if(!literal().isInclusive()) return;
         pr.out.print(".decl " + predicateName() + "(");
         ArrayList<PredicateSymbol> constants = new ArrayList<PredicateSymbol>();
         for(int i = 0; i != realArity(); ++i) {

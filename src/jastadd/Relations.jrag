@@ -8,9 +8,7 @@ import lang.relation.PseudoTuple;
 aspect Arity {
     syn int Literal.arity();
     eq BINDLiteral.arity()   = 2;
-    eq BinaryExclusiveTermLiteral.arity() = 2;
     eq Atom.arity() = getNumTerms();
-	eq Constraint.arity() = getNumExpr();
 
     syn int PredicateSymbol.arity() = literal().arity();
 
@@ -50,7 +48,6 @@ aspect Relation {
 
 	syn PseudoTuple Literal.toTuple() = null;
 	eq Atom.toTuple()          = new PseudoTuple(getTermss());
-	eq BinaryExclusiveTermLiteral.toTuple()  = new PseudoTuple(0);
 	eq BINDLiteral.toTuple()   = new PseudoTuple(0);
 }
 

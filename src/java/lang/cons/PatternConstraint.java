@@ -7,7 +7,7 @@ import static lang.ast.Constructors.*;
 
 public abstract class PatternConstraint {
 	public Clause generateClause(AnalyzeContext ctx) {return null;};
-	public abstract ArrayList<Literal> generateLiterals(AnalyzeContext ctx);
+	public abstract ArrayList<CommonLiteral> generateLiterals(AnalyzeContext ctx);
 	protected ObjLangASTNode node;
 	protected PatternConstraint(ObjLangASTNode node) {
 		this.node = node;
@@ -65,28 +65,26 @@ class EqualityConstraint extends PatternConstraint {
 		super(node);
 		this.pos = pos;
 	}
-	public ArrayList<Literal> generateLiterals(AnalyzeContext ctx) {
-		ArrayList<Literal> result = new ArrayList<>();
+	public ArrayList<CommonLiteral> generateLiterals(AnalyzeContext ctx) {
+		ArrayList<CommonLiteral> result = new ArrayList<>();
 		result.add(makeListAtom(ctx,
 								new Variable(node.getParent().varName()),
 								new Variable(node.indexVarName()),
 								new Variable(node.varName())));
 
-		result.add(new EQLiteral(new PredicateSymbol("EQ"),
-								 new Variable(node.indexVarName()),
+		result.add(new EQLiteral(new Variable(node.indexVarName()),
 								 new IntConstant("" + pos)));
 		return result;
 	}
 }
 
 class MemberConstraint extends PatternConstraint {
-	ArrayList<Literal> result = new ArrayList<>();
 	final String boundVarName = "b_" + node.getNodeId();
 	public MemberConstraint(ObjLangASTNode node) {
 		super(node);
 	}
-	public ArrayList<Literal> generateLiterals(AnalyzeContext ctx) {
-		ArrayList<Literal> result = new ArrayList<>();
+	public ArrayList<CommonLiteral> generateLiterals(AnalyzeContext ctx) {
+		ArrayList<CommonLiteral> result = new ArrayList<>();
 		result.add(makeListAtom(ctx,
 								new Variable(node.getParent().varName()),
 								new Variable(node.indexVarName()),
@@ -105,8 +103,8 @@ class LastConstraint extends PatternConstraint {
 		super(node);
 	}
 
-	public ArrayList<Literal> generateLiterals(AnalyzeContext ctx) {
-		ArrayList<Literal> result = new ArrayList<>();
+	public ArrayList<CommonLiteral> generateLiterals(AnalyzeContext ctx) {
+		ArrayList<CommonLiteral> result = new ArrayList<>();
 		String boundVarName = "b_" + node.getNodeId();
 		result.add(makeListAtom(ctx,
 								new Variable(node.getParent().varName()),
@@ -132,14 +130,13 @@ class AfterConstraint extends PatternConstraint {
 		this.predecessor = predecessor;
 	}
 
-	public ArrayList<Literal> generateLiterals(AnalyzeContext ctx) {
-		ArrayList<Literal> result = new ArrayList<>();
+	public ArrayList<CommonLiteral> generateLiterals(AnalyzeContext ctx) {
+		ArrayList<CommonLiteral> result = new ArrayList<>();
 		result.add(makeListAtom(ctx,
 								new Variable(node.getParent().varName()),
 								new Variable(node.indexVarName()),
 								new Variable(node.varName())));
-		result.add(new GTLiteral(new PredicateSymbol("GT"),
-								 new Variable(node.indexVarName()),
+		result.add(new GTLiteral(new Variable(node.indexVarName()),
 								 new Variable(predecessor.indexVarName())));
 		return result;
 	}
@@ -152,16 +149,15 @@ class NextConstraint extends PatternConstraint {
 		this.predecessor = predecessor;
 	}
 
-	public ArrayList<Literal> generateLiterals(AnalyzeContext ctx) {
-		ArrayList<Literal> result = new ArrayList<>();
+	public ArrayList<CommonLiteral> generateLiterals(AnalyzeContext ctx) {
+		ArrayList<CommonLiteral> result = new ArrayList<>();
 
 		result.add(makeListAtom(ctx,
 								new Variable(node.getParent().varName()),
 								new Variable(node.indexVarName()),
 								new Variable(node.varName())));
 
-		result.add(new EQLiteral(new PredicateSymbol("EQ"),
-								 new Variable(node.indexVarName()),
+		result.add(new EQLiteral(new Variable(node.indexVarName()),
 								 makeAdd(new Variable(predecessor.indexVarName()),
 										 new IntConstant("1"))));
 

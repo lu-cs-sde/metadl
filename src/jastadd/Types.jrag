@@ -218,10 +218,10 @@ aspect TypeCheck {
 	}
 
 	public class TypeMismatchError extends TypeError {
-		private Literal l;
+		private CommonLiteral l;
 		private Type t1, t2;
 
-		public TypeMismatchError(Literal l, Type t1, Type t2) {
+		public TypeMismatchError(CommonLiteral l, Type t1, Type t2) {
 			super(l);
 			this.l = l;
 			this.t1 = t1;
@@ -338,9 +338,16 @@ aspect TypeCheck {
 		return null;
 	}
 
-	syn TypeError BinaryExclusiveTermLiteral.typeError() {
+	syn TypeError BinaryIntegerConstraint.typeError() {
 		if (getLeft().type() != getRight().type()) {
 			return new TypeMismatchError(this, getLeft().type(), getRight().type());
+		}
+		return null;
+	}
+
+	syn TypeError MATCHLiteral.typeError() {
+		if (getExpr(0).type() != getExpr(1).type()) {
+			return new TypeMismatchError(this, getExpr(0).type(), getExpr(1).type());
 		}
 		return null;
 	}
@@ -353,7 +360,7 @@ aspect TypeCheck {
 	}
 
 	Functor contributes typeError() when (typeError() != null) to Program.typeErrors();
-	BinaryExclusiveTermLiteral contributes typeError() when (typeError() != null) to Program.typeErrors();
+	BinaryIntegerConstraint contributes typeError() when (typeError() != null) to Program.typeErrors();
 	BINDLiteral contributes typeError() when (typeError() != null) to Program.typeErrors();
 	Atom contributes typeError() when (typeError() != null) to Program.typeErrors();
 	Pattern contributes nta getLiteral() to Program.typeErrors();
@@ -366,6 +373,7 @@ aspect TypeInference {
 	eq Atom.getTerms(int i).indexInLiteral() {
 		return i;
 	}
+	eq Constraint.getChild().indexInLiteral() = -1;
 	eq Literal.getChild().indexInLiteral() = -1;
 	eq Expr.getChild().indexInLiteral() = -1;
 	eq AnalyzeBlock.getProgramRef().indexInLiteral() = -1;
@@ -483,13 +491,14 @@ aspect TypeInference {
 	inh Expr Expr.sibling();
 	eq Literal.getChild().sibling() = null;
 	eq Expr.getChild().sibling() = null;
-	eq BinaryExclusiveTermLiteral.getLeft().sibling() = getRight();
-	eq BinaryExclusiveTermLiteral.getRight().sibling() = getLeft();
+	eq BinaryIntegerConstraint.getExpr(int i).sibling() = getExpr(1 - i);
+	eq MATCHLiteral.getExpr(int i).sibling() = getExpr(1-i);
 	eq BINDLiteral.getVariable().sibling() = getRight();
 	eq BINDLiteral.getRight().sibling() = getVariable();
+
 	// Return the parent atom for an expression, if any
 	inh Atom Expr.atom();
-	eq Literal.getChild().atom() = null;
+	eq CommonLiteral.getChild().atom() = null;
 	eq Atom.getTerms(int i).atom() = this;
 
 	// Constant AST nodes are created inside the naive evaluator, but they

@@ -55,13 +55,13 @@ NEGLiteral neg_literal = NOT LPARA common_literal.lit RPARA {: lit.setNot(new No
 BINDLiteral bind_literal =
        BIND LPARA variable.var COMMA expr.right RPARA {: return new BINDLiteral(new PredicateSymbol("BIND"), var, right); :};
 
-EQLiteral eq_literal = EQ  LPARA expr.left COMMA expr.right RPARA {: return new EQLiteral(new PredicateSymbol("EQ"),   left, right); :};
-NEQLiteral neq_literal = NEQ LPARA expr.left COMMA expr.right RPARA {: return new NEQLiteral(new PredicateSymbol("NEQ"), left, right); :};
-LTLiteral lt_literal = LT  LPARA expr.left COMMA expr.right RPARA {: return new LTLiteral(new PredicateSymbol("LT"),   left, right); :};
-LTELiteral lte_literal = LTE LPARA expr.left COMMA expr.right RPARA {: return new LTELiteral(new PredicateSymbol("LTE"), left, right); :};
-GTLiteral gt_literal = GT  LPARA expr.left COMMA expr.right RPARA {: return new GTLiteral(new PredicateSymbol("GT"),   left, right); :};
-GTELiteral gte_literal = GTE LPARA expr.left COMMA expr.right RPARA {: return new GTELiteral(new PredicateSymbol("GTE"), left, right); :};
-MATCHLiteral match_literal = MATCH LPARA expr.left COMMA expr.right RPARA {: return new MATCHLiteral(new PredicateSymbol("MATCH"), left, right); :};
+EQLiteral eq_literal = EQ  LPARA expr.left COMMA expr.right RPARA {: return new EQLiteral(left, right); :};
+NEQLiteral neq_literal = NEQ LPARA expr.left COMMA expr.right RPARA {: return new NEQLiteral(left, right); :};
+LTLiteral lt_literal = LT  LPARA expr.left COMMA expr.right RPARA {: return new LTLiteral(left, right); :};
+LTELiteral lte_literal = LTE LPARA expr.left COMMA expr.right RPARA {: return new LTELiteral(left, right); :};
+GTLiteral gt_literal = GT  LPARA expr.left COMMA expr.right RPARA {: return new GTLiteral(left, right); :};
+GTELiteral gte_literal = GTE LPARA expr.left COMMA expr.right RPARA {: return new GTELiteral(left, right); :};
+MATCHLiteral match_literal = MATCH LPARA expr.left COMMA expr.right RPARA {: return new MATCHLiteral(left, right); :};
 
 
 Atom atom = pred_sym.pred LPARA term_list.terms RPARA                      {: return new Atom(pred, terms); :};

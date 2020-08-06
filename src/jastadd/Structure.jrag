@@ -113,22 +113,12 @@ aspect Clause {
 	eq Fact.isRule() = false;
 	eq AnalyzeBlock.isRule() = false;
 
-	syn HashSet<Literal> Rule.literals() {
-		HashSet<Literal> literals = new HashSet<Literal>();
-		for(CommonLiteral l : getHeadss()) literals.add(l.asLiteral());
-		literals.addAll(flattenedBodyLiterals());
-		return literals;
-	}
-
-	syn HashSet<Literal> Rule.flattenedBodyLiterals() {
-		HashSet<Literal> literals = new HashSet<Literal>();
-		for(CommonLiteral l : getBodys()) literals.add(l.asLiteral());
-		return literals;
-	}
-
 	syn TreeSet<Variable> Rule.variables() {
 		TreeSet<Variable> variables = new TreeSet<Variable>(Term.termComparator);
-		for(CommonLiteral l : literals()) variables.addAll(l.variables());
+		for (CommonLiteral l : getHeadss())
+			variables.addAll(l.variables());
+		for (CommonLiteral l : getBodys())
+			variables.addAll(l.variables());
 		return variables;
 	}
 
@@ -163,7 +153,7 @@ aspect Clause {
 aspect Literal {
 	syn PredicateSymbol CommonLiteral.predicate();
 	eq Pattern.predicate() = null;
-
+	eq Constraint.predicate() = null;
 	eq Literal.predicate() = getPredicate();
 
 	inh boolean Literal.isFact();
@@ -182,10 +172,6 @@ aspect Literal {
 	syn boolean CommonLiteral.isBind() = false;
 	eq	BINDLiteral.isBind()   = true;
 
-	syn boolean CommonLiteral.isInclusive();
-	eq CommonLiteral.isInclusive() = false;
-	eq Atom.isInclusive() = true;
-
 	/**
 	   boundVariables = variables bound by the current literal
 	*/
@@ -197,7 +183,6 @@ aspect Literal {
 	}
 	eq Constraint.boundVariables() = new TreeSet<>();
 	eq BINDLiteral.boundVariables() = getVariable().variables();
-	eq BinaryExclusiveTermLiteral.boundVariables() = new TreeSet<>();
 
 	inh boolean Literal.isDef();
 	eq Clause.getChild().isDef() = false;
@@ -239,34 +224,16 @@ aspect Literal {
 		vars.addAll(getRight().variables());
 		return vars;
 	}
-
-	eq BinaryExclusiveTermLiteral.variables() {
-		TreeSet<Variable> vars = new TreeSet<Variable>(Term.termComparator);
-		vars.addAll(getLeft().variables());
-		vars.addAll(getRight().variables());
-		return vars;
-	}
-
-	syn TreeSet<Constant> BinaryExclusiveTermLiteral.constants() {
-		TreeSet<Constant> constants = new TreeSet<Constant>(Term.termComparator);
-		constants.addAll(getLeft().constants());
-		constants.addAll(getRight().constants());
-		return constants;
-	}
-}
-
-aspect CommonLiteral {
-	syn Literal CommonLiteral.asLiteral();
-	eq Pattern.asLiteral() = getLiteral();
-	eq Literal.asLiteral() = this;
 }
 
 aspect Predicate {
 	inh Literal PredicateSymbol.literal();
 	inh Literal Term.literal();
 	inh Literal PredicateRef.literal();
-	eq	Literal.getChild().literal() = this;
-	eq	AnalyzeBlock.getChild().literal() = null;
+
+	eq Atom.getChild().literal() = this;
+	eq Constraint.getChild().literal() = null;
+	eq AnalyzeBlock.getChild().literal() = null;
 
 	public interface PredicateInterface {
 		public boolean isRef();
@@ -352,7 +319,6 @@ aspect FormalPredicate {
 	inh FormalPredicateMap FormalPredicate.formalPredicateMap();
 
 	syn String FormalPredicate.predicateName() = getPRED_ID();
-	syn Literal FormalPredicate.literal() = predicates().iterator().next().literal();
 	syn HashSet<Literal> FormalPredicate.literals() {
 		HashSet<Literal> literals = new HashSet<Literal>();
 		for(PredicateSymbol ps : predicates()) {
@@ -396,4 +362,11 @@ aspect FormalPredicate {
 aspect Types {
 	syn boolean Term.isVariable() = this instanceof Variable;
 	syn boolean Term.isConstant() = !isVariable();
+}
+
+aspect Constraint {
+	syn Expr BinaryIntegerConstraint.getLeft() = getExpr(0);
+	syn Expr BinaryIntegerConstraint.getRight() = getExpr(1);
+	syn Expr MATCHLiteral.getLeft() = getExpr(0);
+	syn Expr MATCHLiteral.getRight() = getExpr(1);
 }

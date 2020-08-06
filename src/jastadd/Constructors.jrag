@@ -2,29 +2,29 @@ aspect Constructors {
 	public Atom.Atom(PredicateSymbol p, List<Term> ts) {
 		this(new Opt(), p, ts);
 	}
-	public EQLiteral.EQLiteral(PredicateSymbol p, Expr l, Expr r) {
-		this(new Opt(), p, l, r);
+	public EQLiteral.EQLiteral(Expr l, Expr r) {
+		this(new Opt(), new List<Expr>().add(l).add(r));
 	}
-	public NEQLiteral.NEQLiteral(PredicateSymbol p, Expr l, Expr r) {
-		this(new Opt(), p, l, r);
+	public NEQLiteral.NEQLiteral(Expr l, Expr r) {
+		this(new Opt(), new List<Expr>().add(l).add(r));
 	}
-	public GTLiteral.GTLiteral(PredicateSymbol p, Expr l, Expr r) {
-		this(new Opt(), p, l, r);
+	public GTLiteral.GTLiteral(Expr l, Expr r) {
+		this(new Opt(), new List<Expr>().add(l).add(r));
 	}
-	public LTLiteral.LTLiteral(PredicateSymbol p, Expr l, Expr r) {
-		this(new Opt(), p, l, r);
+	public LTLiteral.LTLiteral(Expr l, Expr r) {
+		this(new Opt(), new List<Expr>().add(l).add(r));
 	}
-	public GTELiteral.GTELiteral(PredicateSymbol p, Expr l, Expr r) {
-		this(new Opt(), p, l, r);
+	public GTELiteral.GTELiteral(Expr l, Expr r) {
+		this(new Opt(), new List<Expr>().add(l).add(r));
 	}
-	public LTELiteral.LTELiteral(PredicateSymbol p, Expr l, Expr r) {
-		this(new Opt(), p, l, r);
+	public LTELiteral.LTELiteral(Expr l, Expr r) {
+		this(new Opt(), new List<Expr>().add(l).add(r));
 	}
 	public BINDLiteral.BINDLiteral(PredicateSymbol p, CommonVariable v, Expr e) {
 		this(new Opt(), p, v, e);
 	}
-	public MATCHLiteral.MATCHLiteral(PredicateSymbol p, Expr e1, Expr e2) {
-		this(new Opt(), p, e1, e2);
+	public MATCHLiteral.MATCHLiteral(Expr regex, Expr str) {
+		this(new Opt(), new List<Expr>().add(regex).add(str));
 	}
 	public Pattern.Pattern(String s) {
 		this(new Opt(), s);
@@ -67,12 +67,12 @@ aspect Constructors {
 			return r;
 		}
 
-		public static lang.ast.Literal NEQ(lang.ast.Term t1, lang.ast.Term t2) {
-			return new lang.ast.NEQLiteral(new lang.ast.PredicateSymbol("NEQ"), t1, t2);
+		public static lang.ast.CommonLiteral NEQ(lang.ast.Term t1, lang.ast.Term t2) {
+			return new lang.ast.NEQLiteral(t1, t2);
 		}
 
-		public static lang.ast.Literal EQ(lang.ast.Term t1, lang.ast.Term t2) {
-			return new lang.ast.EQLiteral(new lang.ast.PredicateSymbol("EQ"), t1, t2);
+		public static lang.ast.CommonLiteral EQ(lang.ast.Term t1, lang.ast.Term t2) {
+			return new lang.ast.EQLiteral(t1, t2);
 		}
 
 		public static lang.ast.CommonLiteral NOT(lang.ast.CommonLiteral l) {

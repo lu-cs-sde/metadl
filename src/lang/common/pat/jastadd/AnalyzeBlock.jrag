@@ -6,6 +6,7 @@ import lang.cons.ObjLangASTNode;
 import java.lang.reflect.Method;
 import java.lang.ReflectiveOperationException;
 import lang.ast.AnalyzeContext;
+import lang.ast.Constructors;
 import static lang.ast.Constructors.*;
 import lang.io.StringUID;
 import java.util.Arrays;
@@ -21,9 +22,8 @@ aspect AnalyzeBlock {
 				.add(new lang.ast.IntConstant("0")).add(new lang.ast.StringConstant("0"));
 
 			head.add(new lang.ast.Atom(new lang.ast.PredicateSymbol(ctx.progRelName), vars));
-			body.add(new lang.ast.NEQLiteral(new lang.ast.PredicateSymbol("NEQ"),
-											 new lang.ast.IntConstant("0"),
-											 new lang.ast.IntConstant("0")));
+			body.add(Constructors.NEQ(new lang.ast.IntConstant("0"),
+									  new lang.ast.IntConstant("0")));
 
 			return new lang.ast.Rule(head, body);
 		}

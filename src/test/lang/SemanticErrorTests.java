@@ -21,6 +21,8 @@ public class SemanticErrorTests {
                 sb.append(err).append("\n");
             Util.compareOutput(sb.toString(), output, expected);
         } catch(Exception e) {
+			e.printStackTrace();
+
             assertTrue(false);
         }
     }

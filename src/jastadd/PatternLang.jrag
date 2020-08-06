@@ -9,7 +9,7 @@ import java.security.MessageDigest;
 import static lang.io.SimpleLogger.*;
 import java.util.IdentityHashMap;
 import org.apache.commons.lang3.time.StopWatch;
-
+import lang.ast.Constructors;
 
 import se.lth.sep.*;
 import static se.lth.sep.Util.*;
@@ -52,6 +52,7 @@ aspect PatternLang {
 	}
 
 	AnalyzeBlock contributes nta getExpandedClauses() to Program.predicateSymbols();
+	Pattern contributes nta getLiteral() to Program.predicateSymbols();
 
 	public String AnalyzeBlock.translatePredicateName(String predName) {
 		switch (getLang().getSTRING()) {
@@ -124,7 +125,11 @@ aspect PatternLang {
 
 
 	protected Atom Pattern.getLiteralHelper(CommonVariable bindVar) {
-		AnalyzeContext ctx = enclosingAnalyzeBlock().getContext();
+		if (enclosingAnalyzeBlock() == null)
+			return Constructors.atom("ERROR", 0);
+
+		String predName = enclosingAnalyzeBlock().getContext().prefix(predName());
+
 		List<Term> headVars = new List<>();
 		// The assumption is that any parse tree of a pattern contains
 		// the same metavariables
@@ -134,7 +139,7 @@ aspect PatternLang {
 		headVars.addAll(n.metavariables());
 		// we're using a String hash  here; fingers crossed for no collisions in
 		// the same analyze block
-		Atom head = new Atom(new PredicateSymbol(ctx.scopePrefix + predName()),
+		Atom head = new Atom(new PredicateSymbol(predName),
 							 headVars);
 		return head;
 	}

@@ -99,13 +99,13 @@ aspect Task {
         return getProgramWithChecks(description().getInput().getPath());
     }
 
-    public Program Task.getProgramWithChecks(String path) throws Exception {
-        Program program = (Program) FileUtil.parse(new File(path));
-        Compiler.DrAST_root_node = program; // Enable debugging with DrAST
-        new SemanticCheck(getParamss()).perform(program, description());
-        new TypeCheck(getParamss()).perform(program, description());
-        return program;
-    }
+	public Program Task.getProgramWithChecks(String path) throws Exception {
+		Program program = (Program) FileUtil.parse(new File(path));
+		Compiler.DrAST_root_node = program; // Enable debugging with DrAST
+		new SemanticCheck(getParamss()).perform(program, description());
+		new TypeCheck(getParamss()).perform(program, description());
+		return program;
+	}
 
 	public void Task.generateObjectProgramRelations(Program program) throws Exception {
 		// Add IMPORT to the formal predicate map. The facts produced by the IMPORT statement

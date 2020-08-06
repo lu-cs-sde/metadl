@@ -356,6 +356,8 @@ aspect TypeCheck {
 	BinaryExclusiveTermLiteral contributes typeError() when (typeError() != null) to Program.typeErrors();
 	BINDLiteral contributes typeError() when (typeError() != null) to Program.typeErrors();
 	Atom contributes typeError() when (typeError() != null) to Program.typeErrors();
+	Pattern contributes nta getLiteral() to Program.typeErrors();
+	AnalyzeBlock contributes nta getExpandedClauses() to Program.typeErrors();
 }
 
 aspect TypeInference {
@@ -393,6 +395,7 @@ aspect TypeInference {
 	AnalyzeBlock contributes nta getExpandedClauses() to Clause.varMap();
 	AnalyzeBlock contributes nta getExpandedClauses() to FormalPredicate.initialType();
 	Pattern contributes nta getLiteral() to Clause.varMap();
+	Pattern contributes nta getLiteral() to FormalPredicate.initialType();
 
 	public class VariableMap {
 		private Map<String, java.util.List<Variable>> m = new HashMap<>();

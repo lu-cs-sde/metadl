@@ -151,6 +151,9 @@ aspect Clause {
 }
 
 aspect Literal {
+	/**
+	   TODO: remove, used only in tests.
+	 */
 	syn PredicateSymbol CommonLiteral.predicate();
 	eq Pattern.predicate() = null;
 	eq Constraint.predicate() = null;
@@ -165,13 +168,6 @@ aspect Literal {
 	syn boolean Literal.isIMPORT() = getPredicate().getPRED_ID().equals(GlobalNames.IMPORT_NAME);
 	syn boolean Literal.isPredefined() = isEDB() || isOUTPUT() || isIMPORT();
 
-	syn boolean Literal.isAtom();
-	eq	Literal.isAtom() = false;
-	eq	Atom.isAtom()	 = true;
-
-	syn boolean CommonLiteral.isBind() = false;
-	eq	BINDLiteral.isBind()   = true;
-
 	/**
 	   boundVariables = variables bound by the current literal
 	*/
@@ -184,15 +180,24 @@ aspect Literal {
 	eq Constraint.boundVariables() = new TreeSet<>();
 	eq BINDLiteral.boundVariables() = getVariable().variables();
 
+	/**
+	   isDef = true iff the literal is present in a rule's head or in a fact
+	 */
 	inh boolean Literal.isDef();
 	eq Clause.getChild().isDef() = false;
 	eq Rule.getHeads().isDef()	 =	true;
 	eq Fact.getHeads().isDef()	 =	true;
 
+	/**
+	   isUse = true iff the literal is present in a rule's body
+	*/
 	inh boolean Literal.isUse();
 	eq Clause.getChild().isUse() = false;
 	eq Rule.getBody().isUse()	 = true;
 
+	/**
+	   isGround = the literal contains only constants, e.g. A(), B(1, "a"), etc.
+	 */
 	syn boolean Literal.isGround() = variables().isEmpty();
 
 	syn TreeSet<Variable> CommonLiteral.variables();
@@ -227,12 +232,14 @@ aspect Literal {
 }
 
 aspect Predicate {
-	inh Literal PredicateSymbol.literal();
-	inh Literal Term.literal();
-	inh Literal PredicateRef.literal();
+	inh Literal PredicateSymbol.parentLiteral();
+	eq Literal.getPredicate().parentLiteral() = this;
 
-	eq Atom.getChild().literal() = this;
-	eq Constraint.getChild().literal() = null;
+	inh CommonLiteral Term.literal();
+	inh CommonLiteral PredicateRef.literal();
+
+	eq Literal.getChild().literal() = this;
+	eq Constraint.getChild().literal() = this;
 	eq AnalyzeBlock.getChild().literal() = null;
 
 	public interface PredicateInterface {
@@ -244,12 +251,6 @@ aspect Predicate {
 
 	public boolean PredicateSymbol.isRef() { return false; }
 	public boolean PredicateRef.isRef()	   { return true; }
-
-	syn boolean PredicateInterface.isFact()	 = literal().isFact();
-	syn boolean PredicateInterface.isEDB()	 = literal().isEDB();
-	syn boolean PredicateInterface.isUse()	 = literal().isUse();
-	syn boolean PredicateInterface.isDef()	 = literal().isDef();
-	syn boolean PredicateInterface.isNeg()	 = literal().hasNot();
 }
 
 aspect Term {
@@ -288,20 +289,6 @@ aspect Expression {
 		vars.add(this);
 		return vars;
 	}
-
-	public abstract TreeSet<Constant> Expr.constants();
-	syn TreeSet<Constant> Term.constants()	   = new TreeSet<Constant>(Term.termComparator);
-	syn TreeSet<Constant> Constant.constants() {
-		TreeSet<Constant> constants = new TreeSet<Constant>(Term.termComparator);
-		constants.add(this);
-		return constants;
-	}
-	syn TreeSet<Constant> Functor.constants() {
-		TreeSet constants = new TreeSet<>(Term.termComparator);
-		for (Expr e : getArgs())
-			constants.addAll(e.constants());
-		return constants;
-	}
 }
 
 aspect FormalPredicate {
@@ -322,7 +309,7 @@ aspect FormalPredicate {
 	syn HashSet<Literal> FormalPredicate.literals() {
 		HashSet<Literal> literals = new HashSet<Literal>();
 		for(PredicateSymbol ps : predicates()) {
-			literals.add(ps.literal());
+			literals.add(ps.parentLiteral());
 		}
 		return literals;
 	}
@@ -347,11 +334,13 @@ aspect FormalPredicate {
 		return predicates;
 	}
 
+	inh Program PredicateRef.program();
+	inh Program PredicateSymbol.program();
 	syn FormalPredicate PredicateInterface.formalpredicate() {
-		FormalPredicate fp = literal().clause().program().formalPredicateMap().get(getPRED_ID());
+		FormalPredicate fp = program().formalPredicateMap().get(getPRED_ID());
 		if(fp == null) {
 			SimpleLogger.logger().log("Each PredicateSymbol should belong to a FormalPredicate: " + this,
-				SimpleLogger.LogLevel.Level.ERROR);
+									  SimpleLogger.LogLevel.Level.ERROR);
 			System.exit(0);
 			return null; // Needed for JastAdd
 		}

@@ -7,15 +7,13 @@ import lang.relation.PseudoTuple;
 
 aspect Arity {
     syn int Literal.arity();
-    eq BINDLiteral.arity()   = 2;
+    eq BINDLiteral.arity() = 2;
     eq Atom.arity() = getNumTerms();
-
-    syn int PredicateSymbol.arity() = literal().arity();
 
     syn HashSet<Integer> FormalPredicate.arities() {
     	HashSet<Integer> arities = new HashSet<Integer>();
     	for(PredicateSymbol pred : predicates()) {
-        	arities.add(pred.arity());
+        	arities.add(pred.parentLiteral().arity());
         }
         return arities;
     }
@@ -49,26 +47,4 @@ aspect Relation {
 	syn PseudoTuple Literal.toTuple() = null;
 	eq Atom.toTuple()          = new PseudoTuple(getTermss());
 	eq BINDLiteral.toTuple()   = new PseudoTuple(0);
-}
-
-aspect Rules {
-	syn HashSet<Rule> FormalPredicate.useInRules() {
-		HashSet<Rule> rules = new HashSet<Rule>();
-		for(PredicateSymbol pred : predicates()) {
-			if(pred.isUse()) {
-				rules.add((Rule)pred.literal().clause());
-			}
-		}
-		return rules;
-	}
-
-	syn HashSet<Clause> FormalPredicate.definedIn() {
-		HashSet<Clause> rules = new HashSet<Clause>();
-		for(PredicateSymbol pred : predicates()) {
-			if(pred.isDef()) {
-				rules.add(pred.literal().clause());
-			}
-		}
-		return rules;
-	}
 }

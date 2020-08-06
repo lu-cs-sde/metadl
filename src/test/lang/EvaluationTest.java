@@ -39,7 +39,7 @@ public class EvaluationTest {
 			fail();
 		HashMap<String, Relation> nameToRel = new HashMap<>();
 		for (PredicateSymbol psym : fpOut1.predicates()) {
-			Atom output = (Atom) psym.literal();
+			Atom output = (Atom) psym.parentLiteral();
 			PredicateRef pr = (PredicateRef)output.getTerms(0);
 			FormalPredicate fp = pr.formalpredicate();
 

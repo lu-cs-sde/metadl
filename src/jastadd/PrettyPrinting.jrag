@@ -340,7 +340,7 @@ aspect SoufflePrinting {
         FormalPredicate fp = formalPredicateMap().get(GlobalNames.EDB_NAME);
         if(fp == null) return;
 		for (PredicateSymbol psym : fp.predicates()) {
-			Atom edb = (Atom) psym.literal();
+			Atom edb = (Atom) psym.parentLiteral();
 
 			PredicateRef predref = (PredicateRef) edb.getTerms(0);
 			StringConstant fileloc = (StringConstant) edb.getTerms(1);
@@ -359,7 +359,7 @@ aspect SoufflePrinting {
         FormalPredicate fp = formalPredicateMap().get(GlobalNames.OUTPUT_NAME);
         if(fp == null) return;
 		for (PredicateSymbol psym : fp.predicates()) {
-			Atom output = (Atom) psym.literal();
+			Atom output = (Atom) psym.parentLiteral();
 			PredicateRef predref = (PredicateRef) output.getTerms(0);
             pr.out.print(".output " + predref.getPRED_ID() + "(delimiter=\"");
 			pr.out.print(Compiler.getCSVSeparatorEscaped());
@@ -383,7 +383,7 @@ aspect SoufflePrinting {
 		if (fp == null) return;
 
 		for (PredicateSymbol psym : fp.predicates()) {
-			Atom imp = (Atom) psym.literal();
+			Atom imp = (Atom) psym.parentLiteral();
 			PredicateRef predref = (PredicateRef) imp.getTerms(0);
 			String predName = predref.getPRED_ID();
 			String fileLoc = predName + ".csv";

@@ -124,7 +124,7 @@ aspect Task {
 		// files are imported to the same program relation.
 		HashMap<String, ArrayList<Map.Entry<String, String>>> predicateSrcFiles = new HashMap<>();
 		for (PredicateSymbol psym : formalImport.predicates()) {
-			Atom imp = (Atom) psym.literal();
+			Atom imp = (Atom) psym.parentLiteral();
 			String progFileLoc = ((StringConstant)imp.getTerms(1)).getSTRING();
 			String lang = ((StringConstant)imp.getTerms(2)).getSTRING();
 			PredicateRef predref = (PredicateRef)(imp.getTerms(0));

@@ -370,10 +370,8 @@ aspect TypeCheck {
 aspect TypeInference {
 	coll PredicateType FormalPredicate.initialType() [new PredicateType(realArity())] with join root Program;
 	inh int Expr.indexInLiteral();
-	eq Atom.getTerms(int i).indexInLiteral() {
-		return i;
-	}
-	eq Constraint.getChild().indexInLiteral() = -1;
+	eq Atom.getTerms(int i).indexInLiteral() = i;
+	eq Constraint.getExpr(int i).indexInLiteral() = -1;
 	eq Literal.getChild().indexInLiteral() = -1;
 	eq Expr.getChild().indexInLiteral() = -1;
 	eq AnalyzeBlock.getProgramRef().indexInLiteral() = -1;
@@ -382,17 +380,17 @@ aspect TypeInference {
 	IntConstant contributes (new PredicateType.Index(indexInLiteral(), IntegerType.get()))
 		when indexInLiteral() >= 0
 		to FormalPredicate.initialType()
-		for literal().getPredicate().formalpredicate();
+		for ((Literal)literal()).getPredicate().formalpredicate();
 
 	StringConstant contributes (new PredicateType.Index(indexInLiteral(), StringType.get()))
 		when indexInLiteral() >= 0
 		to FormalPredicate.initialType()
-		for literal().getPredicate().formalpredicate();
+		for ((Literal)literal()).getPredicate().formalpredicate();
 
 	PredicateRef contributes (new PredicateType.Index(indexInLiteral(), PredicateRefType.get()))
 		when indexInLiteral() >= 0
 		to FormalPredicate.initialType()
-		for literal().getPredicate().formalpredicate();
+		for ((Literal)literal()).getPredicate().formalpredicate();
 
 	// map variable names to formal predicates and position of the respective
 	// variable in a given predicate
@@ -429,9 +427,9 @@ aspect TypeInference {
 	eq FormalPredicate.type() {
 		PredicateType current = type();
 		for (PredicateSymbol ps : predicates()) {
-			if (!(ps.literal() instanceof Atom))
+			if (!(ps.parentLiteral() instanceof Atom))
 				continue;
-			Atom a = (Atom)(ps.literal());
+			Atom a = (Atom)(ps.parentLiteral());
 			Clause c = a.clause();
 
 			for (int i = 0; i < a.arity(); ++i) {
@@ -466,25 +464,12 @@ aspect TypeInference {
 		}
 	}
 
-	eq LTLiteral.getChild().itype() {
-		return IntegerType.get();
-	}
-
-	eq GTLiteral.getChild().itype() {
-		return IntegerType.get();
-	}
-
-	eq LTELiteral.getChild().itype() {
-		return IntegerType.get();
-	}
-
-	eq GTELiteral.getChild().itype() {
-		return IntegerType.get();
-	}
-
-	eq MATCHLiteral.getChild().itype() {
-		return StringType.get();
-	}
+	eq MATCHLiteral.getExpr().itype() = StringType.get();
+	eq Constraint.getExpr().itype() = UnknownType.get();
+	eq LTLiteral.getExpr().itype() = IntegerType.get();
+	eq GTLiteral.getExpr().itype() = IntegerType.get();
+	eq GTELiteral.getExpr().itype() = IntegerType.get();
+	eq LTELiteral.getExpr().itype() = IntegerType.get();
 
 	// For an expression, return the other expression that
 	// has the same type
@@ -492,7 +477,7 @@ aspect TypeInference {
 	eq Literal.getChild().sibling() = null;
 	eq Expr.getChild().sibling() = null;
 	eq BinaryIntegerConstraint.getExpr(int i).sibling() = getExpr(1 - i);
-	eq MATCHLiteral.getExpr(int i).sibling() = getExpr(1-i);
+	eq MATCHLiteral.getExpr(int i).sibling() = getExpr(1 - i);
 	eq BINDLiteral.getVariable().sibling() = getRight();
 	eq BINDLiteral.getRight().sibling() = getVariable();
 

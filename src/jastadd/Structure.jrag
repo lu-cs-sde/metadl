@@ -159,7 +159,7 @@ aspect Literal {
 	eq Constraint.predicate() = null;
 	eq Literal.predicate() = getPredicate();
 
-	inh boolean Literal.isFact();
+	inh boolean CommonLiteral.isFact();
 	eq Clause.getChild().isFact()		 = false;
 	eq Fact.getHeads(int index).isFact() =	true;
 
@@ -183,7 +183,7 @@ aspect Literal {
 	/**
 	   isDef = true iff the literal is present in a rule's head or in a fact
 	 */
-	inh boolean Literal.isDef();
+	inh boolean CommonLiteral.isDef();
 	eq Clause.getChild().isDef() = false;
 	eq Rule.getHeads().isDef()	 =	true;
 	eq Fact.getHeads().isDef()	 =	true;

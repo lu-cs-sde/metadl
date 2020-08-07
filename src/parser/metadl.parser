@@ -53,7 +53,7 @@ BoundedPattern bounded_pattern = variable.var PATTERN {: return new BoundedPatte
 NEGLiteral neg_literal = NOT LPARA common_literal.lit RPARA {: lit.setNot(new Not()); return lit; :};
 
 BINDLiteral bind_literal =
-       BIND LPARA variable.var COMMA expr.right RPARA {: return new BINDLiteral(new PredicateSymbol("BIND"), var, right); :};
+       BIND LPARA variable.var COMMA expr.right RPARA {: return new BINDLiteral(var, right); :};
 
 EQLiteral eq_literal = EQ  LPARA expr.left COMMA expr.right RPARA {: return new EQLiteral(left, right); :};
 NEQLiteral neq_literal = NEQ LPARA expr.left COMMA expr.right RPARA {: return new NEQLiteral(left, right); :};

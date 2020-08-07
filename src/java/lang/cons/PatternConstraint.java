@@ -110,10 +110,9 @@ class LastConstraint extends PatternConstraint {
 								new Variable(node.getParent().varName()),
 								new Variable(node.indexVarName()),
 								new Variable(node.varName())));
-		result.add(new BINDLiteral(new PredicateSymbol("BIND"),
-								   new Variable(boundVarName),
-								   makeAdd(new Variable(node.indexVarName()),
-										   new IntConstant("1"))));
+		result.add(BIND(new Variable(boundVarName),
+						makeAdd(new Variable(node.indexVarName()),
+								new IntConstant("1"))));
 		result.add(NOT(makeListAtom(ctx,
 									new Variable(node.getParent().varName()),
 									new Variable(boundVarName),

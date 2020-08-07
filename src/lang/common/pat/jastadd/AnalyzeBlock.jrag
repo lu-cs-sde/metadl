@@ -106,11 +106,10 @@ aspect AnalyzeBlock {
 
 			if (convertFunctor != null) {
 				// name(n_id, v) :- P(nodeKind, n_id, idx, t_id, _), P("Terminal", t_id, _, _, w), BIND(v, convertFunctor(w))
-				bodyList.add(new lang.ast.BINDLiteral(new lang.ast.PredicateSymbol("BIND"),
-													  new lang.ast.Variable("v"),
-													  new lang.ast.Functor(new lang.ast.FunctorSymbol(convertFunctor),
-																		   new lang.ast.List<lang.ast.Expr>()
-																		   .add(new lang.ast.Variable("w")))));
+				bodyList.add(BIND(new lang.ast.Variable("v"),
+								  new lang.ast.Functor(new lang.ast.FunctorSymbol(convertFunctor),
+													   new lang.ast.List<lang.ast.Expr>()
+													   .add(new lang.ast.Variable("w")))));
 			}
 
 			return new lang.ast.Rule(headList, bodyList);

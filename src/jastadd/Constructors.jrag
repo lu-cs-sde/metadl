@@ -20,8 +20,8 @@ aspect Constructors {
 	public LTELiteral.LTELiteral(Expr l, Expr r) {
 		this(new Opt(), new List<Expr>().add(l).add(r));
 	}
-	public BINDLiteral.BINDLiteral(PredicateSymbol p, CommonVariable v, Expr e) {
-		this(new Opt(), p, v, e);
+	public BINDLiteral.BINDLiteral(Expr dst, Expr src) {
+		this(new Opt(), new List<Expr>().add(dst).add(src));
 	}
 	public MATCHLiteral.MATCHLiteral(Expr regex, Expr str) {
 		this(new Opt(), new List<Expr>().add(regex).add(str));
@@ -77,6 +77,10 @@ aspect Constructors {
 
 		public static lang.ast.CommonLiteral NOT(lang.ast.CommonLiteral l) {
 			return l.setNot(new Not());
+		}
+
+		public static lang.ast.CommonLiteral BIND(lang.ast.Expr dst, lang.ast.Expr src) {
+			return new BINDLiteral(dst, src);
 		}
 
 		public static lang.ast.Literal NOT(lang.ast.Literal l) {

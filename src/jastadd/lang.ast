@@ -32,12 +32,14 @@ LTLiteral:BinaryIntegerConstraint;
 LTELiteral:BinaryIntegerConstraint;
 GTLiteral:BinaryIntegerConstraint;
 GTELiteral:BinaryIntegerConstraint;
+
 MATCHLiteral:Constraint;
+BINDLiteral:Constraint;
 
 Atom:Literal ::= Terms:Term*;
 
 
-BINDLiteral:Literal ::= Variable:CommonVariable Right:Expr;
+
 
 
 /**

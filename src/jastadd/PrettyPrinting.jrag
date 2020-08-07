@@ -107,9 +107,9 @@ aspect PretyPrinting {
 
     public void BINDLiteral.prettyPrint(PrettyPrinter pr) {
         pr.out.print("BIND(");
-    	pr.prettyPrint(getVariable());
+    	pr.prettyPrint(getDst());
         pr.out.print(", ");
-    	pr.prettyPrint(getRight());
+    	pr.prettyPrint(getSrc());
         pr.out.print(")");
     }
 
@@ -288,9 +288,9 @@ aspect SoufflePrinting {
     }
 
     public void BINDLiteral.soufflePrint(PrettyPrinter pr) {
-    	pr.prettyPrint(getVariable());
+    	pr.prettyPrint(getDst());
         pr.out.print(" = ");
-    	pr.prettyPrint(getRight());
+    	pr.prettyPrint(getSrc());
     }
 
 	public void Fact.soufflePrint(PrettyPrinter pr) {

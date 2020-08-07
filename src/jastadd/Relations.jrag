@@ -6,38 +6,36 @@ import lang.relation.Relation;
 import lang.relation.PseudoTuple;
 
 aspect Arity {
-    syn int Literal.arity();
-    eq BINDLiteral.arity() = 2;
-    eq Atom.arity() = getNumTerms();
+	syn int Literal.arity();
+	eq Atom.arity() = getNumTerms();
 
-    syn HashSet<Integer> FormalPredicate.arities() {
-    	HashSet<Integer> arities = new HashSet<Integer>();
-    	for(PredicateSymbol pred : predicates()) {
-        	arities.add(pred.parentLiteral().arity());
-        }
-        return arities;
-    }
+	syn HashSet<Integer> FormalPredicate.arities() {
+		HashSet<Integer> arities = new HashSet<Integer>();
+		for(PredicateSymbol pred : predicates()) {
+			arities.add(pred.parentLiteral().arity());
+		}
+		return arities;
+	}
 
-    syn HashSet<Integer> FormalPredicate.realArities() {
-        HashSet<Integer> realArities = new HashSet<Integer>(arities());
-        realArities.remove(-1);
-        return realArities;
-    }
+	syn HashSet<Integer> FormalPredicate.realArities() {
+		HashSet<Integer> realArities = new HashSet<Integer>(arities());
+		realArities.remove(-1);
+		return realArities;
+	}
 
-    syn boolean FormalPredicate.isUniqueArity() {
-        return realArities().size() <= 1;
-    }
+	syn boolean FormalPredicate.isUniqueArity() {
+		return realArities().size() <= 1;
+	}
 
-    syn int FormalPredicate.realArity() {
-        if(!isUniqueArity() || realArities().size() == 0) return 0;
-        return realArities().iterator().next();
-    }
+	syn int FormalPredicate.realArity() {
+		if(!isUniqueArity() || realArities().size() == 0) return 0;
+		return realArities().iterator().next();
+	}
 
-    Program contributes nta getFormalPredicates() to Program.semanticErrors();
-    FormalPredicate contributes ("Different Arities for predicate symbol: " + predicateName())
-        when !isUniqueArity() && arities().size() != 1
-        to Program.semanticErrors();
-
+	Program contributes nta getFormalPredicates() to Program.semanticErrors();
+	FormalPredicate contributes ("Different Arities for predicate symbol: " + predicateName())
+		when !isUniqueArity() && arities().size() != 1
+		to Program.semanticErrors();
 }
 
 aspect Relation {
@@ -46,5 +44,4 @@ aspect Relation {
 
 	syn PseudoTuple Literal.toTuple() = null;
 	eq Atom.toTuple()          = new PseudoTuple(getTermss());
-	eq BINDLiteral.toTuple()   = new PseudoTuple(0);
 }

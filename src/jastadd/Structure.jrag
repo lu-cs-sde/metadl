@@ -178,7 +178,7 @@ aspect Literal {
 		return variables();
 	}
 	eq Constraint.boundVariables() = new TreeSet<>();
-	eq BINDLiteral.boundVariables() = getVariable().variables();
+	eq BINDLiteral.boundVariables() = getDst().variables();
 
 	/**
 	   isDef = true iff the literal is present in a rule's head or in a fact
@@ -223,8 +223,8 @@ aspect Literal {
 	eq BINDLiteral.variables()	{
 		TreeSet<Variable> vars = new TreeSet<Variable>(Term.termComparator);
 		Variable v;
-		vars.addAll(getVariable().variables());
-		vars.addAll(getRight().variables());
+		vars.addAll(getDst().variables());
+		vars.addAll(getSrc().variables());
 		return vars;
 	}
 }
@@ -360,4 +360,6 @@ aspect Constraint {
 	syn Expr BinaryIntegerConstraint.getRight() = getExpr(1);
 	syn Expr MATCHLiteral.getLeft() = getExpr(0);
 	syn Expr MATCHLiteral.getRight() = getExpr(1);
+	syn Expr BINDLiteral.getDst() = getExpr(0);
+	syn Expr BINDLiteral.getSrc() = getExpr(1);
 }

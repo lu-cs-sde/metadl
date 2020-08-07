@@ -36,7 +36,7 @@ aspect ErrorCollection {
 		when !freeVarsInNegativeLiteral().isEmpty()
 		to Program.semanticErrors();
 
-    Functor contributes "Free variable(s) " + freeVars() + " in " + this + " in rule " + occuresIn().clause()
+    Functor contributes "Free variable(s) " + freeVars() + " in " + this + " in rule " + literal().clause()
         when !freeVars().isEmpty()
         to Program.semanticErrors();
 

@@ -200,6 +200,10 @@ aspect Literal {
 	 */
 	syn boolean Literal.isGround() = variables().isEmpty();
 
+	/**
+	   variables = set of variables used in the literal, sorted and uniqued by name
+
+	 */
 	syn TreeSet<Variable> CommonLiteral.variables();
 	eq Atom.variables() {
 		TreeSet<Variable> vars = new TreeSet<Variable>(Term.termComparator);
@@ -216,12 +220,6 @@ aspect Literal {
 		return vars;
 	}
 
-	public TreeSet<Variable> Literal.toVarSet(Term t) {
-		TreeSet<Variable> vars = new TreeSet<Variable>(Term.termComparator);
-		if(t.isVariable()) vars.add((Variable)t);
-		return vars;
-	}
-
 	eq BINDLiteral.variables()	{
 		TreeSet<Variable> vars = new TreeSet<Variable>(Term.termComparator);
 		Variable v;
@@ -232,11 +230,19 @@ aspect Literal {
 }
 
 aspect Predicate {
+	/**
+	   parentLiteral = the literal that owns this predicate symbol
+	 */
 	inh Literal PredicateSymbol.parentLiteral();
 	eq Literal.getPredicate().parentLiteral() = this;
 
+	/**
+	   literal = the literal that encloses this term, if any;
+	   terms may be used outside literals, case in which literal = null
+	 */
 	inh CommonLiteral Term.literal();
 	inh CommonLiteral PredicateRef.literal();
+	inh CommonLiteral Expr.literal();
 
 	eq Literal.getChild().literal() = this;
 	eq Constraint.getChild().literal() = this;
@@ -254,15 +260,11 @@ aspect Predicate {
 }
 
 aspect Term {
-	inh Literal Term.occuresIn();
-	eq	Literal.getChild().occuresIn() = this;
-
 	syn boolean Term.isWildcard() = false;
 	eq Wildcard.isWildcard() = true;
 }
 
 aspect Expression {
-	inh Literal Expr.occuresIn();
 	public abstract TreeSet<Variable> Expr.variables();
 
 	syn TreeSet<Variable> Functor.variables() {
@@ -273,7 +275,7 @@ aspect Expression {
 	}
 
 	syn TreeSet<Variable> Functor.freeVars() {
-		TreeSet<Variable> inclbodyvars = ((Rule)occuresIn().clause()).boundVariables();
+		TreeSet<Variable> inclbodyvars = ((Rule)literal().clause()).boundVariables();
 		TreeSet<Variable> free = new TreeSet<Variable>(Term.termComparator);
 
 		for(Variable v : variables()) {
@@ -317,7 +319,7 @@ aspect FormalPredicate {
 	inh HashSet<PredicateSymbol> FormalPredicate.predicates();
 	eq Program.getFormalPredicate(int index).predicates() {
 		HashSet<PredicateSymbol> predicates = new HashSet<PredicateSymbol>();
-		for(PredicateInterface pi :	 predicateMap().get(getFormalPredicate(index).getPRED_ID())) {
+		for(PredicateInterface pi : predicateMap().get(getFormalPredicate(index).getPRED_ID())) {
 			if(!pi.isRef())
 				predicates.add((PredicateSymbol)pi);
 		}
@@ -327,7 +329,7 @@ aspect FormalPredicate {
 	inh HashSet<PredicateRef> FormalPredicate.predicateRefs();
 	eq Program.getFormalPredicate(int index).predicateRefs() {
 		HashSet<PredicateRef> predicates = new HashSet<PredicateRef>();
-		for(PredicateInterface pi :	 predicateMap().get(getFormalPredicate(index).getPRED_ID())) {
+		for(PredicateInterface pi : predicateMap().get(getFormalPredicate(index).getPRED_ID())) {
 			if(pi.isRef())
 				predicates.add((PredicateRef)pi);
 		}

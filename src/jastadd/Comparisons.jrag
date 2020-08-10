@@ -42,11 +42,12 @@ aspect Comparison {
 	}
 
 	public static final CompareTerm Term.termComparator = new CompareTerm();
-	@Override
-	public boolean Term.equals(Object o) {
-		if(!(o instanceof Term)) return false;
-		return termComparator.compare(this, (Term)o) == 0;
-	}
+
+	// @Override
+	// public boolean Term.equals(Object o) {
+	// 	if(!(o instanceof Term)) return false;
+	// 	return termComparator.compare(this, (Term)o) == 0;
+	// }
 
 	public class CompareFormalPredicate implements Comparator<FormalPredicate> {
 		@Override

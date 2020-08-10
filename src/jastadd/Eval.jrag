@@ -1,7 +1,103 @@
-aspect Eval {
-	syn nta List<CommonLiteral> CommonLiteral.evalLiterals() = new List<>();
+import java.util.stream.Collectors;
 
-	syn Set<Variable> Literal.selfJoinVariables() {
+aspect Eval {
+
+
+	/**
+		Removal of self-join variables
+
+		Transform A(x, x, y, y) to A(x, x', y, y'), EQ(x, x'). EQ(y, y').
+	*/
+
+	/**
+	   The presence of this variables introduces a self-join.
+	   E.g.  In A(x, x), the second occurence of x is a self-join variable.
+	 */
+	inh boolean Variable.isSelfJoinVariable();
+	eq CommonLiteral.getChild().isSelfJoinVariable() = false;
+	eq Literal.getTerms(int i).isSelfJoinVariable() {
+		if (!isUse())
+			return false;
+
+		if (!getTerms(i).isVariable())
+			return false;
+
+		for (int j = 0; j < i; j++) {
+			if (getTerms(j).isVariable()) {
+				Variable v = (Variable) getTerms(j);
+				if (v.getVAR_ID().equals(((Variable) getTerms(i)).getVAR_ID()))
+					return true;
+			}
+		}
+
+		return false;
+	}
+
+	syn boolean Literal.isSelfJoin() {
+		if (hasNot())
+			return false;
+
+		for (Term t : getTermss()) {
+			if (t.isVariable() && ((Variable) t).isSelfJoinVariable())
+				return true;
+		}
+		return false;
+	}
+
+	inh int CommonLiteral.positionInRule();
+	eq Rule.getBody(int i).positionInRule() = i;
+
+	/**
+	   nameForDuplicateVar = fresh name to be used for duplicate variable
+	 */
+	inh String Variable.nameForDuplicateVar();
+	eq Literal.getTerms(int i).nameForDuplicateVar() {
+		Variable v = (Variable) getTerms(i);
+		return "j_" + v.getVAR_ID() + i + "_" + positionInRule();
+	}
+
+	/**
+	   Literals for evaluation
+	 */
+	syn java.util.List<CommonLiteral> CommonLiteral.evalLiterals() = Collections.emptyList();
+	eq Literal.evalLiterals() {
+		if (!isSelfJoin())
+			return Collections.singletonList(this);
+
+		java.util.List<CommonLiteral> ret = new ArrayList<>();
+		Literal l = new Literal(getPredicate().treeCopy(), new List<>());
+
+		ret.add(l);
+
+		for (Term t : getTermss()) {
+			if (t.isVariable()) {
+				Variable v = (Variable) t;
+				if (v.isSelfJoinVariable()) {
+					// Create a fresh variable
+					Variable v1 = new Variable(v.nameForDuplicateVar());
+					l.addTerms(v1);
+					// Introduce a constraint
+					ret.add(Constructors.EQ(new Variable(v.getVAR_ID()),
+											new Variable(v.nameForDuplicateVar())));
+				} else {
+					l.addTerms(t.treeCopy());
+				}
+			} else {
+				l.addTerms(t.treeCopy());
+			}
+		}
+
+		return ret;
+	}
+
+	syn Set<String> CommonLiteral.boundVariableNames() =
+		boundVariables().stream().map(v -> v.getVAR_ID()).collect(Collectors.toSet());
+
+	eq Pattern.evalLiterals() = Collections.singletonList(getLiteral());
+	eq Constraint.evalLiterals() = Collections.singletonList(this);
+
+	syn java.util.List<CommonLiteral> Rule.evalSchedule() {
 		return null;
+
 	}
 }

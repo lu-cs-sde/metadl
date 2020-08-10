@@ -392,36 +392,9 @@ aspect TypeInference {
 		to FormalPredicate.initialType()
 		for ((Literal)literal()).getPredicate().formalpredicate();
 
-	// map variable names to formal predicates and position of the respective
-	// variable in a given predicate
-	coll VariableMap Clause.varMap() [new VariableMap()] with add;
-
-	Variable contributes this to Clause.varMap() for literal().clause();
-
-	AnalyzeBlock contributes nta getExpandedClauses() to Clause.varMap();
 	AnalyzeBlock contributes nta getExpandedClauses() to FormalPredicate.initialType();
-	Pattern contributes nta getLiteral() to Clause.varMap();
 	Pattern contributes nta getLiteral() to FormalPredicate.initialType();
 
-	public class VariableMap {
-		private Map<String, java.util.List<Variable>> m = new HashMap<>();
-		public void add(Variable v) {
-			java.util.List<Variable> occurences = m.get(v.getVAR_ID());
-			if (occurences == null) {
-				occurences = new ArrayList<>();
-				m.put(v.getVAR_ID(), occurences);
-			}
-			occurences.add(v);
-		}
-
-		public java.util.List<Variable> get(String varName) {
-			java.util.List<Variable> entry = m.get(varName);
-			if (entry == null) {
-				return Collections.emptyList();
-			}
-			return entry;
-		}
-	}
 
 	syn PredicateType FormalPredicate.type() circular [initialType()];
 	eq FormalPredicate.type() {

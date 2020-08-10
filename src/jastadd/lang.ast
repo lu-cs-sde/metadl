@@ -22,7 +22,7 @@ Not;
 **/
 abstract CommonLiteral ::= [Not];
 
-abstract Literal:CommonLiteral ::= Predicate:PredicateSymbol;
+Literal:CommonLiteral ::= Predicate:PredicateSymbol Terms:Term*;
 abstract Constraint:CommonLiteral ::= Expr*;
 
 abstract BinaryIntegerConstraint : Constraint;
@@ -35,12 +35,6 @@ GTELiteral:BinaryIntegerConstraint;
 
 MATCHLiteral:Constraint;
 BINDLiteral:Constraint;
-
-Atom:Literal ::= Terms:Term*;
-
-
-
-
 
 /**
 	Expressions

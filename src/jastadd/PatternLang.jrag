@@ -97,7 +97,7 @@ aspect PatternLang {
 		AnalyzeContext ctx = enclosingAnalyzeBlock().getContext();
 		ArrayList<Clause> ret = new ArrayList<>();
 		for (ObjLangASTNode n : altParse()) {
-			Atom head = getLiteralHelper(bindVar);
+			Literal head = getLiteralHelper(bindVar);
 			Rule r = new Rule(new List<CommonLiteral>().add(head),
 							  new List<CommonLiteral>().addAll(n.literals(ctx, bindVar)));
 			ret.add(r);
@@ -124,9 +124,9 @@ aspect PatternLang {
 	eq BoundedPattern.predName() = hash(getPATTERN() + "bounded");
 
 
-	protected Atom Pattern.getLiteralHelper(CommonVariable bindVar) {
+	protected Literal Pattern.getLiteralHelper(CommonVariable bindVar) {
 		if (enclosingAnalyzeBlock() == null)
-			return Constructors.atom("ERROR", 0);
+			return Constructors.literal("ERROR", 0);
 
 		String predName = enclosingAnalyzeBlock().getContext().prefix(predName());
 
@@ -139,7 +139,7 @@ aspect PatternLang {
 		headVars.addAll(n.metavariables());
 		// we're using a String hash  here; fingers crossed for no collisions in
 		// the same analyze block
-		Atom head = new Atom(new PredicateSymbol(predName),
+		Literal head = new Literal(new PredicateSymbol(predName),
 							 headVars);
 		return head;
 	}

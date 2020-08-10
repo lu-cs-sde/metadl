@@ -118,7 +118,7 @@ aspect PatternToDatalog {
 			lang.ast.List<lang.ast.Term> terms = new lang.ast.List<>();
 			terms.add(new lang.ast.Variable(varName("_kind")));
 			terms.add(new lang.ast.StringConstant(relName));
-			ret.add(new lang.ast.Atom(new lang.ast.PredicateSymbol(ctx.prefix("SUPERTYPE")), terms));
+			ret.add(new lang.ast.Literal(new lang.ast.PredicateSymbol(ctx.prefix("SUPERTYPE")), terms));
 		}
 
 		for (int i = 0; i < getNumChild(); ++i) {
@@ -134,7 +134,7 @@ aspect PatternToDatalog {
 			lang.ast.Term Token = new lang.ast.Wildcard();
 
 			terms.add(Kind).add(CurrentNodeId).add(ChildIdx).add(ChildId).add(Token);
-			ret.add(new lang.ast.Atom(new lang.ast.PredicateSymbol(predName), terms));
+			ret.add(new lang.ast.Literal(new lang.ast.PredicateSymbol(predName), terms));
 		}
 
 		if (ret.size() == 1) {
@@ -148,7 +148,7 @@ aspect PatternToDatalog {
 			lang.ast.Term Token = new lang.ast.Wildcard();
 
 			terms.add(Kind).add(CurrentNodeId).add(ChildIdx).add(ChildId).add(Token);
-			ret.add(new lang.ast.Atom(new lang.ast.PredicateSymbol(predName), terms));
+			ret.add(new lang.ast.Literal(new lang.ast.PredicateSymbol(predName), terms));
 		}
 
 
@@ -162,7 +162,7 @@ aspect PatternToDatalog {
 			lang.ast.Term Token = new lang.ast.Wildcard();
 
 			terms.add(Kind).add(CurrentNodeId).add(ChildIdx).add(ChildId).add(Token);
-			ret.add(new lang.ast.Atom(new lang.ast.PredicateSymbol(predName), terms));
+			ret.add(new lang.ast.Literal(new lang.ast.PredicateSymbol(predName), terms));
 
 			ret.add(Constructors.EQ(new lang.ast.Variable(varName()),
 									root.treeCopyNoTransform()));
@@ -203,7 +203,7 @@ aspect PatternToDatalog {
 			lang.ast.Term Token = new lang.ast.Wildcard();
 
 			terms.add(Kind).add(CurrentNodeId).add(ChildIdx).add(ChildId).add(Token);
-			ret.add(new lang.ast.Atom(new lang.ast.PredicateSymbol(ctx.progRelName), terms));
+			ret.add(new lang.ast.Literal(new lang.ast.PredicateSymbol(ctx.progRelName), terms));
 		}
 
 
@@ -228,7 +228,7 @@ aspect PatternToDatalog {
 				lang.ast.Wildcard Token = new lang.ast.Wildcard();
 
 				terms.add(Kind).add(CurrentNodeId).add(ChildIdx).add(ChildId).add(Token);
-				ret.add(new lang.ast.Atom(new lang.ast.PredicateSymbol(ctx.progRelName), terms));
+				ret.add(new lang.ast.Literal(new lang.ast.PredicateSymbol(ctx.progRelName), terms));
 			}
 
 			{
@@ -245,7 +245,7 @@ aspect PatternToDatalog {
 				else
 					Token = new lang.ast.StringConstant(t);
 				terms.add(Kind).add(CurrentNodeId).add(ChildIdx).add(ChildId).add(Token);
-				ret.add(new lang.ast.Atom(new lang.ast.PredicateSymbol(ctx.progRelName), terms));
+				ret.add(new lang.ast.Literal(new lang.ast.PredicateSymbol(ctx.progRelName), terms));
 			}
 		}
 
@@ -260,7 +260,7 @@ aspect PatternToDatalog {
 			lang.ast.Term Token = new lang.ast.Wildcard();
 
 			terms.add(Kind).add(CurrentNodeId).add(ChildIdx).add(ChildId).add(Token);
-			ret.add(new lang.ast.Atom(new lang.ast.PredicateSymbol(ctx.progRelName), terms));
+			ret.add(new lang.ast.Literal(new lang.ast.PredicateSymbol(ctx.progRelName), terms));
 		}
 
 		return ret;
@@ -356,7 +356,7 @@ aspect PatternToDatalog {
 			lang.ast.Wildcard Token = new lang.ast.Wildcard();
 
 			terms.add(Kind).add(CurrentNodeId).add(ChildIdx).add(ChildId).add(Token);
-			lits.add(NOT(new lang.ast.Atom(new lang.ast.PredicateSymbol(ctx.progRelName), terms)));
+			lits.add(NOT(new lang.ast.Literal(new lang.ast.PredicateSymbol(ctx.progRelName), terms)));
 			return lits;
 		}
 
@@ -387,7 +387,7 @@ aspect PatternToDatalog {
 			lang.ast.Wildcard Token = new lang.ast.Wildcard();
 
 			terms.add(Kind).add(CurrentNodeId).add(ChildIdx).add(ChildId).add(Token);
-			lits.add(NOT(new lang.ast.Atom(new lang.ast.PredicateSymbol(ctx.progRelName), terms)));
+			lits.add(NOT(new lang.ast.Literal(new lang.ast.PredicateSymbol(ctx.progRelName), terms)));
 			return lits;
 		}
 		return super.asLiterals(ctx, root);

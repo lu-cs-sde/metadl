@@ -1,0 +1,7 @@
+aspect Eval {
+	syn nta List<CommonLiteral> CommonLiteral.evalLiterals() = new List<>();
+
+	syn Set<Variable> Literal.selfJoinVariables() {
+		return null;
+	}
+}

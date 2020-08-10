@@ -172,7 +172,7 @@ aspect Literal {
 	   boundVariables = variables bound by the current literal
 	*/
 	syn TreeSet<Variable> CommonLiteral.boundVariables();
-	eq Atom.boundVariables() {
+	eq Literal.boundVariables() {
 		if (hasNot())
 			return new TreeSet<>();
 		return variables();
@@ -205,7 +205,7 @@ aspect Literal {
 
 	 */
 	syn TreeSet<Variable> CommonLiteral.variables();
-	eq Atom.variables() {
+	eq Literal.variables() {
 		TreeSet<Variable> vars = new TreeSet<Variable>(Term.termComparator);
 		for(Term t : getTermss())
 			if(t.isVariable())

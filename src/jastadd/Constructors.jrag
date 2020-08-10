@@ -1,5 +1,5 @@
 aspect Constructors {
-	public Atom.Atom(PredicateSymbol p, List<Term> ts) {
+	public Literal.Literal(PredicateSymbol p, List<Term> ts) {
 		this(new Opt(), p, ts);
 	}
 	public EQLiteral.EQLiteral(Expr l, Expr r) {
@@ -34,7 +34,7 @@ aspect Constructors {
 	}
 
 	public class Constructors {
-		public static lang.ast.Atom atom(String pred, Object ...args) {
+		public static lang.ast.Literal literal(String pred, Object ...args) {
 			lang.ast.List<lang.ast.Term> terms = new lang.ast.List<>();
 			for (Object o : args) {
 				if (o instanceof Integer) {
@@ -51,7 +51,7 @@ aspect Constructors {
 					throw new RuntimeException("Can't interpret argument.");
 				}
 			}
-			return new lang.ast.Atom(new lang.ast.PredicateSymbol(pred), terms);
+			return new lang.ast.Literal(new lang.ast.PredicateSymbol(pred), terms);
 		}
 
 		public static lang.ast.Rule rule(lang.ast.CommonLiteral ...literals) {

@@ -21,7 +21,7 @@ aspect AnalyzeBlock {
 			vars.add(new lang.ast.StringConstant("")).add(new lang.ast.IntConstant("0")).add(new lang.ast.IntConstant("0"))
 				.add(new lang.ast.IntConstant("0")).add(new lang.ast.StringConstant("0"));
 
-			head.add(new lang.ast.Atom(new lang.ast.PredicateSymbol(ctx.progRelName), vars));
+			head.add(new lang.ast.Literal(new lang.ast.PredicateSymbol(ctx.progRelName), vars));
 			body.add(Constructors.NEQ(new lang.ast.IntConstant("0"),
 									  new lang.ast.IntConstant("0")));
 
@@ -42,7 +42,7 @@ aspect AnalyzeBlock {
 			lang.ast.List<lang.ast.Term> headVars = new lang.ast.List<>();
 			headVars.add(new lang.ast.Variable("n_id"));
 			headVars.add(new lang.ast.Variable("v"));
-			headList.add(new lang.ast.Atom(new lang.ast.PredicateSymbol(ctx.scopePrefix + name),
+			headList.add(new lang.ast.Literal(new lang.ast.PredicateSymbol(ctx.scopePrefix + name),
 										   headVars));
 
 			// ID(n_id, v) :- P(nodeKind, n_id, idx, c_id, _), ID(c_id, v).
@@ -58,8 +58,8 @@ aspect AnalyzeBlock {
 				.add(new lang.ast.Variable("v"));
 
 
-			bodyList.add(new lang.ast.Atom(new lang.ast.PredicateSymbol(ctx.progRelName), body0Vars))
-				.add(new lang.ast.Atom(new lang.ast.PredicateSymbol(ctx.scopePrefix + name), body1Vars));
+			bodyList.add(new lang.ast.Literal(new lang.ast.PredicateSymbol(ctx.progRelName), body0Vars))
+				.add(new lang.ast.Literal(new lang.ast.PredicateSymbol(ctx.scopePrefix + name), body1Vars));
 
 
 			return new lang.ast.Rule(headList, bodyList);
@@ -82,7 +82,7 @@ aspect AnalyzeBlock {
 			lang.ast.List<lang.ast.Term> headVars = new lang.ast.List<>();
 			headVars.add(new lang.ast.Variable("n_id"));
 			headVars.add(new lang.ast.Variable("v"));
-			lang.ast.CommonLiteral head = new lang.ast.Atom(new lang.ast.PredicateSymbol(ctx.scopePrefix + name),
+			lang.ast.CommonLiteral head = new lang.ast.Literal(new lang.ast.PredicateSymbol(ctx.scopePrefix + name),
 															headVars);
 
 			// ID(n_id, v) :- P(nodeKind, n_id, idx, t_id, _), P("Terminal", t_id, _, _, v).
@@ -101,8 +101,8 @@ aspect AnalyzeBlock {
 				.add(new lang.ast.Variable(convertFunctor != null ? "w" : "v"));
 
 			headList.add(head);
-			bodyList.add(new lang.ast.Atom(new lang.ast.PredicateSymbol(ctx.progRelName), body0Vars))
-				.add(new lang.ast.Atom(new lang.ast.PredicateSymbol(ctx.progRelName), body1Vars));
+			bodyList.add(new lang.ast.Literal(new lang.ast.PredicateSymbol(ctx.progRelName), body0Vars))
+				.add(new lang.ast.Literal(new lang.ast.PredicateSymbol(ctx.progRelName), body1Vars));
 
 			if (convertFunctor != null) {
 				// name(n_id, v) :- P(nodeKind, n_id, idx, t_id, _), P("Terminal", t_id, _, _, w), BIND(v, convertFunctor(w))
@@ -126,7 +126,7 @@ aspect AnalyzeBlock {
 			lang.ast.List<lang.ast.Term> headVars = new lang.ast.List<>();
 			headVars.add(new lang.ast.Variable("t_id"));
 			headVars.add(new lang.ast.Variable("v"));
-			lang.ast.CommonLiteral head = new lang.ast.Atom(new lang.ast.PredicateSymbol(ctx.scopePrefix + name),
+			lang.ast.CommonLiteral head = new lang.ast.Literal(new lang.ast.PredicateSymbol(ctx.scopePrefix + name),
 															headVars);
 
 			lang.ast.List<lang.ast.Term> bodyVars = new lang.ast.List<lang.ast.Term>()
@@ -137,7 +137,7 @@ aspect AnalyzeBlock {
 				.add(new lang.ast.Variable("v"));
 
 			headList.add(head);
-			bodyList.add(new lang.ast.Atom(new lang.ast.PredicateSymbol(ctx.progRelName), bodyVars));
+			bodyList.add(new lang.ast.Literal(new lang.ast.PredicateSymbol(ctx.progRelName), bodyVars));
 
 			return new lang.ast.Rule(headList, bodyList);
 		}
@@ -151,7 +151,7 @@ aspect AnalyzeBlock {
 			/* SRC(n, startLine, startCol, endLine, endCol, file) :- P("SrcLocStart", n, startLine, startCol, file),
 			   P("SrcLocEnd", n, endLine, endCol, _). */
 
-			headList.add(new lang.ast.Atom(new lang.ast.PredicateSymbol(ctx.scopePrefix + "SRC"),
+			headList.add(new lang.ast.Literal(new lang.ast.PredicateSymbol(ctx.scopePrefix + "SRC"),
 										   new lang.ast.List<lang.ast.Term>()
 										   .add(new lang.ast.Variable("n"))
 										   .add(new lang.ast.Variable("sl"))
@@ -160,14 +160,14 @@ aspect AnalyzeBlock {
 										   .add(new lang.ast.Variable("ec"))
 										   .add(new lang.ast.Variable("f"))
 										   ));
-			bodyList.add(new lang.ast.Atom(new lang.ast.PredicateSymbol(ctx.progRelName),
+			bodyList.add(new lang.ast.Literal(new lang.ast.PredicateSymbol(ctx.progRelName),
 										   new lang.ast.List<lang.ast.Term>()
 										   .add(new lang.ast.StringConstant("SrcLocStart"))
 										   .add(new lang.ast.Variable("n"))
 										   .add(new lang.ast.Variable("sl"))
 										   .add(new lang.ast.Variable("sc"))
 										   .add(new lang.ast.Variable("f"))));
-			bodyList.add(new lang.ast.Atom(new lang.ast.PredicateSymbol(ctx.progRelName),
+			bodyList.add(new lang.ast.Literal(new lang.ast.PredicateSymbol(ctx.progRelName),
 										   new lang.ast.List<lang.ast.Term>()
 										   .add(new lang.ast.StringConstant("SrcLocEnd"))
 										   .add(new lang.ast.Variable("n"))
@@ -183,11 +183,11 @@ aspect AnalyzeBlock {
 
 			// The INDEX relation maps a node to its position inside a list
 			// INDEX(n, i) :- P("List", _, i, n, _)
-			headList.add(new lang.ast.Atom(new lang.ast.PredicateSymbol(ctx.scopePrefix + "INDEX"),
+			headList.add(new lang.ast.Literal(new lang.ast.PredicateSymbol(ctx.scopePrefix + "INDEX"),
 										   new lang.ast.List<lang.ast.Term>()
 										   .add(new lang.ast.Variable("n"))
 										   .add(new lang.ast.Variable("i"))));
-			bodyList.add(new lang.ast.Atom(new lang.ast.PredicateSymbol(ctx.progRelName),
+			bodyList.add(new lang.ast.Literal(new lang.ast.PredicateSymbol(ctx.progRelName),
 										   new lang.ast.List<lang.ast.Term>()
 										   .add(new lang.ast.StringConstant("List"))
 										   .add(new lang.ast.Wildcard())
@@ -202,11 +202,11 @@ aspect AnalyzeBlock {
 			lang.ast.List<lang.ast.CommonLiteral> bodyList = new  lang.ast.List<>();
 			// The PARENT relation maps a node to its children
 			// PARENT(n, c) :- P(x, n, _, c, _), NEQ(t, "SrcLocBegin"), NEQ(t, "SrcLocEnd"), NEQ(x, "Terminal"), NEQ(x, "REWRITE"), NEQ(x, "ATTR_type").
-			headList.add(new lang.ast.Atom(new lang.ast.PredicateSymbol(ctx.scopePrefix + "PARENT"),
+			headList.add(new lang.ast.Literal(new lang.ast.PredicateSymbol(ctx.scopePrefix + "PARENT"),
 										   new lang.ast.List<lang.ast.Term>()
 										   .add(new lang.ast.Variable("n"))
 										   .add(new lang.ast.Variable("c"))));
-			bodyList.add(new lang.ast.Atom(new lang.ast.PredicateSymbol(ctx.progRelName),
+			bodyList.add(new lang.ast.Literal(new lang.ast.PredicateSymbol(ctx.progRelName),
 										   new lang.ast.List<lang.ast.Term>()
 										   .add(new lang.ast.Variable("t"))
 										   .add(new lang.ast.Variable("n"))
@@ -231,10 +231,10 @@ aspect AnalyzeBlock {
 			lang.ast.List<lang.ast.CommonLiteral> bodyList = new  lang.ast.List<>();
 			// Predicate to check the existence of a node
 			// EXISTS(n) :- P(_, n, _, _, _).
-			headList.add(new lang.ast.Atom(new lang.ast.PredicateSymbol(ctx.scopePrefix + "EXISTS"),
+			headList.add(new lang.ast.Literal(new lang.ast.PredicateSymbol(ctx.scopePrefix + "EXISTS"),
 										   new lang.ast.List<lang.ast.Term>()
 										   .add(new lang.ast.Variable("n"))));
-			bodyList.add(new lang.ast.Atom(new lang.ast.PredicateSymbol(ctx.progRelName),
+			bodyList.add(new lang.ast.Literal(new lang.ast.PredicateSymbol(ctx.progRelName),
 										   new lang.ast.List<lang.ast.Term>()
 										   .add(new lang.ast.Wildcard())
 										   .add(new lang.ast.Variable("n"))
@@ -256,7 +256,7 @@ aspect AnalyzeBlock {
 
 				// SUPERTYPE is reflexive
 				// SUPERTYPE(nodeType, nodeType) :- EQ(0, 0).
-				ret.add(rule(atom(ctx.scopePrefix + "SUPERTYPE", nodeType, nodeType),
+				ret.add(rule(literal(ctx.scopePrefix + "SUPERTYPE", nodeType, nodeType),
 							 EQ(new lang.ast.IntConstant("0"), new lang.ast.IntConstant("0"))));
 
 				String nodeSuperType = PatternGrammarInfo.getNodeSuperType(nodeType);
@@ -264,14 +264,14 @@ aspect AnalyzeBlock {
 					continue;
 
 				// SUPERTYPE(nodeType, nodeSuperType) :- EQ(0, 0).
-				ret.add(rule(atom(ctx.scopePrefix + "SUPERTYPE", nodeType, nodeSuperType),
+				ret.add(rule(literal(ctx.scopePrefix + "SUPERTYPE", nodeType, nodeSuperType),
 							 EQ(new lang.ast.IntConstant("0"), new lang.ast.IntConstant("0"))));
 			}
 
 			// Rule to compute the transitive closure of SUPERTYPE
-			ret.add(rule(atom(ctx.prefix("SUPERTYPE"), "$t", "$s"),
-						 atom(ctx.prefix("SUPERTYPE"), "$t", "$s1"),
-						 atom(ctx.prefix("SUPERTYPE"), "$s1", "$s")));
+			ret.add(rule(literal(ctx.prefix("SUPERTYPE"), "$t", "$s"),
+						 literal(ctx.prefix("SUPERTYPE"), "$t", "$s1"),
+						 literal(ctx.prefix("SUPERTYPE"), "$s1", "$s")));
 
 			return ret;
 		}

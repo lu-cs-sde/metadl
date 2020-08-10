@@ -20,7 +20,7 @@ import lang.ast.PredicateRef;
 import lang.ast.Program;
 import lang.ast.PredicateSymbol;
 import lang.ast.config.Description;
-import lang.ast.Atom;
+import lang.ast.Literal;
 import lang.io.CSVUtil;
 import lang.io.FileUtil;
 import lang.io.SimpleLogger;
@@ -39,7 +39,7 @@ public class EvaluationTest {
 			fail();
 		HashMap<String, Relation> nameToRel = new HashMap<>();
 		for (PredicateSymbol psym : fpOut1.predicates()) {
-			Atom output = (Atom) psym.parentLiteral();
+			Literal output = psym.parentLiteral();
 			PredicateRef pr = (PredicateRef)output.getTerms(0);
 			FormalPredicate fp = pr.formalpredicate();
 

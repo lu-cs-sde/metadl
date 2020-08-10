@@ -57,28 +57,28 @@ aspect LanguageSpecific {
 
 	public static lang.ast.Rule PatLang.makeTypeRule(AnalyzeContext ctx) {
 		return rule(
-					atom(ctx.prefix("TYPE"), "$n", "$t"), // TYPE(n, t) :-
-					atom(ctx.prefix("REWRITE_MAP"), "$n", "$n_rw"),
-					atom(ctx.progRelName, "ATTR_type", "$n_rw", "_", "$t_rw", "_"), // P("ATTR_type", n, _, t, _)
-					atom(ctx.prefix("REWRITE_MAP"), "$t_rw", "$t")
+					literal(ctx.prefix("TYPE"), "$n", "$t"), // TYPE(n, t) :-
+					literal(ctx.prefix("REWRITE_MAP"), "$n", "$n_rw"),
+					literal(ctx.progRelName, "ATTR_type", "$n_rw", "_", "$t_rw", "_"), // P("ATTR_type", n, _, t, _)
+					literal(ctx.prefix("REWRITE_MAP"), "$t_rw", "$t")
 					);
 	}
 
 	public static lang.ast.Rule PatLang.makeDeclRule(AnalyzeContext ctx) {
 		return rule(
-					atom(ctx.prefix("DECL"), "$n", "$t"), // DECL(n, t) :-
-					atom(ctx.prefix("REWRITE_MAP"), "$n", "$n_rw"),
-					atom(ctx.progRelName, "ATTR_decl", "$n_rw", "_", "$t_rw", "_"), // P("ATTR_decl", n, _, t, _)
-					atom(ctx.prefix("REWRITE_MAP"), "$t_rw", "$t")
+					literal(ctx.prefix("DECL"), "$n", "$t"), // DECL(n, t) :-
+					literal(ctx.prefix("REWRITE_MAP"), "$n", "$n_rw"),
+					literal(ctx.progRelName, "ATTR_decl", "$n_rw", "_", "$t_rw", "_"), // P("ATTR_decl", n, _, t, _)
+					literal(ctx.prefix("REWRITE_MAP"), "$t_rw", "$t")
 					);
 	}
 
 	public static lang.ast.Rule PatLang.makeGenericRule(AnalyzeContext ctx) {
 		return rule(
-					atom(ctx.prefix("GENERIC"), "$t", "$g"),
-					atom(ctx.prefix("REWRITE_MAP"), "$t", "$t_rw"),
-					atom(ctx.progRelName, "ATTR_generic_decl", "$t_rw", "_", "$g_rw", "_"),
-					atom(ctx.prefix("REWRITE_MAP"), "$g_rw", "$g"));
+					literal(ctx.prefix("GENERIC"), "$t", "$g"),
+					literal(ctx.prefix("REWRITE_MAP"), "$t", "$t_rw"),
+					literal(ctx.progRelName, "ATTR_generic_decl", "$t_rw", "_", "$g_rw", "_"),
+					literal(ctx.prefix("REWRITE_MAP"), "$g_rw", "$g"));
 	}
 
 
@@ -86,13 +86,13 @@ aspect LanguageSpecific {
 		java.util.List<lang.ast.Clause> ret = new java.util.ArrayList<>();
 		// REWRITE_MAP(n, n) :- P(_, n, _ , _, _), NOT(P("REWRITE", n, _, _, _)).
 		ret.add(rule(
-					 atom(ctx.prefix("REWRITE_MAP"), "$n", "$n"),
-					 atom(ctx.progRelName, "_", "$n", "_", "_", "_"),
-					 NOT(atom(ctx.progRelName, "REWRITE", "$n", "_", "_", "_"))));
+					 literal(ctx.prefix("REWRITE_MAP"), "$n", "$n"),
+					 literal(ctx.progRelName, "_", "$n", "_", "_", "_"),
+					 NOT(literal(ctx.progRelName, "REWRITE", "$n", "_", "_", "_"))));
 		// REWRITE_MAP(n, m) :- P("REWRITE", n, _, m, _).
 		ret.add(rule(
-					 atom(ctx.prefix("REWRITE_MAP"), "$n", "$m"),
-					 atom(ctx.progRelName, "REWRITE", "$n", "_", "$m", "_")));
+					 literal(ctx.prefix("REWRITE_MAP"), "$n", "$m"),
+					 literal(ctx.progRelName, "REWRITE", "$n", "_", "$m", "_")));
 		return ret;
 	}
 

@@ -237,7 +237,7 @@ aspect TypeCheck {
 	// is well-typed.
 	coll TreeSet<TypeError> Program.typeErrors() [new TreeSet<>()];
 
-	private TypeError Atom.typeErrorOUTPUT() {
+	private TypeError Literal.typeErrorOUTPUT() {
 		if (getTerms(0).type() != PredicateRefType.get())
 			return new TypeError(this) {
 				public String report() {
@@ -248,7 +248,7 @@ aspect TypeCheck {
 		return null;
 	}
 
-	private TypeError Atom.typeErrorEDB() {
+	private TypeError Literal.typeErrorEDB() {
 		Term predRef = getTerms(0);
 		if (getTerms(0).type() != PredicateRefType.get())
 			return new TypeError(this) {
@@ -268,7 +268,7 @@ aspect TypeCheck {
 		return null;
 	}
 
-	private TypeError Atom.typeErrorIMPORT() {
+	private TypeError Literal.typeErrorIMPORT() {
 		Term progRef = getTerms(0);
 		if (progRef.type() != PredicateRefType.get())
 			return new TypeError(this) {
@@ -290,7 +290,7 @@ aspect TypeCheck {
 	}
 
 
-	syn TypeError Atom.typeError() {
+	syn TypeError Literal.typeError() {
 		if (isEDB())
 			return typeErrorEDB();
 		if (isOUTPUT())
@@ -362,7 +362,7 @@ aspect TypeCheck {
 	Functor contributes typeError() when (typeError() != null) to Program.typeErrors();
 	BinaryIntegerConstraint contributes typeError() when (typeError() != null) to Program.typeErrors();
 	BINDLiteral contributes typeError() when (typeError() != null) to Program.typeErrors();
-	Atom contributes typeError() when (typeError() != null) to Program.typeErrors();
+	Literal contributes typeError() when (typeError() != null) to Program.typeErrors();
 	Pattern contributes nta getLiteral() to Program.typeErrors();
 	AnalyzeBlock contributes nta getExpandedClauses() to Program.typeErrors();
 }
@@ -370,7 +370,7 @@ aspect TypeCheck {
 aspect TypeInference {
 	coll PredicateType FormalPredicate.initialType() [new PredicateType(realArity())] with join root Program;
 	inh int Expr.indexInLiteral();
-	eq Atom.getTerms(int i).indexInLiteral() = i;
+	eq Literal.getTerms(int i).indexInLiteral() = i;
 	eq Constraint.getExpr(int i).indexInLiteral() = -1;
 	eq Literal.getChild().indexInLiteral() = -1;
 	eq Expr.getChild().indexInLiteral() = -1;
@@ -427,9 +427,7 @@ aspect TypeInference {
 	eq FormalPredicate.type() {
 		PredicateType current = type();
 		for (PredicateSymbol ps : predicates()) {
-			if (!(ps.parentLiteral() instanceof Atom))
-				continue;
-			Atom a = (Atom)(ps.parentLiteral());
+			Literal a = ps.parentLiteral();
 			Clause c = a.clause();
 
 			for (int i = 0; i < a.arity(); ++i) {
@@ -480,11 +478,6 @@ aspect TypeInference {
 	eq MATCHLiteral.getExpr(int i).sibling() = getExpr(1 - i);
 	eq BINDLiteral.getExpr(int i).sibling() = getExpr(1 - i);
 
-	// Return the parent atom for an expression, if any
-	inh Atom Expr.atom();
-	eq CommonLiteral.getChild().atom() = null;
-	eq Atom.getTerms(int i).atom() = this;
-
 	// Constant AST nodes are created inside the naive evaluator, but they
 	// have no parents, so there is no way to compute the itype() attribute for them,
 	// so we use the bottom value in the type lattice.
@@ -497,10 +490,9 @@ aspect TypeInference {
 			t = t.join(sibling().type());
 		}
 
-		if (atom() != null) {
-			Literal l = atom();
-			int i = indexInLiteral();
-			t = t.join(l.getPredicate().formalpredicate().type().get(i));
+		if (indexInLiteral() >= 0) {
+			Literal l = (Literal) literal();
+			t = t.join(l.getPredicate().formalpredicate().type().get(indexInLiteral()));
 		}
 
 		return t;

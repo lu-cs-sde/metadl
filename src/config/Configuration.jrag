@@ -8,7 +8,6 @@ import lang.ast.GlobalNames;
 import lang.ast.StringConstant;
 import lang.ast.TypeError;
 import lang.ast.PredicateSymbol;
-import lang.ast.Atom;
 import lang.relation.PseudoTuple;
 import lang.relation.Relation;
 import lang.io.FileUtil;
@@ -124,7 +123,7 @@ aspect Task {
 		// files are imported to the same program relation.
 		HashMap<String, ArrayList<Map.Entry<String, String>>> predicateSrcFiles = new HashMap<>();
 		for (PredicateSymbol psym : formalImport.predicates()) {
-			Atom imp = (Atom) psym.parentLiteral();
+			Literal imp = psym.parentLiteral();
 			String progFileLoc = ((StringConstant)imp.getTerms(1)).getSTRING();
 			String lang = ((StringConstant)imp.getTerms(2)).getSTRING();
 			PredicateRef predref = (PredicateRef)(imp.getTerms(0));

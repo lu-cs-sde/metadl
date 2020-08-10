@@ -13,13 +13,13 @@ public abstract class PatternConstraint {
 		this.node = node;
 	}
 
-	protected static Atom makeAtom(String pred, Term... ts) {
+	protected static Literal makeLiteral(String pred, Term... ts) {
 		PredicateSymbol ps = new PredicateSymbol(pred);
 		List<Term> terms = new List<>(ts);
-		return new Atom(ps, terms);
+		return new Literal(ps, terms);
 	}
 
-	protected static Atom makeListAtom(AnalyzeContext ctx,
+	protected static Literal makeListLiteral(AnalyzeContext ctx,
 									   Term nodeId,
 									   Term childIdx,
 									   Term childId) {
@@ -27,7 +27,7 @@ public abstract class PatternConstraint {
 		Term list = new StringConstant("List");
 		List<Term> terms = new List<>();
 		terms.add(list).add(nodeId).add(childIdx).add(childId).add(new Wildcard());
-		return new Atom(ps, terms);
+		return new Literal(ps, terms);
 
 	}
 
@@ -67,7 +67,7 @@ class EqualityConstraint extends PatternConstraint {
 	}
 	public ArrayList<CommonLiteral> generateLiterals(AnalyzeContext ctx) {
 		ArrayList<CommonLiteral> result = new ArrayList<>();
-		result.add(makeListAtom(ctx,
+		result.add(makeListLiteral(ctx,
 								new Variable(node.getParent().varName()),
 								new Variable(node.indexVarName()),
 								new Variable(node.varName())));
@@ -85,7 +85,7 @@ class MemberConstraint extends PatternConstraint {
 	}
 	public ArrayList<CommonLiteral> generateLiterals(AnalyzeContext ctx) {
 		ArrayList<CommonLiteral> result = new ArrayList<>();
-		result.add(makeListAtom(ctx,
+		result.add(makeListLiteral(ctx,
 								new Variable(node.getParent().varName()),
 								new Variable(node.indexVarName()),
 								new Variable(node.varName())));
@@ -106,14 +106,14 @@ class LastConstraint extends PatternConstraint {
 	public ArrayList<CommonLiteral> generateLiterals(AnalyzeContext ctx) {
 		ArrayList<CommonLiteral> result = new ArrayList<>();
 		String boundVarName = "b_" + node.getNodeId();
-		result.add(makeListAtom(ctx,
+		result.add(makeListLiteral(ctx,
 								new Variable(node.getParent().varName()),
 								new Variable(node.indexVarName()),
 								new Variable(node.varName())));
 		result.add(BIND(new Variable(boundVarName),
 						makeAdd(new Variable(node.indexVarName()),
 								new IntConstant("1"))));
-		result.add(NOT(makeListAtom(ctx,
+		result.add(NOT(makeListLiteral(ctx,
 									new Variable(node.getParent().varName()),
 									new Variable(boundVarName),
 									new Wildcard())));
@@ -131,7 +131,7 @@ class AfterConstraint extends PatternConstraint {
 
 	public ArrayList<CommonLiteral> generateLiterals(AnalyzeContext ctx) {
 		ArrayList<CommonLiteral> result = new ArrayList<>();
-		result.add(makeListAtom(ctx,
+		result.add(makeListLiteral(ctx,
 								new Variable(node.getParent().varName()),
 								new Variable(node.indexVarName()),
 								new Variable(node.varName())));
@@ -151,7 +151,7 @@ class NextConstraint extends PatternConstraint {
 	public ArrayList<CommonLiteral> generateLiterals(AnalyzeContext ctx) {
 		ArrayList<CommonLiteral> result = new ArrayList<>();
 
-		result.add(makeListAtom(ctx,
+		result.add(makeListLiteral(ctx,
 								new Variable(node.getParent().varName()),
 								new Variable(node.indexVarName()),
 								new Variable(node.varName())));

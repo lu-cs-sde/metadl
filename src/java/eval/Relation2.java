@@ -126,4 +126,14 @@ public class Relation2 {
 		IndexedComparator index = new IndexedComparator(prefix, arity);
 		return index;
 	}
+
+	public Stream<Pair<Tuple, Tuple>> join(Relation2 rhs, IndexedComparator rhsIndex, List<Pair> joinIndices) {
+		rhs.setIndex(rhsIndex);
+
+		for (Tuple t : currentSet) {
+
+		}
+
+		return null;
+	}
 }

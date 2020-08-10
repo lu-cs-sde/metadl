@@ -6,8 +6,7 @@ import lang.relation.Relation;
 import lang.relation.PseudoTuple;
 
 aspect Arity {
-	syn int Literal.arity();
-	eq Atom.arity() = getNumTerms();
+	syn int Literal.arity() = getNumTerms();
 
 	syn HashSet<Integer> FormalPredicate.arities() {
 		HashSet<Integer> arities = new HashSet<Integer>();
@@ -42,6 +41,5 @@ aspect Relation {
 	public static Relation FormalPredicate.nullRelation = new Relation(0);
 	public Relation FormalPredicate.relation = FormalPredicate.nullRelation;
 
-	syn PseudoTuple Literal.toTuple() = null;
-	eq Atom.toTuple()          = new PseudoTuple(getTermss());
+	syn PseudoTuple Literal.toTuple() = new PseudoTuple(getTermss());
 }

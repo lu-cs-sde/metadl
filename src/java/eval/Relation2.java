@@ -18,58 +18,11 @@ import java.util.Comparator;
 import java.util.HashMap;
 
 
-class IndexedComparator implements Comparator<Tuple> {
-	private List<Integer> indices;
-	private List<Integer> otherIndices;
-
-	public IndexedComparator(Collection<Integer> indices, int arity) {
-		assert arity >= indices.size();
-		this.indices = new ArrayList<>(indices);
-		Collections.sort(this.indices);
-		this.otherIndices = new ArrayList<Integer>();
-		for (int i = 0; i < arity; ++i) {
-			if (!this.indices.contains(i))
-				otherIndices.add(i);
-		}
-		assert this.indices.size() + otherIndices.size() == arity;
-	}
-
-	@Override
-	public int compare(Tuple arg0, Tuple arg1) {
-		for (int i : indices) {
-			if (arg0.get(i) < arg1.get(i))
-				return -1;
-			if (arg0.get(i) > arg1.get(i))
-				return 1;
-		}
-
-		for (int i : otherIndices) {
-			if (arg0.get(i) < arg1.get(i))
-				return -1;
-			if (arg0.get(i) > arg1.get(i))
-				return 1;
-		}
-		return 0;
-	}
-
-	@Override
-	public boolean equals(Object o) {
-		if (!(o instanceof IndexedComparator))
-			return false;
-		IndexedComparator other = (IndexedComparator) o;
-		return indices.equals(other.indices);
-	}
-
-	@Override
-	public int hashCode() {
-		return indices.hashCode();
-	}
-}
 
 public class Relation2 {
 	int arity = 0;
 
-	Map<IndexedComparator, SortedSet<Tuple>> indexedMaps = new HashMap<>();
+	Map<Index, SortedSet<Tuple>> indexedMaps = new HashMap<>();
 	SortedSet<Tuple> currentSet = null;
 
 	public Relation2(int arity) {
@@ -80,15 +33,22 @@ public class Relation2 {
 		for (int i = 0; i < arity; ++i)
 			defaultIndices.add(i);
 
-		IndexedComparator defaultIndex = new IndexedComparator(defaultIndices, arity);
+		Index defaultIndex = new Index(defaultIndices, arity);
 		setIndex(defaultIndex);
 	}
 
-	public void setIndex(IndexedComparator index) {
+	public void setIndex(Index index) {
 		currentSet = indexedMaps.get(index);
 		if (currentSet == null) {
+			// no set for the requested index, add new one
 			currentSet = new TreeSet<>(index);
 			indexedMaps.put(index, currentSet);
+
+			// initialize the current set with all the values
+			for (SortedSet<Tuple> s : indexedMaps.values()) {
+				currentSet.addAll(s);
+				break;
+			}
 		}
 	}
 
@@ -122,12 +82,12 @@ public class Relation2 {
 			s.addAll(ts);
 	}
 
-	private IndexedComparator indexFromPrefix(Set<Integer> prefix) {
-		IndexedComparator index = new IndexedComparator(prefix, arity);
+	private Index indexFromPrefix(Set<Integer> prefix) {
+		Index index = new Index(prefix, arity);
 		return index;
 	}
 
-	public Stream<Pair<Tuple, Tuple>> join(Relation2 rhs, IndexedComparator rhsIndex, List<Pair> joinIndices) {
+	public Stream<Pair<Tuple, Tuple>> join(Relation2 rhs, Index rhsIndex, List<Pair> joinIndices) {
 		rhs.setIndex(rhsIndex);
 
 		for (Tuple t : currentSet) {
@@ -135,5 +95,9 @@ public class Relation2 {
 		}
 
 		return null;
+	}
+
+	public int arity() {
+		return arity;
 	}
 }

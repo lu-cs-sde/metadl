@@ -1,4 +1,7 @@
 import java.util.stream.Collectors;
+import org.apache.commons.collections4.SetUtils;
+import java.util.LinkedList;
+import java.util.ListIterator;
 
 aspect Eval {
 
@@ -93,11 +96,68 @@ aspect Eval {
 	syn Set<String> CommonLiteral.boundVariableNames() =
 		boundVariables().stream().map(v -> v.getVAR_ID()).collect(Collectors.toSet());
 
+	syn Set<String> CommonLiteral.variableNames() =
+		variables().stream().map(v -> v.getVAR_ID()).collect(Collectors.toSet());
+
 	eq Pattern.evalLiterals() = Collections.singletonList(getLiteral());
 	eq Constraint.evalLiterals() = Collections.singletonList(this);
 
-	syn java.util.List<CommonLiteral> Rule.evalSchedule() {
-		return null;
+	private boolean Rule.trySchedule(CommonLiteral l, java.util.List<CommonLiteral> postponed,
+									 java.util.List<CommonLiteral> schedule,
+									 Set<String> boundSoFar) {
+		if (SetUtils.difference(l.variableNames(), l.boundVariableNames()).isEmpty()) {
+			// this means that positive Literals are added to the schedule in the order
+			// in which they appear in the clause, while Constraints may be postponed,
+			// such that they are evaluated when all the variables are bound
+			schedule.add(l);
+			boundSoFar.addAll(l.variableNames());
+			return true;
+		} else if (SetUtils.difference(l.variableNames(), boundSoFar).isEmpty()) {
+			schedule.add(l);
+			return true;
+		} else {
+			postponed.add(l);
+			return false;
+		}
+	}
 
+	syn java.util.List<CommonLiteral> Rule.evalSchedule() {
+		java.util.List<CommonLiteral> postponed = new LinkedList<>();
+		java.util.List<CommonLiteral> schedule = new ArrayList<>();
+		Set<String> boundSoFar = new HashSet<>();
+		for (CommonLiteral bs : getBodys()) {
+			// Try to schedule any postponed literals
+			ListIterator<CommonLiteral> it = schedule.listIterator();
+			while (it.hasNext()) {
+				CommonLiteral candidate = it.next();
+				if (trySchedule(candidate, postponed, schedule, boundSoFar))
+					it.remove();
+			}
+
+			// Schedule the current literal
+			for (CommonLiteral l : bs.evalLiterals()) {
+				trySchedule(l, postponed, schedule, boundSoFar);
+			}
+		}
+		return schedule;
+	}
+
+	/**
+	   Assign variable names in the order in which they appear
+	   in the schedule. This allows us to keep track of the bound
+	   variables by using a single integer instead of a set.
+	 */
+	syn Map<String, Integer> Rule.evalVariables() {
+		int i = 0;
+		Map<String, Integer> varMap = new HashMap<>();
+		for (CommonLiteral l : evalSchedule()) {
+			for (Variable v : l.variables()) {
+				if (!varMap.containsKey(v.getVAR_ID())) {
+					varMap.put(v.getVAR_ID(), i);
+					i++;
+				}
+			}
+		}
+		return varMap;
 	}
 }

@@ -1,0 +1,64 @@
+import org.jgrapht.graph.SimpleDirectedGraph;
+import org.jgrapht.Graph;
+import org.jgrapht.graph.DefaultEdge;
+import org.jgrapht.alg.connectivity.KosarajuStrongConnectivityInspector;
+import org.jgrapht.alg.interfaces.StrongConnectivityAlgorithm;
+import org.jgrapht.nio.dot.DOTExporter;
+import java.io.FileWriter;
+
+aspect Stratification {
+	public class PredicateDependencyGraph extends SimpleDirectedGraph<FormalPredicate, DefaultEdge> {
+		PredicateDependencyGraph() {
+			super(DefaultEdge.class);
+		}
+
+		public void addEdge(Pair<Collection<FormalPredicate>, Collection<FormalPredicate>> es) {
+			for (FormalPredicate from : es.getLeft())
+				addVertex(from);
+			for (FormalPredicate to : es.getRight())
+				addVertex(to);
+			for (FormalPredicate from : es.getLeft()) {
+				for (FormalPredicate to : es.getRight()) {
+					if (!from.equals(to))
+						addEdge(from, to);
+				}
+			}
+		}
+
+		public void dump() throws IOException {
+			DOTExporter<FormalPredicate, DefaultEdge> dotEx = new DOTExporter<>(v -> v.getPRED_ID());
+			dotEx.exportGraph(this, new FileWriter("pdg.dot"));
+
+
+			StrongConnectivityAlgorithm<FormalPredicate, DefaultEdge> sc =
+				new KosarajuStrongConnectivityInspector<>(this);
+
+			DOTExporter<Graph<FormalPredicate, DefaultEdge>, DefaultEdge> dotEx2 = new DOTExporter<>();
+
+			dotEx2.exportGraph(sc.getCondensation(), new FileWriter("scc.dot"));
+		}
+	}
+
+	coll PredicateDependencyGraph Program.predicateDependencyGraph() [new PredicateDependencyGraph()] with addEdge;
+
+	private Pair<Collection<FormalPredicate>, Collection<FormalPredicate>> Rule.pdgContribution() {
+		Set<FormalPredicate> from = new HashSet<>();
+		Set<FormalPredicate> to = new HashSet<>();
+
+		for (CommonLiteral h : getHeadss()) {
+			if (h instanceof Literal) {
+				from.add(((Literal) h).getPredicate().formalpredicate());
+			}
+		}
+
+		for (CommonLiteral t : getBodys()) {
+			if (t instanceof Literal) {
+				to.add(((Literal) t).getPredicate().formalpredicate());
+			}
+		}
+		return Pair.of(from, to);
+	}
+
+	Rule contributes pdgContribution() to Program.predicateDependencyGraph();
+	AnalyzeBlock contributes nta getExpandedClauses() to Program.predicateDependencyGraph();
+}

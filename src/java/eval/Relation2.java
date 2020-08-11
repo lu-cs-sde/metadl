@@ -9,6 +9,7 @@ import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.tuple.Pair;
 
 import java.util.ArrayList;
@@ -19,9 +20,23 @@ import java.util.HashMap;
 
 public class Relation2 {
 	int arity = 0;
+	String name = "AnonRel";
 
-	Map<Index, SortedSet<Tuple>> indexedMaps = new HashMap<>();
-	SortedSet<Tuple> currentSet = null;
+	private Map<Index, SortedSet<Tuple>> indexedMaps = new HashMap<>();
+	private SortedSet<Tuple> currentSet = null;
+
+	public Relation2(int arity, String name) {
+		this(arity);
+		this.name = name;
+	}
+
+	@Override public String toString() {
+		return "name(" + arity + ")";
+	}
+
+	public String getName() {
+		return name;
+	}
 
 	public Relation2(int arity) {
 		this.arity = arity;

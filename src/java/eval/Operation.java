@@ -2,11 +2,16 @@ package eval;
 
 public interface Operation {
 	long eval();
+	String prettyPrint();
 
 	public static Operation add(Operation l, Operation r) {
 		return new Operation() {
 			@Override public long eval() {
 				return l.eval() + r.eval();
+			}
+
+			@Override public String prettyPrint() {
+				return "(" + l.prettyPrint() + " + " + r.prettyPrint() + ")";
 			}
 		};
 	}
@@ -16,6 +21,11 @@ public interface Operation {
 			@Override public long eval() {
 				return l.eval() - r.eval();
 			}
+
+			@Override public String prettyPrint() {
+				return "(" + l.prettyPrint() + " - " + r.prettyPrint() + ")";
+			}
+
 		};
 	}
 
@@ -23,6 +33,10 @@ public interface Operation {
 		return new Operation() {
 			@Override public long eval() {
 				return l.eval() * r.eval();
+			}
+
+			@Override public String prettyPrint() {
+				return "(" + l.prettyPrint() + " * " + r.prettyPrint() + ")";
 			}
 		};
 	}
@@ -32,6 +46,10 @@ public interface Operation {
 			@Override public long eval() {
 				return l.eval() / r.eval();
 			}
+
+			@Override public String prettyPrint() {
+				return "(" + l.prettyPrint() + " / " + r.prettyPrint() + ")";
+			}
 		};
 	}
 
@@ -40,6 +58,11 @@ public interface Operation {
 			@Override public long eval() {
 				return l.eval() % r.eval();
 			}
+
+			@Override public String prettyPrint() {
+				return "(" + l.prettyPrint() + " % " + r.prettyPrint() + ")";
+			}
+
 		};
 	}
 
@@ -48,6 +71,11 @@ public interface Operation {
 			@Override public long eval() {
 				return c;
 			}
+
+			@Override public String prettyPrint() {
+				return "" + c;
+			}
+
 		};
 	}
 
@@ -55,6 +83,10 @@ public interface Operation {
 		return new Operation() {
 			@Override public long eval() {
 				return t.get(i);
+			}
+
+			@Override public String prettyPrint() {
+				return "t[" + i + "]";
 			}
 		};
 	}

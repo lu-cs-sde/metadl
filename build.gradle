@@ -33,6 +33,9 @@ dependencies {
     compile 'org.junit.jupiter:junit-jupiter-engine:5.3.1'
     compile 'org.apache.commons:commons-lang3:3.8'
     compile group: 'commons-io', name: 'commons-io', version: '2.6'
+    compile group: 'org.jgrapht', name: 'jgrapht-core', version: '1.4.0'
+    compile group: 'org.jgrapht', name: 'jgrapht-io', version: '1.4.0'
+
     compile 'org.extendj:java8:100.100.100'
 
 

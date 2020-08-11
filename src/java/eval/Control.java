@@ -7,8 +7,19 @@ import java.util.stream.Stream;
 
 import org.apache.commons.lang3.tuple.Pair;
 
+class Util {
+	static String indent(int n) {
+		String s = "";
+		for (int i = 0; i < n; ++i)
+			s += "\t";
+		return s;
+	}
+}
+
 public interface Control {
 	void eval();
+
+	String prettyPrint(int indent);
 
 	public static Control forAll(Tuple t, Relation2 rel, List<Pair<Integer, Integer>> test,
 								 List<Pair<Integer, Long>> consts,
@@ -33,6 +44,10 @@ public interface Control {
 			@Override public void eval() {
 				// do nothing
 			}
+
+			@Override public String prettyPrint(int indent) {
+				return "";
+			}
 		};
 	}
 
@@ -40,6 +55,10 @@ public interface Control {
 		return new Test(cont, l, r) {
 			@Override public boolean test(long a, long b) {
 				return a == b;
+			}
+			@Override public String prettyPrint(int indent) {
+				return Util.indent(indent) + String.format("IF %s = %s THEN\n", l.prettyPrint(), r.prettyPrint())
+					+ cont.prettyPrint(indent + 1);
 			}
 		};
 	}
@@ -49,6 +68,10 @@ public interface Control {
 			@Override public boolean test(long a, long b) {
 				return a != b;
 			}
+			@Override public String prettyPrint(int indent) {
+				return Util.indent(indent) + String.format("IF %s != %s THEN\n", l.prettyPrint(), r.prettyPrint())
+					+ cont.prettyPrint(indent + 1);
+			}
 		};
 	}
 
@@ -56,6 +79,10 @@ public interface Control {
 		return new Test(cont, l, r) {
 			@Override public boolean test(long a, long b) {
 				return a > b;
+			}
+			@Override public String prettyPrint(int indent) {
+				return Util.indent(indent) + String.format("IF %s > %s THEN\n", l.prettyPrint(), r.prettyPrint())
+					+ cont.prettyPrint(indent + 1);
 			}
 		};
 	}
@@ -65,6 +92,11 @@ public interface Control {
 			@Override public boolean test(long a, long b) {
 				return a < b;
 			}
+			@Override public String prettyPrint(int indent) {
+				return Util.indent(indent) + String.format("IF %s < %s THEN\n", l.prettyPrint(), r.prettyPrint())
+					+ cont.prettyPrint(indent + 1);
+			}
+
 		};
 	}
 
@@ -73,6 +105,11 @@ public interface Control {
 			@Override public boolean test(long a, long b) {
 				return a >= b;
 			}
+			@Override public String prettyPrint(int indent) {
+				return Util.indent(indent) + String.format("IF %s >= %s THEN\n", l.prettyPrint(), r.prettyPrint())
+					+ cont.prettyPrint(indent + 1);
+			}
+
 		};
 	}
 
@@ -81,6 +118,11 @@ public interface Control {
 			@Override public boolean test(long a, long b) {
 				return a <= b;
 			}
+			@Override public String prettyPrint(int indent) {
+				return Util.indent(indent) + String.format("IF %s <= %s THEN\n", l.prettyPrint(), r.prettyPrint())
+					+ cont.prettyPrint(indent + 1);
+			}
+
 		};
 	}
 
@@ -91,6 +133,10 @@ public interface Control {
 				cont.eval();
 			}
 
+			@Override public String prettyPrint(int indent) {
+				return Util.indent(indent) + String.format("t[%d] := %s\n", dst, r.prettyPrint())
+					+ cont.prettyPrint(indent + 1);
+			}
 		};
 	}
 
@@ -145,6 +191,24 @@ class ForAll implements Control {
 			cont.eval();
 		}
 	}
+
+	@Override public String prettyPrint(int indent) {
+		String s = Util.indent(indent) + String.format("FOR t IN %s WHERE ");
+
+		for (Pair<Integer, Integer> t : test) {
+			s += String.format("%s[%d] = t[%d] ", rel.getName(), t.getLeft(), t.getRight());
+		}
+
+		for (Pair<Integer, Long> c : consts) {
+			s += String.format("%s[%d] = t[%d] ", rel.getName(), c.getLeft(), c.getRight());
+		}
+
+		for (Pair<Integer, Integer> a : assign) {
+			s += String.format("t[%d] := %s[%d] ", a.getRight(), rel.getName(), a.getLeft());
+		}
+
+		return s + "\n" + cont.prettyPrint(indent + 1);
+	}
 }
 
 class IfNotExists implements Control {
@@ -184,6 +248,22 @@ class IfNotExists implements Control {
 		if (tuples.isEmpty())
 			cont.eval();
 	}
+
+	@Override public String prettyPrint(int indent) {
+		String s = Util.indent(indent) + String.format("IF (");
+		for (Pair<Integer, Integer> t : test) {
+			s += String.format("%d:t[%d], ", t.getLeft(), t.getRight());
+		}
+
+		for (Pair<Integer, Long> c : consts) {
+			s += String.format("%d:%d, ", c.getLeft(), c.getRight());
+		}
+
+		s += ") IN " + rel.getName() + " THEN\n" + cont.prettyPrint(indent + 1);
+		return s;
+	}
+
+
 }
 
 class Insert implements Control {
@@ -220,6 +300,23 @@ class Insert implements Control {
 		}
 
 		cont.eval();
+	}
+
+	@Override
+	public String prettyPrint(int indent) {
+		String s = Util.indent(indent) + String.format("INSERT (");
+
+		for (Pair<Integer, Integer> a : assign) {
+			s += String.format("%d:t[%d], ", a.getLeft(), a.getRight());
+		}
+
+		for (Pair<Integer, Long> c : consts) {
+			s += String.format("%d:%d, ", c.getLeft(), c.getRight());
+		}
+
+		s += ") INTO " + rel.getName() + "\n" + cont.prettyPrint(indent + 1);
+
+		return s;
 	}
 }
 

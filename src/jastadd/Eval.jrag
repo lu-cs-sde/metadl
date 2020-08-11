@@ -305,5 +305,4 @@ aspect Eval {
 	syn Relation2 FormalPredicate.relation2() {
 		return new Relation2(realArity());
 	}
-
 }

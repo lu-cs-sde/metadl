@@ -103,6 +103,15 @@ aspect Task {
 		Compiler.DrAST_root_node = program; // Enable debugging with DrAST
 		new SemanticCheck(getParamss()).perform(program, description());
 		new TypeCheck(getParamss()).perform(program, description());
+
+
+		/// Export the PDF
+		try {
+			program.predicateDependencyGraph().dump();
+		} catch (IOException e) {
+		}
+		///
+
 		return program;
 	}
 

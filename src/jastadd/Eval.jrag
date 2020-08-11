@@ -1,7 +1,13 @@
 import java.util.stream.Collectors;
 import org.apache.commons.collections4.SetUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import java.util.LinkedList;
 import java.util.ListIterator;
+import eval.Control;
+import eval.Relation2;
+import eval.Tuple;
+import eval.EvaluationContext;
+import eval.Operation;
 
 aspect Eval {
 
@@ -147,7 +153,8 @@ aspect Eval {
 	   in the schedule. This allows us to keep track of the bound
 	   variables by using a single integer instead of a set.
 	 */
-	syn Map<String, Integer> Rule.evalVariables() {
+	syn Map<String, Integer> Clause.evalVariables();
+	eq Rule.evalVariables() {
 		int i = 0;
 		Map<String, Integer> varMap = new HashMap<>();
 		for (CommonLiteral l : evalSchedule()) {
@@ -160,4 +167,143 @@ aspect Eval {
 		}
 		return varMap;
 	}
+	eq Fact.evalVariables() = Collections.emptyMap();
+
+	/**
+	   evalTuple = Tuple to hold variable's values while evaluating the current clause
+	 */
+	syn Tuple Clause.evalTuple() = new Tuple(evalVariables().size());
+
+	/**
+	   Generate a statement sequence for the clause
+	 */
+	syn Control Clause.genCode();
+
+	eq Fact.genCode() {
+		return null;
+	}
+	eq Rule.genCode() {
+		return null;
+	}
+
+	syn Control CommonLiteral.genCode() = Control.nop();
+
+
+	syn int Variable.varId() {
+		return literal().clause().evalVariables().get(getVAR_ID());
+	}
+
+	/**
+	   constVal = value of constant, internalized in the case of predicate symbols
+	   and strings
+	 */
+	syn long Constant.constVal(EvaluationContext ctx);
+	eq IntConstant.constVal(EvaluationContext ctx) = Long.parseLong(getNUMERAL());
+	eq PredicateRef.constVal(EvaluationContext ctx) = ctx.internalizeString(getPRED_ID());
+	eq StringConstant.constVal(EvaluationContext ctx) = ctx.internalizeString(getSTRING());
+
+	private Control Literal.genCodePositiveLiteral(Tuple t, Relation2 rel, EvaluationContext ctx, Control cont, Set<String> boundVars) {
+		java.util.List<Pair<Integer, Integer>> assign = new ArrayList<>();
+		java.util.List<Pair<Integer, Long>> consts = new ArrayList<>();
+		java.util.List<Pair<Integer, Integer>> test = new ArrayList<>();
+
+		if (isDef()) {
+			// literal in the head
+			for (int i = 0; i < getNumTerms(); ++i) {
+				if (getTerms(i).isVariable()) {
+					assign.add(Pair.of(i, ((Variable) getTerms(i)).varId()));
+				} else {
+					assert getTerms(i).isConstant();
+					consts.add(Pair.of(i, ((Constant) getTerms(i)).constVal(ctx)));
+				}
+			}
+			return Control.insert(t, rel, assign, consts, cont);
+		} else {
+			// literal in the body
+			for (int i = 0; i < getNumTerms(); ++i) {
+				if (getTerms(i).isVariable()) {
+					Variable v = (Variable) getTerms(i);
+					if (boundVars.contains(v.getVAR_ID())) {
+						// the variable is bound by previous literals, so use its value for lookup
+						test.add(Pair.of(i, v.varId()));
+					} else {
+						// the variable is free, assign it a value and mark it as bound
+						boundVars.add(v.getVAR_ID());
+						assign.add(Pair.of(i, v.varId()));
+					}
+				} else if (getTerms(i).isConstant()) {
+					// ground terms
+					consts.add(Pair.of(i, ((Constant) getTerms(i)).constVal(ctx)));
+				} else {
+					// do nothing for wildcards
+				}
+			}
+			return Control.forAll(t, rel, test, consts, assign, cont);
+		}
+	}
+
+	private Control Literal.genCodeNegativeLiteral(Tuple t, Relation2 rel, EvaluationContext ctx, Control cont) {
+		java.util.List<Pair<Integer, Integer>> assign = new ArrayList<>();
+		java.util.List<Pair<Integer, Long>> consts = new ArrayList<>();
+		java.util.List<Pair<Integer, Integer>> test = new ArrayList<>();
+
+		for (int i = 0; i < getNumTerms(); ++i) {
+			if (getTerms(i).isVariable()) {
+				test.add(Pair.of(i, ((Variable) getTerms(i)).varId()));
+			} else if (getTerms(i).isConstant()) {
+				consts.add(Pair.of(i, ((Constant) getTerms(i)).constVal(ctx)));
+			}
+		}
+
+		return Control.ifNotExists(t, rel, test, consts, cont);
+	}
+
+	private Control Literal.genCode(Tuple t, Relation2 rel, EvaluationContext ctx, Control cont, Set<String> boundVars) {
+		if (hasNot()) {
+			return genCodeNegativeLiteral(t, rel, ctx, cont);
+		} else {
+			return genCodePositiveLiteral(t, rel, ctx, cont, boundVars);
+		}
+	}
+
+	private Control BINDLiteral.genCode(Tuple t, EvaluationContext ctx, Control cont, Set<String> boundVars) {
+		Variable dst = (Variable) getExpr(0);
+		boundVars.add(dst.getVAR_ID());
+		return Control.bind(t, cont, dst.varId(), getExpr(1).genCode(t, ctx));
+	}
+
+	public abstract Operation Expr.genCode(Tuple t, EvaluationContext ctx);
+	@Override public Operation Functor.genCode(Tuple t, EvaluationContext ctx) {
+		Operation arg0 = getArg(0).genCode(t, ctx);
+		Operation arg1 = getArg(1).genCode(t, ctx);
+
+		switch (getFunc().getFUNC_ID()) {
+		case "add":
+			return Operation.add(arg0, arg1);
+		case "mul":
+			return Operation.mul(arg0, arg1);
+		case "sub":
+			return Operation.sub(arg0, arg1);
+		case "div":
+			return Operation.div(arg0, arg1);
+		case "mod":
+			return Operation.mod(arg0, arg1);
+		default:
+			throw new RuntimeException("Functor not implemented: " + getFunc().getFUNC_ID());
+		}
+	}
+	@Override public Operation Variable.genCode(Tuple t, EvaluationContext ctx) {
+		return Operation.component(t, varId());
+	}
+	@Override public Operation Constant.genCode(Tuple t, EvaluationContext ctx) {
+		return Operation.constant(constVal(ctx));
+	}
+	@Override public Operation Wildcard.genCode(Tuple t, EvaluationContext ctx) {
+		return null;
+	}
+
+	syn Relation2 FormalPredicate.relation2() {
+		return new Relation2(realArity());
+	}
+
 }

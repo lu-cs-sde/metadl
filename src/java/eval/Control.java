@@ -2,23 +2,29 @@ package eval;
 
 import java.util.List;
 import java.util.SortedSet;
-import java.util.function.BinaryOperator;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.apache.commons.lang3.tuple.Pair;
 
 public interface Control {
 	void eval();
 
-	public static Control forAll(Tuple t, Relation2 rel, List<Pair<Integer, Integer>> test, List<Pair<Integer, Integer>> assign, Control cont) {
-		return new ForAll(t, rel, test, assign, cont);
+	public static Control forAll(Tuple t, Relation2 rel, List<Pair<Integer, Integer>> test,
+								 List<Pair<Integer, Long>> consts,
+								 List<Pair<Integer, Integer>> assign,
+								 Control cont) {
+		return new ForAll(t, rel, test, consts, assign, cont);
 	}
 
-	public static Control ifNotExists(Tuple t, Relation2 rel, List<Pair<Integer, Integer>> test, Control cont) {
-		return new IfNotExists(t, rel, test, cont);
+	public static Control ifNotExists(Tuple t, Relation2 rel, List<Pair<Integer, Integer>> test,
+									  List<Pair<Integer, Long>> consts,
+									  Control cont) {
+		return new IfNotExists(t, rel, test, consts, cont);
 	}
 
-	public static Control insert(Tuple t, Relation2 rel, List<Pair<Integer, Integer>> assign, List<Pair<Integer, Long>> consts, Control cont) {
+	public static Control insert(Tuple t, Relation2 rel, List<Pair<Integer, Integer>> assign,
+								 List<Pair<Integer, Long>> consts, Control cont) {
 		return new Insert(t, rel, assign, consts, cont);
 	}
 
@@ -77,6 +83,18 @@ public interface Control {
 			}
 		};
 	}
+
+	public static Control bind(Tuple t, Control cont, int dst, Operation r) {
+		return new Control() {
+			@Override public void eval() {
+				t.set(dst, r.eval());
+				cont.eval();
+			}
+
+		};
+	}
+
+	// TODO: implement match
 }
 
 class ForAll implements Control {
@@ -84,6 +102,8 @@ class ForAll implements Control {
 	private Relation2 rel;
 	private List<Pair<Integer, Integer>> test;
 	private List<Pair<Integer, Integer>> assign;
+	private List<Pair<Integer, Long>> consts;
+
 	private Control cont;
 	private long prefix[];
 	private Index index;
@@ -91,22 +111,32 @@ class ForAll implements Control {
 	   test - pairs of (columns, tuple position) to test for equality
 	   assign - pairs of (columns, tuple position) to assign
 	 */
-	ForAll(Tuple t, Relation2 rel, List<Pair<Integer, Integer>> test, List<Pair<Integer, Integer>> assign, Control cont) {
+	ForAll(Tuple t, Relation2 rel, List<Pair<Integer, Integer>> test, List<Pair<Integer, Long>> consts,
+		   List<Pair<Integer, Integer>> assign, Control cont) {
 		this.t = t;
 		this.rel = rel;
 		this.cont = cont;
-		index = new Index(test.stream().map(p -> p.getLeft()).collect(Collectors.toList()), rel.arity());
-		prefix = new long[test.size()];
+		this.consts = consts;
+		index = new Index(Stream.concat(test.stream(), consts.stream())
+						  .map(p -> p.getLeft()).collect(Collectors.toList()), rel.arity());
+
+		// allocate memory for the prefix
+		prefix = new long[test.size() + consts.size()];
+		// populate the constant part
+		for (Pair<Integer, Long> c : consts) {
+			prefix[c.getLeft()] = c.getRight();
+		}
 	}
 
 	public void eval() {
 		// set an index for the relation
 		rel.setIndex(index);
 
-		// create the prefix we want to lookup for
-		for (int i = 0; i < prefix.length; ++i) {
-			prefix[i] = t.get(test.get(i).getRight());
+		// populate the variable part of the prefix
+		for (Pair<Integer, Integer> c : test) {
+			prefix[c.getLeft()] = t.get(c.getRight());
 		}
+
 		SortedSet<Tuple> tuples = rel.lookup(prefix);
 		for (Tuple r : tuples) {
 			for (Pair<Integer, Integer> p : assign) {
@@ -121,23 +151,33 @@ class IfNotExists implements Control {
 	private Tuple t;
 	private Relation2 rel;
 	private List<Pair<Integer, Integer>> test;
+	private List<Pair<Integer, Long>> consts;
 	private Control cont;
 	private long prefix[];
 	private Index index;
 
-	IfNotExists(Tuple t, Relation2 rel, List<Pair<Integer, Integer>> test, Control cont) {
+
+	IfNotExists(Tuple t, Relation2 rel, List<Pair<Integer, Integer>> test,
+				List<Pair<Integer, Long>> consts, Control cont) {
 		this.t = t;
 		this.rel = rel;
 		this.cont = cont;
-		index = new Index(test.stream().map(p -> p.getLeft()).collect(Collectors.toList()), rel.arity());
-		prefix = new long[test.size()];
+		this.consts = consts;
+		index = new Index(Stream.concat(test.stream(), consts.stream())
+						  .map(p -> p.getLeft()).collect(Collectors.toList()), rel.arity());
+		// allocate memory for prefix
+		prefix = new long[test.size() + consts.size()];
+		// populate the constant part
+		for (Pair<Integer, Long> c : consts) {
+			prefix[c.getLeft()] = c.getRight();
+		}
 	}
 
 	public void eval() {
 		rel.setIndex(index);
-
-		for (int i = 0; i < prefix.length; ++i) {
-			prefix[i] = t.get(test.get(i).getRight());
+		// populate the variable part of the prefix
+		for (Pair<Integer, Integer> c : test) {
+			prefix[c.getLeft()] = t.get(c.getRight());
 		}
 
 		SortedSet<Tuple> tuples = rel.lookup(prefix);
@@ -199,5 +239,4 @@ abstract class Test implements Control {
 	}
 
 	protected abstract boolean test(long a, long b);
-
 }

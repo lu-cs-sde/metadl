@@ -351,8 +351,10 @@ aspect FormalPredicate {
 }
 
 aspect Types {
-	syn boolean Term.isVariable() = this instanceof Variable;
-	syn boolean Term.isConstant() = !isVariable();
+	syn boolean Term.isVariable() = false;
+	eq Variable.isVariable() = true;
+	syn boolean Term.isConstant() = false;
+	eq Constant.isConstant() = true;
 }
 
 aspect Constraint {

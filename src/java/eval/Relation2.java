@@ -17,8 +17,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 
-
-
 public class Relation2 {
 	int arity = 0;
 
@@ -80,21 +78,6 @@ public class Relation2 {
 	public void insert(Collection<? extends Tuple> ts) {
 		for (SortedSet<Tuple> s : indexedMaps.values())
 			s.addAll(ts);
-	}
-
-	private Index indexFromPrefix(Set<Integer> prefix) {
-		Index index = new Index(prefix, arity);
-		return index;
-	}
-
-	public Stream<Pair<Tuple, Tuple>> join(Relation2 rhs, Index rhsIndex, List<Pair> joinIndices) {
-		rhs.setIndex(rhsIndex);
-
-		for (Tuple t : currentSet) {
-
-		}
-
-		return null;
 	}
 
 	public int arity() {

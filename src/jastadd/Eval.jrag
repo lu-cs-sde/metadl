@@ -177,17 +177,41 @@ aspect Eval {
 	/**
 	   Generate a statement sequence for the clause
 	 */
-	syn Control Clause.genCode();
+	syn Control Clause.genCode(EvaluationContext ctx);
 
-	eq Fact.genCode() {
-		return null;
+	eq Fact.genCode(EvaluationContext ctx) {
+		Tuple t = evalTuple();
+		Control currentCont = Control.nop();
+		Set<String> boundVars = Collections.emptySet();
+
+		for (CommonLiteral h : getHeadss()) {
+			currentCont = h.genCode(t, ctx, currentCont, boundVars);
+		}
+
+		return currentCont;
 	}
-	eq Rule.genCode() {
-		return null;
+
+	eq Rule.genCode(EvaluationContext ctx) {
+
+		Tuple t = evalTuple();
+		Control currentCont = Control.nop();
+		Set<String> boundVars = new HashSet<>();
+
+		for (CommonLiteral h : getHeadss()) {
+			currentCont = h.genCode(t, ctx, currentCont, boundVars);
+		}
+
+
+		for (CommonLiteral b : evalSchedule()) {
+			currentCont = b.genCode(t, ctx, currentCont, boundVars);
+		}
+
+		return currentCont;
 	}
 
-	syn Control CommonLiteral.genCode() = Control.nop();
-
+	protected Control CommonLiteral.genCode(Tuple t, EvaluationContext ctx, Control cont, Set<String> boundVars) {
+		return Control.nop();
+	}
 
 	syn int Variable.varId() {
 		return literal().clause().evalVariables().get(getVAR_ID());
@@ -258,7 +282,8 @@ aspect Eval {
 		return Control.ifNotExists(t, rel, test, consts, cont);
 	}
 
-	private Control Literal.genCode(Tuple t, Relation2 rel, EvaluationContext ctx, Control cont, Set<String> boundVars) {
+	protected Control Literal.genCode(Tuple t, EvaluationContext ctx, Control cont, Set<String> boundVars) {
+		Relation2 rel = getPredicate().formalpredicate().relation2();
 		if (hasNot()) {
 			return genCodeNegativeLiteral(t, rel, ctx, cont);
 		} else {
@@ -266,7 +291,7 @@ aspect Eval {
 		}
 	}
 
-	private Control BINDLiteral.genCode(Tuple t, EvaluationContext ctx, Control cont, Set<String> boundVars) {
+	protected Control BINDLiteral.genCode(Tuple t, EvaluationContext ctx, Control cont, Set<String> boundVars) {
 		Variable dst = (Variable) getExpr(0);
 		boundVars.add(dst.getVAR_ID());
 		return Control.bind(t, cont, dst.varId(), getExpr(1).genCode(t, ctx));

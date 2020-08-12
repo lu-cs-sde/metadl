@@ -227,7 +227,7 @@ aspect Eval {
 		throw new RuntimeException("Can't generate code for literal " + toString());
 	}
 
-	syn int Variable.varId() {
+	syn lazy int Variable.varId() {
 		return literal().clause().evalVariables().get(getVAR_ID());
 	}
 
@@ -357,6 +357,13 @@ aspect Eval {
 		Variable dst = (Variable) getExpr(0);
 		boundVars.add(dst.getVAR_ID());
 		return Control.bind(t, cont, dst.varId(), getExpr(1).genCode(t, ctx));
+	}
+
+	protected Control MATCHLiteral.genCode(Tuple t, EvaluationContext ctx, Control cont, Set<String> boundVars) {
+		Operation l = getLeft().genCode(t, ctx);
+		Operation r = getRight().genCode(t, ctx);
+
+		return Control.match(ctx, cont, l, r, hasNot());
 	}
 
 	public abstract Operation Expr.genCode(Tuple t, EvaluationContext ctx);

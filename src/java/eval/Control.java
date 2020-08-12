@@ -2,6 +2,7 @@ package eval;
 
 import java.util.List;
 import java.util.SortedSet;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -126,6 +127,20 @@ public interface Control {
 		};
 	}
 
+	public static Control match(EvaluationContext ctx, Control cont, Operation regex, Operation arg, boolean invert) {
+		return new Test(cont, regex, arg) {
+			@Override public boolean test(long a, long b) {
+				String r = ctx.externalizeString(a);
+				String s = ctx.externalizeString(b);
+				return invert ^ Pattern.matches(r, s);
+			}
+
+			@Override public String prettyPrint(int indent) {
+				return Util.indent(indent) + String.format("IF %smatch(%s, %s) THEN\n", invert ? "!" : "", regex.prettyPrint(), arg.prettyPrint());
+			}
+		};
+	}
+
 	public static Control bind(Tuple t, Control cont, int dst, Operation r) {
 		return new Control() {
 			@Override public void eval() {
@@ -151,7 +166,7 @@ class ForAll implements Control {
 	private List<Pair<Integer, Long>> consts;
 
 	private Control cont;
-	private long prefix[];
+	private Tuple minKey, maxKey;
 	private Index index;
 	/**
 	   test - pairs of (columns, tuple position) to test for equality
@@ -169,10 +184,13 @@ class ForAll implements Control {
 						  .map(p -> p.getLeft()).collect(Collectors.toList()), rel.arity());
 
 		// allocate memory for the prefix
-		prefix = new long[test.size() + consts.size()];
+		minKey = rel.infTuple();
+		maxKey = rel.supTuple();
+
 		// populate the constant part
 		for (Pair<Integer, Long> c : consts) {
-			prefix[c.getLeft()] = c.getRight();
+			minKey.set(c.getLeft(), c.getRight());
+			maxKey.set(c.getLeft(), c.getRight());
 		}
 	}
 
@@ -182,10 +200,11 @@ class ForAll implements Control {
 
 		// populate the variable part of the prefix
 		for (Pair<Integer, Integer> c : test) {
-			prefix[c.getLeft()] = t.get(c.getRight());
+			minKey.set(c.getLeft(), t.get(c.getRight()));
+			maxKey.set(c.getLeft(), t.get(c.getRight()));
 		}
 
-		SortedSet<Tuple> tuples = rel.lookup(prefix);
+		SortedSet<Tuple> tuples = rel.lookup(minKey, maxKey);
 		for (Tuple r : tuples) {
 			for (Pair<Integer, Integer> p : assign) {
 				t.set(p.getRight(), r.get(p.getLeft()));
@@ -223,7 +242,7 @@ class IfNotExists implements Control {
 	private List<Pair<Integer, Integer>> test;
 	private List<Pair<Integer, Long>> consts;
 	private Control cont;
-	private long prefix[];
+	private Tuple minKey, maxKey;
 	private Index index;
 
 
@@ -233,13 +252,16 @@ class IfNotExists implements Control {
 		this.rel = rel;
 		this.cont = cont;
 		this.consts = consts;
+		this.test = test;
 		index = new Index(Stream.concat(test.stream(), consts.stream())
 						  .map(p -> p.getLeft()).collect(Collectors.toList()), rel.arity());
-		// allocate memory for prefix
-		prefix = new long[test.size() + consts.size()];
+
+		this.minKey = rel.infTuple();
+		this.maxKey = rel.supTuple();
 		// populate the constant part
 		for (Pair<Integer, Long> c : consts) {
-			prefix[c.getLeft()] = c.getRight();
+			minKey.set(c.getLeft(), c.getRight());
+			maxKey.set(c.getLeft(), c.getRight());
 		}
 	}
 
@@ -247,10 +269,11 @@ class IfNotExists implements Control {
 		rel.setIndex(index);
 		// populate the variable part of the prefix
 		for (Pair<Integer, Integer> c : test) {
-			prefix[c.getLeft()] = t.get(c.getRight());
+			minKey.set(c.getLeft(), t.get(c.getRight()));
+			maxKey.set(c.getLeft(), t.get(c.getRight()));
 		}
 
-		SortedSet<Tuple> tuples = rel.lookup(prefix);
+		SortedSet<Tuple> tuples = rel.lookup(minKey, maxKey);
 		if (tuples.isEmpty())
 			cont.eval();
 	}

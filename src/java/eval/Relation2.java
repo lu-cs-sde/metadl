@@ -1,29 +1,19 @@
 package eval;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.SortedMap;
-import java.util.SortedSet;
-import java.util.TreeSet;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import org.apache.commons.lang3.builder.ToStringBuilder;
-import org.apache.commons.lang3.tuple.Pair;
-
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 public class Relation2 {
 	int arity = 0;
 	String name = "AnonRel";
 
-	private Map<Index, SortedSet<Tuple>> indexedMaps = new HashMap<>();
-	private SortedSet<Tuple> currentSet = null;
+	private Map<Index, TreeSet<Tuple>> indexedMaps = new HashMap<>();
+	private TreeSet<Tuple> currentSet = null;
 	private Index defaultIndex;
 
 	public Relation2(int arity, String name) {
@@ -66,24 +56,23 @@ public class Relation2 {
 		}
 	}
 
-	public SortedSet<Tuple> lookup(long[] prefix) {
-		assert prefix.length <= arity;
-		assert currentSet != null;
+	public Tuple infTuple() {
+		Tuple t = new Tuple(arity);
+		for (int i = 0; i < arity; ++i)
+			t.set(i, Long.MIN_VALUE);
+		return t;
+	}
 
-		Tuple keyL = new Tuple(arity);
-		Tuple keyH = new Tuple(arity);
+	public Tuple supTuple() {
+		Tuple t = new Tuple(arity);
+		for (int i = 0; i < arity; ++i)
+			t.set(i, Long.MAX_VALUE);
+		return t;
+	}
 
-		for (int i = 0; i < prefix.length; ++i) {
-			keyL.set(i, prefix[i]);
-			keyH.set(i, prefix[i]);
-		}
-
-		for (int i = prefix.length; i < arity; ++i) {
-			keyL.set(i, Long.MIN_VALUE);
-			keyH.set(i, Long.MAX_VALUE);
-		}
-
-		return currentSet.subSet(keyL, keyH);
+	public SortedSet<Tuple> lookup(Tuple loInclusive, Tuple hiInclusive) {
+		assert loInclusive.arity() == hiInclusive.arity();
+		return currentSet.subSet(loInclusive, true, hiInclusive, true);
 	}
 
 	public void insert(Tuple t) {

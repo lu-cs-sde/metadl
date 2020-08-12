@@ -222,6 +222,11 @@ aspect Internal {
     public Program EvalBottomUpNaive.perform()  throws Exception {
         SimpleLogger.logger().log(description().debugInfo(), SimpleLogger.LogLevel.Level.DEBUG);
         Program program = getProgramWithChecks();
+		try {
+			program.eval();
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
         return program;
     }
 

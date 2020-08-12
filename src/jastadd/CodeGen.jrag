@@ -9,7 +9,7 @@ import eval.Tuple;
 import eval.EvaluationContext;
 import eval.Operation;
 
-aspect Eval {
+aspect CodeGen {
 
 
 	/**
@@ -184,17 +184,12 @@ aspect Eval {
 	eq Fact.evalVariables() = Collections.emptyMap();
 
 	/**
-	   evalTuple = Tuple to hold variable's values while evaluating the current clause
-	 */
-	syn Tuple Clause.evalTuple() = new Tuple(evalVariables().size());
-
-	/**
 	   Generate a statement sequence for the clause
 	 */
 	syn Control Clause.genCode(EvaluationContext ctx);
 
 	eq Fact.genCode(EvaluationContext ctx) {
-		Tuple t = evalTuple();
+		Tuple t = new Tuple(evalVariables().size());
 		Control currentCont = Control.nop();
 		Set<String> boundVars = Collections.emptySet();
 
@@ -206,8 +201,7 @@ aspect Eval {
 	}
 
 	eq Rule.genCode(EvaluationContext ctx) {
-
-		Tuple t = evalTuple();
+		Tuple t = new Tuple(evalVariables().size());
 		Control currentCont = Control.nop();
 		Set<String> boundVars = new HashSet<>();
 

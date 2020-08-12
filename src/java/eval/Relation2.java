@@ -92,4 +92,8 @@ public class Relation2 {
 	public int size() {
 		return indexedMaps.get(defaultIndex).size();
 	}
+
+	public SortedSet<Tuple> tuples() {
+		return indexedMaps.get(defaultIndex);
+	}
 }

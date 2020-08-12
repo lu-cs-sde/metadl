@@ -91,5 +91,18 @@ public interface Operation {
 		};
 	}
 
+	public static Operation to_number(EvaluationContext ctx, Operation arg) {
+		return new Operation() {
+			@Override public long eval() {
+				String s = ctx.externalizeString(arg.eval());
+				return Long.parseLong(s);
+			}
+
+			@Override public String prettyPrint() {
+				return "to_number(" + arg.prettyPrint() + ")";
+			}
+		};
+	}
+
 	// TODO: implement cat
 }

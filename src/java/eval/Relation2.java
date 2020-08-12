@@ -24,6 +24,7 @@ public class Relation2 {
 
 	private Map<Index, SortedSet<Tuple>> indexedMaps = new HashMap<>();
 	private SortedSet<Tuple> currentSet = null;
+	private Index defaultIndex;
 
 	public Relation2(int arity, String name) {
 		this(arity);
@@ -46,7 +47,7 @@ public class Relation2 {
 		for (int i = 0; i < arity; ++i)
 			defaultIndices.add(i);
 
-		Index defaultIndex = new Index(defaultIndices, arity);
+		defaultIndex = new Index(defaultIndices, arity);
 		setIndex(defaultIndex);
 	}
 
@@ -97,5 +98,9 @@ public class Relation2 {
 
 	public int arity() {
 		return arity;
+	}
+
+	public int size() {
+		return indexedMaps.get(defaultIndex).size();
 	}
 }

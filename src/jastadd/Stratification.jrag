@@ -4,8 +4,10 @@ import org.jgrapht.graph.DefaultEdge;
 import org.jgrapht.alg.connectivity.KosarajuStrongConnectivityInspector;
 import org.jgrapht.alg.interfaces.StrongConnectivityAlgorithm;
 import org.jgrapht.nio.dot.DOTExporter;
+import org.jgrapht.traverse.TopologicalOrderIterator;
 import java.util.LinkedHashSet;
 import java.io.FileWriter;
+import eval.Stratum;
 
 aspect Stratification {
 	public class PredicateDependencyGraph extends SimpleDirectedGraph<FormalPredicate, DefaultEdge> {
@@ -30,7 +32,6 @@ aspect Stratification {
 			DOTExporter<FormalPredicate, DefaultEdge> dotEx = new DOTExporter<>(v -> v.getPRED_ID());
 			dotEx.exportGraph(this, new FileWriter("pdg.dot"));
 
-
 			StrongConnectivityAlgorithm<FormalPredicate, DefaultEdge> sc =
 				new KosarajuStrongConnectivityInspector<>(this);
 
@@ -40,6 +41,11 @@ aspect Stratification {
 		}
 	}
 
+	/**
+	   predicateDependencyGraph = a graph with vertices representing the predicates of the program and
+	   edges the data-dependencies between these predicates. The graph contains an edge P -> Q iff
+	   the Datalog program contains a rule ..., Q, ... :- ... , P, ... .
+	 */
 	coll PredicateDependencyGraph Program.predicateDependencyGraph() [new PredicateDependencyGraph()] with addEdge;
 	coll Set<Clause> FormalPredicate.definedIn() [new LinkedHashSet<Clause>()];
 
@@ -49,13 +55,13 @@ aspect Stratification {
 
 		for (CommonLiteral h : getHeadss()) {
 			if (h instanceof Literal) {
-				from.add(((Literal) h).getPredicate().formalpredicate());
+				to.add(((Literal) h).getPredicate().formalpredicate());
 			}
 		}
 
 		for (CommonLiteral t : getBodys()) {
 			if (t instanceof Literal) {
-				to.add(((Literal) t).getPredicate().formalpredicate());
+				from.add(((Literal) t).getPredicate().formalpredicate());
 			}
 		}
 		return Pair.of(from, to);
@@ -66,4 +72,47 @@ aspect Stratification {
 
 	Literal contributes clause() when isDef() to FormalPredicate.definedIn() for getPredicate().formalpredicate();
 	AnalyzeBlock contributes nta getExpandedClauses() to FormalPredicate.definedIn();
+
+	syn java.util.List<Stratum> Program.strata(EvaluationContext ctx) {
+		java.util.List<Stratum> strata = new ArrayList<>();
+
+		StrongConnectivityAlgorithm<FormalPredicate, DefaultEdge> sca =
+			new KosarajuStrongConnectivityInspector<>(predicateDependencyGraph());
+
+		TopologicalOrderIterator<Graph<FormalPredicate, DefaultEdge>, DefaultEdge> it = new
+			TopologicalOrderIterator<>(sca.getCondensation());
+
+		while (it.hasNext()) {
+			Graph<FormalPredicate, DefaultEdge> scc = it.next();
+			java.util.List<FormalPredicate> orderedPreds = new ArrayList<>(scc.vertexSet());
+			Collections.sort(orderedPreds, (l, r) -> l.getPRED_ID().compareTo(r.getPRED_ID()));
+
+			// relations in the current stratum
+			java.util.List<Relation2> rels = orderedPreds.stream()
+				.map(p -> p.relation2()).collect(Collectors.toList());
+
+			// control statements in the current stratum
+			java.util.List<Control> stmts = new ArrayList<>();
+			for (FormalPredicate p : orderedPreds) {
+				for (Clause c : p.definedIn()) {
+					stmts.add(c.genCode(ctx));
+				}
+			}
+
+			strata.add(new Stratum(rels, stmts));
+		}
+
+		return strata;
+	}
+
+	public void Program.dumpStrata() throws IOException {
+		PrintStream f = new PrintStream("strata.dump");
+		EvaluationContext ctx = new EvaluationContext();
+
+		for (Stratum s : strata(ctx)) {
+			s.prettyPrint(f);
+			f.println();
+		}
+		f.close();
+	}
 }

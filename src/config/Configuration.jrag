@@ -108,6 +108,7 @@ aspect Task {
 		/// Export the PDF
 		try {
 			program.predicateDependencyGraph().dump();
+			program.dumpStrata();
 		} catch (IOException e) {
 		}
 		///

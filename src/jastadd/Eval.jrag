@@ -68,12 +68,12 @@ aspect Eval {
 	/**
 	   Literals for evaluation
 	 */
-	syn java.util.List<CommonLiteral> CommonLiteral.evalLiterals() = Collections.emptyList();
-	eq Literal.evalLiterals() {
+	syn nta List<CommonLiteral> CommonLiteral.evalLiteralList();
+	eq Literal.evalLiteralList() {
 		if (!isSelfJoin())
-			return Collections.singletonList(this);
+			return new List<CommonLiteral>().add(this.treeCopy());
 
-		java.util.List<CommonLiteral> ret = new ArrayList<>();
+		List<CommonLiteral> ret = new List<>();
 		Literal l = new Literal(getPredicate().treeCopy(), new List<>());
 
 		ret.add(l);
@@ -99,52 +99,66 @@ aspect Eval {
 		return ret;
 	}
 
+	eq Pattern.evalLiteralList() = new List<CommonLiteral>().add(getLiteral().treeCopy());
+	eq Constraint.evalLiteralList() = new List<CommonLiteral>().add(this.treeCopy());
+
+
 	syn Set<String> CommonLiteral.boundVariableNames() =
 		boundVariables().stream().map(v -> v.getVAR_ID()).collect(Collectors.toSet());
 
 	syn Set<String> CommonLiteral.variableNames() =
 		variables().stream().map(v -> v.getVAR_ID()).collect(Collectors.toSet());
 
-	eq Pattern.evalLiterals() = Collections.singletonList(getLiteral());
-	eq Constraint.evalLiterals() = Collections.singletonList(this);
 
-	private boolean Rule.trySchedule(CommonLiteral l, java.util.List<CommonLiteral> postponed,
-									 java.util.List<CommonLiteral> schedule,
+	private boolean Rule.trySchedule(CommonLiteral l,
+									 LinkedList<CommonLiteral> schedule,
 									 Set<String> boundSoFar) {
-		if (SetUtils.difference(l.variableNames(), l.boundVariableNames()).isEmpty()) {
-			// this means that positive Literals are added to the schedule in the order
-			// in which they appear in the clause, while Constraints may be postponed,
-			// such that they are evaluated when all the variables are bound
-			schedule.add(l);
+		if (SetUtils.difference(l.variableNames(),
+								SetUtils.union(l.boundVariableNames(), boundSoFar)).isEmpty()) {
+			schedule.addFirst(l);
 			boundSoFar.addAll(l.variableNames());
 			return true;
-		} else if (SetUtils.difference(l.variableNames(), boundSoFar).isEmpty()) {
-			schedule.add(l);
-			return true;
-		} else {
-			postponed.add(l);
-			return false;
 		}
+		return false;
 	}
 
-	syn java.util.List<CommonLiteral> Rule.evalSchedule() {
-		java.util.List<CommonLiteral> postponed = new LinkedList<>();
-		java.util.List<CommonLiteral> schedule = new ArrayList<>();
+	/**
+	   evalSchedule = order in which to evaluate each literal in the clause;
+	   literals are evaluated in the declared order, while the constraints
+	   are postponed until all their operands are bound
+	 */
+	syn lazy java.util.List<CommonLiteral> Rule.evalSchedule() {
+		LinkedList<CommonLiteral> candidates = new LinkedList<>();
+		LinkedList<CommonLiteral> schedule = new LinkedList<>();
+		LinkedList<CommonLiteral> postponed = new LinkedList<>();
 		Set<String> boundSoFar = new HashSet<>();
+
 		for (CommonLiteral bs : getBodys()) {
-			// Try to schedule any postponed literals
-			ListIterator<CommonLiteral> it = schedule.listIterator();
+			for (CommonLiteral l : bs.evalLiteralList())
+				candidates.add(l);
+		}
+
+		while (!candidates.isEmpty() || !postponed.isEmpty()) {
+			// try to schedule any postponed literals first
+			ListIterator<CommonLiteral> it = postponed.listIterator();
 			while (it.hasNext()) {
-				CommonLiteral candidate = it.next();
-				if (trySchedule(candidate, postponed, schedule, boundSoFar))
+				CommonLiteral cand = it.next();
+				if (trySchedule(cand, schedule, boundSoFar))
 					it.remove();
 			}
 
-			// Schedule the current literal
-			for (CommonLiteral l : bs.evalLiterals()) {
-				trySchedule(l, postponed, schedule, boundSoFar);
+			// this means that positive Literals are added to the schedule in the order
+			// in which they appear in the clause, while Constraints may be postponed,
+			// such that they are evaluated when all the variables are bound
+			if (!candidates.isEmpty()) {
+				CommonLiteral cand = candidates.pollFirst();
+				if (!trySchedule(cand, schedule, boundSoFar))
+					postponed.add(cand);
 			}
 		}
+		assert postponed.isEmpty();
+		assert candidates.isEmpty();
+
 		return schedule;
 	}
 
@@ -153,7 +167,7 @@ aspect Eval {
 	   in the schedule. This allows us to keep track of the bound
 	   variables by using a single integer instead of a set.
 	 */
-	syn Map<String, Integer> Clause.evalVariables();
+	syn lazy Map<String, Integer> Clause.evalVariables();
 	eq Rule.evalVariables() {
 		int i = 0;
 		Map<String, Integer> varMap = new HashMap<>();
@@ -210,7 +224,7 @@ aspect Eval {
 	}
 
 	protected Control CommonLiteral.genCode(Tuple t, EvaluationContext ctx, Control cont, Set<String> boundVars) {
-		return Control.nop();
+		throw new RuntimeException("Can't generate code for literal " + toString());
 	}
 
 	syn int Variable.varId() {
@@ -291,6 +305,54 @@ aspect Eval {
 		}
 	}
 
+	protected Control EQLiteral.genCode(Tuple t, EvaluationContext ctx, Control cont, Set<String> boundVars) {
+		Operation l = getLeft().genCode(t, ctx);
+		Operation r = getRight().genCode(t, ctx);
+		if (hasNot())
+			return Control.neq(cont, l, r);
+		return Control.eq(cont, l, r);
+	}
+
+	protected Control NEQLiteral.genCode(Tuple t, EvaluationContext ctx, Control cont, Set<String> boundVars) {
+		Operation l = getLeft().genCode(t, ctx);
+		Operation r = getRight().genCode(t, ctx);
+		if (hasNot())
+			return Control.eq(cont, l, r);
+		return Control.neq(cont, l, r);
+	}
+
+	protected Control LTLiteral.genCode(Tuple t, EvaluationContext ctx, Control cont, Set<String> boundVars) {
+		Operation l = getLeft().genCode(t, ctx);
+		Operation r = getRight().genCode(t, ctx);
+		if (hasNot())
+			return Control.gte(cont, l, r);
+		return Control.lt(cont, l, r);
+	}
+
+	protected Control GTLiteral.genCode(Tuple t, EvaluationContext ctx, Control cont, Set<String> boundVars) {
+		Operation l = getLeft().genCode(t, ctx);
+		Operation r = getRight().genCode(t, ctx);
+		if (hasNot())
+			return Control.lte(cont, l, r);
+		return Control.gt(cont, l, r);
+	}
+
+	protected Control LTELiteral.genCode(Tuple t, EvaluationContext ctx, Control cont, Set<String> boundVars) {
+		Operation l = getLeft().genCode(t, ctx);
+		Operation r = getRight().genCode(t, ctx);
+		if (hasNot())
+			return Control.gt(cont, l, r);
+		return Control.lte(cont, l, r);
+	}
+
+	protected Control GTELiteral.genCode(Tuple t, EvaluationContext ctx, Control cont, Set<String> boundVars) {
+		Operation l = getLeft().genCode(t, ctx);
+		Operation r = getRight().genCode(t, ctx);
+		if (hasNot())
+			return Control.lt(cont, l, r);
+		return Control.gte(cont, l, r);
+	}
+
 	protected Control BINDLiteral.genCode(Tuple t, EvaluationContext ctx, Control cont, Set<String> boundVars) {
 		Variable dst = (Variable) getExpr(0);
 		boundVars.add(dst.getVAR_ID());
@@ -299,23 +361,31 @@ aspect Eval {
 
 	public abstract Operation Expr.genCode(Tuple t, EvaluationContext ctx);
 	@Override public Operation Functor.genCode(Tuple t, EvaluationContext ctx) {
-		Operation arg0 = getArg(0).genCode(t, ctx);
-		Operation arg1 = getArg(1).genCode(t, ctx);
+		if (getNumArg() == 1) {
+			Operation arg0 = getArg(0).genCode(t, ctx);
+			switch (getFunc().getFUNC_ID()) {
+			case "to_number":
+				return Operation.to_number(ctx, arg0);
+			}
+		} else if (getNumArg() == 2) {
+			Operation arg0 = getArg(0).genCode(t, ctx);
+			Operation arg1 = getArg(1).genCode(t, ctx);
 
-		switch (getFunc().getFUNC_ID()) {
-		case "add":
-			return Operation.add(arg0, arg1);
-		case "mul":
-			return Operation.mul(arg0, arg1);
-		case "sub":
-			return Operation.sub(arg0, arg1);
-		case "div":
-			return Operation.div(arg0, arg1);
-		case "mod":
-			return Operation.mod(arg0, arg1);
-		default:
-			throw new RuntimeException("Functor not implemented: " + getFunc().getFUNC_ID());
+			switch (getFunc().getFUNC_ID()) {
+			case "add":
+				return Operation.add(arg0, arg1);
+			case "mul":
+				return Operation.mul(arg0, arg1);
+			case "sub":
+				return Operation.sub(arg0, arg1);
+			case "div":
+				return Operation.div(arg0, arg1);
+			case "mod":
+				return Operation.mod(arg0, arg1);
+			}
 		}
+
+		throw new RuntimeException("Functor not implemented: " + getFunc().getFUNC_ID());
 	}
 	@Override public Operation Variable.genCode(Tuple t, EvaluationContext ctx) {
 		return Operation.component(t, varId());
@@ -327,7 +397,7 @@ aspect Eval {
 		return null;
 	}
 
-	syn Relation2 FormalPredicate.relation2() {
-		return new Relation2(realArity());
+	syn lazy Relation2 FormalPredicate.relation2() {
+		return new Relation2(realArity(), getPRED_ID());
 	}
 }

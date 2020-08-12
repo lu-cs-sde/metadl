@@ -162,7 +162,9 @@ class ForAll implements Control {
 		this.t = t;
 		this.rel = rel;
 		this.cont = cont;
+		this.test = test;
 		this.consts = consts;
+		this.assign = assign;
 		index = new Index(Stream.concat(test.stream(), consts.stream())
 						  .map(p -> p.getLeft()).collect(Collectors.toList()), rel.arity());
 
@@ -193,7 +195,7 @@ class ForAll implements Control {
 	}
 
 	@Override public String prettyPrint(int indent) {
-		String s = Util.indent(indent) + String.format("FOR t IN %s WHERE ");
+		String s = Util.indent(indent) + String.format("FOR t IN %s WHERE ", rel.getName());
 
 		for (Pair<Integer, Integer> t : test) {
 			s += String.format("%s[%d] = t[%d] ", rel.getName(), t.getLeft(), t.getRight());
@@ -208,6 +210,10 @@ class ForAll implements Control {
 		}
 
 		return s + "\n" + cont.prettyPrint(indent + 1);
+	}
+
+	@Override public String toString() {
+		return prettyPrint(0);
 	}
 }
 
@@ -260,10 +266,12 @@ class IfNotExists implements Control {
 		}
 
 		s += ") IN " + rel.getName() + " THEN\n" + cont.prettyPrint(indent + 1);
-		return s;
+		return s + "\n" + cont.prettyPrint(indent + 1);
 	}
 
-
+	@Override public String toString() {
+		return prettyPrint(0);
+	}
 }
 
 class Insert implements Control {
@@ -288,8 +296,7 @@ class Insert implements Control {
 		this.cont = cont;
 	}
 
-	@Override
-	public void eval() {
+	@Override public void eval() {
 		Tuple u = new Tuple(rel.arity());
 		for (Pair<Integer, Integer> a : assign) {
 			u.set(a.getLeft(), t.get(a.getRight()));
@@ -302,8 +309,7 @@ class Insert implements Control {
 		cont.eval();
 	}
 
-	@Override
-	public String prettyPrint(int indent) {
+	@Override public String prettyPrint(int indent) {
 		String s = Util.indent(indent) + String.format("INSERT (");
 
 		for (Pair<Integer, Integer> a : assign) {
@@ -317,6 +323,10 @@ class Insert implements Control {
 		s += ") INTO " + rel.getName() + "\n" + cont.prettyPrint(indent + 1);
 
 		return s;
+	}
+
+	@Override public String toString() {
+		return prettyPrint(0);
 	}
 }
 
@@ -333,6 +343,10 @@ abstract class Test implements Control {
 	public void eval() {
 		if (test(left.eval(), right.eval()))
 			cont.eval();
+	}
+
+	@Override public String toString() {
+		return prettyPrint(0);
 	}
 
 	protected abstract boolean test(long a, long b);

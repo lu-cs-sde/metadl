@@ -8,6 +8,8 @@ import org.jgrapht.traverse.TopologicalOrderIterator;
 import java.util.LinkedHashSet;
 import java.io.FileWriter;
 import eval.Stratum;
+import org.apache.commons.lang3.tuple.Triple;
+
 
 aspect Stratification {
 	public class PredicateDependencyGraph extends DefaultDirectedGraph<FormalPredicate, DefaultEdge> {
@@ -88,24 +90,31 @@ aspect Stratification {
 			java.util.List<FormalPredicate> orderedPreds = new ArrayList<>(scc.vertexSet());
 			Collections.sort(orderedPreds, (l, r) -> l.getPRED_ID().compareTo(r.getPRED_ID()));
 
-			// relations in the current stratum
-			java.util.List<Relation2> rels = orderedPreds.stream()
-				.map(p -> p.relation2()).collect(Collectors.toList());
-
-			// control statements in the current stratum
-			java.util.List<Control> stmts = new ArrayList<>();
-			for (FormalPredicate p : orderedPreds) {
-				for (Clause c : p.definedIn()) {
-					stmts.add(c.genCode(ctx));
-				}
-			}
-
 			if (orderedPreds.size() == 1 &&
 				!pdg.containsEdge(orderedPreds.get(0), orderedPreds.get(0))) {
+
+				FormalPredicate p = orderedPreds.get(0);
+				// control statements in the current stratum
+				java.util.List<Control> stmts = new ArrayList<>();
+				for (Clause c : p.definedIn()) {
+					stmts.addAll(c.genCode(ctx, false, Collections.emptySet()));
+				}
 				// the stratum contains a single predicate; if it does not depend on
 				// itself, then it's safe to evaluate all its rules only once
-				strata.add(Stratum.single(rels, stmts));
+				strata.add(Stratum.single(Collections.singletonList(p.relation2()), stmts));
 			} else {
+				// control statements in the current stratum
+				java.util.List<Control> stmts = new ArrayList<>();
+				for (FormalPredicate p : orderedPreds) {
+					for (Clause c : p.definedIn()) {
+						stmts.addAll(c.genCode(ctx, true, scc.vertexSet()));
+					}
+				}
+				java.util.List<Triple<Relation2, Relation2, Relation2>> rels = orderedPreds.stream()
+					.map(p -> Triple.of(p.relation2(),
+										p.relation2next(),
+										p.relation2delta()))
+					.collect(Collectors.toList());
 				strata.add(Stratum.fixpoint(rels, stmts));
 			}
 		}

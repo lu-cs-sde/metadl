@@ -186,26 +186,33 @@ aspect CodeGen {
 	/**
 	   Generate a statement sequence for the clause
 	 */
-	syn Control Clause.genCode(EvaluationContext ctx);
+	syn java.util.List<Control> Clause.genCode(EvaluationContext ctx, boolean isDelta, Set<FormalPredicate> currentStratum);
 
-	eq Fact.genCode(EvaluationContext ctx) {
+	eq Fact.genCode(EvaluationContext ctx, boolean isDelta, Set<FormalPredicate> currentStratum) {
 		Tuple t = new Tuple(evalVariables().size());
 		Control currentCont = Control.nop();
 		Set<String> boundVars = Collections.emptySet();
 
 		for (CommonLiteral h : getHeadss()) {
-			currentCont = h.genCode(t, ctx, currentCont, boundVars);
+			currentCont = h.genCode(t, ctx, currentCont, boundVars, isDelta);
 		}
 
-		return currentCont;
+		return Collections.singletonList(currentCont);
 	}
 
-	eq Rule.genCode(EvaluationContext ctx) {
+	/**
+	   hasDeltaRelation = only positive literals have a delta relation
+	 */
+	syn boolean CommonLiteral.hasDeltaRelation(Set<FormalPredicate> currentStratum) = false;
+	eq Literal.hasDeltaRelation(Set<FormalPredicate> currentStratum) = !hasNot() &&
+		currentStratum.contains(getPredicate().formalpredicate());
+
+	private Control Rule.genCodeHelper(EvaluationContext ctx, boolean isDelta, int deltaRelIndex) {
 		Tuple t = new Tuple(evalVariables().size());
 		Control currentCont = Control.nop();
 
 		for (CommonLiteral h : getHeadss()) {
-			currentCont = h.genCode(t, ctx, currentCont, Collections.emptySet());
+			currentCont = h.genCode(t, ctx, currentCont, Collections.emptySet(), isDelta);
 		}
 
 		java.util.List<CommonLiteral> schedule = evalSchedule();
@@ -217,16 +224,42 @@ aspect CodeGen {
 			boundVars.add(SetUtils.union(boundVars.get(i - 1), schedule.get(i - 1).boundVariableNames()));
 		}
 
+
 		// now generate the code for each literal, in reverse order
 		for (int i = schedule.size() - 1; i >= 0; i--) {
 			CommonLiteral b = schedule.get(i);
-			currentCont = b.genCode(t, ctx, currentCont, boundVars.get(i));
+			currentCont = b.genCode(t, ctx, currentCont, boundVars.get(i), i == deltaRelIndex);
 		}
 
 		return currentCont;
 	}
 
-	protected Control CommonLiteral.genCode(Tuple t, EvaluationContext ctx, Control cont, Set<String> boundVars) {
+	eq Rule.genCode(EvaluationContext ctx, boolean isDelta, Set<FormalPredicate> currentStratum) {
+		if (!isDelta) {
+			return Collections.singletonList(genCodeHelper(ctx, false, -1));
+		} else {
+			java.util.List<CommonLiteral> schedule = evalSchedule();
+
+			java.util.List<Integer> deltaRelationIndices = new ArrayList<>();
+			for (int i = 0; i < schedule.size(); ++i)
+				if (schedule.get(i).hasDeltaRelation(currentStratum))
+					deltaRelationIndices.add(i);
+
+			if (deltaRelationIndices.isEmpty()) {
+				return Collections.singletonList(genCodeHelper(ctx, true, -1));
+			} else {
+				java.util.List<Control> deltaStmts = new ArrayList<>();
+				for (int i : deltaRelationIndices) {
+					deltaStmts.add(genCodeHelper(ctx, true, i));
+				}
+
+				return deltaStmts;
+			}
+		}
+	}
+
+	protected Control CommonLiteral.genCode(Tuple t, EvaluationContext ctx, Control cont,
+											Set<String> boundVars, boolean isDelta) {
 		throw new RuntimeException("Can't generate code for literal " + toString());
 	}
 
@@ -243,7 +276,8 @@ aspect CodeGen {
 	eq PredicateRef.constVal(EvaluationContext ctx) = ctx.internalizeString(getPRED_ID());
 	eq StringConstant.constVal(EvaluationContext ctx) = ctx.internalizeString(getSTRING());
 
-	private Control Literal.genCodePositiveLiteral(Tuple t, Relation2 rel, EvaluationContext ctx, Control cont, Set<String> boundVars) {
+	private Control Literal.genCodePositiveLiteral(Tuple t, Relation2 rel, EvaluationContext ctx, Control cont,
+												   Set<String> boundVars) {
 		java.util.List<Pair<Integer, Integer>> assign = new ArrayList<>();
 		java.util.List<Pair<Integer, Long>> consts = new ArrayList<>();
 		java.util.List<Pair<Integer, Integer>> test = new ArrayList<>();
@@ -298,16 +332,27 @@ aspect CodeGen {
 		return Control.ifNotExists(t, rel, test, consts, cont);
 	}
 
-	protected Control Literal.genCode(Tuple t, EvaluationContext ctx, Control cont, Set<String> boundVars) {
-		Relation2 rel = getPredicate().formalpredicate().relation2();
+	protected Control Literal.genCode(Tuple t, EvaluationContext ctx, Control cont, Set<String> boundVars, boolean isDelta) {
+		FormalPredicate formalPred = getPredicate().formalpredicate();
+
 		if (hasNot()) {
+			Relation2 rel = formalPred.relation2();
 			return genCodeNegativeLiteral(t, rel, ctx, cont);
 		} else {
+			Relation2 rel;
+			if (isDelta) {
+				if (isDef())
+					rel = formalPred.relation2next();
+				else
+					rel = formalPred.relation2delta();
+			} else {
+				rel = formalPred.relation2();
+			}
 			return genCodePositiveLiteral(t, rel, ctx, cont, boundVars);
 		}
 	}
 
-	protected Control EQLiteral.genCode(Tuple t, EvaluationContext ctx, Control cont, Set<String> boundVars) {
+	protected Control EQLiteral.genCode(Tuple t, EvaluationContext ctx, Control cont, Set<String> boundVars, boolean isDelta) {
 		Operation l = getLeft().genCode(t, ctx);
 		Operation r = getRight().genCode(t, ctx);
 		if (hasNot())
@@ -315,7 +360,7 @@ aspect CodeGen {
 		return Control.eq(cont, l, r);
 	}
 
-	protected Control NEQLiteral.genCode(Tuple t, EvaluationContext ctx, Control cont, Set<String> boundVars) {
+	protected Control NEQLiteral.genCode(Tuple t, EvaluationContext ctx, Control cont, Set<String> boundVars, boolean isDelta) {
 		Operation l = getLeft().genCode(t, ctx);
 		Operation r = getRight().genCode(t, ctx);
 		if (hasNot())
@@ -323,7 +368,7 @@ aspect CodeGen {
 		return Control.neq(cont, l, r);
 	}
 
-	protected Control LTLiteral.genCode(Tuple t, EvaluationContext ctx, Control cont, Set<String> boundVars) {
+	protected Control LTLiteral.genCode(Tuple t, EvaluationContext ctx, Control cont, Set<String> boundVars, boolean isDelta) {
 		Operation l = getLeft().genCode(t, ctx);
 		Operation r = getRight().genCode(t, ctx);
 		if (hasNot())
@@ -331,7 +376,7 @@ aspect CodeGen {
 		return Control.lt(cont, l, r);
 	}
 
-	protected Control GTLiteral.genCode(Tuple t, EvaluationContext ctx, Control cont, Set<String> boundVars) {
+	protected Control GTLiteral.genCode(Tuple t, EvaluationContext ctx, Control cont, Set<String> boundVars, boolean isDelta) {
 		Operation l = getLeft().genCode(t, ctx);
 		Operation r = getRight().genCode(t, ctx);
 		if (hasNot())
@@ -339,7 +384,7 @@ aspect CodeGen {
 		return Control.gt(cont, l, r);
 	}
 
-	protected Control LTELiteral.genCode(Tuple t, EvaluationContext ctx, Control cont, Set<String> boundVars) {
+	protected Control LTELiteral.genCode(Tuple t, EvaluationContext ctx, Control cont, Set<String> boundVars, boolean isDelta) {
 		Operation l = getLeft().genCode(t, ctx);
 		Operation r = getRight().genCode(t, ctx);
 		if (hasNot())
@@ -347,7 +392,7 @@ aspect CodeGen {
 		return Control.lte(cont, l, r);
 	}
 
-	protected Control GTELiteral.genCode(Tuple t, EvaluationContext ctx, Control cont, Set<String> boundVars) {
+	protected Control GTELiteral.genCode(Tuple t, EvaluationContext ctx, Control cont, Set<String> boundVars, boolean isDelta) {
 		Operation l = getLeft().genCode(t, ctx);
 		Operation r = getRight().genCode(t, ctx);
 		if (hasNot())
@@ -355,12 +400,12 @@ aspect CodeGen {
 		return Control.gte(cont, l, r);
 	}
 
-	protected Control BINDLiteral.genCode(Tuple t, EvaluationContext ctx, Control cont, Set<String> boundVars) {
+	protected Control BINDLiteral.genCode(Tuple t, EvaluationContext ctx, Control cont, Set<String> boundVars, boolean isDelta) {
 		Variable dst = (Variable) getExpr(0);
 		return Control.bind(t, cont, dst.varId(), getExpr(1).genCode(t, ctx));
 	}
 
-	protected Control MATCHLiteral.genCode(Tuple t, EvaluationContext ctx, Control cont, Set<String> boundVars) {
+	protected Control MATCHLiteral.genCode(Tuple t, EvaluationContext ctx, Control cont, Set<String> boundVars, boolean isDelta) {
 		Operation l = getLeft().genCode(t, ctx);
 		Operation r = getRight().genCode(t, ctx);
 
@@ -407,5 +452,13 @@ aspect CodeGen {
 
 	syn lazy Relation2 FormalPredicate.relation2() {
 		return new Relation2(realArity(), getPRED_ID());
+	}
+
+	syn lazy Relation2 FormalPredicate.relation2delta() {
+		return new Relation2(realArity(), "delta_" + getPRED_ID());
+	}
+
+	syn lazy Relation2 FormalPredicate.relation2next() {
+		return new Relation2(realArity(), "next_" + getPRED_ID());
 	}
 }

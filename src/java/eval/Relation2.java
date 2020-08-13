@@ -72,18 +72,21 @@ public class Relation2 {
 
 	public SortedSet<Tuple> lookup(Tuple loInclusive, Tuple hiInclusive) {
 		assert loInclusive.arity() == hiInclusive.arity();
-		// return Collections.unmodifiableSortedSet(currentSet.subSet(loInclusive, true, hiInclusive, true));
-		return currentSet.subSet(loInclusive, true, hiInclusive, true);
+		return Collections.unmodifiableSortedSet(currentSet.subSet(loInclusive, true, hiInclusive, true));
 	}
 
-	public void insert(Tuple t) {
+	public boolean insert(Tuple t) {
+		boolean change = false;
 		for (SortedSet<Tuple> s : indexedMaps.values())
-			s.add(t);
+			change |= s.add(t);
+		return change;
 	}
 
-	public void insert(Collection<? extends Tuple> ts) {
+	public boolean insert(Collection<? extends Tuple> ts) {
+		boolean change = false;
 		for (SortedSet<Tuple> s : indexedMaps.values())
-			s.addAll(ts);
+			change |= s.addAll(ts);
+		return change;
 	}
 
 	public int arity() {
@@ -95,7 +98,11 @@ public class Relation2 {
 	}
 
 	public SortedSet<Tuple> tuples() {
-		return currentSet;
-		// return Collections.unmodifiableSortedSet(currentSet);
+		return Collections.unmodifiableSortedSet(currentSet);
+	}
+
+	public void clear() {
+		for (SortedSet<Tuple> s : indexedMaps.values())
+			s.clear();
 	}
 }

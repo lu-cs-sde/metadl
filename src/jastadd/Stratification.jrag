@@ -60,7 +60,7 @@ aspect Stratification {
 			}
 		}
 
-		for (CommonLiteral t : getBodys()) {
+		for (CommonLiteral t : evalSchedule()) {
 			if (t instanceof Literal) {
 				from.add(((Literal) t).getPredicate().formalpredicate());
 			}

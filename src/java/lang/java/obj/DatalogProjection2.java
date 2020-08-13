@@ -136,7 +136,7 @@ public class DatalogProjection2 {
 
 	private void recordRewrittenNode(ASTNode<?> original, ASTNode<?> target) {
 		datalogProjection.addTuple(makeTuple("REWRITE", original, -1, target, ""));
-		prel.insertTuple("REWRITE", original, -1, target, "");
+		prel.insertTuple("REWRITE", nodeId(original), -1, nodeId(target), "");
 	}
 
 	public Relation getRelation() {

@@ -115,7 +115,7 @@ aspect CodeGen {
 									 Set<String> boundSoFar) {
 		if (SetUtils.difference(l.variableNames(),
 								SetUtils.union(l.boundVariableNames(), boundSoFar)).isEmpty()) {
-			schedule.addFirst(l);
+			schedule.add(l);
 			boundSoFar.addAll(l.variableNames());
 			return true;
 		}
@@ -203,15 +203,24 @@ aspect CodeGen {
 	eq Rule.genCode(EvaluationContext ctx) {
 		Tuple t = new Tuple(evalVariables().size());
 		Control currentCont = Control.nop();
-		Set<String> boundVars = new HashSet<>();
 
 		for (CommonLiteral h : getHeadss()) {
-			currentCont = h.genCode(t, ctx, currentCont, boundVars);
+			currentCont = h.genCode(t, ctx, currentCont, Collections.emptySet());
 		}
 
+		java.util.List<CommonLiteral> schedule = evalSchedule();
+		// the running union of the variables bound by each literal in the
+		// schedule
+		java.util.List<Set<String>> boundVars = new ArrayList<>();
+		boundVars.add(Collections.emptySet());
+		for (int i = 1; i < schedule.size(); ++i) {
+			boundVars.add(SetUtils.union(boundVars.get(i - 1), schedule.get(i - 1).boundVariableNames()));
+		}
 
-		for (CommonLiteral b : evalSchedule()) {
-			currentCont = b.genCode(t, ctx, currentCont, boundVars);
+		// now generate the code for each literal, in reverse order
+		for (int i = schedule.size() - 1; i >= 0; i--) {
+			CommonLiteral b = schedule.get(i);
+			currentCont = b.genCode(t, ctx, currentCont, boundVars.get(i));
 		}
 
 		return currentCont;
@@ -259,8 +268,7 @@ aspect CodeGen {
 						// the variable is bound by previous literals, so use its value for lookup
 						test.add(Pair.of(i, v.varId()));
 					} else {
-						// the variable is free, assign it a value and mark it as bound
-						boundVars.add(v.getVAR_ID());
+						// the variable is free, assign it a value
 						assign.add(Pair.of(i, v.varId()));
 					}
 				} else if (getTerms(i).isConstant()) {
@@ -349,7 +357,6 @@ aspect CodeGen {
 
 	protected Control BINDLiteral.genCode(Tuple t, EvaluationContext ctx, Control cont, Set<String> boundVars) {
 		Variable dst = (Variable) getExpr(0);
-		boundVars.add(dst.getVAR_ID());
 		return Control.bind(t, cont, dst.varId(), getExpr(1).genCode(t, ctx));
 	}
 

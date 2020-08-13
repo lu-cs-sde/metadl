@@ -1,4 +1,4 @@
-import org.jgrapht.graph.SimpleDirectedGraph;
+import org.jgrapht.graph.DefaultDirectedGraph;
 import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultEdge;
 import org.jgrapht.alg.connectivity.KosarajuStrongConnectivityInspector;
@@ -10,7 +10,7 @@ import java.io.FileWriter;
 import eval.Stratum;
 
 aspect Stratification {
-	public class PredicateDependencyGraph extends SimpleDirectedGraph<FormalPredicate, DefaultEdge> {
+	public class PredicateDependencyGraph extends DefaultDirectedGraph<FormalPredicate, DefaultEdge> {
 		PredicateDependencyGraph() {
 			super(DefaultEdge.class);
 		}
@@ -22,8 +22,7 @@ aspect Stratification {
 				addVertex(to);
 			for (FormalPredicate from : es.getLeft()) {
 				for (FormalPredicate to : es.getRight()) {
-					if (!from.equals(to))
-						addEdge(from, to);
+					addEdge(from, to);
 				}
 			}
 		}
@@ -76,8 +75,10 @@ aspect Stratification {
 	syn java.util.List<Stratum> Program.strata(EvaluationContext ctx) {
 		java.util.List<Stratum> strata = new ArrayList<>();
 
+		Graph<FormalPredicate, DefaultEdge> pdg = predicateDependencyGraph();
+
 		StrongConnectivityAlgorithm<FormalPredicate, DefaultEdge> sca =
-			new KosarajuStrongConnectivityInspector<>(predicateDependencyGraph());
+			new KosarajuStrongConnectivityInspector<>(pdg);
 
 		TopologicalOrderIterator<Graph<FormalPredicate, DefaultEdge>, DefaultEdge> it = new
 			TopologicalOrderIterator<>(sca.getCondensation());
@@ -99,7 +100,14 @@ aspect Stratification {
 				}
 			}
 
-			strata.add(new Stratum(rels, stmts));
+			if (orderedPreds.size() == 1 &&
+				!pdg.containsEdge(orderedPreds.get(0), orderedPreds.get(0))) {
+				// the stratum contains a single predicate; if it does not depend on
+				// itself, then it's safe to evaluate all its rules only once
+				strata.add(Stratum.single(rels, stmts));
+			} else {
+				strata.add(Stratum.fixpoint(rels, stmts));
+			}
 		}
 
 		return strata;

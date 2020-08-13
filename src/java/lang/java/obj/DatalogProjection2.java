@@ -20,6 +20,7 @@ import lang.io.SimpleLogger;
 import lang.io.StringUID;
 import lang.relation.PseudoTuple;
 import lang.relation.Relation;
+import lang.relation.RelationWrapper;
 
 public class DatalogProjection2 {
 	private ASTNode<?> root;
@@ -27,14 +28,16 @@ public class DatalogProjection2 {
 
 	private int currentNumber = 0;
 	private Relation datalogProjection = new Relation(5);
+	private RelationWrapper prel;
 
 	// TODO: It's just easier to add environment variable than command-line arguments.
 	// This should be removed once we move to a traditional command line parser,
 	// that is easier to modify.
 	private boolean deepAnalysis = System.getenv().get("METADL_ANALYSIS") != null;
 
-	public DatalogProjection2(ASTNode<?> root) {
+	public DatalogProjection2(ASTNode<?> root, RelationWrapper rel) {
 		this.root = root;
+		this.prel = rel;
 	}
 
 	private int nodeId(ASTNode<?> n) {
@@ -79,6 +82,7 @@ public class DatalogProjection2 {
 						traverse(r);
 					}
 					datalogProjection.addTuple(makeTuple(relName, n, -1, r, ""));
+					prel.insertTuple(relName, nodeId(n), -1, nodeId(r), "");
 				}
 			}
 
@@ -132,6 +136,7 @@ public class DatalogProjection2 {
 
 	private void recordRewrittenNode(ASTNode<?> original, ASTNode<?> target) {
 		datalogProjection.addTuple(makeTuple("REWRITE", original, -1, target, ""));
+		prel.insertTuple("REWRITE", original, -1, target, "");
 	}
 
 	public Relation getRelation() {
@@ -171,6 +176,7 @@ public class DatalogProjection2 {
 			lang.ast.IntConstant Col = new lang.ast.IntConstant("" + beaver.Symbol.getColumn(n.getStart()));
 			lang.ast.StringConstant SrcFile = new lang.ast.StringConstant(getSourceFile(n));
 			ret.add(new PseudoTuple(Kind, CurrentNodeId, Line, Col, SrcFile));
+			prel.insertTuple(Kind, CurrentNodeId, Line, Col, SrcFile);
 		}
 
 		{
@@ -182,6 +188,7 @@ public class DatalogProjection2 {
 			// avoid printing the source file once again to avoid bloating the output table
 			lang.ast.StringConstant SrcFile = new lang.ast.StringConstant("");
 			ret.add(new PseudoTuple(Kind, CurrentNodeId, Line, Col, SrcFile));
+			prel.insertTuple(Kind, CurrentNodeId, Line, Col, SrcFile);
 		}
 		return ret;
 	}
@@ -296,20 +303,15 @@ public class DatalogProjection2 {
 			ASTNode<?> child = n.getChildNoTransform(i);
 
 			ret.add(makeTuple(relName, nodeId(n), childIndex, nodeId(child), ""));
+			prel.insertTuple(relName, nodeId(n), childIndex, nodeId(child), "");
 
 			if (child.mayHaveRewrite()) {
 				ASTNode<?> childT = n.getChild(i);
 				ret.add(makeTuple(relName, nodeId(n), childIndex, nodeId(childT), ""));
+				prel.insertTuple(relName, nodeId(n), childIndex, nodeId(childT), "");
 			}
 
 			childIndex++;
-
-			// lang.ast.StringConstant Kind = new lang.ast.StringConstant(relName);
-			// lang.ast.IntConstant ChildId  = new lang.ast.IntConstant("" + nodeId(child));
-			// lang.ast.IntConstant CurrentNodeId = new lang.ast.IntConstant("" + nodeId(n));
-			// lang.ast.IntConstant ChildIdx = new lang.ast.IntConstant("" + childIndex++);
-			// lang.ast.StringConstant Token = new lang.ast.StringConstant("");
-			// ret.add(new PseudoTuple(Kind, CurrentNodeId, ChildIdx, ChildId, Token));
 		}
 
 		// other tokens attached to the node
@@ -326,6 +328,7 @@ public class DatalogProjection2 {
 				lang.ast.IntConstant ChildIdx = new lang.ast.IntConstant("" + childIndex++);
 				lang.ast.StringConstant Token = new lang.ast.StringConstant("");
 				ret.add(new PseudoTuple(Kind, CurrentNodeId, ChildIdx, ChildId, Token));
+				prel.insertTuple(Kind, CurrentNodeId, ChildIdx, ChildId, Token);
 			}
 
 			{
@@ -336,6 +339,7 @@ public class DatalogProjection2 {
 				lang.ast.IntConstant ChildIdx = new lang.ast.IntConstant("0");
 				lang.ast.StringConstant Token = new lang.ast.StringConstant(cleanTerminal(t));
 				ret.add(new PseudoTuple(Kind, CurrentNodeId, ChildIdx, ChildId, Token));
+				prel.insertTuple(Kind, CurrentNodeId, ChildIdx, ChildId, Token);
 			}
 		}
 
@@ -347,6 +351,7 @@ public class DatalogProjection2 {
 			lang.ast.IntConstant ChildIdx = new lang.ast.IntConstant("-1");
 			lang.ast.StringConstant Token = new lang.ast.StringConstant("");
 			ret.add(new PseudoTuple(Kind, CurrentNodeId, ChildIdx, ChildId, Token));
+			prel.insertTuple(Kind, CurrentNodeId, ChildIdx, ChildId, Token);
 		}
 
 		return ret;

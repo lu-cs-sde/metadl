@@ -2,6 +2,7 @@ package eval;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -9,12 +10,11 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 
 public class Relation2 {
-	int arity = 0;
-	String name = "AnonRel";
+	private int arity = 0;
+	private String name = "AnonymousRelation";
 
 	private Map<Index, TreeSet<Tuple>> indexedMaps = new HashMap<>();
-	private TreeSet<Tuple> currentSet = null;
-	private Index defaultIndex;
+	private TreeSet<Tuple> currentSet;
 
 	public Relation2(int arity, String name) {
 		this(arity);
@@ -22,7 +22,7 @@ public class Relation2 {
 	}
 
 	@Override public String toString() {
-		return "name(" + arity + ")";
+		return getName() + "(" + arity() + ")";
 	}
 
 	public String getName() {
@@ -37,23 +37,23 @@ public class Relation2 {
 		for (int i = 0; i < arity; ++i)
 			defaultIndices.add(i);
 
-		defaultIndex = new Index(defaultIndices, arity);
-		setIndex(defaultIndex);
+		Index defaultIndex = new Index(defaultIndices, arity);
+		currentSet = new TreeSet<>(defaultIndex);
+		indexedMaps.put(defaultIndex, currentSet);
 	}
 
 	public void setIndex(Index index) {
-		currentSet = indexedMaps.get(index);
-		if (currentSet == null) {
+		TreeSet<Tuple> nextSet = indexedMaps.get(index);
+		if (nextSet == null) {
 			// no set for the requested index, add new one
-			currentSet = new TreeSet<>(index);
-			indexedMaps.put(index, currentSet);
+			nextSet = new TreeSet<>(index);
+			indexedMaps.put(index, nextSet);
 
-			// initialize the current set with all the values
-			for (SortedSet<Tuple> s : indexedMaps.values()) {
-				currentSet.addAll(s);
-				break;
-			}
+			// initialize the set with all the values in the current
+			// set
+			nextSet.addAll(currentSet);
 		}
+		currentSet = nextSet;
 	}
 
 	public Tuple infTuple() {
@@ -72,6 +72,7 @@ public class Relation2 {
 
 	public SortedSet<Tuple> lookup(Tuple loInclusive, Tuple hiInclusive) {
 		assert loInclusive.arity() == hiInclusive.arity();
+		// return Collections.unmodifiableSortedSet(currentSet.subSet(loInclusive, true, hiInclusive, true));
 		return currentSet.subSet(loInclusive, true, hiInclusive, true);
 	}
 
@@ -90,10 +91,11 @@ public class Relation2 {
 	}
 
 	public int size() {
-		return indexedMaps.get(defaultIndex).size();
+		return currentSet.size();
 	}
 
 	public SortedSet<Tuple> tuples() {
-		return indexedMaps.get(defaultIndex);
+		return currentSet;
+		// return Collections.unmodifiableSortedSet(currentSet);
 	}
 }

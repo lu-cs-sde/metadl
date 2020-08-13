@@ -5,7 +5,9 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-public class Stratum {
+import javax.management.relation.Relation;
+
+public abstract class Stratum {
 	List<Relation2> definedRelations;
 	List<Control> statements;
 
@@ -14,26 +16,58 @@ public class Stratum {
 		this.statements = stmts;
 	}
 
-	public void eval() {
-		boolean change;
-		do {
-			change = false;
-			List<Integer> sizes = definedRelations.stream().map(r -> r.size()).collect(Collectors.toList());
-			for (Control c : statements)
-				c.eval();
+	abstract public void eval();
+	abstract public void prettyPrint(PrintStream s);
 
-			change = IntStream.range(0, definedRelations.size())
-				.anyMatch(i -> sizes.get(i) != definedRelations.get(i).size());
-		} while (change);
+	/**
+	   Build a stratum that evaluates stmts until no more new facts can be derived
+	 */
+	public static Stratum fixpoint(List<Relation2> definedRelations, List<Control> stmts) {
+		return new Stratum(definedRelations, stmts) {
+			@Override public void eval() {
+				boolean change;
+				do {
+					change = false;
+					List<Integer> sizes = definedRelations.stream().map(r -> r.size()).collect(Collectors.toList());
+					for (Control c : statements)
+						c.eval();
+
+					change = IntStream.range(0, definedRelations.size())
+						.anyMatch(i -> sizes.get(i) != definedRelations.get(i).size());
+				} while (change);
+			}
+
+			@Override public void prettyPrint(PrintStream s) {
+				s.print("BEGIN FIXPOINT\n");
+
+				for (Control c : statements) {
+					s.println(c.prettyPrint(0));
+				}
+
+				s.print("END FIXPOINT");
+			}
+		};
 	}
 
-	public void prettyPrint(PrintStream s) {
-		s.print("BEGIN STRATUM\n");
+	/**
+	   Build a stratum that evaluates stmts once
+	 */
+	public static Stratum single(List<Relation2> definedRelations, List<Control> stmts) {
+		return new Stratum(definedRelations, stmts) {
+			@Override public void eval() {
+				for (Control c : statements)
+					c.eval();
+			}
 
-		for (Control c : statements) {
-			s.println(c.prettyPrint(0));
-		}
+			@Override public void prettyPrint(PrintStream s) {
+				s.print("BEGIN SINGLE\n");
 
-		s.print("END_STRATUM");
+				for (Control c : statements) {
+					s.println(c.prettyPrint(0));
+				}
+
+				s.print("END SINGLE");
+			}
+		};
 	}
 }

@@ -180,6 +180,8 @@ public class CSVUtil {
 			writer.writeNext(line);
 		}
 
+		writer.close();
+
 		timer.stop();
 		SimpleLogger.logger().time("Writing CSV file: " + timer.getTime() + "ms ");
 	}

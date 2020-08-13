@@ -1,0 +1,120 @@
+import lang.io.CSVUtil;
+import lang.io.FileUtil;
+import org.apache.commons.collections4.map.DefaultedMap;
+import java.util.LinkedHashMap;
+import lang.relation.RelationWrapper;
+import org.apache.commons.lang3.mutable.MutableInt;
+
+aspect Eval {
+	public void Program.evalIMPORT(EvaluationContext ctx) throws IOException {
+		FormalPredicate fpImp = formalPredicateMap().get("IMPORT");
+		if (fpImp == null) {
+			// no IMPORT in the program, nothing to do
+			return;
+		}
+
+		LinkedHashMap<FormalPredicate, java.util.List<Pair<String, String>>> predToSrc = new LinkedHashMap<>();
+
+		for (PredicateSymbol ps : fpImp.predicates()) {
+			Literal l = ps.parentLiteral();
+			assert l.isIMPORT();
+
+			PredicateRef prog = (PredicateRef) l.getTerms(0);
+			StringConstant dir = (StringConstant) l.getTerms(1);
+			StringConstant lang = (StringConstant) l.getTerms(2);
+
+			java.util.List srcList = predToSrc.get(prog.formalpredicate());
+			if (srcList == null) {
+				srcList = new ArrayList<Pair<String, String>>();
+				predToSrc.put(prog.formalpredicate(), srcList);
+			}
+
+			srcList.add(Pair.of(dir.getSTRING(), lang.getSTRING()));
+		}
+
+		for (Map.Entry<FormalPredicate, java.util.List<Pair<String, String>>> e : predToSrc.entrySet()) {
+			Relation2 rel = e.getKey().relation2();
+
+			if (e.getValue().size() > 1) {
+				throw new RuntimeException("At most one IMPORT for any predicate. ");
+			}
+
+			for (Pair<String, String> locAndLang : e.getValue()) {
+				String srcLang = locAndLang.getRight();
+				String loc = locAndLang.getLeft();
+
+				if (srcLang.equals("java8")) {
+					FileUtil.loadJavaSources(ctx, new RelationWrapper(ctx, rel), Collections.singletonList(loc));
+				} else if (srcLang.equals("metadl")) {
+					MutableInt nodeCounter = new MutableInt(1);
+					try {
+						lang.metadl.obj.ast.Program importedProgram = lang.metadl.obj.ast.Program.fromFileLoc(loc);
+						importedProgram.assignIds(nodeCounter);
+						RelationWrapper rw = new RelationWrapper(ctx, rel);
+						rw.insertPseudoTuples(importedProgram.asRelation().tuples());
+					} catch (beaver.Parser.Exception exception) {
+						throw new RuntimeException(exception);
+					}
+				} else {
+					throw new RuntimeException("Unknown language for IMPORT: " + srcLang + ".");
+				}
+			}
+		}
+	}
+
+	public void Program.evalEDB(EvaluationContext ctx) throws IOException {
+		FormalPredicate fpEDB = formalPredicateMap().get("EDB");
+
+		if (fpEDB == null) {
+			// no IMPORT in the program, nothing to do
+			return;
+		}
+
+		for (PredicateSymbol ps : fpEDB.predicates()) {
+			Literal l = ps.parentLiteral();
+			assert l.isEDB();
+
+			PredicateRef rel = (PredicateRef) l.getTerms(0);
+			StringConstant file = (StringConstant) l.getTerms(1);
+
+			FormalPredicate pred = rel.formalpredicate();
+			PredicateType type = pred.type();
+
+			CSVUtil.readRelation(ctx, type, pred.relation2(), file.getSTRING());
+		}
+	}
+
+	public void Program.evalOUTPUT(EvaluationContext ctx) throws IOException {
+		FormalPredicate fpOUTPUT = formalPredicateMap().get("OUTPUT");
+
+		if (fpOUTPUT == null) {
+			// no IMPORT in the program, nothing to do
+			return;
+		}
+
+		for (PredicateSymbol ps : fpOUTPUT.predicates()) {
+			Literal l = ps.parentLiteral();
+			assert l.isOUTPUT();
+
+			PredicateRef rel = (PredicateRef) l.getTerms(0);
+
+			FormalPredicate pred = rel.formalpredicate();
+			PredicateType type = pred.type();
+
+			CSVUtil.writeRelation(ctx, type, pred.relation2(), rel.getPRED_ID() + ".csv");
+		}
+	}
+
+	public void Program.eval() throws IOException {
+		EvaluationContext ctx = new EvaluationContext();
+		java.util.List<Stratum> strata = strata(ctx);
+
+		evalEDB(ctx);
+		evalIMPORT(ctx);
+
+		for (Stratum s : strata) {
+			s.eval();
+		}
+		evalOUTPUT(ctx);
+	}
+}

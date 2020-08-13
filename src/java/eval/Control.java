@@ -298,7 +298,7 @@ class IfNotExists implements Control {
 }
 
 class Insert implements Control {
-	private Tuple t, u;
+	private Tuple t;
 	private List<Pair<Integer, Integer>> assign;
 	private List<Pair<Integer, Long>> consts;
 	private Control cont;
@@ -317,15 +317,19 @@ class Insert implements Control {
 		this.assign = assign;
 		this.consts = consts;
 		this.cont = cont;
-		this.u = new Tuple(rel.arity());
-		for (Pair<Integer, Long> c : consts) {
-			u.set(c.getLeft(), c.getRight());
-		}
+
+
 	}
 
 	@Override public void eval() {
+		Tuple u = new Tuple(rel.arity());
+
 		for (Pair<Integer, Integer> a : assign) {
 			u.set(a.getLeft(), t.get(a.getRight()));
+		}
+
+		for (Pair<Integer, Long> c : consts) {
+			u.set(c.getLeft(), c.getRight());
 		}
 
 		rel.insert(u);

@@ -23,4 +23,17 @@ public class Tuple {
 	public long get(int i) {
 		return data[i];
 	}
+
+	@Override public boolean equals(Object o) {
+		if (!(o instanceof Tuple))
+			return false;
+		Tuple other = (Tuple) o;
+		if (other.arity() != arity())
+			return false;
+		return Arrays.equals(data, other.data);
+	}
+
+	@Override public int hashCode() {
+		return Arrays.hashCode(data);
+	}
 }

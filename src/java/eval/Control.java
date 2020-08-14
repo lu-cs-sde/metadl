@@ -221,7 +221,7 @@ class ForAll implements Control {
 		}
 
 		for (Pair<Integer, Long> c : consts) {
-			s += String.format("%s[%d] = t[%d] ", rel.getName(), c.getLeft(), c.getRight());
+			s += String.format("%s[%d] = %d ", rel.getName(), c.getLeft(), c.getRight());
 		}
 
 		for (Pair<Integer, Integer> a : assign) {
@@ -288,8 +288,8 @@ class IfNotExists implements Control {
 			s += String.format("%d:%d, ", c.getLeft(), c.getRight());
 		}
 
-		s += ") IN " + rel.getName() + " THEN\n" + cont.prettyPrint(indent + 1);
-		return s + "\n" + cont.prettyPrint(indent + 1);
+		s += ") NOT IN " + rel.getName() + " THEN\n" + cont.prettyPrint(indent + 1);
+		return s;
 	}
 
 	@Override public String toString() {

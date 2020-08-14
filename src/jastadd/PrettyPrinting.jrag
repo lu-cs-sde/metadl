@@ -125,6 +125,7 @@ aspect PretyPrinting {
 
 	public void AnalyzeBlock.prettyPrint(PrettyPrinter pr) {
 		printCollection(getExpandedClauses(), "", "", "", pr);
+		printCollection(getClauses(), "", "", "", pr);
 	}
 
 	public void Wildcard.prettyPrint(PrettyPrinter pr) {

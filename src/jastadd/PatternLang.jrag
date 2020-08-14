@@ -41,10 +41,6 @@ aspect PatternLang {
 	syn nta List<Clause> AnalyzeBlock.getExpandedClauseList() {
 		List<Clause> cls = new List<>();
 		cls.addAll(generateHelperRelations());
-		for (Clause c : getClauses())
-			// TODO: this makes the parser run twice for each pattern;
-			// try to cache this.
-			cls.add(c.treeCopy());
 		for (Pattern p : patterns()) {
 			cls.addAll(p.getClauses());
 		}
@@ -135,8 +131,9 @@ aspect PatternLang {
 		// the same metavariables
 		ObjLangASTNode n = altParse().iterator().next();
 		if (bindVar != null)
-			headVars.add(bindVar);
-		headVars.addAll(n.metavariables());
+			headVars.add(bindVar.treeCopy());
+		for (Variable v : n.metavariables())
+			headVars.add(v.treeCopy());
 		// we're using a String hash  here; fingers crossed for no collisions in
 		// the same analyze block
 		Literal head = new Literal(new PredicateSymbol(predName),

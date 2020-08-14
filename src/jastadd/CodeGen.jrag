@@ -8,6 +8,7 @@ import eval.Relation2;
 import eval.Tuple;
 import eval.EvaluationContext;
 import eval.Operation;
+import java.util.SortedSet;
 
 aspect CodeGen {
 
@@ -103,11 +104,11 @@ aspect CodeGen {
 	eq Constraint.evalLiteralList() = new List<CommonLiteral>().add(this.treeCopy());
 
 
-	syn Set<String> CommonLiteral.boundVariableNames() =
-		boundVariables().stream().map(v -> v.getVAR_ID()).collect(Collectors.toSet());
+	syn SortedSet<String> CommonLiteral.boundVariableNames() =
+		boundVariables().stream().map(v -> v.getVAR_ID()).collect(Collectors.toCollection(TreeSet::new));
 
-	syn Set<String> CommonLiteral.variableNames() =
-		variables().stream().map(v -> v.getVAR_ID()).collect(Collectors.toSet());
+	syn SortedSet<String> CommonLiteral.variableNames() =
+		variables().stream().map(v -> v.getVAR_ID()).collect(Collectors.toCollection(TreeSet::new));
 
 
 	private boolean Rule.trySchedule(CommonLiteral l,
@@ -172,9 +173,9 @@ aspect CodeGen {
 		int i = 0;
 		Map<String, Integer> varMap = new HashMap<>();
 		for (CommonLiteral l : evalSchedule()) {
-			for (Variable v : l.variables()) {
-				if (!varMap.containsKey(v.getVAR_ID())) {
-					varMap.put(v.getVAR_ID(), i);
+			for (String v : l.variableNames()) {
+				if (!varMap.containsKey(v)) {
+					varMap.put(v, i);
 					i++;
 				}
 			}
@@ -263,7 +264,7 @@ aspect CodeGen {
 		throw new RuntimeException("Can't generate code for literal " + toString());
 	}
 
-	syn lazy int Variable.varId() {
+	syn int Variable.varId() {
 		return literal().clause().evalVariables().get(getVAR_ID());
 	}
 

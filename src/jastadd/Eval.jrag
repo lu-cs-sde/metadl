@@ -105,6 +105,12 @@ aspect Eval {
 		}
 	}
 
+	public void Program.dumpAllRelations(EvaluationContext ctx) throws IOException {
+		for (FormalPredicate pred : getFormalPredicates()) {
+			CSVUtil.writeRelation(ctx, pred.type(), pred.relation2(), pred.getPRED_ID() + ".csv");
+		}
+	}
+
 	public void Program.eval() throws IOException {
 		EvaluationContext ctx = new EvaluationContext();
 		java.util.List<Stratum> strata = strata(ctx);
@@ -116,5 +122,6 @@ aspect Eval {
 			s.eval();
 		}
 		evalOUTPUT(ctx);
+		dumpAllRelations(ctx);
 	}
 }

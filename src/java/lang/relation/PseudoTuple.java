@@ -21,14 +21,6 @@ public class PseudoTuple implements Comparable<PseudoTuple> {
 		vars.toArray(this.tuple);
 	}
 
-	public PseudoTuple(PseudoTuple ground, Binding from, PseudoTuple vars) {
-		this.size = vars.size;
-		this.tuple = new Term[size];
-		for(int i = 0; i != size; ++i) {
-			tuple[i] = ground.coord(from.firstCoordOf(vars.tuple[i]));
-		}
-	}
-
 	public PseudoTuple(List<Term> terms) {
 		this.size = terms.getNumChild();
 		this.tuple = new Term[size];

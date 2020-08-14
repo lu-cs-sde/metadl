@@ -45,13 +45,13 @@ aspect Eval {
 				String loc = locAndLang.getLeft();
 
 				if (srcLang.equals("java8")) {
-					FileUtil.loadJavaSources(ctx, new RelationWrapper(ctx, rel), Collections.singletonList(loc));
+					FileUtil.loadJavaSources(ctx, new RelationWrapper(ctx, rel, e.getKey().type()), Collections.singletonList(loc));
 				} else if (srcLang.equals("metadl")) {
 					MutableInt nodeCounter = new MutableInt(1);
 					try {
 						lang.metadl.obj.ast.Program importedProgram = lang.metadl.obj.ast.Program.fromFileLoc(loc);
 						importedProgram.assignIds(nodeCounter);
-						RelationWrapper rw = new RelationWrapper(ctx, rel);
+						RelationWrapper rw = new RelationWrapper(ctx, rel, e.getKey().type());
 						rw.insertPseudoTuples(importedProgram.asRelation().tuples());
 					} catch (beaver.Parser.Exception exception) {
 						throw new RuntimeException(exception);
@@ -112,8 +112,11 @@ aspect Eval {
 		}
 	}
 
+	syn lazy EvaluationContext Program.evalCtx() = new EvaluationContext();
+
 	public void Program.eval() throws IOException {
-		EvaluationContext ctx = new EvaluationContext();
+		EvaluationContext ctx = evalCtx();
+
 		java.util.List<Stratum> strata = strata(ctx);
 
 		evalEDB(ctx);

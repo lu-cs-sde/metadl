@@ -118,95 +118,29 @@ aspect Task {
 	}
 
 	public void Task.generateObjectProgramRelations(Program program) throws Exception {
-		// Add IMPORT to the formal predicate map. The facts produced by the IMPORT statement
-		// will be exported in the generated souffle file.
-		FormalPredicate formalImport = program.formalPredicateMap().get(GlobalNames.IMPORT_NAME);
+		// Start a timer to measure the speed of the import
+		StopWatch progRelTimer = StopWatch.createStarted();
 
+		program.evalIMPORT(program.evalCtx());
+
+		FormalPredicate formalImport = program.formalPredicateMap().get(GlobalNames.IMPORT_NAME);
 		if (formalImport == null)
 			return;
 
-		// At least one IMPORT predicate used in the program, process it.
-
-		// Define a time to measure the speed of the import
-		StopWatch progRelTimer = StopWatch.createStarted();
-
-		// map predicate name to program source files, to handle the case when multiple
-		// files are imported to the same program relation.
-		HashMap<String, ArrayList<Map.Entry<String, String>>> predicateSrcFiles = new HashMap<>();
 		for (PredicateSymbol psym : formalImport.predicates()) {
 			Literal imp = psym.parentLiteral();
 			String progFileLoc = ((StringConstant)imp.getTerms(1)).getSTRING();
 			String lang = ((StringConstant)imp.getTerms(2)).getSTRING();
 			PredicateRef predref = (PredicateRef)(imp.getTerms(0));
+			FormalPredicate formalProg = predref.formalpredicate();
 			String predName = predref.getPRED_ID();
 
-			ArrayList<Map.Entry<String, String>> files = predicateSrcFiles.get(predName);
-			if (files != null) {
-				files.add(new AbstractMap.SimpleEntry<String, String>(progFileLoc, lang));
-			} else {
-				files = new ArrayList<>();
-				files.add(new AbstractMap.SimpleEntry<String, String>(progFileLoc, lang));
-				predicateSrcFiles.put(predName, files);
-			}
+			CSVUtil.writeRelation(program.evalCtx(), formalProg.type(), formalProg.relation2(),
+								  CmdLineOpts.getFactsDir() + "/" + predName + ".csv");
 		}
 
-		for (Map.Entry<String, ArrayList<Map.Entry<String, String>>> predicateSrcFile : predicateSrcFiles.entrySet()) {
-			// exclude this file movement from the counting
-			progRelTimer.suspend();
-
-			String predName = predicateSrcFile.getKey();
-			File output_fp = new File(factsDir() + "/" + predName + ".csv");
-
-			MutableInt nodeCounter = new MutableInt(1);
-			java.util.List<String> java8Srcs = new ArrayList<>();
-
-			// include the program parse
-			progRelTimer.resume();
-
-			boolean append = false;
-			for (Map.Entry<String, String> progFileLang : predicateSrcFile.getValue()) {
-				Relation programRel = null;
-				try {
-					switch (progFileLang.getValue()) {
-					case "metadl": {
-						lang.metadl.obj.ast.Program prog = lang.metadl.obj.ast.Program.fromFileLoc(progFileLang.getKey());
-						prog.assignIds(nodeCounter);
-						programRel = prog.asRelation();
-						break;
-					}
-					case "java8": {
-						java8Srcs.add(progFileLang.getKey());
-						break;
-					}
-					default:
-						SimpleLogger.logger().log("Unknown language to IMPORT: " + progFileLang.getValue(),
-												  SimpleLogger.LogLevel.Level.ERROR);
-						throw new RuntimeException("Unknown language to IMPORT");
-					}
-				} catch(Exception e) {
-					SimpleLogger.logger().log("Could not open file for IMPORT: "
-											  + progFileLang.getKey() + ", " + progFileLang.getValue() + "\n"
-											  + e.toString(), SimpleLogger.LogLevel.Level.ERROR);
-					throw new RuntimeException("Could not open file for IMPORT");
-				}
-
-				if (programRel != null) {
-					CSVUtil.dumpFileInto(programRel, output_fp, append);
-					append = true;
-				}
-			}
-
-			if (!java8Srcs.isEmpty()) {
-				// TODO: This assumes that all imports to this predicate are Java programs. This might
-				// not be the case, but this should be checked in another place...
-				Relation programRel = FileUtil.loadJavaSources(java8Srcs);
-				CSVUtil.dumpFileInto(programRel, output_fp, false);
-			}
-
-			// stop the timer and report
-			progRelTimer.stop();
-		}
-
+		// stop the timer and report
+		progRelTimer.stop();
 		SimpleLogger.logger().time("Evaluate IMPORT statements: " + progRelTimer.getTime() + "ms");
 	}
 }
@@ -214,6 +148,8 @@ aspect Task {
 aspect Import {
 	public Program EvalImport.perform() throws Exception {
 		Program program = getProgramWithChecks();
+		CmdLineOpts.setOutputDir(outputDir());
+		CmdLineOpts.setFactsDir(factsDir());
 		generateObjectProgramRelations(program);
 		return program;
 	}
@@ -244,10 +180,12 @@ aspect Internal {
 
 aspect Souffle {
 	protected Program SouffleTask.preEvaluate() throws Exception {
+		CmdLineOpts.setOutputDir(outputDir());
+		CmdLineOpts.setFactsDir(factsDir());
+
 		SimpleLogger.logger().log(description().debugInfo(), SimpleLogger.LogLevel.Level.DEBUG);
 
 		Program program = getProgramWithChecks();
-
 		generateObjectProgramRelations(program);
 
 		return program;

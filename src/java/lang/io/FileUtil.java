@@ -111,7 +111,7 @@ public class FileUtil {
 		}
 
 		// Generate the program relation
-		lang.java.obj.DatalogProjection2 proj2 = new lang.java.obj.DatalogProjection2(p, new RelationWrapper(null, null) {
+		lang.java.obj.DatalogProjection2 proj2 = new lang.java.obj.DatalogProjection2(p, new RelationWrapper(null, null, null) {
 				@Override public void insertTuple(Object ... args) { /* do nothing */ } });
 		proj2.generate();
 		Relation ret = proj2.getRelation();

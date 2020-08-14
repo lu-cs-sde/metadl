@@ -5,18 +5,10 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.Collection;
 
-import lang.ast.Term;
-import lang.relation.Binding.BindOverlap;
-import lang.relation.Binding.BindResult;
-import lang.relation.Binding.BindResult.Direction;
-import lang.relation.Binding.BindResult.TaggedBind;
-import lang.relation.Binding.BindTerm;
-
 public class Relation {
 	public static final Relation nullRelation = new Relation(0);
 	private Set<PseudoTuple> relation = new TreeSet<PseudoTuple>();
 	private int arity;
-	public Binding binding = Binding.anyBinding;
 
 	public Relation(Relation r) {
 		this.arity = r.arity;
@@ -65,128 +57,8 @@ public class Relation {
 		arity = arity + 1;
 	}
 
-	/**
-	 * Selects a set of tuples based on the binding disregarding the current names of the relation columns
-	 */
-	public Relation select(Binding selectBind) {
-		Relation r = new Relation(this.arity);
-		r.binding = selectBind;
-		for(PseudoTuple t : relation) {
-			if(selectBind.satisfiedBy(t)) {
-				r.relation.add(new PseudoTuple(t));
-			}
-		}
-		return r;
-	}
-
 	public void addAll(Relation r) {
 		relation.addAll(r.tuples());
-	}
-
-	/**
-	 * Selects a set of tuples respecting the names of the relation columns
-	 * Name is given by a Variable Name
-	 * The semantics of a constant in the selectBind is that it is added to the
-	 * selected tuple at the given coordinate.
-	 */
-	public Relation selectNamed(Binding selectBind) {
-		if(binding == Binding.anyBinding) return select(selectBind);
-		Relation r = new Relation(selectBind.totalSize());
-		r.binding = selectBind;
-		TreeSet<BindOverlap> intersect = Binding.intersect(selectBind, binding);
-		Binding difference = Binding.difference(intersect, selectBind);
-
-		tuples().forEach(t -> {
-			PseudoTuple tuple = new PseudoTuple(r.arity);
-			for(BindOverlap bo : intersect) {
-				Term val = t.coord(bo.b2.coords.first());
-				for(Integer i : bo.b1.coords) {
-					tuple.set(i, val);
-				}
-			}
-			for(BindTerm bt : difference) {
-				for(Integer i : bt.coords) {
-					tuple.set(i, bt.t);
-				}
-			}
-			r.addTuple(tuple);
-		});
-		return r;
-	}
-
-	private static boolean agrees(BindResult br, PseudoTuple t_left, PseudoTuple t_right, PseudoTuple build) {
-		for (BindTerm bt_target : br.b_merged) {
-			TaggedBind tagged = br.f.get(bt_target);
-			if (tagged.d == Direction.Both) {
-				BindOverlap bo = (BindOverlap) tagged.b;
-				if (Term.termComparator.compare(t_left.coord(bo.b1.coords.first()),
-						t_right.coord(bo.b2.coords.first())) != 0)
-					return false;
-				build.set(bt_target.coords.first(), t_left.coord(bo.b1.coords.first()));
-			} else {
-				PseudoTuple target = tagged.d == Direction.Left ? t_left : t_right;
-				BindTerm bt = (BindTerm) tagged.b;
-				build.set(bt_target.coords.first(), target.coord(bt.coords.first()));
-			}
-		}
-		return true;
-	}
-
-	public static Relation join(Relation r1, Relation r2) {
-		if(r1 == nullRelation) return r2;
-		if(r2 == nullRelation) return r1;
-
-		TreeSet<BindOverlap> intersect = Binding.intersect(r1.binding, r2.binding);
-		BindResult br = Binding.merge(intersect, r1.binding, r2.binding);
-		Relation r = new Relation(br.b_merged.size());
-		r.binding = br.b_merged;
-
-		r1.tuples().forEach(t_left -> {
-			r2.tuples().forEach(t_right -> {
-				PseudoTuple build = new PseudoTuple(r.arity);
-				if (agrees(br, t_left, t_right, build))
-					r.addTuple(build);
-			});
-		});
-		return r;
-	}
-
-	public static Relation difference(Relation r1, Relation r2) {
-		Relation r = new Relation(r1.arity);
-		r1.tuples().forEach(
-				t -> {
-					if (!r2.contains(t)) r.addTuple(t);
-				}
-		);
-		r.binding = r1.binding;
-		return r;
-	}
-
-	private static PseudoTuple projectWithBindings(Binding newBinding, PseudoTuple other, Binding otherBinding) {
-		PseudoTuple result = new PseudoTuple(newBinding.totalSize());
-		TreeSet<Binding.BindOverlap> intersect = Binding.intersect(newBinding, otherBinding);
-		for (Binding.BindOverlap overlap : intersect) {
-			for (Integer bt : overlap.b1.coords) {
-				result.set(bt, other.coord(overlap.b2.coords.first()));
-			}
-		}
-		return result;
-	}
-
-	public static Relation differenceWithBindings(Relation r1, Relation r2) {
-		assert r1.binding != Binding.anyBinding;
-		assert r2.binding != Binding.anyBinding;
-
-		Relation r2Filtered = r2.selectNamed(r2.binding);
-
-		Relation r = new Relation(r1.arity);
-		r1.tuples().forEach(
-				t -> {
-					PseudoTuple tp = projectWithBindings(r2.binding, t, r1.binding);
-					if (!r2Filtered.contains(tp)) r.addTuple(t);
-				});
-		r.binding = r1.binding;
-		return r;
 	}
 
 	public boolean contains(PseudoTuple t) {

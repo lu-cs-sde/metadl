@@ -56,6 +56,8 @@ public class RelationWrapper {
 				throw new RuntimeException("Unknown argument type for insertTuple, " + args[i].toString());
 			}
 		}
+
+		rel.insert(t);
 	}
 
 	public void insertPseudoTuple(PseudoTuple p) {
@@ -73,6 +75,8 @@ public class RelationWrapper {
 				throw new RuntimeException("Unknown argument type for insertTuple, " + p.coord(i).toString());
 			}
 		}
+
+		rel.insert(t);
 	}
 
 	public void insertPseudoTuples(Collection<? extends PseudoTuple> ps) {

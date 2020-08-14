@@ -22,7 +22,7 @@ public class Relation2 {
 	}
 
 	@Override public String toString() {
-		return getName() + "(" + arity() + ")";
+		return name + "(" + arity + ")" + tuples().toString();
 	}
 
 	public String getName() {
@@ -104,5 +104,19 @@ public class Relation2 {
 	public void clear() {
 		for (SortedSet<Tuple> s : indexedMaps.values())
 			s.clear();
+	}
+
+	@Override public boolean equals(Object o) {
+		if (!(o instanceof Relation2))
+			return false;
+		Relation2 other = (Relation2) o;
+		return this.arity == other.arity &&
+			this.name.equals(other.name) &&
+			this.tuples().equals(other.tuples());
+	}
+
+	@Override public int hashCode() {
+		int p = 31;
+		return ((name.hashCode() * p) + tuples().hashCode()) * p  + arity;
 	}
 }

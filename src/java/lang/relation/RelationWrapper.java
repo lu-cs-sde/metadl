@@ -1,6 +1,8 @@
 package lang.relation;
 
 import java.util.Collection;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import eval.EvaluationContext;
 import eval.Relation2;
@@ -19,10 +21,53 @@ class TupleWrapper {
 	private final PredicateType type;
 	private final EvaluationContext ctx;
 
-	private TupleWrapper(final EvaluationContext ctx, final Tuple t, final PredicateType type) {
+	TupleWrapper(final EvaluationContext ctx, final Tuple t, final PredicateType type) {
 		this.t = t;
 		this.ctx = ctx;
 		this.type = type;
+	}
+
+	public String toString() {
+		String s = "(";
+		for (int i = 0; i < t.arity(); ++i) {
+			if (i != 0) {
+				s += ", ";
+			}
+			if (type.get(i) == IntegerType.get()) {
+				s += t.get(i);
+			} else if (type.get(i) == StringType.get()) {
+				s += "\"" + ctx.externalizeString(t.get(i)) + "\"";
+			} else {
+				assert type.get(i) == PredicateRefType.get();
+				s += "'" + ctx.externalizeString(t.get(i));
+			}
+		}
+		return s + ")";
+	}
+
+
+	@Override public boolean equals(Object o) {
+		if (!(o instanceof TupleWrapper))
+			return false;
+		TupleWrapper other = (TupleWrapper) o;
+
+		if (t.arity() != other.t.arity())
+			return false;
+
+		for (int i = 0; i < t.arity(); ++i) {
+			if (type.get(i) == IntegerType.get() &&
+				t.get(i) != other.t.get(i)) {
+				return false;
+			} else if ((type.get(i) == StringType.get() || type.get(i) == PredicateRefType.get()) &&
+					   !ctx.externalizeString(t.get(i)).equals(other.ctx.externalizeString(other.t.get(i)))) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	@Override public int hashCode() {
+		return toString().hashCode();
 	}
 }
 
@@ -91,5 +136,21 @@ public class RelationWrapper {
 		for (PseudoTuple p : ps) {
 			insertPseudoTuple(p);
 		}
+	}
+
+	public PredicateType type() {
+		return type;
+	}
+
+	public Relation2 getRelation() {
+		return rel;
+	}
+
+	public EvaluationContext getContext() {
+		return ctx;
+	}
+
+	public Set<TupleWrapper> tuples() {
+		return rel.tuples().stream().map(p -> new TupleWrapper(ctx, p, type)).collect(Collectors.toSet());
 	}
 }

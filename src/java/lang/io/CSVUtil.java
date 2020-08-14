@@ -60,31 +60,6 @@ public class CSVUtil {
 		return new StringConstant(line);
 	}
 
-	public static void readFileInto(Program program, Relation r, String path) {
-		SimpleLogger.logger().log("Read file " + path, SimpleLogger.LogLevel.Level.DEBUG);
-
-		CSVParser parser = new CSVParserBuilder().withSeparator(Compiler.getCSVSeparator()).build();
-		try (CSVReader reader = new CSVReaderBuilder(new FileReader(new File(path))).withCSVParser(parser).build()) {
-			String[] line;
-			while ((line = reader.readNext()) != null) {
-				if (line.length != r.arity()) {
-					SimpleLogger
-							.logger().log(
-									"Expected arity: " + r.arity() + " but got "
-											+ line.length + "-sized tuple in .csv file",
-									SimpleLogger.LogLevel.Level.ERROR);
-					System.exit(0);
-				}
-				PseudoTuple ps = new PseudoTuple(r.arity());
-				for (int i = 0; i != line.length; ++i)
-					ps.set(i, parseCSV(program, line[i]));
-				r.addTuple(ps);
-			}
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}
-
 	public static void readRelation(EvaluationContext ctx, PredicateType t, Relation2 rel, String path) throws IOException {
 		assert t.arity() == rel.arity();
 
@@ -123,35 +98,6 @@ public class CSVUtil {
 
 		SimpleLogger.logger().log("End Read file " + path + " into " + rel.getName(), SimpleLogger.LogLevel.Level.DEBUG);
 	}
-
-	public static void readFileInto(Program program, FormalPredicate fp, String path) {
-		SimpleLogger.logger().log("Begin Read file " + path + " into " + fp, SimpleLogger.LogLevel.Level.DEBUG);
-
-		CSVParser parser = new CSVParserBuilder().withSeparator(Compiler.getCSVSeparator()).build();
-		try (CSVReader reader = new CSVReaderBuilder(new FileReader(new File(path))).withCSVParser(parser).build()) {
-			String[] line;
-			while ((line = reader.readNext()) != null) {
-				if (line.length != fp.realArity()) {
-					SimpleLogger
-							.logger().log(
-									"Predicate: " + fp.predicateName() + " has arity: " + fp.realArity() + " but got "
-											+ line.length + "-sized tuple in .csv file",
-									SimpleLogger.LogLevel.Level.ERROR);
-					System.exit(0);
-				}
-				PseudoTuple ps = new PseudoTuple(fp.realArity());
-				for (int i = 0; i != line.length; ++i) {
-					ps.set(i, parseCSV(program, line[i]));
-				}
-				fp.relation.addTuple(ps);
-			}
-
-			SimpleLogger.logger().log("End Read file " + path + " into " + fp, SimpleLogger.LogLevel.Level.DEBUG);
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}
-
 
 	public static void writeRelation(EvaluationContext ctx, PredicateType t, Relation2 rel, String path) throws IOException {
 		StopWatch timer = StopWatch.createStarted();

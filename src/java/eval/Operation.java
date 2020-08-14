@@ -104,5 +104,17 @@ public interface Operation {
 		};
 	}
 
-	// TODO: implement cat
+	public static Operation cat(EvaluationContext ctx, Operation arg0, Operation arg1) {
+		return new Operation() {
+			@Override public long eval() {
+				String s0 = ctx.externalizeString(arg0.eval());
+				String s1 = ctx.externalizeString(arg1.eval());
+				return ctx.internalizeString(s0 + s1);
+			}
+
+			@Override public String prettyPrint() {
+				return "cat(" + arg0.prettyPrint() + ", " + arg1.prettyPrint() + ")";
+			}
+		};
+	}
 }

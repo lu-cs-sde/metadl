@@ -50,7 +50,8 @@ aspect Stratification {
 	coll PredicateDependencyGraph Program.predicateDependencyGraph() [new PredicateDependencyGraph()] with addEdge;
 	coll Set<Clause> FormalPredicate.definedIn() [new LinkedHashSet<Clause>()];
 
-	private Pair<Collection<FormalPredicate>, Collection<FormalPredicate>> Rule.pdgContribution() {
+	syn Pair<Collection<FormalPredicate>, Collection<FormalPredicate>> Clause.pdgContribution();
+	eq Rule.pdgContribution() {
 		Set<FormalPredicate> from = new HashSet<>();
 		Set<FormalPredicate> to = new HashSet<>();
 
@@ -67,8 +68,17 @@ aspect Stratification {
 		}
 		return Pair.of(from, to);
 	}
+	eq Fact.pdgContribution() {
+		Set<FormalPredicate> to = new HashSet<>();
+		for (CommonLiteral h : getHeadss()) {
+			if (h instanceof Literal) {
+				to.add(((Literal) h).getPredicate().formalpredicate());
+			}
+		}
+		return Pair.of(Collections.emptySet(), to);
+	}
 
-	Rule contributes pdgContribution() to Program.predicateDependencyGraph();
+	Clause contributes pdgContribution() to Program.predicateDependencyGraph();
 	AnalyzeBlock contributes nta getExpandedClauses() to Program.predicateDependencyGraph();
 
 	Literal contributes clause() when isDef() to FormalPredicate.definedIn() for getPredicate().formalpredicate();
@@ -121,6 +131,8 @@ aspect Stratification {
 
 		return strata;
 	}
+
+	// TODO: check for negation in same stratum
 
 	public void Program.dumpStrata() throws IOException {
 		PrintStream f = new PrintStream("strata.dump");

@@ -18,6 +18,7 @@ public class EvaluationContext {
 			stringMap.put(s, id);
 			longMap.add(s);
 		}
+
 		return id;
 	}
 

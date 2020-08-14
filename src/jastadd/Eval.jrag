@@ -4,6 +4,7 @@ import org.apache.commons.collections4.map.DefaultedMap;
 import java.util.LinkedHashMap;
 import lang.relation.RelationWrapper;
 import org.apache.commons.lang3.mutable.MutableInt;
+import lang.CmdLineOpts;
 
 aspect Eval {
 	public void Program.evalIMPORT(EvaluationContext ctx) throws IOException {
@@ -80,7 +81,7 @@ aspect Eval {
 			FormalPredicate pred = rel.formalpredicate();
 			PredicateType type = pred.type();
 
-			CSVUtil.readRelation(ctx, type, pred.relation2(), file.getSTRING());
+			CSVUtil.readRelation(ctx, type, pred.relation2(), CmdLineOpts.getFactsDir() + "/" + file.getSTRING());
 		}
 	}
 
@@ -101,7 +102,7 @@ aspect Eval {
 			FormalPredicate pred = rel.formalpredicate();
 			PredicateType type = pred.type();
 
-			CSVUtil.writeRelation(ctx, type, pred.relation2(), rel.getPRED_ID() + ".csv");
+			CSVUtil.writeRelation(ctx, type, pred.relation2(), CmdLineOpts.getOutputDir() + "/" + rel.getPRED_ID() + ".csv");
 		}
 	}
 

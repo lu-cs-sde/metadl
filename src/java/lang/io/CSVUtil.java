@@ -114,7 +114,7 @@ public class CSVUtil {
 					if (line[i].isEmpty() || line[i].charAt(0) != '\'') {
 						throw new RuntimeException("Invalid CSV entry for PredicateRefType");
 					}
-					tup.set(i, ctx.internalizeString(line[i]));
+					tup.set(i, ctx.internalizeString(line[i].substring(1)));
 				}
 			}
 
@@ -173,7 +173,7 @@ public class CSVUtil {
 					line[i] = ctx.externalizeString(tup.get(i));
 				} else {
 					assert t.get(i) == PredicateRefType.get();
-					line[i] = ctx.externalizeString(tup.get(i));
+					line[i] = "'" + ctx.externalizeString(tup.get(i));
 				}
 
 			}

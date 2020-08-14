@@ -436,6 +436,8 @@ aspect CodeGen {
 				return Operation.div(arg0, arg1);
 			case "mod":
 				return Operation.mod(arg0, arg1);
+			case "cat":
+				return Operation.cat(ctx, arg0, arg1);
 			}
 		}
 

@@ -1,4 +1,3 @@
-import lang.relation.Relation;
 import lang.relation.PseudoTuple;
 import java.util.ArrayList;
 import java.util.HashMap;

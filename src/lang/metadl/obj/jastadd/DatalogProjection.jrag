@@ -1,15 +1,43 @@
-import lang.relation.Relation;
 import lang.relation.PseudoTuple;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Collections;
 import java.lang.reflect.ParameterizedType;
 import lang.io.StringUID;
+import eval.Relation2;
+import lang.relation.RelationWrapper;
+import eval.EvaluationContext;
+import lang.ast.PredicateType;
+import lang.ast.IntegerType;
+import lang.ast.PredicateRefType;
+import lang.ast.StringType;
+
 
 aspect LanguageSpecific {
-	coll Relation Program.datalogProjection() [new Relation(5)] with addTuples root Program;
+	syn PredicateType Program.datalogProjectionType() {
+		PredicateType t = new PredicateType(5);
+		t.joinAt(0, StringType.get());
+		t.joinAt(1, IntegerType.get());
+		t.joinAt(2, IntegerType.get());
+		t.joinAt(3, IntegerType.get());
+		t.joinAt(4, StringType.get());
+		return t;
+	}
+
+	coll RelationWrapper Program.datalogProjection() [new RelationWrapper(new EvaluationContext(),
+																		  new Relation2(5),
+																		  datalogProjectionType())]
+		with insertPseudoTuples root Program;
+
 	ASTNode contributes toTuples() to Program.datalogProjection() ;
-	syn Relation Program.asRelation() = datalogProjection();
+	syn RelationWrapper Program.asRelation(EvaluationContext ctx) {
+		// rw uses some internal context
+		RelationWrapper rw = datalogProjection();
+		// ret uses a context provided by call of asRelation
+		RelationWrapper ret = new RelationWrapper(ctx, new Relation2(5), datalogProjectionType());
+		ret.insertTuples(rw.tuples());
+		return ret;
+	}
 
 	// TODO: implement this as for the Java language
 	syn String ASTNode.getSourceFile() = "";

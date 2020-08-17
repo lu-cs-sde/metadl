@@ -22,7 +22,6 @@ import java.util.Map;
 import lang.ast.LangParser;
 import lang.ast.LangScanner;
 import lang.ast.Program;
-import lang.relation.Relation;
 import lang.relation.RelationWrapper;
 import lang.ast.config.ConfigParser;
 import lang.ast.config.ConfigScanner;
@@ -73,50 +72,6 @@ public class FileUtil {
 		ConfigParser configParser   = new ConfigParser();
 		Description descr = (Description) configParser.parse(configScanner);
 		return descr;
-	}
-
-	public static Relation loadJavaSources(java.util.List<String> locs) throws IOException {
-		org.extendj.ast.Program p = new org.extendj.ast.Program();
-
-		// Set the path to the Java runtime
-		String bootCP = System.getenv().get("METADL_JAVA_RT");
-		if (bootCP != null)
-			p.options().setValueForOption(bootCP, "-bootclasspath");
-		String CP = System.getenv().get("METADL_JAVA_CP");
-		if (CP != null)
-			p.options().setValueForOption(CP, "-classpath");
-
-		for (String loc : locs) {
-			// Walk all the java files in the directory and add them to the program
-			File fileOrDir = new File(loc);
-			if (fileOrDir.isDirectory()) {
-				IOFileFilter ff = new WildcardFileFilter("*.java");
-				Iterator<File> it = FileUtils.iterateFiles(fileOrDir, ff, TrueFileFilter.INSTANCE);
-				while (it.hasNext()) {
-					File f = it.next();
-					p.addSourceFile(f.getPath());
-				}
-			} else {
-				p.addSourceFile(fileOrDir.getPath());
-			}
-		}
-
-		// Some sanity check
-		org.extendj.ast.TypeDecl object = p.lookupType("java.lang", "Object");
-		if (object.isUnknown()) {
-			// If we try to continue without java.lang.Object, we'll just get a stack overflow
-			// in member lookups because the unknown (Object) type would be treated as circular.
-			throw new RuntimeException("Error: java.lang.Object is missing."
-									   + " The Java standard library was not found.");
-		}
-
-		// Generate the program relation
-		lang.java.obj.DatalogProjection2 proj2 = new lang.java.obj.DatalogProjection2(p, new RelationWrapper(null, null, null) {
-				@Override public void insertTuple(Object ... args) { /* do nothing */ } });
-		proj2.generate();
-		Relation ret = proj2.getRelation();
-
-		return ret;
 	}
 
 	public static void loadJavaSources(EvaluationContext ctx, RelationWrapper rel,

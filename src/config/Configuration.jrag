@@ -9,7 +9,6 @@ import lang.ast.StringConstant;
 import lang.ast.TypeError;
 import lang.ast.PredicateSymbol;
 import lang.relation.PseudoTuple;
-import lang.relation.Relation;
 import lang.io.FileUtil;
 import lang.io.CSVUtil;
 import lang.io.SimpleLogger;

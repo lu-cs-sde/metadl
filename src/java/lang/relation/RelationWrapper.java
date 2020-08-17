@@ -16,62 +16,77 @@ import lang.ast.StringConstant;
 import lang.ast.StringType;
 import lang.ast.Type;
 
-class TupleWrapper {
-	private final Tuple t;
-	private final PredicateType type;
-	private final EvaluationContext ctx;
-
-	TupleWrapper(final EvaluationContext ctx, final Tuple t, final PredicateType type) {
-		this.t = t;
-		this.ctx = ctx;
-		this.type = type;
-	}
-
-	public String toString() {
-		String s = "(";
-		for (int i = 0; i < t.arity(); ++i) {
-			if (i != 0) {
-				s += ", ";
-			}
-			if (type.get(i) == IntegerType.get()) {
-				s += t.get(i);
-			} else if (type.get(i) == StringType.get()) {
-				s += "\"" + ctx.externalizeString(t.get(i)) + "\"";
-			} else {
-				assert type.get(i) == PredicateRefType.get();
-				s += "'" + ctx.externalizeString(t.get(i));
-			}
-		}
-		return s + ")";
-	}
-
-
-	@Override public boolean equals(Object o) {
-		if (!(o instanceof TupleWrapper))
-			return false;
-		TupleWrapper other = (TupleWrapper) o;
-
-		if (t.arity() != other.t.arity())
-			return false;
-
-		for (int i = 0; i < t.arity(); ++i) {
-			if (type.get(i) == IntegerType.get() &&
-				t.get(i) != other.t.get(i)) {
-				return false;
-			} else if ((type.get(i) == StringType.get() || type.get(i) == PredicateRefType.get()) &&
-					   !ctx.externalizeString(t.get(i)).equals(other.ctx.externalizeString(other.t.get(i)))) {
-				return false;
-			}
-		}
-		return true;
-	}
-
-	@Override public int hashCode() {
-		return toString().hashCode();
-	}
-}
 
 public class RelationWrapper {
+	static class TupleWrapper {
+		private final Tuple t;
+		private final PredicateType type;
+		private final EvaluationContext ctx;
+
+		TupleWrapper(final EvaluationContext ctx, final Tuple t, final PredicateType type) {
+			this.t = t;
+			this.ctx = ctx;
+			this.type = type;
+		}
+
+		@Override public String toString() {
+			String s = "(";
+			for (int i = 0; i < t.arity(); ++i) {
+				if (i != 0) {
+					s += ", ";
+				}
+				if (type.get(i) == IntegerType.get()) {
+					s += t.get(i);
+				} else if (type.get(i) == StringType.get()) {
+					s += "\"" + ctx.externalizeString(t.get(i)) + "\"";
+				} else {
+					assert type.get(i) == PredicateRefType.get();
+					s += "'" + ctx.externalizeString(t.get(i));
+				}
+			}
+			return s + ")";
+		}
+
+
+		@Override public boolean equals(Object o) {
+			if (!(o instanceof TupleWrapper))
+				return false;
+			TupleWrapper other = (TupleWrapper) o;
+
+			if (t.arity() != other.t.arity())
+				return false;
+
+			for (int i = 0; i < t.arity(); ++i) {
+				if (type.get(i) == IntegerType.get() &&
+					t.get(i) != other.t.get(i)) {
+					return false;
+				} else if ((type.get(i) == StringType.get() || type.get(i) == PredicateRefType.get()) &&
+						   !ctx.externalizeString(t.get(i)).equals(other.ctx.externalizeString(other.t.get(i)))) {
+					return false;
+				}
+			}
+			return true;
+		}
+
+		@Override public int hashCode() {
+			return toString().hashCode();
+		}
+
+		public long getAsLong(int i) {
+			if (type.get(i) != IntegerType.get())
+				throw new RuntimeException("Component is not of integer type");
+			return t.get(i);
+		}
+
+		public String getAsString(int i) {
+			if (type.get(i) != StringType.get() &&
+				type.get(i) != PredicateRefType.get())
+				throw new RuntimeException("Component is not of String or PredicateRef type");
+			return ctx.externalizeString(t.get(i));
+		}
+	}
+
+
 	private final EvaluationContext ctx;
 	private final Relation2 rel;
 	private final PredicateType type;
@@ -135,6 +150,32 @@ public class RelationWrapper {
 	public void insertPseudoTuples(Collection<? extends PseudoTuple> ps) {
 		for (PseudoTuple p : ps) {
 			insertPseudoTuple(p);
+		}
+	}
+
+	public void insertTuple(TupleWrapper w) {
+		if (w.t.arity() != rel.arity())
+			throw new RuntimeException("Arity mismatch between inserted tuple's arity and the relation arity");
+		Tuple t = new Tuple(rel.arity());
+
+		for (int i = 0; i < w.t.arity(); ++i) {
+			if (type.get(i) != w.type.get(i))
+				throw new RuntimeException("Type mismatch between inserted tuple and relation at component " + i + ".");
+			if (type.get(i) == IntegerType.get()) {
+				t.set(i, w.t.get(i));
+			} else {
+				assert type.get(i) == StringType.get() ||
+					type.get(i) == PredicateRefType.get();
+				t.set(i, ctx.internalizeString(w.ctx.externalizeString(w.t.get(i))));
+			}
+		}
+
+		rel.insert(t);
+	}
+
+	public void insertTuples(Collection<? extends TupleWrapper> ts) {
+		for (TupleWrapper w : ts) {
+			insertTuple(w);
 		}
 	}
 

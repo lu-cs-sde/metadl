@@ -19,7 +19,6 @@ import org.apache.commons.lang3.tuple.Pair;
 import lang.io.SimpleLogger;
 import lang.io.StringUID;
 import lang.relation.PseudoTuple;
-import lang.relation.Relation;
 import lang.relation.RelationWrapper;
 
 public class DatalogProjection2 {
@@ -27,7 +26,6 @@ public class DatalogProjection2 {
 	private Map<ASTNode<?>, Integer> nodeNumber = new HashMap<>();
 
 	private int currentNumber = 0;
-	private Relation datalogProjection = new Relation(5);
 	private RelationWrapper prel;
 
 	// TODO: It's just easier to add environment variable than command-line arguments.
@@ -81,7 +79,6 @@ public class DatalogProjection2 {
 						// them
 						traverse(r);
 					}
-					datalogProjection.addTuple(makeTuple(relName, n, -1, r, ""));
 					prel.insertTuple(relName, nodeId(n), -1, nodeId(r), "");
 				}
 			}
@@ -113,8 +110,8 @@ public class DatalogProjection2 {
 		}
 
 		nodeId(n);
-		datalogProjection.addTuples(toTuples(n));
-		datalogProjection.addTuples(srcLoc(n));
+		toTuples(n);
+		srcLoc(n);
 	}
 
 	private PseudoTuple makeTuple(Object ...args) {
@@ -135,12 +132,7 @@ public class DatalogProjection2 {
 	}
 
 	private void recordRewrittenNode(ASTNode<?> original, ASTNode<?> target) {
-		datalogProjection.addTuple(makeTuple("REWRITE", original, -1, target, ""));
 		prel.insertTuple("REWRITE", nodeId(original), -1, nodeId(target), "");
-	}
-
-	public Relation getRelation() {
-		return datalogProjection;
 	}
 
 	private static String getRelation(ASTNode<?> n) {

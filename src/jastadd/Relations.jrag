@@ -2,7 +2,6 @@ import java.util.HashSet;
 import java.util.HashMap;
 import java.util.TreeSet;
 import java.util.Comparator;
-import lang.relation.Relation;
 import lang.relation.PseudoTuple;
 
 aspect Arity {
@@ -38,8 +37,5 @@ aspect Arity {
 }
 
 aspect Relation {
-	public static Relation FormalPredicate.nullRelation = new Relation(0);
-	public Relation FormalPredicate.relation = FormalPredicate.nullRelation;
-
 	syn PseudoTuple Literal.toTuple() = new PseudoTuple(getTermss());
 }

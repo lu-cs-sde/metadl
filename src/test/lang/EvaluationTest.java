@@ -31,7 +31,6 @@ import lang.io.CSVUtil;
 import lang.io.FileUtil;
 import lang.io.SimpleLogger;
 import lang.relation.PseudoTuple;
-import lang.relation.Relation;
 import lang.relation.RelationWrapper;
 
 public class EvaluationTest {

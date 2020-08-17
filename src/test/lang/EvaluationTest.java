@@ -5,14 +5,17 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.File;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Ignore;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import eval.Relation2;
@@ -150,23 +153,63 @@ public class EvaluationTest {
 		doEvaluationTest(d1, d2);
 	}
 
+	static Stream<String> metadlPatternTests() {
+		String[] tests = { "evalTest_2", "evalTest_3", "evalTest_4",
+						   "evalTest_5", "evalTest_6", "evalTest_7",
+						   "evalTest_8", "evalTest_9", "evalTest_10",
+						   "evalTest_11", "evalTest_12", "evalTest_13",
+						   "evalTest_14", "evalTest_15",
+						   // "evalTest_16", Disabled, due to introduction of inexact matches
+						   "evalTest_17", "evalTest_18"};
+		return Arrays.stream(tests);
+	}
+
 	@DisplayName("Evaluate programs containing patterns using Souffle")
 	@ParameterizedTest(name = "Pattern Tests")
-	@ValueSource(strings = { "evalTest_2", "evalTest_3", "evalTest_4",
-							 "evalTest_5", "evalTest_6", "evalTest_7",
-							 "evalTest_8", "evalTest_9", "evalTest_10",
-							 "evalTest_11", "evalTest_12", "evalTest_13",
-							 "evalTest_14", "evalTest_15",
-							 // "evalTest_16", Disabled, due to introduction of inexact matches
-							 "evalTest_17", "evalTest_18"})
-	void evaluationTestSoufflePatterns(String fileName) throws Exception {
+	@MethodSource("metadlPatternTests")
+	void evaluationTestPatternsSouffle(String fileName) throws Exception {
+		singleEvaluationTest("./tests/output/souffle",
+							 "./tests/evaluation/withimport/facts",
+							 "./tests/evaluation/withimport",
+							 "./tests/evaluation/withimport/expected",
+							 fileName,
+							 ".in",
+							 "eval::souffle");
+	}
+
+	@DisplayName("Evaluate programs containing patterns using internal evaluator")
+	@ParameterizedTest
+	@MethodSource("metadlPatternTests")
+	void evaluationTestPatternsInternal(String fileName) throws Exception {
+		singleEvaluationTest("./tests/output/souffle",
+							 "./tests/evaluation/withimport/facts",
+							 "./tests/evaluation/withimport",
+							 "./tests/evaluation/withimport/expected",
+							 fileName,
+							 ".in",
+							 "eval::souffle");
+	}
+
+	static Stream<String> metadlJavaTests() {
+		String[] tests = {
+			"bad-covariant-equals", "switch-no-default", "clone-idioms", "number-ctor",
+			"unwritten-field", "naming-convention", "reference-to-mutable-object", "missing-override",
+			"reference-equality", "boxed-primitive-constructor", "operator-precedence",
+			"type-param-unused-in-formals", "paper-examples", "java7", "java8"
+		};
+		return Arrays.stream(tests);
+	}
+
+	void singleEvaluationTest(String outputDir, String factDir, String srcDir, String expectedDir,
+							  String fileName, String fileExt,
+							  String cmd) throws Exception {
 		Description d1 = FileUtil.parseDescription(
-		   "eval::souffle -OUT ./tests/output/souffle -FACTS ./tests/evaluation/withimport/facts ./tests/evaluation/withimport/"
-		   + fileName + ".in");
+		   cmd + " -OUT " + outputDir + " -FACTS " + factDir + " " + srcDir + "/"
+		   + fileName + fileExt);
 
 		Map<String, RelationWrapper> outRelations = doSingleEvaluation(d1);
 		for (Map.Entry<String, RelationWrapper> rel : outRelations.entrySet()) {
-			String expectedF = "./tests/evaluation/withimport/expected/" + fileName + "/" + rel.getKey() + ".csv";
+			String expectedF = expectedDir + "/" + fileName + "/" + rel.getKey() + ".csv";
 			Relation2 expectedRel = new Relation2(rel.getValue().getRelation().arity(),
 												  rel.getValue().getRelation().getName());
 
@@ -185,42 +228,33 @@ public class EvaluationTest {
 			String msg = "Mismatch in test " + fileName + ", relation " + rel.getKey();
 			assertEquals(expectedRel, rel.getValue().getRelation(), msg);
 		}
-
 	}
 
 
-	@DisplayName("Evaluate MetaDL-Java programs")
+	@DisplayName("Evaluate MetaDL-Java programs with Souffle")
 	@ParameterizedTest(name = "MetaDL-Java programs")
-	@ValueSource(strings = {"bad-covariant-equals", "switch-no-default", "clone-idioms", "number-ctor",
-							"unwritten-field", "naming-convention", "reference-to-mutable-object", "missing-override",
-							"reference-equality", "boxed-primitive-constructor", "operator-precedence",
-							"type-param-unused-in-formals", "paper-examples", "java7", "java8"})
-	void evaluationTestMetaDLJava(String fileName) throws Exception {
-		Description d1 = FileUtil.parseDescription(
-		   "eval::souffle -OUT ./tests/output/souffle -FACTS ./tests/evaluation/metadl-java/facts ./tests/evaluation/metadl-java/"
-		   + fileName + ".mdl");
+	@MethodSource("metadlJavaTests")
+	void evaluationTestMetaDLJavaSouffle(String fileName) throws Exception {
+		singleEvaluationTest("./tests/output/souffle",
+							 "./tests/evaluation/metadl-java/facts",
+							 "./tests/evaluation/metadl-java",
+							 "./tests/evaluation/metadl-java/expected",
+							 fileName,
+							 ".mdl",
+							 "eval::souffle");
+	}
 
-		Map<String, RelationWrapper> outRelations = doSingleEvaluation(d1);
-		for (Map.Entry<String, RelationWrapper> rel : outRelations.entrySet()) {
-			String expectedF = "./tests/evaluation/metadl-java/expected/" + fileName + "/" + rel.getKey() + ".csv";
-			Relation2 expectedRel = new Relation2(rel.getValue().getRelation().arity(),
-												  rel.getValue().getRelation().getName());
-
-			CSVUtil.readRelation(rel.getValue().getContext(),
-								 rel.getValue().type(),
-								 expectedRel,
-								 expectedF);
-
-			if (!expectedRel.equals(rel.getValue().getRelation())) {
-				System.out.println(rel.getKey() + " expects ");
-				System.out.println(expectedRel.tuples());
-				System.out.println(rel.getKey() + " actual ");
-				System.out.println(rel.getValue().getRelation().tuples());
-
-			}
-			String msg = "Mismatch in test " + fileName + ", relation " + rel.getKey();
-			assertEquals(expectedRel, rel.getValue().getRelation(), msg);
-		}
+	@DisplayName("Evaluate MetaDL-Java programs with the interna evaluator")
+	@ParameterizedTest
+	@MethodSource("metadlJavaTests")
+	void evaluationTestMetaDLJavaInternal(String fileName) throws Exception {
+		singleEvaluationTest("./tests/output/",
+							 "./tests/evaluation/metadl-java/facts",
+							 "./tests/evaluation/metadl-java",
+							 "./tests/evaluation/metadl-java/expected",
+							 fileName,
+							 ".mdl",
+							 "eval::souffle");
 	}
 
 }

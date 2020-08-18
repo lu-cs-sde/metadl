@@ -120,13 +120,15 @@ public class Compiler {
 		CmdLineOpts ret = new CmdLineOpts();
 
 		Option prettyPrint = Option.builder("p").longOpt("pretty-print").numberOfArgs(1)
-			.desc("Pretty print the program in MetaDL (=metadl) or Souffle (=souffle) format.").build();
+			.desc("Pretty print the program in MetaDL (arg = metadl) or Souffle (arg = souffle) format.").build();
 		Option eval = Option.builder("e").longOpt("eval").numberOfArgs(1)
-			.desc("Evaluate the program using the internal (=metadl) or Souffle (=souffle) evaluator.").build();
+			.desc("Evaluate the program using the internal (arg = metadl) or Souffle (arg = souffle) evaluator.").build();
 		Option check = Option.builder("c").longOpt("check").hasArg(false)
 			.desc("Check that the input represents a valid MetaDL program.").build();
+		Option imp = Option.builder("i").longOpt("import").hasArg(false)
+			.desc("Evaluate only the import statements and output the program representation relation(s).").build();
 
-		OptionGroup actions = new OptionGroup().addOption(eval).addOption(prettyPrint).addOption(check);
+		OptionGroup actions = new OptionGroup().addOption(eval).addOption(prettyPrint).addOption(check).addOption(imp);
 
 		Option factDir = Option.builder("F").longOpt("facts").numberOfArgs(1)
 			.desc("Fact directory.").argName("DIR").build();
@@ -170,6 +172,8 @@ public class Compiler {
 				}
 			} else if (cmd.hasOption("c")) {
 				ret.setAction(Action.CHECK);
+			} else if (cmd.hasOption("i")) {
+				ret.setAction(Action.EVAL_IMPORT);
 			}
 
 			ret.setFactsDir(cmd.getOptionValue("F", "."));
@@ -202,6 +206,9 @@ public class Compiler {
 			case PRETTY_INTERNAL:
 				StandardPrettyPrinter<Program> spp = new StandardPrettyPrinter<>(new PrintStream(System.out));
 				spp.prettyPrint(prog);
+				break;
+			case EVAL_IMPORT:
+				prog.generateObjectProgramRelations(opts);
 				break;
 			case CHECK:
 				break;

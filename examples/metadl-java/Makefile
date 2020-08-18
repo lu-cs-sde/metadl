@@ -8,7 +8,7 @@ METADL=../../compiler.jar
 all : $(TARGETS)
 
 %.dl : %.mdl
-	java -jar $(METADL) pretty::souffle -FACTS . -OUT . $<
+	java -jar $(METADL) -p souffle -F . -D . $<
 
 %.run : %.dl
 	souffle $< -o $@

@@ -19,13 +19,11 @@ import org.apache.commons.io.FileUtils;
 import java.util.Iterator;
 import java.util.Map;
 
+import lang.CmdLineOpts;
 import lang.ast.LangParser;
 import lang.ast.LangScanner;
 import lang.ast.Program;
 import lang.relation.RelationWrapper;
-import lang.ast.config.ConfigParser;
-import lang.ast.config.ConfigScanner;
-import lang.ast.config.Description;
 
 public class FileUtil {
 	public static String changeExtension(String filename, String newExtension) {
@@ -67,11 +65,9 @@ public class FileUtil {
 		return (Program)parser.parse(scanner);
 	}
 
-	public static Description parseDescription(String s) throws IOException, beaver.Parser.Exception {
-		ConfigScanner configScanner = new ConfigScanner(new StringReader(s));
-		ConfigParser configParser   = new ConfigParser();
-		Description descr = (Description) configParser.parse(configScanner);
-		return descr;
+
+	public static CmdLineOpts parseDescription(String s) throws IOException, beaver.Parser.Exception {
+		return lang.Compiler.parseCmdLineArgs(s.split("\\s+"));
 	}
 
 	public static void loadJavaSources(EvaluationContext ctx, RelationWrapper rel,

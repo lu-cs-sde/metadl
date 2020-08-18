@@ -7,7 +7,7 @@ import org.apache.commons.lang3.mutable.MutableInt;
 import lang.CmdLineOpts;
 
 aspect Eval {
-	public void Program.evalIMPORT(EvaluationContext ctx) throws IOException {
+	public void Program.evalIMPORT(EvaluationContext ctx, CmdLineOpts opts) throws IOException {
 		FormalPredicate fpImp = formalPredicateMap().get("IMPORT");
 		if (fpImp == null) {
 			// no IMPORT in the program, nothing to do
@@ -63,7 +63,7 @@ aspect Eval {
 		}
 	}
 
-	public void Program.evalEDB(EvaluationContext ctx) throws IOException {
+	public void Program.evalEDB(EvaluationContext ctx, CmdLineOpts opts) throws IOException {
 		FormalPredicate fpEDB = formalPredicateMap().get("EDB");
 
 		if (fpEDB == null) {
@@ -81,11 +81,11 @@ aspect Eval {
 			FormalPredicate pred = rel.formalpredicate();
 			PredicateType type = pred.type();
 
-			CSVUtil.readRelation(ctx, type, pred.relation2(), CmdLineOpts.getFactsDir() + "/" + file.getSTRING());
+			CSVUtil.readRelation(ctx, type, pred.relation2(), opts.getFactsDir() + "/" + file.getSTRING());
 		}
 	}
 
-	public void Program.evalOUTPUT(EvaluationContext ctx) throws IOException {
+	public void Program.evalOUTPUT(EvaluationContext ctx, CmdLineOpts opts) throws IOException {
 		FormalPredicate fpOUTPUT = formalPredicateMap().get("OUTPUT");
 
 		if (fpOUTPUT == null) {
@@ -102,9 +102,38 @@ aspect Eval {
 			FormalPredicate pred = rel.formalpredicate();
 			PredicateType type = pred.type();
 
-			CSVUtil.writeRelation(ctx, type, pred.relation2(), CmdLineOpts.getOutputDir() + "/" + rel.getPRED_ID() + ".csv");
+			CSVUtil.writeRelation(ctx, type, pred.relation2(), opts.getOutputDir() + "/" + rel.getPRED_ID() + ".csv");
 		}
 	}
+
+
+	public void Program.generateObjectProgramRelations(CmdLineOpts opts) throws IOException {
+		// Start a timer to measure the speed of the import
+		StopWatch progRelTimer = StopWatch.createStarted();
+
+		evalIMPORT(evalCtx(), opts);
+
+		FormalPredicate formalImport = formalPredicateMap().get(GlobalNames.IMPORT_NAME);
+		if (formalImport == null)
+			return;
+
+		for (PredicateSymbol psym : formalImport.predicates()) {
+			Literal imp = psym.parentLiteral();
+			String progFileLoc = ((StringConstant)imp.getTerms(1)).getSTRING();
+			String lang = ((StringConstant)imp.getTerms(2)).getSTRING();
+			PredicateRef predref = (PredicateRef)(imp.getTerms(0));
+			FormalPredicate formalProg = predref.formalpredicate();
+			String predName = predref.getPRED_ID();
+
+			CSVUtil.writeRelation(evalCtx(), formalProg.type(), formalProg.relation2(),
+								  opts.getFactsDir() + "/" + predName + ".csv");
+		}
+
+		// stop the timer and report
+		progRelTimer.stop();
+		SimpleLogger.logger().time("Evaluate IMPORT statements: " + progRelTimer.getTime() + "ms");
+	}
+
 
 	public void Program.dumpAllRelations(EvaluationContext ctx) throws IOException {
 		for (FormalPredicate pred : getFormalPredicates()) {
@@ -114,18 +143,18 @@ aspect Eval {
 
 	syn lazy EvaluationContext Program.evalCtx() = new EvaluationContext();
 
-	public void Program.eval() throws IOException {
+	public void Program.eval(CmdLineOpts opts) throws IOException {
 		EvaluationContext ctx = evalCtx();
 
 		java.util.List<Stratum> strata = strata(ctx);
 
-		evalEDB(ctx);
-		evalIMPORT(ctx);
+		evalEDB(ctx, opts);
+		evalIMPORT(ctx, opts);
 
 		for (Stratum s : strata) {
 			s.eval();
 		}
-		evalOUTPUT(ctx);
-		dumpAllRelations(ctx);
+		evalOUTPUT(ctx, opts);
+		if (false) dumpAllRelations(ctx);
 	}
 }

@@ -25,7 +25,6 @@ import lang.ast.PredicateRef;
 import lang.ast.Program;
 import lang.ast.PredicateSymbol;
 import lang.ast.PredicateType;
-import lang.ast.config.Description;
 import lang.ast.Literal;
 import lang.io.CSVUtil;
 import lang.io.FileUtil;
@@ -37,8 +36,8 @@ public class EvaluationTest {
 	/*
 	 * Compare one evaluation scheme against another.
 	 */
-	public Map<String, RelationWrapper> doSingleEvaluation(Description d1) throws Exception {
-		Program program1 = d1.getTask().perform();
+	public Map<String, RelationWrapper> doSingleEvaluation(CmdLineOpts d1) throws Exception {
+		Program program1 = Compiler.run(d1);
 		FormalPredicate fpOut1 = program1.formalPredicateMap().get(GlobalNames.OUTPUT_NAME);
 
 		if (fpOut1 == null)
@@ -49,10 +48,10 @@ public class EvaluationTest {
 			PredicateRef pr = (PredicateRef)output.getTerms(0);
 			FormalPredicate fp = pr.formalpredicate();
 
-			File in1 = new File(d1.outputDir() + "/" + fp.predicateName() + ".csv");
+			File in1 = new File(d1.getOutputDir() + "/" + fp.predicateName() + ".csv");
 
 			Relation2 r1 = new Relation2(fp.realArity(), fp.getPRED_ID());
-			CSVUtil.readRelation(program1.evalCtx(), fp.type(), r1, d1.outputDir() + "/" + fp.predicateName() + ".csv");
+			CSVUtil.readRelation(program1.evalCtx(), fp.type(), r1, d1.getOutputDir() + "/" + fp.predicateName() + ".csv");
 
 			SimpleLogger.logger().log("Read relation from: " + in1.getPath(), SimpleLogger.LogLevel.Level.DEBUG);
 			nameToRel.put(fp.predicateName(), new RelationWrapper(program1.evalCtx(), r1, fp.type()));
@@ -60,7 +59,7 @@ public class EvaluationTest {
 		return nameToRel;
 	}
 
-	public void doEvaluationTest(Description d1, Description d2) throws Exception {
+	public void doEvaluationTest(CmdLineOpts d1, CmdLineOpts d2) throws Exception {
 		Map<String, RelationWrapper> rels1 = doSingleEvaluation(d1);
 		Map<String, RelationWrapper> rels2 = doSingleEvaluation(d2);
 
@@ -84,10 +83,10 @@ public class EvaluationTest {
 		String inputFile = "./tests/evaluation/" + fileName;
 
 		SimpleLogger.logger().log("Input: " + inputFile, SimpleLogger.LogLevel.Level.DEBUG);
-		Description d1 = FileUtil.parseDescription(
-				"eval::souffle      -OUT ./tests/output/souffle -FACTS ./facts " + inputFile);
-		Description d2 = FileUtil.parseDescription(
-				"eval::bottomupnaive -OUT ./tests/output       -FACTS ./facts  " + inputFile);
+		CmdLineOpts d1 = FileUtil.parseDescription(
+				"-e souffle      -D ./tests/output/souffle -F ./facts " + inputFile);
+		CmdLineOpts d2 = FileUtil.parseDescription(
+				"-e metadl -D ./tests/output       -F ./facts  " + inputFile);
 		doEvaluationTest(d1, d2);
 	}
 
@@ -96,11 +95,11 @@ public class EvaluationTest {
 	@ValueSource(strings = { "evalTest_1.in", "evalTest_2.in"})
 	void evaluationTestsBottomUpNaiveCompareSouffleWithEDBs(String fileName) throws Exception {
 		String outname = FileUtil.changeExtension(fileName, "_with_edb.dl");
-		Description d1 = FileUtil.parseDescription(
-				"eval::souffle      -OUT ./tests/output/souffle -FACTS ./tests/evaluation/withedbs/ -SOUFFLEOUT "
-						+ outname + " ./tests/evaluation/withedbs/" + fileName);
-		Description d2 = FileUtil.parseDescription(
-				"eval::bottomupnaive -OUT ./tests/output         -FACTS ./tests/evaluation/withedbs/ ./tests/evaluation/withedbs/"
+		CmdLineOpts d1 = FileUtil.parseDescription(
+				"-e souffle      -D ./tests/output/souffle -F ./tests/evaluation/withedbs/ "
+						+ " ./tests/evaluation/withedbs/" + fileName);
+		CmdLineOpts d2 = FileUtil.parseDescription(
+				"-e metadl -D ./tests/output         -F ./tests/evaluation/withedbs/ ./tests/evaluation/withedbs/"
 						+ fileName);
 		doEvaluationTest(d1, d2);
 	}
@@ -110,11 +109,11 @@ public class EvaluationTest {
 	@ValueSource(strings = { "evalTest_1.in", "evalTest_2.in" })
 	void evaluationTestsBottomUpNaiveCompareSouffleWithNEGs(String fileName) throws Exception {
 		String outname = FileUtil.changeExtension(fileName, "_with_neg.dl");
-		Description d1 = FileUtil.parseDescription(
-				"eval::souffle      -OUT ./tests/output/souffle -FACTS ./tests/evaluation/withneg/ -SOUFFLEOUT "
-						+ outname + " ./tests/evaluation/withneg/" + fileName);
-		Description d2 = FileUtil.parseDescription(
-				"eval::bottomupnaive -OUT ./tests/output         -FACTS ./tests/evaluation/withneg/ ./tests/evaluation/withneg/"
+		CmdLineOpts d1 = FileUtil.parseDescription(
+				"-e souffle      -D ./tests/output/souffle -F ./tests/evaluation/withneg/ "
+				+ " ./tests/evaluation/withneg/" + fileName);
+		CmdLineOpts d2 = FileUtil.parseDescription(
+				"-e metadl -D ./tests/output         -F ./tests/evaluation/withneg/ ./tests/evaluation/withneg/"
 						+ fileName);
 		doEvaluationTest(d1, d2);
 	}
@@ -123,10 +122,10 @@ public class EvaluationTest {
 	@ParameterizedTest(name = "Evaluation Tests Valid")
 	@ValueSource(strings = { "evalTest_1.in", "evalTest_2.in","evalTest_3.in","evalTest_4.in","evalTest_5.in","evalTest_6.in", "evalTest_7.in","evalTest_8.in","evalTest_9.in" })
 	void evaluationTestsBottomUpNaiveCompareWithBinPred(String fileName) throws Exception {
-		Description d1 = FileUtil.parseDescription(
-				"eval::souffle      -OUT ./tests/output/souffle -FACTS ./tests/evaluation/withbinpred/ ./tests/evaluation/withbinpred/" + fileName);
-		Description d2 = FileUtil.parseDescription(
-				"eval::bottomupnaive -OUT ./tests/output        -FACTS ./tests/evaluation/withbinpred/ ./tests/evaluation/withbinpred/" + fileName);
+		CmdLineOpts d1 = FileUtil.parseDescription(
+				"-e souffle      -D ./tests/output/souffle -F ./tests/evaluation/withbinpred/ ./tests/evaluation/withbinpred/" + fileName);
+		CmdLineOpts d2 = FileUtil.parseDescription(
+				"-e metadl -D ./tests/output        -F ./tests/evaluation/withbinpred/ ./tests/evaluation/withbinpred/" + fileName);
 		doEvaluationTest(d1, d2);
 	}
 
@@ -134,10 +133,10 @@ public class EvaluationTest {
     @ParameterizedTest(name = "Evaluation Tests Valid")
 	@ValueSource(strings = {/* "evalTest_1.in", */ "evalTest_2.in", "evalTest_3.in" })
     void evaluationTestsBottomUpNaiveCompareWithMeta(String fileName) throws Exception {
-        Description d1 = FileUtil.parseDescription(
-                "eval::souffle      -OUT ./tests/output/souffle -FACTS ./tests/evaluation/withmeta/facts ./tests/evaluation/withmeta/" + fileName);
-        Description d2 = FileUtil.parseDescription(
-                "eval::bottomupnaive -OUT ./tests/output        -FACTS ./tests/evaluation/withmeta/facts ./tests/evaluation/withmeta/" + fileName);
+        CmdLineOpts d1 = FileUtil.parseDescription(
+                "-e souffle      -D ./tests/output/souffle -F ./tests/evaluation/withmeta/facts ./tests/evaluation/withmeta/" + fileName);
+        CmdLineOpts d2 = FileUtil.parseDescription(
+                "-e metadl -D ./tests/output        -F ./tests/evaluation/withmeta/facts ./tests/evaluation/withmeta/" + fileName);
         doEvaluationTest(d1, d2);
     }
 
@@ -145,10 +144,10 @@ public class EvaluationTest {
 	@ParameterizedTest(name = "Evaluation Tests Valid")
 	@ValueSource(strings = {"evalTest_1.in", "evalTest_2.in"})
 	void evaluationTestsBottomUpNaiveCompareWithWildcard(String fileName) throws Exception {
-		Description d1 = FileUtil.parseDescription(
-				"eval::souffle      -OUT ./tests/output/souffle -FACTS ./tests/evaluation/withwildcard/facts ./tests/evaluation/withwildcard/" + fileName);
-		Description d2 = FileUtil.parseDescription(
-				"eval::bottomupnaive -OUT ./tests/output        -FACTS ./tests/evaluation/withwildcard/facts ./tests/evaluation/withwildcard/" + fileName);
+		CmdLineOpts d1 = FileUtil.parseDescription(
+				"-e souffle      -D ./tests/output/souffle -F ./tests/evaluation/withwildcard/facts ./tests/evaluation/withwildcard/" + fileName);
+		CmdLineOpts d2 = FileUtil.parseDescription(
+				"-e metadl -D ./tests/output        -F ./tests/evaluation/withwildcard/facts ./tests/evaluation/withwildcard/" + fileName);
 		doEvaluationTest(d1, d2);
 	}
 
@@ -173,7 +172,7 @@ public class EvaluationTest {
 							 "./tests/evaluation/withimport/expected",
 							 fileName,
 							 ".in",
-							 "eval::souffle");
+							 "-e souffle");
 	}
 
 	@DisplayName("Evaluate programs containing patterns using internal evaluator")
@@ -186,7 +185,7 @@ public class EvaluationTest {
 							 "./tests/evaluation/withimport/expected",
 							 fileName,
 							 ".in",
-							 "eval::souffle");
+							 "-e souffle");
 	}
 
 	static Stream<String> metadlJavaTests() {
@@ -202,8 +201,8 @@ public class EvaluationTest {
 	void singleEvaluationTest(String outputDir, String factDir, String srcDir, String expectedDir,
 							  String fileName, String fileExt,
 							  String cmd) throws Exception {
-		Description d1 = FileUtil.parseDescription(
-		   cmd + " -OUT " + outputDir + " -FACTS " + factDir + " " + srcDir + "/"
+		CmdLineOpts d1 = FileUtil.parseDescription(
+		   cmd + " -D " + outputDir + " -F " + factDir + " " + srcDir + "/"
 		   + fileName + fileExt);
 
 		Map<String, RelationWrapper> outRelations = doSingleEvaluation(d1);
@@ -240,7 +239,7 @@ public class EvaluationTest {
 							 "./tests/evaluation/metadl-java/expected",
 							 fileName,
 							 ".mdl",
-							 "eval::souffle");
+							 "-e souffle");
 	}
 
 	@DisplayName("Evaluate MetaDL-Java programs with the interna evaluator")
@@ -253,7 +252,7 @@ public class EvaluationTest {
 							 "./tests/evaluation/metadl-java/expected",
 							 fileName,
 							 ".mdl",
-							 "eval::souffle");
+							 "-e souffle");
 	}
 
 }

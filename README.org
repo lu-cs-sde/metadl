@@ -1,6 +1,6 @@
 #+TITLE: MetaDL: Datalog analyzing Datalog, Java or any language of your choice
 
-MetaDL is a Datalog language extension that enables analysis of Datalog, Java (and potentially other languages)
+MetaDL is a Datalog language extension that enables analysis of Datalog and Java
 programs inside Datalog. In addition, the subset of the metalanguage that depends on the analyzed language is mechanically generated from a description of the abstract and concrete grammars of the analyzed language.
 
 #+BEGIN_SRC prolog
@@ -39,8 +39,8 @@ Current supported Meta-Literals:
 - ~OUTPUT('P).~ output the tuples in relation ~P~ to ~P.csv~
 - ~IMPORT('P, "program.mdl", "metadl")~ generate a program representation relation
 from ~program.mdl~ and add its tuples to the relation ~P~
-- ~IMPORT('P, "program.java", "java4")~ generate a program representation relation
-from ~program.java~ Java 1.4 program
+- ~IMPORT('P, "program.java", "java8")~ generate a program representation relation
+from ~program.java~ Java 8 program
 
 Additional Supported features:
 - Stratified negation ~NOT(P(x1,...,xn))~
@@ -77,7 +77,7 @@ Variables used inside analyze blocks to connect patterns with other literals in 
 - Index metavariables ~p(..., $i:$v, ...)~
 
 ** Special metapredicates
-Special metapredicates are permitted only inside ~analyze~ blocks.
+Special metapredicates are allowed only inside ~analyze~ blocks.
 - ~STR(c, "value")~, ~INT($c, value)~ - relate constants to their value
 - ~ID(v, "name")~ - relate identifiers to their name
 - ~SRC(n, l, c)~ - relate an AST node to its source location
@@ -143,11 +143,8 @@ OUTPUT('SuperInterface).
 #+END_SRC
 
 * License
-
 This repository is covered by the license BSD 2-clause, see
 [[./LICENSE][LICENSE]].
-
-
 
 * Debugging
 The following commands are useful when debugging MetaDL:
@@ -158,13 +155,16 @@ The following commands are useful when debugging MetaDL:
 * Dependencies
 ** SEP
 [[https://git.cs.lth.se/al7330du/sppf-earley-parser][SEP]] is an Earley parser implementation. We use it to parse the patterns.
-** JastAdd
 
+** JastAdd
 [[http://jastadd.org/web/][JastAdd]] is a meta-compilation system that
 supports Reference Attribute Grammars (RAGs). It uses the parser
-generated from Beaver. In addition it takes an AST-description file as
-input. The AST-description is used to generate and populate the
-corresponding classes that represent the dynamic AST.
+generated from Beaver. In addition it takes an abstract grammar description file as
+input. The abstract grammar description is used to generate the classes
+that represent the AST.
+
+** ExtendJ
+[[https://extendj.org][ExtendJ]] is an extensible Java compiler built using JastAdd.
 
 ** Souffle
 [[https://souffle-lang.github.io/][Souffl\'e]] is a high performance Datalog

@@ -33,6 +33,7 @@ dependencies {
     compile 'org.junit.jupiter:junit-jupiter-engine:5.3.1'
     compile 'org.apache.commons:commons-lang3:3.8'
     compile group: 'commons-io', name: 'commons-io', version: '2.6'
+    compile group: 'commons-cli', name: 'commons-cli', version: '1.4'
     compile group: 'org.jgrapht', name: 'jgrapht-core', version: '1.4.0'
     compile group: 'org.jgrapht', name: 'jgrapht-io', version: '1.4.0'
 
@@ -118,8 +119,7 @@ jar {
 // Before compiling, we should generate some Java code:
 compileJava.dependsOn 'generateJava', 'generateScanner', 'generateParser',
     'genMetadlLang',
-    'genJava8Lang',
-    'generateConfig', 'generateScannerConfig', 'generateParserConfig'
+    'genJava8Lang'
 
 void makeGenerateJavaTask(String name, String outDir, String srcDir, String pkg,
 			  boolean patternGrammar = false,
@@ -146,7 +146,7 @@ void makeGenerateJavaTask(String name, String outDir, String srcDir, String pkg,
 }
 
 makeGenerateJavaTask('generateJava', 'src/gen', 'src/jastadd', 'lang.ast')
-makeGenerateJavaTask('generateConfig', 'src/gen', 'src/config/', 'lang.ast.config')
+// makeGenerateJavaTask('generateConfig', 'src/gen', 'src/config/', 'lang.ast.config')
 
 void makeConcatenateTask(String name, String outFile, FileCollection sources) {
     tasks.create(name) {
@@ -174,7 +174,7 @@ void makeGenerateScannerTask(String name, String outDir, String srcFile) {
 }
 
 makeGenerateScannerTask('generateScanner', 'src/gen/lang/ast', 'src/scanner/scanner.flex')
-makeGenerateScannerTask('generateScannerConfig', 'src/gen/lang/ast/config', 'src/config/scanner/scanner.flex')
+// makeGenerateScannerTask('generateScannerConfig', 'src/gen/lang/ast/config', 'src/config/scanner/scanner.flex')
 
 
 
@@ -194,7 +194,7 @@ void makeGenerateParserTask(String name, String outDir, String srcFile) {
     }
 }
 
-makeGenerateParserTask('generateParserConfig', 'src/gen', 'src/config/parser/parser.beaver')
+// makeGenerateParserTask('generateParserConfig', 'src/gen', 'src/config/parser/parser.beaver')
 
 
 void makeGenerateBeaverTask(String name, String outFile, String srcFile, boolean patternGrammar = false) {

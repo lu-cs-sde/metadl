@@ -313,7 +313,10 @@ aspect CodeGen {
 					// do nothing for wildcards
 				}
 			}
-			return Control.forAll(t, rel, test, consts, assign, cont);
+			if (assign.isEmpty())
+				return Control.ifExists(t, rel, test, consts, cont);
+			else
+				return Control.forAll(t, rel, test, consts, assign, cont);
 		}
 	}
 

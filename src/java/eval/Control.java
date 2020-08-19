@@ -32,8 +32,16 @@ public interface Control {
 	public static Control ifNotExists(Tuple t, Relation2 rel, List<Pair<Integer, Integer>> test,
 									  List<Pair<Integer, Long>> consts,
 									  Control cont) {
-		return new IfNotExists(t, rel, test, consts, cont);
+		return new IfExists(t, rel, test, consts, cont, false);
 	}
+
+	public static Control ifExists(Tuple t, Relation2 rel, List<Pair<Integer, Integer>> test,
+								   List<Pair<Integer, Long>> consts,
+								   Control cont) {
+		return new IfExists(t, rel, test, consts, cont, true);
+	}
+
+
 
 	public static Control insert(Tuple t, Relation2 rel, List<Pair<Integer, Integer>> assign,
 								 List<Pair<Integer, Long>> consts, Control cont) {
@@ -154,8 +162,6 @@ public interface Control {
 			}
 		};
 	}
-
-	// TODO: implement match
 }
 
 class ForAll implements Control {
@@ -236,7 +242,7 @@ class ForAll implements Control {
 	}
 }
 
-class IfNotExists implements Control {
+class IfExists implements Control {
 	private Tuple t;
 	private Relation2 rel;
 	private List<Pair<Integer, Integer>> test;
@@ -244,15 +250,16 @@ class IfNotExists implements Control {
 	private Control cont;
 	private Tuple minKey, maxKey;
 	private Index index;
+	private final boolean positive;
 
-
-	IfNotExists(Tuple t, Relation2 rel, List<Pair<Integer, Integer>> test,
-				List<Pair<Integer, Long>> consts, Control cont) {
+	IfExists(Tuple t, Relation2 rel, List<Pair<Integer, Integer>> test,
+			 List<Pair<Integer, Long>> consts, Control cont, boolean positive) {
 		this.t = t;
 		this.rel = rel;
 		this.cont = cont;
 		this.consts = consts;
 		this.test = test;
+		this.positive = positive;
 		index = new Index(Stream.concat(test.stream(), consts.stream())
 						  .map(p -> p.getLeft()).collect(Collectors.toList()), rel.arity());
 
@@ -274,7 +281,7 @@ class IfNotExists implements Control {
 		}
 
 		SortedSet<Tuple> tuples = rel.lookup(minKey, maxKey);
-		if (tuples.isEmpty())
+		if (positive ^ tuples.isEmpty())
 			cont.eval();
 	}
 
@@ -288,7 +295,7 @@ class IfNotExists implements Control {
 			s += String.format("%d:%d, ", c.getLeft(), c.getRight());
 		}
 
-		s += ") NOT IN " + rel.getName() + " THEN\n" + cont.prettyPrint(indent + 1);
+		s += ") " + (positive ? "" : "NOT") + " IN " + rel.getName() + " THEN\n" + cont.prettyPrint(indent + 1);
 		return s;
 	}
 

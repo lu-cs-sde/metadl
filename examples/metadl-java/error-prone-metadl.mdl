@@ -7,6 +7,8 @@ Srcs("") :- NEQ(0, 0).
 # Import all the sources
 IMPORT('P, src, "java8") :- Srcs(src).
 
+OUTPUT('P).
+
 ####################################################################################################
 
 # TypeParamNotUsedInFormals

@@ -187,7 +187,7 @@ public class EvaluationTest {
 							 "./tests/evaluation/withimport/expected",
 							 fileName,
 							 ".in",
-							 "-e souffle");
+							 "-e metadl");
 	}
 
 	static Stream<String> metadlJavaTests() {
@@ -247,7 +247,7 @@ public class EvaluationTest {
 							 "-e souffle");
 	}
 
-	@DisplayName("Evaluate MetaDL-Java programs with the interna evaluator")
+	@DisplayName("Evaluate MetaDL-Java programs with the internal evaluator")
 	@ParameterizedTest
 	@MethodSource("metadlJavaTests")
 	void evaluationTestMetaDLJavaInternal(String fileName) throws Exception {
@@ -257,7 +257,7 @@ public class EvaluationTest {
 							 "./tests/evaluation/metadl-java/expected",
 							 fileName,
 							 ".mdl",
-							 "-e souffle");
+							 "-e metadl");
 	}
 
 }

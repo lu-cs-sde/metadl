@@ -84,56 +84,100 @@ aspect Stratification {
 	Literal contributes clause() when isDef() to FormalPredicate.definedIn() for getPredicate().formalpredicate();
 	AnalyzeBlock contributes nta getExpandedClauses() to FormalPredicate.definedIn();
 
-	syn java.util.List<Stratum> Program.strata(EvaluationContext ctx) {
-		java.util.List<Stratum> strata = new ArrayList<>();
+	public static Stratum Program.genStratum(EvaluationContext ctx, PredicateDependencyGraph pdg,
+											 Graph<FormalPredicate, DefaultEdge> scc) {
+		java.util.List<FormalPredicate> orderedPreds = new ArrayList<>(scc.vertexSet());
+		Collections.sort(orderedPreds, (l, r) -> l.getPRED_ID().compareTo(r.getPRED_ID()));
 
-		Graph<FormalPredicate, DefaultEdge> pdg = predicateDependencyGraph();
+		if (orderedPreds.size() == 1 &&
+			!pdg.containsEdge(orderedPreds.get(0), orderedPreds.get(0))) {
+
+			FormalPredicate p = orderedPreds.get(0);
+			// control statements in the current stratum
+			java.util.List<Control> stmts = new ArrayList<>();
+			for (Clause c : p.definedIn()) {
+				stmts.addAll(c.genCode(ctx, false, Collections.emptySet()));
+			}
+			// the stratum contains a single predicate; if it does not depend on
+			// itself, then it's safe to evaluate all its rules only once
+			return Stratum.single(Collections.singletonList(p.relation2()), stmts);
+		} else {
+			// control statements in the current stratum
+			java.util.List<Control> stmts = new ArrayList<>();
+			for (FormalPredicate p : orderedPreds) {
+				for (Clause c : p.definedIn()) {
+					stmts.addAll(c.genCode(ctx, true, scc.vertexSet()));
+				}
+			}
+			java.util.List<Triple<Relation2, Relation2, Relation2>> rels = orderedPreds.stream()
+				.map(p -> Triple.of(p.relation2(),
+									p.relation2next(),
+									p.relation2delta()))
+				.collect(Collectors.toList());
+			return Stratum.fixpoint(rels, stmts);
+		}
+	}
+
+	syn lazy Graph<Graph<FormalPredicate, DefaultEdge>, DefaultEdge> Program.predicateDependencySCC() {
+		PredicateDependencyGraph pdg = predicateDependencyGraph();
 
 		StrongConnectivityAlgorithm<FormalPredicate, DefaultEdge> sca =
 			new KosarajuStrongConnectivityInspector<>(pdg);
 
+		return sca.getCondensation();
+	}
+
+	syn java.util.List<Stratum> Program.strata(EvaluationContext ctx) {
+		java.util.List<Stratum> strata = new ArrayList<>();
+		PredicateDependencyGraph pdg = predicateDependencyGraph();
+
 		TopologicalOrderIterator<Graph<FormalPredicate, DefaultEdge>, DefaultEdge> it = new
-			TopologicalOrderIterator<>(sca.getCondensation());
+			TopologicalOrderIterator<>(predicateDependencySCC());
 
 		while (it.hasNext()) {
 			Graph<FormalPredicate, DefaultEdge> scc = it.next();
-			java.util.List<FormalPredicate> orderedPreds = new ArrayList<>(scc.vertexSet());
-			Collections.sort(orderedPreds, (l, r) -> l.getPRED_ID().compareTo(r.getPRED_ID()));
-
-			if (orderedPreds.size() == 1 &&
-				!pdg.containsEdge(orderedPreds.get(0), orderedPreds.get(0))) {
-
-				FormalPredicate p = orderedPreds.get(0);
-				// control statements in the current stratum
-				java.util.List<Control> stmts = new ArrayList<>();
-				for (Clause c : p.definedIn()) {
-					stmts.addAll(c.genCode(ctx, false, Collections.emptySet()));
-				}
-				// the stratum contains a single predicate; if it does not depend on
-				// itself, then it's safe to evaluate all its rules only once
-				strata.add(Stratum.single(Collections.singletonList(p.relation2()), stmts));
-			} else {
-				// control statements in the current stratum
-				java.util.List<Control> stmts = new ArrayList<>();
-				for (FormalPredicate p : orderedPreds) {
-					for (Clause c : p.definedIn()) {
-						stmts.addAll(c.genCode(ctx, true, scc.vertexSet()));
-					}
-				}
-				java.util.List<Triple<Relation2, Relation2, Relation2>> rels = orderedPreds.stream()
-					.map(p -> Triple.of(p.relation2(),
-										p.relation2next(),
-										p.relation2delta()))
-					.collect(Collectors.toList());
-				strata.add(Stratum.fixpoint(rels, stmts));
-			}
+			strata.add(genStratum(ctx, pdg, scc));
 		}
 
 		return strata;
 	}
 
-	// TODO: check for negation in same stratum
+	inh Graph<Graph<FormalPredicate, DefaultEdge>, DefaultEdge> FormalPredicate.predicateDependencySCC();
+	eq Program.getFormalPredicate().predicateDependencySCC() = predicateDependencySCC();
+	inh PredicateDependencyGraph FormalPredicate.predicateDependencyGraph();
+	eq Program.getFormalPredicate().predicateDependencyGraph() = predicateDependencyGraph();
 
+	private void FormalPredicate.transitiveClosureHelper(Graph<Graph<FormalPredicate, DefaultEdge>, DefaultEdge> scc,
+														 Graph<FormalPredicate, DefaultEdge> thisSCC,
+														 LinkedHashSet<Graph<FormalPredicate, DefaultEdge>> strata) {
+		if (strata.contains(thisSCC))
+			return;
+		strata.add(thisSCC);
+		for (DefaultEdge predSCCEdge : scc.incomingEdgesOf(thisSCC)) {
+			Graph<FormalPredicate, DefaultEdge> predSCC = scc.getEdgeSource(predSCCEdge);
+			transitiveClosureHelper(scc, predSCC, strata);
+		}
+	}
+
+	// FormalPredicate.strata = strata that this predicate depends on, includig its own stratum;
+	// the list is sorted in topological order
+	syn java.util.List<Stratum> FormalPredicate.strata(EvaluationContext ctx) {
+		// find the SCC that contains this formal predicate
+		Graph<FormalPredicate, DefaultEdge> thisSCC =
+			predicateDependencySCC().vertexSet().stream().filter(e -> e.vertexSet().contains(this)).findFirst().get();
+
+		LinkedHashSet<Graph<FormalPredicate, DefaultEdge>> strataAsSCC = new LinkedHashSet<>();
+
+		transitiveClosureHelper(predicateDependencySCC(),
+								thisSCC, strataAsSCC);
+		LinkedList<Stratum> strata = new LinkedList<>();
+
+		strataAsSCC.forEach(scc -> strata.addFirst(Program.genStratum(ctx, predicateDependencyGraph(), scc)));
+
+		return strata;
+	}
+
+	// TODO: check for negation in same stratum
 	public void Program.dumpStrata() throws IOException {
 		PrintStream f = new PrintStream("strata.dump");
 		EvaluationContext ctx = new EvaluationContext();

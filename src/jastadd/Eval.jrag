@@ -8,101 +8,81 @@ import lang.CmdLineOpts;
 
 aspect Eval {
 	public void Program.evalIMPORT(EvaluationContext ctx, CmdLineOpts opts) throws IOException {
-		FormalPredicate fpImp = formalPredicateMap().get("IMPORT");
+		FormalPredicate fpImp = formalPredicateMap().get(GlobalNames.IMPORT_NAME);
 		if (fpImp == null) {
 			// no IMPORT in the program, nothing to do
 			return;
 		}
 
-		LinkedHashMap<FormalPredicate, java.util.List<Pair<String, String>>> predToSrc = new LinkedHashMap<>();
+		// evaluate the program, up to and including the strata where IMPORT is defined
+		fpImp.eval(ctx);
 
-		for (PredicateSymbol ps : fpImp.predicates()) {
-			Literal l = ps.parentLiteral();
-			assert l.isIMPORT();
+		// now iterate over the tuples in the IMPORT relation
+		RelationWrapper importTuples = new RelationWrapper(ctx, fpImp.relation2(), fpImp.type());
+		for (RelationWrapper.TupleWrapper t : importTuples.tuples()) {
+			String pred = t.getAsString(0);
+			String loc = t.getAsString(1);
+			String srcLang = t.getAsString(2);
 
-			PredicateRef prog = (PredicateRef) l.getTerms(0);
-			StringConstant dir = (StringConstant) l.getTerms(1);
-			StringConstant lang = (StringConstant) l.getTerms(2);
+			FormalPredicate dstPred = formalPredicateMap().get(pred);
+			Relation2 rel = dstPred.relation2();
 
-			java.util.List srcList = predToSrc.get(prog.formalpredicate());
-			if (srcList == null) {
-				srcList = new ArrayList<Pair<String, String>>();
-				predToSrc.put(prog.formalpredicate(), srcList);
-			}
-
-			srcList.add(Pair.of(dir.getSTRING(), lang.getSTRING()));
-		}
-
-		for (Map.Entry<FormalPredicate, java.util.List<Pair<String, String>>> e : predToSrc.entrySet()) {
-			Relation2 rel = e.getKey().relation2();
-
-			if (e.getValue().size() > 1) {
-				throw new RuntimeException("At most one IMPORT for any predicate. ");
-			}
-
-			for (Pair<String, String> locAndLang : e.getValue()) {
-				String srcLang = locAndLang.getRight();
-				String loc = locAndLang.getLeft();
-
-				if (srcLang.equals("java8")) {
-					FileUtil.loadJavaSources(ctx, new RelationWrapper(ctx, rel, e.getKey().type()), Collections.singletonList(loc));
-				} else if (srcLang.equals("metadl")) {
-					MutableInt nodeCounter = new MutableInt(1);
-					try {
-						lang.metadl.obj.ast.Program importedProgram = lang.metadl.obj.ast.Program.fromFileLoc(loc);
-						importedProgram.assignIds(nodeCounter);
-						RelationWrapper rw = new RelationWrapper(ctx, rel, e.getKey().type());
-						rw.insertTuples(importedProgram.datalogProjection().tuples());
-					} catch (beaver.Parser.Exception exception) {
-						throw new RuntimeException(exception);
-					}
-				} else {
-					throw new RuntimeException("Unknown language for IMPORT: " + srcLang + ".");
+			if (srcLang.equals("java8")) {
+				FileUtil.loadJavaSources(ctx, new RelationWrapper(ctx, rel, dstPred.type()), Collections.singletonList(loc));
+			} else if (srcLang.equals("metadl")) {
+				MutableInt nodeCounter = new MutableInt(1);
+				try {
+					lang.metadl.obj.ast.Program importedProgram = lang.metadl.obj.ast.Program.fromFileLoc(loc);
+					importedProgram.assignIds(nodeCounter);
+					RelationWrapper rw = new RelationWrapper(ctx, rel, dstPred.type());
+					rw.insertTuples(importedProgram.datalogProjection().tuples());
+				} catch (beaver.Parser.Exception exception) {
+					throw new RuntimeException(exception);
 				}
+			} else {
+				throw new RuntimeException("Unknown language for IMPORT: " + srcLang + ".");
 			}
 		}
 	}
 
 	public void Program.evalEDB(EvaluationContext ctx, CmdLineOpts opts) throws IOException {
-		FormalPredicate fpEDB = formalPredicateMap().get("EDB");
+		FormalPredicate fpEDB = formalPredicateMap().get(GlobalNames.EDB_NAME);
 
 		if (fpEDB == null) {
 			// no IMPORT in the program, nothing to do
 			return;
 		}
 
-		for (PredicateSymbol ps : fpEDB.predicates()) {
-			Literal l = ps.parentLiteral();
-			assert l.isEDB();
+		fpEDB.eval(ctx);
 
-			PredicateRef rel = (PredicateRef) l.getTerms(0);
-			StringConstant file = (StringConstant) l.getTerms(1);
+		// now iterate over the tuples in the EDB relation
+		RelationWrapper edbTuples = new RelationWrapper(ctx, fpEDB.relation2(), fpEDB.type());
 
-			FormalPredicate pred = rel.formalpredicate();
-			PredicateType type = pred.type();
+		for (RelationWrapper.TupleWrapper t : edbTuples.tuples()) {
+			String pred = t.getAsString(0);
+			String file = t.getAsString(1);
+			FormalPredicate dstPred = formalPredicateMap().get(pred);
+			Relation2 rel = dstPred.relation2();
 
-			CSVUtil.readRelation(ctx, type, pred.relation2(), opts.getFactsDir() + "/" + file.getSTRING());
+			CSVUtil.readRelation(ctx, dstPred.type(), dstPred.relation2(), opts.getFactsDir() + "/" + file);
 		}
 	}
 
 	public void Program.evalOUTPUT(EvaluationContext ctx, CmdLineOpts opts) throws IOException {
-		FormalPredicate fpOUTPUT = formalPredicateMap().get("OUTPUT");
+		FormalPredicate fpOUTPUT = formalPredicateMap().get(GlobalNames.OUTPUT_NAME);
 
 		if (fpOUTPUT == null) {
 			// no IMPORT in the program, nothing to do
 			return;
 		}
 
-		for (PredicateSymbol ps : fpOUTPUT.predicates()) {
-			Literal l = ps.parentLiteral();
-			assert l.isOUTPUT();
+		// now iterate over the tuples in the OUTPUT relation
+		RelationWrapper outputTuples = new RelationWrapper(ctx, fpOUTPUT.relation2(), fpOUTPUT.type());
 
-			PredicateRef rel = (PredicateRef) l.getTerms(0);
-
-			FormalPredicate pred = rel.formalpredicate();
-			PredicateType type = pred.type();
-
-			CSVUtil.writeRelation(ctx, type, pred.relation2(), opts.getOutputDir() + "/" + rel.getPRED_ID() + ".csv");
+		for (RelationWrapper.TupleWrapper t : outputTuples.tuples()) {
+			String pred = t.getAsString(0);
+			FormalPredicate srcPred = formalPredicateMap().get(pred);
+			CSVUtil.writeRelation(ctx, srcPred.type(), srcPred.relation2(), opts.getOutputDir() + "/" + srcPred.getPRED_ID() + ".csv");
 		}
 	}
 
@@ -113,20 +93,19 @@ aspect Eval {
 
 		evalIMPORT(evalCtx(), opts);
 
-		FormalPredicate formalImport = formalPredicateMap().get(GlobalNames.IMPORT_NAME);
-		if (formalImport == null)
+		FormalPredicate fpImp = formalPredicateMap().get(GlobalNames.IMPORT_NAME);
+		if (fpImp == null)
 			return;
 
-		for (PredicateSymbol psym : formalImport.predicates()) {
-			Literal imp = psym.parentLiteral();
-			String progFileLoc = ((StringConstant)imp.getTerms(1)).getSTRING();
-			String lang = ((StringConstant)imp.getTerms(2)).getSTRING();
-			PredicateRef predref = (PredicateRef)(imp.getTerms(0));
-			FormalPredicate formalProg = predref.formalpredicate();
-			String predName = predref.getPRED_ID();
 
-			CSVUtil.writeRelation(evalCtx(), formalProg.type(), formalProg.relation2(),
-								  opts.getFactsDir() + "/" + predName + ".csv");
+		// now iterate over the tuples in the IMPORT relation
+		RelationWrapper importTuples = new RelationWrapper(evalCtx(), fpImp.relation2(), fpImp.type());
+		for (RelationWrapper.TupleWrapper t : importTuples.tuples()) {
+			String pred = t.getAsString(0);
+
+			FormalPredicate srcPred = formalPredicateMap().get(pred);
+			CSVUtil.writeRelation(evalCtx(), srcPred.type(), srcPred.relation2(),
+								  opts.getFactsDir() + "/" + srcPred.getPRED_ID() + ".csv");
 		}
 
 		// stop the timer and report
@@ -156,5 +135,11 @@ aspect Eval {
 		}
 		evalOUTPUT(ctx, opts);
 		if (false) dumpAllRelations(ctx);
+	}
+
+	public void FormalPredicate.eval(EvaluationContext ctx) {
+		for (Stratum s : strata(ctx)) {
+			s.eval();
+		}
 	}
 }

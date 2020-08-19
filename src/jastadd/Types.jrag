@@ -286,6 +286,15 @@ aspect TypeCheck {
 						StringType.get() + ", but got " + fileLoc.type() + ".";
 				}
 			};
+
+		Term lang = getTerms(2);
+		if (lang.type() != StringType.get())
+			return new TypeError(this) {
+				public String report() {
+					return "Third argument to IMPORT must have type " +
+						StringType.get() + ", but got " + fileLoc.type() + ".";
+				}
+			};
 		return null;
 	}
 
@@ -419,8 +428,26 @@ aspect TypeInference {
 	}
 
 	inh Type Expr.itype();
-	eq Literal.getChild().itype() = UnknownType.get();
-    eq Functor.getArg(int i).itype() {
+	eq Literal.getTerms(int i).itype() {
+		if (isEDB()) {
+			switch (i) {
+			case 0: return PredicateRefType.get();
+			case 1: return StringType.get();
+			default: return UnknownType.get();
+			}
+		} else if (isIMPORT()) {
+			switch (i) {
+			case 0: return PredicateRefType.get();
+			case 1: return StringType.get();
+			case 2: return StringType.get();
+			default: return UnknownType.get();
+			}
+		} else if (isOUTPUT() && i == 0) {
+			return PredicateRefType.get();
+		}
+		return UnknownType.get();
+	}
+	eq Functor.getArg(int i).itype() {
 		switch (getFunc().getFUNC_ID()) {
 		case "add":
 		case "mul":

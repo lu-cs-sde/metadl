@@ -18,7 +18,7 @@ import lang.ast.Type;
 
 
 public class RelationWrapper {
-	static class TupleWrapper {
+	public static class TupleWrapper {
 		private final Tuple t;
 		private final PredicateType type;
 		private final EvaluationContext ctx;

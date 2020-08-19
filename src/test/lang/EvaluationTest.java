@@ -43,10 +43,12 @@ public class EvaluationTest {
 		if (fpOut1 == null)
 			fail();
 		HashMap<String, RelationWrapper> nameToRel = new HashMap<>();
-		for (PredicateSymbol psym : fpOut1.predicates()) {
-			Literal output = psym.parentLiteral();
-			PredicateRef pr = (PredicateRef)output.getTerms(0);
-			FormalPredicate fp = pr.formalpredicate();
+
+		RelationWrapper outputTuples = new RelationWrapper(program1.evalCtx(), fpOut1.relation2(), fpOut1.type());
+
+		for (RelationWrapper.TupleWrapper t : outputTuples.tuples()) {
+			String pred = t.getAsString(0);
+			FormalPredicate fp = program1.formalPredicateMap().get(pred);
 
 			File in1 = new File(d1.getOutputDir() + "/" + fp.predicateName() + ".csv");
 
@@ -158,7 +160,7 @@ public class EvaluationTest {
 						   "evalTest_11", "evalTest_12", "evalTest_13",
 						   "evalTest_14", "evalTest_15",
 						   // "evalTest_16", Disabled, due to introduction of inexact matches
-						   "evalTest_17", "evalTest_18"};
+						   "evalTest_17", "evalTest_18", "evalTest_19"};
 		return Arrays.stream(tests);
 	}
 
@@ -218,9 +220,12 @@ public class EvaluationTest {
 
 			if (!expectedRel.equals(rel.getValue().getRelation())) {
 				System.out.println(rel.getKey() + " expects ");
-				System.out.println(expectedRel.tuples());
+				RelationWrapper expectedRelWrapper = new RelationWrapper(rel.getValue().getContext(),
+																		 expectedRel,
+																		 rel.getValue().type());
+				System.out.println(expectedRelWrapper.tuples());
 				System.out.println(rel.getKey() + " actual ");
-				System.out.println(rel.getValue().getRelation().tuples());
+				System.out.println(rel.getValue().tuples());
 
 			}
 			String msg = "Mismatch in test " + fileName + ", relation " + rel.getKey();

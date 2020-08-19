@@ -50,6 +50,7 @@ public class Compiler {
 		Compiler.DrAST_root_node = program; // Enable debugging with DrAST
 
 		if (program.hasSemanticErrors()) {
+			System.err.println(program.errorReport());
 			System.err.println("Compilation failed with semantic errors.");
 			throw new RuntimeException();
 		}
@@ -75,8 +76,6 @@ public class Compiler {
 	}
 
 	public static void evalSouffleProgram(Program program, CmdLineOpts opts) throws IOException {
-		program.generateObjectProgramRelations(opts);
-
 		String soufflePath = opts.getOutputFile();
 		prettyPrintSouffle(program, soufflePath);
 
@@ -198,9 +197,12 @@ public class Compiler {
 				prog.eval(opts);
 				break;
 			case EVAL_SOUFFLE:
+				prog.evalEDB(prog.evalCtx(), opts);
+				prog.generateObjectProgramRelations(opts);
 				evalSouffleProgram(prog, opts);
 				break;
 			case PRETTY_SOUFFLE:
+				prog.evalEDB(prog.evalCtx(), opts);
 				prettyPrintSouffle(prog, opts.getOutputDir() + "/" + opts.getOutputFile());
 				break;
 			case PRETTY_INTERNAL:

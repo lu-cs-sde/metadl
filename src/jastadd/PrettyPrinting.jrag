@@ -337,80 +337,88 @@ aspect SoufflePrinting {
 			pr.out.print(" inline");
     }
 
-    private void Program.soufflePrintEDBDecl(PrettyPrinter pr) {
-        FormalPredicate fp = formalPredicateMap().get(GlobalNames.EDB_NAME);
-        if(fp == null) return;
-		for (PredicateSymbol psym : fp.predicates()) {
-			Literal edb = psym.parentLiteral();
+	private void Program.soufflePrintEDBDecl(PrettyPrinter pr) {
+		FormalPredicate fpEDB = formalPredicateMap().get(GlobalNames.EDB_NAME);
+		if (fpEDB == null) {
+			// no IMPORT in the program, nothing to do
+			return;
+		}
 
-			PredicateRef predref = (PredicateRef) edb.getTerms(0);
-			StringConstant fileloc = (StringConstant) edb.getTerms(1);
+		fpEDB.eval(evalCtx());
+
+		// now iterate over the tuples in the EDB relation
+		RelationWrapper edbTuples = new RelationWrapper(evalCtx(), fpEDB.relation2(), fpEDB.type());
+
+		for (RelationWrapper.TupleWrapper t : edbTuples.tuples()) {
+			String pred = t.getAsString(0);
+			String file = t.getAsString(1);
 
 			pr.out.print(".input ");
-			pr.out.print(predref.getPRED_ID());
+			pr.out.print(pred);
 			pr.out.print("(filename=");
-			pr.prettyPrint(fileloc);
+			pr.out.print("\"" + file + "\"");
 			pr.out.print(", delimiter=\"");
 			pr.out.print(Compiler.getCSVSeparatorEscaped());
 			pr.out.print("\")\n");
 		}
-    }
+	}
 
-    private void Program.soufflePrintOUTPUTDecl(PrettyPrinter pr) {
-        FormalPredicate fp = formalPredicateMap().get(GlobalNames.OUTPUT_NAME);
-        if(fp == null) return;
-		for (PredicateSymbol psym : fp.predicates()) {
-			Literal output = psym.parentLiteral();
-			PredicateRef predref = (PredicateRef) output.getTerms(0);
-            pr.out.print(".output " + predref.getPRED_ID() + "(delimiter=\"");
+	private void Program.soufflePrintOUTPUTDecl(PrettyPrinter pr) {
+		FormalPredicate fpOUTPUT = formalPredicateMap().get(GlobalNames.OUTPUT_NAME);
+		if(fpOUTPUT == null)
+			return;
+
+		fpOUTPUT.eval(evalCtx());
+
+		// now iterate over the tuples in the EDB relation
+		RelationWrapper outputTuples = new RelationWrapper(evalCtx(), fpOUTPUT.relation2(), fpOUTPUT.type());
+
+		for (RelationWrapper.TupleWrapper t : outputTuples.tuples()) {
+			String pred = t.getAsString(0);
+			pr.out.print(".output " + pred + "(delimiter=\"");
 			pr.out.print(Compiler.getCSVSeparatorEscaped());
 			pr.out.print("\")\n");
 		}
-    }
-
-    private String Program.souffleConstantToString(Constant C) {
-	if (C instanceof PredicateRef) {
-	    return "\"'" + ((PredicateRef)C).getPRED_ID() + "\"";
-	} else if (C instanceof StringConstant) {
-    	    return "\"" + C.toString() + "\"";
-	} else {
-	    return C.toString();
 	}
-    }
 
-
-    private void Program.soufflePrintIMPORTFacts(PrettyPrinter pr) {
-		FormalPredicate fp = formalPredicateMap().get(GlobalNames.IMPORT_NAME);
-		if (fp == null) return;
-
-		for (PredicateSymbol psym : fp.predicates()) {
-			Literal imp = psym.parentLiteral();
-			PredicateRef predref = (PredicateRef) imp.getTerms(0);
-			String predName = predref.getPRED_ID();
-			String fileLoc = predName + ".csv";
-            pr.out.print(".input ");
-            pr.out.print(predName);
-            pr.out.print("(filename=\"");
-            pr.out.print(fileLoc);
-            pr.out.print("\", delimiter=\"");
-			pr.out.print(Compiler.getCSVSeparatorEscaped());
-            pr.out.print("\")\n");
+	private void Program.soufflePrintIMPORTFacts(PrettyPrinter pr) {
+		FormalPredicate fpImp = formalPredicateMap().get(GlobalNames.IMPORT_NAME);
+		if (fpImp == null) {
+			// no IMPORT in the program, nothing to do
+			return;
 		}
-    }
+
+		// evaluate the program, up to and including the strata where IMPORT is defined
+		fpImp.eval(evalCtx());
+
+		// now iterate over the tuples in the IMPORT relation
+		RelationWrapper importTuples = new RelationWrapper(evalCtx(), fpImp.relation2(), fpImp.type());
+		for (RelationWrapper.TupleWrapper t : importTuples.tuples()) {
+			String pred = t.getAsString(0);
+
+			pr.out.print(".input ");
+			pr.out.print(pred);
+			pr.out.print("(filename=\"");
+			pr.out.print(pred + ".csv");
+			pr.out.print("\", delimiter=\"");
+			pr.out.print(Compiler.getCSVSeparatorEscaped());
+			pr.out.print("\")\n");
+		}
+	}
 
 
-    public void Program.soufflePrint(PrettyPrinter pr) {
-        printCollection(getFormalPredicates(), "", "\n", "\n", pr);
-        HashSet<String> visited = new HashSet<String>();
-        for(Literal l : predefinedLiterals()) {
-            if(!visited.contains(l.predicate().getPRED_ID())) {
-                // l.artificalInput(pr);
-                visited.add(l.predicate().getPRED_ID());
-            }
-        }
-        soufflePrintEDBDecl(pr);
-        soufflePrintOUTPUTDecl(pr);
+	public void Program.soufflePrint(PrettyPrinter pr) {
+		printCollection(getFormalPredicates(), "", "\n", "\n", pr);
+		HashSet<String> visited = new HashSet<String>();
+		for(Literal l : predefinedLiterals()) {
+			if(!visited.contains(l.predicate().getPRED_ID())) {
+				// l.artificalInput(pr);
+				visited.add(l.predicate().getPRED_ID());
+			}
+		}
+		soufflePrintEDBDecl(pr);
+		soufflePrintOUTPUTDecl(pr);
 		soufflePrintIMPORTFacts(pr);
-        prettyPrint(pr);
-    }
+		prettyPrint(pr);
+	}
 }

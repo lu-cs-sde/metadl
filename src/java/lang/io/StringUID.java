@@ -21,6 +21,4 @@ public class StringUID {
 		}
 		return u;
 	}
-
-
 }

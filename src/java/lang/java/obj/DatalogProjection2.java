@@ -27,6 +27,7 @@ public class DatalogProjection2 {
 
 	private int currentNumber = 0;
 	private RelationWrapper prel;
+	private int tokenUID = Integer.MAX_VALUE;
 
 	// TODO: It's just easier to add environment variable than command-line arguments.
 	// This should be removed once we move to a traditional command line parser,
@@ -311,7 +312,6 @@ public class DatalogProjection2 {
 			// For every token, we generate two tuples
 			// ("NodeKind", CurrentNodeId, ChildIdx, ChildId, "")
 			// ("Token", ChildId, 0, 0, "TokenAsString")
-			int tokenUID = StringUID.getInstance().uid(t);
 			{
 				// Add a tuple to the current node relation
 				lang.ast.StringConstant Kind = new lang.ast.StringConstant(relName);
@@ -333,6 +333,8 @@ public class DatalogProjection2 {
 				ret.add(new PseudoTuple(Kind, CurrentNodeId, ChildIdx, ChildId, Token));
 				prel.insertTuple(Kind, CurrentNodeId, ChildIdx, ChildId, Token);
 			}
+
+			tokenUID--;
 		}
 
 		if (childIndex == 0) {

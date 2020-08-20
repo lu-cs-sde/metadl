@@ -192,10 +192,9 @@ aspect CodeGen {
 	eq Fact.genCode(EvaluationContext ctx, boolean isDelta, Set<FormalPredicate> currentStratum) {
 		Tuple t = new Tuple(evalVariables().size());
 		Control currentCont = Control.nop();
-		Set<String> boundVars = Collections.emptySet();
 
 		for (CommonLiteral h : getHeadss()) {
-			currentCont = h.genCode(t, ctx, currentCont, boundVars, isDelta);
+			currentCont = h.genCode(t, ctx, currentCont, Collections.emptySet(), Collections.emptySet(), isDelta);
 		}
 
 		return Collections.singletonList(currentCont);
@@ -211,9 +210,10 @@ aspect CodeGen {
 	private Control Rule.genCodeHelper(EvaluationContext ctx, boolean isDelta, int deltaRelIndex) {
 		Tuple t = new Tuple(evalVariables().size());
 		Control currentCont = Control.nop();
-
+		Set<String> usedInHeadVars = new HashSet<>();
 		for (CommonLiteral h : getHeadss()) {
-			currentCont = h.genCode(t, ctx, currentCont, Collections.emptySet(), isDelta);
+			currentCont = h.genCode(t, ctx, currentCont, Collections.emptySet(), Collections.emptySet(), isDelta);
+			usedInHeadVars.addAll(h.variableNames());
 		}
 
 		java.util.List<CommonLiteral> schedule = evalSchedule();
@@ -225,11 +225,18 @@ aspect CodeGen {
 			boundVars.add(SetUtils.union(boundVars.get(i - 1), schedule.get(i - 1).boundVariableNames()));
 		}
 
-
+		// the running union of the variables used after each literal in the schedule
+		java.util.List<Set<String>> referedVars = new ArrayList<>();
+		referedVars.add(usedInHeadVars);
+		for (int i = schedule.size() - 2; i >= 0; i--) {
+			referedVars.add(SetUtils.union(referedVars.get(referedVars.size() - 1), schedule.get(i + 1).variableNames()));
+		}
+		Collections.reverse(referedVars);
+		//System.out.println(referedVars);
 		// now generate the code for each literal, in reverse order
 		for (int i = schedule.size() - 1; i >= 0; i--) {
 			CommonLiteral b = schedule.get(i);
-			currentCont = b.genCode(t, ctx, currentCont, boundVars.get(i), i == deltaRelIndex);
+			currentCont = b.genCode(t, ctx, currentCont, boundVars.get(i), referedVars.get(i), i == deltaRelIndex);
 		}
 
 		return currentCont;
@@ -260,7 +267,7 @@ aspect CodeGen {
 	}
 
 	protected Control CommonLiteral.genCode(Tuple t, EvaluationContext ctx, Control cont,
-											Set<String> boundVars, boolean isDelta) {
+											Set<String> boundVars, Set<String> usedVars, boolean isDelta) {
 		throw new RuntimeException("Can't generate code for literal " + toString());
 	}
 
@@ -278,7 +285,7 @@ aspect CodeGen {
 	eq StringConstant.constVal(EvaluationContext ctx) = ctx.internalizeString(getSTRING());
 
 	private Control Literal.genCodePositiveLiteral(Tuple t, Relation2 rel, EvaluationContext ctx, Control cont,
-												   Set<String> boundVars) {
+												   Set<String> boundVars, Set<String> usedVars) {
 		java.util.List<Pair<Integer, Integer>> assign = new ArrayList<>();
 		java.util.List<Pair<Integer, Long>> consts = new ArrayList<>();
 		java.util.List<Pair<Integer, Integer>> test = new ArrayList<>();
@@ -302,8 +309,8 @@ aspect CodeGen {
 					if (boundVars.contains(v.getVAR_ID())) {
 						// the variable is bound by previous literals, so use its value for lookup
 						test.add(Pair.of(i, v.varId()));
-					} else {
-						// the variable is free, assign it a value
+					} else if (usedVars.contains(v.getVAR_ID())) {
+						// the variable is free, and subsequently refered to, assign it a value
 						assign.add(Pair.of(i, v.varId()));
 					}
 				} else if (getTerms(i).isConstant()) {
@@ -336,7 +343,7 @@ aspect CodeGen {
 		return Control.ifNotExists(t, rel, test, consts, cont);
 	}
 
-	protected Control Literal.genCode(Tuple t, EvaluationContext ctx, Control cont, Set<String> boundVars, boolean isDelta) {
+	protected Control Literal.genCode(Tuple t, EvaluationContext ctx, Control cont, Set<String> boundVars, Set<String> usedVars, boolean isDelta) {
 		FormalPredicate formalPred = getPredicate().formalpredicate();
 
 		if (hasNot()) {
@@ -352,11 +359,11 @@ aspect CodeGen {
 			} else {
 				rel = formalPred.relation2();
 			}
-			return genCodePositiveLiteral(t, rel, ctx, cont, boundVars);
+			return genCodePositiveLiteral(t, rel, ctx, cont, boundVars, usedVars);
 		}
 	}
 
-	protected Control EQLiteral.genCode(Tuple t, EvaluationContext ctx, Control cont, Set<String> boundVars, boolean isDelta) {
+	protected Control EQLiteral.genCode(Tuple t, EvaluationContext ctx, Control cont, Set<String> boundVars, Set<String> usedVars, boolean isDelta) {
 		Operation l = getLeft().genCode(t, ctx);
 		Operation r = getRight().genCode(t, ctx);
 		if (hasNot())
@@ -364,7 +371,7 @@ aspect CodeGen {
 		return Control.eq(cont, l, r);
 	}
 
-	protected Control NEQLiteral.genCode(Tuple t, EvaluationContext ctx, Control cont, Set<String> boundVars, boolean isDelta) {
+	protected Control NEQLiteral.genCode(Tuple t, EvaluationContext ctx, Control cont, Set<String> boundVars, Set<String> usedVars, boolean isDelta) {
 		Operation l = getLeft().genCode(t, ctx);
 		Operation r = getRight().genCode(t, ctx);
 		if (hasNot())
@@ -372,7 +379,7 @@ aspect CodeGen {
 		return Control.neq(cont, l, r);
 	}
 
-	protected Control LTLiteral.genCode(Tuple t, EvaluationContext ctx, Control cont, Set<String> boundVars, boolean isDelta) {
+	protected Control LTLiteral.genCode(Tuple t, EvaluationContext ctx, Control cont, Set<String> boundVars, Set<String> usedVars, boolean isDelta) {
 		Operation l = getLeft().genCode(t, ctx);
 		Operation r = getRight().genCode(t, ctx);
 		if (hasNot())
@@ -380,7 +387,7 @@ aspect CodeGen {
 		return Control.lt(cont, l, r);
 	}
 
-	protected Control GTLiteral.genCode(Tuple t, EvaluationContext ctx, Control cont, Set<String> boundVars, boolean isDelta) {
+	protected Control GTLiteral.genCode(Tuple t, EvaluationContext ctx, Control cont, Set<String> boundVars, Set<String> usedVars, boolean isDelta) {
 		Operation l = getLeft().genCode(t, ctx);
 		Operation r = getRight().genCode(t, ctx);
 		if (hasNot())
@@ -388,7 +395,7 @@ aspect CodeGen {
 		return Control.gt(cont, l, r);
 	}
 
-	protected Control LTELiteral.genCode(Tuple t, EvaluationContext ctx, Control cont, Set<String> boundVars, boolean isDelta) {
+	protected Control LTELiteral.genCode(Tuple t, EvaluationContext ctx, Control cont, Set<String> boundVars, Set<String> usedVars, boolean isDelta) {
 		Operation l = getLeft().genCode(t, ctx);
 		Operation r = getRight().genCode(t, ctx);
 		if (hasNot())
@@ -396,7 +403,7 @@ aspect CodeGen {
 		return Control.lte(cont, l, r);
 	}
 
-	protected Control GTELiteral.genCode(Tuple t, EvaluationContext ctx, Control cont, Set<String> boundVars, boolean isDelta) {
+	protected Control GTELiteral.genCode(Tuple t, EvaluationContext ctx, Control cont, Set<String> boundVars, Set<String> usedVars, boolean isDelta) {
 		Operation l = getLeft().genCode(t, ctx);
 		Operation r = getRight().genCode(t, ctx);
 		if (hasNot())
@@ -404,12 +411,12 @@ aspect CodeGen {
 		return Control.gte(cont, l, r);
 	}
 
-	protected Control BINDLiteral.genCode(Tuple t, EvaluationContext ctx, Control cont, Set<String> boundVars, boolean isDelta) {
+	protected Control BINDLiteral.genCode(Tuple t, EvaluationContext ctx, Control cont, Set<String> boundVars, Set<String> usedVars, boolean isDelta) {
 		Variable dst = (Variable) getExpr(0);
 		return Control.bind(t, cont, dst.varId(), getExpr(1).genCode(t, ctx));
 	}
 
-	protected Control MATCHLiteral.genCode(Tuple t, EvaluationContext ctx, Control cont, Set<String> boundVars, boolean isDelta) {
+	protected Control MATCHLiteral.genCode(Tuple t, EvaluationContext ctx, Control cont, Set<String> boundVars, Set<String> usedVars, boolean isDelta) {
 		Operation l = getLeft().genCode(t, ctx);
 		Operation r = getRight().genCode(t, ctx);
 

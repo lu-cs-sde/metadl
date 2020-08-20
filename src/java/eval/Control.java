@@ -280,8 +280,7 @@ class IfExists implements Control {
 			maxKey.set(c.getLeft(), t.get(c.getRight()));
 		}
 
-		SortedSet<Tuple> tuples = rel.lookup(minKey, maxKey);
-		if (positive ^ tuples.isEmpty())
+		if (positive ^ !rel.hasEntryInRange(minKey, maxKey))
 			cont.eval();
 	}
 

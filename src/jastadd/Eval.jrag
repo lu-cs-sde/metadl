@@ -126,6 +126,7 @@ aspect Eval {
 		EvaluationContext ctx = evalCtx();
 
 		java.util.List<Stratum> strata = strata(ctx);
+		dumpStrata();
 
 		evalEDB(ctx, opts);
 		evalIMPORT(ctx, opts);

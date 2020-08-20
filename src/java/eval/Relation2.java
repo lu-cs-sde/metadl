@@ -75,6 +75,16 @@ public class Relation2 {
 		return Collections.unmodifiableSortedSet(currentSet.subSet(loInclusive, true, hiInclusive, true));
 	}
 
+	public boolean hasEntryInRange(Tuple loInclusive, Tuple hiInclusive) {
+		assert loInclusive.arity() == hiInclusive.arity();
+		// find min e s.t. e >= loInclusive
+		Tuple e = currentSet.ceiling(loInclusive);
+		if (e == null)
+			return false;
+		// return e <= hiInclusive
+		return currentSet.comparator().compare(e, hiInclusive) <= 0;
+	}
+
 	public boolean insert(Tuple t) {
 		boolean change = false;
 		for (SortedSet<Tuple> s : indexedMaps.values())

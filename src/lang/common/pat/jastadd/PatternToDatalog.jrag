@@ -11,6 +11,8 @@ import lang.io.StringUID;
 import java.util.Arrays;
 import java.io.PrintStream;
 import static lang.ast.Constructors.*;
+import org.apache.commons.lang3.mutable.MutableInt;
+
 
 aspect PatternToDatalog {
 
@@ -18,12 +20,56 @@ aspect PatternToDatalog {
 	   Assign a unique ID to every node in the AST
 	*/
 	private int ASTNode.UID = 0;
-	private static int ASTNode.RunningId = 0;
-	public synchronized int ASTNode.getNodeId() {
-		if (UID == 0) {
-			UID = ++ASTNode.RunningId;
-		}
+	public int ASTNode.getNodeId() {
 		return UID;
+	}
+
+	public void ASTNode.assignIds() {
+		assignIds(new MutableInt(0));
+	}
+
+	@Override public boolean ASTNode.equals(Object o) {
+		if (o == null)
+			return false;
+		if (o.getClass() != getClass())
+			return false;
+		ASTNode other = (ASTNode) o;
+		if (!tokens().equals(other.tokens()))
+			return false;
+		if (getNumChild() != other.getNumChild())
+			return false;
+		for (int i = 0; i < getNumChild(); ++i) {
+			if ((getChild(i) == null) !=
+				(other.getChild(i) == null)) {
+				return false;
+			} else if (getChild(i) != null && !getChild(i).equals(other.getChild(i))) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	@Override public int ASTNode.hashCode() {
+		int m = 31;
+		int h = getClass().hashCode();
+		h = h * m + tokens().hashCode();
+		for (ASTNode c : astChildren())
+			if (c != null)
+				h = h * m + c.hashCode();
+		return h;
+	}
+
+	private void ASTNode.assignIds(MutableInt count) {
+		// Assign node IDs using a depth first traversal;
+		// this ensures a deterministic order for the nodes
+		// inside the AST.
+		for (ASTNode c : astChildren()) {
+			if (c != null)
+				c.assignIds(count);
+		}
+
+		UID = count.intValue();
+		count.increment();
 	}
 
 	/**

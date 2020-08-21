@@ -221,7 +221,7 @@ aspect PatternLang {
 				}
 			};
 
-		ArrayList<ObjLangASTNode> ret = new ArrayList<>();
+		LinkedHashSet<ObjLangASTNode> ret = new LinkedHashSet<>();
 
 		SimpleLogger.logger().debug("Parsing pattern " + toString());
 
@@ -246,6 +246,7 @@ aspect PatternLang {
 			for (ParseTree pt : pts) {
 				try {
 					ObjLangASTNode astRoot = (ObjLangASTNode) astBuilder.buildAST(pt, symbols);
+					astRoot.assignIds();
 					ret.add(astRoot);
 					parsePatternTimer.suspend();
 					if (SimpleLogger.isDebugMode()) {
@@ -272,7 +273,7 @@ aspect PatternLang {
 			throw new RuntimeException("Errow while parsing pattern");
 		}
 
-		return ret;
+		return new ArrayList(ret);
 	}
 
 	eq Pattern.variables() {

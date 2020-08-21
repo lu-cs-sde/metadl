@@ -31,6 +31,11 @@ public interface ObjLangASTNode {
 	int getNodeId();
 
 	/**
+	   Set the unique IDs for this node and its children
+	 */
+	void assignIds();
+
+	/**
 	   The name of the representative relation for this node type
 	 */
 	String getRelation();

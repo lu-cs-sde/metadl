@@ -25,6 +25,7 @@ import lang.ast.StandardPrettyPrinter;
 import lang.ast.TypeError;
 import lang.io.FileUtil;
 import lang.io.SimpleLogger;
+import lang.ast.PredicateDependencyGraph;
 
 /**
  * Dumps the parsed Abstract Syntax Tree of a Calc program.
@@ -218,6 +219,8 @@ public class Compiler {
 				prog.generateObjectProgramRelations(opts);
 				break;
 			case CHECK:
+				prog.dumpStrata();
+				prog.predicateDependencyGraph().dump();
 				break;
 			}
 

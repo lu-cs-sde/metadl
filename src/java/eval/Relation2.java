@@ -42,7 +42,7 @@ public class Relation2 {
 		indexedMaps.put(defaultIndex, currentSet);
 	}
 
-	public void setIndex(Index index) {
+	private void setIndex(Index index) {
 		TreeSet<Tuple> nextSet = indexedMaps.get(index);
 		if (nextSet == null) {
 			// no set for the requested index, add new one
@@ -70,12 +70,14 @@ public class Relation2 {
 		return t;
 	}
 
-	public SortedSet<Tuple> lookup(Tuple loInclusive, Tuple hiInclusive) {
+	public synchronized SortedSet<Tuple> lookup(Index index, Tuple loInclusive, Tuple hiInclusive) {
+		setIndex(index);
 		assert loInclusive.arity() == hiInclusive.arity();
 		return Collections.unmodifiableSortedSet(currentSet.subSet(loInclusive, true, hiInclusive, true));
 	}
 
-	public boolean hasEntryInRange(Tuple loInclusive, Tuple hiInclusive) {
+	public synchronized boolean hasEntryInRange(Index index, Tuple loInclusive, Tuple hiInclusive) {
+		setIndex(index);
 		assert loInclusive.arity() == hiInclusive.arity();
 		// find min e s.t. e >= loInclusive
 		Tuple e = currentSet.ceiling(loInclusive);

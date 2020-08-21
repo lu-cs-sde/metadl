@@ -202,7 +202,7 @@ class ForAll implements Control {
 
 	public void eval() {
 		// set an index for the relation
-		rel.setIndex(index);
+		// rel.setIndex(index);
 
 		// populate the variable part of the prefix
 		for (Pair<Integer, Integer> c : test) {
@@ -210,7 +210,7 @@ class ForAll implements Control {
 			maxKey.set(c.getLeft(), t.get(c.getRight()));
 		}
 
-		SortedSet<Tuple> tuples = rel.lookup(minKey, maxKey);
+		SortedSet<Tuple> tuples = rel.lookup(index, minKey, maxKey);
 		for (Tuple r : tuples) {
 			for (Pair<Integer, Integer> p : assign) {
 				t.set(p.getRight(), r.get(p.getLeft()));
@@ -273,14 +273,14 @@ class IfExists implements Control {
 	}
 
 	public void eval() {
-		rel.setIndex(index);
+		// rel.setIndex(index);
 		// populate the variable part of the prefix
 		for (Pair<Integer, Integer> c : test) {
 			minKey.set(c.getLeft(), t.get(c.getRight()));
 			maxKey.set(c.getLeft(), t.get(c.getRight()));
 		}
 
-		if (positive ^ !rel.hasEntryInRange(minKey, maxKey))
+		if (positive ^ !rel.hasEntryInRange(index, minKey, maxKey))
 			cont.eval();
 	}
 

@@ -194,7 +194,7 @@ public class Compiler {
 
 			switch (opts.getAction()) {
 			case EVAL_INTERNAL:
-				prog.eval(opts);
+				prog.evalParallel(opts);
 				break;
 			case EVAL_SOUFFLE:
 				prog.evalEDB(prog.evalCtx(), opts);

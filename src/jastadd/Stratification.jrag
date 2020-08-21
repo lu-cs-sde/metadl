@@ -9,7 +9,9 @@ import java.util.LinkedHashSet;
 import java.io.FileWriter;
 import eval.Stratum;
 import org.apache.commons.lang3.tuple.Triple;
-
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+import java.util.concurrent.ExecutionException;
 
 aspect Stratification {
 	public class PredicateDependencyGraph extends DefaultDirectedGraph<FormalPredicate, DefaultEdge> {
@@ -140,6 +142,60 @@ aspect Stratification {
 		}
 
 		return strata;
+	}
+
+	public class ParallelStratum implements Runnable {
+		Stratum s;
+		java.util.List<Future<?>> deps = new ArrayList<>();
+		public ParallelStratum(Stratum s) {
+			this.s = s;
+		}
+		@Override public void run() {
+			// force evaluation of all strata this
+			// stratum depends on
+			for (Future<?> d : deps) {
+				try {
+					d.get();
+				} catch (InterruptedException e) {
+					throw new RuntimeException(e);
+				} catch (ExecutionException e) {
+					throw new RuntimeException(e);
+				}
+			}
+			// evaluate the current stratum
+			s.eval();
+		}
+		public void addDependency(Future<?> dep) {
+			deps.add(dep);
+		}
+	}
+
+	syn java.util.List<Future<?>> Program.parallelStrata(EvaluationContext ctx, ExecutorService exec) {
+		Map<Graph<FormalPredicate, DefaultEdge>, Future<?>> sccFutures = new HashMap<>();
+		java.util.List<Future<?>> terminalFutures = new ArrayList<>();
+
+		PredicateDependencyGraph pdg = predicateDependencyGraph();
+		Graph<Graph<FormalPredicate, DefaultEdge>, DefaultEdge> pdSCC = predicateDependencySCC();
+
+		TopologicalOrderIterator<Graph<FormalPredicate, DefaultEdge>, DefaultEdge> it = new
+			TopologicalOrderIterator<>(pdSCC);
+
+		while (it.hasNext()) {
+			Graph<FormalPredicate, DefaultEdge> scc = it.next();
+			ParallelStratum s = new ParallelStratum(genStratum(ctx, pdg, scc));
+			for (DefaultEdge e : pdSCC.incomingEdgesOf(scc)) {
+				Future<?> d = sccFutures.get(pdSCC.getEdgeSource(e));
+				assert d != null;
+				s.addDependency(d);
+			}
+
+			Future<?> f = exec.submit(s);
+			sccFutures.put(scc, f);
+			if (pdSCC.outgoingEdgesOf(scc).isEmpty()) {
+				terminalFutures.add(f);
+			}
+		}
+		return terminalFutures;
 	}
 
 	inh Graph<Graph<FormalPredicate, DefaultEdge>, DefaultEdge> FormalPredicate.predicateDependencySCC();

@@ -11,6 +11,7 @@ public class CmdLineOpts {
 	public enum Action {
 		EVAL_SOUFFLE,
 		EVAL_INTERNAL,
+		EVAL_INTERNAL_PARALLEL,
 		EVAL_IMPORT,
 		PRETTY_SOUFFLE,
 		PRETTY_INTERNAL,

@@ -12,6 +12,7 @@ import org.apache.commons.lang3.tuple.Triple;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Callable;
 
 aspect Stratification {
 	public class PredicateDependencyGraph extends DefaultDirectedGraph<FormalPredicate, DefaultEdge> {
@@ -97,18 +98,22 @@ aspect Stratification {
 			FormalPredicate p = orderedPreds.get(0);
 			// control statements in the current stratum
 			java.util.List<Control> stmts = new ArrayList<>();
+			String desc = "";
 			for (Clause c : p.definedIn()) {
 				stmts.addAll(c.genCode(ctx, false, Collections.emptySet()));
+				desc += c.toString();
 			}
 			// the stratum contains a single predicate; if it does not depend on
 			// itself, then it's safe to evaluate all its rules only once
-			return Stratum.single(Collections.singletonList(p.relation2()), stmts);
+			return Stratum.single(Collections.singletonList(p.relation2()), stmts, desc);
 		} else {
 			// control statements in the current stratum
 			java.util.List<Control> stmts = new ArrayList<>();
+			String desc = "";
 			for (FormalPredicate p : orderedPreds) {
 				for (Clause c : p.definedIn()) {
 					stmts.addAll(c.genCode(ctx, true, scc.vertexSet()));
+					desc += c.toString();
 				}
 			}
 			java.util.List<Triple<Relation2, Relation2, Relation2>> rels = orderedPreds.stream()
@@ -116,7 +121,7 @@ aspect Stratification {
 									p.relation2next(),
 									p.relation2delta()))
 				.collect(Collectors.toList());
-			return Stratum.fixpoint(rels, stmts);
+			return Stratum.fixpoint(rels, stmts, desc);
 		}
 	}
 
@@ -144,35 +149,39 @@ aspect Stratification {
 		return strata;
 	}
 
-	public class ParallelStratum implements Runnable {
+	public class ParallelStratum implements Callable<java.util.List<ParallelStratum>> {
 		Stratum s;
-		java.util.List<Future<?>> deps = new ArrayList<>();
-		public ParallelStratum(Stratum s) {
+		int nPreds;
+		java.util.List<ParallelStratum> deps = new ArrayList<>();
+
+		public ParallelStratum(Stratum s, int nPreds) {
 			this.s = s;
+			this.nPreds = nPreds;
 		}
-		@Override public void run() {
-			// force evaluation of all strata this
-			// stratum depends on
-			for (Future<?> d : deps) {
-				try {
-					d.get();
-				} catch (InterruptedException e) {
-					throw new RuntimeException(e);
-				} catch (ExecutionException e) {
-					throw new RuntimeException(e);
-				}
-			}
+
+		public void decPreds() {
+			assert nPreds > 0;
+			nPreds--;
+		}
+
+		public boolean isReady() {
+			return nPreds == 0;
+		}
+
+		@Override public java.util.List<ParallelStratum> call() {
 			// evaluate the current stratum
 			s.eval();
+			return deps;
 		}
-		public void addDependency(Future<?> dep) {
+
+		public void addSuccessor(ParallelStratum dep) {
 			deps.add(dep);
 		}
 	}
 
-	syn java.util.List<Future<?>> Program.parallelStrata(EvaluationContext ctx, ExecutorService exec) {
-		Map<Graph<FormalPredicate, DefaultEdge>, Future<?>> sccFutures = new HashMap<>();
-		java.util.List<Future<?>> terminalFutures = new ArrayList<>();
+	syn java.util.List<ParallelStratum> Program.parallelStrata(EvaluationContext ctx, ExecutorService exec) {
+		Map<Graph<FormalPredicate, DefaultEdge>, ParallelStratum> sccToStratum = new HashMap<>();
+		java.util.List<ParallelStratum> initialStrata = new ArrayList<>();
 
 		PredicateDependencyGraph pdg = predicateDependencyGraph();
 		Graph<Graph<FormalPredicate, DefaultEdge>, DefaultEdge> pdSCC = predicateDependencySCC();
@@ -180,22 +189,27 @@ aspect Stratification {
 		TopologicalOrderIterator<Graph<FormalPredicate, DefaultEdge>, DefaultEdge> it = new
 			TopologicalOrderIterator<>(pdSCC);
 
-		while (it.hasNext()) {
-			Graph<FormalPredicate, DefaultEdge> scc = it.next();
-			ParallelStratum s = new ParallelStratum(genStratum(ctx, pdg, scc));
-			for (DefaultEdge e : pdSCC.incomingEdgesOf(scc)) {
-				Future<?> d = sccFutures.get(pdSCC.getEdgeSource(e));
-				assert d != null;
-				s.addDependency(d);
+
+		for (Graph<FormalPredicate, DefaultEdge> scc : pdSCC.vertexSet()) {
+			ParallelStratum s = new ParallelStratum(genStratum(ctx, pdg, scc), pdSCC.incomingEdgesOf(scc).size());
+			sccToStratum.put(scc, s);
+		}
+
+		for (Graph<FormalPredicate, DefaultEdge> scc : pdSCC.vertexSet()) {
+			ParallelStratum s = sccToStratum.get(scc);
+			assert s != null;
+			sccToStratum.put(scc, s);
+			if (pdSCC.incomingEdgesOf(scc).isEmpty()) {
+				initialStrata.add(s);
 			}
 
-			Future<?> f = exec.submit(s);
-			sccFutures.put(scc, f);
-			if (pdSCC.outgoingEdgesOf(scc).isEmpty()) {
-				terminalFutures.add(f);
+			for (DefaultEdge e : pdSCC.outgoingEdgesOf(scc)) {
+				ParallelStratum d = sccToStratum.get(pdSCC.getEdgeTarget(e));
+				assert d != null;
+				s.addSuccessor(d);
 			}
 		}
-		return terminalFutures;
+		return initialStrata;
 	}
 
 	inh Graph<Graph<FormalPredicate, DefaultEdge>, DefaultEdge> FormalPredicate.predicateDependencySCC();

@@ -14,7 +14,7 @@ public class Relation2 {
 	private String name = "AnonymousRelation";
 
 	private Map<Index, TreeSet<Tuple>> indexedMaps = new HashMap<>();
-	private TreeSet<Tuple> currentSet;
+	private TreeSet<Tuple> defaultSet;
 
 	public Relation2(int arity, String name) {
 		this(arity);
@@ -38,11 +38,11 @@ public class Relation2 {
 			defaultIndices.add(i);
 
 		Index defaultIndex = new Index(defaultIndices, arity);
-		currentSet = new TreeSet<>(defaultIndex);
-		indexedMaps.put(defaultIndex, currentSet);
+		defaultSet = new TreeSet<>(defaultIndex);
+		indexedMaps.put(defaultIndex, defaultSet);
 	}
 
-	private void setIndex(Index index) {
+	private synchronized TreeSet<Tuple> setIndex(Index index) {
 		TreeSet<Tuple> nextSet = indexedMaps.get(index);
 		if (nextSet == null) {
 			// no set for the requested index, add new one
@@ -51,9 +51,9 @@ public class Relation2 {
 
 			// initialize the set with all the values in the current
 			// set
-			nextSet.addAll(currentSet);
+			nextSet.addAll(defaultSet);
 		}
-		currentSet = nextSet;
+		return nextSet;
 	}
 
 	public Tuple infTuple() {
@@ -70,14 +70,14 @@ public class Relation2 {
 		return t;
 	}
 
-	public synchronized SortedSet<Tuple> lookup(Index index, Tuple loInclusive, Tuple hiInclusive) {
-		setIndex(index);
+	public SortedSet<Tuple> lookup(Index index, Tuple loInclusive, Tuple hiInclusive) {
+		TreeSet<Tuple> currentSet = setIndex(index);
 		assert loInclusive.arity() == hiInclusive.arity();
 		return Collections.unmodifiableSortedSet(currentSet.subSet(loInclusive, true, hiInclusive, true));
 	}
 
-	public synchronized boolean hasEntryInRange(Index index, Tuple loInclusive, Tuple hiInclusive) {
-		setIndex(index);
+	public boolean hasEntryInRange(Index index, Tuple loInclusive, Tuple hiInclusive) {
+		TreeSet<Tuple> currentSet = setIndex(index);
 		assert loInclusive.arity() == hiInclusive.arity();
 		// find min e s.t. e >= loInclusive
 		Tuple e = currentSet.ceiling(loInclusive);
@@ -106,11 +106,11 @@ public class Relation2 {
 	}
 
 	public int size() {
-		return currentSet.size();
+		return defaultSet.size();
 	}
 
 	public SortedSet<Tuple> tuples() {
-		return Collections.unmodifiableSortedSet(currentSet);
+		return Collections.unmodifiableSortedSet(defaultSet);
 	}
 
 	public void clear() {

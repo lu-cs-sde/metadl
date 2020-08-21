@@ -121,7 +121,7 @@ public class Compiler {
 		Option prettyPrint = Option.builder("p").longOpt("pretty-print").numberOfArgs(1)
 			.desc("Pretty print the program in MetaDL (arg = metadl) or Souffle (arg = souffle) format.").build();
 		Option eval = Option.builder("e").longOpt("eval").numberOfArgs(1)
-			.desc("Evaluate the program using the internal (arg = metadl) or Souffle (arg = souffle) evaluator.").build();
+			.desc("Evaluate the program using the internal (arg = metadl), parallel (arg = metadl-par), Souffle (arg = souffle) evaluator.").build();
 		Option check = Option.builder("c").longOpt("check").hasArg(false)
 			.desc("Check that the input represents a valid MetaDL program.").build();
 		Option imp = Option.builder("i").longOpt("import").hasArg(false)
@@ -164,6 +164,8 @@ public class Compiler {
 					ret.setAction(Action.EVAL_SOUFFLE);
 				} else if (cmd.getOptionValue("e").equals("metadl")) {
 					ret.setAction(Action.EVAL_INTERNAL);
+				} else if (cmd.getOptionValue("e").equals("metadl-par")) {
+					ret.setAction(Action.EVAL_INTERNAL_PARALLEL);
 				} else {
 					System.err.println("Invalid argument to '--eval' option");
 					printHelp(options);
@@ -194,6 +196,9 @@ public class Compiler {
 
 			switch (opts.getAction()) {
 			case EVAL_INTERNAL:
+				prog.eval(opts);
+				break;
+			case EVAL_INTERNAL_PARALLEL:
 				prog.evalParallel(opts);
 				break;
 			case EVAL_SOUFFLE:

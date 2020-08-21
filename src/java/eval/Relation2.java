@@ -10,6 +10,27 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 
 public class Relation2 {
+	public static class ReadOnlyView {
+		private TreeSet<Tuple> currentSet;
+		protected ReadOnlyView(TreeSet<Tuple> tupleSet) {
+			this.currentSet = tupleSet;
+		}
+		public SortedSet<Tuple> lookup(Tuple loInclusive, Tuple hiInclusive) {
+			assert loInclusive.arity() == hiInclusive.arity();
+			return Collections.unmodifiableSortedSet(currentSet.subSet(loInclusive, true, hiInclusive, true));
+		}
+
+		public boolean hasEntryInRange(Tuple loInclusive, Tuple hiInclusive) {
+			assert loInclusive.arity() == hiInclusive.arity();
+			// find min e s.t. e >= loInclusive
+			Tuple e = currentSet.ceiling(loInclusive);
+			if (e == null)
+				return false;
+			// return e <= hiInclusive
+			return currentSet.comparator().compare(e, hiInclusive) <= 0;
+		}
+	}
+
 	private int arity = 0;
 	private String name = "AnonymousRelation";
 
@@ -42,7 +63,7 @@ public class Relation2 {
 		indexedMaps.put(defaultIndex, defaultSet);
 	}
 
-	private synchronized TreeSet<Tuple> setIndex(Index index) {
+	private TreeSet<Tuple> setIndex(Index index) {
 		TreeSet<Tuple> nextSet = indexedMaps.get(index);
 		if (nextSet == null) {
 			// no set for the requested index, add new one
@@ -70,22 +91,26 @@ public class Relation2 {
 		return t;
 	}
 
-	public SortedSet<Tuple> lookup(Index index, Tuple loInclusive, Tuple hiInclusive) {
-		TreeSet<Tuple> currentSet = setIndex(index);
-		assert loInclusive.arity() == hiInclusive.arity();
-		return Collections.unmodifiableSortedSet(currentSet.subSet(loInclusive, true, hiInclusive, true));
+	public ReadOnlyView getReadOnlyView(Index index) {
+		return new ReadOnlyView(setIndex(index));
 	}
 
-	public boolean hasEntryInRange(Index index, Tuple loInclusive, Tuple hiInclusive) {
-		TreeSet<Tuple> currentSet = setIndex(index);
-		assert loInclusive.arity() == hiInclusive.arity();
-		// find min e s.t. e >= loInclusive
-		Tuple e = currentSet.ceiling(loInclusive);
-		if (e == null)
-			return false;
-		// return e <= hiInclusive
-		return currentSet.comparator().compare(e, hiInclusive) <= 0;
-	}
+	// public SortedSet<Tuple> lookup(Index index, Tuple loInclusive, Tuple hiInclusive) {
+	// 	TreeSet<Tuple> currentSet = setIndex(index);
+	// 	assert loInclusive.arity() == hiInclusive.arity();
+	// 	return Collections.unmodifiableSortedSet(currentSet.subSet(loInclusive, true, hiInclusive, true));
+	// }
+
+	// public boolean hasEntryInRange(Index index, Tuple loInclusive, Tuple hiInclusive) {
+	// 	TreeSet<Tuple> currentSet = setIndex(index);
+	// 	assert loInclusive.arity() == hiInclusive.arity();
+	// 	// find min e s.t. e >= loInclusive
+	// 	Tuple e = currentSet.ceiling(loInclusive);
+	// 	if (e == null)
+	// 		return false;
+	// 	// return e <= hiInclusive
+	// 	return currentSet.comparator().compare(e, hiInclusive) <= 0;
+	// }
 
 	public boolean insert(Tuple t) {
 		boolean change = false;

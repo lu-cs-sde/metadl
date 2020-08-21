@@ -173,7 +173,7 @@ class ForAll implements Control {
 
 	private Control cont;
 	private Tuple minKey, maxKey;
-	private Index index;
+	private Relation2.ReadOnlyView view;
 	/**
 	   test - pairs of (columns, tuple position) to test for equality
 	   assign - pairs of (columns, tuple position) to assign
@@ -186,9 +186,9 @@ class ForAll implements Control {
 		this.test = test;
 		this.consts = consts;
 		this.assign = assign;
-		index = new Index(Stream.concat(test.stream(), consts.stream())
-						  .map(p -> p.getLeft()).collect(Collectors.toList()), rel.arity());
-
+		Index index = new Index(Stream.concat(test.stream(), consts.stream())
+								.map(p -> p.getLeft()).collect(Collectors.toList()), rel.arity());
+		this.view = rel.getReadOnlyView(index);
 		// allocate memory for the prefix
 		minKey = rel.infTuple();
 		maxKey = rel.supTuple();
@@ -210,7 +210,7 @@ class ForAll implements Control {
 			maxKey.set(c.getLeft(), t.get(c.getRight()));
 		}
 
-		SortedSet<Tuple> tuples = rel.lookup(index, minKey, maxKey);
+		SortedSet<Tuple> tuples = view.lookup(minKey, maxKey);
 		for (Tuple r : tuples) {
 			for (Pair<Integer, Integer> p : assign) {
 				t.set(p.getRight(), r.get(p.getLeft()));
@@ -249,7 +249,7 @@ class IfExists implements Control {
 	private List<Pair<Integer, Long>> consts;
 	private Control cont;
 	private Tuple minKey, maxKey;
-	private Index index;
+	private Relation2.ReadOnlyView view;
 	private final boolean positive;
 
 	IfExists(Tuple t, Relation2 rel, List<Pair<Integer, Integer>> test,
@@ -260,9 +260,9 @@ class IfExists implements Control {
 		this.consts = consts;
 		this.test = test;
 		this.positive = positive;
-		index = new Index(Stream.concat(test.stream(), consts.stream())
+		Index index = new Index(Stream.concat(test.stream(), consts.stream())
 						  .map(p -> p.getLeft()).collect(Collectors.toList()), rel.arity());
-
+		this.view = rel.getReadOnlyView(index);
 		this.minKey = rel.infTuple();
 		this.maxKey = rel.supTuple();
 		// populate the constant part
@@ -280,7 +280,7 @@ class IfExists implements Control {
 			maxKey.set(c.getLeft(), t.get(c.getRight()));
 		}
 
-		if (positive ^ !rel.hasEntryInRange(index, minKey, maxKey))
+		if (positive ^ !view.hasEntryInRange(minKey, maxKey))
 			cont.eval();
 	}
 

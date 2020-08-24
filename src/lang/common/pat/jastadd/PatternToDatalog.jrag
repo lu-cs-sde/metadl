@@ -262,37 +262,40 @@ aspect PatternToDatalog {
 			int tokenUID = StringUID.getInstance().uid(t);
 			String varName = isMetaVarToken(t) ? t : ("t_" + tokenUID);
 
-			{
-				lang.ast.List<lang.ast.Term> terms = new lang.ast.List<>();
+			if (!isWildcardToken(t)) {
+				{
+					lang.ast.List<lang.ast.Term> terms = new lang.ast.List<>();
 
-				// Add a tuple to the current node relation
-				lang.ast.Term Kind = relName != null ?
-					new lang.ast.StringConstant(relName) : new lang.ast.Wildcard();
-				lang.ast.Variable ChildId = new lang.ast.Variable(varName);
-				lang.ast.CommonVariable CurrentNodeId = root != null ? root : new lang.ast.Variable(varName());
-				lang.ast.IntConstant ChildIdx = new lang.ast.IntConstant("" + childIndex++);
-				lang.ast.Wildcard Token = new lang.ast.Wildcard();
+					// Add a tuple to the current node relation
+					lang.ast.Term Kind = relName != null ?
+						new lang.ast.StringConstant(relName) : new lang.ast.Wildcard();
+					lang.ast.Variable ChildId = new lang.ast.Variable(varName);
+					lang.ast.CommonVariable CurrentNodeId = root != null ? root : new lang.ast.Variable(varName());
+					lang.ast.IntConstant ChildIdx = new lang.ast.IntConstant("" + childIndex);
+					lang.ast.Wildcard Token = new lang.ast.Wildcard();
 
-				terms.add(Kind).add(CurrentNodeId).add(ChildIdx).add(ChildId).add(Token);
-				ret.add(new lang.ast.Literal(new lang.ast.PredicateSymbol(ctx.progRelName), terms));
+					terms.add(Kind).add(CurrentNodeId).add(ChildIdx).add(ChildId).add(Token);
+					ret.add(new lang.ast.Literal(new lang.ast.PredicateSymbol(ctx.progRelName), terms));
+				}
+
+				{
+					// Add a tuple to Token relation
+					lang.ast.List<lang.ast.Term> terms = new lang.ast.List<>();
+
+					lang.ast.StringConstant Kind = new lang.ast.StringConstant("Terminal");
+					lang.ast.Wildcard ChildId = new lang.ast.Wildcard();
+					lang.ast.Term CurrentNodeId = new lang.ast.Variable(varName);
+					lang.ast.Wildcard ChildIdx = new lang.ast.Wildcard();
+					lang.ast.Term Token;
+					if (isMetaVarToken(t))
+						Token = new lang.ast.Wildcard();
+					else
+						Token = new lang.ast.StringConstant(t);
+					terms.add(Kind).add(CurrentNodeId).add(ChildIdx).add(ChildId).add(Token);
+					ret.add(new lang.ast.Literal(new lang.ast.PredicateSymbol(ctx.progRelName), terms));
+				}
 			}
-
-			{
-				// Add a tuple to Token relation
-				lang.ast.List<lang.ast.Term> terms = new lang.ast.List<>();
-
-				lang.ast.StringConstant Kind = new lang.ast.StringConstant("Terminal");
-				lang.ast.Wildcard ChildId = new lang.ast.Wildcard();
-				lang.ast.Variable CurrentNodeId = new lang.ast.Variable(varName);
-				lang.ast.Wildcard ChildIdx = new lang.ast.Wildcard();
-				lang.ast.Term Token;
-				if (isMetaVarToken(t))
-					Token = new lang.ast.Wildcard();
-				else
-					Token = new lang.ast.StringConstant(t);
-				terms.add(Kind).add(CurrentNodeId).add(ChildIdx).add(ChildId).add(Token);
-				ret.add(new lang.ast.Literal(new lang.ast.PredicateSymbol(ctx.progRelName), terms));
-			}
+			childIndex++;
 		}
 
 		if (childIndex == 0) {

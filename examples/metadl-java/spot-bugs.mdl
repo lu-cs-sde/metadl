@@ -113,8 +113,10 @@ FieldInClass(0, 0, 0, 0) :- NEQ(0, 0).
 
 
 ### Analysis
-	    FieldInClassWithInit(c, `t, `f, `i) :- c <: class `_ { ..  .. `t .. , `f = `i, .. ; .. } :>, SRC(c, l, col, _,_,_), NEQ(col, 0).
-	    FieldInClass(c, `t, `f, `m) :- c <: class `_ { .. .. `m .. `t .. , `f , .. ; .. } :>, SRC(c, l, col, _,_,_), NEQ(col, 0).
+	    FieldInClassWithInit(c, `t, `f, `i) :- c <: class `_ { .. `d .. } :>, `d <: .. `t .. , `f = `i, .. ; :>,
+				    SRC(c, l, col, _,_,_), NEQ(col, 0).
+	    FieldInClass(c, `t, `f, `m) :- c <: class `_ { .. `d .. } :>, `d <: .. `m .. `t .. , `f, .. ; :>, SRC(c, l, col, _,_,_), NEQ(col, 0).
+
 	    Field(f) :- FieldInClass(_, _, f, _).
 
 	    FieldAccess(f) :- <: `f :>, DECL(`f, f), Field(f).

@@ -31,7 +31,7 @@ aspect Arity {
 	}
 
 	Program contributes nta getFormalPredicates() to Program.semanticErrors();
-	FormalPredicate contributes ("Different Arities for predicate symbol: " + predicateName())
+	FormalPredicate contributes new SemanticError(this, "Different Arities for predicate symbol: " + predicateName())
 		when !isUniqueArity() && arities().size() != 1
 		to Program.semanticErrors();
 }

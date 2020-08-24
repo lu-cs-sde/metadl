@@ -156,7 +156,7 @@ aspect TypeCheck {
 				return startPos - other.startPos;
 			if (endPos != other.endPos)
 				return endPos - other.endPos;
-			return 0;
+			return report().compareTo(other.report());
 		}
 
 		public abstract String report();

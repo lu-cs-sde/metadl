@@ -23,6 +23,7 @@ import lang.ast.Program;
 import lang.ast.SoufflePrettyPrinter;
 import lang.ast.StandardPrettyPrinter;
 import lang.ast.TypeError;
+import lang.ast.SemanticError;
 import lang.io.FileUtil;
 import lang.io.SimpleLogger;
 import lang.ast.PredicateDependencyGraph;
@@ -61,6 +62,12 @@ public class Compiler {
 				System.err.println(e.reportPosition());
 			System.err.println("Compilation failed with type errors.");
 			throw new RuntimeException();
+		}
+
+		if (!program.semanticWarnings().isEmpty()) {
+			for (SemanticError e : program.semanticWarnings()) {
+				System.err.println(e.reportPosition());
+			}
 		}
 
 		return program;

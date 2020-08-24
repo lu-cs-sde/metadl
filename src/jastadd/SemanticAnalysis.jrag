@@ -1,21 +1,58 @@
 import java.util.TreeSet;
 
 aspect ErrorCollection {
-    coll TreeSet<String> Program.semanticErrors() [new TreeSet<String>()] with add;
-    syn boolean Program.hasSemanticErrors() = !semanticErrors().isEmpty();
-    syn String Program.errorReport() {
-        StringBuilder sb = new StringBuilder();
-        for(String err : semanticErrors()) sb.append(err).append("\n");
-        return sb.toString();
-    }
+	public class SemanticError extends TypeError {
+		private String msg;
+		public SemanticError(beaver.Symbol n, String s) {
+			super(n);
+			this.msg = s;
+		}
 
-    Literal contributes "Non-ground fact: " + this
-        when !isGround() && isFact()
-        to Program.semanticErrors();
+		@Override public String report() {
+			return msg;
+		}
+	}
 
-    Rule contributes "Unbound variable(s): " + unboundVariables() + " in " + this
-        when !unboundVariables().isEmpty()
-        to Program.semanticErrors();
+	public class AmbigousPattern extends SemanticError {
+		java.util.List<ObjLangASTNode> roots;
+		Pattern pat;
+		public AmbigousPattern(Pattern pat, java.util.List<ObjLangASTNode> roots) {
+			super(pat, "");
+			this.roots = roots;
+			this.pat = pat;
+		}
+
+		@Override public String report() {
+			StringBuilder sb = new StringBuilder();
+			sb.append("Ambigous pattern " + pat.toString() + " produces multiple ASTs\n");
+			for (ObjLangASTNode n : roots) {
+				OutputStream ps = new ByteArrayOutputStream();
+				n.debugPrint(new PrintStream(ps));
+				sb.append(ps.toString());
+				sb.append("\n");
+			}
+			return sb.toString();
+		}
+	}
+
+	coll TreeSet<SemanticError> Program.semanticErrors() [new TreeSet<SemanticError>()] with add;
+	coll Set<SemanticError> Program.semanticWarnings() [new TreeSet<SemanticError>()] with add;
+
+	syn boolean Program.hasSemanticErrors() = !semanticErrors().isEmpty();
+	syn String Program.errorReport() {
+		StringBuilder sb = new StringBuilder();
+		for(SemanticError err : semanticErrors())
+			sb.append(err.report()).append("\n");
+		return sb.toString();
+	}
+
+	Literal contributes new SemanticError(this, "Non-ground fact: " + this)
+		when !isGround() && isFact()
+		to Program.semanticErrors();
+
+	Rule contributes new SemanticError(this, "Unbound variable(s): " + unboundVariables() + " in " + this)
+		when !unboundVariables().isEmpty()
+		to Program.semanticErrors();
 
 	syn TreeSet<Variable> CommonLiteral.freeVarsInNegativeLiteral() {
 		if (!hasNot())
@@ -32,29 +69,32 @@ aspect ErrorCollection {
 		return free;
 	}
 
-	CommonLiteral contributes "Free variable(s) " + freeVarsInNegativeLiteral() + " in " + this + " in rule " + clause()
+	CommonLiteral contributes new SemanticError(this, "Free variable(s) " + freeVarsInNegativeLiteral() + " in " + this + " in rule " + clause())
 		when !freeVarsInNegativeLiteral().isEmpty()
 		to Program.semanticErrors();
 
-    Functor contributes "Free variable(s) " + freeVars() + " in " + this + " in rule " + literal().clause()
-        when !freeVars().isEmpty()
-        to Program.semanticErrors();
+	Functor contributes new SemanticError(this, "Free variable(s) " + freeVars() + " in " + this + " in rule " + literal().clause())
+		when !freeVars().isEmpty()
+		to Program.semanticErrors();
 
-	Literal contributes "Nullary literals are not (yet) supported: " + getPredicate().getPRED_ID() + "." when
+	Literal contributes new SemanticError(this, "Nullary literals are not (yet) supported: " + getPredicate().getPRED_ID() + ".") when
 		arity() == 0 to Program.semanticErrors();
 
-	Pattern contributes "Patterns are not allowed outside analyze blocks: " + this + "." when
+	Pattern contributes new SemanticError(this, "Patterns are not allowed outside analyze blocks: " + this + ".") when
 		enclosingAnalyzeBlock() == null to Program.semanticErrors();
 
-	Wildcard contributes this + " is not allowed inside constraints." when
+	Wildcard contributes new SemanticError(this, this + " is not allowed inside constraints.") when
 		literal() instanceof Constraint to Program.semanticErrors();
 
-	Wildcard contributes this + " is not allowed in rule heads or facts." when
+	Wildcard contributes new SemanticError(this, this + " is not allowed in rule heads or facts.") when
 		literal().isDef() to Program.semanticErrors();
 
-	Constraint contributes "Constraints are not allowed in facts." when
+	Constraint contributes new SemanticError(this, "Constraints are not allowed in facts.") when
 		isFact() to Program.semanticErrors();
 
-	Constraint contributes "Constraints are not allowed inside a rule's head." when
+	Constraint contributes new SemanticError(this, "Constraints are not allowed inside a rule's head.") when
 		isDef() && !isFact() to Program.semanticErrors();
+
+	Pattern contributes new AmbigousPattern(this, altParse()) when
+		altParse().size() > 1 to Program.semanticWarnings();
 }

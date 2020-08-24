@@ -6,6 +6,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import lang.ast.Program;
+import lang.ast.SemanticError;
 import lang.io.FileUtil;
 
 public class SemanticErrorTests {
@@ -17,8 +18,8 @@ public class SemanticErrorTests {
 		try {
 			Program program = (Program) FileUtil.parse(input);
 			StringBuilder sb = new StringBuilder();
-			for(String err : program.semanticErrors())
-				sb.append(err).append("\n");
+			for(SemanticError err : program.semanticErrors())
+				sb.append(err.report()).append("\n");
 			Util.compareOutput(sb.toString(), output, expected);
 		} catch(Exception e) {
 			e.printStackTrace();

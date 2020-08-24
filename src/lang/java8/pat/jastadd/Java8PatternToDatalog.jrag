@@ -100,7 +100,6 @@ aspect LanguageSpecific {
 		java.util.List<lang.ast.Clause> ret = new java.util.ArrayList<>();
 		// Identifiers
 		ret.add(makeIdentifierRule(ctx, "IdUse", "ID", 0, null));
-		ret.add(makeIdentifierRule(ctx, "IdWrapper", "ID", 0, null));
 		ret.add(makeIdentifierRule(ctx, "ParseName", "ID", 0, null));
 		ret.add(makeIdentifierRule(ctx, "EnumConstant", "ID", 3, null));
 		ret.add(makeIdentifierRule(ctx, "FieldDeclarator", "ID", 2, null));

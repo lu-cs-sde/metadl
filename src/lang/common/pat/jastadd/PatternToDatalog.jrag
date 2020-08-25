@@ -156,9 +156,14 @@ aspect PatternToDatalog {
 
 
 		for (int i = 0; i < getNumChild(); ++i) {
-			// TODO: what if a metavariable has a metavariable child?
+
 			ASTNode child = getChild(i);
-			if (child == null || child instanceof MetaVariable)
+			if (child == null)
+				continue;
+
+			// MetaVariable children hold the metavarible ID and nothing else.
+			// They should be ignored here.
+			if (child instanceof MetaVariable)
 				continue;
 
 			ret.add(literal(predName, kind, "$" + varName(), i, "$" + child.varName(), "_"));
@@ -229,17 +234,8 @@ aspect PatternToDatalog {
 		}
 
 		if (childIndex == 0) {
-			// This node has no children, emit that
-			lang.ast.List<lang.ast.Term> terms = new lang.ast.List<>();
-
-			lang.ast.StringConstant Kind = new lang.ast.StringConstant(relName);
-			lang.ast.Term ChildId  = new lang.ast.Wildcard();
-			lang.ast.CommonVariable CurrentNodeId = root != null ? root : new lang.ast.Variable(varName());
-			lang.ast.Term ChildIdx = new lang.ast.Wildcard();
-			lang.ast.Term Token = new lang.ast.Wildcard();
-
-			terms.add(Kind).add(CurrentNodeId).add(ChildIdx).add(ChildId).add(Token);
-			ret.add(new lang.ast.Literal(new lang.ast.PredicateSymbol(ctx.progRelName), terms));
+			// This node has no children, but it exists in the tree. Emit that.
+			ret.add(literal(ctx.progRelName, str(relName), root != null ? root : var(varName()), "_", "_", "_"));
 		}
 
 		return ret;

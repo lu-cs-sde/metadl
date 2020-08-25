@@ -47,6 +47,8 @@ aspect Constructors {
 						terms.add(new lang.ast.Wildcard());
 					else
 						terms.add(new lang.ast.StringConstant(s));
+				} else if (o instanceof Term) {
+					terms.add((Term) o);
 				} else {
 					throw new RuntimeException("Can't interpret argument.");
 				}
@@ -65,6 +67,14 @@ aspect Constructors {
 			lang.ast.Rule r = new lang.ast.Rule(headList, bodyList);
 
 			return r;
+		}
+
+		public static lang.ast.Variable var(String name) {
+			return new lang.ast.Variable(name);
+		}
+
+		public static lang.ast.StringConstant str(String s) {
+			return new lang.ast.StringConstant(s);
 		}
 
 		public static lang.ast.CommonLiteral NEQ(lang.ast.Term t1, lang.ast.Term t2) {

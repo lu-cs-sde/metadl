@@ -165,7 +165,7 @@ public class EvaluationTest {
 	}
 
 	@DisplayName("Evaluate programs containing patterns using Souffle")
-	@ParameterizedTest(name = "Pattern Tests")
+	@ParameterizedTest
 	@MethodSource("metadlPatternTests")
 	void evaluationTestPatternsSouffle(String fileName) throws Exception {
 		singleEvaluationTest("./tests/output/souffle",
@@ -235,7 +235,7 @@ public class EvaluationTest {
 
 
 	@DisplayName("Evaluate MetaDL-Java programs with Souffle")
-	@ParameterizedTest(name = "MetaDL-Java programs")
+	@ParameterizedTest
 	@MethodSource("metadlJavaTests")
 	void evaluationTestMetaDLJavaSouffle(String fileName) throws Exception {
 		singleEvaluationTest("./tests/output/souffle",

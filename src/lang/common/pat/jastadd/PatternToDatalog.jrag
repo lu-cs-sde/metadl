@@ -1,5 +1,6 @@
 import lang.cons.PatternConstraint;
 import java.util.TreeSet;
+import java.util.Set;
 import java.util.HashSet;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -68,6 +69,7 @@ aspect PatternToDatalog {
 		}
 
 		UID = count.intValue();
+		// reserve one UID for this node
 		count.increment();
 	}
 
@@ -124,23 +126,34 @@ aspect PatternToDatalog {
 	syn String ASTNode.varName() = varName("");
 	syn String ASTNode.varName(String suffix) {
 		if (isMetaVar()) {
-			try {
-				Method m = this.getClass().getMethod("getVar");
-				MetaVariable v = (MetaVariable) m.invoke(this);
-				if (!v.isWildcard())
-					return v.getID() + suffix;
-			} catch (ReflectiveOperationException e) {
-				throw new Error(e.toString());
+			MetaVariable v = getMetaVariable();
+			if (v == null) {
+				throw new RuntimeException("All MetaVar nodes should have a MetaVariable child");
+			} else if (!v.isWildcard()) {
+				return v.getID() + suffix;
 			}
 		}
 		return "v_" + getNodeId() + suffix;
+	}
+
+	syn MetaVariable ASTNode.getMetaVariable() {
+		if (isMetaVar()) {
+			try {
+				Method m = this.getClass().getMethod("getVar");
+				MetaVariable v = (MetaVariable) m.invoke(this);
+				return v;
+			} catch (ReflectiveOperationException e) {
+				return null;
+			}
+		}
+		return null;
 	}
 
 	syn String ASTNode.indexVarName() {
 		return "i_" + getNodeId();
 	}
 
-	syn ArrayList<lang.ast.CommonLiteral> ASTNode.asLiterals(AnalyzeContext ctx, lang.ast.CommonVariable root);
+	syn java.util.List<lang.ast.CommonLiteral> ASTNode.asLiterals(AnalyzeContext ctx, lang.ast.CommonVariable root);
 
 	public ArrayList<lang.ast.CommonLiteral> ASTNode.metaVarAsLiterals(AnalyzeContext ctx, lang.ast.CommonVariable root) {
 		assert isMetaVar();
@@ -335,20 +348,177 @@ aspect PatternToDatalog {
 	}
 
 
-	syn ArrayList<lang.ast.CommonLiteral> ASTNode.literals(AnalyzeContext ctx, lang.ast.CommonVariable root) {
-		// An add-hoc way of implementing parameterized collection attributes
-		ArrayList<lang.ast.CommonLiteral> list = new ArrayList<>();
-		list.addAll(asLiterals(ctx, root));
-		if (isGap())
-			return list;
+	static Set<String> ASTNode.nonFinalNodeTypes = PatternGrammarInfo.getNonFinalNodeTypes();
+	syn lazy boolean ASTNode.isTrivial() {
+		if (isMetaVar())
+			return false;
+
+		ASTNode parent = getParent();
+		int indexInParent = parent.getIndexOfChild(this);
+
+		for (int i = 0; i < getNumChild(); ++i) {
+			if (!getChild(i).isTrivial())
+				return false;
+		}
+
+		for (String t : tokens()) {
+			if (!isWildcardToken(t))
+				return false;
+		}
+
+		if (parent.name().equals("Opt") || parent.name().equals("List"))
+			return false;
+
+		// concrete AST nodes, check if this adds anything to the parent
+		String typeInParent = PatternGrammarInfo.childNodeType(parent.name(), indexInParent);
+		if (typeInParent == null) {
+			// unknown type in parent, be conservative.
+			return false;
+		} else if (nonFinalNodeTypes.contains(typeInParent)) {
+			// the type in the parent has derived subtypes, so the concrete type
+			// of these node may add some information
+			return false;
+		}
+		return true;
+	}
+
+	eq Opt.isTrivial() {
+		return getNumChild() == 0;
+	}
+
+	eq List.isTrivial() {
+		if (getNumChild() == 0)
+			return true;
 		for (ASTNode c : astChildren()) {
-			if (c == null) {
-				// Metavariable nodes may have null children, skip them
-				assert isMetaVar();
-			} else {
-				list.addAll(c.literals(ctx, null));
+			if (!c.isGap())
+				return false;
+		}
+		// all children, if any, are gaps
+		return true;
+	}
+
+	public void ASTNode.metaVarLiterals2(AnalyzeContext ctx, lang.ast.CommonVariable root,
+										 java.util.List<lang.ast.CommonLiteral> lits) {
+		assert isMetaVar();
+		String relName = getRelation().substring(ASTNode.METAVARIABLE.length());
+		String kind = varName("_kind");
+		// constrain the type of node that can be matched
+		lits.add(literal(ctx.prefix("SUPERTYPE"), var(kind), relName));
+		boolean anyChildLiterals = false;
+		for (int i = 0; i < getNumChild(); ++i) {
+			ASTNode child = getChild(i);
+			if (child == null)
+				continue;
+
+			// MetaVariable children hold the metavarible ID and nothing else.
+			// They should be ignored here.
+			if (child instanceof MetaVariable)
+				continue;
+			anyChildLiterals = true;
+			lits.add(literal(ctx.progRelName, var(kind), var(varName()), i, var(child.varName()), "_"));
+			if (!child.isTrivial())
+				child.literals2(ctx, null, lits);
+		}
+
+		// TODO: do we really need this?
+		if (!anyChildLiterals) {
+			// This metavariable node has no children. Just ensure that is bound to
+			// the correct AST node type
+			lits.add(literal(ctx.progRelName, var(kind),  var(varName()), "_", "_", "_"));
+		}
+
+		// TODO: this
+		if (root != null) {
+			// This is an a <: `b :> pattern. In this case, we need to ensure that a == b.
+			lits.add(literal(ctx.progRelName, var(kind),  var(varName()), "_", "_", "_"));
+			lits.add(literal(ctx.progRelName, var(kind), root.treeCopyNoTransform(), "_", "_", "_"));
+			lits.add(EQ(new lang.ast.Variable(varName()),
+					   root.treeCopyNoTransform()));
+		}
+	}
+
+	public void ASTNode.literals2(AnalyzeContext ctx, lang.ast.CommonVariable root,
+								  java.util.List<lang.ast.CommonLiteral> lits) {
+		if (isGap()) {
+			// gaps are handled by their parent, List
+			return;
+		} else if (isMetaVar()) {
+			// metavariable AST node
+			metaVarLiterals2(ctx, root, lits);
+			return;
+		}
+
+		int childIndex = getNumChild();
+		for (String t : tokens()) {
+			String varName = isMetaVarToken(t) ? t : ("t_" + UID + "_" + childIndex);
+			if (!isWildcardToken(t)) {
+				// Add a tuple to the current node relation
+				lits.add(literal(ctx.progRelName, str(name()), root != null ? root : var(varName()), childIndex, var(varName), "_"));
+				// Add a tuple to Terminal relation
+				lits.add(literal(ctx.progRelName, "Terminal", var(varName), "_", "_", isMetaVarToken(t) ? "_" : str(t)));
+			}
+			childIndex++;
+		}
+
+		for (int i = 0; i < getNumChild(); ++i) {
+			ASTNode child = getChild(i);
+			if (!child.isTrivial()) {
+				lits.add(literal(ctx.progRelName, str(name()), root != null ? root : var(varName()), i , var(child.varName()), "_"));
+				child.literals2(ctx, null, lits);
 			}
 		}
+
+		if (childIndex == 0) {
+			// This node has no children, but it exists in the tree. Emit that.
+			lits.add(literal(ctx.progRelName, str(name()), root != null ? root : var(varName()), "_", "_", "_"));
+		}
+	}
+
+	@Override public void Opt.literals2(AnalyzeContext ctx, lang.ast.CommonVariable root,
+										java.util.List<lang.ast.CommonLiteral> lits) {
+		assert !isTrivial();
+		super.literals2(ctx, root, lits);
+	}
+
+	@Override public void List.literals2(AnalyzeContext ctx, lang.ast.CommonVariable root,
+										 java.util.List<lang.ast.CommonLiteral> lits) {
+		assert !isTrivial();
+
+		ArrayList<PatternConstraint> cons = constraints();
+		if (cons.isEmpty()) {
+			// a list with no gaps
+			for (int i = 0; i < getNumChild(); ++i) {
+				ASTNode child = getChild(i);
+				lits.add(literal(ctx.progRelName, str(name()), var(varName()), i, var(child.varName()), "_"));
+				child.literals2(ctx, null, lits);
+			}
+		} else {
+			// generate any constraints
+			for (PatternConstraint c : cons)
+				lits.addAll(c.generateLiterals(ctx));
+			// traverse the children
+			for (int i = 0; i < getNumChild(); ++i) {
+				ASTNode child = getChild(i);
+				child.literals2(ctx, null, lits);
+			}
+		}
+	}
+
+	syn lazy ArrayList<lang.ast.CommonLiteral> ASTNode.literals(AnalyzeContext ctx, lang.ast.CommonVariable root) {
+		// An add-hoc way of implementing parameterized collection attributes
+		ArrayList<lang.ast.CommonLiteral> list = new ArrayList<>();
+		literals2(ctx, root, list);
+		// list.addAll(asLiterals(ctx, root));
+		// if (isGap())
+		// 	return list;
+		// for (ASTNode c : astChildren()) {
+		// 	if (c == null) {
+		// 		// Metavariable nodes may have null children, skip them
+		// 		assert isMetaVar();
+		// 	} else {
+		// 		list.addAll(c.literals(ctx, null));
+		// 	}
+		// }
 		return list;
 	}
 

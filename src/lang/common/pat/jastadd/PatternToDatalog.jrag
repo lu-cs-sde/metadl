@@ -348,7 +348,29 @@ aspect PatternToDatalog {
 	}
 
 
-	static Set<String> ASTNode.nonFinalNodeTypes = PatternGrammarInfo.getNonFinalNodeTypes();
+	static private Set<String> ASTNode.nonFinalNodeTypes = PatternGrammarInfo.getNonFinalNodeTypes();
+	syn lazy boolean ASTNode.hasFinalTypeInParent() {
+		ASTNode parent = getParent();
+
+		if (parent == null
+			|| parent.name().equals("Opt")
+			|| parent.name().equals("List"))
+			return false;
+
+		int indexInParent = parent.getIndexOfChild(this);
+		String typeInParent = PatternGrammarInfo.childNodeType(parent.name(), indexInParent);
+
+		if (typeInParent == null) {
+			// unknown type in parent, be conservative.
+			return false;
+		} else if (nonFinalNodeTypes.contains(typeInParent)) {
+			// the type in the parent has derived subtypes, so the concrete type
+			// of these node may add some information
+			return false;
+		}
+		return true;
+	}
+
 	syn lazy boolean ASTNode.isTrivial() {
 		if (isMetaVar())
 			return false;
@@ -366,20 +388,9 @@ aspect PatternToDatalog {
 				return false;
 		}
 
-		if (parent.name().equals("Opt") || parent.name().equals("List"))
-			return false;
-
-		// concrete AST nodes, check if this adds anything to the parent
-		String typeInParent = PatternGrammarInfo.childNodeType(parent.name(), indexInParent);
-		if (typeInParent == null) {
-			// unknown type in parent, be conservative.
-			return false;
-		} else if (nonFinalNodeTypes.contains(typeInParent)) {
-			// the type in the parent has derived subtypes, so the concrete type
-			// of these node may add some information
-			return false;
-		}
-		return true;
+		// if the declared type of this node does not have further subtypes,
+		// then emiting its type is not providing new information
+		return hasFinalTypeInParent();
 	}
 
 	eq Opt.isTrivial() {
@@ -401,9 +412,17 @@ aspect PatternToDatalog {
 										 java.util.List<lang.ast.CommonLiteral> lits) {
 		assert isMetaVar();
 		String relName = getRelation().substring(ASTNode.METAVARIABLE.length());
-		String kind = varName("_kind");
-		// constrain the type of node that can be matched
-		lits.add(literal(ctx.prefix("SUPERTYPE"), var(kind), relName));
+		lang.ast.Term kind;
+		if (hasFinalTypeInParent()) {
+			// the matched node can have only one type, so we can
+			// fix it in the literal, instead of providing an upper bound
+			// using the SUPERTYPE predicate
+			kind = str(relName);
+		} else {
+			// constrain the type of node that can be matched
+			kind = var(varName("_kind"));
+			lits.add(literal(ctx.prefix("SUPERTYPE"), kind, relName));
+		}
 		boolean anyChildLiterals = false;
 		for (int i = 0; i < getNumChild(); ++i) {
 			ASTNode child = getChild(i);
@@ -414,24 +433,24 @@ aspect PatternToDatalog {
 			// They should be ignored here.
 			if (child instanceof MetaVariable)
 				continue;
+
 			anyChildLiterals = true;
-			lits.add(literal(ctx.progRelName, var(kind), var(varName()), i, var(child.varName()), "_"));
+			lits.add(literal(ctx.progRelName, kind, var(varName()), i, var(child.varName()), "_"));
 			if (!child.isTrivial())
 				child.literals2(ctx, null, lits);
 		}
 
-		// TODO: do we really need this?
 		if (!anyChildLiterals) {
 			// This metavariable node has no children. Just ensure that is bound to
 			// the correct AST node type
-			lits.add(literal(ctx.progRelName, var(kind),  var(varName()), "_", "_", "_"));
+			lits.add(literal(ctx.progRelName, kind,  var(varName()), "_", "_", "_"));
 		}
 
 		// TODO: this
 		if (root != null) {
 			// This is an a <: `b :> pattern. In this case, we need to ensure that a == b.
-			lits.add(literal(ctx.progRelName, var(kind),  var(varName()), "_", "_", "_"));
-			lits.add(literal(ctx.progRelName, var(kind), root.treeCopyNoTransform(), "_", "_", "_"));
+			lits.add(literal(ctx.progRelName, kind,  var(varName()), "_", "_", "_"));
+			lits.add(literal(ctx.progRelName, kind, root.treeCopyNoTransform(), "_", "_", "_"));
 			lits.add(EQ(new lang.ast.Variable(varName()),
 					   root.treeCopyNoTransform()));
 		}

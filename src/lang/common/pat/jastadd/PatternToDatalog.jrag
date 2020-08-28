@@ -351,13 +351,20 @@ aspect PatternToDatalog {
 	static private Set<String> ASTNode.nonFinalNodeTypes = PatternGrammarInfo.getNonFinalNodeTypes();
 	syn lazy boolean ASTNode.hasFinalTypeInParent() {
 		ASTNode parent = getParent();
+		ASTNode child = this;
 
-		if (parent == null
-			|| parent.name().equals("Opt")
-			|| parent.name().equals("List"))
+		if (parent == null)
 			return false;
 
-		int indexInParent = parent.getIndexOfChild(this);
+		if (parent.name().equals("Opt") || parent.name().equals("List")) {
+			parent = parent.getParent();
+			child = child.getParent();
+		}
+
+		if (parent == null)
+			return false;
+
+		int indexInParent = parent.getIndexOfChild(child);
 		String typeInParent = PatternGrammarInfo.childNodeType(parent.name(), indexInParent);
 
 		if (typeInParent == null) {

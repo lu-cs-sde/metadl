@@ -6,6 +6,7 @@ public class CmdLineOpts {
 	private String genDir;
 	private String outputFile;
 	private String inputFile;
+	private String libFile;
 	private Action action;
 
 	public enum Action {
@@ -22,6 +23,14 @@ public class CmdLineOpts {
 
 	public void setOutputDir(String str) {
 		this.outputDir = str;
+	}
+
+	public String getLibFile() {
+		return libFile;
+	}
+
+	public void setLibFile(String libFile) {
+		this.libFile = libFile;
 	}
 
 	public Action getAction() {

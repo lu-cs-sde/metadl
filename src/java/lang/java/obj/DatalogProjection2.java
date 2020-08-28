@@ -20,14 +20,14 @@ import org.apache.commons.lang3.tuple.Pair;
 
 import lang.io.SimpleLogger;
 import lang.io.StringUID;
-import lang.relation.PseudoTuple;
 import lang.relation.RelationWrapper;
+import lang.relation.TupleInserter;
 
 public class DatalogProjection2 {
 	private ASTNode<?> root;
 
 	private int currentNumber = 0;
-	private RelationWrapper prel;
+	private TupleInserter prel;
 	private int tokenUID = Integer.MAX_VALUE;
 	private Map<ASTNode<?>, Integer> nodeNumber = new HashMap<>();
 
@@ -37,7 +37,7 @@ public class DatalogProjection2 {
 	// that is easier to modify.
 	private boolean deepAnalysis = System.getenv().get("METADL_ANALYSIS") != null;
 
-	public DatalogProjection2(ASTNode<?> root, RelationWrapper rel) {
+	public DatalogProjection2(ASTNode<?> root, TupleInserter rel) {
 		this.root = root;
 		this.prel = rel;
 	}
@@ -119,23 +119,6 @@ public class DatalogProjection2 {
 		srcLoc(n, nid);
 	}
 
-	private PseudoTuple makeTuple(Object ...args) {
-		List<lang.ast.Term> elems = new ArrayList<>(args.length);
-		for (Object o : args) {
-			if (o instanceof ASTNode) {
-				elems.add(new lang.ast.IntConstant("" + nodeId((ASTNode<?>)o)));
-			} else if (o instanceof String) {
-				elems.add(new lang.ast.StringConstant((String)o));
-			} else if (o instanceof Integer) {
-				elems.add(new lang.ast.IntConstant("" + (Integer)o));
-			} else {
-				throw new RuntimeException("Can't add an element of type " + o.getClass() + " to a tuple.");
-			}
-		}
-
-		return new PseudoTuple(elems);
-	}
-
 	private void recordRewrittenNode(ASTNode<?> original, ASTNode<?> target) {
 		prel.insertTuple("REWRITE", nodeId(original), -1, nodeId(target), "");
 	}
@@ -162,32 +145,18 @@ public class DatalogProjection2 {
 		return loc[0];
 	}
 
-	private List<PseudoTuple> srcLoc(ASTNode<?> n, int nid) {
-		java.util.List<PseudoTuple> ret = new ArrayList<>();
-		// record the source location
-		{
-			// ("SourceInfo, CurrentNodeId, StartLine, StartCol, FileName)
-			lang.ast.StringConstant Kind = new lang.ast.StringConstant("SrcLocStart");
-			lang.ast.IntConstant CurrentNodeId = new lang.ast.IntConstant("" + nid);
-			lang.ast.IntConstant Line = new lang.ast.IntConstant("" + beaver.Symbol.getLine(n.getStart()));
-			lang.ast.IntConstant Col = new lang.ast.IntConstant("" + beaver.Symbol.getColumn(n.getStart()));
-			lang.ast.StringConstant SrcFile = new lang.ast.StringConstant(getSourceFile(n));
-			ret.add(new PseudoTuple(Kind, CurrentNodeId, Line, Col, SrcFile));
-			prel.insertTuple(Kind, CurrentNodeId, Line, Col, SrcFile);
-		}
-
-		{
-			// ("SourceInfo, CurrentNodeId, EndLine, EndCol, "")
-			lang.ast.StringConstant Kind = new lang.ast.StringConstant("SrcLocEnd");
-			lang.ast.IntConstant CurrentNodeId = new lang.ast.IntConstant("" + nid);
-			lang.ast.IntConstant Line = new lang.ast.IntConstant("" + beaver.Symbol.getLine(n.getEnd()));
-			lang.ast.IntConstant Col = new lang.ast.IntConstant("" + beaver.Symbol.getColumn(n.getEnd()));
-			// avoid printing the source file once again to avoid bloating the output table
-			lang.ast.StringConstant SrcFile = new lang.ast.StringConstant("");
-			ret.add(new PseudoTuple(Kind, CurrentNodeId, Line, Col, SrcFile));
-			prel.insertTuple(Kind, CurrentNodeId, Line, Col, SrcFile);
-		}
-		return ret;
+	private void srcLoc(ASTNode<?> n, int nid) {
+		String srcFile = getSourceFile(n);
+		prel.insertTuple("SrcLocStart",
+						 nid,
+						 beaver.Symbol.getLine(n.getStart()),
+						 beaver.Symbol.getColumn(n.getStart()),
+						 srcFile);
+		prel.insertTuple("SrcLocEnd",
+						 nid,
+						 beaver.Symbol.getLine(n.getEnd()),
+						 beaver.Symbol.getColumn(n.getEnd()),
+						 "");
 	}
 
 
@@ -290,21 +259,18 @@ public class DatalogProjection2 {
 		return s.replace('[', '(').replace(']', ')').replace('\'', '_').replace('"', '_').replace('\n', '_');
 	}
 
-	private List<PseudoTuple> toTuples(ASTNode<?> n, int nid) {
+	private void toTuples(ASTNode<?> n, int nid) {
 		String relName = getRelation(n);
-		java.util.List<PseudoTuple> ret = new ArrayList<>();
 
 		// the children in the tree
 		int childIndex = 0;
 		for (int i = 0; i < n.getNumChildNoTransform(); ++i) {
 			ASTNode<?> child = n.getChildNoTransform(i);
 
-			ret.add(makeTuple(relName, nodeId(n), childIndex, nodeId(child), ""));
 			prel.insertTuple(relName, nodeId(n), childIndex, nodeId(child), "");
 
 			if (child.mayHaveRewrite()) {
 				ASTNode<?> childT = n.getChild(i);
-				ret.add(makeTuple(relName, nodeId(n), childIndex, nodeId(childT), ""));
 				prel.insertTuple(relName, nodeId(n), childIndex, nodeId(childT), "");
 			}
 
@@ -316,42 +282,18 @@ public class DatalogProjection2 {
 			// For every token, we generate two tuples
 			// ("NodeKind", CurrentNodeId, ChildIdx, ChildId, "")
 			// ("Token", ChildId, 0, 0, "TokenAsString")
-			{
-				// Add a tuple to the current node relation
-				lang.ast.StringConstant Kind = new lang.ast.StringConstant(relName);
-				lang.ast.IntConstant ChildId = new lang.ast.IntConstant("" + tokenUID);
-				lang.ast.IntConstant CurrentNodeId = new lang.ast.IntConstant("" + nid);
-				lang.ast.IntConstant ChildIdx = new lang.ast.IntConstant("" + childIndex++);
-				lang.ast.StringConstant Token = new lang.ast.StringConstant("");
-				ret.add(new PseudoTuple(Kind, CurrentNodeId, ChildIdx, ChildId, Token));
-				prel.insertTuple(Kind, CurrentNodeId, ChildIdx, ChildId, Token);
-			}
 
-			{
-				// Add a tuple to Token relation
-				lang.ast.StringConstant Kind = new lang.ast.StringConstant("Terminal");
-				lang.ast.IntConstant ChildId = new lang.ast.IntConstant("0");
-				lang.ast.IntConstant CurrentNodeId = new lang.ast.IntConstant("" + tokenUID);
-				lang.ast.IntConstant ChildIdx = new lang.ast.IntConstant("0");
-				lang.ast.StringConstant Token = new lang.ast.StringConstant(cleanTerminal(t));
-				ret.add(new PseudoTuple(Kind, CurrentNodeId, ChildIdx, ChildId, Token));
-				prel.insertTuple(Kind, CurrentNodeId, ChildIdx, ChildId, Token);
-			}
+			// Add a tuple to the current node relation
+			prel.insertTuple(relName, nid, childIndex++, tokenUID, "");
+			// Add a tuple to Token relation
+			prel.insertTuple("Terminal", tokenUID, 0, 0, cleanTerminal(t));
 
 			tokenUID--;
 		}
 
 		if (childIndex == 0) {
 			// This node has no children, emit that
-			lang.ast.StringConstant Kind = new lang.ast.StringConstant(relName);
-			lang.ast.IntConstant ChildId  = new lang.ast.IntConstant("-1");
-			lang.ast.IntConstant CurrentNodeId = new lang.ast.IntConstant("" + nid);
-			lang.ast.IntConstant ChildIdx = new lang.ast.IntConstant("-1");
-			lang.ast.StringConstant Token = new lang.ast.StringConstant("");
-			ret.add(new PseudoTuple(Kind, CurrentNodeId, ChildIdx, ChildId, Token));
-			prel.insertTuple(Kind, CurrentNodeId, ChildIdx, ChildId, Token);
+			prel.insertTuple(relName, nid, -1, -1, "");
 		}
-
-		return ret;
 	}
 }

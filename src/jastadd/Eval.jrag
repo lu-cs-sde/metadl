@@ -3,12 +3,13 @@ import lang.io.FileUtil;
 import org.apache.commons.collections4.map.DefaultedMap;
 import java.util.LinkedHashMap;
 import lang.relation.RelationWrapper;
+import lang.relation.TupleInserter;
 import org.apache.commons.lang3.mutable.MutableInt;
 import lang.CmdLineOpts;
 import java.util.concurrent.Executors;
 
 aspect Eval {
-	public void Program.evalIMPORT(EvaluationContext ctx, CmdLineOpts opts) throws IOException {
+	public void Program.evalIMPORT(EvaluationContext ctx, Map<FormalPredicate, TupleInserter> fpToSoufflePredMap) throws IOException {
 		FormalPredicate fpImp = formalPredicateMap().get(GlobalNames.IMPORT_NAME);
 		if (fpImp == null) {
 			// no IMPORT in the program, nothing to do
@@ -29,7 +30,12 @@ aspect Eval {
 			Relation2 rel = dstPred.relation2();
 
 			if (srcLang.equals("java8")) {
-				FileUtil.loadJavaSources(ctx, new RelationWrapper(ctx, rel, dstPred.type()), Collections.singletonList(loc));
+				if (fpToSoufflePredMap != null) {
+					FileUtil.loadJavaSources(ctx, fpToSoufflePredMap.get(dstPred), Collections.singletonList(loc));
+				} else {
+					FileUtil.loadJavaSources(ctx, new RelationWrapper(ctx, rel, dstPred.type()),
+											 Collections.singletonList(loc));
+				}
 			} else if (srcLang.equals("metadl")) {
 				MutableInt nodeCounter = new MutableInt(1);
 				try {
@@ -92,7 +98,7 @@ aspect Eval {
 		// Start a timer to measure the speed of the import
 		StopWatch progRelTimer = StopWatch.createStarted();
 
-		evalIMPORT(evalCtx(), opts);
+		evalIMPORT(evalCtx(), null);
 
 		FormalPredicate fpImp = formalPredicateMap().get(GlobalNames.IMPORT_NAME);
 		if (fpImp == null)
@@ -131,7 +137,7 @@ aspect Eval {
 		predicateDependencyGraph().dump();
 
 		evalEDB(ctx, opts);
-		evalIMPORT(ctx, opts);
+		evalIMPORT(ctx, null);
 
 		for (Stratum s : strata) {
 			s.eval();
@@ -144,7 +150,7 @@ aspect Eval {
 		EvaluationContext ctx = evalCtx();
 
 		evalEDB(ctx, opts);
-		evalIMPORT(ctx, opts);
+		evalIMPORT(ctx, null);
 
 		dumpStrata();
 		predicateDependencyGraph().dump();

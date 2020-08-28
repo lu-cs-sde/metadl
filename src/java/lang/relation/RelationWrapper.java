@@ -17,7 +17,7 @@ import lang.ast.StringType;
 import lang.ast.Type;
 
 
-public class RelationWrapper {
+public class RelationWrapper implements TupleInserter {
 	public static class TupleWrapper {
 		private final Tuple t;
 		private final PredicateType type;

@@ -192,7 +192,7 @@ public class Compiler {
 			.desc("Check that the input represents a valid MetaDL program.").build();
 		Option imp = Option.builder("i").longOpt("import").hasArg(false)
 			.desc("Evaluate only the import statements and output the program representation relation(s).").build();
-		Option gen = Option.builder("g").longOpt("gen-souffle").hasArg(false)
+		Option gen = Option.builder("g").longOpt("gen-hybrid").hasArg(false)
 			.desc("Generate a hybrid MetaDL-Souffle program.").build();
 
 		OptionGroup actions = new OptionGroup().addOption(eval).addOption(prettyPrint).addOption(check)
@@ -206,9 +206,11 @@ public class Compiler {
 			.desc("Generated program dirctory.").argName("DIR").build();
 		Option outFile = Option.builder("o").longOpt("output").numberOfArgs(1)
 			.desc("Output file.").argName("FILE").build();
+		Option libFile = Option.builder("l").longOpt("lib").numberOfArgs(1)
+			.desc("Library file to use for hybrid evaluation.").argName("FILE").build();
 
 		Options options = new Options().addOptionGroup(actions).
-			addOption(factDir).addOption(outDir).addOption(genDir).addOption(outFile);
+			addOption(factDir).addOption(outDir).addOption(genDir).addOption(outFile).addOption(libFile);
 
 		try {
 			CommandLine cmd = parser.parse(options, args);
@@ -258,6 +260,7 @@ public class Compiler {
 			ret.setOutputFile(cmd.getOptionValue("o",
 												 ret.getOutputDir() + "/" +
 												 FileUtil.changeExtension(FileUtil.fileName(ret.getInputFile()), ".dl")));
+			ret.setLibFile(cmd.getOptionValue("l", "libSwigInterface.so"));
 		} catch (ParseException e) {
 			printHelp(options);
 			throw new RuntimeException(e);
@@ -302,9 +305,8 @@ public class Compiler {
 				generateSouffleSWIGProgram(prog, opts);
 				break;
 			case EVAL_HYBRID:
-				prog.evalEDB(prog.evalCtx(), opts);
-				prog.evalIMPORT(prog.evalCtx(), opts);
-				SWIGUtil.runSWIGProgram(prog, opts);
+				SWIGUtil.evalHybridProgram(prog, opts);
+				break;
 			}
 
 			return prog;

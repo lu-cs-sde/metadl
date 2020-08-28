@@ -24,6 +24,7 @@ import lang.ast.LangParser;
 import lang.ast.LangScanner;
 import lang.ast.Program;
 import lang.relation.RelationWrapper;
+import lang.relation.TupleInserter;
 
 public class FileUtil {
 	public static String changeExtension(String filename, String newExtension) {
@@ -70,7 +71,7 @@ public class FileUtil {
 		return lang.Compiler.parseCmdLineArgs(s.split("\\s+"));
 	}
 
-	public static void loadJavaSources(EvaluationContext ctx, RelationWrapper rel,
+	public static void loadJavaSources(EvaluationContext ctx, TupleInserter rel,
 									   java.util.List<String> locs) throws IOException {
 		org.extendj.ast.Program p = new org.extendj.ast.Program();
 

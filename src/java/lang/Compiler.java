@@ -6,8 +6,17 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
+import java.util.Arrays;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import javax.tools.ToolProvider;
+import javax.tools.JavaCompiler;
+import javax.tools.JavaFileObject;
+import javax.tools.StandardJavaFileManager;
 
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.commons.cli.DefaultParser;
@@ -26,6 +35,7 @@ import lang.ast.TypeError;
 import lang.ast.SemanticError;
 import lang.io.FileUtil;
 import lang.io.SimpleLogger;
+import swig.SWIGUtil;
 import lang.ast.PredicateDependencyGraph;
 
 /**
@@ -116,6 +126,54 @@ public class Compiler {
 		brerr.close();
 	}
 
+	public static void generateSouffleSWIGProgram(Program program, CmdLineOpts opts) throws IOException {
+		String soufflePath = opts.getOutputFile();
+		prettyPrintSouffle(program, soufflePath);
+
+		// Disable warnings in souffle
+		String cmd = "souffle -s java -w " + soufflePath;
+		SimpleLogger.logger().log("Run souffle with: " + cmd, SimpleLogger.LogLevel.Level.DEBUG);
+
+		StopWatch souffleRunTimer = StopWatch.createStarted();
+		Process p = Runtime.getRuntime().exec(cmd);
+
+		BufferedReader brerr = new BufferedReader(new InputStreamReader(p.getErrorStream()));
+		BufferedReader br = new BufferedReader(new InputStreamReader(p.getInputStream()));
+
+		while (p.isAlive()) {
+			while (brerr.ready())
+				SimpleLogger.logger().log(":SOUFFLE-ERROR " + brerr.readLine(), SimpleLogger.LogLevel.Level.ERROR);
+			while (br.ready())
+				SimpleLogger.logger().log(":SOUFFLE-OUTPUT " + br.readLine(), SimpleLogger.LogLevel.Level.DEBUG);
+		}
+
+		try {
+			p.waitFor();
+		} catch (InterruptedException e) {
+			throw new RuntimeException(e);
+		}
+		souffleRunTimer.stop();
+		SimpleLogger.logger().time("Run Souffle program: " + souffleRunTimer.getTime() + "ms");
+
+		br.close();
+		brerr.close();
+	}
+
+	// public static void compileSWIGClasses() {
+	// 	String[] genFiles = {
+	// 		"map_string_string.java",  "SwigInterfaceJNI.java", "SWIGSouffleRelation.java", "SWIGTYPE_p_souffle__SouffleProgram.java",
+	// 		"SwigInterface.java",  "SWIGSouffleProgram.java",  "SWIGSouffleTuple.java",  "SWIGTYPE_p_std__ostream.java"};
+
+	// 	JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+	// 	StandardJavaFileManager fileManager = compiler.getStandardFileManager(null, null, null);
+	// 	Iterable<? extends JavaFileObject> compilationUnits = fileManager.getJavaFileObjectsFromStrings(Arrays.asList(genFiles));
+	// 	compiler.getTask(null, fileManager, null, null, null, compilationUnits).call();
+
+	// 	System.loadLibrary("SwigInterface");
+
+
+	// }
+
 	public static String getCSVSeparatorEscaped() {
 		if (getCSVSeparator() != '\t')
 			return String.valueOf(getCSVSeparator());
@@ -129,23 +187,28 @@ public class Compiler {
 		Option prettyPrint = Option.builder("p").longOpt("pretty-print").numberOfArgs(1)
 			.desc("Pretty print the program in MetaDL (arg = metadl) or Souffle (arg = souffle) format.").build();
 		Option eval = Option.builder("e").longOpt("eval").numberOfArgs(1)
-			.desc("Evaluate the program using the internal (arg = metadl), parallel (arg = metadl-par), Souffle (arg = souffle) evaluator.").build();
+			.desc("Evaluate the program using the internal (arg = metadl), parallel (arg = metadl-par), Souffle (arg = souffle), Hybrid (arg = hybrid) evaluator.").build();
 		Option check = Option.builder("c").longOpt("check").hasArg(false)
 			.desc("Check that the input represents a valid MetaDL program.").build();
 		Option imp = Option.builder("i").longOpt("import").hasArg(false)
 			.desc("Evaluate only the import statements and output the program representation relation(s).").build();
+		Option gen = Option.builder("g").longOpt("gen-souffle").hasArg(false)
+			.desc("Generate a hybrid MetaDL-Souffle program.").build();
 
-		OptionGroup actions = new OptionGroup().addOption(eval).addOption(prettyPrint).addOption(check).addOption(imp);
+		OptionGroup actions = new OptionGroup().addOption(eval).addOption(prettyPrint).addOption(check)
+			.addOption(imp).addOption(gen);
 
 		Option factDir = Option.builder("F").longOpt("facts").numberOfArgs(1)
 			.desc("Fact directory.").argName("DIR").build();
 		Option outDir = Option.builder("D").longOpt("out").numberOfArgs(1)
 			.desc("Output directory.").argName("DIR").build();
+		Option genDir = Option.builder("G").longOpt("gen").numberOfArgs(1)
+			.desc("Generated program dirctory.").argName("DIR").build();
 		Option outFile = Option.builder("o").longOpt("output").numberOfArgs(1)
 			.desc("Output file.").argName("FILE").build();
 
 		Options options = new Options().addOptionGroup(actions).
-			addOption(factDir).addOption(outDir).addOption(outFile);
+			addOption(factDir).addOption(outDir).addOption(genDir).addOption(outFile);
 
 		try {
 			CommandLine cmd = parser.parse(options, args);
@@ -174,6 +237,8 @@ public class Compiler {
 					ret.setAction(Action.EVAL_INTERNAL);
 				} else if (cmd.getOptionValue("e").equals("metadl-par")) {
 					ret.setAction(Action.EVAL_INTERNAL_PARALLEL);
+				} else if (cmd.getOptionValue("e").equals("hybrid")) {
+					ret.setAction(Action.EVAL_HYBRID);
 				} else {
 					System.err.println("Invalid argument to '--eval' option");
 					printHelp(options);
@@ -183,10 +248,13 @@ public class Compiler {
 				ret.setAction(Action.CHECK);
 			} else if (cmd.hasOption("i")) {
 				ret.setAction(Action.EVAL_IMPORT);
+			} else if (cmd.hasOption("g")) {
+				ret.setAction(Action.GEN_HYBRID);
 			}
 
 			ret.setFactsDir(cmd.getOptionValue("F", "."));
 			ret.setOutputDir(cmd.getOptionValue("D", "."));
+			ret.setGeneratedDir(cmd.getOptionValue("G", "."));
 			ret.setOutputFile(cmd.getOptionValue("o",
 												 ret.getOutputDir() + "/" +
 												 FileUtil.changeExtension(FileUtil.fileName(ret.getInputFile()), ".dl")));
@@ -229,6 +297,14 @@ public class Compiler {
 				prog.dumpStrata();
 				prog.predicateDependencyGraph().dump();
 				break;
+			case GEN_HYBRID:
+				prog.evalEDB(prog.evalCtx(), opts);
+				generateSouffleSWIGProgram(prog, opts);
+				break;
+			case EVAL_HYBRID:
+				prog.evalEDB(prog.evalCtx(), opts);
+				prog.evalIMPORT(prog.evalCtx(), opts);
+				SWIGUtil.runSWIGProgram(prog, opts);
 			}
 
 			return prog;

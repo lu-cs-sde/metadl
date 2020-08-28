@@ -3,18 +3,20 @@ package lang;
 public class CmdLineOpts {
 	private String outputDir;
 	private String factsDir;
+	private String genDir;
 	private String outputFile;
 	private String inputFile;
 	private Action action;
-
 
 	public enum Action {
 		EVAL_SOUFFLE,
 		EVAL_INTERNAL,
 		EVAL_INTERNAL_PARALLEL,
 		EVAL_IMPORT,
+		EVAL_HYBRID,
 		PRETTY_SOUFFLE,
 		PRETTY_INTERNAL,
+		GEN_HYBRID,
 		CHECK
 	}
 
@@ -56,6 +58,14 @@ public class CmdLineOpts {
 
 	public void setFactsDir(String factsDir) {
 		this.factsDir = factsDir;
+	}
+
+	public String getGeneratedDir() {
+		return this.genDir;
+	}
+
+	public void setGeneratedDir(String genDir) {
+		this.genDir = genDir;
 	}
 
 	@Override public String toString() {

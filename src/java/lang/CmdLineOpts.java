@@ -8,6 +8,7 @@ public class CmdLineOpts {
 	private String inputFile;
 	private String libFile;
 	private Action action;
+	private boolean warningsEnabled = false;
 
 	public enum Action {
 		EVAL_SOUFFLE,
@@ -23,6 +24,14 @@ public class CmdLineOpts {
 
 	public void setOutputDir(String str) {
 		this.outputDir = str;
+	}
+
+	public boolean isWarningsEnabled() {
+		return warningsEnabled;
+	}
+
+	public void setWarningsEnabled(boolean warningsEnabled) {
+		this.warningsEnabled = warningsEnabled;
 	}
 
 	public String getLibFile() {

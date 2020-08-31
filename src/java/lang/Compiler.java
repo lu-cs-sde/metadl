@@ -57,7 +57,8 @@ public class Compiler {
 		formatter.printHelp("metadl PROGRAM", header, options, footer, true);
 	}
 
-	public static Program parseAndCheckProgram(String path) throws IOException, beaver.Parser.Exception {
+	public static Program parseAndCheckProgram(CmdLineOpts opts) throws IOException, beaver.Parser.Exception {
+		String path = opts.getInputFile();
 		Program program = (Program) FileUtil.parse(new File(path));
 		Compiler.DrAST_root_node = program; // Enable debugging with DrAST
 
@@ -74,7 +75,7 @@ public class Compiler {
 			throw new RuntimeException();
 		}
 
-		if (!program.semanticWarnings().isEmpty()) {
+		if (opts.isWarningsEnabled() && !program.semanticWarnings().isEmpty()) {
 			for (SemanticError e : program.semanticWarnings()) {
 				System.err.println(e.reportPosition());
 			}
@@ -208,9 +209,12 @@ public class Compiler {
 			.desc("Output file.").argName("FILE").build();
 		Option libFile = Option.builder("l").longOpt("lib").numberOfArgs(1)
 			.desc("Library file to use for hybrid evaluation.").argName("FILE").build();
+		Option enableWarnings = Option.builder("w").longOpt("warn").hasArg(false)
+			.desc("Print warnings.").build();
+
 
 		Options options = new Options().addOptionGroup(actions).
-			addOption(factDir).addOption(outDir).addOption(genDir).addOption(outFile).addOption(libFile);
+			addOption(factDir).addOption(outDir).addOption(genDir).addOption(outFile).addOption(libFile).addOption(enableWarnings);
 
 		try {
 			CommandLine cmd = parser.parse(options, args);
@@ -261,6 +265,7 @@ public class Compiler {
 												 ret.getOutputDir() + "/" +
 												 FileUtil.changeExtension(FileUtil.fileName(ret.getInputFile()), ".dl")));
 			ret.setLibFile(cmd.getOptionValue("l", "libSwigInterface.so"));
+			ret.setWarningsEnabled(cmd.hasOption("w"));
 		} catch (ParseException e) {
 			printHelp(options);
 			throw new RuntimeException(e);
@@ -271,7 +276,7 @@ public class Compiler {
 
 	public static Program run(CmdLineOpts opts) {
 		try {
-			Program prog = parseAndCheckProgram(opts.getInputFile());
+			Program prog = parseAndCheckProgram(opts);
 
 			switch (opts.getAction()) {
 			case EVAL_INTERNAL:

@@ -132,7 +132,7 @@ public class Compiler {
 		prettyPrintSouffle(program, soufflePath);
 
 		// Disable warnings in souffle
-		String cmd = "souffle -s java -w " + soufflePath;
+		String cmd = "souffle -s java -w -p " + FileUtil.fileNameNoExtension(soufflePath) + ".prof " + soufflePath;
 		SimpleLogger.logger().log("Run souffle with: " + cmd, SimpleLogger.LogLevel.Level.DEBUG);
 
 		StopWatch souffleRunTimer = StopWatch.createStarted();

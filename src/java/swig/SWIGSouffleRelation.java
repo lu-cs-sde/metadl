@@ -47,6 +47,13 @@ public class SWIGSouffleRelation {
     SwigInterfaceJNI.SWIGSouffleRelation_add__SWIG_2(swigCPtr, this, s0, l1, l2, l3, s4, n);
   }
 
+  public void readTuplesFromBuffer(java.nio.ByteBuffer buf) {
+  assert buf.isDirect() : "Buffer must be allocated direct.";
+    {
+      SwigInterfaceJNI.SWIGSouffleRelation_readTuplesFromBuffer(swigCPtr, this, buf);
+    }
+  }
+
   public SWIGSouffleTuple makeTuple() {
     return new SWIGSouffleTuple(SwigInterfaceJNI.SWIGSouffleRelation_makeTuple(swigCPtr, this), true);
   }

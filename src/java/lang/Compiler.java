@@ -324,6 +324,11 @@ public class Compiler {
 	}
 
 	public static void main(String[] args) {
+		// try {
+		// 	Thread.sleep(20 * 1000);
+		// } catch (InterruptedException e) {
+		// }
+
 		Logger log = Logger.getLogger("lang.io");
 		log.setLevel(Level.FINEST);
 		StopWatch totalTime = StopWatch.createStarted();

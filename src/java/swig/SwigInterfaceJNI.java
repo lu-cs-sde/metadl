@@ -22,7 +22,9 @@ public class SwigInterfaceJNI {
   public final static native void SWIGSouffleTuple_add__SWIG_0(long jarg1, SWIGSouffleTuple jarg1_, long jarg2);
   public final static native void SWIGSouffleTuple_add__SWIG_1(long jarg1, SWIGSouffleTuple jarg1_, String jarg2);
   public final static native void delete_SWIGSouffleTuple(long jarg1);
-  public final static native void SWIGSouffleRelation_add(long jarg1, SWIGSouffleRelation jarg1_, long jarg2, SWIGSouffleTuple jarg2_);
+  public final static native void SWIGSouffleRelation_add__SWIG_0(long jarg1, SWIGSouffleRelation jarg1_, long jarg2, SWIGSouffleTuple jarg2_);
+  public final static native void SWIGSouffleRelation_add__SWIG_1(long jarg1, SWIGSouffleRelation jarg1_, String jarg2, long jarg3, long jarg4, long jarg5, String jarg6);
+  public final static native void SWIGSouffleRelation_add__SWIG_2(long jarg1, SWIGSouffleRelation jarg1_, String[] jarg2, long[] jarg3, long[] jarg4, long[] jarg5, String[] jarg6, int jarg7);
   public final static native long SWIGSouffleRelation_makeTuple(long jarg1, SWIGSouffleRelation jarg1_);
   public final static native void delete_SWIGSouffleRelation(long jarg1);
   public final static native long new_SWIGSouffleProgram(long jarg1);

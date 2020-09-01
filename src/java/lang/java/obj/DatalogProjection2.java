@@ -64,6 +64,7 @@ public class DatalogProjection2 {
 		traverseTime.stop();
 		StopWatch attributeMapTime = StopWatch.createStarted();
 		mapAttributes(worklist, Pair.of("type", "ATTR_type"), Pair.of("decl", "ATTR_decl"), Pair.of("genericDecl", "ATTR_generic_decl"));
+		prel.done();
 		attributeMapTime.stop();
 		SimpleLogger.logger().time("Object AST initial traversal: " + traverseTime.getTime() + "ms");
 		SimpleLogger.logger().time("Attribute tabulation: " + attributeMapTime.getTime() + "ms");

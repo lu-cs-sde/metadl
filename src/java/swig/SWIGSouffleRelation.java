@@ -36,12 +36,19 @@ public class SWIGSouffleRelation {
   }
 
   public void add(SWIGSouffleTuple tpl) {
-    SwigInterfaceJNI.SWIGSouffleRelation_add(swigCPtr, this, SWIGSouffleTuple.getCPtr(tpl), tpl);
+    SwigInterfaceJNI.SWIGSouffleRelation_add__SWIG_0(swigCPtr, this, SWIGSouffleTuple.getCPtr(tpl), tpl);
+  }
+
+  public void add(String s0, long l1, long l2, long l3, String s4) {
+    SwigInterfaceJNI.SWIGSouffleRelation_add__SWIG_1(swigCPtr, this, s0, l1, l2, l3, s4);
+  }
+
+  public void add(String[] s0, long[] l1, long[] l2, long[] l3, String[] s4, int n) {
+    SwigInterfaceJNI.SWIGSouffleRelation_add__SWIG_2(swigCPtr, this, s0, l1, l2, l3, s4, n);
   }
 
   public SWIGSouffleTuple makeTuple() {
-    long cPtr = SwigInterfaceJNI.SWIGSouffleRelation_makeTuple(swigCPtr, this);
-    return (cPtr == 0) ? null : new SWIGSouffleTuple(cPtr, false);
+    return new SWIGSouffleTuple(SwigInterfaceJNI.SWIGSouffleRelation_makeTuple(swigCPtr, this), true);
   }
 
 }

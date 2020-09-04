@@ -11,8 +11,8 @@ import lang.relation.TupleInserter;
 
 public class SWIGSouffleRelationAdapter implements TupleInserter {
 	private final static int BUFFER_SIZE = 4 << 20;
-	private int totalTuples = 0;
-	private int totalSize = 0;
+	private long totalTuples = 0;
+	private long totalSize = 0;
 
 	private SWIGSouffleRelation rel;
 	private ByteBuffer buffer = ByteBuffer.allocateDirect(BUFFER_SIZE);

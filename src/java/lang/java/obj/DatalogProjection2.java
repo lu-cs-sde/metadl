@@ -105,12 +105,15 @@ public class DatalogProjection2 {
 		assert n.getNumChild() == n.getNumChildNoTransform();
 		for (int i = 0; i < n.getNumChildNoTransform(); ++i) {
 			ASTNode<?> childNT = n.getChildNoTransform(i);
-			traverse(childNT, worklist);
-			if (childNT.mayHaveRewrite()) {
-				ASTNode<?> child = n.getChild(i);
-				if (child != childNT) {
-					traverse(child, worklist);
-					recordRewrittenNode(childNT, child);
+			// TODO: ExtendJ sometimes returns null for childNT. Understand why.
+			if (childNT != null) {
+				traverse(childNT, worklist);
+				if (childNT.mayHaveRewrite()) {
+					ASTNode<?> child = n.getChild(i);
+					if (child != childNT) {
+						traverse(child, worklist);
+						recordRewrittenNode(childNT, child);
+					}
 				}
 			}
 		}
@@ -267,14 +270,14 @@ public class DatalogProjection2 {
 		int childIndex = 0;
 		for (int i = 0; i < n.getNumChildNoTransform(); ++i) {
 			ASTNode<?> child = n.getChildNoTransform(i);
-
-			prel.insertTuple(relName, nodeId(n), childIndex, nodeId(child), "");
-
-			if (child.mayHaveRewrite()) {
-				ASTNode<?> childT = n.getChild(i);
-				prel.insertTuple(relName, nodeId(n), childIndex, nodeId(childT), "");
+			// TODO: ExtendJ sometimes returns null for child. Understand why.
+			if (child != null) {
+				prel.insertTuple(relName, nodeId(n), childIndex, nodeId(child), "");
+				if (child.mayHaveRewrite()) {
+					ASTNode<?> childT = n.getChild(i);
+					prel.insertTuple(relName, nodeId(n), childIndex, nodeId(childT), "");
+				}
 			}
-
 			childIndex++;
 		}
 

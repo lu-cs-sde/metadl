@@ -20,27 +20,68 @@ MetaDL depends on modified versions of [[http://jastadd.org/web/][JastAdd]] and 
 
 Ensure that the ~souffle~ executable is available in your ~$PATH~.
 
-For analyzing Java, MetaDL need access to a Java 7 runtime library (you can download it [[https://www.oracle.com/java/technologies/javase/javase7-archive-downloads.html#license-lightbox][here]]). Set ~METADL_JAVA_RT=/path/to/jre/lib/rt.jr~ in your environment to let MetaDL know where to find this library.
+For the ~hybrid~ evaluation mode, a version of Souffle exposing a custom JNI interface is required:
+#+BEGIN_SRC
+git clone https://github.com/alexdura/souffle.git -b javadl
+#+END_SRC
+
+For analyzing Java, MetaDL needs access to a Java 7 runtime library (you can download it [[https://www.oracle.com/java/technologies/javase/javase7-archive-downloads.html#license-lightbox][here]]). Set ~METADL_JAVA_RT=/path/to/jre/lib/rt.jr~ in your environment to let MetaDL know where to find this library.
 
 [[https://gradle.org/][Gradle]] is used as a build tool. Additionally, a Makefile summarizes the common build and run commands:
 - Package: ~./gradlew :jar~
 - Test: ~./gradlew :test~
-- Evaluate using the internal engine: ~make eval EVAL=<Input File>~
-- Evaluate using the Souffle back-end: ~make souffle EVAL=<Input File>~
 
-* Datalog
+* Running
+MetaDL support multiple running modes, which represent a tradeoff between speed and external dependencies.
+1. Internal evaluation
+Uses the internal seminaive evaluator and it is reasonably fast when the number of tuples is small (< 1 million).
+#+BEGIN_SRC
+java -jar compiler.jar --eval metadl program.mdl -F fact_dir -D output_dir
+#+END_SRC
 
-[[https://en.wikipedia.org/wiki/Datalog][Datalog]] is a declarative query language, with roots in logic programming. Relations between tables are expressed as Horn clauses.
+2. Internal parallel evaluation
+If the strata dependency is graph, parallel evaluation will speed things up. For that, use the internall parallel evaluator:
+#+BEGIN_SRC
+java -jar compiler.jar --eval metadl-par program.mdl -F fact_dir -D output_dir
+#+END_SRC
+
+3. Hybrid MetaDL-Souffle evaluation
+This is performed in two-steps:
+3.1. The MetaDL program is compiled to a native library.
+#+BEGIN_SRC
+java -jar compiler.jar --gen-hybrid program.mdl
+#+END_SRC
+This will generate a library called ~libSwigInterface.so~ in your current directory.
+3.2. Running the compiled program
+#+BEGIN_SRC
+java -jar compiler.jar --eval hybrid program.mdl --lib /ABS/PATH/TO/libSwigInterface.so -F fact_dir -D output_dir
+#+END_SRC
+
+4. Souffle evaluation (deprecated)
+When the number of tuples is becoming large, using a high performance evaluator will make the runs faster. For this, MetaDL can generate a Souffle program and then evaluate it:
+#+BEGIN_SRC
+java -jar compiler.jar --eval souffle program.mdl -F fact_dir -D output_dir
+#+END_SRC
+
 
 * Language description
+** Datalog
+[[https://en.wikipedia.org/wiki/Datalog][Datalog]] is a declarative query language, with roots in logic programming. Relations between tables are expressed as Horn clauses. MetaDL extends Datalog with syntactic patterns and associates side-effects to the following predicates ~EDB~, ~IMPORT~ and ~OUTPUT~. The order of evaluation is as follows:
+1. All predicates the ~EDB~ predicate depends upon are evaluated. For all tuples ~('P, "file")~ in the the ~EDB~ relation, the file is read as a CSV and its tuples are added to the relation ~P~.
+2. All predicates the ~IMPORT~ predicate depends upon are evaluated. For all tuples ~('P, "path", "lang")~ in the ~IMPORT~ relation, all the files matching the language ~lang~ in ~path~ are parsed and their contents loaded as tuples into the relation ~P~.
+3. Fixpoint evaluation.
+4. For all values ~('P)~ in the ~OUTPUT~ relation, the contents of relation ~P~ are written out to a file ~P.csv~.
 
-Current supported Meta-Literals:
-- ~EDB('P, "facts.csv").~ add the facts in ~facts.csv~ to the relation ~P~
-- ~OUTPUT('P).~ output the tuples in relation ~P~ to ~P.csv~
-- ~IMPORT('P, "program.mdl", "metadl")~ generate a program representation relation
-from ~program.mdl~ and add its tuples to the relation ~P~
-- ~IMPORT('P, "program.java", "java8")~ generate a program representation relation
-from ~program.java~ Java 8 program
+The order of evaluation was chosen for convenience reasons, to make the following patterns possible:
+- Control the analyzed program from a configuration file ~Prog.csv~:
+#+BEGIN_SRC
+EDB('Progs, "Prog.csv").
+IMPORT('P, p, "java8") :- EDB(p, _).
+#+END_SRC
+- Output all the input facts:
+#+BEGIN_SRC
+OUTPUT(p) :- EDB(p, _).
+#+END_SRC
 
 Additional Supported features:
 - Stratified negation ~NOT(P(x1,...,xn))~
@@ -49,17 +90,17 @@ Additional Supported features:
 - Arithmetic expressions ( ~+~, ~-~, ~*~, ~/~) and string concatenation (~cat~) inside ~BIND~ and filtering predicates
 - Type inference
 
-* Metalanguage description
-** Analyze blocks
+** Metalanguage description
+*** Analyze blocks
 Datalog:  ~analyze ('P, "metadl") { }~ or Java:  ~analyze('P, "java4")~
 
 The only blocks that are allowed to contain patterns, metavariables and gaps. All the patterns and special predicates inside these blocks refer to the analyzed program, ~\'P~.
 
-** Patterns
+*** Patterns
 Datalog: ~<:$p(x, 1) :- ..., $q(..., $i:$v, ...) , ... .:>~ or Java ~<: class `c implements .., `i, .. { .. } :>~
 
 Patterns are a mechanism to match rules and bind metavariables to terms, expressions and predicate symbols.
-** Bounded patterns
+*** Bounded patterns
 The root node of a pattern can be accessed by using a bounded pattern ~$p <:$x + $y:>~.
 
 ** Gaps
@@ -67,7 +108,7 @@ Datalog ~...~ or Java ~..~
 
 Gaps express missing elements inside a list.
 
-** Metavariables
+*** Metavariables
 Datalog:  ~$x~, ~$p~  or Java: ~`c, `i~
 
 Variables used inside analyze blocks to connect patterns with other literals in the rule
@@ -76,14 +117,14 @@ Variables used inside analyze blocks to connect patterns with other literals in 
 - Arithmetic expressions: ~$x + $y~
 - Index metavariables ~p(..., $i:$v, ...)~
 
-** Special metapredicates
+*** Special metapredicates
 Special metapredicates are allowed only inside ~analyze~ blocks.
 - ~STR(c, "value")~, ~INT($c, value)~ - relate constants to their value
 - ~ID(v, "name")~ - relate identifiers to their name
 - ~SRC(n, l, c)~ - relate an AST node to its source location
 
-* Examples
-** Constant folding for Datalog
+** Examples
+*** Constant folding for Datalog
 #+BEGIN_SRC
 #Import a program that contains BIND(t, x*y + ((1 + 2*3) - 1) / 2)
 
@@ -108,7 +149,7 @@ analyze('P) {
 OUTPUT('OurExprEval).
 #+END_SRC
 
-** Type hierarchy for Java
+*** Type hierarchy for Java
 #+BEGIN_SRC
 IMPORT('P, "tests/evaluation/withimport/evalTest_15_input.java", "java4").
 
@@ -143,14 +184,13 @@ OUTPUT('SuperInterface).
 #+END_SRC
 
 * License
-This repository is covered by the license BSD 2-clause, see
-[[./LICENSE][LICENSE]].
+This repository is covered by the license BSD 2-clause, see [[./LICENSE][LICENSE]].
 
 * Debugging
 The following commands are useful when debugging MetaDL:
-- Pretty-print desugared MetaDL code: ~make prettyinternal EVAL=<InputFile>~.
-- Pretty-print the program generated for Souffl\"e: ~make prettysouffle EVAL=<InputFile>~.
-- Enable internal debug printouts by setting ~DebugMode=true~ in the environment.
+- Pretty print the desugared program in MetaDL format ~java -jar compiler.jar --pretty-print metadl program.mdl~
+- Pretty print the desugared program in Souffle format ~java -jar compiler.jar --pretty-print metadl program.mdl~
+- Enable internal debug printouts by setting ~METADL_LOG=debug|time|info~ in the environment.
 
 * Dependencies
 ** SEP
@@ -172,15 +212,12 @@ engine that MetaDL uses as backend for evaluating complex queries that
 are too slow for the internal evaluator.
 
 ** JUnit
-
 [[https://junit.org/junit5/][JUnit]] is a unit testing framework.
 
 ** JFlex
-
 [[http://jflex.de/][JFlex]] is a lexical analyzer generator.
 
 ** Beaver
-
 [[http://beaver.sourceforge.net/][Beaver]] is a LALR(1) parser
 generator. The parser descriptions are written in EBNF-form.
 

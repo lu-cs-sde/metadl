@@ -131,8 +131,9 @@ public class Compiler {
 		String soufflePath = opts.getOutputFile();
 		prettyPrintSouffle(program, soufflePath);
 
-		// Disable warnings in souffle
-		String cmd = "souffle -s java -w -p " + FileUtil.fileNameNoExtension(soufflePath) + ".prof " + soufflePath;
+		// Disable warnings in souffle, provide -j 4 to enable the use of parallel
+		// loops (the number of thread is irrelevant as long as it's greater than 1)
+		String cmd = "souffle -j 4 -s java -w -p " + FileUtil.fileNameNoExtension(soufflePath) + ".prof " + soufflePath;
 		SimpleLogger.logger().log("Run souffle with: " + cmd, SimpleLogger.LogLevel.Level.DEBUG);
 
 		StopWatch souffleRunTimer = StopWatch.createStarted();

@@ -39,6 +39,8 @@ public class SWIGUtil {
 	}
 
 	public static void runSWIGProgram(SWIGSouffleProgram swigProg, CmdLineOpts opts) {
+		int hwThreads = Runtime.getRuntime().availableProcessors();
+		swigProg.setNumThreads(Math.max(1, hwThreads / 2));
 		swigProg.run();
 		swigProg.printAll(opts.getOutputDir());
 		swigProg.finalize();

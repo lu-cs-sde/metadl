@@ -76,4 +76,8 @@ public class SWIGSouffleProgram {
     return (cPtr == 0) ? null : new SWIGSouffleRelation(cPtr, false);
   }
 
+  public void setNumThreads(int n) {
+    SwigInterfaceJNI.SWIGSouffleProgram_setNumThreads(swigCPtr, this, n);
+  }
+
 }

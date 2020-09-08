@@ -39,5 +39,6 @@ public class SwigInterfaceJNI {
   public final static native void SWIGSouffleProgram_dumpOutputs__SWIG_0(long jarg1, SWIGSouffleProgram jarg1_, long jarg2);
   public final static native void SWIGSouffleProgram_dumpOutputs__SWIG_1(long jarg1, SWIGSouffleProgram jarg1_);
   public final static native long SWIGSouffleProgram_getRelation(long jarg1, SWIGSouffleProgram jarg1_, String jarg2);
+  public final static native void SWIGSouffleProgram_setNumThreads(long jarg1, SWIGSouffleProgram jarg1_, int jarg2);
   public final static native long newInstance(String jarg1);
 }

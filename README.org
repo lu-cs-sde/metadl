@@ -38,23 +38,23 @@ Uses the internal seminaive evaluator and it is reasonably fast when the number 
 #+BEGIN_SRC
 java -jar compiler.jar --eval metadl program.mdl -F fact_dir -D output_dir
 #+END_SRC
-2. Internal parallel evaluation
+** Internal parallel evaluation
 If the strata dependency is graph, parallel evaluation will speed things up. For that, use the internall parallel evaluator:
 #+BEGIN_SRC
 java -jar compiler.jar --eval metadl-par program.mdl -F fact_dir -D output_dir
 #+END_SRC
-3. Hybrid MetaDL-Souffle evaluation
+** Hybrid MetaDL-Souffle evaluation
 This is performed in two-steps:
-3.1. The MetaDL program is compiled to a native library.
+*** The MetaDL program is compiled to a native library.
 #+BEGIN_SRC
 java -jar compiler.jar --gen-hybrid program.mdl
 #+END_SRC
 This will generate a library called ~libSwigInterface.so~ in your current directory.
-3.2. Running the compiled program
+*** Running the compiled program
 #+BEGIN_SRC
 java -jar compiler.jar --eval hybrid program.mdl --lib /ABS/PATH/TO/libSwigInterface.so -F fact_dir -D output_dir
 #+END_SRC
-4. Souffle evaluation (deprecated)
+** Souffle evaluation (deprecated)
 When the number of tuples is becoming large, using a high performance evaluator will make the runs faster. For this, MetaDL can generate a Souffle program and then evaluate it:
 #+BEGIN_SRC
 java -jar compiler.jar --eval souffle program.mdl -F fact_dir -D output_dir

@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.commons.lang3.time.StopWatch;
 import org.apache.commons.lang3.tuple.Pair;
 
 import lang.CmdLineOpts;
@@ -38,12 +39,15 @@ public class SWIGUtil {
 
 	}
 
-	public static void runSWIGProgram(SWIGSouffleProgram swigProg, CmdLineOpts opts) {
+	private static void runSWIGProgram(SWIGSouffleProgram swigProg, CmdLineOpts opts) {
 		int hwThreads = Runtime.getRuntime().availableProcessors();
+		StopWatch timer = StopWatch.createStarted();
 		swigProg.setNumThreads(Math.max(1, hwThreads / 2));
 		swigProg.run();
 		swigProg.printAll(opts.getOutputDir());
 		swigProg.finalize();
+		timer.stop();
+		SimpleLogger.logger().time("Run SWIG program: " + timer.getTime() + "ms");
 	}
 
 	public static void evalHybridProgram(Program prog, CmdLineOpts opts) throws IOException {

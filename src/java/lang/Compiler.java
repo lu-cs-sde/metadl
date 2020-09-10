@@ -59,6 +59,7 @@ public class Compiler {
 
 	public static Program parseAndCheckProgram(CmdLineOpts opts) throws IOException, beaver.Parser.Exception {
 		String path = opts.getInputFile();
+		StopWatch timer = StopWatch.createStarted();
 		Program program = (Program) FileUtil.parse(new File(path));
 		Compiler.DrAST_root_node = program; // Enable debugging with DrAST
 
@@ -80,7 +81,8 @@ public class Compiler {
 				System.err.println(e.reportPosition());
 			}
 		}
-
+		timer.stop();
+		SimpleLogger.logger().time("Parsing and checking program: " + timer.getTime() + "ms");
 		return program;
 	}
 
@@ -160,21 +162,6 @@ public class Compiler {
 		br.close();
 		brerr.close();
 	}
-
-	// public static void compileSWIGClasses() {
-	// 	String[] genFiles = {
-	// 		"map_string_string.java",  "SwigInterfaceJNI.java", "SWIGSouffleRelation.java", "SWIGTYPE_p_souffle__SouffleProgram.java",
-	// 		"SwigInterface.java",  "SWIGSouffleProgram.java",  "SWIGSouffleTuple.java",  "SWIGTYPE_p_std__ostream.java"};
-
-	// 	JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
-	// 	StandardJavaFileManager fileManager = compiler.getStandardFileManager(null, null, null);
-	// 	Iterable<? extends JavaFileObject> compilationUnits = fileManager.getJavaFileObjectsFromStrings(Arrays.asList(genFiles));
-	// 	compiler.getTask(null, fileManager, null, null, null, compilationUnits).call();
-
-	// 	System.loadLibrary("SwigInterface");
-
-
-	// }
 
 	public static String getCSVSeparatorEscaped() {
 		if (getCSVSeparator() != '\t')

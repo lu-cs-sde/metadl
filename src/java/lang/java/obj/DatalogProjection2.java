@@ -30,6 +30,7 @@ public class DatalogProjection2 {
 	private TupleInserter prel;
 	private int tokenUID = Integer.MAX_VALUE;
 	private Map<ASTNode<?>, Integer> nodeNumber = new HashMap<>();
+	private Map<Integer, ASTNode<?>> number2Node = new HashMap<>();
 
 
 	// TODO: It's just easier to add environment variable than command-line arguments.
@@ -48,6 +49,7 @@ public class DatalogProjection2 {
 		} else {
 			 currentNumber++;
 			 nodeNumber.put(n, currentNumber);
+			 number2Node.put(currentNumber, n);
 			 return currentNumber;
 		}
 	}

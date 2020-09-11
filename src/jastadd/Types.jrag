@@ -324,24 +324,28 @@ aspect TypeCheck {
 	}
 
 	syn TypeError Functor.typeError() {
-		Type expectedType;
+		Type[] expectedType = new Type[2];
 		switch (getFunc().getFUNC_ID()) {
 		case "add":
 		case "mul":
 		case "sub":
 		case "div":
-			expectedType = IntegerType.get(); break;
+			expectedType[0] = expectedType[1] = IntegerType.get(); break;
 		case "to_number":
 		case "cat":
-			expectedType = StringType.get(); break;
+			expectedType[0] = StringType.get(); break;
+		case "attr":
+			expectedType[0] = IntegerType.get();
+			expectedType[1] = StringType.get();
+			break;
 		default:
-			expectedType = BadType.get(); break;
+			expectedType[0] = expectedType[1] = BadType.get(); break;
 		}
 
 		for (int i = 0; i < getNumArg(); ++i) {
 			Expr e = getArg(i);
-			if (e.type() != expectedType) {
-				return new ExpressionTypeError(this, i, e.type(), expectedType);
+			if (e.type() != expectedType[i]) {
+				return new ExpressionTypeError(this, i, e.type(), expectedType[i]);
 			}
 		}
 		return null;
@@ -457,6 +461,11 @@ aspect TypeInference {
 		case "cat":
 		case "to_number":
 			return StringType.get();
+		case "attr":
+			if (i == 0)
+				return IntegerType.get();
+			else
+				return StringType.get();
 		default:
 			return UnknownType.get();
 		}
@@ -514,6 +523,7 @@ aspect TypeInference {
 		case "sub":
 		case "div":
 		case "to_number":
+		case "attr":
 			t = t.join(IntegerType.get()); break;
 		case "cat":
 			t = t.join(StringType.get()); break;

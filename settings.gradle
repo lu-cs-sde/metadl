@@ -20,8 +20,6 @@ includeBuild('./deps/sppf-earley-parser/') {
 
 includeBuild('./deps/extendj') {
     dependencySubstitution {
-	substitute module('org.extendj:java5:100.100.100') with project(':java5')
-	substitute module('org.extendj:java7:100.100.100') with project(':java7')
 	substitute module('org.extendj:java8:100.100.100') with project(':java8')
     }
 }

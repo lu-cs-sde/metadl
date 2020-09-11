@@ -68,3 +68,9 @@ FunctorSymbol ::= <FUNC_ID>;
 abstract MetaPattern : CommonLiteral;
 Pattern : MetaPattern ::= <PATTERN>;
 BoundedPattern : Pattern ::= CommonVariable;
+
+/**
+   Internal AST Nodes
+**/
+InternalLiteral : Literal;
+InternalFunctor : Functor;

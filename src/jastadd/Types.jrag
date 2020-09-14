@@ -332,8 +332,9 @@ aspect TypeCheck {
 		case "div":
 			expectedType[0] = expectedType[1] = IntegerType.get(); break;
 		case "to_number":
-		case "cat":
 			expectedType[0] = StringType.get(); break;
+		case "cat":
+			expectedType[0] = expectedType[1] = StringType.get(); break;
 		case "attr":
 			expectedType[0] = IntegerType.get();
 			expectedType[1] = StringType.get();

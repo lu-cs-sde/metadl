@@ -7,7 +7,7 @@ public class CmdLineOpts {
 	private String outputFile;
 	private String inputFile;
 	private String libFile;
-	private Action action;
+	private Action action = Action.EVAL_INTERNAL;
 	private boolean warningsEnabled = false;
 
 	public enum Action {

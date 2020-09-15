@@ -134,7 +134,7 @@ aspect Eval {
 
 		java.util.List<Stratum> strata = strata(ctx);
 		dumpStrata();
-		predicateDependencyGraph().dump();
+		clauseDependencyGraph().dump();
 
 		evalEDB(ctx, opts);
 		evalIMPORT(ctx, null);
@@ -147,13 +147,15 @@ aspect Eval {
 	}
 
 	public void Program.evalParallel(CmdLineOpts opts) throws IOException {
+		// TODO: this evaluation strategy is now broken, since a relation
+		// can be defined in multiple strata.
 		EvaluationContext ctx = evalCtx();
 
 		evalEDB(ctx, opts);
 		evalIMPORT(ctx, null);
 
 		dumpStrata();
-		predicateDependencyGraph().dump();
+		clauseDependencyGraph().dump();
 
 		int hwThreads = Runtime.getRuntime().availableProcessors();
 		ExecutorService exec = Executors.newFixedThreadPool(Math.max(1, hwThreads / 2));

@@ -82,7 +82,7 @@ public interface Stratum {
 	/**
 	   Build a stratum that evaluates stmts once
 	 */
-	public static Stratum single(List<Relation2> definedRelations, List<Control> stmts, String desc) {
+	public static Stratum single(List<Control> stmts, String desc) {
 		return new Stratum() {
 			@Override public void eval() {
 				StopWatch timer = StopWatch.createStarted();

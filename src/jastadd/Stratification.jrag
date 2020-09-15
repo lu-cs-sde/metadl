@@ -9,114 +9,112 @@ import java.util.LinkedHashSet;
 import java.io.FileWriter;
 import eval.Stratum;
 import org.apache.commons.lang3.tuple.Triple;
+import org.apache.commons.text.StringEscapeUtils;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Callable;
 
 aspect Stratification {
-	public class PredicateDependencyGraph extends DefaultDirectedGraph<FormalPredicate, DefaultEdge> {
-		PredicateDependencyGraph() {
+	public class ClauseDependencyGraph extends DefaultDirectedGraph<Clause, DefaultEdge> {
+		ClauseDependencyGraph() {
 			super(DefaultEdge.class);
 		}
 
-		public void addEdge(Pair<Collection<FormalPredicate>, Collection<FormalPredicate>> es) {
-			for (FormalPredicate from : es.getLeft())
+		/**
+		   es - a pair of (defining_clauses, clause), where defining_clauses define
+		   the predicates used in clause
+		 */
+		public void addEdge(Pair<Collection<Clause>, Clause> es) {
+			Clause to = es.getRight();
+
+			addVertex(to);
+
+			for (Clause from : es.getLeft()) {
 				addVertex(from);
-			for (FormalPredicate to : es.getRight())
-				addVertex(to);
-			for (FormalPredicate from : es.getLeft()) {
-				for (FormalPredicate to : es.getRight()) {
-					addEdge(from, to);
-				}
+				addEdge(from, to);
 			}
 		}
 
 		public void dump() throws IOException {
-			DOTExporter<FormalPredicate, DefaultEdge> dotEx = new DOTExporter<>(v -> v.getPRED_ID());
+			DOTExporter<Clause, DefaultEdge> dotEx = new DOTExporter<>(c -> "\"" + StringEscapeUtils.escapeJava(c.toString()) + "\"");
 			dotEx.exportGraph(this, new FileWriter("pdg.dot"));
 
-			StrongConnectivityAlgorithm<FormalPredicate, DefaultEdge> sc =
+			StrongConnectivityAlgorithm<Clause, DefaultEdge> sc =
 				new KosarajuStrongConnectivityInspector<>(this);
 
-			DOTExporter<Graph<FormalPredicate, DefaultEdge>, DefaultEdge> dotEx2 = new DOTExporter<>();
+			DOTExporter<Graph<Clause, DefaultEdge>, DefaultEdge> dotEx2 = new DOTExporter<>();
 
 			dotEx2.exportGraph(sc.getCondensation(), new FileWriter("scc.dot"));
 		}
 	}
 
 	/**
-	   predicateDependencyGraph = a graph with vertices representing the predicates of the program and
-	   edges the data-dependencies between these predicates. The graph contains an edge P -> Q iff
+	   clauseDependencyGraph = a graph with vertices representing the clauses of the program and
+	   edges the data-dependencies between these clauses. The graph contains an edge P -> Q iff
 	   the Datalog program contains a rule ..., Q, ... :- ... , P, ... .
 	 */
-	coll PredicateDependencyGraph Program.predicateDependencyGraph() [new PredicateDependencyGraph()] with addEdge;
+	coll ClauseDependencyGraph Program.clauseDependencyGraph() [new ClauseDependencyGraph()] with addEdge;
 	coll Set<Clause> FormalPredicate.definedIn() [new LinkedHashSet<Clause>()];
 
-	syn Pair<Collection<FormalPredicate>, Collection<FormalPredicate>> Clause.pdgContribution();
+	syn Pair<Collection<Clause>, Clause> Clause.pdgContribution();
 	eq Rule.pdgContribution() {
-		Set<FormalPredicate> from = new HashSet<>();
-		Set<FormalPredicate> to = new HashSet<>();
-
-		for (CommonLiteral h : getHeadss()) {
-			if (h instanceof Literal) {
-				to.add(((Literal) h).getPredicate().formalpredicate());
-			}
-		}
+		Set<Clause> from = new HashSet<>();
 
 		for (CommonLiteral t : evalSchedule()) {
 			if (t instanceof Literal) {
-				from.add(((Literal) t).getPredicate().formalpredicate());
+				Literal l = (Literal) t;
+				FormalPredicate fp = l.getPredicate().formalpredicate();
+				for (Clause c : fp.definedIn()) {
+					from.add(c);
+				}
 			}
 		}
-		return Pair.of(from, to);
+
+		return Pair.of(from, this);
 	}
 	eq Fact.pdgContribution() {
-		Set<FormalPredicate> to = new HashSet<>();
-		for (CommonLiteral h : getHeadss()) {
-			if (h instanceof Literal) {
-				to.add(((Literal) h).getPredicate().formalpredicate());
-			}
-		}
-		return Pair.of(Collections.emptySet(), to);
+		return Pair.of(Collections.emptySet(), this);
 	}
 
-	Clause contributes pdgContribution() to Program.predicateDependencyGraph();
-	AnalyzeBlock contributes nta getExpandedClauses() to Program.predicateDependencyGraph();
+	Clause contributes pdgContribution() to Program.clauseDependencyGraph();
+	AnalyzeBlock contributes nta getExpandedClauses() to Program.clauseDependencyGraph();
 
 	Literal contributes clause() when isDef() to FormalPredicate.definedIn() for getPredicate().formalpredicate();
 	AnalyzeBlock contributes nta getExpandedClauses() to FormalPredicate.definedIn();
 
-	public static Stratum Program.genStratum(EvaluationContext ctx, PredicateDependencyGraph pdg,
-											 Graph<FormalPredicate, DefaultEdge> scc) {
-		java.util.List<FormalPredicate> orderedPreds = new ArrayList<>(scc.vertexSet());
-		Collections.sort(orderedPreds, (l, r) -> l.getPRED_ID().compareTo(r.getPRED_ID()));
+	public static Stratum Program.genStratum(EvaluationContext ctx, ClauseDependencyGraph pdg,
+											 Graph<Clause, DefaultEdge> scc) {
+		java.util.List<Clause> orderedClauses = new ArrayList<>(scc.vertexSet());
+		// sort the clauses to get a deterministic behavior, not necessary for correctness
+		Collections.sort(orderedClauses, (l, r) -> l.toString().compareTo(r.toString()));
 
-		if (orderedPreds.size() == 1 &&
-			!pdg.containsEdge(orderedPreds.get(0), orderedPreds.get(0))) {
-
-			FormalPredicate p = orderedPreds.get(0);
-			// control statements in the current stratum
-			java.util.List<Control> stmts = new ArrayList<>();
-			String desc = "";
-			for (Clause c : p.definedIn()) {
-				stmts.addAll(c.genCode(ctx, false, Collections.emptySet()));
-				desc += c.toString();
-			}
-			// the stratum contains a single predicate; if it does not depend on
+		if (orderedClauses.size() == 1 &&
+			!pdg.containsEdge(orderedClauses.get(0), orderedClauses.get(0))) {
+			// the stratum contains a single clause; if it does not depend on
 			// itself, then it's safe to evaluate all its rules only once
-			return Stratum.single(Collections.singletonList(p.relation2()), stmts, desc);
-		} else {
+			Clause c = orderedClauses.get(0);
 			// control statements in the current stratum
-			java.util.List<Control> stmts = new ArrayList<>();
-			String desc = "";
-			for (FormalPredicate p : orderedPreds) {
-				for (Clause c : p.definedIn()) {
-					stmts.addAll(c.genCode(ctx, true, scc.vertexSet()));
-					desc += c.toString();
+			java.util.List<Control> stmts = c.genCode(ctx, false, Collections.emptySet());
+			return Stratum.single(stmts, c.toString());
+		} else {
+			// collect the predicates defined in the current stratum
+			Set<FormalPredicate> definedPreds = new LinkedHashSet<>();
+			for (Clause c : orderedClauses) {
+				for (CommonLiteral l : c.getHeadss()) {
+					definedPreds.add(((Literal) l).getPredicate().formalpredicate());
 				}
 			}
-			java.util.List<Triple<Relation2, Relation2, Relation2>> rels = orderedPreds.stream()
+
+			// control statements in the current stratum
+			java.util.List<Control> stmts = new ArrayList<>();
+			String desc = "";
+			for (Clause c : orderedClauses) {
+				stmts.addAll(c.genCode(ctx, true, definedPreds));
+				desc += c.toString();
+			}
+
+			java.util.List<Triple<Relation2, Relation2, Relation2>> rels = definedPreds.stream()
 				.map(p -> Triple.of(p.relation2(),
 									p.relation2next(),
 									p.relation2delta()))
@@ -125,10 +123,10 @@ aspect Stratification {
 		}
 	}
 
-	syn lazy Graph<Graph<FormalPredicate, DefaultEdge>, DefaultEdge> Program.predicateDependencySCC() {
-		PredicateDependencyGraph pdg = predicateDependencyGraph();
+	syn lazy Graph<Graph<Clause, DefaultEdge>, DefaultEdge> Program.clauseDependencySCC() {
+		ClauseDependencyGraph pdg = clauseDependencyGraph();
 
-		StrongConnectivityAlgorithm<FormalPredicate, DefaultEdge> sca =
+		StrongConnectivityAlgorithm<Clause, DefaultEdge> sca =
 			new KosarajuStrongConnectivityInspector<>(pdg);
 
 		return sca.getCondensation();
@@ -136,13 +134,13 @@ aspect Stratification {
 
 	syn java.util.List<Stratum> Program.strata(EvaluationContext ctx) {
 		java.util.List<Stratum> strata = new ArrayList<>();
-		PredicateDependencyGraph pdg = predicateDependencyGraph();
+		ClauseDependencyGraph pdg = clauseDependencyGraph();
 
-		TopologicalOrderIterator<Graph<FormalPredicate, DefaultEdge>, DefaultEdge> it = new
-			TopologicalOrderIterator<>(predicateDependencySCC());
+		TopologicalOrderIterator<Graph<Clause, DefaultEdge>, DefaultEdge> it = new
+			TopologicalOrderIterator<>(clauseDependencySCC());
 
 		while (it.hasNext()) {
-			Graph<FormalPredicate, DefaultEdge> scc = it.next();
+			Graph<Clause, DefaultEdge> scc = it.next();
 			strata.add(genStratum(ctx, pdg, scc));
 		}
 
@@ -180,22 +178,22 @@ aspect Stratification {
 	}
 
 	syn java.util.List<ParallelStratum> Program.parallelStrata(EvaluationContext ctx, ExecutorService exec) {
-		Map<Graph<FormalPredicate, DefaultEdge>, ParallelStratum> sccToStratum = new HashMap<>();
+		Map<Graph<Clause, DefaultEdge>, ParallelStratum> sccToStratum = new HashMap<>();
 		java.util.List<ParallelStratum> initialStrata = new ArrayList<>();
 
-		PredicateDependencyGraph pdg = predicateDependencyGraph();
-		Graph<Graph<FormalPredicate, DefaultEdge>, DefaultEdge> pdSCC = predicateDependencySCC();
+		ClauseDependencyGraph pdg = clauseDependencyGraph();
+		Graph<Graph<Clause, DefaultEdge>, DefaultEdge> pdSCC = clauseDependencySCC();
 
-		TopologicalOrderIterator<Graph<FormalPredicate, DefaultEdge>, DefaultEdge> it = new
+		TopologicalOrderIterator<Graph<Clause, DefaultEdge>, DefaultEdge> it = new
 			TopologicalOrderIterator<>(pdSCC);
 
 
-		for (Graph<FormalPredicate, DefaultEdge> scc : pdSCC.vertexSet()) {
+		for (Graph<Clause, DefaultEdge> scc : pdSCC.vertexSet()) {
 			ParallelStratum s = new ParallelStratum(genStratum(ctx, pdg, scc), pdSCC.incomingEdgesOf(scc).size());
 			sccToStratum.put(scc, s);
 		}
 
-		for (Graph<FormalPredicate, DefaultEdge> scc : pdSCC.vertexSet()) {
+		for (Graph<Clause, DefaultEdge> scc : pdSCC.vertexSet()) {
 			ParallelStratum s = sccToStratum.get(scc);
 			assert s != null;
 			sccToStratum.put(scc, s);
@@ -212,19 +210,19 @@ aspect Stratification {
 		return initialStrata;
 	}
 
-	inh Graph<Graph<FormalPredicate, DefaultEdge>, DefaultEdge> FormalPredicate.predicateDependencySCC();
-	eq Program.getFormalPredicate().predicateDependencySCC() = predicateDependencySCC();
-	inh PredicateDependencyGraph FormalPredicate.predicateDependencyGraph();
-	eq Program.getFormalPredicate().predicateDependencyGraph() = predicateDependencyGraph();
+	inh Graph<Graph<Clause, DefaultEdge>, DefaultEdge> FormalPredicate.clauseDependencySCC();
+	eq Program.getFormalPredicate().clauseDependencySCC() = clauseDependencySCC();
+	inh ClauseDependencyGraph FormalPredicate.clauseDependencyGraph();
+	eq Program.getFormalPredicate().clauseDependencyGraph() = clauseDependencyGraph();
 
-	private void FormalPredicate.transitiveClosureHelper(Graph<Graph<FormalPredicate, DefaultEdge>, DefaultEdge> scc,
-														 Graph<FormalPredicate, DefaultEdge> thisSCC,
-														 LinkedHashSet<Graph<FormalPredicate, DefaultEdge>> strata) {
+	private void FormalPredicate.transitiveClosureHelper(Graph<Graph<Clause, DefaultEdge>, DefaultEdge> scc,
+														 Graph<Clause, DefaultEdge> thisSCC,
+														 LinkedHashSet<Graph<Clause, DefaultEdge>> strata) {
 		if (strata.contains(thisSCC))
 			return;
 		strata.add(thisSCC);
 		for (DefaultEdge predSCCEdge : scc.incomingEdgesOf(thisSCC)) {
-			Graph<FormalPredicate, DefaultEdge> predSCC = scc.getEdgeSource(predSCCEdge);
+			Graph<Clause, DefaultEdge> predSCC = scc.getEdgeSource(predSCCEdge);
 			transitiveClosureHelper(scc, predSCC, strata);
 		}
 	}
@@ -232,17 +230,22 @@ aspect Stratification {
 	// FormalPredicate.strata = strata that this predicate depends on, includig its own stratum;
 	// the list is sorted in topological order
 	syn java.util.List<Stratum> FormalPredicate.strata(EvaluationContext ctx) {
-		// find the SCC that contains this formal predicate
-		Graph<FormalPredicate, DefaultEdge> thisSCC =
-			predicateDependencySCC().vertexSet().stream().filter(e -> e.vertexSet().contains(this)).findFirst().get();
 
-		LinkedHashSet<Graph<FormalPredicate, DefaultEdge>> strataAsSCC = new LinkedHashSet<>();
+		LinkedHashSet<Graph<Clause, DefaultEdge>> strataAsSCC = new LinkedHashSet<>();
 
-		transitiveClosureHelper(predicateDependencySCC(),
-								thisSCC, strataAsSCC);
+		for (Clause c : definedIn()) {
+			// find the SCC that contains this clause
+			Graph<Clause, DefaultEdge> thisSCC =
+				clauseDependencySCC().vertexSet().stream().filter(e -> e.vertexSet().contains(c)).findFirst().get();
+
+			// collect all the clauses the current clause depends upon
+			transitiveClosureHelper(clauseDependencySCC(),
+									thisSCC, strataAsSCC);
+
+		}
 		LinkedList<Stratum> strata = new LinkedList<>();
 
-		strataAsSCC.forEach(scc -> strata.addFirst(Program.genStratum(ctx, predicateDependencyGraph(), scc)));
+		strataAsSCC.forEach(scc -> strata.addFirst(Program.genStratum(ctx, clauseDependencyGraph(), scc)));
 
 		return strata;
 	}

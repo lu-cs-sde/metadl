@@ -291,7 +291,7 @@ public class Compiler {
 				break;
 			case CHECK:
 				prog.dumpStrata();
-				prog.predicateDependencyGraph().dump();
+				prog.clauseDependencyGraph().dump();
 				break;
 			case GEN_HYBRID:
 				prog.evalEDB(prog.evalCtx(), opts);

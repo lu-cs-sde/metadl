@@ -190,6 +190,19 @@ public class EvaluationTest {
 							 "-e metadl");
 	}
 
+	// @DisplayName("Evaluate programs containing patterns using the parallel internal evaluator")
+	// @ParameterizedTest
+	// @MethodSource("metadlPatternTests")
+	// void evaluationTestPatternsInternalParallel(String fileName) throws Exception {
+	// 	singleEvaluationTest("./tests/output/souffle",
+	// 						 "./tests/evaluation/withimport/facts",
+	// 						 "./tests/evaluation/withimport",
+	// 						 "./tests/evaluation/withimport/expected",
+	// 						 fileName,
+	// 						 ".in",
+	// 						 "-e metadl-par");
+	// }
+
 	static Stream<String> metadlJavaTests() {
 		String[] tests = {
 			"bad-covariant-equals", "switch-no-default", "clone-idioms", "number-ctor",
@@ -259,5 +272,18 @@ public class EvaluationTest {
 							 ".mdl",
 							 "-e metadl");
 	}
+
+	// @DisplayName("Evaluate MetaDL-Java programs with the parallel internal evaluator")
+	// @ParameterizedTest
+	// @MethodSource("metadlJavaTests")
+	// void evaluationTestMetaDLJavaInternalParallel(String fileName) throws Exception {
+	// 	singleEvaluationTest("./tests/output/",
+	// 						 "./tests/evaluation/metadl-java/facts",
+	// 						 "./tests/evaluation/metadl-java",
+	// 						 "./tests/evaluation/metadl-java/expected",
+	// 						 fileName,
+	// 						 ".mdl",
+	// 						 "-e metadl");
+	// }
 
 }

@@ -8,13 +8,21 @@ class Node:
         self.kind = kind
         self.nid = nid
         self.children = dict()
+        self.attr = dict()
+        self.label = ""
 
     def addChild(self, i, c):
         self.children[i] = c
 
+    def addAttr(self, a, n):
+        self.attr[a] = n;
+
+    def setLabel(self, label):
+        self.label = label
+
     def toDotNode(self):
         s = "n" + str(self.nid) + " [label=\""
-        s += "{<kind>" + self.kind + "[" + str(self.nid) + "] | {"
+        s += "{<kind>" + self.kind + "[" + str(self.nid) + "] " + self.label + " | {"
         sorted_children = sorted(self.children.items(), key = lambda e : e[0])
 
         for idx, val in enumerate(sorted_children):
@@ -22,6 +30,7 @@ class Node:
                 s += " | "
             s += "<c" + str(val[0]) + "> " + str(val[0])
         s += "}}\"]"
+
         return s
 
     def toDotEdges(self):
@@ -31,6 +40,13 @@ class Node:
             if not first:
                 s += "; "
             s += "n" + str(self.nid) + ":c" + str(idx) + " -> n" + str(c) + ""
+            first = False
+
+        for attr, n in self.attr.items():
+            if not first:
+                s += "; ";
+            s += "n" + str(self.nid) + " -> n" + str(n) + ' [color="{}", label="{}"]' \
+                                                                    .format("red" if "type" in attr else "blue" if "decl" in attr else "green", attr)
             first = False
         return s
 
@@ -59,6 +75,8 @@ def main():
     csv_reader = csv.reader(csvf, delimiter=',')
 
     nodes = dict()
+    attrs = []
+    srcLocs = dict()
 
     for row in csv_reader:
         if row[0] != "SrcLocStart" and row[0] != "SrcLocEnd" \
@@ -71,9 +89,22 @@ def main():
                 nodes[row[1]] = n
             if int(row[2]) >= 0:
                 n.addChild(int(row[2]), int(row[3]))
+        elif row[0] == "REWRITE" or row[0].startswith("ATTR_"):
+            attrs.append((row[1], row[3], row[0]))
+        elif row[0] == "SrcLocStart":
+            srcLocs[row[1]] = row[4] + ":" + row[2] + "," + row[3];
 
         if row[0] == "Terminal":
             nodes[row[1]] = Terminal(row[1], row[4])
+
+
+    for src, tgt, attr in attrs:
+        if src in nodes:
+            nodes[src].addAttr(attr, tgt)
+
+    for n, loc in srcLocs.items():
+        if n in nodes and "Decl" in nodes[n].kind:
+            nodes[n].setLabel(loc.replace("<", "_").replace(">", "_"))
 
     # print([n.toDotNode() for n in nodes.values()])
 

@@ -1,2 +1,1 @@
-Nullary literals are not (yet) supported: F.
-Nullary literals are not (yet) supported: G.
+Unstratifiable program due to literal NOT(A(x, x)).

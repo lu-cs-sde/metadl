@@ -51,8 +51,8 @@ aspect Stratification {
 
 	/**
 	   clauseDependencyGraph = a graph with vertices representing the clauses of the program and
-	   edges the data-dependencies between these clauses. The graph contains an edge P -> Q iff
-	   the Datalog program contains a rule ..., Q, ... :- ... , P, ... .
+	   edges the data-dependencies between these clauses. The graph contains an edge C1 -> C2 iff
+	   the clause C1 defines a literal that is used by C2
 	 */
 	coll ClauseDependencyGraph Program.clauseDependencyGraph() [new ClauseDependencyGraph()] with addEdge;
 	coll Set<Clause> FormalPredicate.definedIn() [new LinkedHashSet<Clause>()];
@@ -61,12 +61,14 @@ aspect Stratification {
 	eq Rule.pdgContribution() {
 		Set<Clause> from = new HashSet<>();
 
-		for (CommonLiteral t : evalSchedule()) {
-			if (t instanceof Literal) {
-				Literal l = (Literal) t;
-				FormalPredicate fp = l.getPredicate().formalpredicate();
-				for (Clause c : fp.definedIn()) {
-					from.add(c);
+		for (CommonLiteral b : getBodys()) {
+			for (CommonLiteral t : b.evalLiteralList()) {
+				if (t instanceof Literal) {
+					Literal l = (Literal) t;
+					FormalPredicate fp = l.getPredicate().formalpredicate();
+					for (Clause c : fp.definedIn()) {
+						from.add(c);
+					}
 				}
 			}
 		}
@@ -82,6 +84,7 @@ aspect Stratification {
 
 	Literal contributes clause() when isDef() to FormalPredicate.definedIn() for getPredicate().formalpredicate();
 	AnalyzeBlock contributes nta getExpandedClauses() to FormalPredicate.definedIn();
+
 
 	public static Stratum Program.genStratum(EvaluationContext ctx, ClauseDependencyGraph pdg,
 											 Graph<Clause, DefaultEdge> scc) {
@@ -121,15 +124,6 @@ aspect Stratification {
 				.collect(Collectors.toList());
 			return Stratum.fixpoint(rels, stmts, desc);
 		}
-	}
-
-	syn lazy Graph<Graph<Clause, DefaultEdge>, DefaultEdge> Program.clauseDependencySCC() {
-		ClauseDependencyGraph pdg = clauseDependencyGraph();
-
-		StrongConnectivityAlgorithm<Clause, DefaultEdge> sca =
-			new KosarajuStrongConnectivityInspector<>(pdg);
-
-		return sca.getCondensation();
 	}
 
 	syn java.util.List<Stratum> Program.strata(EvaluationContext ctx) {
@@ -261,4 +255,52 @@ aspect Stratification {
 		}
 		f.close();
 	}
+}
+
+aspect StratificationError {
+	syn lazy Graph<Graph<Clause, DefaultEdge>, DefaultEdge> Program.clauseDependencySCC() {
+		ClauseDependencyGraph pdg = clauseDependencyGraph();
+
+		StrongConnectivityAlgorithm<Clause, DefaultEdge> sca =
+			new KosarajuStrongConnectivityInspector<>(pdg);
+
+		return sca.getCondensation();
+	}
+
+	syn lazy Map<Clause, Graph<Clause, DefaultEdge>> Program.clauseToSCCMap() {
+		Map<Clause, Graph<Clause, DefaultEdge>> clauseToSCCMap = new HashMap<>();
+		for (Graph<Clause, DefaultEdge> scc : clauseDependencySCC().vertexSet()) {
+			for (Clause c : scc.vertexSet())
+				clauseToSCCMap.put(c, scc);
+		}
+		return clauseToSCCMap;
+	}
+	inh Map<Clause, Graph<Clause, DefaultEdge>> CommonClause.clauseToSCCMap();
+	eq Program.getCommonClause().clauseToSCCMap() = clauseToSCCMap();
+	inh Map<Clause, Graph<Clause, DefaultEdge>> Clause.clauseToSCCMap();
+
+	syn Graph<Clause, DefaultEdge> Clause.getSCC() {
+		return clauseToSCCMap().get(this);
+	}
+
+	syn boolean Literal.unstratifiableNegation() {
+		if (!hasNot())
+			return false;
+		// this is a negated literal
+		FormalPredicate fp = getPredicate().formalpredicate();
+		Graph<Clause, DefaultEdge> scc = clause().getSCC();
+		for (Clause c : scc.vertexSet()) {
+			for (CommonLiteral l : c.getHeadss())
+				if (l instanceof Literal &&
+					((Literal) l).getPredicate().formalpredicate().equals(fp))
+					return true;
+		}
+
+		return false;
+	}
+
+	Literal contributes new SemanticError(this, "Unstratifiable program due to literal " + this + ".") when
+		unstratifiableNegation() to Program.semanticErrors();
+
+
 }

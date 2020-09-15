@@ -270,7 +270,7 @@ aspect PatternLang {
 
 		if (ret.isEmpty()) {
 			logger().error("Error while parsing pattern: " + getPATTERN());
-			throw new RuntimeException("Errow while parsing pattern");
+			throw new RuntimeException("Error while parsing pattern");
 		}
 
 		return new ArrayList(ret);

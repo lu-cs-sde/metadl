@@ -36,7 +36,6 @@ import lang.ast.SemanticError;
 import lang.io.FileUtil;
 import lang.io.SimpleLogger;
 import swig.SWIGUtil;
-import lang.ast.PredicateDependencyGraph;
 
 /**
  * Dumps the parsed Abstract Syntax Tree of a Calc program.

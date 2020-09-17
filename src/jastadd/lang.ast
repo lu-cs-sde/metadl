@@ -65,8 +65,7 @@ FunctorSymbol ::= <FUNC_ID>;
 /**
    Patterns
 **/
-abstract MetaPattern : CommonLiteral;
-Pattern : MetaPattern ::= <PATTERN>;
+Pattern : CommonLiteral ::= <PATTERN> /Literal/;
 BoundedPattern : Pattern ::= CommonVariable;
 
 /**

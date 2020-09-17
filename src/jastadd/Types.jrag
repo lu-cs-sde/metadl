@@ -20,6 +20,10 @@ aspect Type {
 		public Optional<Type> tryJoin(Type t) {
 			return Optional.empty();
 		}
+
+		public Type storageType() {
+			return this;
+		}
 	}
 
 	public class ASTNodeOrIntegerType extends Type {
@@ -36,6 +40,9 @@ aspect Type {
 			return Optional.empty();
 		}
 		public static ASTNodeOrIntegerType get() { return astI; }
+		@Override public Type storageType() {
+			return IntegerType.get();
+		}
 	}
 
 	public class ASTNodeType extends Type {
@@ -50,6 +57,9 @@ aspect Type {
 			return Optional.empty();
 		}
 		public static ASTNodeType get() { return astI; }
+		@Override public Type storageType() {
+			return IntegerType.get();
+		}
 	}
 
 	public class IntegerType extends Type {
@@ -415,7 +425,12 @@ aspect TypeCheck {
 }
 
 aspect TypeInference {
-	coll PredicateType FormalPredicate.initialType() [new PredicateType(realArity())] with join root Program;
+	coll PredicateType FormalPredicate.initialType() [
+													  isProgramRepresentation() ? programRepresentationType() :
+													  new PredicateType(realArity())
+													  ]
+		with join root Program;
+
 	inh int Expr.indexInLiteral();
 	eq Literal.getTerms(int i).indexInLiteral() = i;
 	eq Constraint.getExpr(int i).indexInLiteral() = -1;
@@ -438,6 +453,7 @@ aspect TypeInference {
 		when indexInLiteral() >= 0
 		to FormalPredicate.initialType()
 		for ((Literal)literal()).getPredicate().formalpredicate();
+
 
 	AnalyzeBlock contributes nta getExpandedClauses() to FormalPredicate.initialType();
 	Pattern contributes nta getLiteral() to FormalPredicate.initialType();
@@ -465,9 +481,16 @@ aspect TypeInference {
 		return current;
 	}
 
+	inh boolean Literal.isPatternLiteral();
+	eq Rule.getBody().isPatternLiteral() = false;
+	eq Clause.getHeads().isPatternLiteral() = false;
+	eq Pattern.getLiteral().isPatternLiteral() = true;
+
 	inh Type Expr.itype();
 	eq Literal.getTerms(int i).itype() {
-		if (isEDB()) {
+		if (isPatternLiteral()) {
+			return ASTNodeType.get();
+		} else if (isEDB()) {
 			switch (i) {
 			case 0: return PredicateRefType.get();
 			case 1: return StringType.get();

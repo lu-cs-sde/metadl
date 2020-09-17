@@ -14,20 +14,6 @@ import java.io.PrintStream;
 
 aspect AnalyzeBlock {
 	public class PatLang {
-		public static lang.ast.Rule implicitTypeDecl(AnalyzeContext ctx) {
-			lang.ast.List<lang.ast.CommonLiteral> head = new lang.ast.List<>();
-			lang.ast.List<lang.ast.CommonLiteral> body = new lang.ast.List<>();
-			lang.ast.List<lang.ast.Term> vars = new lang.ast.List<>();
-			vars.add(new lang.ast.StringConstant("")).add(new lang.ast.IntConstant("0")).add(new lang.ast.IntConstant("0"))
-				.add(new lang.ast.IntConstant("0")).add(new lang.ast.StringConstant("0"));
-
-			head.add(new lang.ast.Literal(new lang.ast.PredicateSymbol(ctx.progRelName), vars));
-			body.add(Constructors.NEQ(new lang.ast.IntConstant("0"),
-									  new lang.ast.IntConstant("0")));
-
-			return new lang.ast.Rule(head, body);
-		}
-
 		/**
 		   Build a rule of the shape:
 		   $name(n_id, v) :- P($nodeKind, n_id, idx, t_id, _), P("Terminal", t_id, _, _, v).

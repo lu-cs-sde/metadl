@@ -98,7 +98,7 @@ public class RelationWrapper implements TupleInserter {
 	}
 
 	public long internalizeObject(Object obj, int i) {
-		if (type.get(i) == IntegerType.get()) {
+		if (type.get(i).storageType() == IntegerType.get()) {
 			if (obj instanceof Long) {
 				return (Long)obj;
 			} else if (obj instanceof Integer) {
@@ -106,13 +106,13 @@ public class RelationWrapper implements TupleInserter {
 			} else if (obj instanceof IntConstant) {
 				return Long.parseLong(((IntConstant) obj).getNUMERAL());
 			}
-		} else if (type.get(i) == StringType.get()) {
+		} else if (type.get(i).storageType() == StringType.get()) {
 			if (obj instanceof String) {
 				return ctx.internalizeString((String) obj);
 			} else if (obj instanceof StringConstant) {
 				return ctx.internalizeString(((StringConstant) obj).getSTRING());
 			}
-		} else if (type.get(i) == PredicateRefType.get()) {
+		} else if (type.get(i).storageType() == PredicateRefType.get()) {
 			if (obj instanceof PredicateRef) {
 				return ctx.internalizeString(((PredicateRef) obj).getPRED_ID());
 			}
@@ -159,13 +159,13 @@ public class RelationWrapper implements TupleInserter {
 		Tuple t = new Tuple(rel.arity());
 
 		for (int i = 0; i < w.t.arity(); ++i) {
-			if (type.get(i) != w.type.get(i))
+			if (type.get(i).storageType() != w.type.get(i).storageType())
 				throw new RuntimeException("Type mismatch between inserted tuple and relation at component " + i + ".");
-			if (type.get(i) == IntegerType.get()) {
+			if (type.get(i).storageType() == IntegerType.get()) {
 				t.set(i, w.t.get(i));
 			} else {
-				assert type.get(i) == StringType.get() ||
-					type.get(i) == PredicateRefType.get();
+				assert type.get(i).storageType() == StringType.get() ||
+					type.get(i).storageType() == PredicateRefType.get();
 				t.set(i, ctx.internalizeString(w.ctx.externalizeString(w.t.get(i))));
 			}
 		}

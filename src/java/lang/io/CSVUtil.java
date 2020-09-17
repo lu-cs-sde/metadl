@@ -44,12 +44,12 @@ public class CSVUtil {
 
 			Tuple tup = new Tuple(rel.arity());
 			for (int i = 0; i < line.length; ++i) {
-				if (t.get(i) == IntegerType.get()) {
+				if (t.get(i).storageType() == IntegerType.get()) {
 					tup.set(i, Long.parseLong(line[i]));
-				} else if (t.get(i) == StringType.get()) {
+				} else if (t.get(i).storageType() == StringType.get()) {
 					tup.set(i, ctx.internalizeString(line[i]));
 				} else {
-					assert t.get(i) == PredicateRefType.get();
+					assert t.get(i).storageType() == PredicateRefType.get();
 					if (line[i].isEmpty() || line[i].charAt(0) != '\'') {
 						throw new RuntimeException("Invalid CSV entry for PredicateRefType");
 					}
@@ -77,12 +77,12 @@ public class CSVUtil {
 		String[] line = new String[t.arity()];
 		for (Tuple tup : rel.tuples()) {
 			for (int i = 0; i < t.arity(); ++i) {
-				if (t.get(i) == IntegerType.get()) {
+				if (t.get(i).storageType() == IntegerType.get()) {
 					line[i] = Long.toString(tup.get(i));
-				} else if (t.get(i) == StringType.get()) {
+				} else if (t.get(i).storageType() == StringType.get()) {
 					line[i] = ctx.externalizeString(tup.get(i));
 				} else {
-					assert t.get(i) == PredicateRefType.get();
+					assert t.get(i).storageType() == PredicateRefType.get();
 					line[i] = "'" + ctx.externalizeString(tup.get(i));
 				}
 

@@ -70,19 +70,33 @@ aspect PatternLang {
 		return null;
 	}
 
+	private String PredicateSymbol.contextPredicateName = null;
+	public Optional<String> PredicateSymbol.getContextPredicateName() {
+		return contextPredicateName != null ?
+			Optional.of(contextPredicateName) : Optional.empty();
+	}
 	rewrite PredicateSymbol {
 		when (enclosingAnalyzeBlock() != null &&
 			  enclosingAnalyzeBlock().translatePredicateName(getPRED_ID()) != null)
 			to PredicateSymbol {
-			return new PredicateSymbol(enclosingAnalyzeBlock().translatePredicateName(getPRED_ID()));
+			PredicateSymbol ps = new PredicateSymbol(enclosingAnalyzeBlock().translatePredicateName(getPRED_ID()));
+			ps.contextPredicateName = getPRED_ID();
+			return ps;
 		}
 	}
 
+	private String PredicateRef.contextPredicateName = null;
+	public Optional<String> PredicateRef.getContextPredicateName() {
+		return contextPredicateName != null ?
+			Optional.of(contextPredicateName) : Optional.empty();
+	}
 	rewrite PredicateRef {
 		when (enclosingAnalyzeBlock() != null &&
 			  enclosingAnalyzeBlock().translatePredicateName(getPRED_ID()) != null)
 			to PredicateRef {
-			return new PredicateRef(enclosingAnalyzeBlock().translatePredicateName(getPRED_ID()));
+			PredicateRef pr = new PredicateRef(enclosingAnalyzeBlock().translatePredicateName(getPRED_ID()));
+			pr.contextPredicateName = getPRED_ID();
+			return pr;
 		}
 	}
 
@@ -311,5 +325,33 @@ aspect PatternLang {
 		Symbol buildAST(final ParseTree t, final java.util.List<Symbol> symbols);
 		Grammar getGrammar();
 		EarleyParser getParser();
+	}
+
+	inh boolean PredicateRef.isProgramRepresentation();
+	eq AnalyzeBlock.getProgramRef().isProgramRepresentation() = true;
+	eq Literal.getTerms(int i).isProgramRepresentation() {
+		if (i == 0 && isIMPORT())
+			return true;
+		return false;
+	}
+	eq Constraint.getExpr().isProgramRepresentation() = false;
+
+	syn lazy boolean FormalPredicate.isProgramRepresentation() {
+		for (PredicateRef ref : predicateRefs()) {
+			if (ref.isProgramRepresentation())
+				return true;
+		}
+		return false;
+	}
+
+	private static PredicateType FormalPredicate.programRepresentationType() {
+		PredicateType ptype = new PredicateType(5);
+		ptype.joinAt(0, StringType.get());
+		ptype.joinAt(1, ASTNodeType.get());
+		ptype.joinAt(2, IntegerType.get());
+		// For SrcLoc, this is an Int, otherwise it is an ASTNode
+		ptype.joinAt(3, ASTNodeOrIntegerType.get());
+		ptype.joinAt(4, StringType.get());
+		return ptype;
 	}
 }

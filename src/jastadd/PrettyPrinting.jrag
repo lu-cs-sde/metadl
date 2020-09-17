@@ -328,7 +328,7 @@ aspect SoufflePrinting {
         ArrayList<PredicateSymbol> constants = new ArrayList<PredicateSymbol>();
         for(int i = 0; i != realArity(); ++i) {
 			Type t = type().get(i);
-			String souffleType = t == IntegerType.get() ? "number" : "symbol";
+			String souffleType = t.storageType() == IntegerType.get() ? "number" : "symbol";
             constants.add(new PredicateSymbol("x_" + i + ":" + souffleType));
         }
         printCollection(constants, "", "", ", ", pr);

@@ -18,6 +18,7 @@ public class CmdLineOpts {
 		EVAL_HYBRID,
 		PRETTY_SOUFFLE,
 		PRETTY_INTERNAL,
+		PRETTY_TYPES,
 		GEN_HYBRID,
 		CHECK
 	}

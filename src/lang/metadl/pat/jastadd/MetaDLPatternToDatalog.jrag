@@ -30,26 +30,34 @@ aspect LanguageSpecific {
 		return Collections.singletonList(getVAR_ID());
 	}
 
-	public static java.util.List<lang.ast.Clause> PatLang.generateHelperRelations(AnalyzeContext ctx) {
+	public static java.util.List<lang.ast.Clause> PatLang.generateHelperRelations(AnalyzeContext ctx, Set<String> used) {
 		java.util.List<lang.ast.Clause> ret = new java.util.ArrayList<>();
 
 		// Add two new rules, to map variables and predicates to their predicates
-		ret.add(makeIdentifierRule(ctx, "Variable", "ID", 0, null));
-		ret.add(makeIdentifierRule(ctx, "PredicateSymbol", "ID", 0, null));
-		ret.add(makeIdentifierRule(ctx, "FunctorSymbol", "ID", 0, null));
-		ret.add(makeIdentifierRule(ctx, "IntConstant", "INT", 0, "to_number"));
-		ret.add(makeIdentifierRule(ctx, "StringConstant", "STR", 0, null));
-		ret.add(makeIdentifierRule(ctx, "PredicateRef", "REF", 0, null));
+		if (used.contains("ID")) {
+			ret.add(makeIdentifierRule(ctx, "Variable", "ID", 0, null));
+			ret.add(makeIdentifierRule(ctx, "PredicateSymbol", "ID", 0, null));
+			ret.add(makeIdentifierRule(ctx, "FunctorSymbol", "ID", 0, null));
+		}
+		if (used.contains("INT"))
+			ret.add(makeIdentifierRule(ctx, "IntConstant", "INT", 0, "to_number"));
+		if (used.contains("STR"))
+			ret.add(makeIdentifierRule(ctx, "StringConstant", "STR", 0, null));
+		if (used.contains("REF"))
+			ret.add(makeIdentifierRule(ctx, "PredicateRef", "REF", 0, null));
 
 		// Insert a relation to represent the source location of the node
 		// represented by a metavariable
-		ret.add(makeSrcInfoRule(ctx));
+		if (used.contains("SRC"))
+			ret.add(makeSrcInfoRule(ctx));
 
 		// Insert a relation to map nodes to their position inside a list
-		ret.add(makeIndexRule(ctx));
+		if (used.contains("INDEX"))
+			ret.add(makeIndexRule(ctx));
 
 		// Insert a relation to map nodes to their children
-		ret.add(makeParentRule(ctx));
+		if (used.contains("PARENT"))
+			ret.add(makeParentRule(ctx));
 
 		// Insert a rule for declaring a node's supertypes
 		ret.addAll(makeSuperTypeRelation(ctx));
@@ -73,4 +81,30 @@ aspect LanguageSpecific {
 		return ctx. scopePrefix + s;
 	}
 
+	public static lang.ast.PredicateType PatLang.contextPredicateType(String predName) {
+		switch (predName) {
+		case "INT":
+			return new lang.ast.PredicateType(lang.ast.ASTNodeType.get(),
+											  lang.ast.IntegerType.get());
+		case "STR":
+		case "ID":
+		case "REF":
+			return new lang.ast.PredicateType(lang.ast.ASTNodeType.get(),
+											  lang.ast.StringType.get());
+		case "SRC":
+			return new lang.ast.PredicateType(lang.ast.ASTNodeType.get(),
+											  lang.ast.IntegerType.get(),
+											  lang.ast.IntegerType.get(),
+											  lang.ast.IntegerType.get(),
+											  lang.ast.IntegerType.get(),
+											  lang.ast.StringType.get());
+		case "INDEX":
+			return new lang.ast.PredicateType(lang.ast.ASTNodeType.get(),
+											  lang.ast.IntegerType.get());
+		case "PARENT":
+			return new  lang.ast.PredicateType(lang.ast.ASTNodeType.get(),
+											   lang.ast.ASTNodeType.get());
+		default: return null;
+		}
+	}
 }

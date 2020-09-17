@@ -129,6 +129,13 @@ aspect Type {
 				types.add(UnknownType.get());
 		}
 
+		public PredicateType(Type ... components) {
+			types = new ArrayList<>();
+			for (int i = 0; i < components.length; ++i) {
+				types.add(components[i]);
+			}
+		}
+
 		@Override public String toString() {
 			StringBuilder sb = new StringBuilder();
 			sb.append("(");
@@ -425,11 +432,16 @@ aspect TypeCheck {
 }
 
 aspect TypeInference {
-	coll PredicateType FormalPredicate.initialType() [
-													  isProgramRepresentation() ? programRepresentationType() :
-													  new PredicateType(realArity())
-													  ]
-		with join root Program;
+	private PredicateType FormalPredicate.initialTypeInternal() {
+		if (isProgramRepresentation())
+			return programRepresentationType();
+		PredicateType ptype = getContextPredicateType();
+		if (ptype != null)
+			return ptype;
+		return new PredicateType(realArity());
+	}
+
+	coll PredicateType FormalPredicate.initialType() [initialTypeInternal()] with join root Program;
 
 	inh int Expr.indexInLiteral();
 	eq Literal.getTerms(int i).indexInLiteral() = i;
@@ -490,7 +502,12 @@ aspect TypeInference {
 	eq Literal.getTerms(int i).itype() {
 		if (isPatternLiteral()) {
 			return ASTNodeType.get();
-		} else if (isEDB()) {
+		} /* else if (getPredicate().getContextPredicateName() != null) {
+			// this is a context predicate
+			AnalyzeBlock aBlock = enclosingAnalyzeBlock();
+			PredicateType pType = aBlock.contextPredicateType(getPredicate().getContextPredicateName());
+			return pType.get(i);
+		} */ else if (isEDB()) {
 			switch (i) {
 			case 0: return PredicateRefType.get();
 			case 1: return StringType.get();
@@ -558,7 +575,12 @@ aspect TypeInference {
 
 		if (indexInLiteral() >= 0) {
 			Literal l = (Literal) literal();
-			t = t.join(l.getPredicate().formalpredicate().type().get(indexInLiteral()));
+			if (l.getPredicate().formalpredicate().isProgramRepresentation()) {
+				// all literals that refer to the program representation have the correct
+				// type, so don't change that.
+			} else {
+				t = t.join(l.getPredicate().formalpredicate().type().get(indexInLiteral()));
+			}
 		}
 
 		return t;
@@ -600,5 +622,11 @@ aspect TypeInference {
 
 	eq PredicateRef.type() {
 		return PredicateRefType.get();
+	}
+
+	public void Program.dumpTypes(PrintStream ps) {
+		for (FormalPredicate fp : getFormalPredicateList()) {
+			ps.println(fp.getPRED_ID() + " : " + fp.type().toString());
+		}
 	}
 }

@@ -96,44 +96,63 @@ aspect LanguageSpecific {
 		return ret;
 	}
 
-	public static java.util.List<lang.ast.Clause> PatLang.generateHelperRelations(AnalyzeContext ctx) {
+	public static java.util.List<lang.ast.Clause> PatLang.generateHelperRelations(AnalyzeContext ctx, Set<String> used) {
 		java.util.List<lang.ast.Clause> ret = new java.util.ArrayList<>();
 		// Identifiers
-		ret.add(makeIdentifierRule(ctx, "IdUse", "ID", 0, null));
-		ret.add(makeIdentifierRule(ctx, "ParseName", "ID", 0, null));
-		ret.add(makeIdentifierRule(ctx, "EnumConstant", "ID", 3, null));
-		ret.add(makeIdentifierRule(ctx, "FieldDeclarator", "ID", 2, null));
-		ret.add(makeIdentifierRule(ctx, "VariableDeclarator", "ID", 2, null));
-		ret.add(makeTerminalToIdentifierRule(ctx, "ID"));
+		if (used.contains("ID")) {
+			ret.add(makeIdentifierRule(ctx, "IdUse", "ID", 0, null));
+			ret.add(makeIdentifierRule(ctx, "ParseName", "ID", 0, null));
+			ret.add(makeIdentifierRule(ctx, "EnumConstant", "ID", 3, null));
+			ret.add(makeIdentifierRule(ctx, "FieldDeclarator", "ID", 2, null));
+			ret.add(makeIdentifierRule(ctx, "VariableDeclarator", "ID", 2, null));
+			ret.add(makeTerminalToIdentifierRule(ctx, "ID"));
+		}
 		// Modifiers
-		ret.add(makeIdentifierRule(ctx, "Modifier", "MOD", 0, null));
+		if (used.contains("MOD"))
+			ret.add(makeIdentifierRule(ctx, "Modifier", "MOD", 0, null));
 		// Literals
-		ret.add(makeIdentifierRule(ctx, "CharacterLiteral", "CHAR", 0, null));
-		ret.add(makeIdentifierRule(ctx, "BooleanLiteral", "BOOLEAN", 0, null));
-		ret.add(makeIdentifierRule(ctx, "StringLiteral", "STRING", 0, null));
-		ret.add(makeIdentifierRule(ctx, "NullLiteral", "NULL", 0, null));
-		ret.add(makeIdentifierRule(ctx, "IntegerLiteral", "INT", 0, null));
-		ret.add(makeIdentifierRule(ctx, "LongLiteral", "LONG", 0, null));
-		ret.add(makeIdentifierRule(ctx, "FloatingPointLiteral", "FLOAT", 0, null));
-		ret.add(makeIdentifierRule(ctx, "DoubleLiteral", "DOUBLE", 0, null));
+		if (used.contains("CHAR"))
+			ret.add(makeIdentifierRule(ctx, "CharacterLiteral", "CHAR", 0, null));
+		if (used.contains("BOOLEAN"))
+			ret.add(makeIdentifierRule(ctx, "BooleanLiteral", "BOOLEAN", 0, null));
+		if (used.contains("STRING"))
+			ret.add(makeIdentifierRule(ctx, "StringLiteral", "STRING", 0, null));
+		if (used.contains("NULL"))
+			ret.add(makeIdentifierRule(ctx, "NullLiteral", "NULL", 0, null));
+		if (used.contains("INT"))
+			ret.add(makeIdentifierRule(ctx, "IntegerLiteral", "INT", 0, null));
+		if (used.contains("LONG"))
+			ret.add(makeIdentifierRule(ctx, "LongLiteral", "LONG", 0, null));
+		if (used.contains("FLOAT"))
+			ret.add(makeIdentifierRule(ctx, "FloatingPointLiteral", "FLOAT", 0, null));
+		if (used.contains("DOUBLE"))
+			ret.add(makeIdentifierRule(ctx, "DoubleLiteral", "DOUBLE", 0, null));
 		// Insert a relation to represent the source location of the node
 		// represented by a metavariable
-		ret.add(makeSrcInfoRule(ctx));
+		if (used.contains("SRC"))
+			ret.add(makeSrcInfoRule(ctx));
 		// Insert a relation to map nodes to their position inside a list
-		ret.add(makeIndexRule(ctx));
+		if (used.contains("INDEX"))
+			ret.add(makeIndexRule(ctx));
 		// Insert a relation to map nodes to their children
-		ret.add(makeParentRule(ctx));
+		if (used.contains("PARENT"))
+			ret.add(makeParentRule(ctx));
 		// Insert a relation to check existence of nodes
-		ret.add(makeExistsRule(ctx));
+		if (used.contains("EXISTS"))
+			ret.add(makeExistsRule(ctx));
 		// Insert predicates that expose ExtendJ attributes
-		ret.addAll(makeRewriteMap(ctx));
+		if (used.contains("TYPE") || used.contains("GENERIC") || used.contains("DECL"))
+			ret.addAll(makeRewriteMap(ctx));
 		// Insert the TYPE relation
-		ret.add(makeTypeRule(ctx));
+		if (used.contains("TYPE"))
+			ret.add(makeTypeRule(ctx));
 		// Insert the DECL relation
-		ret.add(makeDeclRule(ctx));
+		if (used.contains("DECL"))
+			ret.add(makeDeclRule(ctx));
 		// Insert the GENERIC rule, map a concrete instance of a generic type
 		// to the declaration of the generic type.
-		ret.add(makeGenericRule(ctx));
+		if (used.contains("GENERIC"))
+			ret.add(makeGenericRule(ctx));
 		// Insert a rule for declaring a node's supertypes
 		ret.addAll(makeSuperTypeRelation(ctx));
 		return ret;
@@ -154,8 +173,8 @@ aspect LanguageSpecific {
 		case "DOUBLE":
 		case "SRC":
 		case "INDEX":
-		case "PARENT":
 		case "EXISTS":
+		case "PARENT":
 		case "TYPE":
 		case "DECL":
 		case "GENERIC":
@@ -165,9 +184,39 @@ aspect LanguageSpecific {
 		return ctx. scopePrefix + s;
 	}
 
-	// eq MemberClassDecl.isWrapperNode() = true;
-	// eq MemberInterfaceDecl.isWrapperNode() = true;
-	// eq InstanceInitializer.isWrapperNode() = true;
-	// eq LocalClassDeclStmt.isWrapperNode() = true;
-	// eq ExprStmt.isWrapperNode() = true;
+	public static lang.ast.PredicateType PatLang.contextPredicateType(String predName) {
+		switch (predName) {
+		case "ID":
+		case "MOD":
+		case "CHAR":
+		case "BOOLEAN":
+		case "STRING":
+		case "NULL":
+		case "INT":
+		case "LONG":
+		case "FLOAT":
+		case "DOUBLE":
+			return new lang.ast.PredicateType(lang.ast.ASTNodeType.get(),
+											  lang.ast.StringType.get());
+		case "SRC":
+			return new lang.ast.PredicateType(lang.ast.ASTNodeType.get(),
+											  lang.ast.IntegerType.get(),
+											  lang.ast.IntegerType.get(),
+											  lang.ast.IntegerType.get(),
+											  lang.ast.IntegerType.get(),
+											  lang.ast.StringType.get());
+		case "INDEX":
+			return new lang.ast.PredicateType(lang.ast.ASTNodeType.get(),
+											  lang.ast.IntegerType.get());
+		case "EXISTS":
+		case "PARENT":
+		case "TYPE":
+		case "DECL":
+		case "GENERIC":
+			return new lang.ast.PredicateType(lang.ast.ASTNodeType.get(),
+											  lang.ast.ASTNodeType.get());
+		default:
+			return null;
+		}
+	}
 }

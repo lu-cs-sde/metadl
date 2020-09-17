@@ -294,7 +294,7 @@ aspect Expression {
 }
 
 aspect FormalPredicate {
-	syn List Program.getFormalPredicateList() {
+	syn nta List<FormalPredicate> Program.getFormalPredicateList() {
 		List list = new List();
 		for(PredicateInterface pred : uniquePredicateSymbols()) {
 			if(!pred.isRef()) {

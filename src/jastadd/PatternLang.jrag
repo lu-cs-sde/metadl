@@ -63,17 +63,26 @@ aspect PatternLang {
 	public java.util.List<lang.ast.Clause> AnalyzeBlock.generateHelperRelations() {
 		switch (getLang().getSTRING()) {
 		case "metadl":
-			return lang.metadl.pat.ast.PatLang.generateHelperRelations(getContext());
+			return lang.metadl.pat.ast.PatLang.generateHelperRelations(getContext(), usedContextPredicates());
 		case "java8":
-			return lang.java8.pat.ast.PatLang.generateHelperRelations(getContext());
+			return lang.java8.pat.ast.PatLang.generateHelperRelations(getContext(), usedContextPredicates());
+		}
+		return null;
+	}
+
+	public PredicateType AnalyzeBlock.contextPredicateType(String predName) {
+		switch (getLang().getSTRING()) {
+		case "metadl":
+			return lang.metadl.pat.ast.PatLang.contextPredicateType(predName);
+		case "java8":
+			return lang.java8.pat.ast.PatLang.contextPredicateType(predName);
 		}
 		return null;
 	}
 
 	private String PredicateSymbol.contextPredicateName = null;
-	public Optional<String> PredicateSymbol.getContextPredicateName() {
-		return contextPredicateName != null ?
-			Optional.of(contextPredicateName) : Optional.empty();
+	public String PredicateSymbol.getContextPredicateName() {
+		return contextPredicateName;
 	}
 	rewrite PredicateSymbol {
 		when (enclosingAnalyzeBlock() != null &&
@@ -86,9 +95,8 @@ aspect PatternLang {
 	}
 
 	private String PredicateRef.contextPredicateName = null;
-	public Optional<String> PredicateRef.getContextPredicateName() {
-		return contextPredicateName != null ?
-			Optional.of(contextPredicateName) : Optional.empty();
+	public String PredicateRef.getContextPredicateName() {
+		return contextPredicateName;
 	}
 	rewrite PredicateRef {
 		when (enclosingAnalyzeBlock() != null &&
@@ -354,4 +362,19 @@ aspect PatternLang {
 		ptype.joinAt(4, StringType.get());
 		return ptype;
 	}
+
+	syn PredicateType FormalPredicate.getContextPredicateType() {
+		for (PredicateSymbol ps : predicates()) {
+			if (ps.getContextPredicateName() != null) {
+				PredicateType ptype = ps.enclosingAnalyzeBlock().contextPredicateType(ps.getContextPredicateName());
+				if (ptype != null)
+					return ptype;
+			}
+		}
+		return null;
+	}
+
+	coll Set<String> AnalyzeBlock.usedContextPredicates() [new HashSet<String>()] root AnalyzeBlock;
+	PredicateSymbol contributes getContextPredicateName() when
+		getContextPredicateName() != null to AnalyzeBlock.usedContextPredicates();
 }

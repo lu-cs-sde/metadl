@@ -218,6 +218,8 @@ public class Compiler {
 					ret.setAction(Action.PRETTY_SOUFFLE);
 				} else if (cmd.getOptionValue("p").equals("metadl")) {
 					ret.setAction(Action.PRETTY_INTERNAL);
+				} else if (cmd.getOptionValue("p").equals("types")) {
+					ret.setAction(Action.PRETTY_TYPES);
 				} else {
 					System.err.println("Invalid argument to '--pretty-print' option");
 					printHelp(options);
@@ -284,6 +286,9 @@ public class Compiler {
 			case PRETTY_INTERNAL:
 				StandardPrettyPrinter<Program> spp = new StandardPrettyPrinter<>(new PrintStream(System.out));
 				spp.prettyPrint(prog);
+				break;
+			case PRETTY_TYPES:
+				prog.dumpTypes(System.out);
 				break;
 			case EVAL_IMPORT:
 				prog.generateObjectProgramRelations(opts);

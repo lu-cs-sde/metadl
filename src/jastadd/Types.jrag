@@ -427,8 +427,6 @@ aspect TypeCheck {
 	BinaryIntegerConstraint contributes typeError() when (typeError() != null) to Program.typeErrors();
 	BINDLiteral contributes typeError() when (typeError() != null) to Program.typeErrors();
 	Literal contributes typeError() when (typeError() != null) to Program.typeErrors();
-	Pattern contributes nta getLiteral() to Program.typeErrors();
-	AnalyzeBlock contributes nta getExpandedClauses() to Program.typeErrors();
 }
 
 aspect TypeInference {
@@ -466,11 +464,6 @@ aspect TypeInference {
 		to FormalPredicate.initialType()
 		for ((Literal)literal()).getPredicate().formalpredicate();
 
-
-	AnalyzeBlock contributes nta getExpandedClauses() to FormalPredicate.initialType();
-	Pattern contributes nta getLiteral() to FormalPredicate.initialType();
-
-
 	syn PredicateType FormalPredicate.type() circular [initialType()];
 	eq FormalPredicate.type() {
 		PredicateType current = type();
@@ -507,12 +500,7 @@ aspect TypeInference {
 	eq Literal.getTerms(int i).itype() {
 		if (isPatternLiteral()) {
 			return ASTNodeType.get();
-		} /* else if (getPredicate().getContextPredicateName() != null) {
-			// this is a context predicate
-			AnalyzeBlock aBlock = enclosingAnalyzeBlock();
-			PredicateType pType = aBlock.contextPredicateType(getPredicate().getContextPredicateName());
-			return pType.get(i);
-		} */ else if (isEDB()) {
+		} else if (isEDB()) {
 			switch (i) {
 			case 0: return PredicateRefType.get();
 			case 1: return StringType.get();

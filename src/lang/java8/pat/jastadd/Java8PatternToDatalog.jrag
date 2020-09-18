@@ -209,12 +209,15 @@ aspect LanguageSpecific {
 			return new lang.ast.PredicateType(lang.ast.ASTNodeType.get(),
 											  lang.ast.IntegerType.get());
 		case "EXISTS":
+			return new lang.ast.PredicateType(lang.ast.ASTNodeType.get());
 		case "PARENT":
+			return new lang.ast.PredicateType(lang.ast.ASTNodeType.get(),
+											  lang.ast.ASTNodeType.get());
 		case "TYPE":
 		case "DECL":
 		case "GENERIC":
 			return new lang.ast.PredicateType(lang.ast.ASTNodeType.get(),
-											  lang.ast.ASTNodeType.get());
+											  lang.ast.ExtASTNodeType.get());
 		default:
 			return null;
 		}

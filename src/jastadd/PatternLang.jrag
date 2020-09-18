@@ -357,8 +357,7 @@ aspect PatternLang {
 		ptype.joinAt(0, StringType.get());
 		ptype.joinAt(1, ASTNodeType.get());
 		ptype.joinAt(2, IntegerType.get());
-		// For SrcLoc, this is an Int, otherwise it is an ASTNode
-		ptype.joinAt(3, ASTNodeOrIntegerType.get());
+		ptype.joinAt(3, ASTNodeType.get());
 		ptype.joinAt(4, StringType.get());
 		return ptype;
 	}

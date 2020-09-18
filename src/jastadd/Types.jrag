@@ -26,25 +26,6 @@ aspect Type {
 		}
 	}
 
-	public class ASTNodeOrIntegerType extends Type {
-		private static ASTNodeOrIntegerType astI = new ASTNodeOrIntegerType();
-		private ASTNodeOrIntegerType() { super(); }
-		@Override public String name() {
-			return "ASTNodeOrInteger";
-		}
-		@Override public Optional<Type> tryJoin(Type t) {
-			if (t == ASTNodeType.get())
-				return Optional.of(this);
-			if (t == IntegerType.get())
-				return Optional.of(this);
-			return Optional.empty();
-		}
-		public static ASTNodeOrIntegerType get() { return astI; }
-		@Override public Type storageType() {
-			return IntegerType.get();
-		}
-	}
-
 	public class ASTNodeType extends Type {
 		private static ASTNodeType astI = new ASTNodeType();
 		private ASTNodeType() { super(); }
@@ -53,10 +34,29 @@ aspect Type {
 		}
 		@Override public Optional<Type> tryJoin(Type t) {
 			if (t == IntegerType.get())
-				return Optional.of(ASTNodeOrIntegerType.get());
+				return Optional.of(ASTNodeType.get());
 			return Optional.empty();
 		}
 		public static ASTNodeType get() { return astI; }
+		@Override public Type storageType() {
+			return IntegerType.get();
+		}
+	}
+
+	public class ExtASTNodeType extends Type {
+		private static ExtASTNodeType astI = new ExtASTNodeType();
+		private ExtASTNodeType() { super(); }
+		@Override public String name() {
+			return "ExtASTNode";
+		}
+		@Override public Optional<Type> tryJoin(Type t) {
+			if (t == IntegerType.get())
+				return Optional.of(ExtASTNodeType.get());
+			if (t == ASTNodeType.get())
+				return Optional.of(ExtASTNodeType.get());
+			return Optional.empty();
+		}
+		public static ExtASTNodeType get() { return astI; }
 		@Override public Type storageType() {
 			return IntegerType.get();
 		}
@@ -474,6 +474,11 @@ aspect TypeInference {
 	syn PredicateType FormalPredicate.type() circular [initialType()];
 	eq FormalPredicate.type() {
 		PredicateType current = type();
+
+		if (isProgramRepresentation())
+			return current;
+		if (getContextPredicateType() != null)
+			return current;
 		for (PredicateSymbol ps : predicates()) {
 			Literal a = ps.parentLiteral();
 			Clause c = a.clause();

@@ -9,4 +9,4 @@
 	url = git@git.cs.lth.se:al7330du/sppf-earley-parser.git
 [submodule "deps/extendj"]
 	path = deps/extendj
-	url = https://bitbucket.org/extendj/extendj.git
+	url = git@git.cs.lth.se:al7330du/extendj.git

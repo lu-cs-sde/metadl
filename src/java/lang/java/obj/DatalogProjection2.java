@@ -14,9 +14,10 @@ import java.util.Set;
 import java.util.function.Consumer;
 
 import org.apache.commons.lang3.time.StopWatch;
-import org.extendj.ast.ASTNode;
-
 import org.apache.commons.lang3.tuple.Pair;
+
+import org.extendj.ast.ASTNode;
+import org.extendj.ProvenanceStackMachine;
 
 import lang.io.SimpleLogger;
 import lang.io.StringUID;
@@ -70,6 +71,8 @@ public class DatalogProjection2 {
 		attributeMapTime.stop();
 		SimpleLogger.logger().time("Object AST initial traversal: " + traverseTime.getTime() + "ms");
 		SimpleLogger.logger().time("Attribute tabulation: " + attributeMapTime.getTime() + "ms");
+
+		// System.out.println(((org.extendj.ast.Program) root).provenance);
 	}
 
 
@@ -87,6 +90,7 @@ public class DatalogProjection2 {
 				String attributeName = attrRelPair.getLeft();
 				String relName = attrRelPair.getRight();
 				ASTNode<?> r = nodeAttribute(n, attributeName);
+				System.out.println(nodeId(n) + ", " + attributeName + " : " + attrProvenance(n, attributeName));
 
 				if (r == null)
 					continue;
@@ -221,6 +225,11 @@ public class DatalogProjection2 {
 		} catch (ClassCastException e) {
 			return null;
 		}
+	}
+
+	private Set<String> attrProvenance(ASTNode<?> n, String attrName) {
+		ProvenanceStackMachine prov = ((org.extendj.ast.Program) root).provenance;
+		return prov.getSources();
 	}
 
 	private List<String> tokens(ASTNode<?> n) {

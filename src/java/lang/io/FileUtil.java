@@ -75,6 +75,8 @@ public class FileUtil {
 									   java.util.List<String> locs) throws IOException {
 		org.extendj.ast.Program p = new org.extendj.ast.Program();
 
+		p.trace().setReceiver(p.provenance);
+
 		// Set the path to the Java runtime
 		String bootCP = System.getenv().get("METADL_JAVA_RT");
 		if (bootCP != null)

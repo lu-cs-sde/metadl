@@ -354,12 +354,11 @@ aspect PatternLang {
 	}
 
 	private static PredicateType FormalPredicate.programRepresentationType() {
-		PredicateType ptype = new PredicateType(5);
-		ptype.joinAt(0, StringType.get());
-		ptype.joinAt(1, ASTNodeType.get());
-		ptype.joinAt(2, IntegerType.get());
-		ptype.joinAt(3, ASTNodeType.get());
-		ptype.joinAt(4, StringType.get());
+		PredicateType ptype = new PredicateType(StringType.get(),
+												ASTNodeType.get(),
+												IntegerType.get(),
+												ASTNodeType.get(),
+												StringType.get());
 		return ptype;
 	}
 

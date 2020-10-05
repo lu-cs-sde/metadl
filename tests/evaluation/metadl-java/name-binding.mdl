@@ -4,7 +4,7 @@ TypeToStr(0, ""), VarDef(0, 0, 0, "") :- NEQ(0, 0).
 ClassDef(0, "", "") :- NEQ(0, 0).
 MethodDef(0, 0, "") :- NEQ(0, 0).
 
-analyze('P, "java8") {
+java('P) {
 	    # Type names
 	    TypeToStr(t, tname) :- t <: `t1.`t2 :>, ID(`t1, n1), TypeToStr(`t2, n2), BIND(tname, cat(n1, cat(".", n2))).
 

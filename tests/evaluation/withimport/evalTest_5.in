@@ -1,6 +1,6 @@
 IMPORT( 'Program, "./tests/evaluation/withimport/evalTest_1.in", "metadl").
 
-analyze ('Program) {
+metadl('Program) {
 	# Constants
 	PredType(pred_name, $i, "String") :- <:..., $p(...,$v,...), ... .:>, INDEX($v, $i), ID($p, pred_name), STR($v, x).
 	PredType(pred_name, $i, "Int") :- <:..., $p(...,$v,...), ... .:>, INDEX($v, $i), ID($p, pred_name), INT($v, x).

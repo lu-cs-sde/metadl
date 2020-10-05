@@ -3,7 +3,7 @@ IMPORT('Q, "tests/evaluation/withimport/evalTest_18_input.java", "java8").
 Scope(0, 0) :- NEQ(0, 0).
 NameDef("", 0) :- NEQ(0, 0).
 
-analyze('Q, "java8") {
+java('Q) {
 	Scope(p, `c) :- p <: class `n { .. `c .. } :>.
 	Scope(p, `b) :- p <: .. `t `f (..) `b :>.
 	Scope(p, `t) :- p <: .. `t `f (..,`t,..) { .. } :>.

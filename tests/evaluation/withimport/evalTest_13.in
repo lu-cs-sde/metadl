@@ -1,6 +1,6 @@
 IMPORT('P, "tests/evaluation/withimport/evalTest_13_input.java", "java8").
 
-analyze ('P, "java8") {
+java('P) {
 	IsVoidMethod(cname, mname) :- <: class `c { .. void `md () { .. } .. } :>, ID(`c, cname), ID(`md, mname).
 	IsVoidMethod(cname, mname) :- <: public class `c { .. void `md () { .. } .. } :>, ID(`c, cname), ID(`md, mname).
 	IsVoidMethod(cname, mname) :- <: public class `c { .. public void `md () { .. } .. } :>, ID(`c, cname), ID(`md, mname).

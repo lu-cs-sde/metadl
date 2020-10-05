@@ -64,7 +64,8 @@ String  = \"[^\"]*\"
 "MATCH"    {  return  sym(Terminals.MATCH);          }
 "NOT"      {  return  sym(Terminals.NOT);            }
 "BIND"     {  return  sym(Terminals.BIND);           }
-"analyze"  {  return  sym(Terminals.ANALYZE);        }
+"java"     {  return  sym(Terminals.JAVA);           }
+"metadl"   {  return  sym(Terminals.METADL);         }
 "_"        {  return  sym(Terminals.WILDCARD);       }
 {Numeral}  {  return  sym(Terminals.NUMERAL);        }
 {VAR_ID}   {  return  sym(Terminals.VAR_ID);         }

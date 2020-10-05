@@ -2,7 +2,7 @@ IMPORT( 'Program, "tests/evaluation/withimport/evalTest_10_input.mdl", "metadl")
 
 # Extract predicates referred in the deprecated relation
 
-analyze('Program) {
+metadl('Program) {
  Deprecated(p) :- <: $d($p) . :>, ID($d, "Deprecated"), REF($p, p).
  Warning(p, l, c) :- <: ... :- ..., $p(...), ... . :>,
                   ID($p, p), Deprecated(p), SRC($p, l, c, _, _, _).

@@ -4,7 +4,7 @@
 
 IMPORT("examples/arity/minidoop.mdl", 'Program).
 
-analyze ('Program) {
+metadl('Program) {
   Arity(pname, arity, loc) :- <: ... :- ..., $p(...,$i:$x), ... .:>, BIND(arity, $i+1), ID($p, pname), SRC($p, loc).
   Arity(pname, arity, loc) :- <: ... :- ..., NOT($p(...,$i:$x)), ... .:>, BIND(arity, $i+1), ID($p, pname), SRC($p, loc).
   Arity(pname, arity, loc) :- <: ..., $p(...,$i:$x), ... :- ... .:>, BIND(arity, $i+1), ID($p, pname), SRC($p, loc).

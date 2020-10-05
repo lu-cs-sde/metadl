@@ -1,6 +1,6 @@
 # Analyze blocks can't be nested
-analyze ('P) {
-	analyze ('Q) {
+metadl('P) {
+	metadl('Q) {
 
 	}
 }

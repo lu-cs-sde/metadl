@@ -1,12 +1,12 @@
 IMPORT( 'Program1, "./tests/evaluation/withimport/input_1.in", "metadl").
 
-analyze ('Program1) {
+metadl('Program1) {
 	Arity(i) :- <:$p(...,$v).:>, INDEX($v, i).
 }
 
 OUTPUT('Arity).
 
-analyze ('Program1) {
+metadl('Program1) {
 	MoreThan3(v) :- <:$p($v1, $v2, ..., $v).:>, INDEX($v, i), BIND(v, i + 1).
 }
 

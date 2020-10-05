@@ -7,7 +7,7 @@ NonPublicFieldReturn(0, 0) :- NEQ(0, 0).
 ParamToVariable(0, 0, 0) :- NEQ(0, 0).
 
 
-analyze('P, "java8") {
+java('P) {
 ### Analysis
 	    FieldInClass(c, `t, `f, `m) :- c <: class `_ { .. .. `m .. `t .. , `f , .. ; .. } :>, NOT(FundamentalTypeUse(`t)),
 	                                   SRC(c, l, col, _,_,_), NEQ(col, 0).

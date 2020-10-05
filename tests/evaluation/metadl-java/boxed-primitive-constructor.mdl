@@ -5,7 +5,7 @@ TypeName("Byte"), TypeName("Float"), TypeName("Double"), TypeName("Boolean").
 
 PrimitiveCtor(0) :- NEQ(0, 0).
 
-analyze('P, "java8") {
+java('P) {
 	    PrimitiveCtor(e) :- e <: new `c(`_) :>, DECL(`c, c), c <: class `name { .. } :>, ID(`name, t), TypeName(t).
 	    PrimitiveCtorDetail(l, c, file) :- PrimitiveCtor(e), SRC(e, l, c, _, _, file).
 	    OUTPUT('PrimitiveCtorDetail).

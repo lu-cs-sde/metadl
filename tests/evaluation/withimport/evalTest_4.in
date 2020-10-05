@@ -1,6 +1,6 @@
 IMPORT( 'Program, "./tests/evaluation/withimport/evalTest_4_input.mdl", "metadl").
 
-analyze ('Program) {
+metadl('Program) {
 	IConstant(c) :- <:...,$p(...,$v,...),... .:>, INT($v, c).
 	IConstant(c) :- <:...,$p(...,$v,...),... :- ... .:>, INT($v, c).
 	IConstant(c) :- <:... :- ...,$p(...,$v,...),... .:>, INT($v, c).

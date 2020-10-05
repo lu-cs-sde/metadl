@@ -6,7 +6,7 @@
 
 IMPORT("p/t0.mdl", 'Program).
 
-analyze ('Program) {
+metadl('Program) {
   DirectDep(p, q)      :- [ ..., $p(...), ... :- ..., $q(...), ... . ], ID($q, q), ID($p, p).
   DirectDep(p, q),
     DirectNegDep(p, q) :- [ ..., $p(...), ... :- ..., NOT($q(...)), ... . ], ID($q, q), ID($p, p).

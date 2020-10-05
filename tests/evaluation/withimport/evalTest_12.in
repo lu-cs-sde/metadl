@@ -1,6 +1,6 @@
 IMPORT('P, "tests/evaluation/withimport/evalTest_12_input.java", "java8").
 
-analyze ('P, "java8") {
+java('P) {
 	IsClass("A") :- <: class A {  } :>.
 	IsClass("D") :- <: class D {  } :>.
 }

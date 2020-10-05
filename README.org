@@ -6,7 +6,7 @@ programs inside Datalog. In addition, the subset of the metalanguage that depend
 #+BEGIN_SRC prolog
 IMPORT('Program, "p/t0.mdl", "metadl").
 
-analyze ('Program) {
+metadl ('Program) {
   Arity(pname, arity) :- <: ... :- ..., $p(...,$i:$x), ... .:>, BIND(arity, $i+1), ID($p, pname).
   Arity(pname, arity) :- <: ... :- ..., NOT($p(...,$i:$x)), ... .:>, BIND(arity, $i+1), ID($p, pname).
   Arity(pname, arity) :- <: ..., $p(...,$i:$x), ... :- ... .:>, BIND(arity, $i+1), ID($p, pname).
@@ -89,7 +89,7 @@ Additional Supported features:
 
 ** Metalanguage description
 *** Analyze blocks
-Datalog:  ~analyze ('P, "metadl") { }~ or Java:  ~analyze('P, "java4")~
+Datalog:  ~metadl ('P) { }~ or Java:  ~java ('P) { }~
 
 The only blocks that are allowed to contain patterns, metavariables and gaps. All the patterns and special predicates inside these blocks refer to the analyzed program, ~\'P~.
 
@@ -127,7 +127,7 @@ Special metapredicates are allowed only inside ~analyze~ blocks.
 
 IMPORT('P, "bpatterns.in", "metadl").
 
-analyze('P) {
+metadl ('P) {
 	    Expr($p, 0, $q, "+"), Expr($p, 1, $r, "+") :- $p <:$q + $r:>.
 	    Expr($p, 0, $q, "*"), Expr($p, 1, $r, "*") :- $p <:$q * $r:>.
 	    Expr($p, 0, $q, "-"), Expr($p, 1, $r, "-") :- $p <:$q - $r:>.
@@ -148,9 +148,9 @@ OUTPUT('OurExprEval).
 
 *** Type hierarchy for Java
 #+BEGIN_SRC
-IMPORT('P, "tests/evaluation/withimport/evalTest_15_input.java", "java4").
+IMPORT('P, "tests/evaluation/withimport/evalTest_15_input.java", "java8").
 
-analyze ('P, "java4") {
+java ('P) {
 	ClassImplementsInterface(c, i) :-
 		<: class `c implements .., `i, .. { .. } :>,
 		ID(`c, c), ID(`i, i).

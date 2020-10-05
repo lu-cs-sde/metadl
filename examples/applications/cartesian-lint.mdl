@@ -1,7 +1,7 @@
 IMPORT("examples/minidoop/minidoop.mdl", 'Program).
 #IMPORT("p/t3.mdl", 'Program).
 
-analyze ('Program) {
+metadl('Program) {
 
   VarOnRHS($p, $q, $i, v) :-
           [ ..., $p(...), ... :- ..., $q(..., $i:$x, ...), ... . ],

@@ -12,7 +12,7 @@ OUTPUT('P).
 
 # NM_METHOD_NAMING_CONVENTION, NM_FIELD_NAMING_CONVENTION, NM_CLASS_NAMING_CONVENTION
 
-analyze('P, "java8") {
+java('P) {
 	    NotLibrary(n) :- SRC(n, l, _, _, _, _), NEQ(l, 0).
 
 	    Decl(`d), Type(c, name) :- c <: class `name { .. `d .. } :>, ID(`name, name).

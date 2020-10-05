@@ -43,7 +43,7 @@ TypeName("Integer"), TypeName("Long"), TypeName("Short"),
 TypeName("Byte"), TypeName("Float"), TypeName("Double").
 
 
-analyze('Q, "java8") {
+java('Q) {
 	    ParentT(n, c) :- PARENT(n, c).
 	    ParentT(n, c) :- ParentT(n, t), PARENT(t, c).
 

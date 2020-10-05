@@ -23,8 +23,8 @@ CommonClause clause = inner_clause
                     | analyze_block
                     ;
 
-AnalyzeBlock analyze_block = ANALYZE LPARA pred_ref.prog_ref RPARA LBRACE inner_clause.clauses+ RBRACE {: return new AnalyzeBlock(prog_ref, new StringConstant("metadl"), clauses); :}
-                           |  ANALYZE LPARA pred_ref.prog_ref COMMA string_constant.lang RPARA LBRACE inner_clause.clauses+ RBRACE {: return new AnalyzeBlock(prog_ref, lang, clauses); :}
+AnalyzeBlock analyze_block = JAVA LPARA pred_ref.prog_ref RPARA LBRACE inner_clause.clauses+ RBRACE {: return new AnalyzeBlock(prog_ref, new StringConstant("java8"), clauses); :}
+                           | METADL LPARA pred_ref.prog_ref RPARA LBRACE inner_clause.clauses+ RBRACE {: return new AnalyzeBlock(prog_ref, new StringConstant("metadl"), clauses); :}
                            ;
 
 Rule rule = lit_list.heads IMPLIED_BY lit_list.body DOT {: return new Rule(heads, body); :};

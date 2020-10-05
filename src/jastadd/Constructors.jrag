@@ -77,6 +77,10 @@ aspect Constructors {
 			return new lang.ast.StringConstant(s);
 		}
 
+		public static lang.ast.IntConstant integer(long i) {
+			return new lang.ast.IntConstant("" + i);
+		}
+
 		public static lang.ast.CommonLiteral NEQ(lang.ast.Term t1, lang.ast.Term t2) {
 			return new lang.ast.NEQLiteral(t1, t2);
 		}

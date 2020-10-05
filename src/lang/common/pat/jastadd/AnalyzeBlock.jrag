@@ -224,5 +224,12 @@ aspect AnalyzeBlock {
 
 			return ret;
 		}
+
+		public static lang.ast.Rule makeProvenanceRelation(AnalyzeContext ctx) {
+			/* the type of the provenance relation is (Integer, String, String), representing
+			 (nodeId, attribute, sourceFile) */
+			return rule(literal(ctx.prefix("PROVENANCE"), integer(0), str(""), str("")),
+						NEQ(integer(0), integer(0)));
+		}
 	}
 }

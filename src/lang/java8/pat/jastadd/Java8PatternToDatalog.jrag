@@ -81,6 +81,12 @@ aspect LanguageSpecific {
 					literal(ctx.prefix("REWRITE_MAP"), "$g_rw", "$g"));
 	}
 
+	public static lang.ast.Rule PatLang.makeASTRule(AnalyzeContext ctx) {
+		return rule(
+					literal(ctx.prefix("AST"), "$p1", "$p2", "$p3", "$p4", "$p5"),
+					literal(ctx.progRelName, "$p1", "$p2", "$p3", "$p4", "$p5"));
+	}
+
 
 	public static java.util.List<lang.ast.Clause> PatLang.makeRewriteMap(AnalyzeContext ctx) {
 		java.util.List<lang.ast.Clause> ret = new java.util.ArrayList<>();
@@ -155,6 +161,9 @@ aspect LanguageSpecific {
 			ret.add(makeGenericRule(ctx));
 		// Insert a rule for declaring a node's supertypes
 		ret.addAll(makeSuperTypeRelation(ctx));
+		// Expose the AST relation
+		if (used.contains("AST"))
+			ret.add(makeASTRule(ctx));
 		return ret;
 	}
 
@@ -178,6 +187,8 @@ aspect LanguageSpecific {
 		case "TYPE":
 		case "DECL":
 		case "GENERIC":
+		// Expose the program representation through the AST context predicate.
+		case "AST":
 			s = predName; break;
 		default: return null;
 		}
@@ -218,6 +229,12 @@ aspect LanguageSpecific {
 		case "GENERIC":
 			return new lang.ast.PredicateType(lang.ast.ASTNodeType.get(),
 											  lang.ast.ExtASTNodeType.get());
+		case "AST":
+			return new lang.ast.PredicateType(lang.ast.StringType.get(),
+											  lang.ast.ExtASTNodeType.get(),
+											  lang.ast.IntegerType.get(),
+											  lang.ast.ExtASTNodeType.get(),
+											  lang.ast.StringType.get());
 		default:
 			return null;
 		}

@@ -1,4 +1,4 @@
-IMPORT('P, "tests/evaluation/metadl-java/src/bad-covariant-equals/", "java8").
+P("tests/evaluation/metadl-java/src/bad-covariant-equals/").
 
 GoodEquals(0) :- NEQ(0, 0).
 

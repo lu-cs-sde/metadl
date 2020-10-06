@@ -1,4 +1,4 @@
-IMPORT('P, "tests/evaluation/metadl-java/src/paper-examples", "java8").
+P("tests/evaluation/metadl-java/src/paper-examples").
 
 ArrayAccess(0, 0, ""), NewArray(0, 0, ""), NewArrayStartEnd("", "", "") :- NEQ(0, 0).
 NewArrayNoInit(0, 0, "") :- NEQ(0, 0).

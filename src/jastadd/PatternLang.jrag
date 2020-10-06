@@ -28,11 +28,15 @@ aspect PatternLang {
 	eq AnalyzeBlock.getClause().enclosingAnalyzeBlock() = this;
 	eq AnalyzeBlock.getExpandedClause().enclosingAnalyzeBlock() = this;
 
-	syn String ASTNode.getScopePrefix() = getParent().getScopePrefix();
-	eq Program.getScopePrefix() = "";
-    eq AnalyzeBlock.getScopePrefix() = "A_" + getProgramRef().getPRED_ID() + "_";
+    syn String AnalyzeBlock.getScopePrefix() = "A_" + getLine(getStart()) + "_" + getColumn(getStart()) + "_";
 	syn AnalyzeContext AnalyzeBlock.getContext() {
-		return new AnalyzeContext(getScopePrefix(), getProgramRef().getPRED_ID());
+		return new AnalyzeContext(getScopePrefix(), getProgramRepresentationPredicateName());
+	}
+	syn String AnalyzeBlock.getProgramRepresentationPredicateName() {
+		return getScopePrefix() + "PR";
+	}
+	syn String AnalyzeBlock.getAttributeProvenancePredicateName() {
+		return getScopePrefix() + "PROV";
 	}
 
 	coll ArrayList<Pattern> AnalyzeBlock.patterns() [new ArrayList<Pattern>()] root AnalyzeBlock;
@@ -335,18 +339,15 @@ aspect PatternLang {
 		EarleyParser getParser();
 	}
 
-	inh boolean PredicateRef.isProgramRepresentation();
-	eq AnalyzeBlock.getProgramRef().isProgramRepresentation() = true;
-	eq Literal.getTerms(int i).isProgramRepresentation() {
-		if (i == 0 && isIMPORT())
-			return true;
-		return false;
+	syn boolean PredicateSymbol.isProgramRepresentation() {
+		if (enclosingAnalyzeBlock() == null)
+			return false;
+		return enclosingAnalyzeBlock().getProgramRepresentationPredicateName().equals(getPRED_ID());
 	}
-	eq Constraint.getExpr().isProgramRepresentation() = false;
 
 	syn lazy boolean FormalPredicate.isProgramRepresentation() {
-		for (PredicateRef ref : predicateRefs()) {
-			if (ref.isProgramRepresentation())
+		for (PredicateSymbol psym : predicates()) {
+			if (psym.isProgramRepresentation())
 				return true;
 		}
 		return false;

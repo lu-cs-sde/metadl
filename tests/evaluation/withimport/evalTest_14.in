@@ -1,4 +1,4 @@
-IMPORT('P, "tests/evaluation/withimport/evalTest_14_input.mdl", "metadl").
+P("tests/evaluation/withimport/evalTest_14_input.mdl").
 
 metadl('P) {
 	IsNeq(pname, qname) :- <: ... :-

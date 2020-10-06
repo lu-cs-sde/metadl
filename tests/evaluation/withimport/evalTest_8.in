@@ -2,7 +2,7 @@
 # Arity(predicate, arity) : reported arity
 # ArityError(predicate) : observed inconsistency
 
-IMPORT( 'Program, "tests/evaluation/withimport/evalTest_8_input.mdl", "metadl").
+Program("tests/evaluation/withimport/evalTest_8_input.mdl").
 
 metadl('Program) {
   Arity(pname, arity, l, c) :- <: ... :- ..., $p(...,$x), ... .:>, INDEX($x, $i), BIND(arity, $i+1), ID($p, pname), SRC($p, l, c, _, _, _).

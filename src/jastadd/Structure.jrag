@@ -71,7 +71,7 @@ aspect Utility {
 }
 
 aspect Program {
-	inh Program Clause.program();
+	inh Program CommonClause.program();
 	eq Program.getChild().program() = this;
 
 	coll HashSet<PredicateInterface> Program.predicateSymbols() [new HashSet<PredicateInterface>()] with add;
@@ -343,8 +343,7 @@ aspect FormalPredicate {
 		if(fp == null) {
 			SimpleLogger.logger().log("Each PredicateSymbol should belong to a FormalPredicate: " + this,
 									  SimpleLogger.LogLevel.Level.ERROR);
-			System.exit(0);
-			return null; // Needed for JastAdd
+			throw new RuntimeException("Each PredicateSymbol should belong to a FormalPredicate: " + this);
 		}
 		return fp;
 	}

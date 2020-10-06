@@ -1,4 +1,4 @@
 EDB('Programs, "evalTest_19.csv").
 P("", 0, 0, 0, "") :- NEQ(0, 0).
-IMPORT('P, p, "java8") :- Programs(p).
+P(p).
 OUTPUT(q) :- IMPORT(q, _, _).

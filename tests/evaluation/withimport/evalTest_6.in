@@ -1,6 +1,6 @@
 # Stratification in Datalog example
 
-IMPORT( 'Program, "tests/evaluation/withimport/evalTest_6_input.mdl", "metadl").
+Program("tests/evaluation/withimport/evalTest_6_input.mdl").
 
 metadl('Program) {
 	DirectDep(p_name, q_name) :- <:...,$p(...),... :- ...,$q(...),... .:>, ID($p, p_name), ID($q, q_name).

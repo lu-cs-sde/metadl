@@ -1,4 +1,4 @@
-IMPORT('P, "tests/evaluation/metadl-java/src/reference-equality/", "java8").
+P("tests/evaluation/metadl-java/src/reference-equality/").
 
 # Code for extracting the type hierarchy
 java('P) {

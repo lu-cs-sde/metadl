@@ -9,6 +9,44 @@ import lang.CmdLineOpts;
 import java.util.concurrent.Executors;
 
 aspect Eval {
+	public void Program.populateProgramRepresentation(FormalPredicate srcs,
+													  FormalPredicate programRepresentation,
+													  String srcLang,
+													  EvaluationContext ctx,
+													  Map<FormalPredicate, TupleInserter> fpToSoufflePredMap) throws IOException {
+		RelationWrapper sourceFilesAndFolders = new RelationWrapper(ctx, srcs.relation2(), srcs.type());
+		java.util.List<String> locs = new ArrayList<>();
+		for (RelationWrapper.TupleWrapper t : sourceFilesAndFolders.tuples()) {
+			String loc = t.getAsString(0);
+			locs.add(loc);
+		}
+
+		if (srcLang.equals("java8")) {
+			if (fpToSoufflePredMap != null) {
+				FileUtil.loadJavaSources(ctx, fpToSoufflePredMap.get(programRepresentation), locs);
+			} else {
+				FileUtil.loadJavaSources(ctx, new RelationWrapper(ctx, programRepresentation.relation2(),
+																  programRepresentation.type()),
+										 locs);
+			}
+		} else if (srcLang.equals("metadl")) {
+			MutableInt nodeCounter = new MutableInt(1);
+			try {
+				if (locs.size() != 1) {
+					throw new RuntimeException("MetaDL for MetaDL is limited to analyzing a single file");
+				}
+				lang.metadl.obj.ast.Program importedProgram = lang.metadl.obj.ast.Program.fromFileLoc(locs.get(0));
+				importedProgram.assignIds(nodeCounter);
+				RelationWrapper rw = new RelationWrapper(ctx, programRepresentation.relation2(), programRepresentation.type());
+				rw.insertTuples(importedProgram.datalogProjection().tuples());
+			} catch (beaver.Parser.Exception exception) {
+				throw new RuntimeException(exception);
+			}
+		} else {
+			throw new RuntimeException("Unknown language for analyze blocks: " + srcLang + ".");
+		}
+	}
+
 	public void Program.evalIMPORT(EvaluationContext ctx, Map<FormalPredicate, TupleInserter> fpToSoufflePredMap) throws IOException {
 		FormalPredicate fpImp = formalPredicateMap().get(GlobalNames.IMPORT_NAME);
 		if (fpImp == null) {
@@ -93,26 +131,40 @@ aspect Eval {
 		}
 	}
 
+	public void Program.evalAnalyzeBlocks(EvaluationContext ctx, CmdLineOpts opts,
+										  Map<FormalPredicate, TupleInserter> fpToSoufflePredMap) throws IOException {
+		for (CommonClause c : getCommonClauses()) {
+			if (c instanceof AnalyzeBlock) {
+				AnalyzeBlock block = (AnalyzeBlock) c;
+				FormalPredicate srcPred = block.getProgramRef().formalpredicate();
+
+				// evalute the predicate representing the input program paths
+				srcPred.eval(ctx);
+
+				// now populate the relations associated with the analyze block
+				FormalPredicate prel = formalPredicateMap().get(block.getProgramRepresentationPredicateName());
+				if (prel != null) {
+					populateProgramRepresentation(srcPred, prel, block.getLang().getSTRING(),
+												  ctx, fpToSoufflePredMap);
+				}
+			}
+		}
+	}
 
 	public void Program.generateObjectProgramRelations(CmdLineOpts opts) throws IOException {
 		// Start a timer to measure the speed of the import
 		StopWatch progRelTimer = StopWatch.createStarted();
 
-		evalIMPORT(evalCtx(), null);
+		// Evaluate the analyze blocks
+		evalAnalyzeBlocks(evalCtx(), opts, null);
 
-		FormalPredicate fpImp = formalPredicateMap().get(GlobalNames.IMPORT_NAME);
-		if (fpImp == null)
-			return;
-
-
-		// now iterate over the tuples in the IMPORT relation
-		RelationWrapper importTuples = new RelationWrapper(evalCtx(), fpImp.relation2(), fpImp.type());
-		for (RelationWrapper.TupleWrapper t : importTuples.tuples()) {
-			String pred = t.getAsString(0);
-
-			FormalPredicate srcPred = formalPredicateMap().get(pred);
-			CSVUtil.writeRelation(evalCtx(), srcPred.type(), srcPred.relation2(),
-								  opts.getFactsDir() + "/" + srcPred.getPRED_ID() + ".csv");
+		// Iterate over all the program representation predicates and dump their relations
+		// to CSV files.
+		for (FormalPredicate srcPred : getFormalPredicates()) {
+			if (srcPred.isProgramRepresentation()) {
+				CSVUtil.writeRelation(evalCtx(), srcPred.type(), srcPred.relation2(),
+									  opts.getFactsDir() + "/" + srcPred.getPRED_ID() + ".csv");
+			}
 		}
 
 		// stop the timer and report
@@ -137,7 +189,7 @@ aspect Eval {
 		clauseDependencyGraph().dump();
 
 		evalEDB(ctx, opts);
-		evalIMPORT(ctx, null);
+		evalAnalyzeBlocks(ctx, opts, null);
 
 		for (Stratum s : strata) {
 			s.eval();
@@ -152,7 +204,7 @@ aspect Eval {
 		EvaluationContext ctx = evalCtx();
 
 		evalEDB(ctx, opts);
-		evalIMPORT(ctx, null);
+		evalAnalyzeBlocks(ctx, opts, null);
 
 		dumpStrata();
 		clauseDependencyGraph().dump();

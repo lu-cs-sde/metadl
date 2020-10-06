@@ -1,4 +1,4 @@
-IMPORT('P, "tests/evaluation/withimport/evalTest_17.java", "java8").
+P("tests/evaluation/withimport/evalTest_17.java").
 
 Val("", 0, 0) :- NEQ(0, 0).
 EvalE(0, 0) :- NEQ(0, 0).

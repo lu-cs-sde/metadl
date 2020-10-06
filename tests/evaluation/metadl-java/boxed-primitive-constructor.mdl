@@ -1,4 +1,4 @@
-IMPORT('P, "tests/evaluation/metadl-java/src/boxed-primitive-constructor/", "java8").
+P("tests/evaluation/metadl-java/src/boxed-primitive-constructor/").
 
 TypeName("Character"), TypeName("Integer"), TypeName("Long"), TypeName("Short"),
 TypeName("Byte"), TypeName("Float"), TypeName("Double"), TypeName("Boolean").

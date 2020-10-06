@@ -1,4 +1,4 @@
-IMPORT( 'P, "tests/evaluation/withimport/evalTest_11_input.mdl", "metadl").
+P("tests/evaluation/withimport/evalTest_11_input.mdl").
 
 metadl('P) {
 	    Expr($p, 0, $q, "+"), Expr($p, 1, $r, "+") :- $p <:$q + $r:>.

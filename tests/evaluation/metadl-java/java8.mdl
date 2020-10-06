@@ -1,4 +1,4 @@
-IMPORT('P, "tests/evaluation/metadl-java/src/java8/", "java8").
+P("tests/evaluation/metadl-java/src/java8/").
 
 # A first test case for java8
 java('P) {

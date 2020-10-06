@@ -1,4 +1,4 @@
-IMPORT( 'Program, "./tests/evaluation/withimport/evalTest_1.in", "metadl").
+Program("./tests/evaluation/withimport/evalTest_1.in").
 
 metadl('Program) {
 	# Constants

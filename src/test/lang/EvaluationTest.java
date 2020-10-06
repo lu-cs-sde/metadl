@@ -163,7 +163,11 @@ public class EvaluationTest {
 						   // "evalTest_17", Disabled, due to stricter type checking
 						   // TODO: re-enable evalTest_17 once conversion functors node -> int and int -> node
 						   // are introduced
-						   "evalTest_18", "evalTest_19"};
+						   "evalTest_18"
+						   // "evalTest_19"
+						   // TODO: re-enable evalTest_19 once the program relation if we expose the
+						   // program representation to the user
+		};
 		return Arrays.stream(tests);
 	}
 
@@ -208,7 +212,10 @@ public class EvaluationTest {
 
 	static Stream<String> metadlJavaTests() {
 		String[] tests = {
-			"bad-covariant-equals", "switch-no-default", "clone-idioms", "number-ctor",
+			"bad-covariant-equals", "switch-no-default", "clone-idioms",
+			// "number-ctor",
+			// re-enable number-ctor once the program relation if we expose the
+			// program representation to the user
 			"unwritten-field", "naming-convention", "reference-to-mutable-object", "missing-override",
 			"reference-equality", "boxed-primitive-constructor", "operator-precedence",
 			"type-param-unused-in-formals", "paper-examples", "java7", "java8"

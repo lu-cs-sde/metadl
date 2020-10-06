@@ -1,4 +1,4 @@
-IMPORT('P, "tests/evaluation/metadl-java/src/missing-override/", "java8").
+P("tests/evaluation/metadl-java/src/missing-override/").
 
 SuperClass(0, 0), SuperInterface(0, 0) :- NEQ(0, 0).
 MethodSig1(0, "", 0), MethodSig2(0, 0, 0) :- NEQ(0, 0).

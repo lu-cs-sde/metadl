@@ -2,7 +2,7 @@
 # Arity(predicate, arity) : reported arity
 # ArityError(predicate) : observed inconsistency
 
-IMPORT("examples/arity/minidoop_x8.mdl", 'Program).
+Program("examples/arity/minidoop_x8.mdl").
 
 metadl('Program) {
   Arity(pname, arity, loc) :- <: ... :- ..., $p(...,$i:$x), ... .:>, BIND(arity, $i+1), ID($p, pname), SRC($p, loc).

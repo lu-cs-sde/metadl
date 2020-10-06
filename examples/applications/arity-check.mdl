@@ -2,7 +2,7 @@
 # Arity(predicate, arity) : reported arity
 # ArityError(predicate) : observed inconsistency
 
-IMPORT("p/t0.mdl", 'Program).
+Program("p/t0.mdl").
 
 metadl('Program) {
   Arity(pname, arity) :- [ ... :- ..., $p(...,$i:$x), ... .], BIND(arity, $i+1), ID($p, pname).

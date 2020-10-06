@@ -1,4 +1,4 @@
-IMPORT('P, "tests/evaluation/metadl-java/src/clone-idioms/", "java8").
+P("tests/evaluation/metadl-java/src/clone-idioms/").
 
 java('P) {
 	    Contains(n1, n2) :- PARENT(n1, n2).

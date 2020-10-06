@@ -1,4 +1,4 @@
-IMPORT('P, "tests/evaluation/withimport/evalTest_13_input.java", "java8").
+P("tests/evaluation/withimport/evalTest_13_input.java").
 
 java('P) {
 	IsVoidMethod(cname, mname) :- <: class `c { .. void `md () { .. } .. } :>, ID(`c, cname), ID(`md, mname).

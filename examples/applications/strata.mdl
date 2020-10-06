@@ -4,7 +4,7 @@
 # DepDirectPredecessorStratum(P, Q):
 # NegationInStratumError(P): predicate P depends on itself in a way that includes negation
 
-IMPORT("p/t0.mdl", 'Program).
+Program("p/t0.mdl").
 
 metadl('Program) {
   DirectDep(p, q)      :- [ ..., $p(...), ... :- ..., $q(...), ... . ], ID($q, q), ID($p, p).

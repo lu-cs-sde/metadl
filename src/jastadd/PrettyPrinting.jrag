@@ -279,15 +279,6 @@ aspect SoufflePrinting {
 		pr.out.print(getVAR_ID().replaceAll("[$`]", "?"));
 	}
 
-    public void Literal.artificalInput(PrettyPrinter pr) {
-        pr.out.print(".input ");
-        pr.out.print(predicate().getPRED_ID());
-        pr.out.print("(filename=");
-        pr.out.print("\"" + predicate().getPRED_ID() + ".csv" + "\"");
-        pr.out.print(", delimiter=\",\"");
-        pr.out.print(")\n");
-    }
-
     public void BINDLiteral.soufflePrint(PrettyPrinter pr) {
     	pr.prettyPrint(getDst());
         pr.out.print(" = ");
@@ -382,40 +373,21 @@ aspect SoufflePrinting {
 	}
 
 	private void Program.soufflePrintIMPORTFacts(PrettyPrinter pr) {
-		FormalPredicate fpImp = formalPredicateMap().get(GlobalNames.IMPORT_NAME);
-		if (fpImp == null) {
-			// no IMPORT in the program, nothing to do
-			return;
-		}
-
-		// evaluate the program, up to and including the strata where IMPORT is defined
-		fpImp.eval(evalCtx());
-
-		// now iterate over the tuples in the IMPORT relation
-		RelationWrapper importTuples = new RelationWrapper(evalCtx(), fpImp.relation2(), fpImp.type());
-		for (RelationWrapper.TupleWrapper t : importTuples.tuples()) {
-			String pred = t.getAsString(0);
-
-			pr.out.print(".input ");
-			pr.out.print(pred);
-			pr.out.print("(filename=\"");
-			pr.out.print(pred + ".csv");
-			pr.out.print("\", delimiter=\"");
-			pr.out.print(Compiler.getCSVSeparatorEscaped());
-			pr.out.print("\")\n");
+		for (FormalPredicate pred : getFormalPredicates()) {
+			if (pred.isProgramRepresentation()) {
+				pr.out.print(".input ");
+				pr.out.print(pred.getPRED_ID());
+				pr.out.print("(filename=\"");
+				pr.out.print(pred.getPRED_ID() + ".csv");
+				pr.out.print("\", delimiter=\"");
+				pr.out.print(Compiler.getCSVSeparatorEscaped());
+				pr.out.print("\")\n");
+			}
 		}
 	}
 
-
 	public void Program.soufflePrint(PrettyPrinter pr) {
 		printCollection(getFormalPredicates(), "", "\n", "\n", pr);
-		HashSet<String> visited = new HashSet<String>();
-		for(Literal l : predefinedLiterals()) {
-			if(!visited.contains(l.predicate().getPRED_ID())) {
-				// l.artificalInput(pr);
-				visited.add(l.predicate().getPRED_ID());
-			}
-		}
 		soufflePrintEDBDecl(pr);
 		soufflePrintOUTPUTDecl(pr);
 		soufflePrintIMPORTFacts(pr);

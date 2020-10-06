@@ -1,4 +1,4 @@
-IMPORT( 'Program1, "./tests/evaluation/withimport/input_1.in", "metadl").
+Program1("./tests/evaluation/withimport/input_1.in").
 
 metadl('Program1) {
 	Arity(i) :- <:$p(...,$v).:>, INDEX($v, i).

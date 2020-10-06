@@ -4,17 +4,12 @@
 EDB('Srcs, "srcs.csv").
 Srcs("") :- NEQ(0, 0).
 
-# Import all the sources
-IMPORT('P, src, "java8") :- Srcs(src).
-
-OUTPUT('P).
-
 ####################################################################################################
 
 # TypeParamNotUsedInFormals
 GenericMethod(0, 0, 0, 0), GenericMethodVoid(0, 0, 0) :- NEQ(0, 0).
 
-java('P) {
+java('Srcs) {
 	    GenericMethod(m, `t1, `t2, `pt) :- m <: <.., `t1, ..> `t2 `_(.. , `pt `p, ..) ; :>.
 	    GenericMethodVoid(m, `t1, `t2) :-  m <: <.., `t1, ..> `t2 `_() ; :>, NOT(GenericMethod(m, _, _, _)).
 

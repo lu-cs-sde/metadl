@@ -1,4 +1,4 @@
-IMPORT('P, "tests/evaluation/withimport/evalTest_16_input.java", "java8").
+P("tests/evaluation/withimport/evalTest_16_input.java").
 
 metadl('P,  "java8") {
 	Class1(c) :- <: class `c implements `a, .. { .. } :>, ID(`c, c).

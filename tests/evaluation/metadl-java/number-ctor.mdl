@@ -1,4 +1,4 @@
-IMPORT('P, "tests/evaluation/metadl-java/src/number-ctor/", "java8").
+P("tests/evaluation/metadl-java/src/number-ctor/").
 
 ### Transform the program P to a program Q that has all the ParseName
 ### node as chains of Dot nodes

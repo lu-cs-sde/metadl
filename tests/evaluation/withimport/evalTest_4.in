@@ -1,4 +1,4 @@
-IMPORT( 'Program, "./tests/evaluation/withimport/evalTest_4_input.mdl", "metadl").
+Program("./tests/evaluation/withimport/evalTest_4_input.mdl").
 
 metadl('Program) {
 	IConstant(c) :- <:...,$p(...,$v,...),... .:>, INT($v, c).

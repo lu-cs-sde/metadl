@@ -1,4 +1,4 @@
-IMPORT('P, "tests/evaluation/withimport/evalTest_12_input.java", "java8").
+P("tests/evaluation/withimport/evalTest_12_input.java").
 
 java('P) {
 	IsClass("A") :- <: class A {  } :>.

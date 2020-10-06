@@ -4,9 +4,9 @@ MetaDL is a Datalog language extension that enables analysis of Datalog and Java
 programs inside Datalog. In addition, the subset of the metalanguage that depends on the analyzed language is mechanically generated from a description of the abstract and concrete grammars of the analyzed language.
 
 #+BEGIN_SRC prolog
-IMPORT('Program, "p/t0.mdl", "metadl").
+Srcs("p/t0.mdl").
 
-metadl ('Program) {
+metadl ('Srcs) {
   Arity(pname, arity) :- <: ... :- ..., $p(...,$i:$x), ... .:>, BIND(arity, $i+1), ID($p, pname).
   Arity(pname, arity) :- <: ... :- ..., NOT($p(...,$i:$x)), ... .:>, BIND(arity, $i+1), ID($p, pname).
   Arity(pname, arity) :- <: ..., $p(...,$i:$x), ... :- ... .:>, BIND(arity, $i+1), ID($p, pname).
@@ -63,9 +63,9 @@ java -jar compiler.jar --eval souffle program.mdl -F fact_dir -D output_dir
 
 * Language description
 ** Datalog
-[[https://en.wikipedia.org/wiki/Datalog][Datalog]] is a declarative query language, with roots in logic programming. Relations between tables are expressed as Horn clauses. MetaDL extends Datalog with syntactic patterns and associates side-effects to the following predicates ~EDB~, ~IMPORT~ and ~OUTPUT~. The order of evaluation is as follows:
+[[https://en.wikipedia.org/wiki/Datalog][Datalog]] is a declarative query language, with roots in logic programming. Relations between tables are expressed as Horn clauses. MetaDL extends Datalog with syntactic patterns and associates side-effects to the following predicates ~EDB~ and ~OUTPUT~. The order of evaluation is as follows:
 1. All predicates the ~EDB~ predicate depends upon are evaluated. For all tuples ~('P, "file")~ in the the ~EDB~ relation, the file is read as a CSV and its tuples are added to the relation ~P~.
-2. All predicates the ~IMPORT~ predicate depends upon are evaluated. For all tuples ~('P, "path", "lang")~ in the ~IMPORT~ relation, all the files matching the language ~lang~ in ~path~ are parsed and their contents loaded as tuples into the relation ~P~.
+2. The predicate the ~java~ or ~metadl~ block depends upon is evaluated. For an analyze block, ~java ('P) { ... }~, the P predicate is evaluated. The strings in the P relation are interpreted as file system paths and the source files present at those locations are loaded for analysis.
 3. Fixpoint evaluation.
 4. For all values ~('P)~ in the ~OUTPUT~ relation, the contents of relation ~P~ are written out to a file ~P.csv~.
 
@@ -73,11 +73,9 @@ The order of evaluation was chosen for convenience reasons, to make the followin
 - Control the analyzed program from a configuration file ~Prog.csv~:
 #+BEGIN_SRC
 EDB('Progs, "Prog.csv").
-IMPORT('P, p, "java8") :- EDB(p, _).
-#+END_SRC
-- Output all the input facts:
-#+BEGIN_SRC
-OUTPUT(p) :- EDB(p, _).
+java ('Progs) {
+  ...
+}
 #+END_SRC
 
 Additional Supported features:
@@ -125,7 +123,7 @@ Special metapredicates are allowed only inside ~analyze~ blocks.
 #+BEGIN_SRC
 #Import a program that contains BIND(t, x*y + ((1 + 2*3) - 1) / 2)
 
-IMPORT('P, "bpatterns.in", "metadl").
+P("bpatterns.in").
 
 metadl ('P) {
 	    Expr($p, 0, $q, "+"), Expr($p, 1, $r, "+") :- $p <:$q + $r:>.
@@ -148,7 +146,7 @@ OUTPUT('OurExprEval).
 
 *** Type hierarchy for Java
 #+BEGIN_SRC
-IMPORT('P, "tests/evaluation/withimport/evalTest_15_input.java", "java8").
+P("tests/evaluation/withimport/evalTest_15_input.java").
 
 java ('P) {
 	ClassImplementsInterface(c, i) :-

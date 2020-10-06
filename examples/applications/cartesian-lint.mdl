@@ -1,5 +1,4 @@
-IMPORT("examples/minidoop/minidoop.mdl", 'Program).
-#IMPORT("p/t3.mdl", 'Program).
+Program("examples/minidoop/minidoop.mdl").
 
 metadl('Program) {
 

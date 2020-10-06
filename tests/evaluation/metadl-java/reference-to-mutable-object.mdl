@@ -1,4 +1,4 @@
-IMPORT('P, "tests/evaluation/metadl-java/src/reference-to-mutable-object/", "java8").
+P("tests/evaluation/metadl-java/src/reference-to-mutable-object/").
 
 FieldInClassWithInit(0, 0, 0, 0) :- NEQ(0, 0).
 FieldInClass(0, 0, 0, 0) :- NEQ(0, 0).

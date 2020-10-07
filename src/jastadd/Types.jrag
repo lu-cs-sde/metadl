@@ -431,8 +431,8 @@ aspect TypeCheck {
 
 aspect TypeInference {
 	private PredicateType FormalPredicate.initialTypeInternal() {
-		if (isProgramRepresentation())
-			return programRepresentationType();
+		if (getProgramRepresentationKind().isPresent())
+			return programRepresentationType(getProgramRepresentationKind().get());
 		PredicateType ptype = getContextPredicateType();
 		if (ptype != null)
 			return ptype;
@@ -468,7 +468,7 @@ aspect TypeInference {
 	eq FormalPredicate.type() {
 		PredicateType current = type();
 
-		if (isProgramRepresentation())
+		if (getProgramRepresentationKind().isPresent())
 			return current;
 		if (getContextPredicateType() != null)
 			return current;
@@ -568,7 +568,7 @@ aspect TypeInference {
 
 		if (indexInLiteral() >= 0) {
 			Literal l = (Literal) literal();
-			if (l.getPredicate().formalpredicate().isProgramRepresentation()) {
+			if (l.getPredicate().formalpredicate().getProgramRepresentationKind().isPresent()) {
 				// all literals that refer to the program representation have the correct
 				// type, so don't change that.
 			} else {

@@ -164,8 +164,8 @@ aspect LanguageSpecific {
 		// Expose the AST relation
 		if (used.contains("AST"))
 			ret.add(makeASTRule(ctx));
-		// Introduce a predicate for provenance
-		ret.add(makeProvenanceRelation(ctx));
+		// // Introduce a predicate for provenance
+		// ret.add(makeProvenanceRelation(ctx));
 
 		return ret;
 	}

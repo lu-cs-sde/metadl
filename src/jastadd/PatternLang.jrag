@@ -30,13 +30,20 @@ aspect PatternLang {
 
     syn String AnalyzeBlock.getScopePrefix() = "A_" + getLine(getStart()) + "_" + getColumn(getStart()) + "_";
 	syn AnalyzeContext AnalyzeBlock.getContext() {
-		return new AnalyzeContext(getScopePrefix(), getProgramRepresentationPredicateName());
+		return new AnalyzeContext(getScopePrefix(),
+								  getProgramRepresentationPredicateName(ProgramRepresentation.AST),
+								  getProgramRepresentationPredicateName(ProgramRepresentation.ATTR_PROVENANCE));
 	}
-	syn String AnalyzeBlock.getProgramRepresentationPredicateName() {
-		return getScopePrefix() + "PR";
-	}
-	syn String AnalyzeBlock.getAttributeProvenancePredicateName() {
-		return getScopePrefix() + "PROV";
+	syn String AnalyzeBlock.getProgramRepresentationPredicateName(ProgramRepresentation r) {
+		switch (r) {
+		case AST:
+			return getScopePrefix() + "PR";
+		case ATTR_PROVENANCE:
+			return getScopePrefix() + "PROV";
+		case ATTR:
+			return getScopePrefix() + "ATTR";
+		}
+		return null;
 	}
 
 	coll ArrayList<Pattern> AnalyzeBlock.patterns() [new ArrayList<Pattern>()] root AnalyzeBlock;
@@ -321,10 +328,13 @@ aspect PatternLang {
 	public class AnalyzeContext {
 		public String scopePrefix;
 		public String progRelName;
+		public String provenanceRelName;
 
-		public AnalyzeContext(String scopePrefix, String progRelName) {
+		public AnalyzeContext(String scopePrefix, String progRelName,
+							  String provenanceRelName) {
 			this.scopePrefix = scopePrefix;
 			this.progRelName = progRelName;
+			this.provenanceRelName = provenanceRelName;
 		}
 
 		// TODO: make scopePrefix private and fix all uses
@@ -333,33 +343,55 @@ aspect PatternLang {
 		}
 	}
 
+	public enum ProgramRepresentation {
+		AST,
+		ATTR,
+		ATTR_PROVENANCE
+	}
+
 	public interface ASTBuilder {
 		Symbol buildAST(final ParseTree t, final java.util.List<Symbol> symbols);
 		Grammar getGrammar();
 		EarleyParser getParser();
 	}
 
-	syn boolean PredicateSymbol.isProgramRepresentation() {
+	syn boolean PredicateSymbol.isProgramRepresentation(ProgramRepresentation r) {
 		if (enclosingAnalyzeBlock() == null)
 			return false;
-		return enclosingAnalyzeBlock().getProgramRepresentationPredicateName().equals(getPRED_ID());
+		return enclosingAnalyzeBlock().getProgramRepresentationPredicateName(r).equals(getPRED_ID());
 	}
 
-	syn lazy boolean FormalPredicate.isProgramRepresentation() {
+	syn lazy boolean FormalPredicate.isProgramRepresentation(ProgramRepresentation r) {
 		for (PredicateSymbol psym : predicates()) {
-			if (psym.isProgramRepresentation())
+			if (psym.isProgramRepresentation(r))
 				return true;
 		}
 		return false;
 	}
 
-	private static PredicateType FormalPredicate.programRepresentationType() {
-		PredicateType ptype = new PredicateType(StringType.get(),
+	syn lazy Optional<ProgramRepresentation> FormalPredicate.getProgramRepresentationKind() {
+		for (ProgramRepresentation r : ProgramRepresentation.class.getEnumConstants()) {
+			if (isProgramRepresentation(r))
+				return Optional.of(r);
+		}
+		return Optional.empty();
+	}
+
+	private static PredicateType FormalPredicate.programRepresentationType(ProgramRepresentation r) {
+		switch (r) {
+		case AST:
+			return new PredicateType(StringType.get(),
 												ASTNodeType.get(),
 												IntegerType.get(),
 												ASTNodeType.get(),
 												StringType.get());
-		return ptype;
+		case ATTR:
+			// TBD
+			return null;
+		case ATTR_PROVENANCE:
+			return new PredicateType(ASTNodeType.get(), StringType.get(), StringType.get());
+		}
+		return null;
 	}
 
 	syn PredicateType FormalPredicate.getContextPredicateType() {

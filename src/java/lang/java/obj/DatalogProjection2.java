@@ -28,7 +28,8 @@ public class DatalogProjection2 {
 	private ASTNode<?> root;
 
 	private int currentNumber = 0;
-	private TupleInserter prel;
+	private TupleInserter programRepresentation;
+	private TupleInserter attributeProvenance;
 	private int tokenUID = Integer.MAX_VALUE;
 	private Map<ASTNode<?>, Integer> nodeNumber = new HashMap<>();
 	private Map<Integer, ASTNode<?>> number2Node = new HashMap<>();
@@ -39,9 +40,12 @@ public class DatalogProjection2 {
 	// that is easier to modify.
 	private boolean deepAnalysis = System.getenv().get("METADL_ANALYSIS") != null;
 
-	public DatalogProjection2(ASTNode<?> root, TupleInserter rel) {
+	public DatalogProjection2(ASTNode<?> root,
+							  TupleInserter programRelation,
+							  TupleInserter attributeProvenanceRelation) {
 		this.root = root;
-		this.prel = rel;
+		this.programRepresentation = programRelation;
+		this.attributeProvenance = attributeProvenanceRelation;
 	}
 
 	private int nodeId(ASTNode<?> n) {
@@ -67,12 +71,11 @@ public class DatalogProjection2 {
 		traverseTime.stop();
 		StopWatch attributeMapTime = StopWatch.createStarted();
 		mapAttributes(worklist, Pair.of("type", "ATTR_type"), Pair.of("decl", "ATTR_decl"), Pair.of("genericDecl", "ATTR_generic_decl"));
-		prel.done();
+		programRepresentation.done();
+		attributeProvenance.done();
 		attributeMapTime.stop();
 		SimpleLogger.logger().time("Object AST initial traversal: " + traverseTime.getTime() + "ms");
 		SimpleLogger.logger().time("Attribute tabulation: " + attributeMapTime.getTime() + "ms");
-
-		// System.out.println(((org.extendj.ast.Program) root).provenance);
 	}
 
 
@@ -90,10 +93,15 @@ public class DatalogProjection2 {
 				String attributeName = attrRelPair.getLeft();
 				String relName = attrRelPair.getRight();
 				ASTNode<?> r = nodeAttribute(n, attributeName);
-				System.out.println(nodeId(n) + ", " + attributeName + " : " + attrProvenance(n, attributeName));
 
 				if (r == null)
 					continue;
+
+				// log the attribute's provenance information
+				Set<String> srcs = attrProvenance(n, attributeName);
+				for (String src : srcs) {
+					attributeProvenance.insertTuple(nodeId(n), attributeName, src);
+				}
 
 				if (!visited(r)) {
 					// attributes may refer to NTAs, that were not visited in the
@@ -101,7 +109,7 @@ public class DatalogProjection2 {
 					// subtree to the worklist, for attribute evaluation
 					traverse(r, worklist);
 				}
-				prel.insertTuple(relName, nodeId(n), -1, nodeId(r), "");
+				programRepresentation.insertTuple(relName, nodeId(n), -1, nodeId(r), "");
 			}
 		}
 	}
@@ -130,7 +138,7 @@ public class DatalogProjection2 {
 	}
 
 	private void recordRewrittenNode(ASTNode<?> original, ASTNode<?> target) {
-		prel.insertTuple("REWRITE", nodeId(original), -1, nodeId(target), "");
+		programRepresentation.insertTuple("REWRITE", nodeId(original), -1, nodeId(target), "");
 	}
 
 	private static String getRelation(ASTNode<?> n) {
@@ -157,12 +165,12 @@ public class DatalogProjection2 {
 
 	private void srcLoc(ASTNode<?> n, int nid) {
 		String srcFile = getSourceFile(n);
-		prel.insertTuple("SrcLocStart",
+		programRepresentation.insertTuple("SrcLocStart",
 						 nid,
 						 beaver.Symbol.getLine(n.getStart()),
 						 beaver.Symbol.getColumn(n.getStart()),
 						 srcFile);
-		prel.insertTuple("SrcLocEnd",
+		programRepresentation.insertTuple("SrcLocEnd",
 						 nid,
 						 beaver.Symbol.getLine(n.getEnd()),
 						 beaver.Symbol.getColumn(n.getEnd()),
@@ -229,7 +237,10 @@ public class DatalogProjection2 {
 
 	private Set<String> attrProvenance(ASTNode<?> n, String attrName) {
 		ProvenanceStackMachine prov = ((org.extendj.ast.Program) root).provenance;
-		return prov.getSources();
+		Set<String> res =  prov.getSources();
+		// TODO: clear the stack before attribute computations
+		// prov.reset();
+		return res;
 	}
 
 	private List<String> tokens(ASTNode<?> n) {
@@ -283,10 +294,10 @@ public class DatalogProjection2 {
 			ASTNode<?> child = n.getChildNoTransform(i);
 			// TODO: ExtendJ sometimes returns null for child. Understand why.
 			if (child != null) {
-				prel.insertTuple(relName, nodeId(n), childIndex, nodeId(child), "");
+				programRepresentation.insertTuple(relName, nodeId(n), childIndex, nodeId(child), "");
 				if (child.mayHaveRewrite()) {
 					ASTNode<?> childT = n.getChild(i);
-					prel.insertTuple(relName, nodeId(n), childIndex, nodeId(childT), "");
+					programRepresentation.insertTuple(relName, nodeId(n), childIndex, nodeId(childT), "");
 				}
 			}
 			childIndex++;
@@ -299,16 +310,16 @@ public class DatalogProjection2 {
 			// ("Token", ChildId, 0, 0, "TokenAsString")
 
 			// Add a tuple to the current node relation
-			prel.insertTuple(relName, nid, childIndex++, tokenUID, "");
+			programRepresentation.insertTuple(relName, nid, childIndex++, tokenUID, "");
 			// Add a tuple to Token relation
-			prel.insertTuple("Terminal", tokenUID, 0, 0, cleanTerminal(t));
+			programRepresentation.insertTuple("Terminal", tokenUID, 0, 0, cleanTerminal(t));
 
 			tokenUID--;
 		}
 
 		if (childIndex == 0) {
 			// This node has no children, emit that
-			prel.insertTuple(relName, nid, -1, -1, "");
+			programRepresentation.insertTuple(relName, nid, -1, -1, "");
 		}
 	}
 }

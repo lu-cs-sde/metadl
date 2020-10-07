@@ -374,7 +374,7 @@ aspect SoufflePrinting {
 
 	private void Program.soufflePrintIMPORTFacts(PrettyPrinter pr) {
 		for (FormalPredicate pred : getFormalPredicates()) {
-			if (pred.isProgramRepresentation()) {
+			if (pred.getProgramRepresentationKind().isPresent()) {
 				pr.out.print(".input ");
 				pr.out.print(pred.getPRED_ID());
 				pr.out.print("(filename=\"");

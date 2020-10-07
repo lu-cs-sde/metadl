@@ -142,7 +142,7 @@ aspect Eval {
 				srcPred.eval(ctx);
 
 				// now populate the relations associated with the analyze block
-				FormalPredicate prel = formalPredicateMap().get(block.getProgramRepresentationPredicateName());
+				FormalPredicate prel = formalPredicateMap().get(block.getProgramRepresentationPredicateName(ProgramRepresentation.AST));
 				if (prel != null) {
 					populateProgramRepresentation(srcPred, prel, block.getLang().getSTRING(),
 												  ctx, fpToSoufflePredMap);
@@ -161,7 +161,7 @@ aspect Eval {
 		// Iterate over all the program representation predicates and dump their relations
 		// to CSV files.
 		for (FormalPredicate srcPred : getFormalPredicates()) {
-			if (srcPred.isProgramRepresentation()) {
+			if (srcPred.getProgramRepresentationKind().isPresent()) {
 				CSVUtil.writeRelation(evalCtx(), srcPred.type(), srcPred.relation2(),
 									  opts.getFactsDir() + "/" + srcPred.getPRED_ID() + ".csv");
 			}

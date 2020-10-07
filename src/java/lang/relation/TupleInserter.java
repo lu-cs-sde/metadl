@@ -6,4 +6,11 @@ public interface TupleInserter {
 		insertTuple((Object)s0, l1, l2, l3, s4);
 	}
 	default void done() {};
+
+	static TupleInserter NULL =
+		new TupleInserter() {
+			@Override public void insertTuple(final Object... elems) {
+				// do nothing
+			}
+		};
 }

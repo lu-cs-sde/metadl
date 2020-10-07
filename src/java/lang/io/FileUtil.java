@@ -110,7 +110,7 @@ public class FileUtil {
 		}
 
 		// Generate the program relation
-		lang.java.obj.DatalogProjection2 proj2 = new lang.java.obj.DatalogProjection2(p, rel);
+		lang.java.obj.DatalogProjection2 proj2 = new lang.java.obj.DatalogProjection2(p, rel, TupleInserter.NULL);
 		proj2.generate();
 	}
 }

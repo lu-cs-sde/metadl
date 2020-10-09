@@ -1,0 +1,13 @@
+Src("tests/evaluation/metadl-java/src/attr-provenance").
+
+Attribute("ATTR_type").
+Attribute("ATTR_decl").
+Attribute("ATTR_generic_decl").
+
+java('Src) {
+	   MissingProvenance(n) :- Attribute(attr), AST(attr, n, _, _, _), NOT(PROVENANCE(n, attr, _)).
+	   ProvenanceData(n, attr, file) :- n <: c.foo() :>, PROVENANCE(n, attr, file).
+}
+
+# OUTPUT('MissingProvenance).
+OUTPUT('ProvenanceData).

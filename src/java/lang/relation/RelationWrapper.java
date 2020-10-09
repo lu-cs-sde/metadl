@@ -35,12 +35,12 @@ public class RelationWrapper implements TupleInserter {
 				if (i != 0) {
 					s += ", ";
 				}
-				if (type.get(i) == IntegerType.get()) {
+				if (type.get(i).storageType() == IntegerType.get()) {
 					s += t.get(i);
-				} else if (type.get(i) == StringType.get()) {
+				} else if (type.get(i).storageType() == StringType.get()) {
 					s += "\"" + ctx.externalizeString(t.get(i)) + "\"";
 				} else {
-					assert type.get(i) == PredicateRefType.get();
+					assert type.get(i).storageType() == PredicateRefType.get();
 					s += "'" + ctx.externalizeString(t.get(i));
 				}
 			}

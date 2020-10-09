@@ -41,11 +41,10 @@ public class DatalogProjection2 {
 	private boolean deepAnalysis = System.getenv().get("METADL_ANALYSIS") != null;
 
 	public DatalogProjection2(ASTNode<?> root,
-							  TupleInserter programRelation,
-							  TupleInserter attributeProvenanceRelation) {
+							  DatalogProjectionSink tupleSink) {
 		this.root = root;
-		this.programRepresentation = programRelation;
-		this.attributeProvenance = attributeProvenanceRelation;
+		this.programRepresentation = tupleSink.ast;
+		this.attributeProvenance = tupleSink.provenance;
 	}
 
 	private int nodeId(ASTNode<?> n) {
@@ -100,7 +99,7 @@ public class DatalogProjection2 {
 				// log the attribute's provenance information
 				Set<String> srcs = attrProvenance(n, attributeName);
 				for (String src : srcs) {
-					attributeProvenance.insertTuple(nodeId(n), attributeName, src);
+					attributeProvenance.insertTuple(nodeId(n), relName, src);
 				}
 
 				if (!visited(r)) {
@@ -237,9 +236,8 @@ public class DatalogProjection2 {
 
 	private Set<String> attrProvenance(ASTNode<?> n, String attrName) {
 		ProvenanceStackMachine prov = ((org.extendj.ast.Program) root).provenance;
-		Set<String> res =  prov.getSources();
-		// TODO: clear the stack before attribute computations
-		// prov.reset();
+		Set<String> res =  prov.getSources(n, attrName + "()");
+		prov.reset();
 		return res;
 	}
 

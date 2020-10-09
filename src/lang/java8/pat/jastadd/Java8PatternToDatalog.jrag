@@ -164,9 +164,8 @@ aspect LanguageSpecific {
 		// Expose the AST relation
 		if (used.contains("AST"))
 			ret.add(makeASTRule(ctx));
-		// // Introduce a predicate for provenance
-		// ret.add(makeProvenanceRelation(ctx));
-
+		if (used.contains("PROVENANCE"))
+			ret.add(makeProvenanceRule(ctx));
 		return ret;
 	}
 
@@ -192,6 +191,7 @@ aspect LanguageSpecific {
 		case "GENERIC":
 		// Expose the program representation through the AST context predicate.
 		case "AST":
+		case "PROVENANCE":
 			s = predName; break;
 		default: return null;
 		}
@@ -237,6 +237,10 @@ aspect LanguageSpecific {
 											  lang.ast.ExtASTNodeType.get(),
 											  lang.ast.IntegerType.get(),
 											  lang.ast.ExtASTNodeType.get(),
+											  lang.ast.StringType.get());
+		case "PROVENANCE":
+			return new lang.ast.PredicateType(lang.ast.ExtASTNodeType.get(),
+											  lang.ast.StringType.get(),
 											  lang.ast.StringType.get());
 		default:
 			return null;

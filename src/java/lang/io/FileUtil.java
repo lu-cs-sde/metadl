@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.StringReader;
+
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import org.apache.commons.io.filefilter.IOFileFilter;
@@ -25,6 +26,7 @@ import lang.ast.LangScanner;
 import lang.ast.Program;
 import lang.relation.RelationWrapper;
 import lang.relation.TupleInserter;
+import lang.java.obj.DatalogProjectionSink;
 
 public class FileUtil {
 	public static String changeExtension(String filename, String newExtension) {
@@ -71,7 +73,8 @@ public class FileUtil {
 		return lang.Compiler.parseCmdLineArgs(s.split("\\s+"));
 	}
 
-	public static void loadJavaSources(EvaluationContext ctx, TupleInserter rel,
+	public static void loadJavaSources(EvaluationContext ctx,
+									   DatalogProjectionSink tupleSink,
 									   java.util.List<String> locs) throws IOException {
 		org.extendj.ast.Program p = new org.extendj.ast.Program();
 
@@ -110,7 +113,7 @@ public class FileUtil {
 		}
 
 		// Generate the program relation
-		lang.java.obj.DatalogProjection2 proj2 = new lang.java.obj.DatalogProjection2(p, rel, TupleInserter.NULL);
+		lang.java.obj.DatalogProjection2 proj2 = new lang.java.obj.DatalogProjection2(p, tupleSink);
 		proj2.generate();
 	}
 }

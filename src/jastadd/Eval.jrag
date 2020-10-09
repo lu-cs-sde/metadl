@@ -10,10 +10,9 @@ import java.util.concurrent.Executors;
 
 aspect Eval {
 	public void Program.populateProgramRepresentation(FormalPredicate srcs,
-													  FormalPredicate programRepresentation,
+													  DatalogProjectionSink tupleSink,
 													  String srcLang,
-													  EvaluationContext ctx,
-													  Map<FormalPredicate, TupleInserter> fpToSoufflePredMap) throws IOException {
+													  EvaluationContext ctx) throws IOException {
 		RelationWrapper sourceFilesAndFolders = new RelationWrapper(ctx, srcs.relation2(), srcs.type());
 		java.util.List<String> locs = new ArrayList<>();
 		for (RelationWrapper.TupleWrapper t : sourceFilesAndFolders.tuples()) {
@@ -22,13 +21,9 @@ aspect Eval {
 		}
 
 		if (srcLang.equals("java8")) {
-			if (fpToSoufflePredMap != null) {
-				FileUtil.loadJavaSources(ctx, fpToSoufflePredMap.get(programRepresentation), locs);
-			} else {
-				FileUtil.loadJavaSources(ctx, new RelationWrapper(ctx, programRepresentation.relation2(),
-																  programRepresentation.type()),
-										 locs);
-			}
+			FileUtil.loadJavaSources(ctx,
+									 tupleSink,
+									 locs);
 		} else if (srcLang.equals("metadl")) {
 			MutableInt nodeCounter = new MutableInt(1);
 			try {
@@ -37,56 +32,13 @@ aspect Eval {
 				}
 				lang.metadl.obj.ast.Program importedProgram = lang.metadl.obj.ast.Program.fromFileLoc(locs.get(0));
 				importedProgram.assignIds(nodeCounter);
-				RelationWrapper rw = new RelationWrapper(ctx, programRepresentation.relation2(), programRepresentation.type());
+				RelationWrapper rw = (RelationWrapper) tupleSink.ast;
 				rw.insertTuples(importedProgram.datalogProjection().tuples());
 			} catch (beaver.Parser.Exception exception) {
 				throw new RuntimeException(exception);
 			}
 		} else {
 			throw new RuntimeException("Unknown language for analyze blocks: " + srcLang + ".");
-		}
-	}
-
-	public void Program.evalIMPORT(EvaluationContext ctx, Map<FormalPredicate, TupleInserter> fpToSoufflePredMap) throws IOException {
-		FormalPredicate fpImp = formalPredicateMap().get(GlobalNames.IMPORT_NAME);
-		if (fpImp == null) {
-			// no IMPORT in the program, nothing to do
-			return;
-		}
-
-		// evaluate the program, up to and including the strata where IMPORT is defined
-		fpImp.eval(ctx);
-
-		// now iterate over the tuples in the IMPORT relation
-		RelationWrapper importTuples = new RelationWrapper(ctx, fpImp.relation2(), fpImp.type());
-		for (RelationWrapper.TupleWrapper t : importTuples.tuples()) {
-			String pred = t.getAsString(0);
-			String loc = t.getAsString(1);
-			String srcLang = t.getAsString(2);
-
-			FormalPredicate dstPred = formalPredicateMap().get(pred);
-			Relation2 rel = dstPred.relation2();
-
-			if (srcLang.equals("java8")) {
-				if (fpToSoufflePredMap != null) {
-					FileUtil.loadJavaSources(ctx, fpToSoufflePredMap.get(dstPred), Collections.singletonList(loc));
-				} else {
-					FileUtil.loadJavaSources(ctx, new RelationWrapper(ctx, rel, dstPred.type()),
-											 Collections.singletonList(loc));
-				}
-			} else if (srcLang.equals("metadl")) {
-				MutableInt nodeCounter = new MutableInt(1);
-				try {
-					lang.metadl.obj.ast.Program importedProgram = lang.metadl.obj.ast.Program.fromFileLoc(loc);
-					importedProgram.assignIds(nodeCounter);
-					RelationWrapper rw = new RelationWrapper(ctx, rel, dstPred.type());
-					rw.insertTuples(importedProgram.datalogProjection().tuples());
-				} catch (beaver.Parser.Exception exception) {
-					throw new RuntimeException(exception);
-				}
-			} else {
-				throw new RuntimeException("Unknown language for IMPORT: " + srcLang + ".");
-			}
 		}
 	}
 
@@ -138,15 +90,18 @@ aspect Eval {
 				AnalyzeBlock block = (AnalyzeBlock) c;
 				FormalPredicate srcPred = block.getProgramRef().formalpredicate();
 
-				// evalute the predicate representing the input program paths
+				// evaluate the predicate representing the input program paths
 				srcPred.eval(ctx);
 
 				// now populate the relations associated with the analyze block
-				FormalPredicate prel = formalPredicateMap().get(block.getProgramRepresentationPredicateName(ProgramRepresentation.AST));
-				if (prel != null) {
-					populateProgramRepresentation(srcPred, prel, block.getLang().getSTRING(),
-												  ctx, fpToSoufflePredMap);
-				}
+				DatalogProjectionSink tupleSink = getDatalogProjectionSink(block);
+
+				// TODO: use the fpToSoufflePredMap to remap inserters in the
+				// DatalogProjectionSink
+				populateProgramRepresentation(srcPred,
+											  tupleSink,
+											  block.getLang().getSTRING(),
+											  ctx);
 			}
 		}
 	}

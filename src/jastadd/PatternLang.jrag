@@ -10,6 +10,7 @@ import static lang.io.SimpleLogger.*;
 import java.util.IdentityHashMap;
 import org.apache.commons.lang3.time.StopWatch;
 import lang.ast.Constructors;
+import lang.java.obj.DatalogProjectionSink;
 
 import se.lth.sep.*;
 import static se.lth.sep.Util.*;
@@ -34,6 +35,7 @@ aspect PatternLang {
 								  getProgramRepresentationPredicateName(ProgramRepresentation.AST),
 								  getProgramRepresentationPredicateName(ProgramRepresentation.ATTR_PROVENANCE));
 	}
+
 	syn String AnalyzeBlock.getProgramRepresentationPredicateName(ProgramRepresentation r) {
 		switch (r) {
 		case AST:
@@ -151,7 +153,6 @@ aspect PatternLang {
 
 	syn String Pattern.predName() = hash(getPATTERN());
 	eq BoundedPattern.predName() = hash(getPATTERN() + "bounded");
-
 
 	protected Literal Pattern.getLiteralHelper(CommonVariable bindVar) {
 		if (enclosingAnalyzeBlock() == null)
@@ -408,4 +409,13 @@ aspect PatternLang {
 	coll Set<String> AnalyzeBlock.usedContextPredicates() [new HashSet<String>()] root AnalyzeBlock;
 	PredicateSymbol contributes getContextPredicateName() when
 		getContextPredicateName() != null to AnalyzeBlock.usedContextPredicates();
+
+	syn DatalogProjectionSink Program.getDatalogProjectionSink(AnalyzeBlock block) {
+		FormalPredicate ast = formalPredicateMap().get(block.getProgramRepresentationPredicateName(ProgramRepresentation.AST));
+		FormalPredicate provenance = formalPredicateMap().get(block.getProgramRepresentationPredicateName(ProgramRepresentation.ATTR_PROVENANCE));
+
+		return new DatalogProjectionSink(ast != null ? new RelationWrapper(evalCtx(), ast.relation2(), ast.type()) : null,
+										 provenance != null ? new RelationWrapper(evalCtx(), provenance.relation2(), provenance.type()) : null,
+										 null);
+	}
 }

@@ -12,6 +12,7 @@ import lang.ast.FormalPredicate;
 import lang.ast.Program;
 import lang.io.FileUtil;
 import lang.io.SimpleLogger;
+import lang.java.obj.DatalogProjectionSink;
 import lang.relation.TupleInserter;
 
 public class SWIGUtil {
@@ -35,8 +36,6 @@ public class SWIGUtil {
 		}
 
 		return Pair.of(swigProg, fpToSoufflePredMap);
-
-
 	}
 
 	private static void runSWIGProgram(SWIGSouffleProgram swigProg, CmdLineOpts opts) {
@@ -53,7 +52,7 @@ public class SWIGUtil {
 	public static void evalHybridProgram(Program prog, CmdLineOpts opts) throws IOException {
 		Pair<SWIGSouffleProgram, Map<FormalPredicate, TupleInserter>> progInfoPair = loadSWIGProgram(prog, opts);
 		prog.evalEDB(prog.evalCtx(), opts);
-		prog.evalIMPORT(prog.evalCtx(), progInfoPair.getRight());
+		prog.evalAnalyzeBlocks(prog.evalCtx(), opts, progInfoPair.getRight());
 		runSWIGProgram(progInfoPair.getLeft(), opts);
 	}
 }

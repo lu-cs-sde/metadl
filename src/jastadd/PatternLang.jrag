@@ -403,11 +403,21 @@ aspect PatternLang {
 					return ptype;
 			}
 		}
+
+		for (PredicateRef pr : predicateRefs()) {
+			if (pr.getContextPredicateName() != null) {
+				PredicateType ptype = pr.enclosingAnalyzeBlock().contextPredicateType(pr.getContextPredicateName());
+				if (ptype != null)
+					return ptype;
+			}
+		}
 		return null;
 	}
 
 	coll Set<String> AnalyzeBlock.usedContextPredicates() [new HashSet<String>()] root AnalyzeBlock;
 	PredicateSymbol contributes getContextPredicateName() when
+		getContextPredicateName() != null to AnalyzeBlock.usedContextPredicates();
+	PredicateRef contributes getContextPredicateName() when
 		getContextPredicateName() != null to AnalyzeBlock.usedContextPredicates();
 
 	syn DatalogProjectionSink Program.getDatalogProjectionSink(AnalyzeBlock block) {

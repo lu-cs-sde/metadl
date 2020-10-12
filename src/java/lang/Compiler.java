@@ -291,6 +291,7 @@ public class Compiler {
 				prog.dumpTypes(System.out);
 				break;
 			case EVAL_IMPORT:
+				prog.evalEDB(prog.evalCtx(), opts);
 				prog.generateObjectProgramRelations(opts);
 				break;
 			case CHECK:

@@ -11,7 +11,7 @@ all : $(TARGETS)
 	java -jar $(METADL) -p souffle -F . -D . $<
 
 %.run : %.dl
-	souffle -p $<.prof $< -o $@
+	souffle -w -p $<.prof $< -o $@
 
 clean :
 	rm -f *.dl

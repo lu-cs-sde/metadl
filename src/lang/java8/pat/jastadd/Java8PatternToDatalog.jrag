@@ -234,12 +234,12 @@ aspect LanguageSpecific {
 											  lang.ast.ExtASTNodeType.get());
 		case "AST":
 			return new lang.ast.PredicateType(lang.ast.StringType.get(),
-											  lang.ast.ExtASTNodeType.get(),
+											  lang.ast.ASTNodeType.get(),
 											  lang.ast.IntegerType.get(),
-											  lang.ast.ExtASTNodeType.get(),
+											  lang.ast.ASTNodeType.get(),
 											  lang.ast.StringType.get());
 		case "PROVENANCE":
-			return new lang.ast.PredicateType(lang.ast.ExtASTNodeType.get(),
+			return new lang.ast.PredicateType(lang.ast.ASTNodeType.get(),
 											  lang.ast.StringType.get(),
 											  lang.ast.StringType.get());
 		default:

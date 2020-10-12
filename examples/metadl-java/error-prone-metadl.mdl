@@ -252,4 +252,6 @@ Conditional(0, 0, 0), Shift(0, 0, 0), Arithmetic(0, 0, 0), SafeAssoc(0, 0, 0) :-
 OUTPUT('ConfusingDetail).
 OUTPUT('ExtraParenDetail).
 
+
+OUTPUT('PROVENANCE).
 }

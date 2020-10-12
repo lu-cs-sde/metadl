@@ -210,5 +210,6 @@ PrimitiveCtor(0) :- NEQ(0, 0).
 
 OUTPUT('PrimitiveCtorDetail).
 OUTPUT('PrimitiveStringCtorDetail).
+OUTPUT('PROVENANCE).
 
 }

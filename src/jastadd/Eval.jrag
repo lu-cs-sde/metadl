@@ -32,7 +32,7 @@ aspect Eval {
 				}
 				lang.metadl.obj.ast.Program importedProgram = lang.metadl.obj.ast.Program.fromFileLoc(locs.get(0));
 				importedProgram.assignIds(nodeCounter);
-				RelationWrapper rw = (RelationWrapper) tupleSink.ast;
+				RelationWrapper rw = (RelationWrapper) tupleSink.getAst();
 				rw.insertTuples(importedProgram.datalogProjection().tuples());
 			} catch (beaver.Parser.Exception exception) {
 				throw new RuntimeException(exception);
@@ -96,8 +96,12 @@ aspect Eval {
 				// now populate the relations associated with the analyze block
 				DatalogProjectionSink tupleSink = getDatalogProjectionSink(block);
 
-				// TODO: use the fpToSoufflePredMap to remap inserters in the
+				// use the fpToSoufflePredMap to remap inserters in the
 				// DatalogProjectionSink
+				if (fpToSoufflePredMap != null) {
+					tupleSink = tupleSink.remap(fpToSoufflePredMap);
+				}
+
 				populateProgramRepresentation(srcPred,
 											  tupleSink,
 											  block.getLang().getSTRING(),

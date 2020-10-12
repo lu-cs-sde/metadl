@@ -43,8 +43,8 @@ public class DatalogProjection2 {
 	public DatalogProjection2(ASTNode<?> root,
 							  DatalogProjectionSink tupleSink) {
 		this.root = root;
-		this.programRepresentation = tupleSink.ast;
-		this.attributeProvenance = tupleSink.provenance;
+		this.programRepresentation = tupleSink.getAst();
+		this.attributeProvenance = tupleSink.getProvenance();
 	}
 
 	private int nodeId(ASTNode<?> n) {

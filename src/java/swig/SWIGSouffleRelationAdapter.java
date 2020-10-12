@@ -20,8 +20,8 @@ public class SWIGSouffleRelationAdapter implements TupleInserter {
 		this.rel = rel;
 		buffer.order(ByteOrder.nativeOrder());
 	}
-	@Override
-	public void insertTuple(Object... elems) {
+
+	public void insertTupleDirect(Object... elems) {
 		assert false;
 		SWIGSouffleTuple tpl = rel.makeTuple();
 		for (Object elem : elems) {
@@ -38,47 +38,55 @@ public class SWIGSouffleRelationAdapter implements TupleInserter {
 		rel.add(tpl);
 	}
 
-	@Override
-	public void insertTuple(String s0, long l1, long l2, long l3, String s4) {
-		byte[] s0Bytes = s0.getBytes(StandardCharsets.UTF_8);
-		byte[] s4Bytes = s4.getBytes(StandardCharsets.UTF_8);
-		// the strings should be 0-terminated, that means 2 extra bytes in the
-		// output
-
-		int requiredSize = 2 * Integer.BYTES + // s0len, s4len
-			1 + s0Bytes.length + // s0 + terminating 0
-			1 + s4Bytes.length + // s4 + terminating 0
-			3 * Long.BYTES; // l1, l2, l3
-
-		int minRequiredSize = 2 * Integer.BYTES;
+	@Override public void insertTuple(Object... elems) {
+		// arity
+		int requiredSize = Integer.BYTES;
+		int minRequiredSize = Integer.BYTES;
+		for (Object elem : elems) {
+			if (elem instanceof Integer ||
+				elem instanceof Long) {
+				// 8 bytes for value
+				requiredSize += Long.BYTES;
+				// 4 bytes in the header
+				requiredSize += Integer.BYTES;
+			} else if (elem instanceof String) {
+				// size of the 0 terminated string
+				requiredSize += ((String) elem).getBytes(StandardCharsets.UTF_8).length + 1;
+				// 4 bytes in the header, for the length
+				requiredSize += Integer.BYTES;
+			} else {
+				throw new RuntimeException("Unknown type for tuple element.");
+			}
+		}
 
 		if (buffer.remaining() >= requiredSize + minRequiredSize) {
-			buffer.putInt(s0Bytes.length + 1);
-			buffer.putInt(s4Bytes.length + 1);
-			buffer.putLong(l1);
-			buffer.putLong(l2);
-			buffer.putLong(l3);
-			buffer.put(s0Bytes);
-			buffer.put((byte) 0);
-			buffer.put(s4Bytes);
-			buffer.put((byte) 0);
-
-			totalTuples++;
+			buffer.putInt(elems.length);
+			for (Object elem : elems) {
+				if (elem instanceof Integer) {
+					buffer.putInt(-1);
+					buffer.putLong((long) (int) (Integer)elem);
+				} else if (elem instanceof Long) {
+					buffer.putInt(-1);
+					buffer.putLong((Long) elem);
+				} else {
+					byte[] bytes = ((String) elem).getBytes(StandardCharsets.UTF_8);
+					buffer.putInt(bytes.length + 1);
+					buffer.put(bytes);
+					buffer.put((byte) 0);
+				}
+			}
 			totalSize += requiredSize;
-
+			totalTuples++;
 		} else {
+			// mark the end of the buffer
 			assert buffer.remaining() >= minRequiredSize;
 			buffer.putInt(-1);
-			buffer.putInt(-1);
 
-			// TODO: we could use double buffering and let
-			// this be executed by another thread
-			// dumpBuffer();
+			// trigger a read at the other end
 			rel.readTuplesFromBuffer(buffer);
 
 			// now clear the buffer
 			buffer.clear();
-
 			totalSize += minRequiredSize;
 		}
 	}
@@ -97,16 +105,14 @@ public class SWIGSouffleRelationAdapter implements TupleInserter {
 			// something has been written in the buffer, trigger a read on
 			// the souffle side
 			buffer.putInt(-1);
-			buffer.putInt(-1);
 
 			// dumpBuffer();
 			rel.readTuplesFromBuffer(buffer);
 
 			buffer.clear();
 
-			totalSize += 2 * Integer.BYTES;
+			totalSize += Integer.BYTES;
 		}
-
 		System.err.println("==== Added " + totalTuples + " tuples, with a size of " + totalSize + " bytes.");
 	}
 }

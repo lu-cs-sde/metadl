@@ -52,7 +52,7 @@ public class DatalogProjectionSink {
 		res.provenancePredicate = provenancePredicate;
 		res.provenance = sinkRemap.getOrDefault(provenancePredicate, provenance);
 		res.attributesPredicate = attributesPredicate;
-		res.attributes = sinkRemap.getOrDefault(provenancePredicate, attributes);
+		res.attributes = sinkRemap.getOrDefault(attributesPredicate, attributes);
 		return res;
 	}
 

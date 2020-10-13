@@ -7,6 +7,7 @@ import java.nio.ByteOrder;
 import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
 
+import lang.io.SimpleLogger;
 import lang.relation.TupleInserter;
 
 public class SWIGSouffleRelationAdapter implements TupleInserter {
@@ -77,6 +78,9 @@ public class SWIGSouffleRelationAdapter implements TupleInserter {
 			}
 			totalSize += requiredSize;
 			totalTuples++;
+			if (totalTuples % 1_000_000 == 0) {
+				SimpleLogger.logger().debug("Pushed " + totalTuples + " tuples through the SWIG interface.");
+			}
 		} else {
 			// mark the end of the buffer
 			assert buffer.remaining() >= minRequiredSize;

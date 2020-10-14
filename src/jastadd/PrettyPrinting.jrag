@@ -331,7 +331,7 @@ aspect SoufflePrinting {
 	private void Program.soufflePrintEDBDecl(PrettyPrinter pr) {
 		FormalPredicate fpEDB = formalPredicateMap().get(GlobalNames.EDB_NAME);
 		if (fpEDB == null) {
-			// no IMPORT in the program, nothing to do
+			// no EDB in the program, nothing to do
 			return;
 		}
 

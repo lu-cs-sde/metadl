@@ -30,6 +30,7 @@ public class DatalogProjection2 {
 	private int currentNumber = 0;
 	private TupleInserter programRepresentation;
 	private TupleInserter attributeProvenance;
+	private TupleInserter srcLoc;
 	private int tokenUID = Integer.MAX_VALUE;
 	private Map<ASTNode<?>, Integer> nodeNumber = new HashMap<>();
 	private Map<Integer, ASTNode<?>> number2Node = new HashMap<>();
@@ -45,6 +46,7 @@ public class DatalogProjection2 {
 		this.root = root;
 		this.programRepresentation = tupleSink.getAst();
 		this.attributeProvenance = tupleSink.getProvenance();
+		this.srcLoc = tupleSink.getSrcLoc();
 	}
 
 	private int nodeId(ASTNode<?> n) {
@@ -148,32 +150,20 @@ public class DatalogProjection2 {
 	}
 
 	private static boolean isLibraryNode(ASTNode<?> n) {
-		String src = getSourceFile(n);
+		String src = n.sourceFile();
 		if (src.endsWith(".class"))
 			return true;
 		return false;
 	}
 
-	private static String getSourceFile(ASTNode<?> n) {
-		// TODO: ExtendJ does not expose the source file as a public method,
-		// but only the source location, which concatentates the file name
-		// and the line number.
-		String[] loc =  n.sourceLocation().split(":");
-		return loc[0];
-	}
-
 	private void srcLoc(ASTNode<?> n, int nid) {
-		String srcFile = getSourceFile(n);
-		programRepresentation.insertTuple("SrcLocStart",
-						 nid,
-						 beaver.Symbol.getLine(n.getStart()),
-						 beaver.Symbol.getColumn(n.getStart()),
-						 srcFile);
-		programRepresentation.insertTuple("SrcLocEnd",
-						 nid,
-						 beaver.Symbol.getLine(n.getEnd()),
-						 beaver.Symbol.getColumn(n.getEnd()),
-						 "");
+		String srcFile = n.sourceFile();
+		srcLoc.insertTuple(nid,
+						   beaver.Symbol.getLine(n.getStart()),
+						   beaver.Symbol.getColumn(n.getStart()),
+						   beaver.Symbol.getLine(n.getEnd()),
+						   beaver.Symbol.getColumn(n.getEnd()),
+						   srcFile);
 	}
 
 

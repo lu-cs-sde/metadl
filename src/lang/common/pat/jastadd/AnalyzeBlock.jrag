@@ -100,30 +100,8 @@ aspect AnalyzeBlock {
 			/* SRC(n, startLine, startCol, endLine, endCol, file) :- P("SrcLocStart", n, startLine, startCol, file),
 			   P("SrcLocEnd", n, endLine, endCol, _). */
 
-			headList.add(new lang.ast.Literal(new lang.ast.PredicateSymbol(ctx.scopePrefix + "SRC"),
-										   new lang.ast.List<lang.ast.Term>()
-										   .add(new lang.ast.Variable("n"))
-										   .add(new lang.ast.Variable("sl"))
-										   .add(new lang.ast.Variable("sc"))
-										   .add(new lang.ast.Variable("el"))
-										   .add(new lang.ast.Variable("ec"))
-										   .add(new lang.ast.Variable("f"))
-										   ));
-			bodyList.add(new lang.ast.Literal(new lang.ast.PredicateSymbol(ctx.progRelName),
-										   new lang.ast.List<lang.ast.Term>()
-										   .add(new lang.ast.StringConstant("SrcLocStart"))
-										   .add(new lang.ast.Variable("n"))
-										   .add(new lang.ast.Variable("sl"))
-										   .add(new lang.ast.Variable("sc"))
-										   .add(new lang.ast.Variable("f"))));
-			bodyList.add(new lang.ast.Literal(new lang.ast.PredicateSymbol(ctx.progRelName),
-										   new lang.ast.List<lang.ast.Term>()
-										   .add(new lang.ast.StringConstant("SrcLocEnd"))
-										   .add(new lang.ast.Variable("n"))
-										   .add(new lang.ast.Variable("el"))
-										   .add(new lang.ast.Variable("ec"))
-										   .add(new lang.ast.Wildcard())));
-			return new lang.ast.Rule(headList, bodyList);
+			return rule(literal(ctx.scopePrefix + "SRC", "$n", "$sl", "$sc", "$el", "$ec", "$f"),
+						literal(ctx.srcRelName, "$n", "$sl", "$sc", "$el", "$ec", "$f"));
 		}
 
 		public static lang.ast.Rule makeIndexRule(AnalyzeContext ctx) {

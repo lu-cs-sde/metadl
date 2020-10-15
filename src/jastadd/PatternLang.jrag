@@ -33,7 +33,9 @@ aspect PatternLang {
 	syn AnalyzeContext AnalyzeBlock.getContext() {
 		return new AnalyzeContext(getScopePrefix(),
 								  getProgramRepresentationPredicateName(ProgramRepresentation.AST),
-								  getProgramRepresentationPredicateName(ProgramRepresentation.ATTR_PROVENANCE));
+								  getProgramRepresentationPredicateName(ProgramRepresentation.ATTR_PROVENANCE),
+								  getProgramRepresentationPredicateName(ProgramRepresentation.SRC),
+								  getProgramRepresentationPredicateName(ProgramRepresentation.ATTR));
 	}
 
 	syn String AnalyzeBlock.getProgramRepresentationPredicateName(ProgramRepresentation r) {
@@ -44,6 +46,8 @@ aspect PatternLang {
 			return getScopePrefix() + "PROV";
 		case ATTR:
 			return getScopePrefix() + "ATTR";
+		case SRC:
+			return getScopePrefix() + "SLOC";
 		}
 		return null;
 	}
@@ -330,12 +334,17 @@ aspect PatternLang {
 		public String scopePrefix;
 		public String progRelName;
 		public String provenanceRelName;
+		public String srcRelName;
+		public String attrRelName;
 
 		public AnalyzeContext(String scopePrefix, String progRelName,
-							  String provenanceRelName) {
+							  String provenanceRelName, String srcRelName,
+							  String attrRelName) {
 			this.scopePrefix = scopePrefix;
 			this.progRelName = progRelName;
 			this.provenanceRelName = provenanceRelName;
+			this.srcRelName = srcRelName;
+			this.attrRelName = attrRelName;
 		}
 
 		// TODO: make scopePrefix private and fix all uses
@@ -347,7 +356,8 @@ aspect PatternLang {
 	public enum ProgramRepresentation {
 		AST,
 		ATTR,
-		ATTR_PROVENANCE
+		ATTR_PROVENANCE,
+		SRC
 	}
 
 	public interface ASTBuilder {
@@ -381,14 +391,22 @@ aspect PatternLang {
 	private static PredicateType FormalPredicate.programRepresentationType(ProgramRepresentation r) {
 		switch (r) {
 		case AST:
-			return new PredicateType(StringType.get(),
-												ASTNodeType.get(),
-												IntegerType.get(),
-												ASTNodeType.get(),
-												StringType.get());
+			return new PredicateType(StringType.get(), // node kind
+									 ASTNodeType.get(), // node id
+									 IntegerType.get(), // child index
+									 ASTNodeType.get(), // child node id
+									 StringType.get()); // misc (to be removed)
 		case ATTR:
-			// TBD
-			return null;
+			return new PredicateType(ASTNodeType.get(),  // node id
+									 StringType.get(),   // attribute
+									 IntegerType.get()); // attribute value node id
+		case SRC:
+			return new PredicateType(ASTNodeType.get(), // node
+									 IntegerType.get(), // start line
+									 IntegerType.get(), // start col
+									 IntegerType.get(), // end line
+									 IntegerType.get(), // end col,
+									 StringType.get()); // file
 		case ATTR_PROVENANCE:
 			return new PredicateType(ASTNodeType.get(), StringType.get(), StringType.get());
 		}
@@ -423,7 +441,8 @@ aspect PatternLang {
 	syn DatalogProjectionSink Program.getDatalogProjectionSink(AnalyzeBlock block) {
 		FormalPredicate ast = formalPredicateMap().get(block.getProgramRepresentationPredicateName(ProgramRepresentation.AST));
 		FormalPredicate provenance = formalPredicateMap().get(block.getProgramRepresentationPredicateName(ProgramRepresentation.ATTR_PROVENANCE));
+		FormalPredicate srcLoc = formalPredicateMap().get(block.getProgramRepresentationPredicateName(ProgramRepresentation.SRC));
 
-		return new DatalogProjectionSink(evalCtx(), ast, provenance, null);
+		return new DatalogProjectionSink(evalCtx(), ast, provenance, null, srcLoc);
 	}
 }

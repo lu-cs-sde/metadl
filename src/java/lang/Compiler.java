@@ -56,12 +56,18 @@ public class Compiler {
 		formatter.printHelp("metadl PROGRAM", header, options, footer, true);
 	}
 
-	public static Program parseAndCheckProgram(CmdLineOpts opts) throws IOException, beaver.Parser.Exception {
+	public static Program parseProgram(CmdLineOpts opts) throws IOException, beaver.Parser.Exception {
 		String path = opts.getInputFile();
 		StopWatch timer = StopWatch.createStarted();
 		Program program = (Program) FileUtil.parse(new File(path));
 		Compiler.DrAST_root_node = program; // Enable debugging with DrAST
+		timer.stop();
+		SimpleLogger.logger().time("Parsing: " + timer.getTime() + "ms");
+		return program;
+	}
 
+	public static void checkProgram(Program program, CmdLineOpts opts) {
+		StopWatch timer = StopWatch.createStarted();
 		if (program.hasSemanticErrors()) {
 			System.err.println(program.errorReport());
 			System.err.println("Compilation failed with semantic errors.");
@@ -81,8 +87,7 @@ public class Compiler {
 			}
 		}
 		timer.stop();
-		SimpleLogger.logger().time("Parsing and checking program: " + timer.getTime() + "ms");
-		return program;
+		SimpleLogger.logger().time("Semantic and type analysis: " + timer.getTime() + "ms");
 	}
 
 	public static void prettyPrintSouffle(Program program, String soufflePath) throws FileNotFoundException {
@@ -265,44 +270,54 @@ public class Compiler {
 
 	public static Program run(CmdLineOpts opts) {
 		try {
-			Program prog = parseAndCheckProgram(opts);
+			Program prog = parseProgram(opts);
 
 			switch (opts.getAction()) {
 			case EVAL_INTERNAL:
+				checkProgram(prog, opts);
 				prog.eval(opts);
 				break;
 			case EVAL_INTERNAL_PARALLEL:
+				checkProgram(prog, opts);
 				prog.evalParallel(opts);
 				break;
 			case EVAL_SOUFFLE:
+				checkProgram(prog, opts);
 				prog.evalEDB(prog.evalCtx(), opts);
 				prog.generateObjectProgramRelations(opts);
 				evalSouffleProgram(prog, opts);
 				break;
 			case PRETTY_SOUFFLE:
+				checkProgram(prog, opts);
 				prog.evalEDB(prog.evalCtx(), opts);
 				prettyPrintSouffle(prog, opts.getOutputDir() + "/" + opts.getOutputFile());
 				break;
 			case PRETTY_INTERNAL:
 				StandardPrettyPrinter<Program> spp = new StandardPrettyPrinter<>(new PrintStream(System.out));
 				spp.prettyPrint(prog);
+				checkProgram(prog, opts);
 				break;
 			case PRETTY_TYPES:
 				prog.dumpTypes(System.out);
+				checkProgram(prog, opts);
 				break;
 			case EVAL_IMPORT:
+				checkProgram(prog, opts);
 				prog.evalEDB(prog.evalCtx(), opts);
 				prog.generateObjectProgramRelations(opts);
 				break;
 			case CHECK:
+				checkProgram(prog, opts);
 				prog.dumpStrata();
 				prog.clauseDependencyGraph().dump();
 				break;
 			case GEN_HYBRID:
+				checkProgram(prog, opts);
 				prog.evalEDB(prog.evalCtx(), opts);
 				generateSouffleSWIGProgram(prog, opts);
 				break;
 			case EVAL_HYBRID:
+				checkProgram(prog, opts);
 				SWIGUtil.evalHybridProgram(prog, opts);
 				break;
 			}

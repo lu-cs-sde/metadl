@@ -30,6 +30,7 @@ public class DatalogProjection2 {
 	private int currentNumber = 0;
 	private TupleInserter programRepresentation;
 	private TupleInserter attributeProvenance;
+	private TupleInserter attributes;
 	private TupleInserter srcLoc;
 	private int tokenUID = Integer.MAX_VALUE;
 	private Map<ASTNode<?>, Integer> nodeNumber = new HashMap<>();
@@ -47,6 +48,7 @@ public class DatalogProjection2 {
 		this.programRepresentation = tupleSink.getAst();
 		this.attributeProvenance = tupleSink.getProvenance();
 		this.srcLoc = tupleSink.getSrcLoc();
+		this.attributes = tupleSink.getAttributes();
 	}
 
 	private int nodeId(ASTNode<?> n) {
@@ -71,7 +73,7 @@ public class DatalogProjection2 {
 		traverse(root, worklist);
 		traverseTime.stop();
 		StopWatch attributeMapTime = StopWatch.createStarted();
-		mapAttributes(worklist, Pair.of("type", "ATTR_type"), Pair.of("decl", "ATTR_decl"), Pair.of("genericDecl", "ATTR_generic_decl"));
+		mapAttributes(worklist, "type", "decl", "genericDecl");
 		programRepresentation.done();
 		attributeProvenance.done();
 		attributeMapTime.stop();
@@ -79,8 +81,7 @@ public class DatalogProjection2 {
 		SimpleLogger.logger().time("Attribute tabulation: " + attributeMapTime.getTime() + "ms");
 	}
 
-
-	final private void mapAttributes(Queue<ASTNode<?>> worklist, Pair<String, String> ...attrs) {
+	final private void mapAttributes(Queue<ASTNode<?>> worklist, String ...attrs) {
 		while (!worklist.isEmpty()) {
 			ASTNode<?> n = worklist.poll();
 			assert visited(n);
@@ -90,18 +91,16 @@ public class DatalogProjection2 {
 			if (!deepAnalysis && isLibraryNode(n))
 				continue;
 
-			for (Pair<String, String> attrRelPair : attrs) {
-				String attributeName = attrRelPair.getLeft();
-				String relName = attrRelPair.getRight();
-				ASTNode<?> r = nodeAttribute(n, attributeName);
+			for (String attrName : attrs) {
+				ASTNode<?> r = nodeAttribute(n, attrName);
 
 				if (r == null)
 					continue;
 
 				// log the attribute's provenance information
-				Set<String> srcs = attrProvenance(n, attributeName);
+				Set<String> srcs = attrProvenance(n, attrName);
 				for (String src : srcs) {
-					attributeProvenance.insertTuple(nodeId(n), relName, src);
+					attributeProvenance.insertTuple(nodeId(n), attrName, src);
 				}
 
 				if (!visited(r)) {
@@ -110,7 +109,7 @@ public class DatalogProjection2 {
 					// subtree to the worklist, for attribute evaluation
 					traverse(r, worklist);
 				}
-				programRepresentation.insertTuple(relName, nodeId(n), -1, nodeId(r), "");
+				attributes.insertTuple(attrName, nodeId(n), nodeId(r));
 			}
 		}
 	}

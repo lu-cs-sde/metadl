@@ -57,18 +57,18 @@ aspect LanguageSpecific {
 
 	public static lang.ast.Rule PatLang.makeTypeRule(AnalyzeContext ctx) {
 		return rule(
-					literal(ctx.prefix("TYPE"), "$n", "$t"), // TYPE(n, t) :-
+					literal(ctx.prefix("TYPE"), "$n", "$t"),
 					literal(ctx.prefix("REWRITE_MAP"), "$n", "$n_rw"),
-					literal(ctx.progRelName, "ATTR_type", "$n_rw", "_", "$t_rw", "_"), // P("ATTR_type", n, _, t, _)
+					literal(ctx.attrRelName, "type", "$n_rw", "$t_rw"),
 					literal(ctx.prefix("REWRITE_MAP"), "$t_rw", "$t")
 					);
 	}
 
 	public static lang.ast.Rule PatLang.makeDeclRule(AnalyzeContext ctx) {
 		return rule(
-					literal(ctx.prefix("DECL"), "$n", "$t"), // DECL(n, t) :-
+					literal(ctx.prefix("DECL"), "$n", "$t"),
 					literal(ctx.prefix("REWRITE_MAP"), "$n", "$n_rw"),
-					literal(ctx.progRelName, "ATTR_decl", "$n_rw", "_", "$t_rw", "_"), // P("ATTR_decl", n, _, t, _)
+					literal(ctx.attrRelName, "decl", "$n_rw", "$t_rw"),
 					literal(ctx.prefix("REWRITE_MAP"), "$t_rw", "$t")
 					);
 	}
@@ -77,8 +77,9 @@ aspect LanguageSpecific {
 		return rule(
 					literal(ctx.prefix("GENERIC"), "$t", "$g"),
 					literal(ctx.prefix("REWRITE_MAP"), "$t", "$t_rw"),
-					literal(ctx.progRelName, "ATTR_generic_decl", "$t_rw", "_", "$g_rw", "_"),
-					literal(ctx.prefix("REWRITE_MAP"), "$g_rw", "$g"));
+					literal(ctx.attrRelName, "genericDecl", "$t", "$g"),
+					literal(ctx.prefix("REWRITE_MAP"), "$g_rw", "$g")
+					);
 	}
 
 	public static lang.ast.Rule PatLang.makeASTRule(AnalyzeContext ctx) {

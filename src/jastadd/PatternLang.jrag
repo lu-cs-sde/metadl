@@ -397,9 +397,9 @@ aspect PatternLang {
 									 ASTNodeType.get(), // child node id
 									 StringType.get()); // misc (to be removed)
 		case ATTR:
-			return new PredicateType(ASTNodeType.get(),  // node id
-									 StringType.get(),   // attribute
-									 IntegerType.get()); // attribute value node id
+			return new PredicateType(StringType.get(),   // attribute
+									 ASTNodeType.get(),  // node id
+									 ASTNodeType.get()); // attribute value node id
 		case SRC:
 			return new PredicateType(ASTNodeType.get(), // node
 									 IntegerType.get(), // start line
@@ -442,7 +442,8 @@ aspect PatternLang {
 		FormalPredicate ast = formalPredicateMap().get(block.getProgramRepresentationPredicateName(ProgramRepresentation.AST));
 		FormalPredicate provenance = formalPredicateMap().get(block.getProgramRepresentationPredicateName(ProgramRepresentation.ATTR_PROVENANCE));
 		FormalPredicate srcLoc = formalPredicateMap().get(block.getProgramRepresentationPredicateName(ProgramRepresentation.SRC));
+		FormalPredicate attr = formalPredicateMap().get(block.getProgramRepresentationPredicateName(ProgramRepresentation.ATTR));
 
-		return new DatalogProjectionSink(evalCtx(), ast, provenance, null, srcLoc);
+		return new DatalogProjectionSink(evalCtx(), ast, provenance, attr, srcLoc);
 	}
 }

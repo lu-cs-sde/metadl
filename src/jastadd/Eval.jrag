@@ -32,7 +32,7 @@ aspect Eval {
 				}
 				lang.metadl.obj.ast.Program importedProgram = lang.metadl.obj.ast.Program.fromFileLoc(locs.get(0));
 				importedProgram.assignIds(nodeCounter);
-				RelationWrapper rw = (RelationWrapper) tupleSink.getAst();
+				RelationWrapper rw = (RelationWrapper) tupleSink.getAST();
 				rw.insertTuples(importedProgram.datalogProjection().tuples());
 			} catch (beaver.Parser.Exception exception) {
 				throw new RuntimeException(exception);

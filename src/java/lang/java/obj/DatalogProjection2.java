@@ -32,6 +32,7 @@ public class DatalogProjection2 {
 	private TupleInserter attributeProvenance;
 	private TupleInserter attributes;
 	private TupleInserter srcLoc;
+	private TupleInserter nta;
 	private int tokenUID = Integer.MAX_VALUE;
 	private Map<ASTNode<?>, Integer> nodeNumber = new HashMap<>();
 	private Map<Integer, ASTNode<?>> number2Node = new HashMap<>();
@@ -45,10 +46,11 @@ public class DatalogProjection2 {
 	public DatalogProjection2(ASTNode<?> root,
 							  DatalogProjectionSink tupleSink) {
 		this.root = root;
-		this.programRepresentation = tupleSink.getAst();
+		this.programRepresentation = tupleSink.getAST();
 		this.attributeProvenance = tupleSink.getProvenance();
 		this.srcLoc = tupleSink.getSrcLoc();
 		this.attributes = tupleSink.getAttributes();
+		this.nta = tupleSink.getNTA();
 	}
 
 	private int nodeId(ASTNode<?> n) {
@@ -70,7 +72,7 @@ public class DatalogProjection2 {
 		// traverse the tree
 		StopWatch traverseTime = StopWatch.createStarted();
 		Queue<ASTNode<?>> worklist = new ArrayDeque<>();
-		traverse(root, worklist);
+		traverse(root, worklist, programRepresentation);
 		traverseTime.stop();
 		StopWatch attributeMapTime = StopWatch.createStarted();
 		mapAttributes(worklist, "type", "decl", "genericDecl");
@@ -78,6 +80,7 @@ public class DatalogProjection2 {
 		attributeProvenance.done();
 		attributes.done();
 		srcLoc.done();
+		nta.done();
 		attributeMapTime.stop();
 		SimpleLogger.logger().time("Object AST initial traversal: " + traverseTime.getTime() + "ms");
 		SimpleLogger.logger().time("Attribute tabulation: " + attributeMapTime.getTime() + "ms");
@@ -88,7 +91,7 @@ public class DatalogProjection2 {
 			ASTNode<?> n = worklist.poll();
 			assert visited(n);
 
-			// prevent the analysis from dinving into rt.jar, which
+			// prevent the analysis from diving into rt.jar, which
 			// takes a long (O(minutes)) time.
 			if (!deepAnalysis && isLibraryNode(n))
 				continue;
@@ -107,40 +110,40 @@ public class DatalogProjection2 {
 
 				if (!visited(r)) {
 					// attributes may refer to NTAs, that were not visited in the
-					// initial traversal, visit them now and every node in the
+					// initial traversal, visit them now and add every node in the
 					// subtree to the worklist, for attribute evaluation
-					traverse(r, worklist);
+					traverse(r, worklist, programRepresentation);
 				}
 				attributes.insertTuple(attrName, nodeId(n), nodeId(r));
 			}
 		}
 	}
 
-	private void traverse(ASTNode<?> n, Queue<ASTNode<?>> worklist) {
+	private void traverse(ASTNode<?> n, Queue<ASTNode<?>> worklist, TupleInserter astTupleSink) {
 		worklist.add(n);
 		assert n.getNumChild() == n.getNumChildNoTransform();
 		for (int i = 0; i < n.getNumChildNoTransform(); ++i) {
 			ASTNode<?> childNT = n.getChildNoTransform(i);
 			// TODO: ExtendJ sometimes returns null for childNT. Understand why.
 			if (childNT != null) {
-				traverse(childNT, worklist);
+				traverse(childNT, worklist, astTupleSink);
 				if (childNT.mayHaveRewrite()) {
 					ASTNode<?> child = n.getChild(i);
 					if (child != childNT) {
-						traverse(child, worklist);
-						recordRewrittenNode(childNT, child);
+						traverse(child, worklist, astTupleSink);
+						recordRewrittenNode(childNT, child, astTupleSink);
 					}
 				}
 			}
 		}
 
 		int nid = nodeId(n);
-		toTuples(n, nid);
+		toTuples(n, nid, astTupleSink);
 		srcLoc(n, nid);
 	}
 
-	private void recordRewrittenNode(ASTNode<?> original, ASTNode<?> target) {
-		programRepresentation.insertTuple("REWRITE", nodeId(original), -1, nodeId(target), "");
+	private void recordRewrittenNode(ASTNode<?> original, ASTNode<?> target, TupleInserter astTupleSink) {
+		astTupleSink.insertTuple("REWRITE", nodeId(original), -1, nodeId(target), "");
 	}
 
 	private static String getRelation(ASTNode<?> n) {
@@ -274,7 +277,7 @@ public class DatalogProjection2 {
 		return s.replace('[', '(').replace(']', ')').replace('\'', '_').replace('"', '_').replace('\n', '_');
 	}
 
-	private void toTuples(ASTNode<?> n, int nid) {
+	private void toTuples(ASTNode<?> n, int nid, TupleInserter astTupleSink) {
 		String relName = getRelation(n);
 
 		// the children in the tree
@@ -283,10 +286,10 @@ public class DatalogProjection2 {
 			ASTNode<?> child = n.getChildNoTransform(i);
 			// TODO: ExtendJ sometimes returns null for child. Understand why.
 			if (child != null) {
-				programRepresentation.insertTuple(relName, nodeId(n), childIndex, nodeId(child), "");
+				astTupleSink.insertTuple(relName, nodeId(n), childIndex, nodeId(child), "");
 				if (child.mayHaveRewrite()) {
 					ASTNode<?> childT = n.getChild(i);
-					programRepresentation.insertTuple(relName, nodeId(n), childIndex, nodeId(childT), "");
+					astTupleSink.insertTuple(relName, nodeId(n), childIndex, nodeId(childT), "");
 				}
 			}
 			childIndex++;
@@ -299,16 +302,16 @@ public class DatalogProjection2 {
 			// ("Token", ChildId, 0, 0, "TokenAsString")
 
 			// Add a tuple to the current node relation
-			programRepresentation.insertTuple(relName, nid, childIndex++, tokenUID, "");
+			astTupleSink.insertTuple(relName, nid, childIndex++, tokenUID, "");
 			// Add a tuple to Token relation
-			programRepresentation.insertTuple("Terminal", tokenUID, 0, 0, cleanTerminal(t));
+			astTupleSink.insertTuple("Terminal", tokenUID, 0, 0, cleanTerminal(t));
 
 			tokenUID--;
 		}
 
 		if (childIndex == 0) {
 			// This node has no children, emit that
-			programRepresentation.insertTuple(relName, nid, -1, -1, "");
+			astTupleSink.insertTuple(relName, nid, -1, -1, "");
 		}
 	}
 }

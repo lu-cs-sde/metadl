@@ -48,6 +48,8 @@ aspect PatternLang {
 			return getScopePrefix() + "ATTR";
 		case SRC:
 			return getScopePrefix() + "SLOC";
+		case NTA:
+			return getScopePrefix() + "NTA";
 		}
 		return null;
 	}
@@ -357,7 +359,8 @@ aspect PatternLang {
 		AST,
 		ATTR,
 		ATTR_PROVENANCE,
-		SRC
+		SRC,
+		NTA
 	}
 
 	public interface ASTBuilder {
@@ -391,6 +394,7 @@ aspect PatternLang {
 	private static PredicateType FormalPredicate.programRepresentationType(ProgramRepresentation r) {
 		switch (r) {
 		case AST:
+		case NTA:
 			return new PredicateType(StringType.get(), // node kind
 									 ASTNodeType.get(), // node id
 									 IntegerType.get(), // child index
@@ -443,7 +447,8 @@ aspect PatternLang {
 		FormalPredicate provenance = formalPredicateMap().get(block.getProgramRepresentationPredicateName(ProgramRepresentation.ATTR_PROVENANCE));
 		FormalPredicate srcLoc = formalPredicateMap().get(block.getProgramRepresentationPredicateName(ProgramRepresentation.SRC));
 		FormalPredicate attr = formalPredicateMap().get(block.getProgramRepresentationPredicateName(ProgramRepresentation.ATTR));
+		FormalPredicate nta = formalPredicateMap().get(block.getProgramRepresentationPredicateName(ProgramRepresentation.NTA));
 
-		return new DatalogProjectionSink(evalCtx(), ast, provenance, attr, srcLoc);
+		return new DatalogProjectionSink(evalCtx(), ast, provenance, attr, srcLoc, nta);
 	}
 }

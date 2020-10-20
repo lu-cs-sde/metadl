@@ -14,12 +14,18 @@ public class SWIGSouffleRelationAdapter implements TupleInserter {
 	private final static int BUFFER_SIZE = 4 << 20;
 	private long totalTuples = 0;
 	private long totalSize = 0;
-
+	private String name = "Unknown";
 	private SWIGSouffleRelation rel;
 	private ByteBuffer buffer = ByteBuffer.allocateDirect(BUFFER_SIZE);
+
 	public SWIGSouffleRelationAdapter(SWIGSouffleRelation rel) {
 		this.rel = rel;
 		buffer.order(ByteOrder.nativeOrder());
+	}
+
+	public SWIGSouffleRelationAdapter(SWIGSouffleRelation rel, String name) {
+		this(rel);
+		this.name = name;
 	}
 
 	public void insertTupleDirect(Object... elems) {
@@ -79,7 +85,7 @@ public class SWIGSouffleRelationAdapter implements TupleInserter {
 			totalSize += requiredSize;
 			totalTuples++;
 			if (totalTuples % 1_000_000 == 0) {
-				SimpleLogger.logger().debug("Pushed " + totalTuples + " tuples through the SWIG interface.");
+				SimpleLogger.logger().debug("Pushed " + totalTuples + " tuples to relation " + name + " through the SWIG interface.");
 			}
 		} else {
 			// mark the end of the buffer
@@ -117,6 +123,6 @@ public class SWIGSouffleRelationAdapter implements TupleInserter {
 
 			totalSize += Integer.BYTES;
 		}
-		System.err.println("==== Added " + totalTuples + " tuples, with a size of " + totalSize + " bytes.");
+		SimpleLogger.logger().debug("==== Added " + totalTuples + " tuples to relation " + name + ", with a size of " + totalSize + " bytes.");
 	}
 }

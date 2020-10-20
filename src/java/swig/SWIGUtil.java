@@ -33,7 +33,7 @@ public class SWIGUtil {
 			}
 
 			SimpleLogger.logger().debug("Relation '" + name + "' is stored directly inside Souffle.");
-			fpToSoufflePredMap.put(pred, new SWIGSouffleRelationAdapter(swigRel));
+			fpToSoufflePredMap.put(pred, new SWIGSouffleRelationAdapter(swigRel, pred.getPRED_ID()));
 		}
 
 		return Pair.of(swigProg, fpToSoufflePredMap);

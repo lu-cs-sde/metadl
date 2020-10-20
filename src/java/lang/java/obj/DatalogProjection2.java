@@ -76,6 +76,8 @@ public class DatalogProjection2 {
 		mapAttributes(worklist, "type", "decl", "genericDecl");
 		programRepresentation.done();
 		attributeProvenance.done();
+		attributes.done();
+		srcLoc.done();
 		attributeMapTime.stop();
 		SimpleLogger.logger().time("Object AST initial traversal: " + traverseTime.getTime() + "ms");
 		SimpleLogger.logger().time("Attribute tabulation: " + attributeMapTime.getTime() + "ms");

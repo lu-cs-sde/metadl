@@ -28,10 +28,10 @@ java('P) {
 
 	    TSuperType(t, s) :- SuperType(t, s).
 	    TSuperType(t, s) :- TSuperType(t, s1), SuperType(s1, s).
-}
+
 
 # Code for finding if a method overrides another method
-java('P) {
+
 	    MethodSig2(m, i, pt) :- m <: `rett `name(.., `pt `_, ..) ; :>,
 	    		  DECL(`pt, pt), PARENT(param, `pt), INDEX(param, i).
 	    # TODO: The MethodSig1 relation will not contain Object.equals(Object o), since the DECL attribute
@@ -54,9 +54,7 @@ java('P) {
 	    Override(m, super) :- MethodSig1(m, n, ret), MethodSig1(super, n, ret),
                                   GrandParent(c1, m), GrandParent(c2, super), TSuperType(c1, c2).
 
-}
 
-java('P) {
 	    ClassEq(0, 0) :- NEQ(0, 0).
 	    ClassEq(c, `d) :- c <: class `_ { .. `d .. } :>, `d <: .. public .. boolean equals(`t `o) ;:>.
 	    ClassEq(c, `d) :- c <: class `_ <..> { .. `d .. } :>, `d <: .. public .. boolean equals(`t `o) ;:>.

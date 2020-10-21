@@ -161,8 +161,7 @@ aspect PatternToDatalog {
 
 		assert getRelation().startsWith(ASTNode.METAVARIABLE);
 		String relName = getRelation().substring(ASTNode.METAVARIABLE.length());
-		String predName = ctx.progRelName;
-		String kind = "$" + varName("_kind");
+		lang.ast.Variable kind = var(varName("_kind"));
 
 		// constrain the type of node that can be matched
 		ret.add(literal(ctx.prefix("SUPERTYPE"), kind, relName));
@@ -179,19 +178,19 @@ aspect PatternToDatalog {
 			if (child instanceof MetaVariable)
 				continue;
 
-			ret.add(literal(predName, kind, "$" + varName(), i, "$" + child.varName(), "_"));
+			ret.add(literal(ctx.progRelName, kind, var(varName()), i, var(child.varName()), "_"));
 		}
 
 		if (ret.size() == 1) {
 			// This metavariable node has no children. Just ensure that is bound to
 			// the correct AST node type
-			ret.add(literal(predName, kind,  "$" + varName(), "_", "_", "_"));
+			ret.add(literal(ctx.progRelName, kind,  var(varName()), "_", "_", "_"));
 		}
 
 
 		if (root != null) {
 			// This is an a <: `b :> pattern. In this case, we need to ensure that a == b.
-			ret.add(literal(predName, kind, root.treeCopyNoTransform(), "_", "_", "_"));
+			ret.add(literal(ctx.progRelName, kind, root.treeCopyNoTransform(), "_", "_", "_"));
 			ret.add(EQ(new lang.ast.Variable(varName()),
 					   root.treeCopyNoTransform()));
 		}

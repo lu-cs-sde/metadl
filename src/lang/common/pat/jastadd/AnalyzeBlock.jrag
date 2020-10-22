@@ -204,5 +204,11 @@ aspect AnalyzeBlock {
 			return rule(literal(ctx.scopePrefix + "PROVENANCE", "$x", "$y", "$z"),
 						literal(ctx.provenanceRelName, "$x", "$y", "$z"));
 		}
+
+		public static lang.ast.Rule makeNTARule(AnalyzeContext ctx) {
+			// merge all the NTAs into the program representation relation
+			return rule(literal(ctx.progRelName, "$x", "$y", "$z", "$u", "$w"),
+						literal(ctx.ntaRelName, "$x", "$y", "$z", "$u", "$w"));
+		}
 	}
 }

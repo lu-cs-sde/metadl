@@ -169,6 +169,10 @@ aspect LanguageSpecific {
 			ret.add(makeASTRule(ctx));
 		if (used.contains("PROVENANCE"))
 			ret.add(makeProvenanceRule(ctx));
+		// Add all the NTA tuples into the program representation
+		// TODO:
+		ret.add(makeNTARule(ctx));
+
 		return ret;
 	}
 

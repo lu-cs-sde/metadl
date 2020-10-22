@@ -35,7 +35,8 @@ aspect PatternLang {
 								  getProgramRepresentationPredicateName(ProgramRepresentation.AST),
 								  getProgramRepresentationPredicateName(ProgramRepresentation.ATTR_PROVENANCE),
 								  getProgramRepresentationPredicateName(ProgramRepresentation.SRC),
-								  getProgramRepresentationPredicateName(ProgramRepresentation.ATTR));
+								  getProgramRepresentationPredicateName(ProgramRepresentation.ATTR),
+								  getProgramRepresentationPredicateName(ProgramRepresentation.NTA));
 	}
 
 	syn String AnalyzeBlock.getProgramRepresentationPredicateName(ProgramRepresentation r) {
@@ -338,15 +339,17 @@ aspect PatternLang {
 		public String provenanceRelName;
 		public String srcRelName;
 		public String attrRelName;
+		public String ntaRelName;
 
 		public AnalyzeContext(String scopePrefix, String progRelName,
 							  String provenanceRelName, String srcRelName,
-							  String attrRelName) {
+							  String attrRelName, String ntaRelName) {
 			this.scopePrefix = scopePrefix;
 			this.progRelName = progRelName;
 			this.provenanceRelName = provenanceRelName;
 			this.srcRelName = srcRelName;
 			this.attrRelName = attrRelName;
+			this.ntaRelName = ntaRelName;
 		}
 
 		// TODO: make scopePrefix private and fix all uses

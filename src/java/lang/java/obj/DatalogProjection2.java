@@ -17,7 +17,9 @@ import org.apache.commons.lang3.time.StopWatch;
 import org.apache.commons.lang3.tuple.Pair;
 
 import org.extendj.ast.ASTNode;
+import org.junit.jupiter.engine.discovery.predicates.IsNestedTestClass;
 import org.extendj.ProvenanceStackMachine;
+import org.extendj.ast.FileIdStorage;
 
 import lang.io.SimpleLogger;
 import lang.io.StringUID;
@@ -27,60 +29,72 @@ import lang.relation.TupleInserter;
 public class DatalogProjection2 {
 	private ASTNode<?> root;
 
-	private int currentNumber = 0;
 	private TupleInserter programRepresentation;
 	private TupleInserter attributeProvenance;
 	private TupleInserter attributes;
 	private TupleInserter srcLoc;
 	private TupleInserter nta;
 	private int tokenUID = Integer.MAX_VALUE;
-	private Map<ASTNode<?>, Integer> nodeNumber = new HashMap<>();
-	private Map<Integer, ASTNode<?>> number2Node = new HashMap<>();
-
+	private int ntaNum = 1;
+	private int ntaFileId = 100;
+	private FileIdStorage fileIdDb;
 
 	// TODO: It's just easier to add environment variable than command-line arguments.
 	// This should be removed once we move to a traditional command line parser,
 	// that is easier to modify.
 	private boolean deepAnalysis = System.getenv().get("METADL_ANALYSIS") != null;
 
+
 	public DatalogProjection2(ASTNode<?> root,
-							  DatalogProjectionSink tupleSink) {
+							  DatalogProjectionSink tupleSink,
+							  FileIdStorage fileIdStorage) {
 		this.root = root;
 		this.programRepresentation = tupleSink.getAST();
 		this.attributeProvenance = tupleSink.getProvenance();
 		this.srcLoc = tupleSink.getSrcLoc();
 		this.attributes = tupleSink.getAttributes();
 		this.nta = tupleSink.getNTA();
+		this.fileIdDb = fileIdStorage;
 	}
 
-	private int nodeId(ASTNode<?> n) {
-		if (visited(n)) {
-			return nodeNumber.get(n);
-		} else {
-			 currentNumber++;
-			 nodeNumber.put(n, currentNumber);
-			 number2Node.put(currentNumber, n);
-			 return currentNumber;
-		}
+	private long nodeId(ASTNode<?> n) {
+		assert n.javaDLNum >= 0;
+		return (long)n.javaDLFileId << 32 | n.javaDLNum;
 	}
 
 	private boolean visited(ASTNode<?> n) {
-		return nodeNumber.containsKey(n);
+		return n.visitedMarker;
+	}
+
+	private void markVisited(ASTNode<?> n) {
+		n.visitedMarker = true;
+	}
+
+	private boolean hasNodeId(ASTNode<?> n) {
+		return n.javaDLNum >= 0;
 	}
 
 	public void generate() {
 		// traverse the tree
 		StopWatch traverseTime = StopWatch.createStarted();
 		Queue<ASTNode<?>> worklist = new ArrayDeque<>();
-		traverse(root, worklist, programRepresentation);
+
+		for (org.extendj.ast.CompilationUnit cu : ((org.extendj.ast.Program) root).getCompilationUnits()) {
+			int fileId = fileIdDb.getIdForFile(cu.getClassSource().sourceName());
+			cu.doNodeNumbering(1, fileId);
+			traverse(cu, worklist, programRepresentation);
+		}
+
 		traverseTime.stop();
 		StopWatch attributeMapTime = StopWatch.createStarted();
 		mapAttributes(worklist, "type", "decl", "genericDecl");
+		// flush all the external relations
 		programRepresentation.done();
 		attributeProvenance.done();
 		attributes.done();
 		srcLoc.done();
 		nta.done();
+		// stop the timers and report
 		attributeMapTime.stop();
 		SimpleLogger.logger().time("Object AST initial traversal: " + traverseTime.getTime() + "ms");
 		SimpleLogger.logger().time("Attribute tabulation: " + attributeMapTime.getTime() + "ms");
@@ -109,10 +123,16 @@ public class DatalogProjection2 {
 				}
 
 				if (!visited(r)) {
-					// attributes may refer to NTAs, that were not visited in the
-					// initial traversal, visit them now and add every node in the
-					// subtree to the worklist, for attribute evaluation
-					traverse(r, worklist, programRepresentation);
+					if (hasNodeId(r)) {
+						// this is a node from the source files or loaded from a library
+						traverse(r, worklist, programRepresentation);
+					} else {
+						// attributes may refer to NTAs, that were not visited in the
+						// initial traversal, visit them now and add every node in the
+						// subtree to the worklist, for attribute evaluation
+						ntaNum = r.doNodeNumbering(ntaNum, ntaFileId);
+						traverse(r, worklist, nta);
+					}
 				}
 				attributes.insertTuple(attrName, nodeId(n), nodeId(r));
 			}
@@ -137,7 +157,8 @@ public class DatalogProjection2 {
 			}
 		}
 
-		int nid = nodeId(n);
+		long nid = nodeId(n);
+		markVisited(n);
 		toTuples(n, nid, astTupleSink);
 		srcLoc(n, nid);
 	}
@@ -160,7 +181,7 @@ public class DatalogProjection2 {
 		return false;
 	}
 
-	private void srcLoc(ASTNode<?> n, int nid) {
+	private void srcLoc(ASTNode<?> n, long nid) {
 		String srcFile = n.sourceFile();
 		srcLoc.insertTuple(nid,
 						   beaver.Symbol.getLine(n.getStart()),
@@ -277,7 +298,7 @@ public class DatalogProjection2 {
 		return s.replace('[', '(').replace(']', ')').replace('\'', '_').replace('"', '_').replace('\n', '_');
 	}
 
-	private void toTuples(ASTNode<?> n, int nid, TupleInserter astTupleSink) {
+	private void toTuples(ASTNode<?> n, long nid, TupleInserter astTupleSink) {
 		String relName = getRelation(n);
 
 		// the children in the tree

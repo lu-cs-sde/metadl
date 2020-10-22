@@ -27,6 +27,7 @@ import lang.ast.Program;
 import lang.relation.RelationWrapper;
 import lang.relation.TupleInserter;
 import lang.java.obj.DatalogProjectionSink;
+import lang.java.obj.FileIdDatabase;
 
 public class FileUtil {
 	public static String changeExtension(String filename, String newExtension) {
@@ -79,6 +80,7 @@ public class FileUtil {
 		org.extendj.ast.Program p = new org.extendj.ast.Program();
 
 		p.trace().setReceiver(p.provenance);
+		p.fileIdStorage = new FileIdDatabase();
 
 		// Set the path to the Java runtime
 		String bootCP = System.getenv().get("METADL_JAVA_RT");
@@ -113,7 +115,7 @@ public class FileUtil {
 		}
 
 		// Generate the program relation
-		lang.java.obj.DatalogProjection2 proj2 = new lang.java.obj.DatalogProjection2(p, tupleSink);
+		lang.java.obj.DatalogProjection2 proj2 = new lang.java.obj.DatalogProjection2(p, tupleSink, p.fileIdStorage);
 		proj2.generate();
 	}
 }

@@ -20,7 +20,8 @@ java('P) {
 	BadEquals(`d) :- <: .. enum `k { .. ; .. `d .. } :>, CovariantEquals(`d), NOT(ClassHasGoodEquals(`k)).
 
 
-	BadEqualsReport(f, ls, cs, le, ce) :- BadEquals(d), NOT(d <: @SuppressWarnings("CovariantEquals") .. `_ `_(..) {..} :>), SRC(d, ls, cs, le, ce, f).
+	BadEqualsReport(f, ls, cs, le, ce) :- BadEquals(d), NOT(d <: @SuppressWarnings("CovariantEquals") .. `_ `_(..) {..} :>),
+	                                      SRC(d, ls, cs, le, ce, f), GT(ls, 0).
 }
 
 OUTPUT('BadEqualsReport).

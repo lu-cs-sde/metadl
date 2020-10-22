@@ -28,6 +28,8 @@ aspect Copied {
     return dot;
   }
 
+  // ParseName <: Expr
+  // Dot <: Expr
   public Access Dot.qualifiesAccess(Access access) {
     Dot lastDot = lastDot();
     Expr last = lastDot.getRightNoTransform();
@@ -38,9 +40,7 @@ aspect Copied {
   }
 
   public Access ParseName.qualifiesAccess(Access access) {
-	  // TODO: MetaDL cannot handle cases where semantic actions use introspection.
-	  // Disabled for now. We may want to implement this as a rewrite.
-    if (false && access instanceof ParseName) {
+    if (access instanceof ParseName) {
       ParseName name = (ParseName) access;
       ArrayList<NamePart> parts = new ArrayList<NamePart>(nameParts);
       parts.addAll(name.nameParts);
@@ -150,8 +150,6 @@ aspect Copied {
   }
 
   public Access Dot.buildMethodAccess(List<Expr> arguments) {
-	  // TODO: MetaDL cannot handle cases where semantic actions use introspection.
-	  // Disabled for now. We may want to implement this as a rewrite.
 	  Access rightmostAccess = lastDot().getRightNoTransform();
 	  Access call = rightmostAccess.buildMethodAccess(arguments);
 	  lastDot().setRight(call);

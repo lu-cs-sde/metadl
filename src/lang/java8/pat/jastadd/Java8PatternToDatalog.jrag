@@ -112,6 +112,8 @@ aspect LanguageSpecific {
 			ret.add(makeIdentifierRule(ctx, "EnumConstant", "ID", 3, null));
 			ret.add(makeIdentifierRule(ctx, "FieldDeclarator", "ID", 2, null));
 			ret.add(makeIdentifierRule(ctx, "VariableDeclarator", "ID", 2, null));
+			ret.add(makeIdentifierRule(ctx, "VarAccess", "ID", 0, null));
+			ret.add(makeIdentifierRule(ctx, "TypeAccess", "ID", 0, null)); // TODO: give access to the package name too
 			ret.add(makeTerminalToIdentifierRule(ctx, "ID"));
 		}
 		// Modifiers

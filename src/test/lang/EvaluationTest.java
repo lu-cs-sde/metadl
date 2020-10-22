@@ -219,7 +219,7 @@ public class EvaluationTest {
 			"unwritten-field", "naming-convention", "reference-to-mutable-object", "missing-override",
 			"reference-equality", "boxed-primitive-constructor", "operator-precedence",
 			"type-param-unused-in-formals", "paper-examples", "java7", "java8",
-			"attr-provenance"
+			"attr-provenance", "names"
 		};
 		return Arrays.stream(tests);
 	}

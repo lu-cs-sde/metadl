@@ -37,14 +37,14 @@ java('Srcs) {
 }
 ### End of transformation
 
-NumberCtor(0) :- NEQ(0, 0).
+# NumberCtor(0) :- NEQ(0, 0).
 
 # Enumerate the bad types here
 TypeName("Integer"), TypeName("Long"), TypeName("Short"),
 TypeName("Byte"), TypeName("Float"), TypeName("Double").
 
 
-Empty("") :- NEQ(0, 0).
+# Empty("") :- NEQ(0, 0).
 
 java('Empty) {
             AST(a, b, c, d, e) :- Q(a, b, c, d, e).

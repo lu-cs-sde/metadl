@@ -1,7 +1,7 @@
 P("tests/evaluation/metadl-java/src/unwritten-field/").
 
-FieldInClassWithInit(0, 0, 0, 0) :- NEQ(0, 0).
-FieldInClass(0, 0, 0, 0) :- NEQ(0, 0).
+# FieldInClassWithInit(0, 0, 0, 0) :- NEQ(0, 0).
+# FieldInClass(0, 0, 0, 0) :- NEQ(0, 0).
 
 java('P) {
 ### Analysis

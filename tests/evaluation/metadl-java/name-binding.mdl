@@ -1,8 +1,8 @@
 P("tests/evaluation/metadl-java/src/name-binding").
 
-TypeToStr(0, ""), VarDef(0, 0, 0, "") :- NEQ(0, 0).
-ClassDef(0, "", "") :- NEQ(0, 0).
-MethodDef(0, 0, "") :- NEQ(0, 0).
+# TypeToStr(0, ""), VarDef(0, 0, 0, "") :- NEQ(0, 0).
+# ClassDef(0, "", "") :- NEQ(0, 0).
+# MethodDef(0, 0, "") :- NEQ(0, 0).
 
 java('P) {
 	    # Type names

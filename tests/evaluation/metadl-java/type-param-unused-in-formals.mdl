@@ -1,7 +1,7 @@
 P("tests/evaluation/metadl-java/src/type-param-unused-in-formals/").
 
 
-GenericMethod(0, 0, 0, 0), GenericMethodVoid(0, 0, 0) :- NEQ(0, 0).
+# GenericMethod(0, 0, 0, 0), GenericMethodVoid(0, 0, 0) :- NEQ(0, 0).
 
 java('P) {
 	    GenericMethod(m, `t1, `t2, `pt) :- m <: <.., `t1, ..> `t2 `_(.. , `pt `p, ..) ; :>.

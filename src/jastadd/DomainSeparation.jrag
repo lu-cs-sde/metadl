@@ -1,0 +1,176 @@
+import org.jgrapht.alg.util.UnionFind;
+
+aspect DomainSeparation {
+	public class DomainSignature<T extends Comparable> extends UnionFind<T> {
+		private TreeSet<T> elems = new TreeSet<>();
+
+		public DomainSignature(Set<T> e) {
+			super(e);
+			elems.addAll(e);
+		}
+
+		public DomainSignature(Collection<T> c) {
+			this(new TreeSet<>(c));
+		}
+
+		// Create a domain signature with the same equivalence
+		// classes as sig
+		public DomainSignature(DomainSignature<T> sig) {
+			super(sig.elems);
+			elems.addAll(sig.elems);
+			for (T e : sig.elems) {
+				union(e, sig.find(e));
+			}
+		}
+
+		// create a new signature where i <=> j are in the same equivalence class iff
+		// i <=> j in s1 and i <=> j in s2.
+
+		public static <T extends Comparable> DomainSignature<T> merge(DomainSignature<T> s1, DomainSignature<T> s2) {
+			assert s1.elems.equals(s2.elems);
+			DomainSignature<T> ret = new DomainSignature<T>(s1.elems);
+			for (T e1 : s1.elems) {
+				for (T e2 : s2.elems) {
+					if (s1.inSameSet(e1, e2) &&
+						s2.inSameSet(e1, e2)) {
+						ret.union(e1, e2);
+					}
+				}
+			}
+			return ret;
+		}
+
+		@Override public void addElement(T e) {
+			elems.add(e);
+			super.addElement(e);
+		}
+
+		@Override public boolean equals(Object o) {
+			if (o == this)
+				return true;
+			if (!(o instanceof DomainSignature))
+				return false;
+			DomainSignature<T> other = (DomainSignature<T>) o;
+			return equivalenceSets().equals(other.equivalenceSets());
+		}
+
+		public Set<Set<T>> equivalenceSets() {
+			Map<T, Set<T>> m = new HashMap<>();
+			for (T e : elems) {
+				T r = find(e);
+				Set<T> s = m.get(r);
+				if (s == null) {
+					s = new TreeSet<T>();
+					m.put(r, s);
+				}
+				s.add(e);
+			}
+			return new HashSet<>(m.values());
+		}
+
+		@Override public String toString() {
+			return equivalenceSets().toString();
+		}
+	}
+
+	syn DomainSignature<Integer> FormalPredicate.initialDomainSignature() {
+		// program representation predicates have their own signatures
+		if (getProgramRepresentationKind().isPresent()) {
+			return programRepresentationDomainSignature(getProgramRepresentationKind().get());
+		}
+
+		DomainSignature<Integer> dom = new DomainSignature<Integer>(Collections.emptySet());
+		// add all the indices that have AST type to the same domain
+		int first = -1;
+		for (int i : astIndices()) {
+			dom.addElement(i);
+			if (first != -1) {
+				dom.union(first, i);
+			} else {
+				first = i;
+			}
+		}
+
+		return dom;
+	}
+
+	inh Clause Literal.parentClause();
+	eq Rule.getBody().parentClause() = this;
+	eq Clause.getHeads().parentClause() = this;
+
+	syn lazy java.util.List<Integer> FormalPredicate.astIndices() {
+		java.util.List<Integer> l = new ArrayList<>();
+		for (int i = 0; i < type().arity(); i++) {
+			if (type().get(i) == ASTNodeType.get())
+				l.add(i);
+		}
+		return l;
+	}
+
+	syn lazy java.util.List<Integer> Literal.astIndices() =
+		getPredicate().formalpredicate().astIndices();
+
+	syn DomainSignature<Integer> FormalPredicate.domainSignature() circular [initialDomainSignature()] {
+		// iterate over all the heads and merge their signatures
+		DomainSignature<Integer> predSig = new DomainSignature<>(domainSignature());
+		for (Literal l : literals()) {
+			if (l.isDef() && l.parentClause() instanceof Rule) {
+				DomainSignature<Integer> literalSig = new DomainSignature<>(astIndices());
+				DomainSignature<String> clauseSig = ((Rule)l.parentClause()).domainSignature();
+				for (int i : l.astIndices()) {
+					if (!(l.getTerms(i) instanceof Variable))
+						continue;
+					String vi = ((Variable)l.getTerms(i)).getVAR_ID();
+					for (int j : l.astIndices()) {
+						if (!(l.getTerms(j) instanceof Variable))
+							continue;
+						String vj = ((Variable)l.getTerms(j)).getVAR_ID();
+						if (clauseSig.inSameSet(vi, vj))
+							literalSig.union(i, j);
+					}
+				}
+				predSig = DomainSignature.merge(predSig, literalSig);
+			}
+		}
+		return predSig;
+	}
+
+	syn DomainSignature<String> Rule.initialDomainSignature() {
+		// initially all the variables have their own domain
+		DomainSignature<String> dom = new DomainSignature<String>(varMap().variableNames());
+		return dom;
+	}
+
+	syn DomainSignature<String> Rule.domainSignature() circular [initialDomainSignature()] {
+		DomainSignature<String> ruleSig = new DomainSignature<>(domainSignature());
+
+		for (CommonLiteral c : getBodys()) {
+			if (c instanceof Literal) {
+				Literal l = (Literal) c;
+				DomainSignature<Integer> literalSig = l.getPredicate().formalpredicate().domainSignature();
+				for (int i : l.astIndices()) {
+					if (!(l.getTerms(i) instanceof Variable))
+						continue;
+					String vi = ((Variable)l.getTerms(i)).getVAR_ID();
+					for (int j : l.astIndices()) {
+						if (!(l.getTerms(j) instanceof Variable))
+							continue;
+						String vj = ((Variable)l.getTerms(j)).getVAR_ID();
+						if (literalSig.inSameSet(i, j))
+							ruleSig.union(vi, vj);
+					}
+				}
+			}
+		}
+
+		return ruleSig;
+	}
+
+	public void Program.dumpDomainSignatures(PrintStream ps) {
+		for (FormalPredicate p : getFormalPredicates()) {
+			ps.print(p.getPRED_ID() + " : " + p.type());
+			ps.println(" " + p.domainSignature().equivalenceSets());
+		}
+	}
+
+}

@@ -17,6 +17,10 @@ aspect VariableMap {
 			}
 			return entry;
 		}
+
+		public Set<String> variableNames() {
+			return m.keySet();
+		}
 	}
 
 	coll VariableMap Clause.varMap() [new VariableMap()] with add;

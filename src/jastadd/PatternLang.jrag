@@ -420,7 +420,31 @@ aspect PatternLang {
 		return null;
 	}
 
-	syn PredicateType FormalPredicate.getContextPredicateType() {
+	private static DomainSignature FormalPredicate.programRepresentationDomainSignature(ProgramRepresentation r) {
+		DomainSignature<Integer> dom = new DomainSignature<Integer>(Collections.emptySet());
+		switch (r) {
+		case AST:
+		case NTA:
+			// {{1, 3}}
+			dom.addElement(1);
+			dom.addElement(3);
+			dom.union(1, 3);
+			return dom;
+		case ATTR:
+			// {{0}, {2}}
+			dom.addElement(1);
+			dom.addElement(2);
+			return dom;
+		case SRC:
+		case ATTR_PROVENANCE:
+			// {{0}}
+			dom.addElement(0);
+			return dom;
+		}
+		return null;
+	}
+
+	syn lazy PredicateType FormalPredicate.getContextPredicateType() {
 		for (PredicateSymbol ps : predicates()) {
 			if (ps.getContextPredicateName() != null) {
 				PredicateType ptype = ps.enclosingAnalyzeBlock().contextPredicateType(ps.getContextPredicateName());

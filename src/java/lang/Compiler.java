@@ -299,6 +299,7 @@ public class Compiler {
 				break;
 			case PRETTY_TYPES:
 				prog.dumpTypes(System.out);
+				prog.dumpDomainSignatures(System.out);
 				checkProgram(prog, opts);
 				break;
 			case EVAL_IMPORT:

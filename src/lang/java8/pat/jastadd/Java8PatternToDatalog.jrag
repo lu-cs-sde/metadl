@@ -238,7 +238,7 @@ aspect LanguageSpecific {
 		case "DECL":
 		case "GENERIC":
 			return new lang.ast.PredicateType(lang.ast.ASTNodeType.get(),
-											  lang.ast.ExtASTNodeType.get());
+											  lang.ast.ASTNodeType.get());
 		case "AST":
 			return new lang.ast.PredicateType(lang.ast.StringType.get(),
 											  lang.ast.ASTNodeType.get(),

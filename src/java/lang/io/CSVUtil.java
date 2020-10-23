@@ -5,6 +5,11 @@ import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
+import java.lang.reflect.Constructor;
+import java.util.Map;
+import java.util.function.Function;
+
+import javax.security.auth.kerberos.KerberosCredMessage;
 
 import com.opencsv.CSVParser;
 import com.opencsv.CSVParserBuilder;
@@ -24,6 +29,37 @@ import lang.ast.PredicateType;
 import lang.ast.StringType;
 
 public class CSVUtil {
+
+	public static <K, V> void readMap(Map<K, V> m, Function<String, K> keyParser, Function<String, V> valueParser, String path) throws IOException {
+		CSVParser parser = new CSVParserBuilder().withSeparator(Compiler.getCSVSeparator()).build();
+		CSVReader reader = new CSVReaderBuilder(new FileReader(new File(path))).withCSVParser(parser).build();
+
+		String[] line;
+		while ((line = reader.readNext()) != null) {
+			K key = keyParser.apply(line[0]);
+			V val = valueParser.apply(line[1]);
+			m.put(key, val);
+		}
+
+		reader.close();
+	}
+
+	public static <K, V> void writeMap(Map<K, V> m, String path) throws IOException {
+		CSVWriter writer = new CSVWriter(new OutputStreamWriter(new FileOutputStream(path)),
+										 Compiler.getCSVSeparator(),
+										 CSVWriter.NO_QUOTE_CHARACTER,
+										 CSVWriter.DEFAULT_ESCAPE_CHARACTER,
+										 CSVWriter.RFC4180_LINE_END);
+		String[] line = new String[2];
+		for (Map.Entry<K, V> entry : m.entrySet()) {
+			line[0] = entry.getKey().toString();
+			line[1] = entry.getValue().toString();
+			writer.writeNext(line);
+		}
+		writer.close();
+	}
+
+
 	public static void readRelation(EvaluationContext ctx, PredicateType t, Relation2 rel, String path) throws IOException {
 		assert t.arity() == rel.arity();
 

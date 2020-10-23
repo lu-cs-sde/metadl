@@ -78,9 +78,16 @@ public class FileUtil {
 									   DatalogProjectionSink tupleSink,
 									   java.util.List<String> locs) throws IOException {
 		org.extendj.ast.Program p = new org.extendj.ast.Program();
+		String fileIdDb = "analyzed-files.csv";
 
 		p.trace().setReceiver(p.provenance);
-		p.fileIdStorage = new FileIdDatabase();
+		try {
+			SimpleLogger.logger().info("Loading file-to-id database, " + fileIdDb + ".");
+			p.fileIdStorage = FileIdDatabase.loadFromFile(fileIdDb);
+		} catch (IOException e) {
+			SimpleLogger.logger().info("Loading of file-to-id database failed, using an empty one");
+			p.fileIdStorage = new FileIdDatabase();
+		}
 
 		// Set the path to the Java runtime
 		String bootCP = System.getenv().get("METADL_JAVA_RT");
@@ -117,5 +124,7 @@ public class FileUtil {
 		// Generate the program relation
 		lang.java.obj.DatalogProjection2 proj2 = new lang.java.obj.DatalogProjection2(p, tupleSink, p.fileIdStorage);
 		proj2.generate();
+
+		((FileIdDatabase) p.fileIdStorage).storeToFile(fileIdDb);
 	}
 }

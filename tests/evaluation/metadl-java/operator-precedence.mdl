@@ -1,7 +1,5 @@
 P("tests/evaluation/metadl-java/src/operator-precedence/").
 
-Conditional(0, 0, 0), Shift(0, 0, 0), Arithmetic(0, 0, 0), SafeAssoc(0, 0, 0) :- NEQ(0, 0).
-
 java('P) {
 	    Conditional(e, `l, `r), Prec(e, "cand") :- e <: `l && `r :>.
 	    Conditional(e, `l, `r), Prec(e, "cor") :- e <: `l || `r :>.

@@ -1,7 +1,5 @@
 P("tests/evaluation/metadl-java/src/bad-covariant-equals/").
 
-GoodEquals(0) :- NEQ(0, 0).
-
 java('P) {
 	# equals method where the class has another correct equals, probably a helper
 	CovariantEquals(`d1) :- <: .. class `k  { .. `d1 ..  } :> ,

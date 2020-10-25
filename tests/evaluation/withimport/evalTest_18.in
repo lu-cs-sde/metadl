@@ -1,8 +1,5 @@
 Q("tests/evaluation/withimport/evalTest_18_input.java").
 
-Scope(0, 0) :- NEQ(0, 0).
-NameDef("", 0) :- NEQ(0, 0).
-
 java('Q) {
 	Scope(p, `c) :- p <: class `n { .. `c .. } :>.
 	Scope(p, `b) :- p <: .. `t `f (..) `b :>.

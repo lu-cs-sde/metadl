@@ -55,7 +55,6 @@ java('P) {
                                   GrandParent(c1, m), GrandParent(c2, super), TSuperType(c1, c2).
 
 
-	    ClassEq(0, 0) :- NEQ(0, 0).
 	    ClassEq(c, `d) :- c <: class `_ { .. `d .. } :>, `d <: .. public .. boolean equals(`t `o) ;:>.
 	    ClassEq(c, `d) :- c <: class `_ <..> { .. `d .. } :>, `d <: .. public .. boolean equals(`t `o) ;:>.
 
@@ -82,7 +81,6 @@ java('P) {
 	    # OUTPUT('BadEq).
 	    OUTPUT('BadEqDetail).
 
-	    MethodIsAbstract(0) :- NEQ(0, 0).
 	    MethodIsAbstract(m) :- m <: .. abstract .. `t `m(..) ; :>.
 
 

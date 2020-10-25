@@ -1,8 +1,5 @@
 P("tests/evaluation/metadl-java/src/missing-override/").
 
-SuperClass(0, 0), SuperInterface(0, 0) :- NEQ(0, 0).
-MethodSig1(0, "", 0), MethodSig2(0, 0, 0) :- NEQ(0, 0).
-
 # Code for extracting the type hierarchy
 java('P) {
 	    SuperClass1(c, d) :- c <: class `_ extends `d { .. } :>, DECL(`d, d).

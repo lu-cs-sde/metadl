@@ -1,8 +1,5 @@
 P("tests/evaluation/metadl-java/src/switch-no-default/").
 
-ExpectWarning(0), DesireWarning(0), SwitchWithDefault(0), NoWarning(0), DesireNoWarning(0) :- NEQ(0, 0).
-EnumMembers(0, 0), CaseOnEnum(0, 0, 0) :- NEQ(0, 0).
-
 java('P) {
 ### Analysis
 	    SwitchWithDefault(s) :- s <: switch (`_) { .. default: .. } :>.

@@ -71,7 +71,10 @@ aspect PretyPrinting {
     }
 
     public void Rule.prettyPrint(PrettyPrinter pr) {
+		pr.printComment(isLocalClause() ? "Local clause" : "Global clause");
 		pr.printComment("Domains: " + domainSignature().equivalenceSets().toString());
+		pr.printComment("Domain separation: " + domainSeparation().equivalenceSets().toString());
+
         printCollection(getHeadss(), "", "", ",", pr);
         pr.out.print(" :- ");
         printCollection(getBodys(), "", ".\n", ", ", pr);

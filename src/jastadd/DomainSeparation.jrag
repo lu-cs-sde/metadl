@@ -1,8 +1,10 @@
 import org.jgrapht.alg.util.UnionFind;
+import java.util.stream.IntStream;
+import org.apache.commons.collections4.SetUtils;
 
 aspect DomainSeparation {
-	public class DomainSignature<T extends Comparable> extends UnionFind<T> {
-		private TreeSet<T> elems = new TreeSet<>();
+	public class DomainSignature<T> extends UnionFind<T> {
+		private Set<T> elems = new HashSet<>();
 
 		public DomainSignature(Set<T> e) {
 			super(e);
@@ -10,7 +12,7 @@ aspect DomainSeparation {
 		}
 
 		public DomainSignature(Collection<T> c) {
-			this(new TreeSet<>(c));
+			this(new HashSet<>(c));
 		}
 
 		// Create a domain signature with the same equivalence
@@ -60,7 +62,7 @@ aspect DomainSeparation {
 				T r = find(e);
 				Set<T> s = m.get(r);
 				if (s == null) {
-					s = new TreeSet<T>();
+					s = new HashSet<T>();
 					m.put(r, s);
 				}
 				s.add(e);
@@ -82,7 +84,7 @@ aspect DomainSeparation {
 		DomainSignature<Integer> dom = new DomainSignature<Integer>(Collections.emptySet());
 		// add all the indices that have AST type to the same domain
 		int first = -1;
-		for (int i : astIndices()) {
+		for (int i = 0; i < type().arity(); ++i) {
 			dom.addElement(i);
 			if (first != -1) {
 				dom.union(first, i);
@@ -93,10 +95,6 @@ aspect DomainSeparation {
 
 		return dom;
 	}
-
-	inh Clause Literal.parentClause();
-	eq Rule.getBody().parentClause() = this;
-	eq Clause.getHeads().parentClause() = this;
 
 	syn lazy java.util.List<Integer> FormalPredicate.astIndices() {
 		java.util.List<Integer> l = new ArrayList<>();
@@ -114,14 +112,14 @@ aspect DomainSeparation {
 		// iterate over all the heads and merge their signatures
 		DomainSignature<Integer> predSig = new DomainSignature<>(domainSignature());
 		for (Literal l : literals()) {
-			if (l.isDef() && l.parentClause() instanceof Rule) {
-				DomainSignature<Integer> literalSig = new DomainSignature<>(astIndices());
-				DomainSignature<String> clauseSig = ((Rule)l.parentClause()).domainSignature();
-				for (int i : l.astIndices()) {
+			if (l.isDef() && l.clause() instanceof Rule) {
+				DomainSignature<Integer> literalSig = new DomainSignature<>(IntStream.range(0, l.getNumTerms()).boxed().collect(Collectors.toList()));
+				DomainSignature<String> clauseSig = ((Rule)l.clause()).domainSignature();
+				for (int i = 0; i < l.getNumTerms(); i++) {
 					if (!(l.getTerms(i) instanceof Variable))
 						continue;
 					String vi = ((Variable)l.getTerms(i)).getVAR_ID();
-					for (int j : l.astIndices()) {
+					for (int j = 0; j < l.getNumTerms(); j++) {
 						if (!(l.getTerms(j) instanceof Variable))
 							continue;
 						String vj = ((Variable)l.getTerms(j)).getVAR_ID();
@@ -141,28 +139,36 @@ aspect DomainSeparation {
 		return dom;
 	}
 
+	syn Literal CommonLiteral.asLiteral();
+	eq Literal.asLiteral() = this;
+	eq Pattern.asLiteral() = getLiteral();
+	eq Constraint.asLiteral() = null;
+
 	syn DomainSignature<String> Rule.domainSignature() circular [initialDomainSignature()] {
 		DomainSignature<String> ruleSig = new DomainSignature<>(varMap().variableNames());
 
 		for (CommonLiteral c : getBodys()) {
-			if (c instanceof Literal) {
-				Literal l = (Literal) c;
-				DomainSignature<Integer> literalSig = l.getPredicate().formalpredicate().domainSignature();
-				for (int i : l.astIndices()) {
-					if (!(l.getTerms(i) instanceof Variable))
+			if (c.hasNot())
+				continue;
+
+			Literal l = c.asLiteral();
+			if (l == null)
+				continue;
+
+			DomainSignature<Integer> literalSig = l.getPredicate().formalpredicate().domainSignature();
+			for (int i = 0; i < l.getNumTerms(); ++i) {
+				if (!(l.getTerms(i) instanceof Variable))
+					continue;
+				String vi = ((Variable)l.getTerms(i)).getVAR_ID();
+				for (int j = 0; j < l.getNumTerms(); j++) {
+					if (!(l.getTerms(j) instanceof Variable))
 						continue;
-					String vi = ((Variable)l.getTerms(i)).getVAR_ID();
-					for (int j : l.astIndices()) {
-						if (!(l.getTerms(j) instanceof Variable))
-							continue;
-						String vj = ((Variable)l.getTerms(j)).getVAR_ID();
-						if (literalSig.inSameSet(i, j))
-							ruleSig.union(vi, vj);
-					}
+					String vj = ((Variable)l.getTerms(j)).getVAR_ID();
+					if (literalSig.inSameSet(i, j))
+						ruleSig.union(vi, vj);
 				}
 			}
 		}
-
 		return ruleSig;
 	}
 
@@ -173,4 +179,48 @@ aspect DomainSeparation {
 		}
 	}
 
+	syn boolean FormalPredicate.isSingleDomain() =
+		domainSignature().equivalenceSets().size() == 1;
+
+	public DomainSignature<Literal> Rule.domainSeparation() {
+		DomainSignature<Literal> sig = new DomainSignature<>(Collections.emptySet());
+		for (CommonLiteral c : getBodys()) {
+			Literal l = c.asLiteral();
+			if (l == null)
+				continue;
+			sig.addElement(l);
+		}
+
+		for (int i = 0; i < getNumBody(); ++i) {
+			Literal li = getBody(i).asLiteral();
+			if (li == null)
+				continue;
+			if (!li.getPredicate().formalpredicate().isSingleDomain())
+				continue;
+
+			for (int j = i + 1; j < getNumBody(); ++j) {
+				Literal lj = getBody(j).asLiteral();
+				if (lj == null)
+					continue;
+				if (!lj.getPredicate().formalpredicate().isSingleDomain())
+					continue;
+				// both literals' domains have a single partition, check whether
+				// they share a variable
+				if (!SetUtils.intersection(li.variableNames(), lj.variableNames()).isEmpty())
+					sig.union(li, lj);
+			}
+		}
+		return sig;
+	}
+
+	syn boolean Clause.isLocalClause() circular [true];
+	eq Fact.isLocalClause() = true;
+	eq Rule.isLocalClause() {
+		if (domainSeparation().equivalenceSets().size() > 1)
+			return false;
+		for (Clause d : dependsOn())
+			if (!d.isLocalClause())
+				return false;
+		return true;
+	}
 }

@@ -57,23 +57,30 @@ aspect Stratification {
 	coll ClauseDependencyGraph Program.clauseDependencyGraph() [new ClauseDependencyGraph()] with addEdge;
 	coll Set<Clause> FormalPredicate.definedIn() [new LinkedHashSet<Clause>()];
 
-	syn Pair<Collection<Clause>, Clause> Clause.pdgContribution();
-	eq Rule.pdgContribution() {
-		Set<Clause> from = new HashSet<>();
-
+	/**
+	   dependsOn() - the set of clauses where literals in the body of this clause are defined
+	 */
+	syn Set<Clause> Clause.dependsOn();
+	eq Fact.dependsOn() = Collections.emptySet();
+	eq Rule.dependsOn() {
+		Set<Clause> deps = new HashSet<>();
 		for (CommonLiteral b : getBodys()) {
 			for (CommonLiteral t : b.evalLiteralList()) {
 				if (t instanceof Literal) {
 					Literal l = (Literal) t;
 					FormalPredicate fp = l.getPredicate().formalpredicate();
 					for (Clause c : fp.definedIn()) {
-						from.add(c);
+						deps.add(c);
 					}
 				}
 			}
 		}
+		return deps;
+	}
 
-		return Pair.of(from, this);
+	syn Pair<Collection<Clause>, Clause> Clause.pdgContribution();
+	eq Rule.pdgContribution() {
+		return Pair.of(dependsOn(), this);
 	}
 	eq Fact.pdgContribution() {
 		return Pair.of(Collections.emptySet(), this);
@@ -244,7 +251,6 @@ aspect Stratification {
 		return strata;
 	}
 
-	// TODO: check for negation in same stratum
 	public void Program.dumpStrata() throws IOException {
 		PrintStream f = new PrintStream("strata.dump");
 		EvaluationContext ctx = new EvaluationContext();

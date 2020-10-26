@@ -142,7 +142,7 @@ aspect DomainSeparation {
 	}
 
 	syn DomainSignature<String> Rule.domainSignature() circular [initialDomainSignature()] {
-		DomainSignature<String> ruleSig = new DomainSignature<>(domainSignature());
+		DomainSignature<String> ruleSig = new DomainSignature<>(varMap().variableNames());
 
 		for (CommonLiteral c : getBodys()) {
 			if (c instanceof Literal) {

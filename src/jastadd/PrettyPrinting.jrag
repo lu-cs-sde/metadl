@@ -71,6 +71,7 @@ aspect PretyPrinting {
     }
 
     public void Rule.prettyPrint(PrettyPrinter pr) {
+		pr.printComment("Domains: " + domainSignature().equivalenceSets().toString());
         printCollection(getHeadss(), "", "", ",", pr);
         pr.out.print(" :- ");
         printCollection(getBodys(), "", ".\n", ", ", pr);
@@ -181,6 +182,10 @@ aspect ExtensionablePrinting {
 		protected void negationSuffix() {
 			out.print(")");
 		}
+
+		protected void printComment(String s) {
+			// out.println("# " + s);
+		}
     }
 
     public class StandardPrettyPrinter<T extends ASTNode> extends PrettyPrinter<T> {
@@ -208,6 +213,11 @@ aspect ExtensionablePrinting {
 		@Override
 		protected void negationSuffix() {
 			out.print(")");
+		}
+
+		@Override
+		protected void printComment(String s) {
+			out.println("// " + s);
 		}
     }
 }
@@ -315,6 +325,7 @@ aspect SoufflePrinting {
 	}
 
     public void FormalPredicate.soufflePrint(PrettyPrinter pr) {
+		pr.printComment("Domains: " + domainSignature().equivalenceSets());
         pr.out.print(".decl " + predicateName() + "(");
         ArrayList<PredicateSymbol> constants = new ArrayList<PredicateSymbol>();
         for(int i = 0; i != realArity(); ++i) {

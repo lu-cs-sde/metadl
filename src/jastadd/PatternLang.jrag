@@ -426,30 +426,19 @@ aspect PatternLang {
 		case AST:
 		case NTA:
 			// {{1, 3}, {0}, {2}, {4}}
-			dom.addElement(0);
 			dom.addElement(1);
-			dom.addElement(2);
 			dom.addElement(3);
-			dom.addElement(4);
 			dom.union(1, 3);
 			return dom;
 		case ATTR:
-			dom.addElement(0);
 			dom.addElement(1);
 			dom.addElement(2);
 			return dom;
 		case SRC:
 			dom.addElement(0);
-			dom.addElement(1);
-			dom.addElement(2);
-			dom.addElement(3);
-			dom.addElement(4);
-			dom.addElement(5);
 			return dom;
 		case ATTR_PROVENANCE:
 			dom.addElement(0);
-			dom.addElement(1);
-			dom.addElement(2);
 			return dom;
 		}
 		return null;

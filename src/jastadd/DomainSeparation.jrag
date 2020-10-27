@@ -84,7 +84,7 @@ aspect DomainSeparation {
 		DomainSignature<Integer> dom = new DomainSignature<Integer>(Collections.emptySet());
 		// add all the indices that have AST type to the same domain
 		int first = -1;
-		for (int i = 0; i < type().arity(); ++i) {
+		for (int i : astIndices()) {
 			dom.addElement(i);
 			if (first != -1) {
 				dom.union(first, i);
@@ -108,18 +108,21 @@ aspect DomainSeparation {
 	syn lazy java.util.List<Integer> Literal.astIndices() =
 		getPredicate().formalpredicate().astIndices();
 
+	syn lazy Set<String> Literal.astVariables() =
+		astIndices().stream().map(i -> getTerms(i)).filter(t -> t instanceof Variable).map(t -> ((Variable) t).getVAR_ID()).collect(Collectors.toSet());
+
 	syn DomainSignature<Integer> FormalPredicate.domainSignature() circular [initialDomainSignature()] {
 		// iterate over all the heads and merge their signatures
 		DomainSignature<Integer> predSig = new DomainSignature<>(domainSignature());
 		for (Literal l : literals()) {
 			if (l.isDef() && l.clause() instanceof Rule) {
-				DomainSignature<Integer> literalSig = new DomainSignature<>(IntStream.range(0, l.getNumTerms()).boxed().collect(Collectors.toList()));
+				DomainSignature<Integer> literalSig = new DomainSignature<>(astIndices());
 				DomainSignature<String> clauseSig = ((Rule)l.clause()).domainSignature();
-				for (int i = 0; i < l.getNumTerms(); i++) {
+				for (int i : l.astIndices()) {
 					if (!(l.getTerms(i) instanceof Variable))
 						continue;
 					String vi = ((Variable)l.getTerms(i)).getVAR_ID();
-					for (int j = 0; j < l.getNumTerms(); j++) {
+					for (int j : l.astIndices()) {
 						if (!(l.getTerms(j) instanceof Variable))
 							continue;
 						String vj = ((Variable)l.getTerms(j)).getVAR_ID();
@@ -133,9 +136,14 @@ aspect DomainSeparation {
 		return predSig;
 	}
 
-	syn DomainSignature<String> Rule.initialDomainSignature() {
+	private DomainSignature<String> Rule.initialDomainSignature() {
 		// initially all the variables have their own domain
-		DomainSignature<String> dom = new DomainSignature<String>(varMap().variableNames());
+		DomainSignature<String> dom = new DomainSignature<String>(Collections.emptySet());
+		for (String varName : varMap().variableNames()) {
+			if (varMap().get(varName).get(0).type() == ASTNodeType.get()) {
+				dom.addElement(varName);
+			}
+		}
 		return dom;
 	}
 
@@ -145,7 +153,7 @@ aspect DomainSeparation {
 	eq Constraint.asLiteral() = null;
 
 	syn DomainSignature<String> Rule.domainSignature() circular [initialDomainSignature()] {
-		DomainSignature<String> ruleSig = new DomainSignature<>(varMap().variableNames());
+		DomainSignature<String> ruleSig = initialDomainSignature();
 
 		for (CommonLiteral c : getBodys()) {
 			if (c.hasNot())
@@ -156,11 +164,11 @@ aspect DomainSeparation {
 				continue;
 
 			DomainSignature<Integer> literalSig = l.getPredicate().formalpredicate().domainSignature();
-			for (int i = 0; i < l.getNumTerms(); ++i) {
+			for (int i : l.astIndices()) {
 				if (!(l.getTerms(i) instanceof Variable))
 					continue;
 				String vi = ((Variable)l.getTerms(i)).getVAR_ID();
-				for (int j = 0; j < l.getNumTerms(); j++) {
+				for (int j : l.astIndices()) {
 					if (!(l.getTerms(j) instanceof Variable))
 						continue;
 					String vj = ((Variable)l.getTerms(j)).getVAR_ID();
@@ -182,11 +190,13 @@ aspect DomainSeparation {
 	syn boolean FormalPredicate.isSingleDomain() =
 		domainSignature().equivalenceSets().size() == 1;
 
-	public DomainSignature<Literal> Rule.domainSeparation() {
+	syn DomainSignature<Literal> Rule.domainSeparation() {
 		DomainSignature<Literal> sig = new DomainSignature<>(Collections.emptySet());
 		for (CommonLiteral c : getBodys()) {
 			Literal l = c.asLiteral();
 			if (l == null)
+				continue;
+			if (!l.getPredicate().formalpredicate().isASTPredicate())
 				continue;
 			sig.addElement(l);
 		}
@@ -206,21 +216,93 @@ aspect DomainSeparation {
 					continue;
 				// both literals' domains have a single partition, check whether
 				// they share a variable
-				if (!SetUtils.intersection(li.variableNames(), lj.variableNames()).isEmpty())
+				if (!SetUtils.intersection(li.astVariables(), lj.astVariables()).isEmpty())
 					sig.union(li, lj);
 			}
 		}
 		return sig;
 	}
 
-	syn boolean Clause.isLocalClause() circular [true];
-	eq Fact.isLocalClause() = true;
-	eq Rule.isLocalClause() {
-		if (domainSeparation().equivalenceSets().size() > 1)
-			return false;
-		for (Clause d : dependsOn())
-			if (!d.isLocalClause())
+	syn boolean FormalPredicate.isLocal() circular [true] {
+		for (Clause c : definedIn()) {
+			if (!c.isLocal()) {
 				return false;
+			}
+		}
+		return true;
+	}
+
+	syn boolean Clause.isLocal() circular [true];
+	eq Fact.isLocal() = true;
+	eq Rule.isLocal() {
+		java.util.List<Literal> astLiterals = new ArrayList<>();
+		// all the AST literals are single domain
+		for (CommonLiteral c : getBodys()) {
+			Literal l = c.asLiteral();
+			if (l == null)
+				continue;
+			FormalPredicate pred = l.getPredicate().formalpredicate();
+			// this rule uses a non-local predicate
+			if (!pred.isLocal())
+				return false;
+			if (pred.isASTPredicate()) {
+				// check that the predicate has exactly one equivalence set;
+				// this means that the predicate contains information about
+				// exactly one AST and has witnesses for that
+				if (pred.domainSignature().equivalenceSets().size() != 1)
+					return false;
+				// collect the literals that depend on AST facts
+				astLiterals.add(l);
+			}
+		}
+
+		if (astLiterals.isEmpty())
+			return true;
+
+		DomainSignature<Literal> s = new DomainSignature<>(astLiterals);
+		for (int i = 0; i < astLiterals.size(); ++i) {
+			Literal li = astLiterals.get(i);
+			for (int j = i + 1; j < astLiterals.size(); ++j) {
+				Literal lj = astLiterals.get(j);
+				if (!SetUtils.intersection(li.astVariables(), lj.astVariables()).isEmpty())
+					s.union(li, lj);
+			}
+		}
+
+		return s.equivalenceSets().size() == 1;
+	}
+
+	syn boolean FormalPredicate.initialIsASTPredicate() {
+		if (getProgramRepresentationKind().isPresent())
+			return true;
+		return false;
+	}
+
+	syn Set<FormalPredicate> Clause.predicateUses();
+	eq Fact.predicateUses() = Collections.emptySet();
+	eq Rule.predicateUses() {
+		Set<FormalPredicate> res = new HashSet<>();
+		for (CommonLiteral c : getBodys()) {
+			Literal l = c.asLiteral();
+			if (l != null) {
+				res.add(l.getPredicate().formalpredicate());
+			}
+		}
+		return res;
+	}
+
+	syn boolean Clause.isASTClause() circular [false] {
+		for (FormalPredicate fp : predicateUses())
+			if (!fp.isASTPredicate())
+				return false;
+		return true;
+	}
+
+	syn boolean FormalPredicate.isASTPredicate() circular [initialIsASTPredicate()] {
+		for (Clause c : definedIn()) {
+			if (!c.isASTClause())
+				return false;
+		}
 		return true;
 	}
 }

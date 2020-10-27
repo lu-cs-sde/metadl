@@ -76,7 +76,6 @@ aspect PretyPrinting {
 		}
 		pr.printComment(isLocal() ? "Local clause" : "Global clause");
 		pr.printComment("Domains: " + domainSignature().equivalenceSets().toString());
-		pr.printComment("Domain separation: " + domainSeparation().equivalenceSets().toString());
 
         printCollection(getHeadss(), "", "", ",", pr);
         pr.out.print(" :- ");

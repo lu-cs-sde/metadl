@@ -187,42 +187,8 @@ aspect DomainSeparation {
 		}
 	}
 
-	syn boolean FormalPredicate.isSingleDomain() =
-		domainSignature().equivalenceSets().size() == 1;
-
-	syn DomainSignature<Literal> Rule.domainSeparation() {
-		DomainSignature<Literal> sig = new DomainSignature<>(Collections.emptySet());
-		for (CommonLiteral c : getBodys()) {
-			Literal l = c.asLiteral();
-			if (l == null)
-				continue;
-			if (!l.getPredicate().formalpredicate().isASTPredicate())
-				continue;
-			sig.addElement(l);
-		}
-
-		for (int i = 0; i < getNumBody(); ++i) {
-			Literal li = getBody(i).asLiteral();
-			if (li == null)
-				continue;
-			if (!li.getPredicate().formalpredicate().isSingleDomain())
-				continue;
-
-			for (int j = i + 1; j < getNumBody(); ++j) {
-				Literal lj = getBody(j).asLiteral();
-				if (lj == null)
-					continue;
-				if (!lj.getPredicate().formalpredicate().isSingleDomain())
-					continue;
-				// both literals' domains have a single partition, check whether
-				// they share a variable
-				if (!SetUtils.intersection(li.astVariables(), lj.astVariables()).isEmpty())
-					sig.union(li, lj);
-			}
-		}
-		return sig;
-	}
-
+	// A predicate is local iff its relation can be computed separately for each
+	// translation.
 	syn boolean FormalPredicate.isLocal() circular [true] {
 		for (Clause c : definedIn()) {
 			if (!c.isLocal()) {
@@ -232,6 +198,8 @@ aspect DomainSeparation {
 		return true;
 	}
 
+	// A clause is local iff it can be computed for each translation unit
+	// in separation.
 	syn boolean Clause.isLocal() circular [true];
 	eq Fact.isLocal() = true;
 	eq Rule.isLocal() {
@@ -256,9 +224,11 @@ aspect DomainSeparation {
 			}
 		}
 
+		// no literals depend on AST, then this can be computed locally
 		if (astLiterals.isEmpty())
 			return true;
 
+		// some literals depend on the AST, check that they are all connected
 		DomainSignature<Literal> s = new DomainSignature<>(astLiterals);
 		for (int i = 0; i < astLiterals.size(); ++i) {
 			Literal li = astLiterals.get(i);
@@ -273,6 +243,8 @@ aspect DomainSeparation {
 	}
 
 	syn boolean FormalPredicate.initialIsASTPredicate() {
+		// Only the program representation predicates are
+		// AST predicates
 		if (getProgramRepresentationKind().isPresent())
 			return true;
 		return false;
@@ -291,18 +263,20 @@ aspect DomainSeparation {
 		return res;
 	}
 
+	// A clause is an AST clause if it depends on any AST-derived predicates
 	syn boolean Clause.isASTClause() circular [false] {
 		for (FormalPredicate fp : predicateUses())
-			if (!fp.isASTPredicate())
-				return false;
-		return true;
+			if (fp.isASTPredicate())
+				return true;
+		return false;
 	}
 
+	// A predicate is an AST predicate if it depends (transitively) on any AST facts
 	syn boolean FormalPredicate.isASTPredicate() circular [initialIsASTPredicate()] {
 		for (Clause c : definedIn()) {
-			if (!c.isASTClause())
-				return false;
+			if (c.isASTClause())
+				return true;
 		}
-		return true;
+		return isASTPredicate();
 	}
 }

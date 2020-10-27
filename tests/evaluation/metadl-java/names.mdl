@@ -1,0 +1,11 @@
+Src("Names.java").
+
+java('Src) {
+     Cat(n, c) :- AST(c, n, _, _, _).
+     Fields(`f, `g, cf, cg) :- <: `f.`g :>, Cat(`f, cf), Cat(`g, cg).
+     FieldNames(n, m) :- Fields(f, g, _, _), ID(f, n), ID(g, m).
+     Method(`b, `f) :- <: `b.`f(..) :>.
+     MethodNames(n, m) :- Method(`b, `f), ID(`b, n), ID(`f, m).
+     OUTPUT('FieldNames).
+     OUTPUT('MethodNames).
+}

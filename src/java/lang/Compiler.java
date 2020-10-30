@@ -19,14 +19,8 @@ import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
 
 import org.apache.commons.lang3.time.StopWatch;
-import org.apache.commons.cli.DefaultParser;
-import org.apache.commons.cli.Option;
-import org.apache.commons.cli.Options;
-import org.apache.commons.cli.OptionGroup;
-import org.apache.commons.cli.ParseException;
-import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.CommandLine;
 
+import incremental.ProgramSplit;
 import lang.CmdLineOpts.Action;
 import lang.ast.Program;
 import lang.ast.SoufflePrettyPrinter;
@@ -46,14 +40,6 @@ public class Compiler {
 	public static char getCSVSeparator() {
 		// TODO: make this a cmd line option
 		return ',';
-	}
-
-	public static void printHelp(Options options) {
-		String header = "Compile and run a MetaDL program.\n\n";
-		String footer = "\nPlease report issues at https://github.com/lu-cs-sde/metadl";
-
-		HelpFormatter formatter = new HelpFormatter();
-		formatter.printHelp("metadl PROGRAM", header, options, footer, true);
 	}
 
 	public static Program parseProgram(CmdLineOpts opts) throws IOException, beaver.Parser.Exception {
@@ -173,101 +159,6 @@ public class Compiler {
 		return "\\t";
 	}
 
-	public static CmdLineOpts parseCmdLineArgs(String[] args) {
-		DefaultParser parser = new DefaultParser();
-		CmdLineOpts ret = new CmdLineOpts();
-
-		Option prettyPrint = Option.builder("p").longOpt("pretty-print").numberOfArgs(1)
-			.desc("Pretty print the program in MetaDL (arg = metadl) or Souffle (arg = souffle) format.").build();
-		Option eval = Option.builder("e").longOpt("eval").numberOfArgs(1)
-			.desc("Evaluate the program using the internal (arg = metadl), parallel (arg = metadl-par), Souffle (arg = souffle), Hybrid (arg = hybrid) evaluator.").build();
-		Option check = Option.builder("c").longOpt("check").hasArg(false)
-			.desc("Check that the input represents a valid MetaDL program.").build();
-		Option imp = Option.builder("i").longOpt("import").hasArg(false)
-			.desc("Evaluate only the import statements and output the program representation relation(s).").build();
-		Option gen = Option.builder("g").longOpt("gen-hybrid").hasArg(false)
-			.desc("Generate a hybrid MetaDL-Souffle program.").build();
-
-		OptionGroup actions = new OptionGroup().addOption(eval).addOption(prettyPrint).addOption(check)
-			.addOption(imp).addOption(gen);
-
-		Option factDir = Option.builder("F").longOpt("facts").numberOfArgs(1)
-			.desc("Fact directory.").argName("DIR").build();
-		Option outDir = Option.builder("D").longOpt("out").numberOfArgs(1)
-			.desc("Output directory.").argName("DIR").build();
-		Option genDir = Option.builder("G").longOpt("gen").numberOfArgs(1)
-			.desc("Generated program dirctory.").argName("DIR").build();
-		Option outFile = Option.builder("o").longOpt("output").numberOfArgs(1)
-			.desc("Output file.").argName("FILE").build();
-		Option libFile = Option.builder("l").longOpt("lib").numberOfArgs(1)
-			.desc("Library file to use for hybrid evaluation.").argName("FILE").build();
-		Option enableWarnings = Option.builder("w").longOpt("warn").hasArg(false)
-			.desc("Print warnings.").build();
-
-
-		Options options = new Options().addOptionGroup(actions).
-			addOption(factDir).addOption(outDir).addOption(genDir).addOption(outFile).addOption(libFile).addOption(enableWarnings);
-
-		try {
-			CommandLine cmd = parser.parse(options, args);
-			if (cmd.getArgs().length != 1) {
-				System.err.println("Missing PROGRAM argument.");
-				printHelp(options);
-				throw new RuntimeException();
-			} else {
-				ret.setInputFile(cmd.getArgs()[0]);
-			}
-
-			if (cmd.hasOption("p")) {
-				if (cmd.getOptionValue("p").equals("souffle")) {
-					ret.setAction(Action.PRETTY_SOUFFLE);
-				} else if (cmd.getOptionValue("p").equals("metadl")) {
-					ret.setAction(Action.PRETTY_INTERNAL);
-				} else if (cmd.getOptionValue("p").equals("types")) {
-					ret.setAction(Action.PRETTY_TYPES);
-				} else {
-					System.err.println("Invalid argument to '--pretty-print' option");
-					printHelp(options);
-					throw new RuntimeException();
-				}
-			} else if (cmd.hasOption("e")) {
-				if (cmd.getOptionValue("e").equals("souffle")) {
-					ret.setAction(Action.EVAL_SOUFFLE);
-				} else if (cmd.getOptionValue("e").equals("metadl")) {
-					ret.setAction(Action.EVAL_INTERNAL);
-				} else if (cmd.getOptionValue("e").equals("metadl-par")) {
-					ret.setAction(Action.EVAL_INTERNAL_PARALLEL);
-				} else if (cmd.getOptionValue("e").equals("hybrid")) {
-					ret.setAction(Action.EVAL_HYBRID);
-				} else {
-					System.err.println("Invalid argument to '--eval' option");
-					printHelp(options);
-					throw new RuntimeException();
-				}
-			} else if (cmd.hasOption("c")) {
-				ret.setAction(Action.CHECK);
-			} else if (cmd.hasOption("i")) {
-				ret.setAction(Action.EVAL_IMPORT);
-			} else if (cmd.hasOption("g")) {
-				ret.setAction(Action.GEN_HYBRID);
-			}
-
-			ret.setFactsDir(cmd.getOptionValue("F", "."));
-			ret.setOutputDir(cmd.getOptionValue("D", "."));
-			ret.setGeneratedDir(cmd.getOptionValue("G", "."));
-			ret.setOutputFile(cmd.getOptionValue("o",
-												 ret.getOutputDir() + "/" +
-												 FileUtil.changeExtension(FileUtil.fileName(ret.getInputFile()), ".dl")));
-			ret.setLibFile(cmd.getOptionValue("l", "libSwigInterface.so"));
-			ret.setWarningsEnabled(cmd.hasOption("w"));
-		} catch (ParseException e) {
-			printHelp(options);
-			throw new RuntimeException(e);
-		}
-
-		return ret;
-	}
-
 	public static Program run(CmdLineOpts opts) {
 		try {
 			Program prog = parseProgram(opts);
@@ -321,6 +212,15 @@ public class Compiler {
 				checkProgram(prog, opts);
 				SWIGUtil.evalHybridProgram(prog, opts);
 				break;
+			case SEPARATE_SOUFFLE:
+			case SEPARATE_INTERNAL:
+				checkProgram(prog, opts);
+				StandardPrettyPrinter<Program> lpp = new StandardPrettyPrinter<>(new PrintStream("local.mdl"));
+				StandardPrettyPrinter<Program> gpp = new StandardPrettyPrinter<>(new PrintStream("global.mdl"));
+				ProgramSplit split = new ProgramSplit(prog);
+				lpp.prettyPrint(split.getLocalProgram());
+				gpp.prettyPrint(split.getGlobalProgram());
+				break;
 			}
 
 			return prog;
@@ -342,7 +242,7 @@ public class Compiler {
 		log.setLevel(Level.FINEST);
 		StopWatch totalTime = StopWatch.createStarted();
 
-		CmdLineOpts opts = parseCmdLineArgs(args);
+		CmdLineOpts opts = CmdLineOpts.parseCmdLineArgs(args);
 		run(opts);
 
 		totalTime.stop();

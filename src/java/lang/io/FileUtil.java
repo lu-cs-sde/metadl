@@ -71,7 +71,7 @@ public class FileUtil {
 
 
 	public static CmdLineOpts parseDescription(String s) throws IOException, beaver.Parser.Exception {
-		return lang.Compiler.parseCmdLineArgs(s.split("\\s+"));
+		return lang.CmdLineOpts.parseCmdLineArgs(s.split("\\s+"));
 	}
 
 	public static void loadJavaSources(EvaluationContext ctx,

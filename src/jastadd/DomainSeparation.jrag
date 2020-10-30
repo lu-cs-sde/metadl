@@ -188,7 +188,7 @@ aspect DomainSeparation {
 	}
 
 	// A predicate is local iff its relation can be computed separately for each
-	// translation.
+	// translation unit.
 	syn boolean FormalPredicate.isLocal() circular [true] {
 		for (Clause c : definedIn()) {
 			if (!c.isLocal()) {
@@ -278,5 +278,57 @@ aspect DomainSeparation {
 				return true;
 		}
 		return isASTPredicate();
+	}
+
+	// A predicate is a boundary predicate if it is local, but is used in non-local clauses
+	syn boolean FormalPredicate.isBoundary() {
+		if (!isLocal())
+			return false;
+
+		for (PredicateSymbol p : predicates()) {
+			Clause c = p.parentLiteral().clause();
+			// the predicate can be defined or used by the clause,
+			// if it's defined, the clause must be local, it's only
+			// the use that can be non-local
+			if (!c.isLocal())
+				return true;
+		}
+		return false;
+	}
+
+	syn lazy boolean FormalPredicate.hasLocalUse() {
+		for (PredicateSymbol p : predicates()) {
+			Clause c = p.parentLiteral().clause();
+			if (p.parentLiteral().isUse() && c.isLocal())
+				return true;
+		}
+		return false;
+	}
+
+	syn lazy boolean FormalPredicate.hasGlobalUse() {
+		for (PredicateSymbol p : predicates()) {
+			Clause c = p.parentLiteral().clause();
+			if (p.parentLiteral().isUse() && !c.isLocal())
+				return true;
+		}
+		return false;
+	}
+
+	syn lazy boolean FormalPredicate.hasLocalDef() {
+		for (PredicateSymbol p : predicates()) {
+			Clause c = p.parentLiteral().clause();
+			if (p.parentLiteral().isDef() && c.isLocal())
+				return true;
+		}
+		return false;
+	}
+
+	syn lazy boolean FormalPredicate.hasGlobalDef() {
+		for (PredicateSymbol p : predicates()) {
+			Clause c = p.parentLiteral().clause();
+			if (p.parentLiteral().isDef() && !c.isLocal())
+				return true;
+		}
+		return false;
 	}
 }

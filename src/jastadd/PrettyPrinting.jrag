@@ -71,11 +71,11 @@ aspect PretyPrinting {
     }
 
     public void Rule.prettyPrint(PrettyPrinter pr) {
-		if (isASTClause()) {
-			pr.printComment("AST clause");
-		}
-		pr.printComment(isLocal() ? "Local clause" : "Global clause");
-		pr.printComment("Domains: " + domainSignature().equivalenceSets().toString());
+		// if (isASTClause()) {
+		// 	pr.printComment("AST clause");
+		// }
+		// pr.printComment(isLocal() ? "Local clause" : "Global clause");
+		// pr.printComment("Domains: " + domainSignature().equivalenceSets().toString());
 
         printCollection(getHeadss(), "", "", ",", pr);
         pr.out.print(" :- ");

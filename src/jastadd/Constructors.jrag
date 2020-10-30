@@ -69,6 +69,13 @@ aspect Constructors {
 			return r;
 		}
 
+		public static lang.ast.Fact fact(lang.ast.CommonLiteral ...literals) {
+			lang.ast.List<lang.ast.CommonLiteral> headList = new lang.ast.List<>();
+			headList.add(literals[0]);
+			lang.ast.Fact f = new lang.ast.Fact(headList);
+			return f;
+		}
+
 		public static lang.ast.Variable var(String name) {
 			return new lang.ast.Variable(name);
 		}
@@ -79,6 +86,10 @@ aspect Constructors {
 
 		public static lang.ast.IntConstant integer(long i) {
 			return new lang.ast.IntConstant("" + i);
+		}
+
+		public static lang.ast.PredicateRef ref(String s) {
+			return new lang.ast.PredicateRef(s);
 		}
 
 		public static lang.ast.CommonLiteral NEQ(lang.ast.Term t1, lang.ast.Term t2) {

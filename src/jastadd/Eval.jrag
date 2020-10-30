@@ -73,6 +73,8 @@ aspect Eval {
 			return;
 		}
 
+		fpOUTPUT.eval(ctx);
+
 		// now iterate over the tuples in the OUTPUT relation
 		RelationWrapper outputTuples = new RelationWrapper(ctx, fpOUTPUT.relation2(), fpOUTPUT.type());
 

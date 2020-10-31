@@ -3,6 +3,7 @@ package incremental;
 import java.util.function.Consumer;
 
 import eval.EvaluationContext;
+import lang.ast.ASTNodeType;
 import lang.ast.AnalyzeBlock;
 import lang.ast.Clause;
 import lang.ast.CommonClause;
@@ -10,11 +11,17 @@ import lang.ast.CommonLiteral;
 import lang.ast.Fact;
 import lang.ast.FormalPredicate;
 import lang.ast.GlobalNames;
+import lang.ast.IntegerType;
 import lang.ast.Literal;
 import lang.ast.Pattern;
+import lang.ast.PredicateRef;
+import lang.ast.PredicateRefType;
 import lang.ast.PredicateSymbol;
+import lang.ast.PredicateType;
 import lang.ast.Program;
 import lang.ast.Rule;
+import lang.ast.StringType;
+import lang.ast.Term;
 import lang.relation.RelationWrapper;
 
 import static lang.ast.Constructors.*;
@@ -31,7 +38,7 @@ public class ProgramSplit {
 		split();
 	}
 
-	private CommonLiteral copyLiteral(CommonLiteral l) {
+	private static CommonLiteral copyLiteral(CommonLiteral l) {
 		if (l instanceof Pattern) {
 			return ((Pattern) l).getLiteral().treeCopy();
 		}
@@ -39,16 +46,16 @@ public class ProgramSplit {
 			Literal ll = (Literal) l;
 			Literal c = ll.treeCopy();
 			if (ll.isOUTPUT()) {
-				c.setPredicate(new PredicateSymbol("_OUTPUT"));
+				c.setPredicate(new PredicateSymbol("OUTPUT_"));
 			} else if (ll.isEDB()) {
-				c.setPredicate(new PredicateSymbol("_EDB"));
+				c.setPredicate(new PredicateSymbol("EDB_"));
 			}
 			return c;
 		}
 		return l.treeCopy();
 	}
 
-	private Clause copyClause(Clause c) {
+	private static Clause copyClause(Clause c) {
 		lang.ast.List<CommonLiteral> head = new lang.ast.List<>();
 
 
@@ -66,6 +73,24 @@ public class ProgramSplit {
 		} else {
 			return new Fact(head);
 		}
+	}
+
+	private static Rule implicitTypeDeclaration(FormalPredicate p) {
+		PredicateType t = p.type();
+		Term[] terms = new Term[t.arity()];
+		for (int i = 0; i < t.arity(); ++i) {
+			if (t.get(i) == IntegerType.get() ||
+				t.get(i) == ASTNodeType.get()) {
+				terms[i] = integer(0);
+			} else if (t.get(i) == StringType.get()) {
+				terms[i] = str("");
+			} else {
+				assert t.get(i) == PredicateRefType.get();
+				terms[i] = new PredicateRef(p.getPRED_ID());
+			}
+		}
+
+		return rule(literal(p.getPRED_ID(), terms), NEQ(integer(0), integer(0)));
 	}
 
 	/**
@@ -138,6 +163,14 @@ public class ProgramSplit {
 			if (p.hasLocalDef() && p.hasGlobalUse()) {
 				localProgram.addCommonClause(fact(literal(GlobalNames.OUTPUT_NAME, ref(p.getPRED_ID()))));
 				globalProgram.addCommonClause(fact(literal(GlobalNames.EDB_NAME, ref(p.getPRED_ID()), str(p.getPRED_ID() + ".csv"))));
+			}
+
+			if (p.hasGlobalUse() || p.hasGlobalDef()) {
+				globalProgram.addCommonClause(implicitTypeDeclaration(p));
+			}
+
+			if (p.hasLocalUse() || p.hasLocalDef()) {
+				localProgram.addCommonClause(implicitTypeDeclaration(p));
 			}
 		}
 

@@ -1,10 +1,13 @@
 package incremental;
 
+import java.util.List;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import eval.EvaluationContext;
 import lang.ast.ASTNodeType;
 import lang.ast.AnalyzeBlock;
+import lang.ast.AnalyzeContext;
 import lang.ast.Clause;
 import lang.ast.CommonClause;
 import lang.ast.CommonLiteral;
@@ -124,8 +127,8 @@ public class ProgramSplit {
 	}
 
 	/**
-	   Compute all the EDB predicates of the original program and emit the
-	   new EDB facts in the corresponding partition.
+	   Compute all the OUTPUT predicates of the original program and emit the
+	   new OUTPUT facts in the corresponding partition.
 	 */
 	private void splitOUTPUT() {
 		FormalPredicate fpOUTPUT = program.formalPredicateMap().get(GlobalNames.OUTPUT_NAME);
@@ -201,5 +204,21 @@ public class ProgramSplit {
 
 	public Program getLocalProgram() {
 		return localProgram;
+	}
+
+	public static class AnalysisInfo {
+		public AnalyzeContext ctx;
+		public String srcRelName;
+
+		public AnalysisInfo(AnalyzeContext ctx, String srcRelName) {
+			this.ctx = ctx;
+			this.srcRelName = srcRelName;
+		}
+	}
+
+
+	public List<AnalysisInfo> getAnalyzeContexts() {
+		return program.analyzeBlocks().stream().map(b -> new AnalysisInfo(b.getContext(), b.getProgramRef().getPRED_ID()))
+													.collect(Collectors.toList());
 	}
 }

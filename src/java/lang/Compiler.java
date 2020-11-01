@@ -13,12 +13,10 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import javax.tools.ToolProvider;
-import javax.tools.JavaCompiler;
-import javax.tools.JavaFileObject;
-import javax.tools.StandardJavaFileManager;
 
 import org.apache.commons.lang3.time.StopWatch;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 
 import incremental.ProgramSplit;
 import lang.CmdLineOpts.Action;
@@ -153,6 +151,18 @@ public class Compiler {
 		brerr.close();
 	}
 
+	public static void generateIncrementalProgram(Program prog, CmdLineOpts opts) throws IOException {
+		StandardPrettyPrinter<Program> lpp = new StandardPrettyPrinter<>(new PrintStream("local.mdl"));
+		StandardPrettyPrinter<Program> gpp = new StandardPrettyPrinter<>(new PrintStream("global.mdl"));
+		// split program into local and global parts
+		ProgramSplit split = new ProgramSplit(prog);
+		lpp.prettyPrint(split.getLocalProgram());
+		gpp.prettyPrint(split.getGlobalProgram());
+
+		ObjectMapper mapper = new ObjectMapper();
+		mapper.writeValue(new File("analysis.json"), split.getAnalyzeContexts());
+	}
+
 	public static String getCSVSeparatorEscaped() {
 		if (getCSVSeparator() != '\t')
 			return String.valueOf(getCSVSeparator());
@@ -215,11 +225,7 @@ public class Compiler {
 			case SEPARATE_SOUFFLE:
 			case SEPARATE_INTERNAL:
 				checkProgram(prog, opts);
-				StandardPrettyPrinter<Program> lpp = new StandardPrettyPrinter<>(new PrintStream("local.mdl"));
-				StandardPrettyPrinter<Program> gpp = new StandardPrettyPrinter<>(new PrintStream("global.mdl"));
-				ProgramSplit split = new ProgramSplit(prog);
-				lpp.prettyPrint(split.getLocalProgram());
-				gpp.prettyPrint(split.getGlobalProgram());
+				generateIncrementalProgram(prog, opts);
 				break;
 			}
 

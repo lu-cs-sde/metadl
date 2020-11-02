@@ -36,7 +36,7 @@ public class DatalogProjection2 {
 	private TupleInserter nta;
 	private int tokenUID = Integer.MAX_VALUE;
 	private int ntaNum = 1;
-	private int ntaFileId = 100;
+	private static int NTA_FILE_ID = 1 << 16;
 	private FileIdStorage fileIdDb;
 
 	// TODO: It's just easier to add environment variable than command-line arguments.
@@ -62,6 +62,11 @@ public class DatalogProjection2 {
 		return (long)n.javaDLFileId << 32 | n.javaDLNum;
 	}
 
+	private boolean isNTANode(ASTNode<?> n) {
+		assert visited(n);
+		return n.javaDLFileId == NTA_FILE_ID;
+	}
+
 	private boolean visited(ASTNode<?> n) {
 		return n.visitedMarker;
 	}
@@ -79,6 +84,8 @@ public class DatalogProjection2 {
 		StopWatch traverseTime = StopWatch.createStarted();
 		Queue<ASTNode<?>> worklist = new ArrayDeque<>();
 
+		// Traverse each compilation unit
+		// TODO: this is ExtendJ-specific; should be language agnostic.
 		for (org.extendj.ast.CompilationUnit cu : ((org.extendj.ast.Program) root).getCompilationUnits()) {
 			int fileId = fileIdDb.getIdForFile(cu.getClassSource().sourceName());
 			cu.doNodeNumbering(1, fileId);
@@ -130,7 +137,7 @@ public class DatalogProjection2 {
 						// attributes may refer to NTAs, that were not visited in the
 						// initial traversal, visit them now and add every node in the
 						// subtree to the worklist, for attribute evaluation
-						ntaNum = r.doNodeNumbering(ntaNum, ntaFileId);
+						ntaNum = r.doNodeNumbering(ntaNum, NTA_FILE_ID);
 						traverse(r, worklist, nta);
 					}
 				}
@@ -160,7 +167,10 @@ public class DatalogProjection2 {
 		long nid = nodeId(n);
 		markVisited(n);
 		toTuples(n, nid, astTupleSink);
-		srcLoc(n, nid);
+		if (!isNTANode(n)) {
+			// only non-NTA nodes have a source location
+			srcLoc(n, nid);
+		}
 	}
 
 	private void recordRewrittenNode(ASTNode<?> original, ASTNode<?> target, TupleInserter astTupleSink) {

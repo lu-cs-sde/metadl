@@ -63,7 +63,7 @@ public class DatalogProjectionSink {
 		}
 	}
 
-	private DatalogProjectionSink() { }
+	protected DatalogProjectionSink() { }
 
 	public DatalogProjectionSink remap(Map<FormalPredicate, TupleInserter> sinkRemap) {
 		DatalogProjectionSink res = new DatalogProjectionSink();

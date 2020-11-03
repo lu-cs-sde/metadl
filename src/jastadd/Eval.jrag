@@ -65,6 +65,34 @@ aspect Eval {
 		}
 	}
 
+	public void Program.evalIMPORT(EvaluationContext ctx, CmdLineOpts opts) throws IOException {
+		FormalPredicate fpIMPORT = formalPredicateMap().get(GlobalNames.IMPORT_NAME);
+
+		if (fpIMPORT == null) {
+			// no IMPORT in the program, nothing to do
+			return;
+		}
+
+		fpIMPORT.eval(ctx);
+
+		// now iterate over the tuples in the IMPORT relation
+		RelationWrapper edbTuples = new RelationWrapper(ctx, fpIMPORT.relation2(), fpIMPORT.type());
+
+		for (RelationWrapper.TupleWrapper t : edbTuples.tuples()) {
+			String pred = t.getAsString(0);
+			String dir = t.getAsString(1);
+			String wildcard = t.getAsString(2);
+
+			FormalPredicate dstPred = formalPredicateMap().get(pred);
+			Relation2 rel = dstPred.relation2();
+			RelationWrapper relWrapper = new RelationWrapper(ctx, rel, dstPred.type());
+
+			for (File f : FileUtil.flattenFilesAndDirs(Collections.singletonList(new File(dir)), wildcard)) {
+				relWrapper.insertTuple(f.getPath(), "A");
+			}
+		}
+	}
+
 	public void Program.evalOUTPUT(EvaluationContext ctx, CmdLineOpts opts) throws IOException {
 		FormalPredicate fpOUTPUT = formalPredicateMap().get(GlobalNames.OUTPUT_NAME);
 
@@ -150,6 +178,7 @@ aspect Eval {
 		clauseDependencyGraph().dump();
 
 		evalEDB(ctx, opts);
+		evalIMPORT(ctx, opts);
 		evalAnalyzeBlocks(ctx, opts, null);
 
 		for (Stratum s : strata) {

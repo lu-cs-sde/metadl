@@ -1,8 +1,6 @@
-P("tests/evaluation/metadl-java/src/name-binding").
+IMPORT('P, "tests/evaluation/metadl-java/src/name-binding", "*.java").
 
-# TypeToStr(0, ""), VarDef(0, 0, 0, "") :- NEQ(0, 0).
-# ClassDef(0, "", "") :- NEQ(0, 0).
-# MethodDef(0, 0, "") :- NEQ(0, 0).
+P("", "") :- P("", "").
 
 java('P) {
 	    # Type names

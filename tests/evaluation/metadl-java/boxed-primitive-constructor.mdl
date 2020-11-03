@@ -1,4 +1,6 @@
-P("tests/evaluation/metadl-java/src/boxed-primitive-constructor/").
+IMPORT('P, "tests/evaluation/metadl-java/src/boxed-primitive-constructor/", "*.java").
+
+P("", "") :- NEQ(0, 0).
 
 TypeName("Character"), TypeName("Integer"), TypeName("Long"), TypeName("Short"),
 TypeName("Byte"), TypeName("Float"), TypeName("Double"), TypeName("Boolean").

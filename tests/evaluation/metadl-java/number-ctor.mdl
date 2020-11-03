@@ -1,4 +1,5 @@
-Srcs("tests/evaluation/metadl-java/src/number-ctor/").
+IMPORT('Srcs, "tests/evaluation/metadl-java/src/number-ctor/", "*.java").
+Srcs("", "") :- Srcs("", "").
 
 ### Transform the program P to a program Q that has all the ParseName
 ### node as chains of Dot nodes

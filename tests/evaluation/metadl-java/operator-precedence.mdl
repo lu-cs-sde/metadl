@@ -1,4 +1,5 @@
-P("tests/evaluation/metadl-java/src/operator-precedence/").
+IMPORT('P, "tests/evaluation/metadl-java/src/operator-precedence/", "*.java").
+P("", "") :- NEQ("", "").
 
 java('P) {
 	    Conditional(e, `l, `r), Prec(e, "cand") :- e <: `l && `r :>.

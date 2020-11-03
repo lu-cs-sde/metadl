@@ -96,7 +96,7 @@ public class FileUtil {
 
 	public static void loadJavaSources(EvaluationContext ctx,
 									   DatalogProjectionSink tupleSink,
-									   java.util.List<String> locs) throws IOException {
+									   java.util.List<String> srcs) throws IOException {
 		org.extendj.ast.Program p = new org.extendj.ast.Program();
 		String fileIdDb = "analyzed-files.csv";
 
@@ -114,8 +114,11 @@ public class FileUtil {
 			p.options().setValueForOption(CP, "-classpath");
 
 		// Walk all the java files in the directory and add them to the program
-		for (File src : flattenFilesAndDirs(locs.stream().map(f -> new File(f)).collect(Collectors.toList()), "*.java")) {
-			p.addSourceFile(src.getPath());
+		// for (File src : flattenFilesAndDirs(locs.stream().map(f -> new File(f)).collect(Collectors.toList()), "*.java")) {
+		// 	p.addSourceFile(src.getPath());
+		// }
+		for (String src : srcs) {
+			p.addSourceFile(src);
 		}
 
 		// Some sanity check

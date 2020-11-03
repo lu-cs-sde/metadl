@@ -1,4 +1,6 @@
-P("tests/evaluation/metadl-java/src/bad-covariant-equals/").
+IMPORT('P, "tests/evaluation/metadl-java/src/bad-covariant-equals/", "*.java").
+
+P("", "") :- P("", "").
 
 java('P) {
 	# equals method where the class has another correct equals, probably a helper

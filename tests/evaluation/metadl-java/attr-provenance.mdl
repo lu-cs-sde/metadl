@@ -1,4 +1,5 @@
-Src("tests/evaluation/metadl-java/src/attr-provenance").
+IMPORT('Src, "tests/evaluation/metadl-java/src/attr-provenance", "*.java").
+Src("", "") :- NEQ(0, 0).
 
 Attribute("ATTR_type").
 Attribute("ATTR_decl").

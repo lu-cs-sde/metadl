@@ -1,4 +1,6 @@
-P("tests/evaluation/metadl-java/src/missing-override/").
+IMPORT('P, "tests/evaluation/metadl-java/src/missing-override/", "*.java").
+
+P("", "") :- P("", "").
 
 # Code for extracting the type hierarchy
 java('P) {

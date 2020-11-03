@@ -1,7 +1,5 @@
-P("tests/evaluation/metadl-java/src/unwritten-field/").
-
-# FieldInClassWithInit(0, 0, 0, 0) :- NEQ(0, 0).
-# FieldInClass(0, 0, 0, 0) :- NEQ(0, 0).
+IMPORT('P, "tests/evaluation/metadl-java/src/unwritten-field/", "*.java").
+P("", "") :- P("", "").
 
 java('P) {
 ### Analysis

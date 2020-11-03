@@ -1,4 +1,6 @@
-P("tests/evaluation/metadl-java/src/java8/").
+IMPORT('P, "tests/evaluation/metadl-java/src/java8/", "*.java").
+
+P("", "") :- NEQ(0, 0).
 
 # A first test case for java8
 java('P) {

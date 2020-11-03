@@ -191,12 +191,14 @@ public class Compiler {
 			case EVAL_SOUFFLE:
 				checkProgram(prog, opts);
 				prog.evalEDB(prog.evalCtx(), opts);
+				prog.evalIMPORT(prog.evalCtx(), opts);
 				prog.generateObjectProgramRelations(opts);
 				evalSouffleProgram(prog, opts);
 				break;
 			case PRETTY_SOUFFLE:
 				checkProgram(prog, opts);
 				prog.evalEDB(prog.evalCtx(), opts);
+				prog.evalIMPORT(prog.evalCtx(), opts);
 				prettyPrintSouffle(prog, opts.getOutputDir() + "/" + opts.getOutputFile());
 				break;
 			case PRETTY_INTERNAL:
@@ -210,8 +212,10 @@ public class Compiler {
 				checkProgram(prog, opts);
 				break;
 			case EVAL_IMPORT:
+				// TODO: rename EVAL_IMPORT to EVAL_ANALYZE_BLOCKS or just remove the option
 				checkProgram(prog, opts);
 				prog.evalEDB(prog.evalCtx(), opts);
+				prog.evalIMPORT(prog.evalCtx(), opts);
 				prog.generateObjectProgramRelations(opts);
 				break;
 			case CHECK:
@@ -222,6 +226,7 @@ public class Compiler {
 			case GEN_HYBRID:
 				checkProgram(prog, opts);
 				prog.evalEDB(prog.evalCtx(), opts);
+				prog.evalIMPORT(prog.evalCtx(), opts);
 				generateSouffleSWIGProgram(prog, opts);
 				break;
 			case EVAL_HYBRID:

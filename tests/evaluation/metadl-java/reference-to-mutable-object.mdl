@@ -1,11 +1,6 @@
-P("tests/evaluation/metadl-java/src/reference-to-mutable-object/").
+IMPORT('P, "tests/evaluation/metadl-java/src/reference-to-mutable-object/", "*.java").
 
-# FieldInClassWithInit(0, 0, 0, 0) :- NEQ(0, 0).
-# FieldInClass(0, 0, 0, 0) :- NEQ(0, 0).
-
-# NonPublicFieldReturn(0, 0) :- NEQ(0, 0).
-# ParamToVariable(0, 0, 0) :- NEQ(0, 0).
-
+P("", "") :- P("", "").
 
 java('P) {
 ### Analysis

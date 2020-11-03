@@ -1,4 +1,6 @@
-P("tests/evaluation/metadl-java/src/naming-convention/").
+IMPORT('P, "tests/evaluation/metadl-java/src/naming-convention/", "*.java").
+
+P("", "") :- P("", "").
 
 java('P) {
 	    NotLibrary(n) :- SRC(n, l, _, _, _, _), NEQ(l, 0).

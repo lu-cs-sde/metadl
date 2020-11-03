@@ -1,4 +1,6 @@
-P("tests/evaluation/metadl-java/src/switch-no-default/").
+IMPORT('P, "tests/evaluation/metadl-java/src/switch-no-default/", "*.java").
+
+P("", "") :- P("", "").
 
 java('P) {
 ### Analysis

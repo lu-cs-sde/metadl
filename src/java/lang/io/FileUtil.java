@@ -17,8 +17,11 @@ import eval.Relation2;
 import org.apache.commons.io.filefilter.TrueFileFilter;
 import org.apache.commons.io.FileUtils;
 
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import lang.CmdLineOpts;
 import lang.ast.LangParser;
@@ -74,6 +77,23 @@ public class FileUtil {
 		return lang.CmdLineOpts.parseCmdLineArgs(s.split("\\s+"));
 	}
 
+	public static List<File> flattenFilesAndDirs(List<File> files, String ext) {
+		List<File> ret = new ArrayList<>();
+		for (File fileOrDir : files) {
+			if (fileOrDir.isDirectory()) {
+				IOFileFilter ff = new WildcardFileFilter("*.java");
+				Iterator<File> it = FileUtils.iterateFiles(fileOrDir, ff, TrueFileFilter.INSTANCE);
+				while (it.hasNext()) {
+					File f = it.next();
+					ret.add(f);
+				}
+			} else {
+				ret.add(fileOrDir);
+			}
+		}
+		return ret;
+	}
+
 	public static void loadJavaSources(EvaluationContext ctx,
 									   DatalogProjectionSink tupleSink,
 									   java.util.List<String> locs) throws IOException {
@@ -93,19 +113,9 @@ public class FileUtil {
 		if (CP != null)
 			p.options().setValueForOption(CP, "-classpath");
 
-		for (String loc : locs) {
-			// Walk all the java files in the directory and add them to the program
-			File fileOrDir = new File(loc);
-			if (fileOrDir.isDirectory()) {
-				IOFileFilter ff = new WildcardFileFilter("*.java");
-				Iterator<File> it = FileUtils.iterateFiles(fileOrDir, ff, TrueFileFilter.INSTANCE);
-				while (it.hasNext()) {
-					File f = it.next();
-					p.addSourceFile(f.getPath());
-				}
-			} else {
-				p.addSourceFile(fileOrDir.getPath());
-			}
+		// Walk all the java files in the directory and add them to the program
+		for (File src : flattenFilesAndDirs(locs.stream().map(f -> new File(f)).collect(Collectors.toList()), "*.java")) {
+			p.addSourceFile(src.getPath());
 		}
 
 		// Some sanity check

@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -17,7 +18,7 @@ import java.util.stream.Stream;
 import org.apache.commons.lang3.time.StopWatch;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-
+import incremental.IncrementalDriver;
 import incremental.ProgramSplit;
 import lang.CmdLineOpts.Action;
 import lang.ast.Program;
@@ -158,6 +159,11 @@ public class Compiler {
 		ProgramSplit split = new ProgramSplit(prog);
 		lpp.prettyPrint(split.getLocalProgram());
 		gpp.prettyPrint(split.getGlobalProgram());
+
+		IncrementalDriver incDriver = new IncrementalDriver(new File(opts.getOutputDir()));
+		List<File> sourceFiles = FileUtil.flattenFilesAndDirs(Collections.singletonList(new File(opts.getFactsDir())),
+															  "*.java");
+		incDriver.generate(sourceFiles);
 
 		ObjectMapper mapper = new ObjectMapper();
 		mapper.writeValue(new File("analysis.json"), split.getAnalyzeContexts());

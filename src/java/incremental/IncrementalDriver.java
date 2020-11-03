@@ -68,11 +68,11 @@ class StandaloneDatalogProjectionSink extends DatalogProjectionSink {
 	}
 
 	public void writeToFile(File root) throws IOException {
-		writeToFileHelper(ast, root, ProgramRepresentation.AST.name());
-		writeToFileHelper(provenance, root, ProgramRepresentation.ATTR_PROVENANCE.name());
-		writeToFileHelper(attributes, root, ProgramRepresentation.ATTR.name());
-		writeToFileHelper(srcLoc, root, ProgramRepresentation.SRC.name());
-		writeToFileHelper(nta, root, ProgramRepresentation.NTA.name());
+		writeToFileHelper(ast, root, ProgramRepresentation.AST.name() + ".csv");
+		writeToFileHelper(provenance, root, ProgramRepresentation.ATTR_PROVENANCE.name() + ".csv");
+		writeToFileHelper(attributes, root, ProgramRepresentation.ATTR.name() + ".csv");
+		writeToFileHelper(srcLoc, root, ProgramRepresentation.SRC.name() + ".csv");
+		writeToFileHelper(nta, root, ProgramRepresentation.NTA.name() + ".csv");
 	}
 }
 

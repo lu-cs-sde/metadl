@@ -6,6 +6,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
+import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -155,7 +156,7 @@ public class Compiler {
 		brerr.close();
 	}
 
-	public static void generateIncrementalProgram(Program prog, CmdLineOpts opts) throws IOException {
+	public static void generateIncrementalProgram(Program prog, CmdLineOpts opts) throws IOException, SQLException {
 		// evaluate the EDB and IMPORT predicate, to ensure
 		// that the inputs to the analyze blocks can be evaluated in turn
 		prog.evalEDB(prog.evalCtx(), opts);
@@ -262,6 +263,8 @@ public class Compiler {
 
 			return prog;
 		} catch (IOException e) {
+			throw new RuntimeException(e);
+		} catch (SQLException e) {
 			throw new RuntimeException(e);
 		} catch (beaver.Parser.Exception e) {
 			System.err.println("Failed to parse the input program\n" + e.toString());

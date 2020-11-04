@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.security.MessageDigest;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -199,7 +200,7 @@ public class IncrementalDriver {
 		}
 	}
 
-	public void runLocalProgram(Program local) throws IOException {
+	public void runLocalProgram(Program local) throws IOException, SQLException {
 		StandardPrettyPrinter<Program> lpp =
 			new StandardPrettyPrinter<>(new PrintStream(new File(prog, "local.mdl")));
 		lpp.prettyPrint(local);

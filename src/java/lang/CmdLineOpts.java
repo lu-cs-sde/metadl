@@ -19,6 +19,7 @@ public class CmdLineOpts {
 	private String outputFile;
 	private String inputFile;
 	private String libFile;
+	private String sqlDbFile;
 	private Action action = Action.EVAL_INTERNAL;
 	private boolean warningsEnabled = false;
 
@@ -39,6 +40,14 @@ public class CmdLineOpts {
 
 	public void setOutputDir(String str) {
 		this.outputDir = str;
+	}
+
+	public String getSqlDbFile() {
+		return sqlDbFile;
+	}
+
+	public void setSqlDbFile(String sqlDbFile) {
+		this.sqlDbFile = sqlDbFile;
 	}
 
 	public boolean isWarningsEnabled() {
@@ -144,9 +153,12 @@ public class CmdLineOpts {
 			.desc("Library file to use for hybrid evaluation.").argName("FILE").build();
 		Option enableWarnings = Option.builder("w").longOpt("warn").hasArg(false)
 			.desc("Print warnings.").build();
+		Option sqldb = Option.builder("q").longOpt("sqldb").numberOfArgs(1)
+			.desc("SQLite database file.").argName("FILE").build();
 
-		Options options = new Options().addOptionGroup(actions).
-			addOption(factDir).addOption(outDir).addOption(genDir).addOption(outFile).addOption(libFile).addOption(enableWarnings);
+		Options options = new Options().addOptionGroup(actions)
+			.addOption(factDir).addOption(outDir).addOption(genDir).addOption(outFile)
+			.addOption(libFile).addOption(enableWarnings).addOption(sqldb);
 
 		try {
 			CommandLine cmd = parser.parse(options, args);
@@ -192,6 +204,10 @@ public class CmdLineOpts {
 				ret.setAction(Action.GEN_HYBRID);
 			} else if (cmd.hasOption("s")) {
 				ret.setAction(Action.SEPARATE_INTERNAL);
+			}
+
+			if (cmd.hasOption("q")) {
+				ret.setSqlDbFile(cmd.getOptionValue("q"));
 			}
 
 			ret.setFactsDir(cmd.getOptionValue("F", "."));

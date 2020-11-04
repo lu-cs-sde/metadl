@@ -3,6 +3,7 @@ package swig;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.sql.SQLException;
 
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.commons.lang3.tuple.Pair;
@@ -50,7 +51,7 @@ public class SWIGUtil {
 		SimpleLogger.logger().time("Run SWIG program: " + timer.getTime() + "ms");
 	}
 
-	public static void evalHybridProgram(Program prog, CmdLineOpts opts) throws IOException {
+	public static void evalHybridProgram(Program prog, CmdLineOpts opts) throws IOException, SQLException {
 		Pair<SWIGSouffleProgram, Map<FormalPredicate, TupleInserter>> progInfoPair = loadSWIGProgram(prog, opts);
 		prog.evalEDB(prog.evalCtx(), opts);
 		prog.evalIMPORT(prog.evalCtx(), opts);

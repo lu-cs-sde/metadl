@@ -1,3 +1,4 @@
+import lang.io.SQLUtil;
 import lang.io.CSVUtil;
 import lang.io.FileUtil;
 import org.apache.commons.collections4.map.DefaultedMap;
@@ -7,6 +8,7 @@ import lang.relation.TupleInserter;
 import org.apache.commons.lang3.mutable.MutableInt;
 import lang.CmdLineOpts;
 import java.util.concurrent.Executors;
+import java.sql.SQLException;
 
 aspect Eval {
 	public void Program.populateProgramRepresentation(FormalPredicate srcs,
@@ -42,7 +44,7 @@ aspect Eval {
 		}
 	}
 
-	public void Program.evalEDB(EvaluationContext ctx, CmdLineOpts opts) throws IOException {
+	public void Program.evalEDB(EvaluationContext ctx, CmdLineOpts opts) throws IOException, SQLException {
 		FormalPredicate fpEDB = formalPredicateMap().get(GlobalNames.EDB_NAME);
 
 		if (fpEDB == null) {
@@ -61,7 +63,11 @@ aspect Eval {
 			FormalPredicate dstPred = formalPredicateMap().get(pred);
 			Relation2 rel = dstPred.relation2();
 
-			CSVUtil.readRelation(ctx, dstPred.type(), dstPred.relation2(), opts.getFactsDir() + "/" + file);
+			if (opts.getSqlDbFile() != null) {
+				SQLUtil.readRelation(ctx, dstPred.type(), dstPred.relation2(), opts.getSqlDbFile(), pred);
+			} else {
+				CSVUtil.readRelation(ctx, dstPred.type(), dstPred.relation2(), opts.getFactsDir() + "/" + file);
+			}
 		}
 	}
 
@@ -93,7 +99,7 @@ aspect Eval {
 		}
 	}
 
-	public void Program.evalOUTPUT(EvaluationContext ctx, CmdLineOpts opts) throws IOException {
+	public void Program.evalOUTPUT(EvaluationContext ctx, CmdLineOpts opts) throws IOException, SQLException {
 		FormalPredicate fpOUTPUT = formalPredicateMap().get(GlobalNames.OUTPUT_NAME);
 
 		if (fpOUTPUT == null) {
@@ -109,7 +115,11 @@ aspect Eval {
 		for (RelationWrapper.TupleWrapper t : outputTuples.tuples()) {
 			String pred = t.getAsString(0);
 			FormalPredicate srcPred = formalPredicateMap().get(pred);
-			CSVUtil.writeRelation(ctx, srcPred.type(), srcPred.relation2(), opts.getOutputDir() + "/" + srcPred.getPRED_ID() + ".csv");
+			if (opts.getSqlDbFile() != null) {
+				SQLUtil.writeRelation(ctx, srcPred.type(), srcPred.relation2(), opts.getSqlDbFile(), srcPred.getPRED_ID());
+			} else {
+				CSVUtil.writeRelation(ctx, srcPred.type(), srcPred.relation2(), opts.getOutputDir() + "/" + srcPred.getPRED_ID() + ".csv");
+			}
 		}
 	}
 
@@ -140,7 +150,7 @@ aspect Eval {
 		}
 	}
 
-	public void Program.generateObjectProgramRelations(CmdLineOpts opts) throws IOException {
+	public void Program.generateObjectProgramRelations(CmdLineOpts opts) throws IOException, SQLException {
 		// Start a timer to measure the speed of the import
 		StopWatch progRelTimer = StopWatch.createStarted();
 
@@ -151,8 +161,12 @@ aspect Eval {
 		// to CSV files.
 		for (FormalPredicate srcPred : getFormalPredicates()) {
 			if (srcPred.getProgramRepresentationKind().isPresent()) {
-				CSVUtil.writeRelation(evalCtx(), srcPred.type(), srcPred.relation2(),
+				if (opts.getSqlDbFile() != null) {
+					SQLUtil.writeRelation(evalCtx(), srcPred.type(), srcPred.relation2(), opts.getSqlDbFile(), srcPred.getPRED_ID());
+				} else {
+					CSVUtil.writeRelation(evalCtx(), srcPred.type(), srcPred.relation2(),
 									  opts.getFactsDir() + "/" + srcPred.getPRED_ID() + ".csv");
+				}
 			}
 		}
 
@@ -170,7 +184,7 @@ aspect Eval {
 
 	syn lazy EvaluationContext Program.evalCtx() = new EvaluationContext();
 
-	public void Program.eval(CmdLineOpts opts) throws IOException {
+	public void Program.eval(CmdLineOpts opts) throws IOException, SQLException {
 		EvaluationContext ctx = evalCtx();
 
 		java.util.List<Stratum> strata = strata(ctx);
@@ -188,7 +202,7 @@ aspect Eval {
 		if (false) dumpAllRelations(ctx);
 	}
 
-	public void Program.evalParallel(CmdLineOpts opts) throws IOException {
+	public void Program.evalParallel(CmdLineOpts opts) throws IOException, SQLException {
 		// TODO: this evaluation strategy is now broken, since a relation
 		// can be defined in multiple strata.
 		EvaluationContext ctx = evalCtx();

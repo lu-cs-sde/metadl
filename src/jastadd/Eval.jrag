@@ -250,4 +250,14 @@ aspect Eval {
 			s.eval();
 		}
 	}
+
+	/**
+	   Empty all the relations used in the program. This is necessary when
+	   a Program object is evaluated multiple times.
+	 */
+	public void Program.clearRelations() {
+		for (FormalPredicate p : getFormalPredicates()) {
+			p.relation2().clear();
+		}
+	}
 }

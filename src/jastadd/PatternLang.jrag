@@ -39,20 +39,9 @@ aspect PatternLang {
 								  getProgramRepresentationPredicateName(ProgramRepresentation.NTA));
 	}
 
+
 	syn String AnalyzeBlock.getProgramRepresentationPredicateName(ProgramRepresentation r) {
-		switch (r) {
-		case AST:
-			return getScopePrefix() + "PR";
-		case ATTR_PROVENANCE:
-			return getScopePrefix() + "PROV";
-		case ATTR:
-			return getScopePrefix() + "ATTR";
-		case SRC:
-			return getScopePrefix() + "SLOC";
-		case NTA:
-			return getScopePrefix() + "NTA";
-		}
-		return null;
+		return getScopePrefix() + r.getPredicateName();
 	}
 
 	coll ArrayList<Pattern> AnalyzeBlock.patterns() [new ArrayList<Pattern>()] root AnalyzeBlock;
@@ -359,11 +348,20 @@ aspect PatternLang {
 	}
 
 	public enum ProgramRepresentation {
-		AST,
-		ATTR,
-		ATTR_PROVENANCE,
-		SRC,
-		NTA
+		AST("PR"),
+		ATTR("ATTR"),
+		ATTR_PROVENANCE("PROV"),
+		SRC("SLOC"),
+		NTA("NTA");
+
+		private String predName;
+		ProgramRepresentation(String predName) {
+			this.predName = predName;
+		}
+
+		public String getPredicateName() {
+			return predName;
+		}
 	}
 
 	public interface ASTBuilder {
@@ -447,7 +445,10 @@ aspect PatternLang {
 	syn lazy PredicateType FormalPredicate.getContextPredicateType() {
 		for (PredicateSymbol ps : predicates()) {
 			if (ps.getContextPredicateName() != null) {
-				PredicateType ptype = ps.enclosingAnalyzeBlock().contextPredicateType(ps.getContextPredicateName());
+				AnalyzeBlock b = ps.enclosingAnalyzeBlock();
+				if (b == null)
+					continue;
+				PredicateType ptype = b.contextPredicateType(ps.getContextPredicateName());
 				if (ptype != null)
 					return ptype;
 			}
@@ -455,7 +456,10 @@ aspect PatternLang {
 
 		for (PredicateRef pr : predicateRefs()) {
 			if (pr.getContextPredicateName() != null) {
-				PredicateType ptype = pr.enclosingAnalyzeBlock().contextPredicateType(pr.getContextPredicateName());
+				AnalyzeBlock b = pr.enclosingAnalyzeBlock();
+				if (b == null)
+					continue;
+				PredicateType ptype = b.contextPredicateType(pr.getContextPredicateName());
 				if (ptype != null)
 					return ptype;
 			}

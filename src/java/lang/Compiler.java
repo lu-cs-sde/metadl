@@ -21,6 +21,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import incremental.IncrementalDriver;
 import incremental.ProgramSplit;
 import lang.CmdLineOpts.Action;
+import lang.ast.AnalyzeBlock;
+import lang.ast.FormalPredicate;
 import lang.ast.Program;
 import lang.ast.SoufflePrettyPrinter;
 import lang.ast.StandardPrettyPrinter;
@@ -28,6 +30,7 @@ import lang.ast.TypeError;
 import lang.ast.SemanticError;
 import lang.io.FileUtil;
 import lang.io.SimpleLogger;
+import lang.relation.RelationWrapper;
 import swig.SWIGUtil;
 
 /**
@@ -153,20 +156,37 @@ public class Compiler {
 	}
 
 	public static void generateIncrementalProgram(Program prog, CmdLineOpts opts) throws IOException {
-		StandardPrettyPrinter<Program> lpp = new StandardPrettyPrinter<>(new PrintStream("local.mdl"));
+		// evaluate the EDB and IMPORT predicate, to ensure
+		// that the inputs to the analyze blocks can be evaluated in turn
+		prog.evalEDB(prog.evalCtx(), opts);
+		prog.evalIMPORT(prog.evalCtx(), opts);
+
+		// StandardPrettyPrinter<Program> lpp = new StandardPrettyPrinter<>(new PrintStream("local.mdl"));
 		StandardPrettyPrinter<Program> gpp = new StandardPrettyPrinter<>(new PrintStream("global.mdl"));
 		// split program into local and global parts
 		ProgramSplit split = new ProgramSplit(prog);
-		lpp.prettyPrint(split.getLocalProgram());
+		// lpp.prettyPrint(split.getLocalProgram());
 		gpp.prettyPrint(split.getGlobalProgram());
 
 		IncrementalDriver incDriver = new IncrementalDriver(new File(opts.getOutputDir()));
-		List<File> sourceFiles = FileUtil.flattenFilesAndDirs(Collections.singletonList(new File(opts.getFactsDir())),
-															  "*.java");
-		incDriver.generate(sourceFiles);
+		incDriver.init();
 
-		ObjectMapper mapper = new ObjectMapper();
-		mapper.writeValue(new File("analysis.json"), split.getAnalyzeContexts());
+		for (AnalyzeBlock b : prog.analyzeBlocks()) {
+			FormalPredicate srcPred = b.getProgramRef().formalpredicate();
+			// evaluate the predicate representing the input program paths
+			srcPred.eval(prog.evalCtx());
+			RelationWrapper srcPredRel = new RelationWrapper(prog.evalCtx(), srcPred.relation2(), srcPred.type());
+
+			// build the list of files
+			List<File> files = srcPredRel.tuples().stream().map(t -> new File(t.getAsString(0))).collect(Collectors.toList());
+
+			// now generate the relations that represent each file
+			incDriver.generate(files, b.getContext().scopePrefix);
+		}
+
+		incDriver.runLocalProgram(split.getLocalProgram());
+
+		incDriver.shutdown();
 	}
 
 	public static String getCSVSeparatorEscaped() {

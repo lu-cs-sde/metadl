@@ -2,17 +2,24 @@ package incremental;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.security.MessageDigest;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.function.Function;
 
 import eval.EvaluationContext;
 import eval.Relation2;
+import lang.CmdLineOpts;
 import lang.ast.FormalPredicate;
 import lang.ast.PredicateType;
+import lang.ast.Program;
 import lang.ast.ProgramRepresentation;
+import lang.ast.StandardPrettyPrinter;
 import lang.io.CSVUtil;
+import lang.Compiler;
+import static lang.io.SimpleLogger.*;
 import lang.java.obj.DatalogProjection2;
 import lang.java.obj.DatalogProjectionSink;
 import lang.java.obj.FileIdDatabase;
@@ -29,13 +36,15 @@ class StandaloneDatalogProjectionSink extends DatalogProjectionSink {
 	private RelationWrapper attributes;
 	private RelationWrapper srcLoc;
 	private RelationWrapper nta;
+	private String relPrefix;
 
 	private static RelationWrapper makeRelation(EvaluationContext ctx, PredicateType t) {
 		return new RelationWrapper(ctx, new Relation2(t.arity()), t);
 	}
 
-	public StandaloneDatalogProjectionSink() {
+	public StandaloneDatalogProjectionSink(String relPrefix) {
 		EvaluationContext ctx = new EvaluationContext();
+		this.relPrefix = relPrefix;
 		ast = makeRelation(ctx, FormalPredicate.programRepresentationType(ProgramRepresentation.AST));
 		provenance = makeRelation(ctx, FormalPredicate.programRepresentationType(ProgramRepresentation.ATTR_PROVENANCE));
 		attributes = makeRelation(ctx, FormalPredicate.programRepresentationType(ProgramRepresentation.ATTR));
@@ -68,11 +77,11 @@ class StandaloneDatalogProjectionSink extends DatalogProjectionSink {
 	}
 
 	public void writeToFile(File root) throws IOException {
-		writeToFileHelper(ast, root, ProgramRepresentation.AST.name() + ".csv");
-		writeToFileHelper(provenance, root, ProgramRepresentation.ATTR_PROVENANCE.name() + ".csv");
-		writeToFileHelper(attributes, root, ProgramRepresentation.ATTR.name() + ".csv");
-		writeToFileHelper(srcLoc, root, ProgramRepresentation.SRC.name() + ".csv");
-		writeToFileHelper(nta, root, ProgramRepresentation.NTA.name() + ".csv");
+		writeToFileHelper(ast, root, relPrefix + ProgramRepresentation.AST.getPredicateName() + ".csv");
+		writeToFileHelper(provenance, root, relPrefix + ProgramRepresentation.ATTR_PROVENANCE.getPredicateName() + ".csv");
+		writeToFileHelper(attributes, root, relPrefix + ProgramRepresentation.ATTR.getPredicateName() + ".csv");
+		writeToFileHelper(srcLoc, root, relPrefix + ProgramRepresentation.SRC.getPredicateName() + ".csv");
+		writeToFileHelper(nta, root, relPrefix + ProgramRepresentation.NTA.getPredicateName() + ".csv");
 	}
 }
 
@@ -84,6 +93,8 @@ public class IncrementalDriver {
 	private File fileIdDbFile;
 	private File pathHashFile;
 
+	private Map<String, String> fileToHash;
+
 	public IncrementalDriver(File root) {
 		// folders
 		this.common = new File(root, "common");
@@ -93,6 +104,34 @@ public class IncrementalDriver {
 		this.fileIdDbFile = new File(common, "fileid.csv");
 		// fileHash
 		this.pathHashFile = new File(common, "filehash.csv");
+	}
+
+	public void init() throws IOException {
+		// ensure that all directories exist
+		common.mkdir();
+		prog.mkdir();
+		srcs.mkdir();
+
+		if (fileIdDbFile.exists()) {
+			logger().info("Loading the file ID database from " + fileIdDbFile);
+			fileIdDb = FileIdDatabase.loadFromFile(fileIdDbFile.getPath());
+		} else {
+			// create a fresh file-id database
+			fileIdDb = new FileIdDatabase();
+		}
+
+		fileToHash = new TreeMap<String, String>();
+		if (pathHashFile.exists()) {
+			logger().info("Loading path hashes from " + pathHashFile);
+			CSVUtil.readMap(fileToHash, Function.identity(), Function.identity(), pathHashFile.getPath());
+		}
+	}
+
+	public void shutdown() throws IOException {
+		// store the file-id database
+		fileIdDb.storeToFile(fileIdDbFile.getPath());
+		// store the file name to source dir map
+		CSVUtil.writeMap(fileToHash, pathHashFile.getPath());
 	}
 
 	private org.extendj.ast.Program createProgram(org.extendj.ast.FileIdStorage fs) {
@@ -138,23 +177,14 @@ public class IncrementalDriver {
 		}
 	}
 
-	public void generate(List<File> sourceFiles) throws IOException {
-		// ensure that all directories exist
-		common.mkdir();
-		prog.mkdir();
-		srcs.mkdir();
-
-		// create a fresh file-id database
-		fileIdDb = new FileIdDatabase();
-		Map<String, String> fileToHash = new TreeMap<String, String>();
-
+	public void generate(List<File> sourceFiles, String relPrefix) throws IOException {
 		for (File f : sourceFiles) {
 			org.extendj.ast.Program p = createProgram(fileIdDb);
 			p.addSourceFile(f.getPath());
 			checkProgram(p);
 
 			// generate the Datalog projection
-			StandaloneDatalogProjectionSink sink = new StandaloneDatalogProjectionSink();
+			StandaloneDatalogProjectionSink sink = new StandaloneDatalogProjectionSink(relPrefix);
 			DatalogProjection2 proj = new DatalogProjection2(p, sink, fileIdDb);
 			proj.generate();
 
@@ -167,11 +197,30 @@ public class IncrementalDriver {
 			srcDir.mkdir();
 			sink.writeToFile(srcDir);
 		}
+	}
 
-		// store the file-id database
-		fileIdDb.storeToFile(fileIdDbFile.getPath());
-		// store the file name to source dir map
-		CSVUtil.writeMap(fileToHash, pathHashFile.getPath());
+	public void runLocalProgram(Program local) throws IOException {
+		StandardPrettyPrinter<Program> lpp =
+			new StandardPrettyPrinter<>(new PrintStream(new File(prog, "local.mdl")));
+		lpp.prettyPrint(local);
+
+		for (String h : fileToHash.values()) {
+			File factDir = new File(srcs, h);
+			File outDir = factDir;
+
+			CmdLineOpts opts = new CmdLineOpts();
+			opts.setAction(CmdLineOpts.Action.EVAL_INTERNAL);
+			opts.setFactsDir(factDir.getPath());
+			opts.setOutputDir(outDir.getPath());
+
+			Compiler.checkProgram(local, opts);
+			local.eval(opts);
+			local.clearRelations();
+		}
+	}
+
+	public void concatenateLocalResults() {
+
 	}
 
 	public void update(List<File> modifiedFiles, List<File> removedFiles,

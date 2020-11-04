@@ -93,7 +93,7 @@ public class ProgramSplit {
 			}
 		}
 
-		return rule(literal(p.getPRED_ID(), terms), NEQ(integer(0), integer(0)));
+		return rule(literal(p.getPRED_ID(), (Object[]) terms), NEQ(integer(0), integer(0)));
 	}
 
 	/**
@@ -166,6 +166,10 @@ public class ProgramSplit {
 			if (p.hasLocalDef() && p.hasGlobalUse()) {
 				localProgram.addCommonClause(fact(literal(GlobalNames.OUTPUT_NAME, ref(p.getPRED_ID()))));
 				globalProgram.addCommonClause(fact(literal(GlobalNames.EDB_NAME, ref(p.getPRED_ID()), str(p.getPRED_ID() + ".csv"))));
+			}
+
+			if (p.hasLocalUse() && p.getProgramRepresentationKind().isPresent()) {
+				localProgram.addCommonClause(fact(literal(GlobalNames.EDB_NAME, ref(p.getPRED_ID()), str(p.getPRED_ID() + ".csv"))));
 			}
 
 			if (p.hasGlobalUse() || p.hasGlobalDef()) {

@@ -145,7 +145,6 @@ public class CmdLineOpts {
 		Option enableWarnings = Option.builder("w").longOpt("warn").hasArg(false)
 			.desc("Print warnings.").build();
 
-
 		Options options = new Options().addOptionGroup(actions).
 			addOption(factDir).addOption(outDir).addOption(genDir).addOption(outFile).addOption(libFile).addOption(enableWarnings);
 

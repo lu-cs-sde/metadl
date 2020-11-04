@@ -15,6 +15,7 @@ import java.util.function.Consumer;
 
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.text.StringEscapeUtils;
 
 import org.extendj.ast.ASTNode;
 import org.junit.jupiter.engine.discovery.predicates.IsNestedTestClass;
@@ -305,7 +306,9 @@ public class DatalogProjection2 {
 	private String cleanTerminal(String s) {
 		// TODO: Souffle assumes that [ or ] are used in the CSV
 		// for encoding a record.
-		return s.replace('[', '(').replace(']', ')').replace('\'', '_').replace('"', '_').replace('\n', '_');
+		s = s.replace('[', '(').replace(']', ')').replace('\'', '_').replace('"', '_').replace('\n', '_').replace(',', '_');
+		 // return StringEscapeUtils.escapeCsv(s);
+		 return s;
 	}
 
 	private void toTuples(ASTNode<?> n, long nid, TupleInserter astTupleSink) {

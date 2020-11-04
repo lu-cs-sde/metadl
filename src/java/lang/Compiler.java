@@ -186,6 +186,7 @@ public class Compiler {
 		}
 
 		incDriver.runLocalProgram(split.getLocalProgram());
+		incDriver.runGlobalProgram(split.getLocalOutputs(), split.getGlobalProgram());
 
 		incDriver.shutdown();
 	}

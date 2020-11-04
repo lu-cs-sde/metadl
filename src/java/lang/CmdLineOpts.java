@@ -20,6 +20,7 @@ public class CmdLineOpts {
 	private String inputFile;
 	private String libFile;
 	private String sqlDbFile;
+	private String relationNamePrefix = "";
 	private Action action = Action.EVAL_INTERNAL;
 	private boolean warningsEnabled = false;
 
@@ -40,6 +41,14 @@ public class CmdLineOpts {
 
 	public void setOutputDir(String str) {
 		this.outputDir = str;
+	}
+
+	public String getRelationNamePrefix() {
+		return relationNamePrefix;
+	}
+
+	public void setRelationNamePrefix(String relationNamePrefix) {
+		this.relationNamePrefix = relationNamePrefix;
 	}
 
 	public String getSqlDbFile() {

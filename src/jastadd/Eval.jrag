@@ -64,7 +64,7 @@ aspect Eval {
 			Relation2 rel = dstPred.relation2();
 
 			if (opts.getSqlDbFile() != null) {
-				SQLUtil.readRelation(ctx, dstPred.type(), dstPred.relation2(), opts.getSqlDbFile(), pred);
+				SQLUtil.readRelation(ctx, dstPred.type(), dstPred.relation2(), opts.getSqlDbFile(), opts.getRelationNamePrefix() + pred);
 			} else {
 				CSVUtil.readRelation(ctx, dstPred.type(), dstPred.relation2(), opts.getFactsDir() + "/" + file);
 			}
@@ -116,7 +116,8 @@ aspect Eval {
 			String pred = t.getAsString(0);
 			FormalPredicate srcPred = formalPredicateMap().get(pred);
 			if (opts.getSqlDbFile() != null) {
-				SQLUtil.writeRelation(ctx, srcPred.type(), srcPred.relation2(), opts.getSqlDbFile(), srcPred.getPRED_ID());
+				SQLUtil.writeRelation(ctx, srcPred.type(), srcPred.relation2(), opts.getSqlDbFile(),
+									  opts.getRelationNamePrefix() + srcPred.getPRED_ID());
 			} else {
 				CSVUtil.writeRelation(ctx, srcPred.type(), srcPred.relation2(), opts.getOutputDir() + "/" + srcPred.getPRED_ID() + ".csv");
 			}
@@ -162,7 +163,8 @@ aspect Eval {
 		for (FormalPredicate srcPred : getFormalPredicates()) {
 			if (srcPred.getProgramRepresentationKind().isPresent()) {
 				if (opts.getSqlDbFile() != null) {
-					SQLUtil.writeRelation(evalCtx(), srcPred.type(), srcPred.relation2(), opts.getSqlDbFile(), srcPred.getPRED_ID());
+					SQLUtil.writeRelation(evalCtx(), srcPred.type(), srcPred.relation2(), opts.getSqlDbFile(),
+										  opts.getRelationNamePrefix() + srcPred.getPRED_ID());
 				} else {
 					CSVUtil.writeRelation(evalCtx(), srcPred.type(), srcPred.relation2(),
 									  opts.getFactsDir() + "/" + srcPred.getPRED_ID() + ".csv");

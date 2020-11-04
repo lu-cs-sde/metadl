@@ -56,6 +56,9 @@ public class SQLUtil {
 	public static void writeRelation(EvaluationContext ctx, PredicateType t, Relation2 rel, String path, String table) throws SQLException {
 		Connection conn = DriverManager.getConnection("jdbc:sqlite:" + path);
 		Statement tbl = conn.createStatement();
+
+		conn.setAutoCommit(false);
+
 		tbl.executeUpdate("DROP TABLE IF EXISTS " + table);
 		tbl.executeUpdate(String.format("CREATE TABLE %s %s", table, tableType(t)));
 
@@ -72,9 +75,12 @@ public class SQLUtil {
 					ps.setString(i + 1, "'" + ctx.externalizeString(tpl.get(i)));
 				}
 			}
-			ps.execute();
+			ps.addBatch();
 		}
 
+		ps.executeBatch();
+
+		conn.commit();
 		conn.close();
 	}
 
@@ -84,8 +90,8 @@ public class SQLUtil {
 		Statement select = conn.createStatement();
 		ResultSet rs = select.executeQuery("SELECT * FROM " + table);
 
-		Tuple tup = new Tuple(t.arity());
 		while (rs.next()) {
+			Tuple tup = new Tuple(t.arity());
 			for (int i = 0; i < t.arity(); i++) {
 				if (t.get(i).storageType() == IntegerType.get()) {
 					tup.set(i, rs.getLong(i + 1));
@@ -101,5 +107,7 @@ public class SQLUtil {
 			}
 			rel.insert(tup);
 		}
+
+		conn.close();
 	}
 }

@@ -1,6 +1,9 @@
 package incremental;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -31,10 +34,9 @@ import static lang.ast.Constructors.*;
 
 public class ProgramSplit {
 	private Program program;
-	private Program computeChangedFilesProgram;
-	private Program removeObsoleteFactsProgram;
 	private Program localProgram;
 	private Program globalProgram;
+	private Set<String> localOutputs = new TreeSet<>();
 
 	public ProgramSplit(Program program) {
 		this.program = program;
@@ -148,6 +150,7 @@ public class ProgramSplit {
 			FormalPredicate p = program.formalPredicateMap().get(pred);
 			if (p.hasLocalDef()) {
 				localProgram.addCommonClause(fact(literal(GlobalNames.OUTPUT_NAME, ref(pred))));
+				localOutputs.add(pred);
 			}
 			if (p.hasGlobalDef()) {
 				globalProgram.addCommonClause(fact(literal(GlobalNames.OUTPUT_NAME, ref(pred))));
@@ -166,10 +169,16 @@ public class ProgramSplit {
 			if (p.hasLocalDef() && p.hasGlobalUse()) {
 				localProgram.addCommonClause(fact(literal(GlobalNames.OUTPUT_NAME, ref(p.getPRED_ID()))));
 				globalProgram.addCommonClause(fact(literal(GlobalNames.EDB_NAME, ref(p.getPRED_ID()), str(p.getPRED_ID() + ".csv"))));
+				localOutputs.add(p.getPRED_ID());
 			}
 
 			if (p.hasLocalUse() && p.getProgramRepresentationKind().isPresent()) {
 				localProgram.addCommonClause(fact(literal(GlobalNames.EDB_NAME, ref(p.getPRED_ID()), str(p.getPRED_ID() + ".csv"))));
+			}
+
+			if (p.hasGlobalUse() && p.getProgramRepresentationKind().isPresent()) {
+				globalProgram.addCommonClause(fact(literal(GlobalNames.EDB_NAME, ref(p.getPRED_ID()), str(p.getPRED_ID() + ".csv"))));
+				localOutputs.add(p.getPRED_ID());
 			}
 
 			if (p.hasGlobalUse() || p.hasGlobalDef()) {
@@ -208,6 +217,10 @@ public class ProgramSplit {
 
 	public Program getLocalProgram() {
 		return localProgram;
+	}
+
+	public Set<String> getLocalOutputs() {
+		return Collections.unmodifiableSet(localOutputs);
 	}
 
 	public static class AnalysisInfo {

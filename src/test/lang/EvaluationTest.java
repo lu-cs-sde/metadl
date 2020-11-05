@@ -33,9 +33,6 @@ import lang.relation.PseudoTuple;
 import lang.relation.RelationWrapper;
 
 public class EvaluationTest {
-	/*
-	 * Compare one evaluation scheme against another.
-	 */
 	public Map<String, RelationWrapper> doSingleEvaluation(CmdLineOpts d1) throws Exception {
 		Program program1 = Compiler.run(d1);
 		FormalPredicate fpOut1 = program1.formalPredicateMap().get(GlobalNames.OUTPUT_NAME);

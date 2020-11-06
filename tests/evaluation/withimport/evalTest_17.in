@@ -25,4 +25,4 @@ java('P) {
 	    ValLoc(var, val, line) :- Val(var, loc, val), SRC(loc, line, _, _, _, _).
 }
 
-OUTPUT('Ret).
+OUTPUT('Ret, "Ret.csv", "csv").

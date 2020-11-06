@@ -5,5 +5,5 @@ metadl('Program) {
    Negative(name) :- <:... :- ..., NOT($p(...)), ... .:>, ID($p, name).
 }
 
-OUTPUT('Positive).
-OUTPUT('Negative).
+OUTPUT('Positive, "Positive.csv", "csv").
+OUTPUT('Negative, "Negative.csv", "csv").

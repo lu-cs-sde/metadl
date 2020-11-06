@@ -21,6 +21,6 @@ java('P) {
 
 }
 
-OUTPUT('WarningTypeName).
-OUTPUT('WarningFieldName).
-OUTPUT('WarningMethodName).
+OUTPUT('WarningTypeName, "WarningTypeName.csv", "csv").
+OUTPUT('WarningFieldName, "WarningFieldName.csv", "csv").
+OUTPUT('WarningMethodName, "WarningMethodName.csv", "csv").

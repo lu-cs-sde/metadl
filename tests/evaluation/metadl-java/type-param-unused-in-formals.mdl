@@ -34,4 +34,4 @@ java('P) {
 	    TypeUnusedInFormalsDetail(l, c, file) :- TypeUnusedInFormals(t), SRC(t, l, c, _, _, file), GT(l, 0).
 }
 
-OUTPUT('TypeUnusedInFormalsDetail).
+OUTPUT('TypeUnusedInFormalsDetail, "TypeUnusedInFormalsDetail.csv", "csv").

@@ -1,7 +1,7 @@
-OUTPUT('A), OUTPUT('B).
+OUTPUT('A, "A.csv", "csv"), OUTPUT('B, "B.csv", "csv").
 A("A", "B").
 A("B", "C").
 B("C", "D").
 
-EDB('EDB, "EDB.csv").
+EDB('EDB, "EDB.csv", "csv").
 A("E", x) :- A(y, x), NOT(B("C", z)).

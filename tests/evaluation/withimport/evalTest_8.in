@@ -10,7 +10,7 @@ metadl('Program) {
   Arity(pname, arity, l, c) :- <: ..., $p(...,$x), ... :- ... .:>, INDEX($x, $i), BIND(arity, $i+1), ID($p, pname), SRC($p, l, c, _, _, _).
 }
 
-OUTPUT('Arity).
+OUTPUT('Arity, "Arity.csv", "csv").
 
 ArityError(p, li, ci), ArityError(p, lj, cj) :- Arity(p, i, li, ci), Arity(p, j, lj, cj), NOT(EQ(i, j)).
-OUTPUT('ArityError).
+OUTPUT('ArityError, "ArityError.csv", "csv").

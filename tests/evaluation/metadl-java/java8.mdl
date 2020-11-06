@@ -8,5 +8,5 @@ java('P) {
 	    MethodRef(0) :- <: this::`m :>.
 }
 
-OUTPUT('Lambda1).
-OUTPUT('MethodRef).
+OUTPUT('Lambda1, "Lambda1.csv", "csv").
+OUTPUT('MethodRef, "MethodRef.csv", "csv").

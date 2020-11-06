@@ -1,9 +1,9 @@
-OUTPUT('A).
-OUTPUT('B).
-OUTPUT('C).
-OUTPUT('Filter).
-OUTPUT('OUTPUT).
-EDB('Vars, "Vars.csv").
+OUTPUT('A, "A.csv", "csv").
+OUTPUT('B, "B.csv", "csv").
+OUTPUT('C, "C.csv", "csv").
+OUTPUT('Filter, "Filter.csv", "csv").
+OUTPUT('OUTPUT, "OUTPUT.csv", "csv").
+EDB('Vars, "Vars.csv", "csv").
 
 Vars(0) :- NEQ(0, 0).
 

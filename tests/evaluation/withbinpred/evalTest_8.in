@@ -1,5 +1,5 @@
-OUTPUT('A).
-OUTPUT('B).
+OUTPUT('A, "A.csv", "csv").
+OUTPUT('B, "B.csv", "csv").
 Vars(1), Vars(2), Vars(3).
 
 A(x, y) :- Vars(x), Vars(y).

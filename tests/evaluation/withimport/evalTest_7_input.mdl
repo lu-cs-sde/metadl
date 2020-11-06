@@ -14,4 +14,3 @@ Z3(x, x) :- T(x, y). # don't warn
 
 OUTPUT('T).
 OUTPUT('N).
-

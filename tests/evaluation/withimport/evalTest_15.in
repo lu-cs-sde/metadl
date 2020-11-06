@@ -25,6 +25,6 @@ Interface(c, i) :- ClassImplementsInterface(c, i).
 Interface(c, i) :- SuperClass(c, d), Interface(d, i).
 Interface(c, i) :- Interface(c, j), SuperInterface(j, i).
 
-OUTPUT('Interface).
-OUTPUT('SuperClass).
-OUTPUT('SuperInterface).
+OUTPUT('Interface, "Interface.csv", "csv").
+OUTPUT('SuperClass, "SuperClass.csv", "csv").
+OUTPUT('SuperInterface, "SuperInterface.csv", "csv").

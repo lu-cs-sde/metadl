@@ -1,2 +1,2 @@
-OUTPUT('A).
+OUTPUT('A, "A.csv", "csv").
 A(x) :- BIND(x, "Integer").

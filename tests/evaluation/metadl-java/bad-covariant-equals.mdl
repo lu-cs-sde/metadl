@@ -24,4 +24,4 @@ java('P) {
 	                                      SRC(d, ls, cs, le, ce, f), GT(ls, 0).
 }
 
-OUTPUT('BadEqualsReport).
+OUTPUT('BadEqualsReport, "BadEqualsReport.csv", "csv").

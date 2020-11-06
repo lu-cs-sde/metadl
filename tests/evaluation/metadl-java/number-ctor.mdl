@@ -66,5 +66,5 @@ java('Empty) {
 Result("Passed") :- NOT(Mismatch(_)).
 Result("Failed") :- Mismatch(_).
 
-OUTPUT('Result).
-OUTPUT('NumberCtorDetail).
+OUTPUT('Result, "Result.csv", "csv").
+OUTPUT('NumberCtorDetail, "NumberCtorDetail.csv", "csv").

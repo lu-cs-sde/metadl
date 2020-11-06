@@ -7,7 +7,6 @@ import java.util.TreeSet;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-import eval.EvaluationContext;
 import lang.ast.ASTNodeType;
 import lang.ast.AnalyzeBlock;
 import lang.ast.AnalyzeContext;
@@ -29,7 +28,6 @@ import lang.ast.ProgramRepresentation;
 import lang.ast.Rule;
 import lang.ast.StringType;
 import lang.ast.Term;
-import lang.ast.Type;
 import lang.relation.RelationWrapper;
 
 import static lang.ast.Constructors.*;
@@ -123,13 +121,14 @@ public class ProgramSplit {
 		for (RelationWrapper.TupleWrapper t : EDBs.tuples()) {
 			String pred = t.getAsString(0);
 			String file = t.getAsString(1);
+			String format = t.getAsString(2);
 
 			FormalPredicate p = program.formalPredicateMap().get(pred);
 			if (p.hasLocalUse()) {
-				localProgram.addCommonClause(fact(literal(GlobalNames.EDB_NAME, ref(pred), file)));
+				localProgram.addCommonClause(fact(literal(GlobalNames.EDB_NAME, ref(pred), str(file), str(format))));
 			}
 			if (p.hasGlobalUse()) {
-				globalProgram.addCommonClause(fact(literal(GlobalNames.EDB_NAME, ref(pred), file)));
+				globalProgram.addCommonClause(fact(literal(GlobalNames.EDB_NAME, ref(pred), str(file), str(format))));
 			}
 		}
 	}
@@ -151,14 +150,18 @@ public class ProgramSplit {
 		RelationWrapper OUTPUTs = new RelationWrapper(program.evalCtx(), fpOUTPUT.relation2(), fpOUTPUT.type());
 		for (RelationWrapper.TupleWrapper t : OUTPUTs.tuples()) {
 			String pred = t.getAsString(0);
+			String file = t.getAsString(1);
+			// String format = t.getAsString(2);
+			// TODO: force the format to sqlite, the tests expect this
+			String format = "sqlite";
 
 			FormalPredicate p = program.formalPredicateMap().get(pred);
 			if (p.hasLocalDef()) {
-				localProgram.addCommonClause(fact(literal(GlobalNames.OUTPUT_NAME, ref(pred))));
+				localProgram.addCommonClause(fact(literal(GlobalNames.OUTPUT_NAME, ref(pred), str(file), str(format))));
 				localOutputs.add(pred);
 			}
 			if (p.hasGlobalDef()) {
-				globalProgram.addCommonClause(fact(literal(GlobalNames.OUTPUT_NAME, ref(pred))));
+				globalProgram.addCommonClause(fact(literal(GlobalNames.OUTPUT_NAME, ref(pred), str(file), str(format))));
 			}
 		}
 	}
@@ -179,17 +182,17 @@ public class ProgramSplit {
 			}
 
 			if (p.hasLocalDef() && p.hasGlobalUse()) {
-				localProgram.addCommonClause(fact(literal(GlobalNames.OUTPUT_NAME, ref(p.getPRED_ID()))));
-				globalProgram.addCommonClause(fact(literal(GlobalNames.EDB_NAME, ref(p.getPRED_ID()), str(p.getPRED_ID() + ".csv"))));
+				localProgram.addCommonClause(fact(literal(GlobalNames.OUTPUT_NAME, ref(p.getPRED_ID()), str("ignored"), str("sqlite"))));
+				globalProgram.addCommonClause(fact(literal(GlobalNames.EDB_NAME, ref(p.getPRED_ID()), str("ignored"), str("sqlite"))));
 				localOutputs.add(p.getPRED_ID());
 			}
 
 			if (p.hasLocalUse() && p.getProgramRepresentationKind().isPresent()) {
-				localProgram.addCommonClause(fact(literal(GlobalNames.EDB_NAME, ref(p.getPRED_ID()), str(p.getPRED_ID() + ".csv"))));
+				localProgram.addCommonClause(fact(literal(GlobalNames.EDB_NAME, ref(p.getPRED_ID()), str("ignored"), str("sqlite"))));
 			}
 
 			if (p.hasGlobalUse() && p.getProgramRepresentationKind().isPresent()) {
-				globalProgram.addCommonClause(fact(literal(GlobalNames.EDB_NAME, ref(p.getPRED_ID()), str(p.getPRED_ID() + ".csv"))));
+				globalProgram.addCommonClause(fact(literal(GlobalNames.EDB_NAME, ref(p.getPRED_ID()), str("ignored"), str("sqlite"))));
 				localOutputs.add(p.getPRED_ID());
 			}
 

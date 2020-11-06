@@ -3,4 +3,4 @@ B(2, 4), B(4, 5), B(2, 2).
 
 C(x, y) :- A(x, y, z), NOT(B(x, _)).
 
-OUTPUT('C).
+OUTPUT('C, "C.csv", "csv").

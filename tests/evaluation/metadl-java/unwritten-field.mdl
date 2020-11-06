@@ -87,5 +87,5 @@ java('P) {
 	    Result("fail") :- Mismatch(_).
 }
 
-OUTPUT('WarningDetails).
-OUTPUT('Result).
+OUTPUT('WarningDetails, "WarningDetails.csv", "csv").
+OUTPUT('Result, "Result.csv", "csv").

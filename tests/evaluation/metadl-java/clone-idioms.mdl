@@ -30,4 +30,4 @@ java('P) {
 	    GoodCloneMethodReport(c, f, ls, cs, le, ce) :- GoodCloneMethod(c), SRC(c, ls, cs, le, ce, f).
 }
 
-OUTPUT('BadCloneReport).
+OUTPUT('BadCloneReport, "BadCloneReport.csv", "csv").

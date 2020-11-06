@@ -15,4 +15,4 @@ metadl('P) {
 	    OurExprEval(v) :- <: ... :- ..., BIND($v, x*y + $e), ... .:>, Eval($e, v).
 }
 
-OUTPUT('OurExprEval).
+OUTPUT('OurExprEval, "OurExprEval.csv", "csv").

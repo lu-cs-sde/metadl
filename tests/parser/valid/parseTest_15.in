@@ -1,6 +1,6 @@
 ALocs("A_file1.in").
 ALocs("A_file2.in").
-EDB('B, "B.csv").
-EDB('A, x) :- ALocs(x).
-EDB('EDB, x) :- B(x).
-B(x) :- NOT(EDB('A, x)).
+EDB('B, "B.csv", "csv").
+EDB('A, x, "csv") :- ALocs(x, "csv").
+EDB('EDB, x, "csv") :- B(x, "csv").
+B(x) :- NOT(EDB('A, x, "csv")).

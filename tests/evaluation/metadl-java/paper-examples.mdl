@@ -12,7 +12,7 @@ java('P) {
 	NewArrayStartEnd(t, s, e) :- <: new `t[] {`s, .. , `e} :>, ID(`t, t), ID(`s, s), ID(`e, e).
 }
 
-OUTPUT('ArrayAccess).
-OUTPUT('NewArrayStartEnd).
-OUTPUT('NewArray).
-OUTPUT('NewArrayNoInit).
+OUTPUT('ArrayAccess, "ArrayAccess.csv", "csv").
+OUTPUT('NewArrayStartEnd, "NewArrayStartEnd.csv", "csv").
+OUTPUT('NewArray, "NewArray.csv", "csv").
+OUTPUT('NewArrayNoInit, "NewArrayNoInit.csv", "csv").

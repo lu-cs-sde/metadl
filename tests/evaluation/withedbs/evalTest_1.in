@@ -1,4 +1,4 @@
-OUTPUT('A).
+OUTPUT('A, "A.csv", "csv").
 A("", "") :- NEQ(0, 0).
-EDB('A, "A.csv").
+EDB('A, "A.csv", "csv").
 A(x, z) :- A(x, y), A(y, z).

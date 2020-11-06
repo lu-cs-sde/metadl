@@ -8,5 +8,5 @@ TypeName("Byte"), TypeName("Float"), TypeName("Double"), TypeName("Boolean").
 java('P) {
 	    PrimitiveCtor(e) :- e <: new `c(`_) :>, DECL(`c, c), c <: class `name { .. } :>, ID(`name, t), TypeName(t).
 	    PrimitiveCtorDetail(l, c, file) :- PrimitiveCtor(e), SRC(e, l, c, _, _, file).
-	    OUTPUT('PrimitiveCtorDetail).
+	    OUTPUT('PrimitiveCtorDetail, "PrimitiveCtorDetail.csv", "csv").
 }

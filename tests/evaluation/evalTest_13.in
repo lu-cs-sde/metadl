@@ -6,4 +6,4 @@ G("C").
 G("D").
 
 H(s) :- F(s1), F(s2), BIND(s, cat(s1, s2)).
-OUTPUT('H).
+OUTPUT('H, "H.csv", "csv").

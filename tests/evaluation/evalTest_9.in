@@ -1,4 +1,4 @@
-OUTPUT('A), OUTPUT('B).
+OUTPUT('A, "A.csv", "csv"), OUTPUT('B, "B.csv", "csv").
 
 A("A", "B").
 A("B", "C").

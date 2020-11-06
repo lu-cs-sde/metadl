@@ -61,7 +61,7 @@ java('P) {
 	    ClassEq(c, `d) :- c <: class `_ <..> { .. `d .. } :>, `d <: .. public .. boolean equals(`t `o) ;:>.
 
 	    ClassEqDetail(l, c, file) :- ClassEq(cl, d), SRC(cl, l, c, _, _, file).
-	    # OUTPUT('ClassEqDetail).
+	    # OUTPUT('ClassEqDetail, "ClassEqDetail.csv", "csv").
 
 	    # RealType - the most precise type known for the term
 	    # - in case of generic type instances, this is the generic type declaration they instantiate
@@ -77,11 +77,11 @@ java('P) {
 	    	       NOT(IsExcludedThis(`t1)), NOT(IsExcludedThis(`t2)).
 
 	    DebugEq(t1, t2) :- EqualityTest(`t1, `t2), RealType(`t1, t1), RealType(`t2, t2).
-	    # OUTPUT('DebugEq).
+	    # OUTPUT('DebugEq, "DebugEq.csv", "csv").
 
 	    BadEqDetail(l, c, file) :- BadEq(t1, _), SRC(t1, l, c, _, _, file).
-	    # OUTPUT('BadEq).
-	    OUTPUT('BadEqDetail).
+	    # OUTPUT('BadEq, "BadEq.csv", "csv").
+	    OUTPUT('BadEqDetail, "BadEqDetail.csv", "csv").
 
 	    MethodIsAbstract(m) :- m <: .. abstract .. `t `m(..) ; :>.
 
@@ -99,14 +99,14 @@ java('P) {
 
 	    MustUseEqualsDetail(l, c, file) :- MustUseEquals(cl), SRC(cl, l, c, _, _, file).
 
-	    # OUTPUT('MustUseEqualsDetail).
+	    # OUTPUT('MustUseEqualsDetail, "MustUseEqualsDetail.csv", "csv").
 
-	    # OUTPUT('ClassEq).
-	    # OUTPUT('MustUseEquals).
+	    # OUTPUT('ClassEq, "ClassEq.csv", "csv").
+	    # OUTPUT('MustUseEquals, "MustUseEquals.csv", "csv").
 
 	    TSuperTypeDetail(f1, f2) :- TSuperType(s1, s2), SRC(s1, _, _, _, _, f1), SRC(s2, _, _, _, _, f2).
-	    # OUTPUT('TSuperTypeDetail).
-	    # OUTPUT('ObjectDecl).
+	    # OUTPUT('TSuperTypeDetail, "TSuperTypeDetail.csv", "csv").
+	    # OUTPUT('ObjectDecl, "ObjectDecl.csv", "csv").
 
 	    # Exclude all the comparisons with this in compareTo and equals methods
 	    ExcludedMethods(`m) :- <: class `_ implements Comparable<`t> { .. `m .. } :>, `m <: public int compareTo(..) ; :>.
@@ -115,7 +115,7 @@ java('P) {
 	    ExcludedTerms(c) :- ExcludedTerms(p), NOT(p <: `_ `_ ( .. ) ; :>), PARENT(p, c).
 	    IsThis(`t) :- `t <: this :>.
 	    IsExcludedThis(t) :- IsThis(t), ExcludedTerms(t).
-	    # OUTPUT('IsThis).
-	    # OUTPUT('ExcludedMethods).
-	    # OUTPUT('IsExcludedThis).
+	    # OUTPUT('IsThis, "IsThis.csv", "csv").
+	    # OUTPUT('ExcludedMethods, "ExcludedMethods.csv", "csv").
+	    # OUTPUT('IsExcludedThis, "IsExcludedThis.csv", "csv").
 }

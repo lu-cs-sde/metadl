@@ -1,4 +1,4 @@
-OUTPUT('B).
-OUTPUT('C).
+OUTPUT('B, "B.csv", "csv").
+OUTPUT('C, "C.csv", "csv").
 C("C11", "C12", "C13").
 B(x, x) :- C(x, y, z).

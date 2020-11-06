@@ -1,4 +1,4 @@
-OUTPUT('Nat).
+OUTPUT('Nat, "Nat.csv", "csv").
 Nat(0).
 Nat(y) :- Nat(x),
           BIND(y, x + 1),

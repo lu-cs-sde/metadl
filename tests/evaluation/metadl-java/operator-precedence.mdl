@@ -41,5 +41,5 @@ java('P) {
 	    ExtraParenDetail(l, c, file) :- ExtraParen(p, _), SRC(p, l, c, _, _, file).
 }
 
-OUTPUT('ConfusingDetail).
-OUTPUT('ExtraParenDetail).
+OUTPUT('ConfusingDetail, "ConfusingDetail.csv", "csv").
+OUTPUT('ExtraParenDetail, "ExtraParenDetail.csv", "csv").

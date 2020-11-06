@@ -12,4 +12,4 @@ metadl('Program) {
 
 AllVarInExpr(v) :- Var(e, v).
 
-OUTPUT('AllVarInExpr).
+OUTPUT('AllVarInExpr, "AllVarInExpr.csv", "csv").

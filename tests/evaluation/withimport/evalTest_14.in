@@ -11,4 +11,4 @@ metadl('P) {
 
 }
 
-OUTPUT('IsNeq).
+OUTPUT('IsNeq, "IsNeq.csv", "csv").

@@ -18,7 +18,7 @@ metadl('Program) {
 	SConstant(c) :- <:... :- ...,$p(...,$v,...),... .:>, STR($v, c).
 }
 
-OUTPUT('IConstant).
-OUTPUT('SConstant).
-OUTPUT('Variable).
-OUTPUT('Predicate).
+OUTPUT('IConstant, "IConstant.csv", "csv").
+OUTPUT('SConstant, "SConstant.csv", "csv").
+OUTPUT('Variable, "Variable.csv", "csv").
+OUTPUT('Predicate, "Predicate.csv", "csv").

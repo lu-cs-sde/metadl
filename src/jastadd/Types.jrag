@@ -484,18 +484,24 @@ aspect TypeInference {
 		} else if (isEDB()) {
 			switch (i) {
 			case 0: return PredicateRefType.get();
-			case 1: return StringType.get();
+			case 1:
+			case 2: return StringType.get();
 			default: return UnknownType.get();
 			}
 		} else if (isIMPORT()) {
 			switch (i) {
 			case 0: return PredicateRefType.get();
-			case 1: return StringType.get();
+			case 1:
 			case 2: return StringType.get();
 			default: return UnknownType.get();
 			}
-		} else if (isOUTPUT() && i == 0) {
-			return PredicateRefType.get();
+		} else if (isOUTPUT()) {
+			switch (i) {
+			case 0: return PredicateRefType.get();
+			case 1:
+			case 2: return StringType.get();
+			default: return UnknownType.get();
+			}
 		}
 		return UnknownType.get();
 	}

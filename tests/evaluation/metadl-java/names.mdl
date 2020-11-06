@@ -6,6 +6,6 @@ java('Src) {
      FieldNames(n, m) :- Fields(f, g, _, _), ID(f, n), ID(g, m).
      Method(`b, `f) :- <: `b.`f(..) :>.
      MethodNames(n, m) :- Method(`b, `f), ID(`b, n), ID(`f, m).
-     OUTPUT('FieldNames).
-     OUTPUT('MethodNames).
+     OUTPUT('FieldNames, "FieldNames.csv", "csv").
+     OUTPUT('MethodNames, "MethodNames.csv", "csv").
 }

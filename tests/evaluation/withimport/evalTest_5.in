@@ -43,6 +43,6 @@ metadl('Program) {
 	IncompleteTyped(p_name, i) :- TermIndex(p_name, i), NOT(IsTyped(p_name, i)).
 }
 
-OUTPUT('PredType).
-OUTPUT('InconsistentTyped).
-OUTPUT('IncompleteTyped).
+OUTPUT('PredType, "PredType.csv", "csv").
+OUTPUT('InconsistentTyped, "InconsistentTyped.csv", "csv").
+OUTPUT('IncompleteTyped, "IncompleteTyped.csv", "csv").

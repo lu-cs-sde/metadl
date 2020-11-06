@@ -20,6 +20,6 @@ SameStratum(p_name, q_name) :- Dep(p_name, q_name), Dep(q_name, p_name).
 Error(p_name, q_name) :- SameStratum(p_name, q_name), DirectDepNeg(p_name, q_name).
 ParentStratum(p_name, q_name) :- DirectDep(p_name, q_name), NOT(SameStratum(p_name, q_name)).
 
-OUTPUT('SameStratum).
-OUTPUT('ParentStratum).
-OUTPUT('Error).
+OUTPUT('SameStratum, "SameStratum.csv", "csv").
+OUTPUT('ParentStratum, "ParentStratum.csv", "csv").
+OUTPUT('Error, "Error.csv", "csv").

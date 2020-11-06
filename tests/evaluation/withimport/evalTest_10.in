@@ -15,4 +15,4 @@ metadl('Program) {
 }
 
 
-OUTPUT('Warning).
+OUTPUT('Warning, "Warning.csv", "csv").

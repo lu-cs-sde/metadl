@@ -43,6 +43,6 @@ java('P) {
 
 VarDefDetail(c, v, t, name, tname) :- VarDef(c, v, t, name), TypeToStr(t, tname).
 
-OUTPUT('VarDefDetail).
-OUTPUT('ClassDef).
-OUTPUT('MethodDef).
+OUTPUT('VarDefDetail, "VarDefDetail.csv", "csv").
+OUTPUT('ClassDef, "ClassDef.csv", "csv").
+OUTPUT('MethodDef, "MethodDef.csv", "csv").

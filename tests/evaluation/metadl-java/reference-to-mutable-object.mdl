@@ -71,7 +71,7 @@ java('P) {
 	    Result("fail") :- Mismatch(_).
 }
 
-OUTPUT('MismatchDetail).
-OUTPUT('Result).
-OUTPUT('ParamToNonPublicFieldDetail).
-OUTPUT('NonPublicFieldReturnDetail).
+OUTPUT('MismatchDetail, "MismatchDetail.csv", "csv").
+OUTPUT('Result, "Result.csv", "csv").
+OUTPUT('ParamToNonPublicFieldDetail, "ParamToNonPublicFieldDetail.csv", "csv").
+OUTPUT('NonPublicFieldReturnDetail, "NonPublicFieldReturnDetail.csv", "csv").

@@ -10,7 +10,7 @@ java('P) {
 }
 
 
-OUTPUT('Diamond).
-OUTPUT('TryWithResources).
-OUTPUT('NumericLiterals).
-OUTPUT('Multicatch).
+OUTPUT('Diamond, "Diamond.csv", "csv").
+OUTPUT('TryWithResources, "TryWithResources.csv", "csv").
+OUTPUT('NumericLiterals, "NumericLiterals.csv", "csv").
+OUTPUT('Multicatch, "Multicatch.csv", "csv").

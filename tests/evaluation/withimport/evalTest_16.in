@@ -22,10 +22,10 @@ metadl('P,  "java8") {
 	Class4_public_abstract(c) :- <: public abstract class `c extends `a { .. } :>, ID(`c, c).
 }
 
-OUTPUT('Class1).
-OUTPUT('Class2).
-OUTPUT('Class3).
-OUTPUT('Class4).
+OUTPUT('Class1, "Class1.csv", "csv").
+OUTPUT('Class2, "Class2.csv", "csv").
+OUTPUT('Class3, "Class3.csv", "csv").
+OUTPUT('Class4, "Class4.csv", "csv").
 OUTPUT('Class1_public).
 OUTPUT('Class2_public).
 OUTPUT('Class3_public).

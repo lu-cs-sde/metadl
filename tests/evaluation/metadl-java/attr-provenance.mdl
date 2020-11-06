@@ -10,5 +10,5 @@ java('Src) {
 	   ProvenanceData(n, attr, file) :- n <: c.foo() :>, PROVENANCE(n, attr, file).
 }
 
-# OUTPUT('MissingProvenance).
-OUTPUT('ProvenanceData).
+# OUTPUT('MissingProvenance, "MissingProvenance.csv", "csv").
+OUTPUT('ProvenanceData, "ProvenanceData.csv", "csv").

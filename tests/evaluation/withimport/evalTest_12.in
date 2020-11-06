@@ -5,4 +5,4 @@ java('P) {
 	IsClass("D") :- <: class D {  } :>.
 }
 
-OUTPUT('IsClass).
+OUTPUT('IsClass, "IsClass.csv", "csv").

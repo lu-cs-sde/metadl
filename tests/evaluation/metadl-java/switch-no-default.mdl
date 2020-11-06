@@ -40,5 +40,5 @@ java('P) {
 	    TestResult("Fail") :- Mismatch(_).
 }
 
-OUTPUT('MismatchDetails).
-OUTPUT('TestResult).
+OUTPUT('MismatchDetails, "MismatchDetails.csv", "csv").
+OUTPUT('TestResult, "TestResult.csv", "csv").

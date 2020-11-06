@@ -1,3 +1,3 @@
-OUTPUT('Order).
+OUTPUT('Order, "Order.csv", "csv").
 Order(1, 2), Order(2, 3).
 Order(x,z) :- Order(x, y), Order(y, z).

@@ -9,5 +9,5 @@ java('P) {
 	IsPublicMethod(mname) :- <: public `t `m (..) {..} :>, ID(`m, mname).
 }
 
-OUTPUT('IsVoidMethod).
-OUTPUT('IsPublicMethod).
+OUTPUT('IsVoidMethod, "IsVoidMethod.csv", "csv").
+OUTPUT('IsPublicMethod, "IsPublicMethod.csv", "csv").

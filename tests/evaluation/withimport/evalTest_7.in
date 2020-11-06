@@ -48,4 +48,4 @@ metadl('Program) {
       NOT(MultipleOccurrencesOfInputVar($q, v)).
 }
 
-OUTPUT('CartesianProjectionWarning).
+OUTPUT('CartesianProjectionWarning, "CartesianProjectionWarning.csv", "csv").

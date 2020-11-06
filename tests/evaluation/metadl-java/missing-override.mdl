@@ -68,4 +68,4 @@ java('P) {
 	    MissingOverrideDetail(l, c, file) :- MissingOverride(m), SRC(m, l, c, _, _, file).
 }
 
-OUTPUT('MissingOverrideDetail).
+OUTPUT('MissingOverrideDetail, "MissingOverrideDetail.csv", "csv").

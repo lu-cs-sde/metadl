@@ -25,9 +25,11 @@ import lang.ast.PredicateRefType;
 import lang.ast.PredicateSymbol;
 import lang.ast.PredicateType;
 import lang.ast.Program;
+import lang.ast.ProgramRepresentation;
 import lang.ast.Rule;
 import lang.ast.StringType;
 import lang.ast.Term;
+import lang.ast.Type;
 import lang.relation.RelationWrapper;
 
 import static lang.ast.Constructors.*;
@@ -36,11 +38,13 @@ public class ProgramSplit {
 	private Program program;
 	private Program localProgram;
 	private Program globalProgram;
+	private Program updateProgram;
 	private Set<String> localOutputs = new TreeSet<>();
 
 	public ProgramSplit(Program program) {
 		this.program = program;
 		split();
+		generateUpdateProgram();
 	}
 
 	private static CommonLiteral copyLiteral(CommonLiteral l) {
@@ -81,7 +85,10 @@ public class ProgramSplit {
 	}
 
 	private static Rule implicitTypeDeclaration(FormalPredicate p) {
-		PredicateType t = p.type();
+		return implicitTypeDeclaration(p.getPRED_ID(), p.type());
+	}
+
+	private static Rule implicitTypeDeclaration(String predName, PredicateType t) {
 		Term[] terms = new Term[t.arity()];
 		for (int i = 0; i < t.arity(); ++i) {
 			if (t.get(i) == IntegerType.get() ||
@@ -91,11 +98,11 @@ public class ProgramSplit {
 				terms[i] = str("");
 			} else {
 				assert t.get(i) == PredicateRefType.get();
-				terms[i] = new PredicateRef(p.getPRED_ID());
+				terms[i] = new PredicateRef(predName);
 			}
 		}
 
-		return rule(literal(p.getPRED_ID(), (Object[]) terms), NEQ(integer(0), integer(0)));
+		return rule(literal(predName, (Object[]) terms), NEQ(integer(0), integer(0)));
 	}
 
 	/**
@@ -110,10 +117,9 @@ public class ProgramSplit {
 			return;
 		}
 
-		EvaluationContext ctx = new EvaluationContext();
-		fpEDB.eval(ctx);
+		fpEDB.eval(program.evalCtx());
 
-		RelationWrapper EDBs = new RelationWrapper(ctx, fpEDB.relation2(), fpEDB.type());
+		RelationWrapper EDBs = new RelationWrapper(program.evalCtx(), fpEDB.relation2(), fpEDB.type());
 		for (RelationWrapper.TupleWrapper t : EDBs.tuples()) {
 			String pred = t.getAsString(0);
 			String file = t.getAsString(1);
@@ -140,10 +146,9 @@ public class ProgramSplit {
 			return;
 		}
 
-		EvaluationContext ctx = new EvaluationContext();
-		fpOUTPUT.eval(ctx);
+		fpOUTPUT.eval(program.evalCtx());
 
-		RelationWrapper OUTPUTs = new RelationWrapper(ctx, fpOUTPUT.relation2(), fpOUTPUT.type());
+		RelationWrapper OUTPUTs = new RelationWrapper(program.evalCtx(), fpOUTPUT.relation2(), fpOUTPUT.type());
 		for (RelationWrapper.TupleWrapper t : OUTPUTs.tuples()) {
 			String pred = t.getAsString(0);
 
@@ -166,6 +171,13 @@ public class ProgramSplit {
 		splitOUTPUT();
 
 		for (FormalPredicate p : program.getFormalPredicates()) {
+			if (p.getProgramRepresentationKind().isPresent() &&
+				p.getProgramRepresentationKind().get() == ProgramRepresentation.ATTR_PROVENANCE) {
+				// The provenance relation must be globaly available. It is used to decide which
+				// files need an update.
+				localOutputs.add(p.getPRED_ID());
+			}
+
 			if (p.hasLocalDef() && p.hasGlobalUse()) {
 				localProgram.addCommonClause(fact(literal(GlobalNames.OUTPUT_NAME, ref(p.getPRED_ID()))));
 				globalProgram.addCommonClause(fact(literal(GlobalNames.EDB_NAME, ref(p.getPRED_ID()), str(p.getPRED_ID() + ".csv"))));
@@ -211,8 +223,58 @@ public class ProgramSplit {
 		}
 	}
 
+	private void generateUpdateClauses(Program p, AnalyzeBlock b) {
+		String SRC_DELTA = b.getProgramRef().getPRED_ID();
+		String AST_VISIT = b.getContext().prefix("AST_VISIT");
+		String AST_REMOVE = b.getContext().prefix("AST_REMOVE");
+
+		String ATTR_PROVENANCE = b.getContext().provenanceRelName;
+		String SRC_LOC = b.getContext().srcRelName;
+
+		// Type declarations
+		p.addCommonClause(implicitTypeDeclaration(SRC_DELTA, new PredicateType(StringType.get(),
+																			   StringType.get())));
+		p.addCommonClause(implicitTypeDeclaration(ATTR_PROVENANCE,
+												  FormalPredicate.programRepresentationType(ProgramRepresentation.ATTR_PROVENANCE)));
+		p.addCommonClause(implicitTypeDeclaration(SRC_LOC,
+												  FormalPredicate.programRepresentationType(ProgramRepresentation.SRC)));
+
+		// AST_VISIT - the files that need to be revisited
+		// visit the files that were modified
+		p.addCommonClause(rule(literal(AST_VISIT, var("f")), literal(SRC_DELTA, var("f"), str("M"))));
+		// visit new files
+		p.addCommonClause(rule(literal(AST_VISIT, var("f")), literal(SRC_DELTA, var("f"), str("A"))));
+		// visit the files where attributes affected by a file change are computed
+		// TODO: this can be refined, to only compute the attributes, not traverse the entire file
+		p.addCommonClause(rule(literal(AST_VISIT, var("f")), literal(SRC_DELTA, var("f_attr"), "_"),
+							   literal(ATTR_PROVENANCE, var("n"), "_", var("f_attr")),
+							   literal(SRC_LOC, var("n"), "_", "_", "_", "_", var("f"))));
+		// AST_REMOVE - files to remove
+		p.addCommonClause(rule(literal(AST_REMOVE, var("f")), literal(SRC_DELTA, var("f"), str("D"))));
+
+		// Input
+		p.addCommonClause(fact(literal(GlobalNames.EDB_NAME, ref(SRC_DELTA), str(SRC_DELTA + ".csv")),
+							   literal(GlobalNames.EDB_NAME, ref(ATTR_PROVENANCE), str(ATTR_PROVENANCE + ".csv")),
+							   literal(GlobalNames.EDB_NAME, ref(SRC_LOC), str(SRC_LOC + ".csv"))));
+
+		// Output
+		p.addCommonClause(fact(literal(GlobalNames.OUTPUT_NAME, ref(AST_VISIT)),
+							   literal(GlobalNames.OUTPUT_NAME, ref(AST_REMOVE))));
+	}
+
+	private void generateUpdateProgram() {
+		updateProgram = new Program();
+		for (AnalyzeBlock b : program.analyzeBlocks()) {
+			generateUpdateClauses(updateProgram, b);
+		}
+	}
+
 	public Program getGlobalProgram() {
 		return globalProgram;
+	}
+
+	public Program getUpdateProgram() {
+		return updateProgram;
 	}
 
 	public Program getLocalProgram() {

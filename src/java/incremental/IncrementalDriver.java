@@ -167,6 +167,9 @@ public class IncrementalDriver {
 		return p;
 	}
 
+	/**
+	   Compute the SHA-1 has of the file path.
+	 */
 	protected static String hash(File f) {
 		try {
 			MessageDigest md = MessageDigest.getInstance("SHA-1");
@@ -181,6 +184,9 @@ public class IncrementalDriver {
 		return null;
 	}
 
+	/**
+	   Run a sanity check on the program
+	 */
 	private void checkProgram(org.extendj.ast.Program p) {
 		// Some sanity check
 		org.extendj.ast.TypeDecl object = p.lookupType("java.lang", "Object");
@@ -192,6 +198,10 @@ public class IncrementalDriver {
 		}
 	}
 
+	/**
+	   Generate the program representation for the given source files, and store it
+	   to predicates with a given prefix
+	 */
 	public void generate(List<File> sourceFiles, String relPrefix) throws IOException, SQLException {
 		for (File f : sourceFiles) {
 			logger().debug("Extracting AST facts from source " + f.getPath() + ".");
@@ -212,6 +222,9 @@ public class IncrementalDriver {
 		}
 	}
 
+	/**
+	   Run the local program on all the files in the file database
+	 */
 	public void runLocalProgram(Program local) throws IOException, SQLException {
 		StandardPrettyPrinter<Program> lpp =
 			new StandardPrettyPrinter<>(new PrintStream(new File(prog, "local.mdl")));
@@ -233,6 +246,10 @@ public class IncrementalDriver {
 		}
 	}
 
+	/**
+	   Create a view that is the union of all the local relations, computed
+	   in the local pass.
+	 */
 	private void createGlobalView(Connection conn, String localOutput) throws SQLException {
 		Statement stmt = conn.createStatement();
 		stmt.executeUpdate("DROP VIEW IF EXISTS " + localOutput);
@@ -247,6 +264,10 @@ public class IncrementalDriver {
 		stmt.executeUpdate(unionView);
 	}
 
+	/**
+	   For each relation that is defined locally, but used globally, create a view
+	   that is the union of the local results.
+	 */
 	private void createGlobalViews(Set<String> localOutputs) throws SQLException {
 		Connection conn = DriverManager.getConnection("jdbc:sqlite:" + progDbFile.getPath());
 		conn.setAutoCommit(false);
@@ -273,5 +294,6 @@ public class IncrementalDriver {
 
 	public void update(List<File> modifiedFiles, List<File> removedFiles,
 					   List<File> addedFiles) {
+
 	}
 }

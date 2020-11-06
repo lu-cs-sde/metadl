@@ -162,31 +162,21 @@ public class Compiler {
 		prog.evalEDB(prog.evalCtx(), opts);
 		prog.evalIMPORT(prog.evalCtx(), opts);
 
-		// StandardPrettyPrinter<Program> lpp = new StandardPrettyPrinter<>(new PrintStream("local.mdl"));
-		StandardPrettyPrinter<Program> gpp = new StandardPrettyPrinter<>(new PrintStream("global.mdl"));
+
 		// split program into local and global parts
 		ProgramSplit split = new ProgramSplit(prog);
-		// lpp.prettyPrint(split.getLocalProgram());
-		gpp.prettyPrint(split.getGlobalProgram());
-
-		IncrementalDriver incDriver = new IncrementalDriver(new File(opts.getOutputDir()));
-		incDriver.init();
-
-		for (AnalyzeBlock b : prog.analyzeBlocks()) {
-			FormalPredicate srcPred = b.getProgramRef().formalpredicate();
-			// evaluate the predicate representing the input program paths
-			srcPred.eval(prog.evalCtx());
-			RelationWrapper srcPredRel = new RelationWrapper(prog.evalCtx(), srcPred.relation2(), srcPred.type());
-
-			// build the list of files
-			List<File> files = srcPredRel.tuples().stream().map(t -> new File(t.getAsString(0))).collect(Collectors.toList());
-
-			// now generate the relations that represent each file
-			incDriver.generate(files, b.getContext().scopePrefix);
+		if (!split.canEvaluateIncrementally()) {
+			throw new RuntimeException("Cannot evaluate this program incrementally.");
 		}
 
-		incDriver.runLocalProgram(split.getLocalProgram());
-		incDriver.runGlobalProgram(split.getLocalOutputs(), split.getGlobalProgram());
+
+		IncrementalDriver incDriver = new IncrementalDriver(new File(opts.getOutputDir()), split);
+		incDriver.init();
+
+		incDriver.update(opts);
+
+		incDriver.runLocalProgram();
+		incDriver.runGlobalProgram();
 
 		incDriver.shutdown();
 	}
@@ -255,8 +245,8 @@ public class Compiler {
 				checkProgram(prog, opts);
 				SWIGUtil.evalHybridProgram(prog, opts);
 				break;
-			case SEPARATE_SOUFFLE:
-			case SEPARATE_INTERNAL:
+			case INCREMENTAL_UPDATE:
+			case INCREMENTAL_INIT:
 				checkProgram(prog, opts);
 				generateIncrementalProgram(prog, opts);
 				break;

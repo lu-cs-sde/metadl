@@ -33,8 +33,8 @@ public class CmdLineOpts {
 		PRETTY_SOUFFLE,
 		PRETTY_INTERNAL,
 		PRETTY_TYPES,
-		SEPARATE_INTERNAL,
-		SEPARATE_SOUFFLE,
+		INCREMENTAL_INIT,
+		INCREMENTAL_UPDATE,
 		GEN_HYBRID,
 		CHECK
 	}
@@ -143,12 +143,11 @@ public class CmdLineOpts {
 			.desc("Evaluate only the import statements and output the program representation relation(s).").build();
 		Option gen = Option.builder("g").longOpt("gen-hybrid").hasArg(false)
 			.desc("Generate a hybrid MetaDL-Souffle program.").build();
-		// TODO: add an argument to be able to select the output format: metadl or souffle
-		Option separate = Option.builder("s").longOpt("separate").hasArg(false)
-			.desc("Generate a separated program and other helper programs.").build();
+		Option incremental = Option.builder("s").longOpt("incremental").hasArg(false)
+			.desc("Incrementally evaluate the program (init = initial run, update = subsequent runs).").build();
 
 		OptionGroup actions = new OptionGroup().addOption(eval).addOption(prettyPrint).addOption(check)
-			.addOption(imp).addOption(gen).addOption(separate);
+			.addOption(imp).addOption(gen).addOption(incremental);
 
 		Option factDir = Option.builder("F").longOpt("facts").numberOfArgs(1)
 			.desc("Fact directory.").argName("DIR").build();
@@ -212,7 +211,15 @@ public class CmdLineOpts {
 			} else if (cmd.hasOption("g")) {
 				ret.setAction(Action.GEN_HYBRID);
 			} else if (cmd.hasOption("s")) {
-				ret.setAction(Action.SEPARATE_INTERNAL);
+				if (cmd.getOptionValue("s").equals("init")) {
+					ret.setAction(Action.INCREMENTAL_INIT);
+				} else if (cmd.getOptionValue("s").equals("update")) {
+					ret.setAction(Action.INCREMENTAL_UPDATE);
+				} else {
+					System.err.println("Invalid argument to '--incremental' option");
+					printHelp(options);
+					throw new RuntimeException();
+				}
 			}
 
 			if (cmd.hasOption("q")) {

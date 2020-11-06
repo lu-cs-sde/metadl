@@ -226,50 +226,48 @@ public class ProgramSplit {
 		}
 	}
 
-	private void generateUpdateClauses(Program p, AnalyzeBlock b) {
-		String SRC_DELTA = b.getProgramRef().getPRED_ID();
-		String AST_VISIT = b.getContext().prefix("AST_VISIT");
-		String AST_REMOVE = b.getContext().prefix("AST_REMOVE");
+	public static String AST_VISIT_RELATION = "AST_VISIT";
+	public static String AST_REMOVE_RELATION = "AST_REMOVE";
+	public static String ANALYZED_SOURCES_RELATION = "ANALYZED_SOURCES";
 
+	private void generateUpdateClauses(Program p, AnalyzeBlock b) {
 		String ATTR_PROVENANCE = b.getContext().provenanceRelName;
 		String SRC_LOC = b.getContext().srcRelName;
 
 		// Type declarations
-		p.addCommonClause(implicitTypeDeclaration(SRC_DELTA, new PredicateType(StringType.get(),
+		p.addCommonClause(implicitTypeDeclaration(ANALYZED_SOURCES_RELATION, new PredicateType(StringType.get(),
 																			   StringType.get())));
 		p.addCommonClause(implicitTypeDeclaration(ATTR_PROVENANCE,
 												  FormalPredicate.programRepresentationType(ProgramRepresentation.ATTR_PROVENANCE)));
 		p.addCommonClause(implicitTypeDeclaration(SRC_LOC,
 												  FormalPredicate.programRepresentationType(ProgramRepresentation.SRC)));
 
-		// AST_VISIT - the files that need to be revisited
+		// AST_VISIT_RELATION - the files that need to be revisited
 		// visit the files that were modified
-		p.addCommonClause(rule(literal(AST_VISIT, var("f")), literal(SRC_DELTA, var("f"), str("M"))));
+		p.addCommonClause(rule(literal(AST_VISIT_RELATION, var("f")), literal(ANALYZED_SOURCES_RELATION, var("f"), str("M"))));
 		// visit new files
-		p.addCommonClause(rule(literal(AST_VISIT, var("f")), literal(SRC_DELTA, var("f"), str("A"))));
+		p.addCommonClause(rule(literal(AST_VISIT_RELATION, var("f")), literal(ANALYZED_SOURCES_RELATION, var("f"), str("A"))));
 		// visit the files where attributes affected by a file change are computed
 		// TODO: this can be refined, to only compute the attributes, not traverse the entire file
-		p.addCommonClause(rule(literal(AST_VISIT, var("f")), literal(SRC_DELTA, var("f_attr"), "_"),
+		p.addCommonClause(rule(literal(AST_VISIT_RELATION, var("f")), literal(ANALYZED_SOURCES_RELATION, var("f_attr"), "_"),
 							   literal(ATTR_PROVENANCE, var("n"), "_", var("f_attr")),
 							   literal(SRC_LOC, var("n"), "_", "_", "_", "_", var("f"))));
-		// AST_REMOVE - files to remove
-		p.addCommonClause(rule(literal(AST_REMOVE, var("f")), literal(SRC_DELTA, var("f"), str("D"))));
+		// AST_REMOVE_RELATION - files to remove
+		p.addCommonClause(rule(literal(AST_REMOVE_RELATION, var("f")), literal(ANALYZED_SOURCES_RELATION, var("f"), str("D"))));
 
 		// Input
-		p.addCommonClause(fact(literal(GlobalNames.EDB_NAME, ref(SRC_DELTA), str(SRC_DELTA + ".csv")),
-							   literal(GlobalNames.EDB_NAME, ref(ATTR_PROVENANCE), str(ATTR_PROVENANCE + ".csv")),
-							   literal(GlobalNames.EDB_NAME, ref(SRC_LOC), str(SRC_LOC + ".csv"))));
+		// The ANALYZED_SOURCES_RELATION predicate relation should be filled in by the caller
+		p.addCommonClause(fact(literal(GlobalNames.EDB_NAME, ref(ATTR_PROVENANCE), str("internal"), str("sqlite")),
+							   literal(GlobalNames.EDB_NAME, ref(SRC_LOC), str("internal"), str("sqlite"))));
 
 		// Output
-		p.addCommonClause(fact(literal(GlobalNames.OUTPUT_NAME, ref(AST_VISIT)),
-							   literal(GlobalNames.OUTPUT_NAME, ref(AST_REMOVE))));
+		// p.addCommonClause(fact(literal(GlobalNames.OUTPUT_NAME, ref(AST_VISIT_RELATION)),
+		// 					   literal(GlobalNames.OUTPUT_NAME, ref(AST_REMOVE_RELATION))));
 	}
 
 	private void generateUpdateProgram() {
 		updateProgram = new Program();
-		for (AnalyzeBlock b : program.analyzeBlocks()) {
-			generateUpdateClauses(updateProgram, b);
-		}
+		generateUpdateClauses(updateProgram, program.analyzeBlocks().get(0));
 	}
 
 	public Program getGlobalProgram() {
@@ -282,6 +280,10 @@ public class ProgramSplit {
 
 	public Program getLocalProgram() {
 		return localProgram;
+	}
+
+	public Program getProgram() {
+		return program;
 	}
 
 	public Set<String> getLocalOutputs() {
@@ -302,5 +304,29 @@ public class ProgramSplit {
 	public List<AnalysisInfo> getAnalyzeContexts() {
 		return program.analyzeBlocks().stream().map(b -> new AnalysisInfo(b.getContext(), b.getProgramRef().getPRED_ID()))
 													.collect(Collectors.toList());
+	}
+
+	public boolean canEvaluateIncrementally() {
+		if (program.analyzeBlocks().isEmpty()) {
+			// the program must have at least one analyze block
+			return false;
+		}
+
+		if (program.analyzeBlocks().stream()
+			.map(b -> b.getProgramRef().getPRED_ID()).distinct().count() != 1) {
+			// all analyze blocks must use the same program relation
+			return false;
+		}
+
+		if (program.analyzeBlocks().stream()
+			.anyMatch(b -> !b.getLang().getSTRING().equals("java8"))) {
+			// all analyze blocks must use the Java language
+			return false;
+		}
+		return true;
+	}
+
+	public FormalPredicate getSourceRelation() {
+		return program.formalPredicateMap().get(program.analyzeBlocks().get(0).getProgramRef().getPRED_ID());
 	}
 }

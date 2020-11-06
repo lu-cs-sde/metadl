@@ -72,14 +72,13 @@ public class IncrementalTest {
 
 	private static void runProgramAndExtractResults(String name) throws SQLException, IOException {
 		String src = new File(PROGRAM_DIR, name + ".mdl").getPath();
-		Map<String, RelationWrapper> res = new TreeMap<>();
 
 		File output = new File(OUTPUT_DIR, name);
 		output.mkdir();
 
 		// Build the command-line options
 		CmdLineOpts opts = new CmdLineOpts();
-		opts.setAction(CmdLineOpts.Action.SEPARATE_INTERNAL);
+		opts.setAction(CmdLineOpts.Action.INCREMENTAL_INIT);
 		opts.setOutputDir(output.getPath());
 		opts.setInputFile(src);
 

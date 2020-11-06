@@ -20,6 +20,7 @@ import java.util.stream.Collectors;
 import eval.EvaluationContext;
 import eval.Relation2;
 import lang.CmdLineOpts;
+import lang.ast.AnalyzeBlock;
 import lang.ast.FormalPredicate;
 import lang.ast.PredicateType;
 import lang.ast.Program;
@@ -34,6 +35,7 @@ import lang.java.obj.DatalogProjectionSink;
 import lang.java.obj.FileIdDatabase;
 import lang.relation.RelationWrapper;
 import lang.relation.TupleInserter;
+import lang.relation.RelationWrapper.TupleWrapper;
 
 class StandaloneDatalogProjectionSink extends DatalogProjectionSink {
 	@Override public DatalogProjectionSink remap(Map<FormalPredicate, TupleInserter> sinkRemap) {
@@ -108,7 +110,10 @@ public class IncrementalDriver {
 
 	private Map<String, String> fileToHash;
 
-	public IncrementalDriver(File root) {
+	private ProgramSplit progSplit;
+
+	public IncrementalDriver(File root, ProgramSplit progSplit) {
+		this.progSplit = progSplit;
 		// folders
 		this.common = new File(root, "common");
 		this.prog = new File(root, "prog");
@@ -222,10 +227,83 @@ public class IncrementalDriver {
 		}
 	}
 
+	private RelationWrapper computeAnalyzedSources(String factDir) throws IOException, SQLException {
+		Program prog = progSplit.getProgram();
+		CmdLineOpts opts = new CmdLineOpts();
+		opts.setAction(CmdLineOpts.Action.EVAL_INTERNAL);
+		opts.setFactsDir(factDir);
+
+		// evaluate the EDB and IMPORT predicate, to ensure
+		// that the inputs to the analyze blocks can be evaluated in turn
+		prog.evalEDB(prog.evalCtx(), opts);
+		prog.evalIMPORT(prog.evalCtx(), opts);
+
+		// find out which predicate defines the analyzed sources
+		FormalPredicate srcPred = progSplit.getSourceRelation();
+		srcPred.eval(prog.evalCtx());
+
+		// copy the tuples from one relation to another
+		RelationWrapper srcWrapper = new RelationWrapper(prog.evalCtx(), srcPred.relation2(), srcPred.type());
+
+		return srcWrapper;
+	}
+
+	private static void setRelation(Program prog, String relName, RelationWrapper rel) {
+		FormalPredicate pred = prog.formalPredicateMap().get(relName);
+		pred.relation2().clear();
+		RelationWrapper dst = new RelationWrapper(prog.evalCtx(), pred.relation2(), pred.type());
+		dst.insertTuples(rel.tuples());
+	}
+
+	private static RelationWrapper getRelation(Program prog, String relName) {
+		FormalPredicate pred = prog.formalPredicateMap().get(relName);
+		pred.relation2().clear();
+		RelationWrapper src = new RelationWrapper(prog.evalCtx(), pred.relation2(), pred.type());
+		return src;
+	}
+
+	/**
+	   Update the program representation for the given files.
+	 */
+	public void update(CmdLineOpts opts) throws IOException, SQLException {
+		RelationWrapper analyzedSrcs = computeAnalyzedSources(opts.getFactsDir());
+		List<File> visitFiles;
+		if (opts.getAction() == CmdLineOpts.Action.INCREMENTAL_INIT) {
+			visitFiles = analyzedSrcs.tuples().stream().map(t -> new File(t.getAsString(0))).collect(Collectors.toList());
+		} else {
+			assert opts.getAction() == CmdLineOpts.Action.INCREMENTAL_UPDATE;
+
+			Program update = progSplit.getUpdateProgram();
+			setRelation(update, ProgramSplit.ANALYZED_SOURCES_RELATION, analyzedSrcs);
+
+			CmdLineOpts updateOpts = new CmdLineOpts();
+			updateOpts.setAction(CmdLineOpts.Action.EVAL_INTERNAL);
+			updateOpts.setSqlDbFile(progDbFile.getPath());
+
+			// evaluate the update program
+			update.eval(updateOpts);
+
+			RelationWrapper visitFilesRel = getRelation(update, ProgramSplit.AST_VISIT_RELATION);
+			// RelationWrapper removeFilesRel = getRelation(update, ProgramSplit.AST_REMOVE_RELATION);
+			visitFiles = visitFilesRel.tuples().stream().map(t -> new File(t.getAsString(0))).collect(Collectors.toList());
+		}
+
+
+		for (AnalyzeBlock b : progSplit.getProgram().analyzeBlocks()) {
+			// populate the program representation relations for each analyze block
+			generate(visitFiles, b.getContext().scopePrefix);
+		}
+
+		System.err.println(visitFiles);
+	}
+
+
 	/**
 	   Run the local program on all the files in the file database
 	 */
-	public void runLocalProgram(Program local) throws IOException, SQLException {
+	public void runLocalProgram() throws IOException, SQLException {
+		Program local = progSplit.getLocalProgram();
+
 		StandardPrettyPrinter<Program> lpp =
 			new StandardPrettyPrinter<>(new PrintStream(new File(prog, "local.mdl")));
 		lpp.prettyPrint(local);
@@ -278,22 +356,19 @@ public class IncrementalDriver {
 		conn.close();
 	}
 
-	public void runGlobalProgram(Set<String> localOutputs, Program global) throws SQLException, IOException {
+	public void runGlobalProgram() throws SQLException, IOException {
+		Program global = progSplit.getGlobalProgram();
+
 		StandardPrettyPrinter<Program> pp =
 			new StandardPrettyPrinter<>(new PrintStream(new File(prog, "global.mdl")));
 		pp.prettyPrint(global);
 
-		createGlobalViews(localOutputs);
+		createGlobalViews(progSplit.getLocalOutputs());
 		logger().debug("Running the global program");
 		CmdLineOpts opts = new CmdLineOpts();
 		opts.setAction(CmdLineOpts.Action.EVAL_INTERNAL);
 		opts.setSqlDbFile(progDbFile.getPath());
 		Compiler.checkProgram(global, opts);
 		global.eval(opts);
-	}
-
-	public void update(List<File> modifiedFiles, List<File> removedFiles,
-					   List<File> addedFiles) {
-
 	}
 }

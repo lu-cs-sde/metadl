@@ -174,13 +174,6 @@ public class ProgramSplit {
 		splitOUTPUT();
 
 		for (FormalPredicate p : program.getFormalPredicates()) {
-			if (p.getProgramRepresentationKind().isPresent() &&
-				p.getProgramRepresentationKind().get() == ProgramRepresentation.ATTR_PROVENANCE) {
-				// The provenance relation must be globaly available. It is used to decide which
-				// files need an update.
-				localOutputs.add(p.getPRED_ID());
-			}
-
 			if (p.hasLocalDef() && p.hasGlobalUse()) {
 				localProgram.addCommonClause(fact(literal(GlobalNames.OUTPUT_NAME, ref(p.getPRED_ID()), str("ignored"), str("sqlite"))));
 				globalProgram.addCommonClause(fact(literal(GlobalNames.EDB_NAME, ref(p.getPRED_ID()), str("ignored"), str("sqlite"))));
@@ -233,6 +226,9 @@ public class ProgramSplit {
 	private void generateUpdateClauses(Program p, AnalyzeBlock b) {
 		String ATTR_PROVENANCE = b.getContext().provenanceRelName;
 		String SRC_LOC = b.getContext().srcRelName;
+
+		localOutputs.add(ATTR_PROVENANCE);
+		localOutputs.add(SRC_LOC);
 
 		// Type declarations
 		p.addCommonClause(implicitTypeDeclaration(ANALYZED_SOURCES_RELATION, new PredicateType(StringType.get(),

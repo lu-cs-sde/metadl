@@ -143,7 +143,7 @@ public class CmdLineOpts {
 			.desc("Evaluate only the import statements and output the program representation relation(s).").build();
 		Option gen = Option.builder("g").longOpt("gen-hybrid").hasArg(false)
 			.desc("Generate a hybrid MetaDL-Souffle program.").build();
-		Option incremental = Option.builder("s").longOpt("incremental").hasArg(false)
+		Option incremental = Option.builder("s").longOpt("incremental").numberOfArgs(1)
 			.desc("Incrementally evaluate the program (init = initial run, update = subsequent runs).").build();
 
 		OptionGroup actions = new OptionGroup().addOption(eval).addOption(prettyPrint).addOption(check)

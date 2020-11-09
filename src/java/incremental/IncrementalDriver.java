@@ -8,6 +8,7 @@ import java.security.MessageDigest;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.util.Collections;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
@@ -207,7 +208,7 @@ public class IncrementalDriver {
 	   Generate the program representation for the given source files, and store it
 	   to predicates with a given prefix
 	 */
-	public void generate(List<File> sourceFiles, String relPrefix) throws IOException, SQLException {
+	private void generate(List<File> sourceFiles, String relPrefix) throws IOException, SQLException {
 		for (File f : sourceFiles) {
 			logger().debug("Extracting AST facts from source " + f.getPath() + ".");
 			org.extendj.ast.Program p = createProgram(fileIdDb);
@@ -225,6 +226,30 @@ public class IncrementalDriver {
 
 			sink.writeToDB(progDbFile);
 		}
+	}
+
+	private void dropTable(Connection conn, String name) throws SQLException {
+		Statement stmt = conn.createStatement();
+		stmt.executeUpdate("DROP TABLE IF EXISTS " + name);
+	}
+
+	private void delete(List<File> sourceFiles, String relPrefix) throws SQLException {
+		Connection conn = DriverManager.getConnection("jdbc:sqlite:" + progDbFile.getPath());
+		conn.setAutoCommit(false);
+
+		for (File f : sourceFiles) {
+			String pathHash = fileToHash.get(f.getPath());
+			for (ProgramRepresentation r : ProgramRepresentation.values()) {
+				dropTable(conn, "cu_" + pathHash + "$" + relPrefix + r.name());
+			}
+			for (String localTable  : progSplit.getLocalOutputs()) {
+				dropTable(conn, "cu_" + pathHash +  "$" + localTable);
+			}
+			fileToHash.remove(f.getPath());
+		}
+
+		conn.commit();
+		conn.close();
 	}
 
 	private RelationWrapper computeAnalyzedSources(String factDir) throws IOException, SQLException {
@@ -257,7 +282,6 @@ public class IncrementalDriver {
 
 	private static RelationWrapper getRelation(Program prog, String relName) {
 		FormalPredicate pred = prog.formalPredicateMap().get(relName);
-		pred.relation2().clear();
 		RelationWrapper src = new RelationWrapper(prog.evalCtx(), pred.relation2(), pred.type());
 		return src;
 	}
@@ -268,8 +292,11 @@ public class IncrementalDriver {
 	public void update(CmdLineOpts opts) throws IOException, SQLException {
 		RelationWrapper analyzedSrcs = computeAnalyzedSources(opts.getFactsDir());
 		List<File> visitFiles;
+		List<File> deletedFiles;
 		if (opts.getAction() == CmdLineOpts.Action.INCREMENTAL_INIT) {
 			visitFiles = analyzedSrcs.tuples().stream().map(t -> new File(t.getAsString(0))).collect(Collectors.toList());
+			deletedFiles = Collections.emptyList();
+			logger().debug("Initial incremental run with files " + visitFiles + ".");
 		} else {
 			assert opts.getAction() == CmdLineOpts.Action.INCREMENTAL_UPDATE;
 
@@ -284,15 +311,22 @@ public class IncrementalDriver {
 			update.eval(updateOpts);
 
 			RelationWrapper visitFilesRel = getRelation(update, ProgramSplit.AST_VISIT_RELATION);
-			// RelationWrapper removeFilesRel = getRelation(update, ProgramSplit.AST_REMOVE_RELATION);
 			visitFiles = visitFilesRel.tuples().stream().map(t -> new File(t.getAsString(0))).collect(Collectors.toList());
+
+			RelationWrapper removeFilesRel = getRelation(update, ProgramSplit.AST_REMOVE_RELATION);
+			deletedFiles = removeFilesRel.tuples().stream().map(t -> new File(t.getAsString(0))).collect(Collectors.toList());
+
+			logger().debug("Update incremental run with modified/added files " +
+						   visitFiles + ", removed files " + deletedFiles + ".");
 		}
 
 
 		for (AnalyzeBlock b : progSplit.getProgram().analyzeBlocks()) {
 			// populate the program representation relations for each analyze block
 			generate(visitFiles, b.getContext().scopePrefix);
+			delete(deletedFiles, b.getContext().scopePrefix);
 		}
+
 
 		System.err.println(visitFiles);
 	}

@@ -161,10 +161,10 @@ aspect PatternToDatalog {
 
 		assert getRelation().startsWith(ASTNode.METAVARIABLE);
 		String relName = getRelation().substring(ASTNode.METAVARIABLE.length());
-		lang.ast.Variable kind = var(varName("_kind"));
+		String kind = varName("_kind");
 
 		// constrain the type of node that can be matched
-		ret.add(literal(ctx.prefix("SUPERTYPE"), kind, relName));
+		ret.add(literal(ctx.prefix("SUPERTYPE"), var(kind), relName));
 
 
 		for (int i = 0; i < getNumChild(); ++i) {
@@ -178,21 +178,20 @@ aspect PatternToDatalog {
 			if (child instanceof MetaVariable)
 				continue;
 
-			ret.add(literal(ctx.progRelName, kind, var(varName()), i, var(child.varName()), "_"));
+			ret.add(literal(ctx.progRelName, var(kind), var(varName()), i, var(child.varName()), "_"));
 		}
 
 		if (ret.size() == 1) {
 			// This metavariable node has no children. Just ensure that is bound to
 			// the correct AST node type
-			ret.add(literal(ctx.progRelName, kind,  var(varName()), "_", "_", "_"));
+			ret.add(literal(ctx.progRelName, var(kind),  var(varName()), "_", "_", "_"));
 		}
 
 
 		if (root != null) {
 			// This is an a <: `b :> pattern. In this case, we need to ensure that a == b.
-			ret.add(literal(ctx.progRelName, kind, root.treeCopyNoTransform(), "_", "_", "_"));
-			ret.add(EQ(new lang.ast.Variable(varName()),
-					   root.treeCopyNoTransform()));
+			ret.add(literal(ctx.progRelName, var(kind), root.treeCopyNoTransform(), "_", "_", "_"));
+			ret.add(EQ(var(varName()), root.treeCopyNoTransform()));
 		}
 
 		return ret;
@@ -418,15 +417,16 @@ aspect PatternToDatalog {
 										 java.util.List<lang.ast.CommonLiteral> lits) {
 		assert isMetaVar();
 		String relName = getRelation().substring(ASTNode.METAVARIABLE.length());
-		lang.ast.Term kind;
+		// the literal builder builds a variable if kind is prefixed by $, otherwise a string literal.
+		String kind;
 		if (hasFinalTypeInParent()) {
 			// the matched node can have only one type, so we can
 			// fix it in the literal, instead of providing an upper bound
 			// using the SUPERTYPE predicate
-			kind = str(relName);
+			kind = relName;
 		} else {
 			// constrain the type of node that can be matched
-			kind = var(varName("_kind"));
+			kind = "$" + varName("_kind");
 			lits.add(literal(ctx.prefix("SUPERTYPE"), kind, relName));
 		}
 		boolean anyChildLiterals = false;
@@ -452,7 +452,6 @@ aspect PatternToDatalog {
 			lits.add(literal(ctx.progRelName, kind,  var(varName()), "_", "_", "_"));
 		}
 
-		// TODO: this
 		if (root != null) {
 			// This is an a <: `b :> pattern. In this case, we need to ensure that a == b.
 			lits.add(literal(ctx.progRelName, kind,  var(varName()), "_", "_", "_"));

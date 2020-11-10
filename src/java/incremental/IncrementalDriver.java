@@ -364,14 +364,22 @@ public class IncrementalDriver {
 	   in the local pass.
 	 */
 	private void createGlobalView(Connection conn, String localOutput) throws SQLException {
+
+
 		Statement stmt = conn.createStatement();
 		stmt.executeUpdate("DROP VIEW IF EXISTS " + localOutput);
 
-		String unionView = "CREATE VIEW " + localOutput + " AS ";
-		unionView += String.join(" UNION ",
+		String unionView;
+		if (fileToHash.isEmpty()) {
+			// Create an empty view
+			unionView = "CREATE VIEW " + localOutput + " AS SELECT * FROM sqlite_master WHERE 1 = 0";
+		} else {
+			unionView = "CREATE VIEW " + localOutput + " AS ";
+			unionView += String.join(" UNION ",
 								 fileToHash.values().stream()
 								 .map(h -> "SELECT * FROM cu_" + h + "$" + localOutput)
 								 .collect(Collectors.toUnmodifiableList()));
+		}
 
 		logger().debug("Creating a global view, " + unionView);
 		stmt.executeUpdate(unionView);

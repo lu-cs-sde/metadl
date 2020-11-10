@@ -1,9 +1,11 @@
 package incremental;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.HashSet;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -38,11 +40,63 @@ public class ProgramSplit {
 	private Program globalProgram;
 	private Program updateProgram;
 	private Set<String> localOutputs = new TreeSet<>();
+	private Set<Clause> forcedGlobalClauses = new HashSet<>();
+	private Set<FormalPredicate> forcedGlobalPredicates = new HashSet<>();
 
 	public ProgramSplit(Program program) {
 		this.program = program;
+		splitPredicates();
 		split();
 		generateUpdateProgram();
+	}
+
+	/** Split the predicates that have a local and a global definition.
+		E.g. P(x, y) :- PARENT(x, y). # local definition
+		     P(x, y) :- PARENT(x, _), PARENT(_, y). # global definition
+		to:
+		     P_local(x, y) :- PARENT(x, y). # local definition
+			 P_global(x, y) :- PARENT(x, _), PARENT(_, y). # global definition
+			 P(x, y) :- P_local(x, y). # in global program
+			 P(x, y) :- P_global(x, y). # in global program
+	 */
+	private void splitPredicates() {
+		List<FormalPredicate> splitPreds = new ArrayList<>();
+		for (FormalPredicate p : program.getFormalPredicates()) {
+			if (p.hasLocalDef() && p.hasGlobalDef()) {
+				splitPreds.add(p);
+			}
+		}
+
+		for (FormalPredicate p : splitPreds) {
+			for (PredicateSymbol sym : p.predicates()) {
+				Literal l = sym.parentLiteral();
+				if (l.isDef()) {
+					Clause c = l.clause();
+					if (c.isLocal()) {
+						sym.setPRED_ID(sym.getPRED_ID() + "_local");
+					} else {
+						sym.setPRED_ID(sym.getPRED_ID() + "_global");
+					}
+				}
+			}
+
+			// now introduce a clause that gathers everything to the original predicate
+			String[] varNames = new String[p.type().arity()];
+			for (int i = 0; i < p.type().arity(); ++i) {
+				varNames[i] = "$v" + i;
+			}
+
+			Rule localRule = rule(literal(p.getPRED_ID(), (Object []) varNames), literal(p.getPRED_ID() + "_local", (Object []) varNames));
+			forcedGlobalClauses.add(localRule);
+			forcedGlobalPredicates.add(p);
+			Rule globalRule = rule(literal(p.getPRED_ID(), (Object []) varNames), literal(p.getPRED_ID() + "_global", (Object []) varNames));
+
+			program.addCommonClause(localRule);
+			program.addCommonClause(globalRule);
+		}
+
+		// recompute all the attributes after the program has been modified
+		program.flushTreeCache();
 	}
 
 	private static CommonLiteral copyLiteral(CommonLiteral l) {
@@ -156,7 +210,7 @@ public class ProgramSplit {
 			String format = "sqlite";
 
 			FormalPredicate p = program.formalPredicateMap().get(pred);
-			if (p.hasLocalDef()) {
+			if (p.hasLocalDef()  && !forcedGlobalPredicates.contains(p)) {
 				localProgram.addCommonClause(fact(literal(GlobalNames.OUTPUT_NAME, ref(pred), str(file), str(format))));
 				localOutputs.add(pred);
 			}
@@ -199,7 +253,7 @@ public class ProgramSplit {
 		}
 
 		Consumer<Clause> clauseSeparator = (Clause c) -> {
-			if (c.isLocal())
+			if (c.isLocal() && !forcedGlobalClauses.contains(c))
 				localProgram.addCommonClause(copyClause(c));
 			else
 				globalProgram.addCommonClause(copyClause(c));

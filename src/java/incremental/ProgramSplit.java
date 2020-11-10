@@ -253,12 +253,15 @@ public class ProgramSplit {
 
 		// Input
 		// The ANALYZED_SOURCES_RELATION predicate relation should be filled in by the caller
-		p.addCommonClause(fact(literal(GlobalNames.EDB_NAME, ref(ATTR_PROVENANCE), str("internal"), str("sqlite")),
-							   literal(GlobalNames.EDB_NAME, ref(SRC_LOC), str("internal"), str("sqlite"))));
+		p.addCommonClause(fact(literal(GlobalNames.EDB_NAME, ref(ATTR_PROVENANCE), str("internal"), str("sqlite"))));
+		p.addCommonClause(fact(literal(GlobalNames.EDB_NAME, ref(SRC_LOC), str("internal"), str("sqlite"))));
 
-		// Output
-		// p.addCommonClause(fact(literal(GlobalNames.OUTPUT_NAME, ref(AST_VISIT_RELATION)),
-		// 					   literal(GlobalNames.OUTPUT_NAME, ref(AST_REMOVE_RELATION))));
+		// Output (Enable for debug purposes)
+		if (false) {
+			p.addCommonClause(fact(literal(GlobalNames.OUTPUT_NAME, ref(AST_VISIT_RELATION), str("AST_VISIT"), str("csv"))));
+			p.addCommonClause(fact(literal(GlobalNames.OUTPUT_NAME, ref(ATTR_PROVENANCE), str("ATTR_PROV"), str("csv"))));
+			p.addCommonClause(fact(literal(GlobalNames.OUTPUT_NAME, ref(SRC_LOC), str("SRC_LOC"), str("csv"))));
+		}
 	}
 
 	private void generateUpdateProgram() {

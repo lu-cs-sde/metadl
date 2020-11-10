@@ -306,6 +306,7 @@ public class IncrementalDriver {
 			CmdLineOpts updateOpts = new CmdLineOpts();
 			updateOpts.setAction(CmdLineOpts.Action.EVAL_INTERNAL);
 			updateOpts.setSqlDbFile(progDbFile.getPath());
+			updateOpts.setOutputDir(".");
 
 			// evaluate the update program
 			update.eval(updateOpts);

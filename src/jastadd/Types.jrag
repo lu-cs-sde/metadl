@@ -422,6 +422,9 @@ aspect TypeInference {
 
 	coll PredicateType FormalPredicate.initialType() [initialTypeInternal()] with join root Program;
 
+	AnalyzeBlock contributes nta getExpandedClauses() to FormalPredicate.initialType();
+	Pattern contributes nta getLiteral() to FormalPredicate.initialType();
+
 	inh int Expr.indexInLiteral();
 	eq Literal.getTerms(int i).indexInLiteral() = i;
 	eq Constraint.getExpr(int i).indexInLiteral() = -1;

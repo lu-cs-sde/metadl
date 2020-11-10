@@ -1,13 +1,12 @@
 # 5 ErrorProne checks
 
 # Read the sources
-EDB('Srcs, "srcs.csv").
-Srcs("") :- NEQ(0, 0).
+EDB('Srcs, "srcs.csv", "csv").
+Srcs("", "") :- NEQ(0, 0).
 
 ####################################################################################################
 
 # TypeParamNotUsedInFormals
-GenericMethod(0, 0, 0, 0), GenericMethodVoid(0, 0, 0) :- NEQ(0, 0).
 
 java('Srcs) {
 	    GenericMethod(m, `t1, `t2, `pt) :- m <: <.., `t1, ..> `t2 `_(.. , `pt `p, ..) ; :>.
@@ -42,7 +41,7 @@ java('Srcs) {
 	    TypeUnusedInFormalsDetail(l, c, file) :- TypeUnusedInFormals(t), SRC(t, l, c, _, _, file), GT(l, 0).
 
 
-OUTPUT('TypeUnusedInFormalsDetail).
+OUTPUT('TypeUnusedInFormalsDetail, "TypeUnusedInFormalsDetail.csv", "csv").
 
 ####################################################################################################
 
@@ -107,7 +106,6 @@ OUTPUT('TypeUnusedInFormalsDetail).
 	    # Covariant return type
 	    Override(m, super) :- OverrideCandidate(m, super), NOT(DiffNumParams(m, super)).
 
-	    ClassEq(0, 0) :- NEQ(0, 0).
 	    ClassEq(c, `d) :- c <: class `_ { .. `d .. } :>, `d <: .. public .. boolean equals(`t `o) ;:>.
 	    ClassEq(c, `d) :- c <: class `_ <..> { .. `d .. } :>, `d <: .. public .. boolean equals(`t `o) ;:>.
 
@@ -132,9 +130,8 @@ OUTPUT('TypeUnusedInFormalsDetail).
 
 	    BadEqDetail(l, c, file) :- BadEq(t1, _), SRC(t1, l, c, _, _, file), GT(l, 0).
 	    # OUTPUT('BadEq).
-	    OUTPUT('BadEqDetail).
+	    OUTPUT('BadEqDetail, "BadEqDetail.csv", "csv").
 
-	    MethodIsAbstract(0) :- NEQ(0, 0).
 	    MethodIsAbstract(m) :- m <: .. abstract .. `t `m(..) ; :>.
 
 
@@ -187,7 +184,7 @@ OUTPUT('TypeUnusedInFormalsDetail).
 	    MissingOverrideDetail(l, c, file) :- MissingOverride(m), SRC(m, l, c, _, _, file), GT(l, 0).
 
 
-OUTPUT('MissingOverrideDetail).
+OUTPUT('MissingOverrideDetail, "MissingOverrideDetail.csv", "csv").
 
 
 ####################################################################################################
@@ -199,7 +196,7 @@ OUTPUT('MissingOverrideDetail).
 
 	    PrimitiveCtor(e) :- e <: new `c(`_) :>, DECL(`c, c), c <: class `name { .. } :>, ID(`name, t), TypeName(t).
 	    PrimitiveCtorDetailEP(l, c, file) :- PrimitiveCtor(e), SRC(e, l, c, _, _, file), GT(l, 0).
-	    OUTPUT('PrimitiveCtorDetailEP).
+	    OUTPUT('PrimitiveCtorDetailEP, "PrimitiveCtorDetailEP.csv", "csv").
 
 
 
@@ -207,7 +204,6 @@ OUTPUT('MissingOverrideDetail).
 
 
 # Operator precedence
-Conditional(0, 0, 0), Shift(0, 0, 0), Arithmetic(0, 0, 0), SafeAssoc(0, 0, 0) :- NEQ(0, 0).
 
 
 	    Conditional(e, `l, `r), Prec(e, "cand") :- e <: `l && `r :>.
@@ -249,9 +245,6 @@ Conditional(0, 0, 0), Shift(0, 0, 0), Arithmetic(0, 0, 0), SafeAssoc(0, 0, 0) :-
 	    ExtraParenDetail(l, c, file) :- ExtraParen(p, _), SRC(p, l, c, _, _, file), GT(l, 0).
 
 
-OUTPUT('ConfusingDetail).
-OUTPUT('ExtraParenDetail).
-
-
-OUTPUT('PROVENANCE).
+OUTPUT('ConfusingDetail, "ConfusingDetail.csv", "csv").
+OUTPUT('ExtraParenDetail, "ExtraParenDetail.csv", "csv").
 }

@@ -1,4 +1,4 @@
-Src("Names.java").
+Src("tests/evaluation/metadl-java/src/names/Names.java").
 
 java('Src) {
      Cat(n, c) :- AST(c, n, _, _, _).

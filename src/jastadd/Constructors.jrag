@@ -71,7 +71,9 @@ aspect Constructors {
 
 		public static lang.ast.Fact fact(lang.ast.CommonLiteral ...literals) {
 			lang.ast.List<lang.ast.CommonLiteral> headList = new lang.ast.List<>();
-			headList.add(literals[0]);
+			for (lang.ast.CommonLiteral l : literals) {
+				headList.add(l);
+			}
 			lang.ast.Fact f = new lang.ast.Fact(headList);
 			return f;
 		}

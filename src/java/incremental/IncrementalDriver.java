@@ -8,6 +8,7 @@ import java.security.MessageDigest;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.List;
@@ -17,6 +18,8 @@ import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
+import org.apache.commons.collections4.ListUtils;
 
 import eval.EvaluationContext;
 import eval.Relation2;
@@ -332,7 +335,6 @@ public class IncrementalDriver {
 		System.err.println(visitFiles);
 	}
 
-
 	/**
 	   Run the local program on all the files in the file database
 	 */
@@ -367,22 +369,43 @@ public class IncrementalDriver {
 
 
 		Statement stmt = conn.createStatement();
-		stmt.executeUpdate("DROP VIEW IF EXISTS " + localOutput);
 
-		String unionView;
 		if (fileToHash.isEmpty()) {
 			// Create an empty view
-			unionView = "CREATE VIEW " + localOutput + " AS SELECT * FROM sqlite_master WHERE 1 = 0";
+			stmt.executeUpdate("DROP VIEW IF EXISTS " + localOutput);
+			stmt.executeUpdate("CREATE VIEW " + localOutput + " AS SELECT * FROM sqlite_master WHERE 1 = 0");
 		} else {
-			unionView = "CREATE VIEW " + localOutput + " AS ";
-			unionView += String.join(" UNION ",
-								 fileToHash.values().stream()
-								 .map(h -> "SELECT * FROM cu_" + h + "$" + localOutput)
-								 .collect(Collectors.toUnmodifiableList()));
-		}
+			final int SQLITE_LIMIT_COMPOUND_SELECT = 500;
+			// SQLite supports union views of at most 500 tables
+			List<String> hashes = new ArrayList<>(fileToHash.values());
 
-		logger().debug("Creating a global view, " + unionView);
-		stmt.executeUpdate(unionView);
+			// .. so we have to create two layers of views if we want to gather between 500 and 25000 tables
+			List<List<String>> partitionedHashes = ListUtils.partition(hashes, SQLITE_LIMIT_COMPOUND_SELECT);
+			List<String> tmpViews = new ArrayList<>();
+			for (int i = 0; i < partitionedHashes.size(); ++i) {
+				List<String> part = partitionedHashes.get(i);
+				String tmpViewName = localOutput + "_tmp_" + i;
+				tmpViews.add(tmpViewName);
+
+				stmt.executeUpdate("DROP VIEW IF EXISTS " + tmpViewName);
+				String createTmpView = "CREATE VIEW " + tmpViewName + " AS ";
+				createTmpView += String.join(" UNION ",
+											 part.stream().map(h -> "SELECT * FROM cu_" + h + "$" + localOutput)
+											 .collect(Collectors.toUnmodifiableList()));
+				logger().debug("Creating a temporary view, " + createTmpView);
+				stmt.executeUpdate(createTmpView);
+			}
+
+			stmt.executeUpdate("DROP VIEW IF EXISTS " + localOutput);
+
+			String unionView = "CREATE VIEW " + localOutput + " AS ";
+			unionView += String.join(" UNION ",
+									 tmpViews.stream()
+									 .map(v -> "SELECT * FROM " + v)
+									 .collect(Collectors.toUnmodifiableList()));
+			logger().debug("Creating a global view, " + unionView);
+			stmt.executeUpdate(unionView);
+		}
 	}
 
 	/**

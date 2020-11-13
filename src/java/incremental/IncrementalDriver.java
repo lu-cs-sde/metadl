@@ -166,7 +166,7 @@ public class IncrementalDriver {
 		}
 
 		if (useSouffle) {
-		// generate the Souffle executables
+			// generate the Souffle executables
 			if (!localSouffleProg.exists()) {
 				generateSouffleProgram(progSplit.getLocalProgram(), localSouffleProg);
 			} else {
@@ -396,18 +396,25 @@ public class IncrementalDriver {
 		// parallelize this loop
 		for (String h : fileToHash.values()) {
 			logger().debug("Running the local program on " + h + ".");
-			CmdLineOpts internalOpts = new CmdLineOpts();
-			internalOpts.setAction(CmdLineOpts.Action.EVAL_INTERNAL);
-			internalOpts.setSqlDbFile(progDbFile.getPath());
-			internalOpts.setFactsDir(opts.getFactsDir());
-			internalOpts.setOutputDir(opts.getOutputDir());
-			// TODO: this prefix is hacky; use temporary views to the
-			// right relation instead
-			internalOpts.setRelationNamePrefix("cu_" + h + "$");
+			if (useSouffle) {
+				String cmd = localSouffleProg.getPath() + " -D " + opts.getOutputDir() + " -F " + opts.getFactsDir() +
+					" -d " + progDbFile + " -t cu_" + h + "$";
+				logger().debug("Souffle command: " + cmd);
+				FileUtil.run(cmd);
+			} else {
+				CmdLineOpts internalOpts = new CmdLineOpts();
+				internalOpts.setAction(CmdLineOpts.Action.EVAL_INTERNAL);
+				internalOpts.setSqlDbFile(progDbFile.getPath());
+				internalOpts.setFactsDir(opts.getFactsDir());
+				internalOpts.setOutputDir(opts.getOutputDir());
+				// TODO: this prefix is hacky; use temporary views to the
+				// right relation instead
+				internalOpts.setRelationNamePrefix("cu_" + h + "$");
 
-			Compiler.checkProgram(local, internalOpts);
-			local.eval(internalOpts);
-			local.clearRelations();
+				Compiler.checkProgram(local, internalOpts);
+				local.eval(internalOpts);
+				local.clearRelations();
+			}
 		}
 	}
 

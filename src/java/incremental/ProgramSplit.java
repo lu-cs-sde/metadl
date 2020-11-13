@@ -283,6 +283,9 @@ public class ProgramSplit {
 		localOutputs.add(ATTR_PROVENANCE);
 		localOutputs.add(SRC_LOC);
 
+		// read the analyzed sources
+		p.addCommonClause(fact(literal(GlobalNames.EDB_NAME, ref(ANALYZED_SOURCES_RELATION), str(INTERNAL_DB_NAME), str("sqlite"))));
+
 		// Type declarations
 		p.addCommonClause(implicitTypeDeclaration(ANALYZED_SOURCES_RELATION, new PredicateType(StringType.get(),
 																			   StringType.get())));

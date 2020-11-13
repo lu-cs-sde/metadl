@@ -342,6 +342,7 @@ public class IncrementalDriver {
 	 */
 	public void update(CmdLineOpts opts) throws IOException, SQLException {
 		RelationWrapper analyzedSrcs = computeAnalyzedSources(opts.getFactsDir());
+		Program update = progSplit.getUpdateProgram();
 		List<File> visitFiles;
 		List<File> deletedFiles;
 		if (opts.getAction() == CmdLineOpts.Action.INCREMENTAL_INIT) {
@@ -350,28 +351,44 @@ public class IncrementalDriver {
 			logger().debug("Initial incremental run with files " + visitFiles + ".");
 		} else {
 			assert opts.getAction() == CmdLineOpts.Action.INCREMENTAL_UPDATE;
+			RelationWrapper visitFilesRel;
+			RelationWrapper removeFilesRel;
 
-			Program update = progSplit.getUpdateProgram();
-			setRelation(update, ProgramSplit.ANALYZED_SOURCES_RELATION, analyzedSrcs);
+			if (useSouffle) {
+				SQLUtil.writeRelation(progDbFile.getPath(), ProgramSplit.ANALYZED_SOURCES_RELATION, analyzedSrcs);
 
-			CmdLineOpts updateOpts = new CmdLineOpts();
-			updateOpts.setAction(CmdLineOpts.Action.EVAL_INTERNAL);
-			updateOpts.setSqlDbFile(progDbFile.getPath());
-			updateOpts.setOutputDir(".");
+				// Run the update program
+				String cmd = updateSouffleProg + " -D " + opts.getOutputDir() + " -F " + opts.getFactsDir()
+					+ " -d " + progDbFile;
+				logger().debug("Souffle command: " + cmd);
+				FileUtil.run(cmd);
 
-			// evaluate the update program
-			update.eval(updateOpts);
+				// Now read back the results
+				visitFilesRel = SQLUtil.readRelation(progDbFile.getPath(), ProgramSplit.AST_VISIT_RELATION,
+													 update.formalPredicateMap().get(ProgramSplit.AST_VISIT_RELATION).type());
+				removeFilesRel = SQLUtil.readRelation(progDbFile.getPath(), ProgramSplit.AST_REMOVE_RELATION,
+													  update.formalPredicateMap().get(ProgramSplit.AST_REMOVE_RELATION).type());
+			} else {
+				setRelation(update, ProgramSplit.ANALYZED_SOURCES_RELATION, analyzedSrcs);
 
-			RelationWrapper visitFilesRel = getRelation(update, ProgramSplit.AST_VISIT_RELATION);
-			visitFiles = visitFilesRel.tuples().stream().map(t -> new File(t.getAsString(0))).collect(Collectors.toList());
+				CmdLineOpts updateOpts = new CmdLineOpts();
+				updateOpts.setAction(CmdLineOpts.Action.EVAL_INTERNAL);
+				updateOpts.setSqlDbFile(progDbFile.getPath());
+				updateOpts.setOutputDir(".");
 
-			RelationWrapper removeFilesRel = getRelation(update, ProgramSplit.AST_REMOVE_RELATION);
+				// evaluate the update program
+				update.eval(updateOpts);
+
+				visitFilesRel = getRelation(update, ProgramSplit.AST_VISIT_RELATION);
+				removeFilesRel = getRelation(update, ProgramSplit.AST_REMOVE_RELATION);
+			}
+
 			deletedFiles = removeFilesRel.tuples().stream().map(t -> new File(t.getAsString(0))).collect(Collectors.toList());
+			visitFiles = visitFilesRel.tuples().stream().map(t -> new File(t.getAsString(0))).collect(Collectors.toList());
 
 			logger().debug("Update incremental run with modified/added files " +
 						   visitFiles + ", removed files " + deletedFiles + ".");
 		}
-
 
 		for (AnalyzeBlock b : progSplit.getProgram().analyzeBlocks()) {
 			// populate the program representation relations for each analyze block

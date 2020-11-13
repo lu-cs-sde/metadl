@@ -4,6 +4,7 @@ import java.io.IOException;
 
 import eval.EvaluationContext;
 import eval.Relation2;
+import lang.relation.RelationWrapper;
 import eval.Tuple;
 import lang.ast.IntegerType;
 import lang.ast.PredicateRefType;
@@ -109,5 +110,17 @@ public class SQLUtil {
 		}
 
 		conn.close();
+	}
+
+	public static RelationWrapper readRelation(String path, String table, PredicateType t) throws SQLException {
+		Relation2 rel = new Relation2(t.arity());
+		EvaluationContext ctx = new EvaluationContext();
+		readRelation(ctx, t, rel, path, table);
+		RelationWrapper result = new RelationWrapper(ctx, rel, t);
+		return result;
+	}
+
+	public static void writeRelation(String path, String table, RelationWrapper rel) throws SQLException {
+		writeRelation(rel.getContext(), rel.type(), rel.getRelation(), path, table);
 	}
 }

@@ -205,9 +205,7 @@ public class ProgramSplit {
 		for (RelationWrapper.TupleWrapper t : OUTPUTs.tuples()) {
 			String pred = t.getAsString(0);
 			String file = t.getAsString(1);
-			// String format = t.getAsString(2);
-			// TODO: force the format to sqlite, the tests expect this
-			String format = "sqlite";
+			String format = t.getAsString(2);
 
 			FormalPredicate p = program.formalPredicateMap().get(pred);
 			if (p.hasLocalDef()  && !forcedGlobalPredicates.contains(p)) {
@@ -229,17 +227,17 @@ public class ProgramSplit {
 
 		for (FormalPredicate p : program.getFormalPredicates()) {
 			if (p.hasLocalDef() && p.hasGlobalUse()) {
-				localProgram.addCommonClause(fact(literal(GlobalNames.OUTPUT_NAME, ref(p.getPRED_ID()), str("ignored"), str("sqlite"))));
-				globalProgram.addCommonClause(fact(literal(GlobalNames.EDB_NAME, ref(p.getPRED_ID()), str("ignored"), str("sqlite"))));
+				localProgram.addCommonClause(fact(literal(GlobalNames.OUTPUT_NAME, ref(p.getPRED_ID()), str(INTERNAL_DB_NAME), str("sqlite"))));
+				globalProgram.addCommonClause(fact(literal(GlobalNames.EDB_NAME, ref(p.getPRED_ID()), str(INTERNAL_DB_NAME), str("sqlite"))));
 				localOutputs.add(p.getPRED_ID());
 			}
 
 			if (p.hasLocalUse() && p.getProgramRepresentationKind().isPresent()) {
-				localProgram.addCommonClause(fact(literal(GlobalNames.EDB_NAME, ref(p.getPRED_ID()), str("ignored"), str("sqlite"))));
+				localProgram.addCommonClause(fact(literal(GlobalNames.EDB_NAME, ref(p.getPRED_ID()), str(INTERNAL_DB_NAME), str("sqlite"))));
 			}
 
 			if (p.hasGlobalUse() && p.getProgramRepresentationKind().isPresent()) {
-				globalProgram.addCommonClause(fact(literal(GlobalNames.EDB_NAME, ref(p.getPRED_ID()), str("ignored"), str("sqlite"))));
+				globalProgram.addCommonClause(fact(literal(GlobalNames.EDB_NAME, ref(p.getPRED_ID()), str(INTERNAL_DB_NAME), str("sqlite"))));
 				localOutputs.add(p.getPRED_ID());
 			}
 
@@ -276,6 +274,7 @@ public class ProgramSplit {
 	public static String AST_VISIT_RELATION = "AST_VISIT";
 	public static String AST_REMOVE_RELATION = "AST_REMOVE";
 	public static String ANALYZED_SOURCES_RELATION = "ANALYZED_SOURCES";
+	public static String INTERNAL_DB_NAME = "__internal__";
 
 	private void generateUpdateClauses(Program p, AnalyzeBlock b) {
 		String ATTR_PROVENANCE = b.getContext().provenanceRelName;
@@ -307,8 +306,12 @@ public class ProgramSplit {
 
 		// Input
 		// The ANALYZED_SOURCES_RELATION predicate relation should be filled in by the caller
-		p.addCommonClause(fact(literal(GlobalNames.EDB_NAME, ref(ATTR_PROVENANCE), str("internal"), str("sqlite"))));
-		p.addCommonClause(fact(literal(GlobalNames.EDB_NAME, ref(SRC_LOC), str("internal"), str("sqlite"))));
+		p.addCommonClause(fact(literal(GlobalNames.EDB_NAME, ref(ATTR_PROVENANCE), str(INTERNAL_DB_NAME), str("sqlite"))));
+		p.addCommonClause(fact(literal(GlobalNames.EDB_NAME, ref(SRC_LOC), str(INTERNAL_DB_NAME), str("sqlite"))));
+
+		// Output
+		p.addCommonClause(fact(literal(GlobalNames.OUTPUT_NAME, ref(AST_VISIT_RELATION), str(INTERNAL_DB_NAME), str("sqlite"))));
+		p.addCommonClause(fact(literal(GlobalNames.OUTPUT_NAME, ref(AST_REMOVE_RELATION), str(INTERNAL_DB_NAME), str("sqlite"))));
 
 		// Output (Enable for debug purposes)
 		if (false) {

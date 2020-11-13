@@ -9,6 +9,7 @@ import org.apache.commons.lang3.mutable.MutableInt;
 import lang.CmdLineOpts;
 import java.util.concurrent.Executors;
 import java.sql.SQLException;
+import java.nio.file.Paths;
 
 aspect Eval {
 	public void Program.populateProgramRepresentation(FormalPredicate srcs,
@@ -66,10 +67,10 @@ aspect Eval {
 
 			if (format.equals("sqlite")) {
 				SQLUtil.readRelation(ctx, dstPred.type(), dstPred.relation2(),
-									 opts.getSqlDbFile() != null ? opts.getSqlDbFile() : file,
+									 file.equals("__internal__") ? opts.getSqlDbFile() : Paths.get(opts.getFactsDir(), file).toString(),
 									 opts.getRelationNamePrefix() + pred);
 			} else if (format.equals("csv")) {
-				CSVUtil.readRelation(ctx, dstPred.type(), dstPred.relation2(), opts.getFactsDir() + "/" + file);
+				CSVUtil.readRelation(ctx, dstPred.type(), dstPred.relation2(), Paths.get(opts.getFactsDir(), file).toString());
 			} else {
 				throw new RuntimeException("Unknown format for EDB, " + format + ".");
 			}
@@ -125,10 +126,10 @@ aspect Eval {
 			FormalPredicate srcPred = formalPredicateMap().get(pred);
 			if (format.equals("sqlite")) {
 				SQLUtil.writeRelation(ctx, srcPred.type(), srcPred.relation2(),
-									  opts.getSqlDbFile() != null ? opts.getSqlDbFile() : file,
+									  file.equals("__internal__") ? opts.getSqlDbFile() : Paths.get(opts.getOutputDir(), file).toString(),
 									  opts.getRelationNamePrefix() + srcPred.getPRED_ID());
 			} else if (format.equals("csv")) {
-				CSVUtil.writeRelation(ctx, srcPred.type(), srcPred.relation2(), opts.getOutputDir() + "/" + srcPred.getPRED_ID() + ".csv");
+				CSVUtil.writeRelation(ctx, srcPred.type(), srcPred.relation2(), Paths.get(opts.getOutputDir(), file).toString());
 			} else {
 				throw new RuntimeException("Unknown format for OUTPUT, " + format + ".");
 			}

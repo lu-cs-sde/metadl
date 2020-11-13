@@ -1,9 +1,11 @@
 package incremental;
 
 import java.sql.Statement;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.io.InputStreamReader;
 import java.security.MessageDigest;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -31,6 +33,7 @@ import lang.ast.Program;
 import lang.ast.ProgramRepresentation;
 import lang.ast.StandardPrettyPrinter;
 import lang.io.CSVUtil;
+import lang.io.FileUtil;
 import lang.io.SQLUtil;
 import lang.Compiler;
 import static lang.io.SimpleLogger.*;
@@ -107,14 +110,19 @@ public class IncrementalDriver {
 	private File common;
 	private File prog;
 	private File srcs;
-	private FileIdDatabase fileIdDb;
+
 	private File fileIdDbFile;
 	private File pathHashFile;
 	private File progDbFile;
+	private File localSouffleProg;
+	private File globalSouffleProg;
+	private File updateSouffleProg;
 
 	private Map<String, String> fileToHash;
 
 	private ProgramSplit progSplit;
+
+	private boolean useSouffle = true;
 
 	public IncrementalDriver(File root, ProgramSplit progSplit) {
 		this.progSplit = progSplit;
@@ -128,7 +136,12 @@ public class IncrementalDriver {
 		this.pathHashFile = new File(common, "filehash.csv");
 		// program database
 		this.progDbFile = new File(srcs, "program.db");
+		this.localSouffleProg = new File(prog, "local");
+		this.globalSouffleProg = new File(prog, "global");
+		this.updateSouffleProg = new File(prog, "update");
 	}
+
+	private FileIdDatabase fileIdDb;
 
 	public void init() throws IOException {
 		// ensure that all directories exist
@@ -136,6 +149,7 @@ public class IncrementalDriver {
 		prog.mkdir();
 		srcs.mkdir();
 
+		// load the file id database
 		if (fileIdDbFile.exists()) {
 			logger().info("Loading the file ID database from " + fileIdDbFile);
 			fileIdDb = FileIdDatabase.loadFromFile(fileIdDbFile.getPath());
@@ -144,10 +158,32 @@ public class IncrementalDriver {
 			fileIdDb = new FileIdDatabase();
 		}
 
+		// load the file to hash mapping
 		fileToHash = new TreeMap<String, String>();
 		if (pathHashFile.exists()) {
 			logger().info("Loading path hashes from " + pathHashFile);
 			CSVUtil.readMap(fileToHash, Function.identity(), Function.identity(), pathHashFile.getPath());
+		}
+
+		if (useSouffle) {
+		// generate the Souffle executables
+			if (!localSouffleProg.exists()) {
+				generateSouffleProgram(progSplit.getLocalProgram(), localSouffleProg);
+			} else {
+				logger().info("Using existing Souffle local program from " + localSouffleProg);
+			}
+
+			if (!globalSouffleProg.exists()) {
+				generateSouffleProgram(progSplit.getGlobalProgram(), globalSouffleProg);
+			} else {
+				logger().info("Using existing Souffle global program from " + globalSouffleProg);
+			}
+
+			if (!updateSouffleProg.exists()) {
+				generateSouffleProgram(progSplit.getUpdateProgram(), updateSouffleProg);
+			} else {
+				logger().info("Using existing Souffle update program from " + updateSouffleProg);
+			}
 		}
 	}
 
@@ -156,6 +192,18 @@ public class IncrementalDriver {
 		fileIdDb.storeToFile(fileIdDbFile.getPath());
 		// store the file name to source dir map
 		CSVUtil.writeMap(fileToHash, pathHashFile.getPath());
+	}
+
+	private void compileSouffleProgram(File src, File exec) throws IOException {
+		String cmd = "souffle -w " + src.getPath() + " -o " + exec.getPath();
+		logger().debug("Compiling Souffle program with: " + cmd);
+		FileUtil.run(cmd);
+	}
+
+	private void generateSouffleProgram(Program p, File path) throws IOException {
+		File tmp = File.createTempFile("souffle", ".dl");
+		Compiler.prettyPrintSouffle(p, tmp.getPath());
+		compileSouffleProgram(tmp, path);
 	}
 
 	private org.extendj.ast.Program createProgram(org.extendj.ast.FileIdStorage fs) {
@@ -338,7 +386,7 @@ public class IncrementalDriver {
 	/**
 	   Run the local program on all the files in the file database
 	 */
-	public void runLocalProgram() throws IOException, SQLException {
+	public void runLocalProgram(CmdLineOpts opts) throws IOException, SQLException {
 		Program local = progSplit.getLocalProgram();
 
 		StandardPrettyPrinter<Program> lpp =
@@ -348,15 +396,17 @@ public class IncrementalDriver {
 		// parallelize this loop
 		for (String h : fileToHash.values()) {
 			logger().debug("Running the local program on " + h + ".");
-			CmdLineOpts opts = new CmdLineOpts();
-			opts.setAction(CmdLineOpts.Action.EVAL_INTERNAL);
-			opts.setSqlDbFile(progDbFile.getPath());
+			CmdLineOpts internalOpts = new CmdLineOpts();
+			internalOpts.setAction(CmdLineOpts.Action.EVAL_INTERNAL);
+			internalOpts.setSqlDbFile(progDbFile.getPath());
+			internalOpts.setFactsDir(opts.getFactsDir());
+			internalOpts.setOutputDir(opts.getOutputDir());
 			// TODO: this prefix is hacky; use temporary views to the
 			// right relation instead
-			opts.setRelationNamePrefix("cu_" + h + "$");
+			internalOpts.setRelationNamePrefix("cu_" + h + "$");
 
-			Compiler.checkProgram(local, opts);
-			local.eval(opts);
+			Compiler.checkProgram(local, internalOpts);
+			local.eval(internalOpts);
 			local.clearRelations();
 		}
 	}
@@ -422,7 +472,7 @@ public class IncrementalDriver {
 		conn.close();
 	}
 
-	public void runGlobalProgram() throws SQLException, IOException {
+	public void runGlobalProgram(CmdLineOpts opts) throws SQLException, IOException {
 		Program global = progSplit.getGlobalProgram();
 
 		StandardPrettyPrinter<Program> pp =
@@ -431,10 +481,20 @@ public class IncrementalDriver {
 
 		createGlobalViews(progSplit.getLocalOutputs());
 		logger().debug("Running the global program");
-		CmdLineOpts opts = new CmdLineOpts();
-		opts.setAction(CmdLineOpts.Action.EVAL_INTERNAL);
-		opts.setSqlDbFile(progDbFile.getPath());
-		Compiler.checkProgram(global, opts);
-		global.eval(opts);
+
+		if (useSouffle) {
+			String cmd = globalSouffleProg.getPath() + " -D " + opts.getOutputDir()  + " -F " + opts.getFactsDir() +
+				" -d " + progDbFile;
+			logger().debug("Souffle command: " + cmd);
+			FileUtil.run(cmd);
+		} else {
+			CmdLineOpts internalOpts = new CmdLineOpts();
+			internalOpts.setAction(CmdLineOpts.Action.EVAL_INTERNAL);
+			internalOpts.setSqlDbFile(progDbFile.getPath());
+			internalOpts.setOutputDir(opts.getOutputDir());
+			internalOpts.setFactsDir(opts.getFactsDir());
+			Compiler.checkProgram(global, internalOpts);
+			global.eval(internalOpts);
+		}
 	}
 }

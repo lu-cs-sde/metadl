@@ -316,8 +316,8 @@ aspect SoufflePrinting {
 		// 	return true;
 		// if (n.endsWith("_PARENT"))
 		// 	return true;
-		if (n.endsWith("_REWRITE_MAP"))
-			return true;
+		// if (n.endsWith("_REWRITE_MAP"))
+		// 	return true;
 		// if (n.endsWith("_DECL"))
 		// 	return true;
 		// if (n.endsWith("_TYPE"))
@@ -350,6 +350,19 @@ aspect SoufflePrinting {
 			pr.out.print(" inline");
     }
 
+	private static void Program.printIODescription(PrettyPrinter pr, String file, String format) {
+		pr.out.print("(IO=");
+		if (format.equals("csv")) {
+			pr.out.print("file");
+			pr.out.print(", filename=\"" + file + "\"");
+			pr.out.print(", delimiter=\"" + Compiler.getCSVSeparatorEscaped() + "\"");
+		} else {
+			pr.out.print(format);
+			pr.out.print(", dbname=\"" + file + "\"");
+		}
+		pr.out.println(")");
+	}
+
 	private void Program.soufflePrintEDBDecl(PrettyPrinter pr) {
 		FormalPredicate fpEDB = formalPredicateMap().get(GlobalNames.EDB_NAME);
 		if (fpEDB == null) {
@@ -365,14 +378,12 @@ aspect SoufflePrinting {
 		for (RelationWrapper.TupleWrapper t : edbTuples.tuples()) {
 			String pred = t.getAsString(0);
 			String file = t.getAsString(1);
+			String format = t.getAsString(2);
 
 			pr.out.print(".input ");
 			pr.out.print(pred);
-			pr.out.print("(filename=");
-			pr.out.print("\"" + file + "\"");
-			pr.out.print(", delimiter=\"");
-			pr.out.print(Compiler.getCSVSeparatorEscaped());
-			pr.out.print("\")\n");
+			printIODescription(pr, file, format);
+			pr.out.println();
 		}
 	}
 
@@ -388,9 +399,11 @@ aspect SoufflePrinting {
 
 		for (RelationWrapper.TupleWrapper t : outputTuples.tuples()) {
 			String pred = t.getAsString(0);
-			pr.out.print(".output " + pred + "(delimiter=\"");
-			pr.out.print(Compiler.getCSVSeparatorEscaped());
-			pr.out.print("\")\n");
+			String file = t.getAsString(1);
+			String format = t.getAsString(2);
+			pr.out.print(".output " + pred);
+			printIODescription(pr, file, format);
+			pr.out.println();
 		}
 	}
 

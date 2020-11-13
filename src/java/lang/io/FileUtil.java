@@ -1,8 +1,10 @@
 package lang.io;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.StringReader;
 
 import java.nio.file.Path;
@@ -133,5 +135,30 @@ public class FileUtil {
 		// Generate the program relation
 		lang.java.obj.DatalogProjection2 proj2 = new lang.java.obj.DatalogProjection2(p, tupleSink, p.fileIdStorage);
 		proj2.generate();
+	}
+
+	public static void run(String cmd) throws IOException {
+		Process p = Runtime.getRuntime().exec(cmd);
+
+		BufferedReader stderr = new BufferedReader(new InputStreamReader(p.getErrorStream()));
+		BufferedReader stdout = new BufferedReader(new InputStreamReader(p.getInputStream()));
+
+		while (p.isAlive()) {
+			while (stderr.ready()) {
+				SimpleLogger.logger().error(":SOUFFLE-ERROR: " + stderr.readLine());
+			}
+			while (stdout.ready()) {
+				SimpleLogger.logger().debug(":SOUFLE-OUTPUT: " + stdout.readLine());
+			}
+		}
+
+		try {
+			p.waitFor();
+		} catch (InterruptedException e) {
+			throw new RuntimeException(e);
+		}
+
+		stderr.close();
+		stdout.close();
 	}
 }

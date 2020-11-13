@@ -98,28 +98,9 @@ public class Compiler {
 		SimpleLogger.logger().log("Run souffle with: " + cmd, SimpleLogger.LogLevel.Level.DEBUG);
 
 		StopWatch souffleRunTimer = StopWatch.createStarted();
-		Process p = Runtime.getRuntime().exec(cmd);
-
-		BufferedReader brerr = new BufferedReader(new InputStreamReader(p.getErrorStream()));
-		BufferedReader br = new BufferedReader(new InputStreamReader(p.getInputStream()));
-
-		while (p.isAlive()) {
-			while (brerr.ready())
-				SimpleLogger.logger().log(":SOUFFLE-ERROR " + brerr.readLine(), SimpleLogger.LogLevel.Level.ERROR);
-			while (br.ready())
-				SimpleLogger.logger().log(":SOUFFLE-OUTPUT " + br.readLine(), SimpleLogger.LogLevel.Level.DEBUG);
-		}
-
-		try {
-			p.waitFor();
-		} catch (InterruptedException e) {
-			throw new RuntimeException(e);
-		}
+		FileUtil.run(cmd);
 		souffleRunTimer.stop();
 		SimpleLogger.logger().time("Run Souffle program: " + souffleRunTimer.getTime() + "ms");
-
-		br.close();
-		brerr.close();
 	}
 
 	public static void generateSouffleSWIGProgram(Program program, CmdLineOpts opts) throws IOException {
@@ -132,28 +113,9 @@ public class Compiler {
 		SimpleLogger.logger().log("Run souffle with: " + cmd, SimpleLogger.LogLevel.Level.DEBUG);
 
 		StopWatch souffleRunTimer = StopWatch.createStarted();
-		Process p = Runtime.getRuntime().exec(cmd);
-
-		BufferedReader brerr = new BufferedReader(new InputStreamReader(p.getErrorStream()));
-		BufferedReader br = new BufferedReader(new InputStreamReader(p.getInputStream()));
-
-		while (p.isAlive()) {
-			while (brerr.ready())
-				SimpleLogger.logger().log(":SOUFFLE-ERROR " + brerr.readLine(), SimpleLogger.LogLevel.Level.ERROR);
-			while (br.ready())
-				SimpleLogger.logger().log(":SOUFFLE-OUTPUT " + br.readLine(), SimpleLogger.LogLevel.Level.DEBUG);
-		}
-
-		try {
-			p.waitFor();
-		} catch (InterruptedException e) {
-			throw new RuntimeException(e);
-		}
+		FileUtil.run(cmd);
 		souffleRunTimer.stop();
 		SimpleLogger.logger().time("Run Souffle program: " + souffleRunTimer.getTime() + "ms");
-
-		br.close();
-		brerr.close();
 	}
 
 	public static void generateIncrementalProgram(Program prog, CmdLineOpts opts) throws IOException, SQLException {
@@ -174,8 +136,8 @@ public class Compiler {
 
 		incDriver.update(opts);
 
-		incDriver.runLocalProgram();
-		incDriver.runGlobalProgram();
+		incDriver.runLocalProgram(opts);
+		incDriver.runGlobalProgram(opts);
 
 		incDriver.shutdown();
 	}

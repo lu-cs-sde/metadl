@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.util.Arrays;
@@ -80,6 +81,7 @@ public class IncrementalTest {
 		CmdLineOpts opts = new CmdLineOpts();
 		opts.setAction(CmdLineOpts.Action.INCREMENTAL_INIT);
 		opts.setOutputDir(output.getPath());
+		opts.setFactsDir(".");
 		opts.setInputFile(src);
 
 		// Run the split program
@@ -91,7 +93,8 @@ public class IncrementalTest {
 
 			Relation2 rel = new Relation2(pred.type().arity());
 			EvaluationContext ctx = new EvaluationContext();
-			SQLUtil.readRelation(ctx, pred.type(), rel, Paths.get(output.getPath(), "srcs", "program.db").toString(), predName);
+			CSVUtil.readRelation(ctx, pred.type(), rel, Paths.get(output.getPath(), predName + ".csv").toString());
+			// SQLUtil.readRelation(ctx, pred.type(), rel, Paths.get(output.getPath(), "srcs", "program.db").toString(), predName);
 			RelationWrapper relW = new RelationWrapper(ctx, rel, pred.type());
 
 			Relation2 expectedRel = new Relation2(pred.type().arity());

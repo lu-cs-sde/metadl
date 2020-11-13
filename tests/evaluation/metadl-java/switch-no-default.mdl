@@ -15,6 +15,7 @@ java('P) {
 	    SwitchOnAllEnumMembers(s) :- CaseOnEnum(s, e, _), NOT(SwitchWithoutEnumMember(s, e)).
 
 	    SwitchWithoutDefault(s) :- Switch(s), NOT(SwitchWithDefault(s)), NOT(SwitchOnAllEnumMembers(s)).
+	    SwitchWithoutDefaultDetail(l, c, f) :- SwitchWithoutDefault(s), SRC(s, l, c, _, _, f).
 ##### Test
 	    ParentT(n, c) :- PARENT(n, c).
 	    ParentT(n, c) :- ParentT(n, t), PARENT(t, c).
@@ -42,3 +43,4 @@ java('P) {
 
 OUTPUT('MismatchDetails, "MismatchDetails.csv", "csv").
 OUTPUT('TestResult, "TestResult.csv", "csv").
+OUTPUT('SwitchWithoutDefaultDetail, "SwitchWithoutDefaultDetail.csv", "csv").

@@ -22,6 +22,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.ListUtils;
+import org.apache.commons.lang3.time.StopWatch;
 
 import eval.EvaluationContext;
 import eval.Relation2;
@@ -136,6 +137,7 @@ public class IncrementalDriver {
 		this.pathHashFile = new File(common, "filehash.csv");
 		// program database
 		this.progDbFile = new File(srcs, "program.db");
+		// souffle programs
 		this.localSouffleProg = new File(prog, "local");
 		this.globalSouffleProg = new File(prog, "global");
 		this.updateSouffleProg = new File(prog, "update");
@@ -164,6 +166,10 @@ public class IncrementalDriver {
 			logger().info("Loading path hashes from " + pathHashFile);
 			CSVUtil.readMap(fileToHash, Function.identity(), Function.identity(), pathHashFile.getPath());
 		}
+
+		dumpProgram(progSplit.getLocalProgram(), new File(prog, "local.mdl"));
+		dumpProgram(progSplit.getGlobalProgram(), new File(prog, "global.mdl"));
+		dumpProgram(progSplit.getUpdateProgram(),  new File(prog, "update.mdl"));
 
 		if (useSouffle) {
 			// generate the Souffle executables
@@ -204,6 +210,12 @@ public class IncrementalDriver {
 		File tmp = File.createTempFile("souffle", ".dl");
 		Compiler.prettyPrintSouffle(p, tmp.getPath());
 		compileSouffleProgram(tmp, path);
+	}
+
+	private void dumpProgram(Program p, File path) throws IOException {
+		StandardPrettyPrinter<Program> lpp =
+			new StandardPrettyPrinter<>(new PrintStream(path));
+		lpp.prettyPrint(p);
 	}
 
 	private org.extendj.ast.Program createProgram(org.extendj.ast.FileIdStorage fs) {
@@ -260,6 +272,7 @@ public class IncrementalDriver {
 	   to predicates with a given prefix
 	 */
 	private void generate(List<File> sourceFiles, String relPrefix) throws IOException, SQLException {
+		StopWatch timer = StopWatch.createStarted();
 		for (File f : sourceFiles) {
 			logger().debug("Extracting AST facts from source " + f.getPath() + ".");
 			org.extendj.ast.Program p = createProgram(fileIdDb);
@@ -277,6 +290,8 @@ public class IncrementalDriver {
 
 			sink.writeToDB(progDbFile);
 		}
+		timer.stop();
+		logger().time("Fact extraction from " + sourceFiles.size() + " files: " + timer.getTime() + " ms");
 	}
 
 	private void dropTable(Connection conn, String name) throws SQLException {
@@ -396,43 +411,46 @@ public class IncrementalDriver {
 			delete(deletedFiles, b.getContext().scopePrefix);
 		}
 
+		runLocalProgram(visitFiles, opts);
+	}
 
-		System.err.println(visitFiles);
+	private void runLocalProgram(List<File> visitFiles, CmdLineOpts opts) throws IOException, SQLException {
+		StopWatch timer = StopWatch.createStarted();
+		for (File file : visitFiles) {
+			runLocalProgram(opts, file);
+		}
+		timer.stop();
+		logger().time("Running the local program on " + visitFiles.size() + " files:" + timer.getTime() + " ms");
 	}
 
 	/**
 	   Run the local program on all the files in the file database
 	 */
-	public void runLocalProgram(CmdLineOpts opts) throws IOException, SQLException {
-		Program local = progSplit.getLocalProgram();
+	private void runLocalProgram(CmdLineOpts opts, File file) throws IOException, SQLException {
+		String h = fileToHash.get(file.getPath());
 
-		StandardPrettyPrinter<Program> lpp =
-			new StandardPrettyPrinter<>(new PrintStream(new File(prog, "local.mdl")));
-		lpp.prettyPrint(local);
+		logger().debug("Running the local program on " + h + ".");
+		if (useSouffle) {
+			String cmd = localSouffleProg.getPath() + " -D " + opts.getOutputDir() + " -F " + opts.getFactsDir() +
+				" -d " + progDbFile + " -t cu_" + h + "$";
+			logger().debug("Souffle command: " + cmd);
+			FileUtil.run(cmd);
+		} else {
+			Program local = progSplit.getLocalProgram();
+			CmdLineOpts internalOpts = new CmdLineOpts();
+			internalOpts.setAction(CmdLineOpts.Action.EVAL_INTERNAL);
+			internalOpts.setSqlDbFile(progDbFile.getPath());
+			internalOpts.setFactsDir(opts.getFactsDir());
+			internalOpts.setOutputDir(opts.getOutputDir());
+			// TODO: this prefix is hacky; use temporary views to the
+			// right relation instead
+			internalOpts.setRelationNamePrefix("cu_" + h + "$");
 
-		// parallelize this loop
-		for (String h : fileToHash.values()) {
-			logger().debug("Running the local program on " + h + ".");
-			if (useSouffle) {
-				String cmd = localSouffleProg.getPath() + " -D " + opts.getOutputDir() + " -F " + opts.getFactsDir() +
-					" -d " + progDbFile + " -t cu_" + h + "$";
-				logger().debug("Souffle command: " + cmd);
-				FileUtil.run(cmd);
-			} else {
-				CmdLineOpts internalOpts = new CmdLineOpts();
-				internalOpts.setAction(CmdLineOpts.Action.EVAL_INTERNAL);
-				internalOpts.setSqlDbFile(progDbFile.getPath());
-				internalOpts.setFactsDir(opts.getFactsDir());
-				internalOpts.setOutputDir(opts.getOutputDir());
-				// TODO: this prefix is hacky; use temporary views to the
-				// right relation instead
-				internalOpts.setRelationNamePrefix("cu_" + h + "$");
-
-				Compiler.checkProgram(local, internalOpts);
-				local.eval(internalOpts);
-				local.clearRelations();
-			}
+			Compiler.checkProgram(local, internalOpts);
+			local.eval(internalOpts);
+			local.clearRelations();
 		}
+
 	}
 
 	/**
@@ -498,10 +516,6 @@ public class IncrementalDriver {
 
 	public void runGlobalProgram(CmdLineOpts opts) throws SQLException, IOException {
 		Program global = progSplit.getGlobalProgram();
-
-		StandardPrettyPrinter<Program> pp =
-			new StandardPrettyPrinter<>(new PrintStream(new File(prog, "global.mdl")));
-		pp.prettyPrint(global);
 
 		createGlobalViews(progSplit.getLocalOutputs());
 		logger().debug("Running the global program");

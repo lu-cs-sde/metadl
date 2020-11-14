@@ -136,7 +136,6 @@ public class Compiler {
 
 		incDriver.update(opts);
 
-		incDriver.runLocalProgram(opts);
 		incDriver.runGlobalProgram(opts);
 
 		incDriver.shutdown();

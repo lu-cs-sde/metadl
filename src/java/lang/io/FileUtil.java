@@ -4,7 +4,9 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.io.StringReader;
 
 import java.nio.file.Path;
@@ -23,6 +25,9 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
 import lang.CmdLineOpts;
@@ -137,28 +142,44 @@ public class FileUtil {
 		proj2.generate();
 	}
 
-	public static void run(String cmd) throws IOException {
-		Process p = Runtime.getRuntime().exec(cmd);
-
-		BufferedReader stderr = new BufferedReader(new InputStreamReader(p.getErrorStream()));
-		BufferedReader stdout = new BufferedReader(new InputStreamReader(p.getInputStream()));
-
-		while (p.isAlive()) {
-			while (stderr.ready()) {
-				SimpleLogger.logger().error(":SOUFFLE-ERROR: " + stderr.readLine());
-			}
-			while (stdout.ready()) {
-				SimpleLogger.logger().debug(":SOUFLE-OUTPUT: " + stdout.readLine());
-			}
+	static class OutputConsumer implements Runnable {
+		InputStream src;
+		public OutputConsumer(InputStream src) {
+			this.src = src;
 		}
 
+		@Override
+		public void run() {
+			// TODO Auto-generated method stub
+			String line;
+
+			BufferedReader reader = new BufferedReader(new InputStreamReader(src));
+			// SimpleLogger logger = SimpleLogger.logger();
+			try {
+				while ((line = reader.readLine()) != null) {
+					System.err.println(line);
+					// synchronized (logger) {
+					// 	logger.error(line);
+					// }
+				}
+			} catch (IOException e) {
+				throw new RuntimeException(e);
+			}
+		}
+	}
+
+	public static int run(String cmd) throws IOException {
+		Process p = Runtime.getRuntime().exec(cmd);
+		// consume stderr and stdout
+		Thread stdoutReader = new Thread(new OutputConsumer(p.getInputStream()));
+		Thread stderrReader = new Thread(new OutputConsumer(p.getErrorStream()));
+		stdoutReader.setDaemon(true);
+		stderrReader.setDaemon(true);
 		try {
-			p.waitFor();
+			int exitCode = p.waitFor();
+			return exitCode;
 		} catch (InterruptedException e) {
 			throw new RuntimeException(e);
 		}
-
-		stderr.close();
-		stdout.close();
 	}
 }

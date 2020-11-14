@@ -19,7 +19,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 
 public class SQLUtil {
-	private static String tableType(PredicateType t) {
+	private static String tableType(PredicateType t, Integer tag) {
 		if (t.arity() == 0)
 			throw new RuntimeException("Unclear how to create tables of 0 arity");
 
@@ -27,19 +27,24 @@ public class SQLUtil {
 		for (int i = 0; i < t.arity(); i++) {
 			if (i != 0)
 				ret += ", ";
-			ret += "c" + i + " ";
+			ret += "'" + i + "' ";
 			if (t.get(i).storageType() == IntegerType.get()) {
 				ret += "INTEGER";
 			} else {
 				ret += "TEXT";
 			}
 		}
+
+		if (tag != null) {
+			ret += ", _tag INTEGER";
+		}
+
 		ret += ")";
 
 		return ret;
 	}
 
-	private static String tuple(int arity) {
+	private static String tuple(int arity, Integer tag) {
 		if (arity == 0)
 			throw new RuntimeException("Unclear how to create tables of 0 arity");
 
@@ -49,21 +54,28 @@ public class SQLUtil {
 				ret += ", ";
 			ret += "?";
 		}
+
+		if (tag != null) {
+			ret += ", " + tag;
+		}
+
 		ret += ")";
 
 		return ret;
 	}
 
-	public static void writeRelation(EvaluationContext ctx, PredicateType t, Relation2 rel, String path, String table) throws SQLException {
+	public static void writeRelation(EvaluationContext ctx, PredicateType t, Relation2 rel, String path, String table, Integer tag) throws SQLException {
 		Connection conn = DriverManager.getConnection("jdbc:sqlite:" + path);
 		Statement tbl = conn.createStatement();
 
 		conn.setAutoCommit(false);
 
-		tbl.executeUpdate("DROP TABLE IF EXISTS " + table);
-		tbl.executeUpdate(String.format("CREATE TABLE %s %s", table, tableType(t)));
+		tbl.executeUpdate(String.format("CREATE TABLE IF NOT EXISTS %s %s", table, tableType(t, tag)));
+		if (tag != null) {
+			tbl.executeUpdate(String.format("CREATE INDEX IF NOT EXISTS '%s_index' ON '%s'(_tag)", table, table));
+		}
 
-		PreparedStatement ps = conn.prepareStatement(String.format("INSERT INTO %s VALUES %s", table, tuple(t.arity())));
+		PreparedStatement ps = conn.prepareStatement(String.format("INSERT INTO %s VALUES %s", table, tuple(t.arity(), tag)));
 
 		for (Tuple tpl : rel.tuples()) {
 			for (int i = 0; i < t.arity(); ++i) {
@@ -85,11 +97,15 @@ public class SQLUtil {
 		conn.close();
 	}
 
-	public static void readRelation(EvaluationContext ctx, PredicateType t, Relation2 rel, String path, String table) throws SQLException {
+	public static void readRelation(EvaluationContext ctx, PredicateType t, Relation2 rel, String path, String table, Integer tag) throws SQLException {
 		Connection conn = DriverManager.getConnection("jdbc:sqlite:" + path);
 
 		Statement select = conn.createStatement();
-		ResultSet rs = select.executeQuery("SELECT * FROM " + table);
+		String query = "SELECT * FROM '" + table + "'";
+		if (tag != null) {
+			query += " WHERE _tag = " + tag;
+		}
+		ResultSet rs = select.executeQuery(query);
 
 		while (rs.next()) {
 			Tuple tup = new Tuple(t.arity());
@@ -115,12 +131,12 @@ public class SQLUtil {
 	public static RelationWrapper readRelation(String path, String table, PredicateType t) throws SQLException {
 		Relation2 rel = new Relation2(t.arity());
 		EvaluationContext ctx = new EvaluationContext();
-		readRelation(ctx, t, rel, path, table);
+		readRelation(ctx, t, rel, path, table, null);
 		RelationWrapper result = new RelationWrapper(ctx, rel, t);
 		return result;
 	}
 
 	public static void writeRelation(String path, String table, RelationWrapper rel) throws SQLException {
-		writeRelation(rel.getContext(), rel.type(), rel.getRelation(), path, table);
+		writeRelation(rel.getContext(), rel.type(), rel.getRelation(), path, table, null);
 	}
 }

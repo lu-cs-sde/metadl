@@ -68,7 +68,7 @@ aspect Eval {
 			if (format.equals("sqlite")) {
 				SQLUtil.readRelation(ctx, dstPred.type(), dstPred.relation2(),
 									 file.equals("__internal__") ? opts.getSqlDbFile() : Paths.get(opts.getFactsDir(), file).toString(),
-									 opts.getRelationNamePrefix() + pred);
+									 pred, opts.getDbEntryTag());
 			} else if (format.equals("csv")) {
 				CSVUtil.readRelation(ctx, dstPred.type(), dstPred.relation2(), Paths.get(opts.getFactsDir(), file).toString());
 			} else {
@@ -127,7 +127,7 @@ aspect Eval {
 			if (format.equals("sqlite")) {
 				SQLUtil.writeRelation(ctx, srcPred.type(), srcPred.relation2(),
 									  file.equals("__internal__") ? opts.getSqlDbFile() : Paths.get(opts.getOutputDir(), file).toString(),
-									  opts.getRelationNamePrefix() + srcPred.getPRED_ID());
+									  pred, opts.getDbEntryTag());
 			} else if (format.equals("csv")) {
 				CSVUtil.writeRelation(ctx, srcPred.type(), srcPred.relation2(), Paths.get(opts.getOutputDir(), file).toString());
 			} else {
@@ -176,7 +176,7 @@ aspect Eval {
 			if (srcPred.getProgramRepresentationKind().isPresent()) {
 				if (opts.getSqlDbFile() != null) {
 					SQLUtil.writeRelation(evalCtx(), srcPred.type(), srcPred.relation2(), opts.getSqlDbFile(),
-										  opts.getRelationNamePrefix() + srcPred.getPRED_ID());
+										  srcPred.getPRED_ID(), opts.getDbEntryTag());
 				} else {
 					CSVUtil.writeRelation(evalCtx(), srcPred.type(), srcPred.relation2(),
 									  opts.getFactsDir() + "/" + srcPred.getPRED_ID() + ".csv");

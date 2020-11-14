@@ -20,6 +20,7 @@ import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang3.time.StopWatch;
@@ -52,14 +53,16 @@ class StandaloneDatalogProjectionSink extends DatalogProjectionSink {
 
 	private EnumMap<ProgramRepresentation, RelationWrapper> relations = new EnumMap<>(ProgramRepresentation.class);
 
+	private int fileTag;
 	private String relPrefix;
 
 	private static RelationWrapper makeRelation(EvaluationContext ctx, PredicateType t) {
 		return new RelationWrapper(ctx, new Relation2(t.arity()), t);
 	}
 
-	public StandaloneDatalogProjectionSink(String relPrefix) {
+	public StandaloneDatalogProjectionSink(int fileTag, String relPrefix) {
 		EvaluationContext ctx = new EvaluationContext();
+		this.fileTag = fileTag;
 		this.relPrefix = relPrefix;
 		for (ProgramRepresentation pr : ProgramRepresentation.values()) {
 			relations.put(pr, makeRelation(ctx, FormalPredicate.programRepresentationType(pr)));
@@ -86,18 +89,8 @@ class StandaloneDatalogProjectionSink extends DatalogProjectionSink {
 		return relations.get(ProgramRepresentation.NTA);
 	}
 
-	private void writeToFileHelper(RelationWrapper rel, File root, String name) throws IOException {
-		CSVUtil.writeRelation(rel.getContext(), rel.type(), rel.getRelation(), new File(root, name + ".csv").getPath());
-	}
-
-	public void writeToFile(File root) throws IOException {
-		for (ProgramRepresentation pr : ProgramRepresentation.values()) {
-			writeToFileHelper(relations.get(pr), root, relPrefix + pr.getPredicateName());
-		}
-	}
-
 	private void writeToDBHelper(RelationWrapper rel, File dbFile, String table) throws SQLException {
-		SQLUtil.writeRelation(rel.getContext(), rel.type(), rel.getRelation(), dbFile.getPath(), table);
+		SQLUtil.writeRelation(rel.getContext(), rel.type(), rel.getRelation(), dbFile.getPath(), table, fileTag);
 	}
 
 	public void writeToDB(File dbFile) throws SQLException {
@@ -201,13 +194,15 @@ public class IncrementalDriver {
 	}
 
 	private void compileSouffleProgram(File src, File exec) throws IOException {
-		String cmd = "souffle -w " + src.getPath() + " -o " + exec.getPath();
+		// The -j 4 argument ensures that Souffle uses OpenMP in the generated code.
+		// The number of threads is selected dynamically and the value 4 is not relevant.
+		String cmd = "souffle -j 4 -p inc.prof -w " + src.getPath() + " -o " + exec.getPath();
 		logger().debug("Compiling Souffle program with: " + cmd);
 		FileUtil.run(cmd);
 	}
 
 	private void generateSouffleProgram(Program p, File path) throws IOException {
-		File tmp = File.createTempFile("souffle", ".dl");
+		File tmp = new File(path.getPath() + ".dl");
 		Compiler.prettyPrintSouffle(p, tmp.getPath());
 		compileSouffleProgram(tmp, path);
 	}
@@ -280,9 +275,10 @@ public class IncrementalDriver {
 			checkProgram(p);
 
 			String pathHash = hash(f);
+			int fileTag = fileIdDb.getIdForFile(f.getPath());
 
 			// generate the Datalog projection
-			StandaloneDatalogProjectionSink sink = new StandaloneDatalogProjectionSink("cu_" + pathHash + "$" + relPrefix);
+			StandaloneDatalogProjectionSink sink = new StandaloneDatalogProjectionSink(fileTag, relPrefix);
 			DatalogProjection2 proj = new DatalogProjection2(p, sink, fileIdDb);
 			proj.generate();
 
@@ -294,9 +290,9 @@ public class IncrementalDriver {
 		logger().time("Fact extraction from " + sourceFiles.size() + " files: " + timer.getTime() + " ms");
 	}
 
-	private void dropTable(Connection conn, String name) throws SQLException {
+	private void deleteEntries(Connection conn, String table, int fileId) throws SQLException {
 		Statement stmt = conn.createStatement();
-		stmt.executeUpdate("DROP TABLE IF EXISTS " + name);
+		stmt.executeUpdate("DELETE FROM '" + table + "' WHERE _tag = " + fileId);
 	}
 
 	private void delete(List<File> sourceFiles, String relPrefix) throws SQLException {
@@ -304,14 +300,15 @@ public class IncrementalDriver {
 		conn.setAutoCommit(false);
 
 		for (File f : sourceFiles) {
+			int fileId = fileIdDb.getIdForFile(f.getPath());
+
 			String pathHash = fileToHash.get(f.getPath());
 			for (ProgramRepresentation r : ProgramRepresentation.values()) {
-				dropTable(conn, "cu_" + pathHash + "$" + relPrefix + r.name());
+				deleteEntries(conn, relPrefix + r.getPredicateName(), fileId);
 			}
 			for (String localTable  : progSplit.getLocalOutputs()) {
-				dropTable(conn, "cu_" + pathHash +  "$" + localTable);
+				deleteEntries(conn, localTable, fileId);
 			}
-			fileToHash.remove(f.getPath());
 		}
 
 		conn.commit();
@@ -405,10 +402,16 @@ public class IncrementalDriver {
 						   visitFiles + ", removed files " + deletedFiles + ".");
 		}
 
+		// populate the program representation relations for each analyze block
 		for (AnalyzeBlock b : progSplit.getProgram().analyzeBlocks()) {
-			// populate the program representation relations for each analyze block
+			if (opts.getAction() == CmdLineOpts.Action.INCREMENTAL_UPDATE) {
+				// remove the information for the deleted files, but also for the files
+				// that need revisiting
+				delete(Stream.concat(deletedFiles.stream(), visitFiles.stream()).collect(Collectors.toList()),
+					   b.getContext().scopePrefix);
+			}
+			// extract information from the other files
 			generate(visitFiles, b.getContext().scopePrefix);
-			delete(deletedFiles, b.getContext().scopePrefix);
 		}
 
 		runLocalProgram(visitFiles, opts);
@@ -427,12 +430,16 @@ public class IncrementalDriver {
 	   Run the local program on all the files in the file database
 	 */
 	private void runLocalProgram(CmdLineOpts opts, File file) throws IOException, SQLException {
-		String h = fileToHash.get(file.getPath());
+		// String h = fileToHash.get(file.getPath());
 
-		logger().debug("Running the local program on " + h + ".");
+		logger().debug("Running the local program on " + file + ".");
+
+		int fileId = fileIdDb.getIdForFile(file.getPath());
+
+		StopWatch timer = StopWatch.createStarted();
 		if (useSouffle) {
 			String cmd = localSouffleProg.getPath() + " -D " + opts.getOutputDir() + " -F " + opts.getFactsDir() +
-				" -d " + progDbFile + " -t cu_" + h + "$";
+				" -d " + progDbFile + " -t " + fileId + "";
 			logger().debug("Souffle command: " + cmd);
 			FileUtil.run(cmd);
 		} else {
@@ -444,13 +451,14 @@ public class IncrementalDriver {
 			internalOpts.setOutputDir(opts.getOutputDir());
 			// TODO: this prefix is hacky; use temporary views to the
 			// right relation instead
-			internalOpts.setRelationNamePrefix("cu_" + h + "$");
+			internalOpts.setDbEntryTag(fileId);
 
 			Compiler.checkProgram(local, internalOpts);
 			local.eval(internalOpts);
 			local.clearRelations();
 		}
-
+		timer.stop();
+		logger().time("Running local program on " + file + ":" + timer.getTime() + " ms");
 	}
 
 	/**
@@ -517,7 +525,7 @@ public class IncrementalDriver {
 	public void runGlobalProgram(CmdLineOpts opts) throws SQLException, IOException {
 		Program global = progSplit.getGlobalProgram();
 
-		createGlobalViews(progSplit.getLocalOutputs());
+		// createGlobalViews(progSplit.getLocalOutputs());
 		logger().debug("Running the global program");
 
 		if (useSouffle) {

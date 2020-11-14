@@ -191,14 +191,14 @@ public class ProgramSplit {
 	   Compute all the OUTPUT predicates of the original program and emit the
 	   new OUTPUT facts in the corresponding partition.
 	 */
-	private void splitOUTPUT() {
+	private Set<FormalPredicate> splitOUTPUT() {
 		FormalPredicate fpOUTPUT = program.formalPredicateMap().get(GlobalNames.OUTPUT_NAME);
-
 		if (fpOUTPUT == null) {
 			// no OUTPUT in the program, nothing to do
-			return;
+			return Collections.emptySet();
 		}
 
+		Set<FormalPredicate> outputs = new HashSet<>();
 		fpOUTPUT.eval(program.evalCtx());
 
 		RelationWrapper OUTPUTs = new RelationWrapper(program.evalCtx(), fpOUTPUT.relation2(), fpOUTPUT.type());
@@ -208,14 +208,11 @@ public class ProgramSplit {
 			String format = t.getAsString(2);
 
 			FormalPredicate p = program.formalPredicateMap().get(pred);
-			if (p.hasLocalDef()  && !forcedGlobalPredicates.contains(p)) {
-				localProgram.addCommonClause(fact(literal(GlobalNames.OUTPUT_NAME, ref(pred), str(file), str(format))));
-				localOutputs.add(pred);
-			}
-			if (p.hasGlobalDef()) {
-				globalProgram.addCommonClause(fact(literal(GlobalNames.OUTPUT_NAME, ref(pred), str(file), str(format))));
-			}
+			outputs.add(p);
+			globalProgram.addCommonClause(fact(literal(GlobalNames.OUTPUT_NAME, ref(pred), str(file), str(format))));
 		}
+
+		return outputs;
 	}
 
 	private void split() {
@@ -223,10 +220,10 @@ public class ProgramSplit {
 		globalProgram = new Program();
 
 		splitEDB();
-		splitOUTPUT();
+		Set<FormalPredicate> outputPreds = splitOUTPUT();
 
 		for (FormalPredicate p : program.getFormalPredicates()) {
-			if (p.hasLocalDef() && p.hasGlobalUse()) {
+			if (p.hasLocalDef() && (p.hasGlobalUse() || outputPreds.contains(p))) {
 				localProgram.addCommonClause(fact(literal(GlobalNames.OUTPUT_NAME, ref(p.getPRED_ID()), str(INTERNAL_DB_NAME), str("sqlite"))));
 				globalProgram.addCommonClause(fact(literal(GlobalNames.EDB_NAME, ref(p.getPRED_ID()), str(INTERNAL_DB_NAME), str("sqlite"))));
 				localOutputs.add(p.getPRED_ID());
@@ -236,12 +233,12 @@ public class ProgramSplit {
 				localProgram.addCommonClause(fact(literal(GlobalNames.EDB_NAME, ref(p.getPRED_ID()), str(INTERNAL_DB_NAME), str("sqlite"))));
 			}
 
-			if (p.hasGlobalUse() && p.getProgramRepresentationKind().isPresent()) {
+			if ((p.hasGlobalUse() || outputPreds.contains(p)) && p.getProgramRepresentationKind().isPresent()) {
 				globalProgram.addCommonClause(fact(literal(GlobalNames.EDB_NAME, ref(p.getPRED_ID()), str(INTERNAL_DB_NAME), str("sqlite"))));
 				localOutputs.add(p.getPRED_ID());
 			}
 
-			if (p.hasGlobalUse() || p.hasGlobalDef()) {
+			if (p.hasGlobalUse() || p.hasGlobalDef() || outputPreds.contains(p)) {
 				globalProgram.addCommonClause(implicitTypeDeclaration(p));
 			}
 

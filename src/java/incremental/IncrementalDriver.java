@@ -272,6 +272,10 @@ public class IncrementalDriver {
 	private void generate(List<File> sourceFiles, String relPrefix) throws IOException, SQLException {
 		StopWatch timer = StopWatch.createStarted();
 		for (File f : sourceFiles) {
+			if (!f.exists()) {
+				logger().info("Skipping file " + f + ". File does not exist. ");
+				continue;
+			}
 			logger().debug("Extracting AST facts from source " + f.getPath() + ".");
 			org.extendj.ast.Program p = createProgram(fileIdDb);
 			p.addSourceFile(f.getPath());

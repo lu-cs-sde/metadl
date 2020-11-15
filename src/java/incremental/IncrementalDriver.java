@@ -167,19 +167,22 @@ public class IncrementalDriver {
 		if (useSouffle) {
 			// generate the Souffle executables
 			if (!localSouffleProg.exists()) {
-				generateSouffleProgram(progSplit.getLocalProgram(), localSouffleProg);
+				generateSouffleProgram(progSplit.getLocalProgram(), localSouffleProg, "-j 4");
 			} else {
 				logger().info("Using existing Souffle local program from " + localSouffleProg);
 			}
 
 			if (!globalSouffleProg.exists()) {
-				generateSouffleProgram(progSplit.getGlobalProgram(), globalSouffleProg);
+				// Due to a bug in Souffle, at least one global program deadlocks if run with multiple
+				// threads (metadl/examples/metadl-java/error-prone-metadl.mdl,
+				// 2dcc83e1912eba034206b4fa0067a282ca0b1f47), but otherwise works fine.
+				generateSouffleProgram(progSplit.getGlobalProgram(), globalSouffleProg, "");
 			} else {
 				logger().info("Using existing Souffle global program from " + globalSouffleProg);
 			}
 
 			if (!updateSouffleProg.exists()) {
-				generateSouffleProgram(progSplit.getUpdateProgram(), updateSouffleProg);
+				generateSouffleProgram(progSplit.getUpdateProgram(), updateSouffleProg, "-j 4");
 			} else {
 				logger().info("Using existing Souffle update program from " + updateSouffleProg);
 			}
@@ -193,18 +196,18 @@ public class IncrementalDriver {
 		CSVUtil.writeMap(fileToHash, pathHashFile.getPath());
 	}
 
-	private void compileSouffleProgram(File src, File exec) throws IOException {
+	private void compileSouffleProgram(File src, File exec, String extraArgs) throws IOException {
 		// The -j 4 argument ensures that Souffle uses OpenMP in the generated code.
 		// The number of threads is selected dynamically and the value 4 is not relevant.
-		String cmd = "souffle -j 4 -p inc.prof -w " + src.getPath() + " -o " + exec.getPath();
+		String cmd = "souffle " + extraArgs + " -p inc.prof -w " + src.getPath() + " -o " + exec.getPath();
 		logger().debug("Compiling Souffle program with: " + cmd);
 		FileUtil.run(cmd);
 	}
 
-	private void generateSouffleProgram(Program p, File path) throws IOException {
+	private void generateSouffleProgram(Program p, File path, String extraArgs) throws IOException {
 		File tmp = new File(path.getPath() + ".dl");
 		Compiler.prettyPrintSouffle(p, tmp.getPath());
-		compileSouffleProgram(tmp, path);
+		compileSouffleProgram(tmp, path, extraArgs);
 	}
 
 	private void dumpProgram(Program p, File path) throws IOException {

@@ -535,6 +535,7 @@ public class IncrementalDriver {
 		// createGlobalViews(progSplit.getLocalOutputs());
 		logger().debug("Running the global program");
 
+		StopWatch timer = StopWatch.createStarted();
 		if (useSouffle) {
 			String cmd = globalSouffleProg.getPath() + " -D " + opts.getOutputDir()  + " -F " + opts.getFactsDir() +
 				" -d " + progDbFile;
@@ -549,5 +550,8 @@ public class IncrementalDriver {
 			Compiler.checkProgram(global, internalOpts);
 			global.eval(internalOpts);
 		}
+		timer.stop();
+		logger().time("Running the global program: " + timer.getTime() + " ms.");
+
 	}
 }

@@ -176,7 +176,7 @@ public class IncrementalDriver {
 				// Due to a bug in Souffle, at least one global program deadlocks if run with multiple
 				// threads (metadl/examples/metadl-java/error-prone-metadl.mdl,
 				// 2dcc83e1912eba034206b4fa0067a282ca0b1f47), but otherwise works fine.
-				generateSouffleProgram(progSplit.getGlobalProgram(), globalSouffleProg, "");
+				generateSouffleProgram(progSplit.getGlobalProgram(), globalSouffleProg, "-j 4");
 			} else {
 				logger().info("Using existing Souffle global program from " + globalSouffleProg);
 			}

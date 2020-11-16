@@ -128,6 +128,18 @@ public class SQLUtil {
 		conn.close();
 	}
 
+	public static void clearRelation(String path, String table) throws SQLException {
+		Connection conn = DriverManager.getConnection("jdbc:sqlite:" + path);
+		Statement del = conn.createStatement();
+		try {
+			del.executeUpdate("DELETE FROM '" + table + "'");
+		} catch(SQLException e) {
+			SimpleLogger.logger().debug("Dropped SQL exception " + e);
+		} finally {
+			conn.close();
+		}
+	}
+
 	public static RelationWrapper readRelation(String path, String table, PredicateType t) throws SQLException {
 		Relation2 rel = new Relation2(t.arity());
 		EvaluationContext ctx = new EvaluationContext();

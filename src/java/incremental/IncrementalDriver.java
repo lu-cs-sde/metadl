@@ -374,6 +374,7 @@ public class IncrementalDriver {
 			RelationWrapper removeFilesRel;
 
 			if (useSouffle) {
+				SQLUtil.clearRelation(progDbFile.getPath(), ProgramSplit.ANALYZED_SOURCES_RELATION);
 				SQLUtil.writeRelation(progDbFile.getPath(), ProgramSplit.ANALYZED_SOURCES_RELATION, analyzedSrcs);
 
 				// Run the update program

@@ -20,21 +20,18 @@ MetaDL depends on modified versions of [[http://jastadd.org/web/][JastAdd]] and 
 
 Ensure that the ~souffle~ executable is available in your ~$PATH~.
 
-For the ~hybrid~ evaluation mode, a version of Souffle exposing a custom JNI interface is required:
+For the ~hybrid~ and ~incremental~ evaluation modes, a version a modified version of Souffle is needed. This version exposes an extended JNI interface and uses a different format for SQLite input and output.
 #+BEGIN_SRC
 git clone https://github.com/alexdura/souffle.git -b javadl
 #+END_SRC
 
 For analyzing Java, MetaDL needs access to a Java 7 runtime library (you can download it [[https://www.oracle.com/java/technologies/javase/javase7-archive-downloads.html#license-lightbox][here]]). Set ~METADL_JAVA_RT=/path/to/jre/lib/rt.jr~ in your environment to let MetaDL know where to find this library.
-
-[[https://gradle.org/][Gradle]] is used as a build tool. Additionally, a Makefile summarizes the common build and run commands:
-- Package: ~./gradlew :jar~
-- Test: ~./gradlew :test~
+Run ~./gradlew :jar~ to build MetaDL and  ~./gradlew :test~ to test it. For the tests to run, you need the ~souffle~ executable in your executable path.
 
 * Running
-MetaDL support multiple running modes, which represent a tradeoff between speed and external dependencies.
+MetaDL support multiple running modes, which represent a trade-off between speed and external dependencies.
 1. Internal evaluation
-Uses the internal seminaive evaluator and it is reasonably fast when the number of tuples is small (< 1 million).
+Uses the internal semi-naive evaluator and it is reasonably fast when the number of tuples is small (< 1 million).
 #+BEGIN_SRC
 java -jar compiler.jar --eval metadl program.mdl -F fact_dir -D output_dir
 #+END_SRC
@@ -54,12 +51,25 @@ This will generate a library called ~libSwigInterface.so~ in your current direct
 #+BEGIN_SRC
 java -jar compiler.jar --eval hybrid program.mdl --lib /ABS/PATH/TO/libSwigInterface.so -F fact_dir -D output_dir
 #+END_SRC
+** Incremental evaluation
+For incremental evaluation mode, the source predicate reference for an analyze block, e.g. ~Srcs~ in ~java ('Srcs) { .. }~ must contain tuples of the form ~(FilePath, MDA)~ where MDA is one of "M", "D", "A" and indicates whether the file was added, modified or removed.
+*** Initial run
+The initial run generates the analysis programs and initializes the cache structure.
+For initial runs, the MDA component of the source predicate is always interpreted as "A".
+#+BEGIN_SRC
+java -jar compiler.jar --incremental init -D output_and_cache_dir -F fact_dir
+#+END_SRC
+*** Update run
+The update run, recomputes the analysis results based on the information in the source relations. Results for files that were previously analyzed, but are not present in the source relation, are kept in the cache and updated if necessary.
+#+BEGIN_SRC
+java -jar compiler.jar --incremental update -D output_and_cache_dir -F fact_dir
+#+END_SRC
+The fact that the output and the cache share the same directory is an artifact of the current command line interface and they will be separated in the future.
 ** Souffle evaluation (deprecated)
 When the number of tuples is becoming large, using a high performance evaluator will make the runs faster. For this, MetaDL can generate a Souffle program and then evaluate it:
 #+BEGIN_SRC
 java -jar compiler.jar --eval souffle program.mdl -F fact_dir -D output_dir
 #+END_SRC
-
 
 * Language description
 ** Datalog
@@ -72,7 +82,7 @@ java -jar compiler.jar --eval souffle program.mdl -F fact_dir -D output_dir
 The order of evaluation was chosen for convenience reasons, to make the following patterns possible:
 - Control the analyzed program from a configuration file ~Prog.csv~:
 #+BEGIN_SRC
-EDB('Progs, "Prog.csv").
+EDB('Progs, "Prog.csv", "csv").
 java ('Progs) {
   ...
 }
@@ -141,7 +151,7 @@ metadl ('P) {
 }
 
 # OurExprEval = {3}.
-OUTPUT('OurExprEval).
+OUTPUT('OurExprEval, "OurExprEval", "csv").
 #+END_SRC
 
 *** Type hierarchy for Java
@@ -173,13 +183,13 @@ Interface(c, i) :- ClassImplementsInterface(c, i).
 Interface(c, i) :- SuperClass(c, d), Interface(d, i).
 Interface(c, i) :- Interface(c, j), SuperInterface(j, i).
 
-OUTPUT('Interface).
-OUTPUT('SuperClass).
-OUTPUT('SuperInterface).
+OUTPUT('Interface, "Interface.csv", "csv").
+OUTPUT('SuperClass, "SuperClass.csv", "csv").
+OUTPUT('SuperInterface, "SuperInterface.csv", "csv").
 #+END_SRC
 
 * License
-This repository is covered by the license BSD 2-clause, see [[./LICENSE][LICENSE]].
+This repository is covered by a BSD 2-clause license, see [[./LICENSE][LICENSE]].
 
 * Debugging
 The following commands are useful when debugging MetaDL:

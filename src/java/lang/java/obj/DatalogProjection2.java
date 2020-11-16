@@ -35,9 +35,8 @@ public class DatalogProjection2 {
 	private TupleInserter attributes;
 	private TupleInserter srcLoc;
 	private TupleInserter nta;
-	private int tokenUID = Integer.MAX_VALUE;
-	private int ntaNum = 1;
-	private static int NTA_FILE_ID = 1 << 16;
+	private int NTANum = 1;
+
 	private FileIdStorage fileIdDb;
 
 	// TODO: It's just easier to add environment variable than command-line arguments.
@@ -63,9 +62,18 @@ public class DatalogProjection2 {
 		return (long)n.javaDLFileId << 32 | n.javaDLNum;
 	}
 
+	private int fileId(ASTNode<?> n) {
+		return n.javaDLFileId;
+	}
+
+	private static int NTA_FILE_ID_BIT = 1 << 30; // use bit 30 to get positive IDs
+	private int NTAFileId(int fileId) {
+		return fileId | NTA_FILE_ID_BIT;
+	}
+
 	private boolean isNTANode(ASTNode<?> n) {
 		assert visited(n);
-		return n.javaDLFileId == NTA_FILE_ID;
+		return (n.javaDLFileId & NTA_FILE_ID_BIT) != 0;
 	}
 
 	private boolean visited(ASTNode<?> n) {
@@ -138,7 +146,7 @@ public class DatalogProjection2 {
 						// attributes may refer to NTAs, that were not visited in the
 						// initial traversal, visit them now and add every node in the
 						// subtree to the worklist, for attribute evaluation
-						ntaNum = r.doNodeNumbering(ntaNum, NTA_FILE_ID);
+						NTANum = r.doNodeNumbering(NTANum, NTAFileId(fileId(n)));
 						traverse(r, worklist, nta);
 					}
 				}
@@ -165,12 +173,11 @@ public class DatalogProjection2 {
 			}
 		}
 
-		long nid = nodeId(n);
 		markVisited(n);
-		toTuples(n, nid, astTupleSink);
+		toTuples(n, astTupleSink);
 		if (!isNTANode(n)) {
 			// only non-NTA nodes have a source location
-			srcLoc(n, nid);
+			srcLoc(n);
 		}
 	}
 
@@ -192,7 +199,8 @@ public class DatalogProjection2 {
 		return false;
 	}
 
-	private void srcLoc(ASTNode<?> n, long nid) {
+	private void srcLoc(ASTNode<?> n) {
+		long nid = nodeId(n);
 		String srcFile = n.sourceFile();
 		srcLoc.insertTuple(nid,
 						   beaver.Symbol.getLine(n.getStart()),
@@ -311,7 +319,16 @@ public class DatalogProjection2 {
 		 return s;
 	}
 
-	private void toTuples(ASTNode<?> n, long nid, TupleInserter astTupleSink) {
+	private int tokenUID = Integer.MAX_VALUE;
+	private long freshTokeId(ASTNode<?> n) {
+		// give a token id that is file specific
+		long fileId = fileId(n);
+		tokenUID--;
+		return (fileId << 32) | tokenUID;
+	}
+
+	private void toTuples(ASTNode<?> n, TupleInserter astTupleSink) {
+		long nid = nodeId(n);
 		String relName = getRelation(n);
 
 		// the children in the tree
@@ -334,13 +351,11 @@ public class DatalogProjection2 {
 			// For every token, we generate two tuples
 			// ("NodeKind", CurrentNodeId, ChildIdx, ChildId, "")
 			// ("Token", ChildId, 0, 0, "TokenAsString")
-
+			long tid = freshTokeId(n);
 			// Add a tuple to the current node relation
-			astTupleSink.insertTuple(relName, nid, childIndex++, tokenUID, "");
+			astTupleSink.insertTuple(relName, nid, childIndex++, tid, "");
 			// Add a tuple to Token relation
-			astTupleSink.insertTuple("Terminal", tokenUID, 0, 0, cleanTerminal(t));
-
-			tokenUID--;
+			astTupleSink.insertTuple("Terminal", tid, 0, 0, cleanTerminal(t));
 		}
 
 		if (childIndex == 0) {

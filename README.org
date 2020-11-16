@@ -24,6 +24,12 @@ For the ~hybrid~ and ~incremental~ evaluation modes, a version a modified versio
 #+BEGIN_SRC
 git clone https://github.com/alexdura/souffle.git -b javadl
 #+END_SRC
+When building, make sure to enable 64-bit domains and SWIG (needed only for the hybrid mode):
+#+BEGIN_SRC
+./bootstrap
+./configure --enable-swig --enable-64bit-domain
+make
+#+END_SRC
 
 For analyzing Java, MetaDL needs access to a Java 7 runtime library (you can download it [[https://www.oracle.com/java/technologies/javase/javase7-archive-downloads.html#license-lightbox][here]]). Set ~METADL_JAVA_RT=/path/to/jre/lib/rt.jr~ in your environment to let MetaDL know where to find this library.
 Run ~./gradlew :jar~ to build MetaDL and  ~./gradlew :test~ to test it. For the tests to run, you need the ~souffle~ executable in your executable path.

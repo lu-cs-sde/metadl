@@ -83,7 +83,7 @@ OUTPUT('TypeUnusedInFormalsDetail, "TypeUnusedInFormalsDetail.csv", "csv").
 	    		  DECL(`rett, ret), ID(`name, name).
 
 	    MethodSig2Local(m, i, `pt) :- m <: `rett `name(.., `pt `_, ..) ; :>,
-	        		  DECL(`pt, pt), PARENT(param, `pt), INDEX(param, i).
+	        		 PARENT(param, `pt), INDEX(param, i).
 	    MethodSig2(m, i, pt) :- MethodSig2Local(m, i, `pt), DECL(`pt, pt).
 
 	    MethodHasNoParams(m) :- MethodSig1(m, _, _), NOT(MethodSig2(m, _, _)).

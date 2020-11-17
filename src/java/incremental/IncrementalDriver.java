@@ -136,6 +136,10 @@ public class IncrementalDriver {
 
 	private FileIdDatabase fileIdDb;
 
+	/**
+	   Creates the directory structure of the cache and ensures that
+	   the local, global and update programs exist.
+	 */
 	public void init() throws IOException {
 		// ensure that all directories exist
 		common.mkdir();

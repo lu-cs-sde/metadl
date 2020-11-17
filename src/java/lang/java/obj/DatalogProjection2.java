@@ -167,7 +167,7 @@ public class DatalogProjection2 {
 					ASTNode<?> child = n.getChild(i);
 					if (child != childNT) {
 						traverse(child, worklist, astTupleSink);
-						recordRewrittenNode(childNT, child, astTupleSink);
+						recordRewrittenNode(childNT, child);
 					}
 				}
 			}
@@ -181,8 +181,8 @@ public class DatalogProjection2 {
 		}
 	}
 
-	private void recordRewrittenNode(ASTNode<?> original, ASTNode<?> target, TupleInserter astTupleSink) {
-		astTupleSink.insertTuple("REWRITE", nodeId(original), -1, nodeId(target), "");
+	private void recordRewrittenNode(ASTNode<?> original, ASTNode<?> target) {
+		attributes.insertTuple("rewriteTo", nodeId(original), nodeId(target));
 	}
 
 	private static String getRelation(ASTNode<?> n) {

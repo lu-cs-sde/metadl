@@ -55,52 +55,34 @@ aspect LanguageSpecific {
 		return tokenList;
 	}
 
-	public static lang.ast.Rule PatLang.makeTypeRule(AnalyzeContext ctx) {
-		return rule(
-					literal(ctx.prefix("TYPE"), "$n", "$t"),
-					literal(ctx.prefix("REWRITE_MAP"), "$n", "$n_rw"),
-					literal(ctx.attrRelName, "type", "$n_rw", "$t_rw"),
-					literal(ctx.prefix("REWRITE_MAP"), "$t_rw", "$t")
-					);
-	}
-
-	public static lang.ast.Rule PatLang.makeDeclRule(AnalyzeContext ctx) {
-		return rule(
-					literal(ctx.prefix("DECL"), "$n", "$t"),
-					literal(ctx.prefix("REWRITE_MAP"), "$n", "$n_rw"),
-					literal(ctx.attrRelName, "decl", "$n_rw", "$t_rw"),
-					literal(ctx.prefix("REWRITE_MAP"), "$t_rw", "$t")
-					);
-	}
-
-	public static lang.ast.Rule PatLang.makeGenericRule(AnalyzeContext ctx) {
-		return rule(
-					literal(ctx.prefix("GENERIC"), "$t", "$g"),
-					literal(ctx.prefix("REWRITE_MAP"), "$t", "$t_rw"),
-					literal(ctx.attrRelName, "genericDecl", "$t", "$g"),
-					literal(ctx.prefix("REWRITE_MAP"), "$g_rw", "$g")
-					);
+	public static java.util.List<lang.ast.Clause> PatLang.makeAttributeRule(AnalyzeContext ctx, String attrName, String predName) {
+		return Arrays.asList(
+							 rule(
+								  literal(ctx.prefix(predName), "$n", "$t"),
+								  literal(ctx.attrRelName, "rewriteTo", "$n", "$n_rw"),
+								  literal(ctx.attrRelName, str(attrName), "$n_rw", "$t_rw"),
+								  literal(ctx.attrRelName, "rewriteTo", "$t_rw", "$t")),
+							 rule(
+								  literal(ctx.prefix(predName), "$n", "$t"),
+								  literal(ctx.attrRelName, "rewriteTo", "$n", "$n_rw"),
+								  literal(ctx.attrRelName, str(attrName), "$n_rw", "$t"),
+								  NOT(literal(ctx.attrRelName, "rewriteTo", "$t", "_"))),
+							 rule(
+								  literal(ctx.prefix(predName), "$n", "$t"),
+								  literal(ctx.attrRelName, str(attrName), "$n", "$t_rw"),
+								  NOT(literal(ctx.attrRelName, "rewriteTo", "$n", "_")),
+								  literal(ctx.attrRelName, "rewriteTo", "$t_rw", "$t")),
+							 rule(
+								  literal(ctx.prefix(predName), "$n", "$t"),
+								  literal(ctx.attrRelName, str(attrName), "$n", "$t"),
+								  NOT(literal(ctx.attrRelName, "rewriteTo", "$n", "_")),
+								  NOT(literal(ctx.attrRelName, "rewriteTo", "$t", "_"))));
 	}
 
 	public static lang.ast.Rule PatLang.makeASTRule(AnalyzeContext ctx) {
 		return rule(
 					literal(ctx.prefix("AST"), "$p1", "$p2", "$p3", "$p4", "$p5"),
 					literal(ctx.progRelName, "$p1", "$p2", "$p3", "$p4", "$p5"));
-	}
-
-
-	public static java.util.List<lang.ast.Clause> PatLang.makeRewriteMap(AnalyzeContext ctx) {
-		java.util.List<lang.ast.Clause> ret = new java.util.ArrayList<>();
-		// REWRITE_MAP(n, n) :- P(_, n, _ , _, _), NOT(P("REWRITE", n, _, _, _)).
-		ret.add(rule(
-					 literal(ctx.prefix("REWRITE_MAP"), "$n", "$n"),
-					 literal(ctx.progRelName, "_", "$n", "_", "_", "_"),
-					 NOT(literal(ctx.progRelName, "REWRITE", "$n", "_", "_", "_"))));
-		// REWRITE_MAP(n, m) :- P("REWRITE", n, _, m, _).
-		ret.add(rule(
-					 literal(ctx.prefix("REWRITE_MAP"), "$n", "$m"),
-					 literal(ctx.progRelName, "REWRITE", "$n", "_", "$m", "_")));
-		return ret;
 	}
 
 	public static java.util.List<lang.ast.Clause> PatLang.generateHelperRelations(AnalyzeContext ctx, Set<String> used) {
@@ -150,18 +132,17 @@ aspect LanguageSpecific {
 		if (used.contains("EXISTS"))
 			ret.add(makeExistsRule(ctx));
 		// Insert predicates that expose ExtendJ attributes
-		if (used.contains("TYPE") || used.contains("GENERIC") || used.contains("DECL"))
-			ret.addAll(makeRewriteMap(ctx));
 		// Insert the TYPE relation
 		if (used.contains("TYPE"))
-			ret.add(makeTypeRule(ctx));
+			ret.addAll(makeAttributeRule(ctx, "type", "TYPE"));
 		// Insert the DECL relation
 		if (used.contains("DECL"))
-			ret.add(makeDeclRule(ctx));
+			ret.addAll(makeAttributeRule(ctx, "decl", "DECL"));
 		// Insert the GENERIC rule, map a concrete instance of a generic type
 		// to the declaration of the generic type.
 		if (used.contains("GENERIC"))
-			ret.add(makeGenericRule(ctx));
+			ret.addAll(makeAttributeRule(ctx, "genericDecl", "GENERIC"));
+
 		// Insert a rule for declaring a node's supertypes
 		ret.addAll(makeSuperTypeRelation(ctx));
 		// Expose the AST relation

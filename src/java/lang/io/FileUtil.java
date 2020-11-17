@@ -154,13 +154,13 @@ public class FileUtil {
 			String line;
 
 			BufferedReader reader = new BufferedReader(new InputStreamReader(src));
-			// SimpleLogger logger = SimpleLogger.logger();
+			SimpleLogger logger = SimpleLogger.logger();
 			try {
 				while ((line = reader.readLine()) != null) {
 					System.err.println(line);
-					// synchronized (logger) {
-					// 	logger.error(line);
-					// }
+					synchronized (logger) {
+						logger.error(line);
+					}
 				}
 			} catch (IOException e) {
 				throw new RuntimeException(e);
@@ -173,8 +173,8 @@ public class FileUtil {
 		// consume stderr and stdout
 		Thread stdoutReader = new Thread(new OutputConsumer(p.getInputStream()));
 		Thread stderrReader = new Thread(new OutputConsumer(p.getErrorStream()));
-		stdoutReader.setDaemon(true);
-		stderrReader.setDaemon(true);
+		stdoutReader.start();
+		stderrReader.start();
 		try {
 			int exitCode = p.waitFor();
 			return exitCode;

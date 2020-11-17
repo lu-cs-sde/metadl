@@ -112,8 +112,6 @@ public class IncrementalDriver {
 	private File globalSouffleProg;
 	private File updateSouffleProg;
 
-	private Map<String, String> fileToHash;
-
 	private ProgramSplit progSplit;
 
 	private boolean useSouffle = true;
@@ -153,13 +151,6 @@ public class IncrementalDriver {
 			fileIdDb = new FileIdDatabase();
 		}
 
-		// load the file to hash mapping
-		fileToHash = new TreeMap<String, String>();
-		if (pathHashFile.exists()) {
-			logger().info("Loading path hashes from " + pathHashFile);
-			CSVUtil.readMap(fileToHash, Function.identity(), Function.identity(), pathHashFile.getPath());
-		}
-
 		dumpProgram(progSplit.getLocalProgram(), new File(prog, "local.mdl"));
 		dumpProgram(progSplit.getGlobalProgram(), new File(prog, "global.mdl"));
 		dumpProgram(progSplit.getUpdateProgram(),  new File(prog, "update.mdl"));
@@ -192,8 +183,6 @@ public class IncrementalDriver {
 	public void shutdown() throws IOException {
 		// store the file-id database
 		fileIdDb.storeToFile(fileIdDbFile.getPath());
-		// store the file name to source dir map
-		CSVUtil.writeMap(fileToHash, pathHashFile.getPath());
 	}
 
 	private void compileSouffleProgram(File src, File exec, String extraArgs) throws IOException {
@@ -281,15 +270,12 @@ public class IncrementalDriver {
 			p.addSourceFile(f.getPath());
 			checkProgram(p);
 
-			String pathHash = hash(f);
 			int fileTag = fileIdDb.getIdForFile(f.getPath());
 
 			// generate the Datalog projection
 			StandaloneDatalogProjectionSink sink = new StandaloneDatalogProjectionSink(fileTag, relPrefix);
 			DatalogProjection2 proj = new DatalogProjection2(p, sink, fileIdDb);
 			proj.generate();
-
-			fileToHash.put(f.getPath(), pathHash);
 
 			sink.writeToDB(progDbFile);
 		}
@@ -309,7 +295,6 @@ public class IncrementalDriver {
 		for (File f : sourceFiles) {
 			int fileId = fileIdDb.getIdForFile(f.getPath());
 
-			String pathHash = fileToHash.get(f.getPath());
 			for (ProgramRepresentation r : ProgramRepresentation.values()) {
 				deleteEntries(conn, relPrefix + r.getPredicateName(), fileId);
 			}
@@ -361,7 +346,7 @@ public class IncrementalDriver {
 	 */
 	public void update(CmdLineOpts opts) throws IOException, SQLException {
 		RelationWrapper analyzedSrcs = computeAnalyzedSources(opts.getFactsDir());
-		Program update = progSplit.getUpdateProgram();
+
 		List<File> visitFiles;
 		List<File> deletedFiles;
 		if (opts.getAction() == CmdLineOpts.Action.INCREMENTAL_INIT) {
@@ -385,10 +370,12 @@ public class IncrementalDriver {
 
 				// Now read back the results
 				visitFilesRel = SQLUtil.readRelation(progDbFile.getPath(), ProgramSplit.AST_VISIT_RELATION,
-													 update.formalPredicateMap().get(ProgramSplit.AST_VISIT_RELATION).type());
+													 ProgramSplit.getTypeForUpdateRelation(ProgramSplit.AST_VISIT_RELATION));
 				removeFilesRel = SQLUtil.readRelation(progDbFile.getPath(), ProgramSplit.AST_REMOVE_RELATION,
-													  update.formalPredicateMap().get(ProgramSplit.AST_REMOVE_RELATION).type());
+													  ProgramSplit.getTypeForUpdateRelation(ProgramSplit.AST_REMOVE_RELATION));
 			} else {
+				Program update = progSplit.getUpdateProgram();
+
 				setRelation(update, ProgramSplit.ANALYZED_SOURCES_RELATION, analyzedSrcs);
 
 				CmdLineOpts updateOpts = new CmdLineOpts();
@@ -438,8 +425,6 @@ public class IncrementalDriver {
 	   Run the local program on all the files in the file database
 	 */
 	private void runLocalProgram(CmdLineOpts opts, File file) throws IOException, SQLException {
-		// String h = fileToHash.get(file.getPath());
-
 		logger().debug("Running the local program on " + file + ".");
 
 		int fileId = fileIdDb.getIdForFile(file.getPath());
@@ -457,8 +442,6 @@ public class IncrementalDriver {
 			internalOpts.setSqlDbFile(progDbFile.getPath());
 			internalOpts.setFactsDir(opts.getFactsDir());
 			internalOpts.setOutputDir(opts.getOutputDir());
-			// TODO: this prefix is hacky; use temporary views to the
-			// right relation instead
 			internalOpts.setDbEntryTag(fileId);
 
 			Compiler.checkProgram(local, internalOpts);
@@ -469,71 +452,7 @@ public class IncrementalDriver {
 		logger().time("Running local program on " + file + ":" + timer.getTime() + " ms");
 	}
 
-	/**
-	   Create a view that is the union of all the local relations, computed
-	   in the local pass.
-	 */
-	private void createGlobalView(Connection conn, String localOutput) throws SQLException {
-
-
-		Statement stmt = conn.createStatement();
-
-		if (fileToHash.isEmpty()) {
-			// Create an empty view
-			stmt.executeUpdate("DROP VIEW IF EXISTS " + localOutput);
-			stmt.executeUpdate("CREATE VIEW " + localOutput + " AS SELECT * FROM sqlite_master WHERE 1 = 0");
-		} else {
-			final int SQLITE_LIMIT_COMPOUND_SELECT = 500;
-			// SQLite supports union views of at most 500 tables
-			List<String> hashes = new ArrayList<>(fileToHash.values());
-
-			// .. so we have to create two layers of views if we want to gather between 500 and 25000 tables
-			List<List<String>> partitionedHashes = ListUtils.partition(hashes, SQLITE_LIMIT_COMPOUND_SELECT);
-			List<String> tmpViews = new ArrayList<>();
-			for (int i = 0; i < partitionedHashes.size(); ++i) {
-				List<String> part = partitionedHashes.get(i);
-				String tmpViewName = localOutput + "_tmp_" + i;
-				tmpViews.add(tmpViewName);
-
-				stmt.executeUpdate("DROP VIEW IF EXISTS " + tmpViewName);
-				String createTmpView = "CREATE VIEW " + tmpViewName + " AS ";
-				createTmpView += String.join(" UNION ",
-											 part.stream().map(h -> "SELECT * FROM cu_" + h + "$" + localOutput)
-											 .collect(Collectors.toUnmodifiableList()));
-				logger().debug("Creating a temporary view, " + createTmpView);
-				stmt.executeUpdate(createTmpView);
-			}
-
-			stmt.executeUpdate("DROP VIEW IF EXISTS " + localOutput);
-
-			String unionView = "CREATE VIEW " + localOutput + " AS ";
-			unionView += String.join(" UNION ",
-									 tmpViews.stream()
-									 .map(v -> "SELECT * FROM " + v)
-									 .collect(Collectors.toUnmodifiableList()));
-			logger().debug("Creating a global view, " + unionView);
-			stmt.executeUpdate(unionView);
-		}
-	}
-
-	/**
-	   For each relation that is defined locally, but used globally, create a view
-	   that is the union of the local results.
-	 */
-	private void createGlobalViews(Set<String> localOutputs) throws SQLException {
-		Connection conn = DriverManager.getConnection("jdbc:sqlite:" + progDbFile.getPath());
-		conn.setAutoCommit(false);
-		for (String l : localOutputs) {
-			createGlobalView(conn, l);
-		}
-		conn.commit();
-		conn.close();
-	}
-
 	public void runGlobalProgram(CmdLineOpts opts) throws SQLException, IOException {
-		Program global = progSplit.getGlobalProgram();
-
-		// createGlobalViews(progSplit.getLocalOutputs());
 		logger().debug("Running the global program");
 
 		StopWatch timer = StopWatch.createStarted();
@@ -543,6 +462,7 @@ public class IncrementalDriver {
 			logger().debug("Souffle command: " + cmd);
 			FileUtil.run(cmd);
 		} else {
+			Program global = progSplit.getGlobalProgram();
 			CmdLineOpts internalOpts = new CmdLineOpts();
 			internalOpts.setAction(CmdLineOpts.Action.EVAL_INTERNAL);
 			internalOpts.setSqlDbFile(progDbFile.getPath());

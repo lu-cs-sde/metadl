@@ -131,7 +131,7 @@ public class Compiler {
 			throw new RuntimeException("Cannot evaluate this program incrementally.");
 		}
 
-		IncrementalDriver incDriver = new IncrementalDriver(new File(opts.getOutputDir()), split);
+		IncrementalDriver incDriver = new IncrementalDriver(new File(opts.getCacheDir()), split);
 		incDriver.init();
 
 		incDriver.update(opts);

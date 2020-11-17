@@ -268,9 +268,21 @@ public class ProgramSplit {
 		}
 	}
 
-	public static String AST_VISIT_RELATION = "AST_VISIT";
-	public static String AST_REMOVE_RELATION = "AST_REMOVE";
-	public static String ANALYZED_SOURCES_RELATION = "ANALYZED_SOURCES";
+	public final static String AST_VISIT_RELATION = "AST_VISIT";
+	public final static String AST_REMOVE_RELATION = "AST_REMOVE";
+	public final static String ANALYZED_SOURCES_RELATION = "ANALYZED_SOURCES";
+	public static PredicateType getTypeForUpdateRelation(String name) {
+		switch (name) {
+		case AST_VISIT_RELATION:
+		case AST_REMOVE_RELATION:
+			return new PredicateType(StringType.get());
+		case ANALYZED_SOURCES_RELATION:
+			return new PredicateType(StringType.get(), StringType.get());
+		default:
+			throw new RuntimeException("Unknown relation name " + name);
+		}
+	}
+
 	public static String INTERNAL_DB_NAME = "__internal__";
 
 	private void generateUpdateClauses(Program p, AnalyzeBlock b) {
@@ -284,8 +296,8 @@ public class ProgramSplit {
 		p.addCommonClause(fact(literal(GlobalNames.EDB_NAME, ref(ANALYZED_SOURCES_RELATION), str(INTERNAL_DB_NAME), str("sqlite"))));
 
 		// Type declarations
-		p.addCommonClause(implicitTypeDeclaration(ANALYZED_SOURCES_RELATION, new PredicateType(StringType.get(),
-																			   StringType.get())));
+		p.addCommonClause(implicitTypeDeclaration(ANALYZED_SOURCES_RELATION, getTypeForUpdateRelation(ANALYZED_SOURCES_RELATION)));
+
 		p.addCommonClause(implicitTypeDeclaration(ATTR_PROVENANCE,
 												  FormalPredicate.programRepresentationType(ProgramRepresentation.ATTR_PROVENANCE)));
 		p.addCommonClause(implicitTypeDeclaration(SRC_LOC,

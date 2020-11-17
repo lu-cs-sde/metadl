@@ -81,6 +81,7 @@ public class IncrementalTest {
 		CmdLineOpts opts = new CmdLineOpts();
 		opts.setAction(CmdLineOpts.Action.INCREMENTAL_INIT);
 		opts.setOutputDir(output.getPath());
+		opts.setCacheDir(output.getPath());
 		opts.setFactsDir(".");
 		opts.setInputFile(src);
 

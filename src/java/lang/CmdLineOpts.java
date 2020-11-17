@@ -15,12 +15,12 @@ import org.apache.commons.cli.CommandLine;
 public class CmdLineOpts {
 	private String outputDir;
 	private String factsDir;
-	private String genDir;
+	private String cacheDir;
 	private String outputFile;
 	private String inputFile;
 	private String libFile;
-	private String sqlDbFile;
-	private Integer dbEntryTag = null;
+	private String sqlDbFile; // Internal option
+	private Integer dbEntryTag = null; // Internal option
 	private Action action = Action.EVAL_INTERNAL;
 	private boolean warningsEnabled = false;
 
@@ -111,12 +111,12 @@ public class CmdLineOpts {
 		this.factsDir = factsDir;
 	}
 
-	public String getGeneratedDir() {
-		return this.genDir;
+	public String getCacheDir() {
+		return this.cacheDir;
 	}
 
-	public void setGeneratedDir(String genDir) {
-		this.genDir = genDir;
+	public void setCacheDir(String cacheDir) {
+		this.cacheDir = cacheDir;
 	}
 
 	@Override public String toString() {
@@ -153,8 +153,8 @@ public class CmdLineOpts {
 			.desc("Fact directory.").argName("DIR").build();
 		Option outDir = Option.builder("D").longOpt("out").numberOfArgs(1)
 			.desc("Output directory.").argName("DIR").build();
-		Option genDir = Option.builder("G").longOpt("gen").numberOfArgs(1)
-			.desc("Generated program dirctory.").argName("DIR").build();
+		Option genDir = Option.builder("C").longOpt("cache").numberOfArgs(1)
+			.desc("Incremental evaluation cache.").argName("DIR").build();
 		Option outFile = Option.builder("o").longOpt("output").numberOfArgs(1)
 			.desc("Output file.").argName("FILE").build();
 		Option libFile = Option.builder("l").longOpt("lib").numberOfArgs(1)
@@ -228,7 +228,7 @@ public class CmdLineOpts {
 
 			ret.setFactsDir(cmd.getOptionValue("F", "."));
 			ret.setOutputDir(cmd.getOptionValue("D", "."));
-			ret.setGeneratedDir(cmd.getOptionValue("G", "."));
+			ret.setCacheDir(cmd.getOptionValue("C", ret.getOutputDir()));
 			ret.setOutputFile(cmd.getOptionValue("o",
 												 ret.getOutputDir() + "/" +
 												 FileUtil.changeExtension(FileUtil.fileName(ret.getInputFile()), ".dl")));

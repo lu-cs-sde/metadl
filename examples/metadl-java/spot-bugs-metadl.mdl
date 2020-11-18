@@ -1,7 +1,7 @@
 # Top 5 warnings, as reported by How many of all bugs do we find? a study of static bug detectors [Habib & Pradel]
 
 # Read the sources
-EDB('Srcs, "srcs.csv").
+EDB('Srcs, "srcs.csv", "csv").
 
 Srcs("") :- NEQ(0,0).
 
@@ -28,9 +28,9 @@ java('Srcs) {
 
 
 
-OUTPUT('WarningTypeName).
-OUTPUT('WarningFieldName).
-OUTPUT('WarningMethodName).
+OUTPUT('WarningTypeName, "WarningTypeName.csv", "csv").
+OUTPUT('WarningFieldName, "WarningFieldName.csv", "csv").
+OUTPUT('WarningMethodName, "WarningMethodName.csv", "csv").
 
 
 ####################################################################################################
@@ -52,19 +52,13 @@ OUTPUT('WarningMethodName).
 	    SwitchWithoutDefaultDetail(l, c, file) :- SwitchWithoutDefault(s), SRC(s, l, c, _, _, file), GT(l, 0).
 
 
-OUTPUT('SwitchWithoutDefaultDetail).
+OUTPUT('SwitchWithoutDefaultDetail, "SwitchWithoutDefaultDetail.csv", "csv").
 
 
 ####################################################################################################
 
 # EI_EXPOSE_REP, MS_EXPOSE_REP, EI_EXPOSE_REP2, EI_EXPOSE_STATIC_REP2, EI2
 # aka  Reference to mutable object
-
-FieldInClass1(0, 0, 0, 0) :- NEQ(0, 0).
-
-NonPublicFieldReturn(0, 0) :- NEQ(0, 0).
-ParamToVariable(0, 0, 0) :- NEQ(0, 0).
-
 
 
 ### Analysis
@@ -101,16 +95,14 @@ ParamToVariable(0, 0, 0) :- NEQ(0, 0).
 	    ParamToNonPublicFieldDetail(l, c, file) :- ParamToNonPublicField(m), SRC(m, l, c, _, _, file).
 
 
-OUTPUT('ParamToNonPublicFieldDetail).
-OUTPUT('NonPublicFieldReturnDetail).
+OUTPUT('ParamToNonPublicFieldDetail, "ParamToNonPublicFieldDetail.csv", "csv").
+OUTPUT('NonPublicFieldReturnDetail, "NonPublicFieldReturnDetail.csv", "csv").
 
 ####################################################################################################
 
 # UWF_UNWRITTEN_FIELD, UWF_UNWRITTEN_PUBLIC_OR_PROTECTED_FIELD
 # aka Read of unwritten field
 
-FieldInClassWithInit(0, 0, 0, 0) :- NEQ(0, 0).
-FieldInClass(0, 0, 0, 0) :- NEQ(0, 0).
 
 
 ### Analysis
@@ -188,8 +180,8 @@ FieldInClass(0, 0, 0, 0) :- NEQ(0, 0).
 	    				       	  SRC(f, l, c, _, _, file), GT(l, 0).
 
 
-OUTPUT('Warn_UWF_UNWRITTEN_PUBLIC_OR_PROTECTED_FIELD_Detail).
-OUTPUT('Warn_UWF_UNWRITTEN_FIELD_Detail).
+OUTPUT('Warn_UWF_UNWRITTEN_PUBLIC_OR_PROTECTED_FIELD_Detail, "Warn_UWF_UNWRITTEN_PUBLIC_OR_PROTECTED_FIELD_Detail.csv", "csv").
+OUTPUT('Warn_UWF_UNWRITTEN_FIELD_Detail, "Warn_UWF_UNWRITTEN_FIELD_Detail.csv", "csv").
 
 ####################################################################################################
 
@@ -199,8 +191,6 @@ OUTPUT('Warn_UWF_UNWRITTEN_FIELD_Detail).
 TypeName("Character"), TypeName("Integer"), TypeName("Long"), TypeName("Short"),
 TypeName("Byte"), TypeName("Float"), TypeName("Double"), TypeName("Boolean").
 
-PrimitiveCtor(0) :- NEQ(0, 0).
-
 
 	    PrimitiveCtor(e) :- e <: new `c(`_) :>, DECL(`c, c), c <: class `name { .. } :>, ID(`name, t), TypeName(t).
 	    PrimitiveCtorDetail(l, c, file) :- PrimitiveCtor(e), SRC(e, l, c, _, _, file).
@@ -208,8 +198,7 @@ PrimitiveCtor(0) :- NEQ(0, 0).
 	    PrimitiveStringCtorDetail(l, c, file) :- PrimitiveStringCtor(e), SRC(e, l, c, _, _, file), GT(l, 0).
 
 
-OUTPUT('PrimitiveCtorDetail).
-OUTPUT('PrimitiveStringCtorDetail).
-OUTPUT('PROVENANCE).
+OUTPUT('PrimitiveCtorDetail, "PrimitiveCtorDetail.csv", "csv").
+OUTPUT('PrimitiveStringCtorDetail, "PrimitiveStringCtorDetail.csv", "csv").
 
 }

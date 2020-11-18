@@ -88,7 +88,7 @@ OUTPUT('TypeUnusedInFormalsDetail, "TypeUnusedInFormalsDetail.csv", "csv").
 
 	    MethodHasNoParams(m) :- MethodSig1(m, _, _), NOT(MethodSig2(m, _, _)).
 
-	    ClassForMethod(m, c) :- m <: `rett `name(..) ; :>, PARENT(c, p), PARENT(p, m).
+	    ClassForMethod(m, c) :- m <: `rett `name(..) ; :>, PARENT(p, m), PARENT(c, p).
 
 	    # Covariant return type
 	    OverrideCandidate(m, super) :- MethodSig1(m, n, ret), MethodSig1(super, n, ret_super), TSuperType(ret, ret_super),

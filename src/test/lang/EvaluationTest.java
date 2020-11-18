@@ -216,7 +216,8 @@ public class EvaluationTest {
 			"unwritten-field", "naming-convention", "reference-to-mutable-object", "missing-override",
 			"reference-equality", "boxed-primitive-constructor", "operator-precedence",
 			"type-param-unused-in-formals", "paper-examples", "java7", "java8",
-			"attr-provenance", "names"
+			// "attr-provenance": provenance information is not produced in non-incremental mode
+			"names"
 		};
 		return Arrays.stream(tests);
 	}

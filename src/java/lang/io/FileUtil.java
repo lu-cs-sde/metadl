@@ -107,7 +107,7 @@ public class FileUtil {
 		org.extendj.ast.Program p = new org.extendj.ast.Program();
 		String fileIdDb = "analyzed-files.csv";
 
-		p.trace().setReceiver(p.provenance);
+		// p.trace().setReceiver(p.provenance);
 		SimpleLogger.logger().info("Using an empty file-to-id database");
 		p.fileIdStorage = new FileIdDatabase();
 

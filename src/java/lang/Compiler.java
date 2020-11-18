@@ -32,6 +32,7 @@ import lang.ast.SemanticError;
 import lang.io.FileUtil;
 import lang.io.SimpleLogger;
 import lang.relation.RelationWrapper;
+import prof.Profile;
 import swig.SWIGUtil;
 
 /**
@@ -48,15 +49,18 @@ public class Compiler {
 	public static Program parseProgram(CmdLineOpts opts) throws IOException, beaver.Parser.Exception {
 		String path = opts.getInputFile();
 		StopWatch timer = StopWatch.createStarted();
+		Profile.profile().startTimer("main", "parsing");
 		Program program = (Program) FileUtil.parse(new File(path));
 		Compiler.DrAST_root_node = program; // Enable debugging with DrAST
 		timer.stop();
+		Profile.profile().stopTimer("main", "parsing");
 		SimpleLogger.logger().time("Parsing: " + timer.getTime() + "ms");
 		return program;
 	}
 
 	public static void checkProgram(Program program, CmdLineOpts opts) {
 		StopWatch timer = StopWatch.createStarted();
+		Profile.profile().startTimer("main", "sema_and_type_check");
 		if (program.hasSemanticErrors()) {
 			System.err.println(program.errorReport());
 			System.err.println("Compilation failed with semantic errors.");
@@ -75,6 +79,7 @@ public class Compiler {
 				System.err.println(e.reportPosition());
 			}
 		}
+		Profile.profile().stopTimer("main", "sema_and_type_check");
 		timer.stop();
 		SimpleLogger.logger().time("Semantic and type analysis: " + timer.getTime() + "ms");
 	}
@@ -124,13 +129,15 @@ public class Compiler {
 		prog.evalEDB(prog.evalCtx(), opts);
 		prog.evalIMPORT(prog.evalCtx(), opts);
 
-
+		Profile.profile().startTimer("main", "local_and_global_split");
 		// split program into local and global parts
 		ProgramSplit split = new ProgramSplit(prog);
 		if (!split.canEvaluateIncrementally()) {
 			throw new RuntimeException("Cannot evaluate this program incrementally.");
 		}
+		Profile.profile().stopTimer("main", "local_and_global_split");
 
+		Profile.profile().startTimer("main", "incremental_driver");
 		IncrementalDriver incDriver = new IncrementalDriver(new File(opts.getCacheDir()), split);
 		incDriver.init();
 
@@ -139,6 +146,7 @@ public class Compiler {
 		incDriver.runGlobalProgram(opts);
 
 		incDriver.shutdown();
+		Profile.profile().stopTimer("main", "incremental_driver");
 	}
 
 	public static String getCSVSeparatorEscaped() {
@@ -234,9 +242,21 @@ public class Compiler {
 		StopWatch totalTime = StopWatch.createStarted();
 
 		CmdLineOpts opts = CmdLineOpts.parseCmdLineArgs(args);
+		if (opts.getProfileFile() != null) {
+			// set the output file  for the profiling information
+			Profile.profile().setOutput(new File(opts.getProfileFile()));
+		}
+
+		Profile.profile().startTimer("main", "total");
 		run(opts);
+		Profile.profile().stopTimer("main", "total");
 
 		totalTime.stop();
 		SimpleLogger.logger().time("Total: " + totalTime.getTime() + "ms ");
+
+		if (opts.getProfileFile() != null) {
+			// write out the profiling information
+			Profile.profile().writeOut();
+		}
 	}
 }

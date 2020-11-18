@@ -39,6 +39,7 @@ import lang.io.FileUtil;
 import lang.io.SQLUtil;
 import lang.Compiler;
 import static lang.io.SimpleLogger.*;
+import static prof.Profile.*;
 import lang.java.obj.DatalogProjection2;
 import lang.java.obj.DatalogProjectionSink;
 import lang.java.obj.FileIdDatabase;
@@ -269,19 +270,27 @@ public class IncrementalDriver {
 				logger().info("Skipping file " + f + ". File does not exist. ");
 				continue;
 			}
+
+			profile().startTimer("object_file_compile", f.getPath());
 			logger().debug("Extracting AST facts from source " + f.getPath() + ".");
 			org.extendj.ast.Program p = createProgram(fileIdDb);
 			p.addSourceFile(f.getPath());
 			checkProgram(p);
 
+			profile().stopTimer("object_file_compile", f.getPath());
+
 			int fileTag = fileIdDb.getIdForFile(f.getPath());
 
+			profile().startTimer("object_file_generate_relations", f.getPath());
 			// generate the Datalog projection
 			StandaloneDatalogProjectionSink sink = new StandaloneDatalogProjectionSink(fileTag, relPrefix);
 			DatalogProjection2 proj = new DatalogProjection2(p, sink, fileIdDb);
 			proj.generate();
+			profile().stopTimer("object_file_generate_relations", f.getPath());
 
+			profile().startTimer("object_file_db_write", f.getPath());
 			sink.writeToDB(progDbFile);
+			profile().stopTimer("object_file_db_write", f.getPath());
 		}
 		timer.stop();
 		logger().time("Fact extraction from " + sourceFiles.size() + " files: " + timer.getTime() + " ms");
@@ -362,6 +371,8 @@ public class IncrementalDriver {
 			RelationWrapper visitFilesRel;
 			RelationWrapper removeFilesRel;
 
+			profile().startTimer("update_program", "total");
+
 			if (useSouffle) {
 				SQLUtil.clearRelation(progDbFile.getPath(), ProgramSplit.ANALYZED_SOURCES_RELATION);
 				SQLUtil.writeRelation(progDbFile.getPath(), ProgramSplit.ANALYZED_SOURCES_RELATION, analyzedSrcs);
@@ -394,8 +405,18 @@ public class IncrementalDriver {
 				removeFilesRel = getRelation(update, ProgramSplit.AST_REMOVE_RELATION);
 			}
 
+			profile().stopTimer("update_program", "total");
+
 			deletedFiles = removeFilesRel.tuples().stream().map(t -> new File(t.getAsString(0))).collect(Collectors.toList());
 			visitFiles = visitFilesRel.tuples().stream().map(t -> new File(t.getAsString(0))).collect(Collectors.toList());
+
+			profile().setCounter("file_delta", "n_D",
+								 analyzedSrcs.tuples().stream().filter(t -> t.getAsString(1).equals("D")).count());
+			profile().setCounter("file_delta", "n_A",
+								 analyzedSrcs.tuples().stream().filter(t -> t.getAsString(1).equals("A")).count());
+			profile().setCounter("file_delta", "n_M",
+								 analyzedSrcs.tuples().stream().filter(t -> t.getAsString(1).equals("M")).count());
+			profile().setCounter("file_delta", "n_analyzed", visitFilesRel.tuples().size());
 
 			logger().debug("Update incremental run with modified/added files " +
 						   visitFiles + ", removed files " + deletedFiles + ".");
@@ -417,10 +438,14 @@ public class IncrementalDriver {
 	}
 
 	private void runLocalProgram(List<File> visitFiles, CmdLineOpts opts) throws IOException, SQLException {
+		profile().startTimer("local_program", "total");
+
 		StopWatch timer = StopWatch.createStarted();
 		for (File file : visitFiles) {
 			runLocalProgram(opts, file);
 		}
+
+		profile().stopTimer("local_program", "total");
 		timer.stop();
 		logger().time("Running the local program on " + visitFiles.size() + " files:" + timer.getTime() + " ms");
 	}
@@ -434,6 +459,7 @@ public class IncrementalDriver {
 		int fileId = fileIdDb.getIdForFile(file.getPath());
 
 		StopWatch timer = StopWatch.createStarted();
+		profile().startTimer("local_program", file.getPath());
 		if (useSouffle) {
 			String cmd = localSouffleProg.getPath() + " -D " + opts.getOutputDir() + " -F " + opts.getFactsDir() +
 				" -d " + progDbFile + " -t " + fileId + "";
@@ -453,6 +479,8 @@ public class IncrementalDriver {
 			local.clearRelations();
 		}
 		timer.stop();
+		profile().stopTimer("local_program", file.getPath());
+
 		logger().time("Running local program on " + file + ":" + timer.getTime() + " ms");
 	}
 
@@ -460,6 +488,7 @@ public class IncrementalDriver {
 		logger().debug("Running the global program");
 
 		StopWatch timer = StopWatch.createStarted();
+		profile().startTimer("global_program", "total");
 		if (useSouffle) {
 			String cmd = globalSouffleProg.getPath() + " -D " + opts.getOutputDir()  + " -F " + opts.getFactsDir() +
 				" -d " + progDbFile;
@@ -476,6 +505,8 @@ public class IncrementalDriver {
 			global.eval(internalOpts);
 		}
 		timer.stop();
+		profile().stopTimer("global_program", "total");
+
 		logger().time("Running the global program: " + timer.getTime() + " ms.");
 
 	}

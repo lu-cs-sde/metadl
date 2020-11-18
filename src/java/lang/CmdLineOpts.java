@@ -19,6 +19,7 @@ public class CmdLineOpts {
 	private String outputFile;
 	private String inputFile;
 	private String libFile;
+	private String profileFile;
 	private String sqlDbFile; // Internal option
 	private Integer dbEntryTag = null; // Internal option
 	private Action action = Action.EVAL_INTERNAL;
@@ -41,6 +42,14 @@ public class CmdLineOpts {
 
 	public void setOutputDir(String str) {
 		this.outputDir = str;
+	}
+
+	public String getProfileFile() {
+		return profileFile;
+	}
+
+	public void setProfileFile(String profileFile) {
+		this.profileFile = profileFile;
 	}
 
 	public Integer getDbEntryTag() {
@@ -163,10 +172,12 @@ public class CmdLineOpts {
 			.desc("Print warnings.").build();
 		Option sqldb = Option.builder("q").longOpt("sqldb").numberOfArgs(1)
 			.desc("SQLite database file.").argName("FILE").build();
+		Option profile = Option.builder("P").longOpt("profile").numberOfArgs(1)
+			.desc("Enable profiling and dump the results in JSON format").argName("FILE").build();
 
 		Options options = new Options().addOptionGroup(actions)
 			.addOption(factDir).addOption(outDir).addOption(genDir).addOption(outFile)
-			.addOption(libFile).addOption(enableWarnings).addOption(sqldb);
+			.addOption(libFile).addOption(enableWarnings).addOption(sqldb).addOption(profile);
 
 		try {
 			CommandLine cmd = parser.parse(options, args);
@@ -224,6 +235,10 @@ public class CmdLineOpts {
 
 			if (cmd.hasOption("q")) {
 				ret.setSqlDbFile(cmd.getOptionValue("q"));
+			}
+
+			if (cmd.hasOption("P")) {
+				ret.setProfileFile(cmd.getOptionValue("P"));
 			}
 
 			ret.setFactsDir(cmd.getOptionValue("F", "."));

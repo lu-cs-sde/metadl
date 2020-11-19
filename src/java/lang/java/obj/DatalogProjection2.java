@@ -96,7 +96,7 @@ public class DatalogProjection2 {
 		// Traverse each compilation unit
 		// TODO: this is ExtendJ-specific; should be language agnostic.
 		for (org.extendj.ast.CompilationUnit cu : ((org.extendj.ast.Program) root).getCompilationUnits()) {
-			int fileId = fileIdDb.getIdForFile(cu.getClassSource().sourceName());
+			int fileId = fileIdDb.getIdForFile(cu.getClassSource().pathName());
 			cu.doNodeNumbering(1, fileId);
 			traverse(cu, worklist, programRepresentation);
 		}

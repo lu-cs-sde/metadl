@@ -71,7 +71,7 @@ public class DomainSeparationTest {
 		assertTrue(B.isASTPredicate());
 		assertTrue(C.isASTPredicate());
 		// B and C use the DECL attribute, which is global
-		assertFalse(B.isLocal());
-		assertFalse(C.isLocal());
+		assertTrue(B.isLocal());
+		assertTrue(C.isLocal());
 	}
 }

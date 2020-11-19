@@ -108,8 +108,22 @@ aspect DomainSeparation {
 	syn lazy java.util.List<Integer> Literal.astIndices() =
 		getPredicate().formalpredicate().astIndices();
 
+	inh String Wildcard.freshVariableName();
+	eq Literal.getTerms(int i).freshVariableName() {
+		return "w_" + i + "_" + positionInRule();
+	}
+
+	/**
+		dsName = a name to use for the domain separation algoriths;
+		for Variables, this is their actual name, while for Wildcards it
+		fresh name for each.
+	 */
+	syn String CommonVariable.dsName();
+	eq Variable.dsName() = getVAR_ID();
+	eq Wildcard.dsName() = freshVariableName();
+
 	syn lazy Set<String> Literal.astVariables() =
-		astIndices().stream().map(i -> getTerms(i)).filter(t -> t instanceof Variable).map(t -> ((Variable) t).getVAR_ID()).collect(Collectors.toSet());
+		astIndices().stream().map(i -> ((CommonVariable) getTerms(i)).dsName()).collect(Collectors.toSet());
 
 	syn DomainSignature<Integer> FormalPredicate.domainSignature() circular [initialDomainSignature()] {
 		// iterate over all the heads and merge their signatures
@@ -119,13 +133,9 @@ aspect DomainSeparation {
 				DomainSignature<Integer> literalSig = new DomainSignature<>(astIndices());
 				DomainSignature<String> clauseSig = ((Rule)l.clause()).domainSignature();
 				for (int i : l.astIndices()) {
-					if (!(l.getTerms(i) instanceof Variable))
-						continue;
-					String vi = ((Variable)l.getTerms(i)).getVAR_ID();
+					String vi = ((CommonVariable)l.getTerms(i)).dsName();
 					for (int j : l.astIndices()) {
-						if (!(l.getTerms(j) instanceof Variable))
-							continue;
-						String vj = ((Variable)l.getTerms(j)).getVAR_ID();
+						String vj = ((CommonVariable)l.getTerms(j)).dsName();
 						if (clauseSig.inSameSet(vi, vj))
 							literalSig.union(i, j);
 					}
@@ -139,11 +149,24 @@ aspect DomainSeparation {
 	private DomainSignature<String> Rule.initialDomainSignature() {
 		// initially all the variables have their own domain
 		DomainSignature<String> dom = new DomainSignature<String>(Collections.emptySet());
-		for (String varName : varMap().variableNames()) {
-			if (varMap().get(varName).get(0).type() == ASTNodeType.get()) {
-				dom.addElement(varName);
+
+		SortedSet<String> varNames = new TreeSet<>();
+		for (CommonLiteral c : getHeadss()) {
+			Literal l = c.asLiteral();
+			if (l != null ) {
+				varNames.addAll(((Literal) l).astVariables());
 			}
 		}
+
+		for (CommonLiteral c : getBodys()) {
+			Literal l = c.asLiteral();
+			if (l != null) {
+				varNames.addAll(((Literal) l).astVariables());
+			}
+		}
+
+		varNames.forEach(v -> dom.addElement(v));
+
 		return dom;
 	}
 
@@ -165,13 +188,9 @@ aspect DomainSeparation {
 
 			DomainSignature<Integer> literalSig = l.getPredicate().formalpredicate().domainSignature();
 			for (int i : l.astIndices()) {
-				if (!(l.getTerms(i) instanceof Variable))
-					continue;
-				String vi = ((Variable)l.getTerms(i)).getVAR_ID();
+				String vi = ((CommonVariable)l.getTerms(i)).dsName();
 				for (int j : l.astIndices()) {
-					if (!(l.getTerms(j) instanceof Variable))
-						continue;
-					String vj = ((Variable)l.getTerms(j)).getVAR_ID();
+					String vj = ((CommonVariable)l.getTerms(j)).dsName();
 					if (literalSig.inSameSet(i, j))
 						ruleSig.union(vi, vj);
 				}
@@ -190,6 +209,11 @@ aspect DomainSeparation {
 	// A predicate is local iff its relation can be computed separately for each
 	// translation unit.
 	syn boolean FormalPredicate.isLocal() circular [true] {
+		if (getContextPredicateType() != null) {
+			// this is a context predicate and all context predicates are local
+			return true;
+		}
+
 		for (Clause c : definedIn()) {
 			if (!c.isLocal()) {
 				return false;
@@ -204,6 +228,7 @@ aspect DomainSeparation {
 	eq Fact.isLocal() = true;
 	eq Rule.isLocal() {
 		java.util.List<Literal> astLiterals = new ArrayList<>();
+
 		// all the AST literals are single domain
 		for (CommonLiteral c : getBodys()) {
 			Literal l = c.asLiteral();
@@ -217,14 +242,30 @@ aspect DomainSeparation {
 				// check that the predicate has exactly one equivalence set;
 				// this means that the predicate contains information about
 				// exactly one AST and has witnesses for that
-				if (pred.domainSignature().equivalenceSets().size() != 1)
+				if (l.astVariables().isEmpty())
 					return false;
+
+				// ensure that all AST variables are in the same domain, either
+				// constrained by the predicate, or constrained by other variables
+				// in the clause.
+				DomainSignature<Integer> literalSig = l.getPredicate().formalpredicate().domainSignature();
+
+				for (int i : l.astIndices()) {
+					String vi = ((CommonVariable)l.getTerms(i)).dsName();
+					for (int j : l.astIndices()) {
+						String vj = ((CommonVariable)l.getTerms(j)).dsName();
+						if (!literalSig.inSameSet(i, j) && !domainSignature().inSameSet(vi, vj))
+							return false;
+					}
+				}
+
 				// collect the literals that depend on AST facts
 				astLiterals.add(l);
 			}
 		}
 
 		// no literals depend on AST, then this can be computed locally
+		// (or globally), it doesn't matter.
 		if (astLiterals.isEmpty())
 			return true;
 

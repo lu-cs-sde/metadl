@@ -71,12 +71,6 @@ aspect PretyPrinting {
     }
 
     public void Rule.prettyPrint(PrettyPrinter pr) {
-		// if (isASTClause()) {
-		// 	pr.printComment("AST clause");
-		// }
-		// pr.printComment(isLocal() ? "Local clause" : "Global clause");
-		// pr.printComment("Domains: " + domainSignature().equivalenceSets().toString());
-
         printCollection(getHeadss(), "", "", ",", pr);
         pr.out.print(" :- ");
         printCollection(getBodys(), "", ".\n", ", ", pr);
@@ -289,6 +283,16 @@ aspect SoufflePrinting {
         prettyPrint(pr);
         pr.out.print("\"");
     }
+
+	public void Rule.soufflePrint(PrettyPrinter pr) {
+		if (isASTClause()) {
+			pr.printComment("AST clause");
+		}
+		pr.printComment(isLocal() ? "Local clause" : "Global clause");
+		pr.printComment("Domains: " + domainSignature().equivalenceSets().toString());
+
+		prettyPrint(pr);
+	}
 
 	public void Variable.soufflePrint(PrettyPrinter pr) {
 		pr.out.print(getVAR_ID().replaceAll("[$`]", "?"));

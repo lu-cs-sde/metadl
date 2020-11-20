@@ -35,7 +35,7 @@ public class DatalogProjection2 {
 	private TupleInserter attributes;
 	private TupleInserter srcLoc;
 	private TupleInserter nta;
-	private int NTANum = 1;
+	private long NTANum = 1;
 
 	private FileIdStorage fileIdDb;
 
@@ -55,40 +55,51 @@ public class DatalogProjection2 {
 		this.attributes = tupleSink.getAttributes();
 		this.nta = tupleSink.getNTA();
 		this.fileIdDb = fileIdStorage;
+
 	}
 
+	private Map<ASTNode, Long> nodeToId = new HashMap<>();
 	private long nodeId(ASTNode<?> n) {
-		assert n.javaDLNum >= 0;
-		return (long)n.javaDLFileId << 32 | n.javaDLNum;
+		// if (n.javaDLNodeId >= 0)
+		// 	return n.javaDLNodeId;
+ 		// TODO: consider caching this on the node itself
+		Long id = nodeToId.get(n);
+		if (id != null) {
+			n.javaDLNodeId = id;
+			return id;
+		}
+
+		if (!n.numberOnDemand(fileIdDb, nodeToId)) {
+			// throw new RuntimeException("Node numbering failed.");
+			NTANum = n.doNodeNumberingNTA(NTANum, nodeToId);
+		}
+
+		id = nodeToId.get(n);
+		n.javaDLNodeId = id;
+		return id;
 	}
 
-	private int fileId(ASTNode<?> n) {
-		return n.javaDLFileId;
-	}
 
 	private static int NTA_FILE_ID_BIT = 1 << 30; // use bit 30 to get positive IDs
-	private int NTAFileId(int fileId) {
-		return fileId | NTA_FILE_ID_BIT;
+	private long NTAFileId(long fileId) {
+		return (((long) (fileId)) | NTA_FILE_ID_BIT) << 32;
 	}
 
 	private boolean isNTANode(ASTNode<?> n) {
-		assert visited(n);
-		return (n.javaDLFileId & NTA_FILE_ID_BIT) != 0;
+		long nid = nodeId(n);
+		return ((nid >>> 32) & NTA_FILE_ID_BIT) != 0;
 	}
 
+	private Set<ASTNode<?>> visitedSet = new HashSet<>();
 	private boolean visited(ASTNode<?> n) {
-		return n.visitedMarker;
+		return visitedSet.contains(n);
 	}
 
 	private void markVisited(ASTNode<?> n) {
-		n.visitedMarker = true;
+		visitedSet.add(n);
 	}
 
-	private boolean hasNodeId(ASTNode<?> n) {
-		return n.javaDLNum >= 0;
-	}
-
-	public void generate() {
+	public void generate(boolean batchMode) {
 		// traverse the tree
 		StopWatch traverseTime = StopWatch.createStarted();
 		Queue<ASTNode<?>> worklist = new ArrayDeque<>();
@@ -96,8 +107,15 @@ public class DatalogProjection2 {
 		// Traverse each compilation unit
 		// TODO: this is ExtendJ-specific; should be language agnostic.
 		for (org.extendj.ast.CompilationUnit cu : ((org.extendj.ast.Program) root).getCompilationUnits()) {
-			int fileId = fileIdDb.getIdForFile(cu.getClassSource().pathName());
-			cu.doNodeNumbering(1, fileId);
+			// we know we're gone traverse all this CU, so number it!
+			cu.numberAllNodes(fileIdDb, nodeToId);
+			if (batchMode) {
+				// in batch mode, all NTAs share a single namespace
+				NTANum = NTAFileId(0);
+			} else {
+				// in incremental mode NTAs are file specific
+				NTANum = NTAFileId(fileIdDb.getIdForFile(cu.getClassSource().pathName()));
+			}
 			traverse(cu, worklist, programRepresentation);
 		}
 
@@ -139,16 +157,7 @@ public class DatalogProjection2 {
 				}
 
 				if (!visited(r)) {
-					if (hasNodeId(r)) {
-						// this is a node from the source files or loaded from a library
-						traverse(r, worklist, programRepresentation);
-					} else {
-						// attributes may refer to NTAs, that were not visited in the
-						// initial traversal, visit them now and add every node in the
-						// subtree to the worklist, for attribute evaluation
-						NTANum = r.doNodeNumbering(NTANum, NTAFileId(fileId(n)));
-						traverse(r, worklist, nta);
-					}
+					traverse(r, worklist, isNTANode(r) ? nta : programRepresentation);
 				}
 				attributes.insertTuple(attrName, nodeId(n), nodeId(r));
 			}
@@ -156,6 +165,7 @@ public class DatalogProjection2 {
 	}
 
 	private void traverse(ASTNode<?> n, Queue<ASTNode<?>> worklist, TupleInserter astTupleSink) {
+
 		worklist.add(n);
 		assert n.getNumChild() == n.getNumChildNoTransform();
 		for (int i = 0; i < n.getNumChildNoTransform(); ++i) {
@@ -164,7 +174,7 @@ public class DatalogProjection2 {
 			if (childNT != null) {
 				traverse(childNT, worklist, astTupleSink);
 				if (childNT.mayHaveRewrite()) {
-					ASTNode<?> child = n.getChild(i);
+					ASTNode<?> child = n.getFrozenChild(i);
 					if (child != childNT) {
 						traverse(child, worklist, astTupleSink);
 						recordRewrittenNode(childNT, child);
@@ -322,7 +332,7 @@ public class DatalogProjection2 {
 	private int tokenUID = Integer.MAX_VALUE;
 	private long freshTokeId(ASTNode<?> n) {
 		// give a token id that is file specific
-		long fileId = fileId(n);
+		long fileId = nodeId(n) >> 32;
 		tokenUID--;
 		return (fileId << 32) | tokenUID;
 	}
@@ -337,9 +347,11 @@ public class DatalogProjection2 {
 			ASTNode<?> child = n.getChildNoTransform(i);
 			// TODO: ExtendJ sometimes returns null for child. Understand why.
 			if (child != null) {
+				assert astTupleSink != nta || isNTANode(n);
+				assert astTupleSink != programRepresentation || !isNTANode(n);
 				astTupleSink.insertTuple(relName, nodeId(n), childIndex, nodeId(child), "");
 				if (child.mayHaveRewrite()) {
-					ASTNode<?> childT = n.getChild(i);
+					ASTNode<?> childT = n.getFrozenChild(i);
 					astTupleSink.insertTuple(relName, nodeId(n), childIndex, nodeId(childT), "");
 				}
 			}

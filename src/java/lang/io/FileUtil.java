@@ -139,7 +139,7 @@ public class FileUtil {
 
 		// Generate the program relation
 		lang.java.obj.DatalogProjection2 proj2 = new lang.java.obj.DatalogProjection2(p, tupleSink, p.fileIdStorage);
-		proj2.generate();
+		proj2.generate(true);
 	}
 
 	static class OutputConsumer implements Runnable {

@@ -284,8 +284,8 @@ public class IncrementalDriver {
 			profile().startTimer("object_file_generate_relations", f.getPath());
 			// generate the Datalog projection
 			StandaloneDatalogProjectionSink sink = new StandaloneDatalogProjectionSink(fileTag, relPrefix);
-			DatalogProjection2 proj = new DatalogProjection2(p, sink, fileIdDb);
-			proj.generate(false);
+			DatalogProjection2 proj = new DatalogProjection2(fileIdDb, p.provenance);
+			proj.generate(p, sink);
 			profile().stopTimer("object_file_generate_relations", f.getPath());
 
 			profile().startTimer("object_file_db_write", f.getPath());

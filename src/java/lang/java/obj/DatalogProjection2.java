@@ -4,9 +4,11 @@ import java.lang.reflect.Method;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
@@ -18,44 +20,30 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.text.StringEscapeUtils;
 
 import org.extendj.ast.ASTNode;
+import org.extendj.ast.CompilationUnit;
 import org.junit.jupiter.engine.discovery.predicates.IsNestedTestClass;
 import org.extendj.ProvenanceStackMachine;
 import org.extendj.ast.FileIdStorage;
+import org.extendj.ast.Program;
 
 import lang.io.SimpleLogger;
-import lang.io.StringUID;
 import lang.relation.RelationWrapper;
 import lang.relation.TupleInserter;
 
 public class DatalogProjection2 {
-	private ASTNode<?> root;
-
-	private TupleInserter programRepresentation;
-	private TupleInserter attributeProvenance;
-	private TupleInserter attributes;
-	private TupleInserter srcLoc;
-	private TupleInserter nta;
 	private long NTANum = 1;
-
 	private FileIdStorage fileIdDb;
+	private ProvenanceStackMachine prov;
 
 	// TODO: It's just easier to add environment variable than command-line arguments.
 	// This should be removed once we move to a traditional command line parser,
 	// that is easier to modify.
 	private boolean deepAnalysis = System.getenv().get("METADL_ANALYSIS") != null;
 
-
-	public DatalogProjection2(ASTNode<?> root,
-							  DatalogProjectionSink tupleSink,
-							  FileIdStorage fileIdStorage) {
-		this.root = root;
-		this.programRepresentation = tupleSink.getAST();
-		this.attributeProvenance = tupleSink.getProvenance();
-		this.srcLoc = tupleSink.getSrcLoc();
-		this.attributes = tupleSink.getAttributes();
-		this.nta = tupleSink.getNTA();
+	public DatalogProjection2(FileIdStorage fileIdStorage,
+							  ProvenanceStackMachine prov) {
 		this.fileIdDb = fileIdStorage;
-
+		this.prov = prov;
 	}
 
 	private Map<ASTNode, Long> nodeToId = new HashMap<>();
@@ -71,7 +59,9 @@ public class DatalogProjection2 {
 
 		if (!n.numberOnDemand(fileIdDb, nodeToId)) {
 			// throw new RuntimeException("Node numbering failed.");
+			// System.out.print("Do NTA node numbering at " + n + " from " + NTANum);
 			NTANum = n.doNodeNumberingNTA(NTANum, nodeToId);
+			// System.out.println(" until " + NTANum);
 		}
 
 		id = nodeToId.get(n);
@@ -79,119 +69,159 @@ public class DatalogProjection2 {
 		return id;
 	}
 
-
 	private static int NTA_FILE_ID_BIT = 1 << 30; // use bit 30 to get positive IDs
 	private long NTAFileId(long fileId) {
 		return (((long) (fileId)) | NTA_FILE_ID_BIT) << 32;
 	}
 
-	private boolean isNTANode(ASTNode<?> n) {
-		long nid = nodeId(n);
-		return ((nid >>> 32) & NTA_FILE_ID_BIT) != 0;
+	public Set<CompilationUnit> generate(CompilationUnit cu, DatalogProjectionSink tupleSink) {
+		NTANum = NTAFileId(fileIdDb.getIdForFile(cu.getClassSource().relativeName()));
+
+		Set<CompilationUnit> externalCUs = traverseAndMapAttributes(cu, cu, tupleSink, "type", "decl", "genericDecl");
+
+		tupleSink.getAST().done();
+		tupleSink.getProvenance().done();
+		tupleSink.getSrcLoc().done();
+		tupleSink.getAttributes().done();
+		tupleSink.getNTA().done();
+
+		return externalCUs;
 	}
 
-	private Set<ASTNode<?>> visitedSet = new HashSet<>();
-	private boolean visited(ASTNode<?> n) {
-		return visitedSet.contains(n);
-	}
-
-	private void markVisited(ASTNode<?> n) {
-		visitedSet.add(n);
-	}
-
-	public void generate(boolean batchMode) {
-		// traverse the tree
-		StopWatch traverseTime = StopWatch.createStarted();
-		Queue<ASTNode<?>> worklist = new ArrayDeque<>();
-
-		// Traverse each compilation unit
-		// TODO: this is ExtendJ-specific; should be language agnostic.
-		for (org.extendj.ast.CompilationUnit cu : ((org.extendj.ast.Program) root).getCompilationUnits()) {
-			// we know we're gone traverse all this CU, so number it!
-			cu.numberAllNodes(fileIdDb, nodeToId);
-			if (batchMode) {
-				// in batch mode, all NTAs share a single namespace
-				NTANum = NTAFileId(0);
-			} else {
-				// in incremental mode NTAs are file specific
-				NTANum = NTAFileId(fileIdDb.getIdForFile(cu.getClassSource().pathName()));
-			}
-			traverse(cu, worklist, programRepresentation);
+	public void generate(Program p, DatalogProjectionSink tupleSink) {
+		Set<CompilationUnit> worklist = new LinkedHashSet<>();
+		for (CompilationUnit cu : p.getCompilationUnits()) {
+			worklist.addAll(generate(cu, tupleSink));
 		}
 
-		traverseTime.stop();
-		StopWatch attributeMapTime = StopWatch.createStarted();
-		mapAttributes(worklist, "type", "decl", "genericDecl");
-		// flush all the external relations
-		programRepresentation.done();
-		attributeProvenance.done();
-		attributes.done();
-		srcLoc.done();
-		nta.done();
-		// stop the timers and report
-		attributeMapTime.stop();
-		SimpleLogger.logger().time("Object AST initial traversal: " + traverseTime.getTime() + "ms");
-		SimpleLogger.logger().time("Attribute tabulation: " + attributeMapTime.getTime() + "ms");
-	}
-
-	final private void mapAttributes(Queue<ASTNode<?>> worklist, String ...attrs) {
 		while (!worklist.isEmpty()) {
-			ASTNode<?> n = worklist.poll();
-			assert visited(n);
-
-			// prevent the analysis from diving into rt.jar, which
-			// takes a long (O(minutes)) time.
-			if (!deepAnalysis && isLibraryNode(n))
-				continue;
-
-			for (String attrName : attrs) {
-				ASTNode<?> r = nodeAttribute(n, attrName);
-
-				if (r == null)
-					continue;
-
-				// log the attribute's provenance information
-				Set<String> srcs = attrProvenance(n, attrName);
-				for (String src : srcs) {
-					attributeProvenance.insertTuple(nodeId(n), attrName, src);
-				}
-
-				if (!visited(r)) {
-					traverse(r, worklist, isNTANode(r) ? nta : programRepresentation);
-				}
-				attributes.insertTuple(attrName, nodeId(n), nodeId(r));
-			}
+			// pop a CU from the set
+			CompilationUnit cu = worklist.iterator().next();
+			worklist.remove(cu);
+			worklist.addAll(generate(cu, tupleSink));
 		}
 	}
 
-	private void traverse(ASTNode<?> n, Queue<ASTNode<?>> worklist, TupleInserter astTupleSink) {
+	private Set<CompilationUnit> traverseAndMapAttributes(CompilationUnit currentCU,
+														 ASTNode<?> n,
+														 DatalogProjectionSink tupleSink,
+														 String ...attrs) {
 
-		worklist.add(n);
-		assert n.getNumChild() == n.getNumChildNoTransform();
-		for (int i = 0; i < n.getNumChildNoTransform(); ++i) {
-			ASTNode<?> childNT = n.getChildNoTransform(i);
-			// TODO: ExtendJ sometimes returns null for childNT. Understand why.
-			if (childNT != null) {
-				traverse(childNT, worklist, astTupleSink);
-				if (childNT.mayHaveRewrite()) {
-					ASTNode<?> child = n.getFrozenChild(i);
-					if (child != childNT) {
-						traverse(child, worklist, astTupleSink);
-						recordRewrittenNode(childNT, child);
+		boolean mapAttributes = !isLibraryNode(currentCU) || deepAnalysis;
+
+		Queue<ASTNode<?>> currentCUNodes = new ArrayDeque<>();
+		Queue<ASTNode<?>> NTANodes = new ArrayDeque<>();
+
+		Set<ASTNode<?>> processed = new HashSet<>();
+		Set<CompilationUnit> otherCompilationUnits = new LinkedHashSet<>();
+
+		// seed the worklist
+		currentCUNodes.add(n);
+
+		// run the worklist
+		while (!(currentCUNodes.isEmpty() && NTANodes.isEmpty())) {
+			while (!currentCUNodes.isEmpty()) {
+				ASTNode<?> q = currentCUNodes.poll();
+				if (processed.contains(q)) {
+					continue;
+				}
+				// mark visited
+				processed.add(q);
+				// add the tuples to the relation
+				toTuples(q, tupleSink.getAST());
+				// record source location
+				srcLoc(q, tupleSink.getSrcLoc());
+				// now process the attributes
+				if (mapAttributes) {
+					mapAttributes2(q, currentCU, otherCompilationUnits, currentCUNodes, NTANodes, tupleSink.getAttributes(),
+								   tupleSink.getProvenance(), attrs);
+				}
+				// add the children to the worklist
+				for (int i = 0; i < q.getNumChildNoTransform(); ++i) {
+					ASTNode<?> childNT = q.getChildNoTransform(i);
+					// TODO: ExtendJ sometimes returns null for childNT. Understand why.
+					if (childNT != null) {
+						currentCUNodes.add(childNT);
+						if (childNT.mayHaveRewrite()) {
+							ASTNode<?> child = q.getChild(i);
+							if (child != childNT) {
+								currentCUNodes.add(child);
+								recordRewrittenNode(childNT, child, tupleSink.getAttributes());
+							}
+						}
+					}
+				}
+			}
+
+			while (!NTANodes.isEmpty()) {
+				ASTNode<?> q = NTANodes.poll();
+				if (processed.contains(q)) {
+					continue;
+				}
+				// mark visited
+				processed.add(q);
+				// add the tuples to the relation
+				toTuples(q, tupleSink.getNTA());
+				// now process the attributes
+				if (mapAttributes) {
+					mapAttributes2(q, currentCU, otherCompilationUnits, currentCUNodes, NTANodes, tupleSink.getAttributes(),
+								   tupleSink.getProvenance(), attrs);
+				}
+				// add the children to the worklist
+				for (int i = 0; i < q.getNumChildNoTransform(); ++i) {
+					ASTNode<?> childNT = q.getChildNoTransform(i);
+					// TODO: ExtendJ sometimes returns null for childNT. Understand why.
+					if (childNT != null) {
+						NTANodes.add(childNT);
+						if (childNT.mayHaveRewrite()) {
+							ASTNode<?> child = q.getChild(i);
+							if (child != childNT) {
+								NTANodes.add(child);
+								recordRewrittenNode(childNT, child, tupleSink.getAttributes());
+							}
+						}
 					}
 				}
 			}
 		}
+		return otherCompilationUnits;
+	}
 
-		markVisited(n);
-		toTuples(n, astTupleSink);
-		if (!isNTANode(n)) {
-			// only non-NTA nodes have a source location
-			srcLoc(n);
+	private void mapAttributes2(ASTNode<?> n,
+								CompilationUnit currentCU,
+								Set<CompilationUnit> otherCUs,
+								Queue<ASTNode<?>> currentCUNodes,
+								Queue<ASTNode<?>> ntaNodes,
+								TupleInserter attributes,
+								TupleInserter attributeProvenance,
+								String ...attrs) {
+		for (String attrName : attrs) {
+			ASTNode<?> r = nodeAttribute(n, attrName);
+
+			if (r == null)
+				continue;
+
+			// log the attribute's provenance information
+			Set<String> srcs = attrProvenance(n, attrName);
+			for (String src : srcs) {
+				attributeProvenance.insertTuple(nodeId(n), attrName, src);
+			}
+
+			attributes.insertTuple(attrName, nodeId(n), nodeId(r));
+
+			if (r.parentCompilationUnit() == null) {
+				// this is an NTA
+				ntaNodes.add(r);
+			} else if (r.parentCompilationUnit() == currentCU) {
+				// this is another node from the current compilation unit
+				currentCUNodes.add(r);
+			} else {
+				otherCUs.add(r.parentCompilationUnit());
+			}
 		}
 	}
 
-	private void recordRewrittenNode(ASTNode<?> original, ASTNode<?> target) {
+	private void recordRewrittenNode(ASTNode<?> original, ASTNode<?> target, TupleInserter attributes) {
 		attributes.insertTuple("rewriteTo", nodeId(original), nodeId(target));
 	}
 
@@ -209,7 +239,7 @@ public class DatalogProjection2 {
 		return false;
 	}
 
-	private void srcLoc(ASTNode<?> n) {
+	private void srcLoc(ASTNode<?> n, TupleInserter srcLoc) {
 		long nid = nodeId(n);
 		String srcFile = n.sourceFile();
 		srcLoc.insertTuple(nid,
@@ -279,7 +309,9 @@ public class DatalogProjection2 {
 	}
 
 	private Set<String> attrProvenance(ASTNode<?> n, String attrName) {
-		ProvenanceStackMachine prov = ((org.extendj.ast.Program) root).provenance;
+		if (prov == null)
+			return Collections.emptySet();
+
 		Set<String> res =  prov.getSources(n, attrName + "()");
 		prov.reset();
 		return res;
@@ -330,7 +362,7 @@ public class DatalogProjection2 {
 	}
 
 	private int tokenUID = Integer.MAX_VALUE;
-	private long freshTokeId(ASTNode<?> n) {
+	private long freshTokenId(ASTNode<?> n) {
 		// give a token id that is file specific
 		long fileId = nodeId(n) >> 32;
 		tokenUID--;
@@ -347,8 +379,6 @@ public class DatalogProjection2 {
 			ASTNode<?> child = n.getChildNoTransform(i);
 			// TODO: ExtendJ sometimes returns null for child. Understand why.
 			if (child != null) {
-				assert astTupleSink != nta || isNTANode(n);
-				assert astTupleSink != programRepresentation || !isNTANode(n);
 				astTupleSink.insertTuple(relName, nodeId(n), childIndex, nodeId(child), "");
 				if (child.mayHaveRewrite()) {
 					ASTNode<?> childT = n.getFrozenChild(i);
@@ -363,7 +393,7 @@ public class DatalogProjection2 {
 			// For every token, we generate two tuples
 			// ("NodeKind", CurrentNodeId, ChildIdx, ChildId, "")
 			// ("Token", ChildId, 0, 0, "TokenAsString")
-			long tid = freshTokeId(n);
+			long tid = freshTokenId(n);
 			// Add a tuple to the current node relation
 			astTupleSink.insertTuple(relName, nid, childIndex++, tid, "");
 			// Add a tuple to Token relation

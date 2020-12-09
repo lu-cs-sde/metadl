@@ -257,7 +257,7 @@ public class IncrementalDriver {
 	   Generate the program representation for the given source files, and store it
 	   to predicates with a given prefix
 	 */
-	private void generate(List<File> sourceFiles, String relPrefix) throws IOException, SQLException {
+	private List<File> generate(List<File> sourceFiles, String relPrefix) throws IOException, SQLException {
 		StopWatch timer = StopWatch.createStarted();
 
 		Set<ClassSource> externalClasses = new TreeSet<>(new Comparator<ClassSource>() {
@@ -302,6 +302,9 @@ public class IncrementalDriver {
 		}
 
 
+		// TODO: This list encodes paths inside JARs, not on the file system.
+		List<File> externalFiles = new ArrayList<>();
+
 		for (ClassSource src : externalClasses) {
 			if (this.externalClasses.put(src.relativeName(), src.relativeName()) != null) {
 				// check whether the external class was already analyzed
@@ -309,20 +312,22 @@ public class IncrementalDriver {
 				continue;
 			}
 
-			org.extendj.ast.Program externalClassesProgram = createProgram(fileIdDb);
+			externalFiles.add(new File(src.relativeName()));
+
+			org.extendj.ast.Program externalClassProgram = createProgram(fileIdDb);
 
 			// this class file is not in the database
 			logger().debug("Adding class file to database " + src.relativeName() + ".");
 			src.openInputStream();
 
 			profile().startTimer("object_file_compile", src.relativeName());
-			CompilationUnit externalCU = src.parseCompilationUnit(externalClassesProgram);
+			CompilationUnit externalCU = src.parseCompilationUnit(externalClassProgram);
 			profile().stopTimer("object_file_compile", src.relativeName());
 			int fileTag = fileIdDb.getIdForFile(src.relativeName());
 			StandaloneDatalogProjectionSink sink = new StandaloneDatalogProjectionSink(fileTag, relPrefix);
 
 			profile().startTimer("object_file_generate_relations", src.relativeName());
-			DatalogProjection2 proj = new DatalogProjection2(fileIdDb, externalClassesProgram.provenance);
+			DatalogProjection2 proj = new DatalogProjection2(fileIdDb, externalClassProgram.provenance);
 			proj.generate(externalCU, sink);
 			profile().stopTimer("object_file_generate_relations", src.relativeName());
 
@@ -333,6 +338,8 @@ public class IncrementalDriver {
 
 		timer.stop();
 		logger().time("Fact extraction from " + sourceFiles.size() + " files: " + timer.getTime() + " ms");
+
+		return externalFiles;
 	}
 
 	private void deleteEntries(Connection conn, String table, int fileId) throws SQLException {
@@ -461,6 +468,8 @@ public class IncrementalDriver {
 						   visitFiles + ", removed files " + deletedFiles + ".");
 		}
 
+		List<File> externalFiles = Collections.emptyList();
+
 		// populate the program representation relations for each analyze block
 		for (AnalyzeBlock b : progSplit.getProgram().analyzeBlocks()) {
 			if (opts.getAction() == CmdLineOpts.Action.INCREMENTAL_UPDATE) {
@@ -470,10 +479,10 @@ public class IncrementalDriver {
 					   b.getContext().scopePrefix);
 			}
 			// extract information from the other files
-			generate(visitFiles, b.getContext().scopePrefix);
+			externalFiles = generate(visitFiles, b.getContext().scopePrefix);
 		}
 
-		runLocalProgram(visitFiles, opts);
+		runLocalProgram(Stream.concat(visitFiles.stream(), externalFiles.stream()).collect(Collectors.toList()), opts);
 	}
 
 	private void runLocalProgram(List<File> visitFiles, CmdLineOpts opts) throws IOException, SQLException {

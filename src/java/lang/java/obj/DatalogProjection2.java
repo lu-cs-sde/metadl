@@ -109,6 +109,7 @@ public class DatalogProjection2 {
 														 String ...attrs) {
 
 		boolean mapAttributes = !isLibraryNode(currentCU) || deepAnalysis;
+		boolean visitRewrittenChildren = currentCU.fromSource();
 
 		Queue<ASTNode<?>> currentCUNodes = new ArrayDeque<>();
 		Queue<ASTNode<?>> NTANodes = new ArrayDeque<>();
@@ -129,7 +130,7 @@ public class DatalogProjection2 {
 				// mark visited
 				processed.add(q);
 				// add the tuples to the relation
-				toTuples(q, tupleSink.getAST());
+				toTuples(q, tupleSink.getAST(), visitRewrittenChildren);
 				// record source location
 				srcLoc(q, tupleSink.getSrcLoc());
 				// now process the attributes
@@ -143,7 +144,7 @@ public class DatalogProjection2 {
 					// TODO: ExtendJ sometimes returns null for childNT. Understand why.
 					if (childNT != null) {
 						currentCUNodes.add(childNT);
-						if (childNT.mayHaveRewrite()) {
+						if (visitRewrittenChildren && childNT.mayHaveRewrite()) {
 							ASTNode<?> child = q.getChild(i);
 							if (child != childNT) {
 								currentCUNodes.add(child);
@@ -162,7 +163,7 @@ public class DatalogProjection2 {
 				// mark visited
 				processed.add(q);
 				// add the tuples to the relation
-				toTuples(q, tupleSink.getNTA());
+				toTuples(q, tupleSink.getNTA(), visitRewrittenChildren);
 				// now process the attributes
 				if (mapAttributes) {
 					mapAttributes2(q, currentCU, otherCompilationUnits, currentCUNodes, NTANodes, tupleSink.getAttributes(),
@@ -174,7 +175,7 @@ public class DatalogProjection2 {
 					// TODO: ExtendJ sometimes returns null for childNT. Understand why.
 					if (childNT != null) {
 						NTANodes.add(childNT);
-						if (childNT.mayHaveRewrite()) {
+						if (visitRewrittenChildren && childNT.mayHaveRewrite()) {
 							ASTNode<?> child = q.getChild(i);
 							if (child != childNT) {
 								NTANodes.add(child);
@@ -370,7 +371,7 @@ public class DatalogProjection2 {
 		return (fileId << 32) | tokenUID;
 	}
 
-	private void toTuples(ASTNode<?> n, TupleInserter astTupleSink) {
+	private void toTuples(ASTNode<?> n, TupleInserter astTupleSink, boolean visitRewrittenChildren) {
 		long nid = nodeId(n);
 		String relName = getRelation(n);
 
@@ -381,8 +382,8 @@ public class DatalogProjection2 {
 			// TODO: ExtendJ sometimes returns null for child. Understand why.
 			if (child != null) {
 				astTupleSink.insertTuple(relName, nodeId(n), childIndex, nodeId(child), "");
-				if (child.mayHaveRewrite()) {
-					ASTNode<?> childT = n.getFrozenChild(i);
+				if (visitRewrittenChildren && child.mayHaveRewrite()) {
+					ASTNode<?> childT = n.getChild(i);
 					if (childT != child) {
 						astTupleSink.insertTuple(relName, nodeId(n), childIndex, nodeId(childT), "");
 					}

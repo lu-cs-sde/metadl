@@ -102,7 +102,11 @@ public class IncrementalTest {
 			CSVUtil.readRelation(ctx, pred.type(), expectedRel, Paths.get(EXPECTED_DIR.getPath(), name, predName + ".csv").toString());
 			RelationWrapper expectedRelW = new RelationWrapper(ctx, expectedRel, pred.type());
 
-			assertEquals(expectedRelW.tuples(), relW.tuples());
+			if (!expectedRelW.tuples().equals(relW.tuples())) {
+				System.err.println(expectedRelW.tuples());
+				System.err.println(relW.tuples());
+			}
+			assertEquals(expectedRelW.tuples(), relW.tuples(), "Relation " + predName + " differs.");
 		}
 	}
 

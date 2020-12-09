@@ -97,6 +97,7 @@ public class DatalogProjection2 {
 		while (!worklist.isEmpty()) {
 			// pop a CU from the set
 			CompilationUnit cu = worklist.iterator().next();
+			System.out.println("Traversing " + cu.getClassSource().relativeName());
 			worklist.remove(cu);
 			worklist.addAll(generate(cu, tupleSink));
 		}
@@ -382,7 +383,9 @@ public class DatalogProjection2 {
 				astTupleSink.insertTuple(relName, nodeId(n), childIndex, nodeId(child), "");
 				if (child.mayHaveRewrite()) {
 					ASTNode<?> childT = n.getFrozenChild(i);
-					astTupleSink.insertTuple(relName, nodeId(n), childIndex, nodeId(childT), "");
+					if (childT != child) {
+						astTupleSink.insertTuple(relName, nodeId(n), childIndex, nodeId(childT), "");
+					}
 				}
 			}
 			childIndex++;

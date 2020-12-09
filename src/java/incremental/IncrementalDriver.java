@@ -12,18 +12,23 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang3.time.StopWatch;
+import org.extendj.ast.ClassSource;
+import org.extendj.ast.CompilationUnit;
 
 import eval.EvaluationContext;
 import eval.Relation2;
@@ -107,11 +112,11 @@ public class IncrementalDriver {
 	private File srcs;
 
 	private File fileIdDbFile;
-	private File pathHashFile;
 	private File progDbFile;
 	private File localSouffleProg;
 	private File globalSouffleProg;
 	private File updateSouffleProg;
+	private File externalClassesFile;
 
 	private ProgramSplit progSplit;
 
@@ -125,10 +130,10 @@ public class IncrementalDriver {
 		this.srcs = new File(root, "srcs");
 		// files
 		this.fileIdDbFile = new File(common, "fileid.csv");
-		// fileHash
-		this.pathHashFile = new File(common, "filehash.csv");
 		// program database
 		this.progDbFile = new File(srcs, "program.db");
+		// external classes
+		this.externalClassesFile = new File(common, "extclass.csv");
 		// souffle programs
 		this.localSouffleProg = new File(prog, "local");
 		this.globalSouffleProg = new File(prog, "global");
@@ -136,6 +141,7 @@ public class IncrementalDriver {
 	}
 
 	private FileIdDatabase fileIdDb;
+	private Map<String, String> externalClasses = new TreeMap<>();
 
 	/**
 	   Creates the directory structure of the cache and ensures that
@@ -156,6 +162,12 @@ public class IncrementalDriver {
 			fileIdDb = new FileIdDatabase();
 		}
 
+		// load the external classes
+		if (externalClassesFile.exists()) {
+			logger().info("Loading external classes database from " + externalClassesFile);
+			CSVUtil.readMap(externalClasses, Function.identity(), Function.identity(), externalClassesFile.getPath());
+		}
+
 		dumpProgram(progSplit.getLocalProgram(), new File(prog, "local.mdl"));
 		dumpProgram(progSplit.getGlobalProgram(), new File(prog, "global.mdl"));
 		dumpProgram(progSplit.getUpdateProgram(),  new File(prog, "update.mdl"));
@@ -169,9 +181,6 @@ public class IncrementalDriver {
 			}
 
 			if (!globalSouffleProg.exists()) {
-				// Due to a bug in Souffle, at least one global program deadlocks if run with multiple
-				// threads (metadl/examples/metadl-java/error-prone-metadl.mdl,
-				// 2dcc83e1912eba034206b4fa0067a282ca0b1f47), but otherwise works fine.
 				generateSouffleProgram(progSplit.getGlobalProgram(), globalSouffleProg, "-j 4");
 			} else {
 				logger().info("Using existing Souffle global program from " + globalSouffleProg);
@@ -188,6 +197,8 @@ public class IncrementalDriver {
 	public void shutdown() throws IOException {
 		// store the file-id database
 		fileIdDb.storeToFile(fileIdDbFile.getPath());
+		// store the external classes file
+		CSVUtil.writeMap(externalClasses, externalClassesFile.getPath());
 	}
 
 	private void compileSouffleProgram(File src, File exec, String extraArgs) throws IOException {
@@ -229,23 +240,6 @@ public class IncrementalDriver {
 	}
 
 	/**
-	   Compute the SHA-1 has of the file path.
-	 */
-	protected static String hash(File f) {
-		try {
-			MessageDigest md = MessageDigest.getInstance("SHA-1");
-			byte[] md5 = md.digest(f.getPath().getBytes("UTF-8"));
-			StringBuffer sb = new StringBuffer();
-			for (byte b : md5) {
-				sb.append(String.format("%02x", b));
-			}
-			return sb.toString();
-		}
-		catch (Exception e) {}
-		return null;
-	}
-
-	/**
 	   Run a sanity check on the program
 	 */
 	private void checkProgram(org.extendj.ast.Program p) {
@@ -265,6 +259,14 @@ public class IncrementalDriver {
 	 */
 	private void generate(List<File> sourceFiles, String relPrefix) throws IOException, SQLException {
 		StopWatch timer = StopWatch.createStarted();
+
+		Set<ClassSource> externalClasses = new TreeSet<>(new Comparator<ClassSource>() {
+			@Override
+			public int compare(ClassSource arg0, ClassSource arg1) {
+				return arg0.relativeName().compareTo(arg1.relativeName());
+			}
+			});
+
 		for (File f : sourceFiles) {
 			if (!f.exists()) {
 				logger().info("Skipping file " + f + ". File does not exist. ");
@@ -273,8 +275,9 @@ public class IncrementalDriver {
 
 			profile().startTimer("object_file_compile", f.getPath());
 			logger().debug("Extracting AST facts from source " + f.getPath() + ".");
+			// TODO: is the Program object needed, or is the CU enough?
 			org.extendj.ast.Program p = createProgram(fileIdDb);
-			p.addSourceFile(f.getPath());
+			org.extendj.ast.CompilationUnit cu = p.addSourceFile(f.getPath());
 			checkProgram(p);
 
 			profile().stopTimer("object_file_compile", f.getPath());
@@ -282,16 +285,52 @@ public class IncrementalDriver {
 			int fileTag = fileIdDb.getIdForFile(f.getPath());
 
 			profile().startTimer("object_file_generate_relations", f.getPath());
+
 			// generate the Datalog projection
 			StandaloneDatalogProjectionSink sink = new StandaloneDatalogProjectionSink(fileTag, relPrefix);
 			DatalogProjection2 proj = new DatalogProjection2(fileIdDb, p.provenance);
-			proj.generate(p, sink);
+
+			Set<CompilationUnit> externalCUs = proj.generate(cu, sink);
+			externalCUs.stream().filter(u -> !u.fromSource())
+				.map(CompilationUnit::getClassSource).forEachOrdered(externalClasses::add);
+
 			profile().stopTimer("object_file_generate_relations", f.getPath());
 
 			profile().startTimer("object_file_db_write", f.getPath());
 			sink.writeToDB(progDbFile);
 			profile().stopTimer("object_file_db_write", f.getPath());
 		}
+
+
+		for (ClassSource src : externalClasses) {
+			if (this.externalClasses.put(src.relativeName(), src.relativeName()) != null) {
+				// check whether the external class was already analyzed
+				logger().debug("Skipping external class " + src.relativeName());
+				continue;
+			}
+
+			org.extendj.ast.Program externalClassesProgram = createProgram(fileIdDb);
+
+			// this class file is not in the database
+			logger().debug("Adding class file to database " + src.relativeName() + ".");
+			src.openInputStream();
+
+			profile().startTimer("object_file_compile", src.relativeName());
+			CompilationUnit externalCU = src.parseCompilationUnit(externalClassesProgram);
+			profile().stopTimer("object_file_compile", src.relativeName());
+			int fileTag = fileIdDb.getIdForFile(src.relativeName());
+			StandaloneDatalogProjectionSink sink = new StandaloneDatalogProjectionSink(fileTag, relPrefix);
+
+			profile().startTimer("object_file_generate_relations", src.relativeName());
+			DatalogProjection2 proj = new DatalogProjection2(fileIdDb, externalClassesProgram.provenance);
+			proj.generate(externalCU, sink);
+			profile().stopTimer("object_file_generate_relations", src.relativeName());
+
+			profile().startTimer("object_file_db_write", src.relativeName());
+			sink.writeToDB(progDbFile);
+			profile().stopTimer("object_file_db_write", src.relativeName());
+		}
+
 		timer.stop();
 		logger().time("Fact extraction from " + sourceFiles.size() + " files: " + timer.getTime() + " ms");
 	}

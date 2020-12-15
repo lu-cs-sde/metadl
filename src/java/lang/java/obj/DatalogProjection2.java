@@ -94,11 +94,16 @@ public class DatalogProjection2 {
 			worklist.addAll(generate(cu, tupleSink));
 		}
 
+		Set<CompilationUnit> traversed = new HashSet<>();
+
 		while (!worklist.isEmpty()) {
 			// pop a CU from the set
 			CompilationUnit cu = worklist.iterator().next();
-			System.out.println("Traversing " + cu.getClassSource().relativeName());
 			worklist.remove(cu);
+			if (!traversed.add(cu)) {
+				continue;
+			}
+
 			worklist.addAll(generate(cu, tupleSink));
 		}
 	}
@@ -135,7 +140,7 @@ public class DatalogProjection2 {
 				srcLoc(q, tupleSink.getSrcLoc());
 				// now process the attributes
 				if (mapAttributes) {
-					mapAttributes2(q, currentCU, otherCompilationUnits, currentCUNodes, NTANodes, tupleSink.getAttributes(),
+					mapAttributes(q, currentCU, otherCompilationUnits, currentCUNodes, NTANodes, tupleSink.getAttributes(),
 								   tupleSink.getProvenance(), attrs);
 				}
 				// add the children to the worklist
@@ -166,7 +171,7 @@ public class DatalogProjection2 {
 				toTuples(q, tupleSink.getNTA(), visitRewrittenChildren);
 				// now process the attributes
 				if (mapAttributes) {
-					mapAttributes2(q, currentCU, otherCompilationUnits, currentCUNodes, NTANodes, tupleSink.getAttributes(),
+					mapAttributes(q, currentCU, otherCompilationUnits, currentCUNodes, NTANodes, tupleSink.getAttributes(),
 								   tupleSink.getProvenance(), attrs);
 				}
 				// add the children to the worklist
@@ -189,7 +194,7 @@ public class DatalogProjection2 {
 		return otherCompilationUnits;
 	}
 
-	private void mapAttributes2(ASTNode<?> n,
+	private void mapAttributes(ASTNode<?> n,
 								CompilationUnit currentCU,
 								Set<CompilationUnit> otherCUs,
 								Queue<ASTNode<?>> currentCUNodes,

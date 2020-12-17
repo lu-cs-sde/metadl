@@ -16,7 +16,7 @@ public class FileIdDatabase implements org.extendj.ast.FileIdStorage {
 	private Map<Integer, String> idToFileMap = new HashMap<>();
 
 	int runningId = 1;
-	@Override public int getIdForLib(String lib) {
+	@Override synchronized public int getIdForLib(String lib) {
 		int ret;
 		if (!fileToIdMap.containsKey(lib)) {
 			fileToIdMap.put(lib, runningId);

@@ -25,12 +25,12 @@ public class Profile {
 		return PROFILE;
     }
 
-    public void setOutput(File f) {
+    public synchronized void setOutput(File f) {
 		SimpleLogger.logger().info("Generating profiling information into file " + f);
 		this.output = f;
     }
 
-    public void startTimer(String group, String timer) {
+    public synchronized void startTimer(String group, String timer) {
 		if (output == null)
 			return;
 
@@ -43,7 +43,7 @@ public class Profile {
 		tg.put(timer, StopWatch.createStarted());
     }
 
-    public void stopTimer(String group, String timer) {
+    public synchronized void stopTimer(String group, String timer) {
 		if (output == null)
 			return;
 
@@ -53,7 +53,7 @@ public class Profile {
 		setCounter(group, timer, t.getTime());
     }
 
-    public void setCounter(String group, String counter, long value) {
+    public synchronized void setCounter(String group, String counter, long value) {
 		if (output == null)
 			return;
 
@@ -68,7 +68,7 @@ public class Profile {
 		}
     }
 
-	public void writeOut() {
+	public synchronized void writeOut() {
 		if (output == null)
 			return;
 

@@ -17,6 +17,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Map;
 
 public class SQLUtil {
 	private static String tableType(PredicateType t, Integer tag) {
@@ -62,6 +63,39 @@ public class SQLUtil {
 		ret += ")";
 
 		return ret;
+	}
+
+	public static void writeMap(Map<String, Integer> m, String path, String table) throws SQLException {
+		Connection conn = DriverManager.getConnection("jdbc:sqlite:" + path);
+		Statement tbl = conn.createStatement();
+
+		conn.setAutoCommit(false);
+
+		tbl.executeUpdate(String.format("DROP TABLE IF EXISTS %s", table));
+		tbl.executeUpdate(String.format("CREATE TABLE %s (key TEXT, val INTEGER)", table));
+
+		PreparedStatement ps = conn.prepareStatement(String.format("INSERT INTO %s VALUES (?, ?)", table));
+		for (Map.Entry<String, Integer> e : m.entrySet()) {
+			ps.setString(1, e.getKey());
+			ps.setInt(2, e.getValue());
+			ps.addBatch();
+		}
+
+		ps.executeBatch();
+		conn.commit();
+		conn.close();
+	}
+
+	public static void readMap(Map<String, Integer> m, String path, String table) throws SQLException {
+		Connection conn = DriverManager.getConnection("jdbc:sqlite:" + path);
+
+		Statement select = conn.createStatement();
+		ResultSet rs = select.executeQuery("SELECT * FROM " + table);
+		while (rs.next()) {
+			m.put(rs.getString(1), rs.getInt(2));
+		}
+
+		conn.close();
 	}
 
 	public static void writeRelation(EvaluationContext ctx, PredicateType t, Relation2 rel, String path, String table, Integer tag) throws SQLException {

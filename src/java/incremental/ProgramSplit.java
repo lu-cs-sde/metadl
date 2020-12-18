@@ -271,6 +271,9 @@ public class ProgramSplit {
 	public final static String AST_VISIT_RELATION = "AST_VISIT";
 	public final static String AST_REMOVE_RELATION = "AST_REMOVE";
 	public final static String ANALYZED_SOURCES_RELATION = "ANALYZED_SOURCES";
+	public final static String FILE_ID = "FILE_ID";
+	public final static String EXTERNAL_FILE = "EXTERNAL_FILE";
+
 	public static PredicateType getTypeForUpdateRelation(String name) {
 		switch (name) {
 		case AST_VISIT_RELATION:
@@ -278,6 +281,8 @@ public class ProgramSplit {
 			return new PredicateType(StringType.get());
 		case ANALYZED_SOURCES_RELATION:
 			return new PredicateType(StringType.get(), StringType.get());
+		case FILE_ID:
+			return new PredicateType(StringType.get(), IntegerType.get());
 		default:
 			throw new RuntimeException("Unknown relation name " + name);
 		}
@@ -294,14 +299,22 @@ public class ProgramSplit {
 
 		// read the analyzed sources
 		p.addCommonClause(fact(literal(GlobalNames.EDB_NAME, ref(ANALYZED_SOURCES_RELATION), str(INTERNAL_DB_NAME), str("sqlite"))));
+		// read the file Id database
+		p.addCommonClause(fact(literal(GlobalNames.EDB_NAME, ref(FILE_ID), str(INTERNAL_DB_NAME), str("sqlite"))));
 
 		// Type declarations
 		p.addCommonClause(implicitTypeDeclaration(ANALYZED_SOURCES_RELATION, getTypeForUpdateRelation(ANALYZED_SOURCES_RELATION)));
+
+		p.addCommonClause(implicitTypeDeclaration(FILE_ID, getTypeForUpdateRelation(FILE_ID)));
 
 		p.addCommonClause(implicitTypeDeclaration(ATTR_PROVENANCE,
 												  FormalPredicate.programRepresentationType(ProgramRepresentation.ATTR_PROVENANCE)));
 		p.addCommonClause(implicitTypeDeclaration(SRC_LOC,
 												  FormalPredicate.programRepresentationType(ProgramRepresentation.SRC)));
+
+
+		// AST_REMOVE_RELATION - files to remove
+		p.addCommonClause(rule(literal(AST_REMOVE_RELATION, var("f")), literal(ANALYZED_SOURCES_RELATION, var("f"), str("D"))));
 
 		// AST_VISIT_RELATION - the files that need to be revisited
 		// visit the files that were modified
@@ -312,9 +325,9 @@ public class ProgramSplit {
 		// TODO: this can be refined, to only compute the attributes, not traverse the entire file
 		p.addCommonClause(rule(literal(AST_VISIT_RELATION, var("f")), literal(ANALYZED_SOURCES_RELATION, var("f_attr"), "_"),
 							   literal(ATTR_PROVENANCE, var("n"), "_", var("f_attr")),
-							   literal(SRC_LOC, var("n"), "_", "_", "_", "_", var("f"))));
-		// AST_REMOVE_RELATION - files to remove
-		p.addCommonClause(rule(literal(AST_REMOVE_RELATION, var("f")), literal(ANALYZED_SOURCES_RELATION, var("f"), str("D"))));
+							   BIND(var("fid"), functor("band", functor("bshru", var("n"), integer(32)), integer((1 << 30) - 1))),
+							   literal(FILE_ID, var("f"), var("fid")),
+							   NOT(literal(AST_REMOVE_RELATION, var("f")))));
 
 		// Input
 		// The ANALYZED_SOURCES_RELATION predicate relation should be filled in by the caller

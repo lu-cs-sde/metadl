@@ -147,20 +147,20 @@ public class IncrementalDriver {
 	/**
 	   Creates the directory structure of the cache and ensures that
 	   the local, global and update programs exist.
+	 * @throws SQLException
 	 */
-	public void init() throws IOException {
+	public void init() throws IOException, SQLException {
 		// ensure that all directories exist
 		common.mkdir();
 		prog.mkdir();
 		srcs.mkdir();
 
 		// load the file id database
-		if (fileIdDbFile.exists()) {
-			logger().info("Loading the file ID database from " + fileIdDbFile);
-			fileIdDb = FileIdDatabase.loadFromFile(fileIdDbFile.getPath());
-		} else {
-			// create a fresh file-id database
+		if (!progDbFile.exists()) {
+			logger().info("Using a fresh file ID database");
 			fileIdDb = new FileIdDatabase();
+		} else {
+			fileIdDb = FileIdDatabase.loadFromTable(progDbFile.getPath(), ProgramSplit.FILE_ID);
 		}
 
 		// load the external classes
@@ -195,9 +195,9 @@ public class IncrementalDriver {
 		}
 	}
 
-	public void shutdown() throws IOException {
+	public void shutdown() throws IOException, SQLException {
 		// store the file-id database
-		fileIdDb.storeToFile(fileIdDbFile.getPath());
+		fileIdDb.storeToTable(progDbFile.getPath(), ProgramSplit.FILE_ID);
 		// store the external classes file
 		CSVUtil.writeMap(externalClasses, externalClassesFile.getPath());
 	}

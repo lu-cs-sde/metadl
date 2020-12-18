@@ -62,9 +62,82 @@ public interface Operation {
 			@Override public String prettyPrint() {
 				return "(" + l.prettyPrint() + " % " + r.prettyPrint() + ")";
 			}
-
 		};
 	}
+
+	public static Operation bor(Operation l, Operation r) {
+		return new Operation() {
+			@Override public long eval() {
+				return l.eval() | r.eval();
+			}
+
+			@Override public String prettyPrint() {
+				return "(" + l.prettyPrint() + " bor " + r.prettyPrint() + ")";
+			}
+		};
+	}
+
+	public static Operation band(Operation l, Operation r) {
+		return new Operation() {
+			@Override public long eval() {
+				return l.eval() & r.eval();
+			}
+
+			@Override public String prettyPrint() {
+				return "(" + l.prettyPrint() + " band " + r.prettyPrint() + ")";
+			}
+		};
+	}
+
+	public static Operation bxor(Operation l, Operation r) {
+		return new Operation() {
+			@Override public long eval() {
+				return l.eval() % r.eval();
+			}
+
+			@Override public String prettyPrint() {
+				return "(" + l.prettyPrint() + " bxor " + r.prettyPrint() + ")";
+			}
+		};
+	}
+
+	public static Operation bshl(Operation l, Operation r) {
+		return new Operation() {
+			@Override public long eval() {
+				return l.eval() << r.eval();
+			}
+
+			@Override public String prettyPrint() {
+				return "(" + l.prettyPrint() + " bshl " + r.prettyPrint() + ")";
+			}
+		};
+	}
+
+	public static Operation bshr(Operation l, Operation r) {
+		return new Operation() {
+			@Override public long eval() {
+				return l.eval() >> r.eval();
+			}
+
+			@Override public String prettyPrint() {
+				return "(" + l.prettyPrint() + " bshr " + r.prettyPrint() + ")";
+			}
+		};
+	}
+
+	public static Operation bshru(Operation l, Operation r) {
+		return new Operation() {
+			@Override public long eval() {
+				return l.eval() >>> r.eval();
+			}
+
+			@Override public String prettyPrint() {
+				return "(" + l.prettyPrint() + " bshru " + r.prettyPrint() + ")";
+			}
+		};
+	}
+
+
 
 	public static Operation constant(long c) {
 		return new Operation() {

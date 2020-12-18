@@ -114,5 +114,9 @@ aspect Constructors {
 			return l.setNot(new Not());
 		}
 
+		public static lang.ast.Functor functor(String name, Expr ... arg) {
+			lang.ast.List<lang.ast.Expr> argList = new lang.ast.List<>(arg);
+			return new lang.ast.Functor(new lang.ast.FunctorSymbol(name), argList);
+		}
 	}
 }

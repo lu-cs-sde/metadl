@@ -361,6 +361,12 @@ aspect TypeCheck {
 		case "mul":
 		case "sub":
 		case "div":
+		case "band":
+		case "bor":
+		case "bxor":
+		case "bshl":
+		case "bshr":
+		case "bshru":
 			expectedType[0] = expectedType[1] = IntegerType.get(); break;
 		case "to_number":
 			expectedType[0] = StringType.get(); break;
@@ -514,6 +520,12 @@ aspect TypeInference {
 		case "mul":
 		case "sub":
 		case "div":
+		case "band":
+		case "bor":
+		case "bxor":
+		case "bshl":
+		case "bshr":
+		case "bshru":
 			return IntegerType.get();
 		case "cat":
 		case "to_number":
@@ -579,6 +591,12 @@ aspect TypeInference {
 		case "mul":
 		case "sub":
 		case "div":
+		case "band":
+		case "bor":
+		case "bxor":
+		case "bshl":
+		case "bshr":
+		case "bshru":
 		case "to_number":
 		case "attr":
 			t = t.join(IntegerType.get()); break;

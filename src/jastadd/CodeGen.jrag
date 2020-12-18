@@ -446,6 +446,18 @@ aspect CodeGen {
 				return Operation.div(arg0, arg1);
 			case "mod":
 				return Operation.mod(arg0, arg1);
+			case "bxor":
+				return Operation.bxor(arg0, arg1);
+			case "band":
+				return Operation.band(arg0, arg1);
+			case "bor":
+				return Operation.bor(arg0, arg1);
+			case "bshr":
+				return Operation.bshr(arg0, arg1);
+			case "bshru":
+				return Operation.bshru(arg0, arg1);
+			case "bshl":
+				return Operation.bshl(arg0, arg1);
 			case "cat":
 				return Operation.cat(ctx, arg0, arg1);
 			}

@@ -153,6 +153,14 @@ aspect PretyPrinting {
 		case "div":
 			op = "/";
 			break;
+		case "band":
+		case "bor":
+		case "bxor":
+		case "lshr":
+		case "bshr":
+		case "bshru":
+			op = funcId;
+			break;
 		}
 		// arithmetic, infix notation
 		pr.out.print("(");

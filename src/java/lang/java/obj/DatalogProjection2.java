@@ -298,20 +298,14 @@ public class DatalogProjection2 {
 		}
 	}
 
-	private <T> T nodeAttribute(ASTNode<?> n, String attrName) {
-		try {
-			Method m = getMethodForClass(n.getClass(), attrName);
-			if (m == null)
-				return null;
-			Object o = m.invoke(n);
-			if (o == null)
-				return null;
-			return (T)o;
-		} catch (ReflectiveOperationException e) {
-			// do nothing, the node may be missing the attribute
-			return null;
-		} catch (ClassCastException e) {
-			return null;
+	private <T> T nodeAttribute(ASTNode n, String attrName) {
+		switch (attrName) {
+		case "type": return (T) n.type();
+		case "decl": return (T) n.decl();
+		case "genericDecl":
+			return (n.isGeneric()) ? (T) n.genericDecl() : null;
+		default:
+			throw new RuntimeException("Unknown attribute " + attrName);
 		}
 	}
 

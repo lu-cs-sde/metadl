@@ -153,103 +153,8 @@ aspect PatternToDatalog {
 		return "i_" + getNodeId();
 	}
 
-	syn java.util.List<lang.ast.CommonLiteral> ASTNode.asLiterals(AnalyzeContext ctx, lang.ast.CommonVariable root);
-
-	public ArrayList<lang.ast.CommonLiteral> ASTNode.metaVarAsLiterals(AnalyzeContext ctx, lang.ast.CommonVariable root) {
-		assert isMetaVar();
-		java.util.ArrayList<lang.ast.CommonLiteral> ret = new ArrayList<>();
-
-		assert getRelation().startsWith(ASTNode.METAVARIABLE);
-		String relName = getRelation().substring(ASTNode.METAVARIABLE.length());
-		String kind = varName("_kind");
-
-		// constrain the type of node that can be matched
-		ret.add(literal(ctx.prefix("SUPERTYPE"), var(kind), relName));
-
-
-		for (int i = 0; i < getNumChild(); ++i) {
-
-			ASTNode child = getChild(i);
-			if (child == null)
-				continue;
-
-			// MetaVariable children hold the metavarible ID and nothing else.
-			// They should be ignored here.
-			if (child instanceof MetaVariable)
-				continue;
-
-			ret.add(literal(ctx.progRelName, var(kind), var(varName()), i, var(child.varName()), "_"));
-		}
-
-		if (ret.size() == 1) {
-			// This metavariable node has no children. Just ensure that is bound to
-			// the correct AST node type
-			ret.add(literal(ctx.progRelName, var(kind),  var(varName()), "_", "_", "_"));
-		}
-
-
-		if (root != null) {
-			// This is an a <: `b :> pattern. In this case, we need to ensure that a == b.
-			ret.add(literal(ctx.progRelName, var(kind), root.treeCopyNoTransform(), "_", "_", "_"));
-			ret.add(EQ(var(varName()), root.treeCopyNoTransform()));
-		}
-
-		return ret;
-	}
-
 	static boolean ASTNode.isMetaVarToken(String token) {
 		return java.util.regex.Pattern.matches("`[\\p{Alpha}_][\\p{Alnum}_]*", token);
-	}
-
-	/**
-	   The asLiterals() equations are isomorphic to toTuples()
-	   equations in the DatalogProject aspect. The common parts should be
-	   factored out to ensure that the relational
-	   representation of a program matches the code generated for a pattern.
-	 */
-	eq ASTNode.asLiterals(AnalyzeContext ctx, lang.ast.CommonVariable root) {
-		ArrayList<lang.ast.CommonLiteral> literals = new ArrayList<>();
-		if (isGap())
-			return literals;
-		if (isMetaVar())
-			return metaVarAsLiterals(ctx, root);
-
-		String relName = getRelation();
-
-		java.util.ArrayList<lang.ast.CommonLiteral> ret = new ArrayList<>();
-
-		// the children in the tree
-		for (int i = 0; i < getNumChild(); ++i) {
-			ASTNode child = getChild(i);
-			ret.add(literal(ctx.progRelName, relName, root != null ? root : var(varName()), i, var(child.varName()), "_"));
-		}
-
-
-		int childIndex = getNumChild();
-		// other tokens attached to the node
-		for (String t : tokens()) {
-			// For every token, we generate two tuples
-			// ("NodeKind", CurrentNodeId, ChildIdx, ChildId, "")
-			// ("Token", ChildId, _, _, "TokenAsString")
-			int tokenUID = StringUID.getInstance().uid(t);
-			String varName = isMetaVarToken(t) ? t : ("t_" + tokenUID);
-
-			if (!isWildcardToken(t)) {
-				// Add a tuple to the current node relation
-				ret.add(literal(ctx.progRelName, str(relName), root != null ? root : var(varName()), childIndex, var(varName), "_"));
-				// Add a tuple to Token relation
-				ret.add(literal(ctx.progRelName, "Terminal", var(varName), "_", "_",
-								isMetaVarToken(t) ? "_" : str(t)));
-			}
-			childIndex++;
-		}
-
-		if (childIndex == 0) {
-			// This node has no children, but it exists in the tree. Emit that.
-			ret.add(literal(ctx.progRelName, str(relName), root != null ? root : var(varName()), "_", "_", "_"));
-		}
-
-		return ret;
 	}
 
 	ASTNode implements ObjLangASTNode;
@@ -307,44 +212,6 @@ aspect PatternToDatalog {
 		}
 		return cons;
 	}
-
-	syn ArrayList<lang.ast.Clause> ASTNode.asClauses(AnalyzeContext ctx) = new ArrayList<>();
-	eq List.asClauses(AnalyzeContext ctx) {
-		// TODO: this is not used currently used, because none of the
-		// constraints implements the generateClause method.
-		// Remove maybe?
-		ArrayList<PatternConstraint> cons = constraints();
-		if (cons.isEmpty())
-			return new ArrayList<>();
-		ArrayList<lang.ast.Clause> clauses = new ArrayList<>();
-		for (PatternConstraint c : cons) {
-			lang.ast.Clause cls = c.generateClause(ctx);
-			if (cls != null)
-				clauses.add(cls);
-		}
-		return clauses;
-	}
-
-	eq List.asLiterals(AnalyzeContext ctx, lang.ast.CommonVariable root) {
-		ArrayList<lang.ast.CommonLiteral> lits = new ArrayList<>();
-
-		if (getNumChild() == 1 && getChild(0).isGap())
-			return lits;
-
-		ArrayList<PatternConstraint> cons = constraints();
-		if (cons.isEmpty())
-			return super.asLiterals(ctx, null);
-
-		for (PatternConstraint c : cons)
-			lits.addAll(c.generateLiterals(ctx));
-		return lits;
-	}
-
-	eq MetaVariable.asLiterals(AnalyzeContext ctx, lang.ast.CommonVariable root) = new ArrayList<>();
-	eq Opt.asLiterals(AnalyzeContext ctx, lang.ast.CommonVariable root) {
-		return super.asLiterals(ctx, root);
-	}
-
 
 	static private Set<String> ASTNode.nonFinalNodeTypes = PatternGrammarInfo.getNonFinalNodeTypes();
 	syn lazy boolean ASTNode.hasFinalTypeInParent() {
@@ -532,17 +399,6 @@ aspect PatternToDatalog {
 		// An add-hoc way of implementing parameterized collection attributes
 		ArrayList<lang.ast.CommonLiteral> list = new ArrayList<>();
 		literals2(ctx, root, list);
-		// list.addAll(asLiterals(ctx, root));
-		// if (isGap())
-		// 	return list;
-		// for (ASTNode c : astChildren()) {
-		// 	if (c == null) {
-		// 		// Metavariable nodes may have null children, skip them
-		// 		assert isMetaVar();
-		// 	} else {
-		// 		list.addAll(c.literals(ctx, null));
-		// 	}
-		// }
 		return list;
 	}
 

@@ -1,5 +1,6 @@
 package lang.java.obj;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -14,16 +15,19 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.text.StringEscapeUtils;
 
 import org.extendj.ast.ASTNode;
+import org.extendj.ast.ASTNodeAnnotation;
 import org.extendj.ast.CompilationUnit;
 import org.junit.jupiter.engine.discovery.predicates.IsNestedTestClass;
 import org.extendj.ProvenanceStackMachine;
 import org.extendj.ast.FileIdStorage;
+import org.extendj.ast.ParseName;
 import org.extendj.ast.Program;
 
 import lang.io.SimpleLogger;
@@ -318,40 +322,93 @@ public class DatalogProjection2 {
 		return res;
 	}
 
-	private List<String> tokens(ASTNode<?> n) {
-		ArrayList<String> r = new ArrayList<>();
 
-		CastWrapper w = new CastWrapper(n);
-		w.bind((org.extendj.ast.Literal l) -> r.add(l.getLITERAL()))
-			.bind((org.extendj.ast.Literal l) -> r.add(l.getLITERAL()))
-			.bind((org.extendj.ast.CompilationUnit l) -> r.add(l.getPackageDecl()))
-			.bind((org.extendj.ast.PackageAccess l) -> r.add(l.getPackage()))
-			.bind((org.extendj.ast.IdUse id) -> r.add(id.getID()))
-			.bind((org.extendj.ast.Modifier m) -> r.add(m.getID()))
-			.bind((org.extendj.ast.LabeledStmt s) -> r.add(s.getLabel()))
-			.bind((org.extendj.ast.BreakStmt b) -> r.add(b.getLabel()))
-			.bind((org.extendj.ast.ContinueStmt c) -> r.add(c.getLabel()))
-			.bind((org.extendj.ast.ParseName p) -> {
-					// TODO: In ExtendJ ParseName.nameParts is not accessible; resort to
-					// spliting the string as a workaround
-					String[] parts = p.name().split("\\.");
-					r.addAll(Arrays.asList(parts));
-				})
-			.bind((org.extendj.ast.ASTNode nn) -> {
-					try {
-						Method m = getMethodForClass(nn.getClass(), "getID");
-						if (m == null) {
-							// do nothing
-						} else {
-							String id = (String)m.invoke(n);
-							assert id != null;
-							r.add(id);
-						}
-					} catch (ReflectiveOperationException e) {
-						// do nothing
-					}
-				});
-		return r;
+	private static Map<Class<?>, java.util.List<Pair<String, Method>>> tokenAccessors = new HashMap<>();
+
+	private static java.util.List<Pair<String, Method>> getTokenAccessors(ASTNode<?> n) {
+		java.util.List<Pair<String, Method>> tokenAccessor = tokenAccessors.get(n.getClass());
+		if (tokenAccessor != null)
+			return tokenAccessor;
+
+		for (Method method : n.getClass().getMethods()) {
+			ASTNodeAnnotation.Token token = method.getAnnotation(ASTNodeAnnotation.Token.class);
+			if (token != null && method.getReturnType().equals(String.class)) {
+				if (tokenAccessor == null) {
+					tokenAccessor = new ArrayList<>();
+				}
+				tokenAccessor.add(Pair.of(token.name(), method));
+			}
+		}
+
+		if (tokenAccessor == null) {
+			tokenAccessor = Collections.emptyList();
+		}
+
+		tokenAccessors.put(n.getClass(), tokenAccessor);
+
+		return tokenAccessor;
+	}
+
+	/**
+	   Return a list of (Token Name, Token Value) pairs representing the
+	   tokens of the current AST node
+	 */
+	public static java.util.List<Pair<String, String>> namedTokens(ASTNode<?> n) {
+		java.util.List<Pair<String, String>> tokens = new ArrayList<>();
+		for (Pair<String, Method> accessor : getTokenAccessors(n)) {
+			try {
+				tokens.add(Pair.of(accessor.getLeft(), (String) accessor.getRight().invoke(n)));
+			} catch (InvocationTargetException e) {
+				throw new RuntimeException(e);
+			} catch (IllegalAccessException e) {
+				throw new RuntimeException(e);
+			}
+		}
+		return tokens;
+	}
+
+	private List<String> tokens(ASTNode<?> n) {
+		if (n instanceof ParseName) {
+			// TODO: In ExtendJ ParseName.nameParts is not accessible; resort to
+			// spliting the string as a workaround
+			ParseName p = (ParseName) n;
+			String[] parts = p.name().split("\\.");
+			return Arrays.asList(parts);
+		} else {
+			return namedTokens(n).stream().map(Pair::getRight).collect(Collectors.toList());
+		}
+
+		// CastWrapper w = new CastWrapper(n);
+		// w.bind((org.extendj.ast.Literal l) -> r.add(l.getLITERAL()))
+		// 	.bind((org.extendj.ast.Literal l) -> r.add(l.getLITERAL()))
+		// 	.bind((org.extendj.ast.CompilationUnit l) -> r.add(l.getPackageDecl()))
+		// 	.bind((org.extendj.ast.PackageAccess l) -> r.add(l.getPackage()))
+		// 	.bind((org.extendj.ast.IdUse id) -> r.add(id.getID()))
+		// 	.bind((org.extendj.ast.Modifier m) -> r.add(m.getID()))
+		// 	.bind((org.extendj.ast.LabeledStmt s) -> r.add(s.getLabel()))
+		// 	.bind((org.extendj.ast.BreakStmt b) -> r.add(b.getLabel()))
+		// 	.bind((org.extendj.ast.ContinueStmt c) -> r.add(c.getLabel()))
+		// 	.bind((org.extendj.ast.ParseName p) -> {
+		// 			// TODO: In ExtendJ ParseName.nameParts is not accessible; resort to
+		// 			// spliting the string as a workaround
+		// 			String[] parts = p.name().split("\\.");
+		// 			r.addAll(Arrays.asList(parts));
+		// 		})
+		// 	.bind((org.extendj.ast.ASTNode nn) -> {
+		// 			try {
+		// 				Method m = getMethodForClass(nn.getClass(), "getID");
+		// 				if (m == null) {
+		// 					// do nothing
+		// 				} else {
+		// 					String id = (String)m.invoke(n);
+		// 					assert id != null;
+		// 					r.add(id);
+		// 				}
+		// 			} catch (ReflectiveOperationException e) {
+		// 				// do nothing
+		// 			}
+		// 		});
+		// return r;
 	}
 
 	private String cleanTerminal(String s) {

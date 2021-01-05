@@ -11,44 +11,50 @@ import java.util.Arrays;
 
 aspect LanguageSpecific {
 	// TODO: the token list should be generated
-	syn java.util.List<String> ASTNode.tokens() {
-		try {
-			Method m = getClass().getMethod("getID");
-			String id = (String)m.invoke(this);
-			assert id != null;
-			return Collections.singletonList(id);
-		} catch (ReflectiveOperationException e) {
-			return Collections.emptyList();
-		}
-	}
-	eq ArrayTypeAccess.tokens() {
+	// syn java.util.List<String> ASTNode.tokens() {
+	// 	try {
+	// 		Method m = getClass().getMethod("getID");
+	// 		String id = (String)m.invoke(this);
+	// 		assert id != null;
+	// 		return Collections.singletonList(id);
+	// 	} catch (ReflectiveOperationException e) {
+	// 		return Collections.emptyList();
+	// 	}
+	// }
+
+	@Override public java.util.List<String> ArrayTypeAccess.tokens() {
+		// ArrayTypeAccess : TypeAccess ::= /<Package:String>/ /<ID:String>/ Access;
+		// ArrayTypeAccess overrides the Package and ID tokens with
+		// nonterminal tokens. These means that those tokens are not
+		// properties of the ArrayTypeAccess nodes.
 		return Collections.emptyList();
 	}
-	eq Literal.tokens() {
-		return Collections.singletonList(getLITERAL());
-	}
-	eq CompilationUnit.tokens() {
-		return Collections.singletonList(getPackageDecl());
-	}
-	eq PackageAccess.tokens() {
-		return Collections.singletonList(getPackage());
-	}
-	eq IdUse.tokens() {
-		return Collections.singletonList(getID());
-	}
-	eq Modifier.tokens() {
-		return Collections.singletonList(getID());
-	}
-	eq LabeledStmt.tokens() {
-		return Collections.singletonList(getLabel());
-	}
-	eq BreakStmt.tokens() {
-		return Collections.singletonList(getLabel());
-	}
-	eq ContinueStmt.tokens() {
-		return Collections.singletonList(getLabel());
-	}
-	eq ParseName.tokens() {
+
+	// eq Literal.tokens() {
+	// 	return Collections.singletonList(getLITERAL());
+	// }
+	// eq CompilationUnit.tokens() {
+	// 	return Collections.singletonList(getPackageDecl());
+	// }
+	// eq PackageAccess.tokens() {
+	// 	return Collections.singletonList(getPackage());
+	// }
+	// eq IdUse.tokens() {
+	// 	return Collections.singletonList(getID());
+	// }
+	// eq Modifier.tokens() {
+	// 	return Collections.singletonList(getID());
+	// }
+	// eq LabeledStmt.tokens() {
+	// 	return Collections.singletonList(getLabel());
+	// }
+	// eq BreakStmt.tokens() {
+	// 	return Collections.singletonList(getLabel());
+	// }
+	// eq ContinueStmt.tokens() {
+	// 	return Collections.singletonList(getLabel());
+	// }
+	@Override public java.util.List<String> ParseName.tokens() {
 		java.util.List<String>  tokenList = new ArrayList<>();
 		for (NamePart np : nameParts)
 			tokenList.add(np.toString());

@@ -1,0 +1,7 @@
+aspect ParseNameAsLiterals {
+	@Override public void ParseName.literals2(AnalyzeContext ctx, lang.ast.CommonVariable root,
+											  java.util.List<lang.ast.CommonLiteral> lits) {
+
+		super.literals2(ctx, root, lits);
+	}
+}

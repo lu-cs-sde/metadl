@@ -1,0 +1,56 @@
+import java.util.Map;
+import java.util.HashMap;
+import java.util.stream.Collectors;
+import java.lang.reflect.InvocationTargetException;
+import org.apache.commons.lang3.tuple.Pair;
+
+
+aspect Tokens {
+	private static Map<Class<?>, java.util.List<Pair<String, Method>>> ASTNode.tokenAccessors = new HashMap<>();
+
+	private java.util.List<Pair<String, Method>> ASTNode.getTokenAccessors() {
+		java.util.List<Pair<String, Method>> tokenAccessor = tokenAccessors.get(getClass());
+		if (tokenAccessor != null)
+			return tokenAccessor;
+
+		for (Method method : getClass().getMethods()) {
+			ASTNodeAnnotation.Token token = method.getAnnotation(ASTNodeAnnotation.Token.class);
+			if (token != null) {
+				if (tokenAccessor == null) {
+					tokenAccessor = new ArrayList<>();
+				}
+				tokenAccessor.add(Pair.of(token.name(), method));
+			}
+		}
+
+		if (tokenAccessor == null) {
+			tokenAccessor = Collections.emptyList();
+		}
+
+		tokenAccessors.put(getClass(), tokenAccessor);
+
+		return tokenAccessor;
+	}
+
+	/**
+	   Return a list of (Token Name, Token Value) pairs representing the
+	   tokens of the current AST node
+	 */
+	public java.util.List<Pair<String, String>> ASTNode.namedTokens() {
+		java.util.List<Pair<String, String>> tokens = new ArrayList<>();
+		for (Pair<String, Method> accessor : getTokenAccessors()) {
+			try {
+				tokens.add(Pair.of(accessor.getLeft(), (String) accessor.getRight().invoke(this)));
+			} catch (InvocationTargetException e) {
+				throw new RuntimeException(e);
+			} catch (IllegalAccessException e) {
+				throw new RuntimeException(e);
+			}
+		}
+		return tokens;
+	}
+
+	public java.util.List<String> ASTNode.tokens() {
+		return namedTokens().stream().map(Pair::getRight).collect(Collectors.toList());
+	}
+}

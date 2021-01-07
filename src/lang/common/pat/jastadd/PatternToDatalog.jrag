@@ -340,13 +340,13 @@ aspect PatternToDatalog {
 		}
 
 		int childIndex = getNumChild();
-		for (String t : tokens()) {
-			String varName = isMetaVarToken(t) ? t : ("t_" + UID + "_" + childIndex);
-			if (!isWildcardToken(t)) {
+		for (Pair<String, String> t : namedTokens()) {
+			String varName = isMetaVarToken(t.getRight()) ? t.getRight() : ("t_" + UID + "_" + childIndex);
+			if (!isWildcardToken(t.getRight())) {
 				// Add a tuple to the current node relation
 				lits.add(literal(ctx.progRelName, str(name()), root != null ? root : var(varName()), childIndex, var(varName), "_"));
 				// Add a tuple to Terminal relation
-				lits.add(literal(ctx.progRelName, "Terminal", var(varName), "_", "_", isMetaVarToken(t) ? "_" : str(t)));
+				lits.add(literal(ctx.progRelName, t.getLeft(), var(varName), "_", "_", isMetaVarToken(t.getRight()) ? "_" : str(t.getRight())));
 			}
 			childIndex++;
 		}

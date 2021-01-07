@@ -50,7 +50,7 @@ aspect Tokens {
 		return tokens;
 	}
 
-	public java.util.List<String> ASTNode.tokens() {
+	public final java.util.List<String> ASTNode.tokens() {
 		return namedTokens().stream().map(Pair::getRight).collect(Collectors.toList());
 	}
 }

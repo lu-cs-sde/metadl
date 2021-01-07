@@ -1,16 +1,21 @@
-import lang.relation.PseudoTuple;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Collections;
-import java.lang.reflect.ParameterizedType;
-import lang.io.StringUID;
-import eval.Relation2;
-import lang.relation.RelationWrapper;
 import eval.EvaluationContext;
-import lang.ast.PredicateType;
+import eval.Relation2;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.stream.Collectors;
 import lang.ast.IntegerType;
 import lang.ast.PredicateRefType;
+import lang.ast.PredicateType;
 import lang.ast.StringType;
+import lang.io.StringUID;
+import lang.relation.PseudoTuple;
+import lang.relation.RelationWrapper;
+import org.apache.commons.lang3.tuple.Pair;
 
 
 aspect LanguageSpecific {
@@ -42,25 +47,52 @@ aspect LanguageSpecific {
 	// TODO: implement this as for the Java language
 	syn String ASTNode.getSourceFile() = "";
 
-	// Identical defintion to PatLang.jrag
-	syn java.util.List<String> ASTNode.tokens() = Collections.emptyList();
+	// Identical defintion in Tokens.jrag
+	private static Map<Class<?>, java.util.List<Pair<String, Method>>> ASTNode.tokenAccessors = new HashMap<>();
 
-	eq IntConstant.tokens() {
-		return Collections.singletonList(getNUMERAL());
+	private java.util.List<Pair<String, Method>> ASTNode.getTokenAccessors() {
+		java.util.List<Pair<String, Method>> tokenAccessor = tokenAccessors.get(getClass());
+		if (tokenAccessor != null)
+			return tokenAccessor;
+
+		for (Method method : getClass().getMethods()) {
+			ASTNodeAnnotation.Token token = method.getAnnotation(ASTNodeAnnotation.Token.class);
+			if (token != null) {
+				if (tokenAccessor == null) {
+					tokenAccessor = new ArrayList<>();
+				}
+				tokenAccessor.add(Pair.of(token.name(), method));
+			}
+		}
+
+		if (tokenAccessor == null) {
+			tokenAccessor = Collections.emptyList();
+		}
+
+		tokenAccessors.put(getClass(), tokenAccessor);
+
+		return tokenAccessor;
 	}
-	eq StringConstant.tokens() {
-		return Collections.singletonList(getSTRING());
+
+	/**
+	   Return a list of (Token Name, Token Value) pairs representing the
+	   tokens of the current AST node
+	 */
+	public java.util.List<Pair<String, String>> ASTNode.namedTokens() {
+		java.util.List<Pair<String, String>> tokens = new ArrayList<>();
+		for (Pair<String, Method> accessor : getTokenAccessors()) {
+			try {
+				tokens.add(Pair.of(accessor.getLeft(), (String) accessor.getRight().invoke(this)));
+			} catch (InvocationTargetException e) {
+				throw new RuntimeException(e);
+			} catch (IllegalAccessException e) {
+				throw new RuntimeException(e);
+			}
+		}
+		return tokens;
 	}
-	eq PredicateRef.tokens() {
-		return Collections.singletonList(getPRED_ID());
-	}
-	eq PredicateSymbol.tokens() {
-		return Collections.singletonList(getPRED_ID());
-	}
-	eq FunctorSymbol.tokens() {
-		return Collections.singletonList(getFUNC_ID());
-	}
-	eq Variable.tokens() {
-		return Collections.singletonList(getVAR_ID());
+
+	public final java.util.List<String> ASTNode.tokens() {
+		return namedTokens().stream().map(Pair::getRight).collect(Collectors.toList());
 	}
 }

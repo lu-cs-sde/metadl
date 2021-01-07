@@ -20,75 +20,79 @@ aspect AnalyzeBlock {
 		   or, if converFunctor != null:
 		   $name(n_id, v) :- P($nodeKind, n_id, idx, t_id, _), P("Terminal", t_id, _, _, w), BIND(v, $converFunctor(w)).
 		*/
+		// public static lang.ast.Rule makeIdentifierRule(AnalyzeContext ctx,
+		// 											   String nodeKind,
+		// 											   String name,
+		// 											   int idx,
+		// 											   String convertFunctor) {
+		// 	lang.ast.List<lang.ast.CommonLiteral> headList = new lang.ast.List<>();
+		// 	lang.ast.List<lang.ast.CommonLiteral> bodyList = new  lang.ast.List<>();
+
+		// 	lang.ast.List<lang.ast.Term> headVars = new lang.ast.List<>();
+		// 	headVars.add(new lang.ast.Variable("n_id"));
+		// 	headVars.add(new lang.ast.Variable("v"));
+		// 	lang.ast.CommonLiteral head = new lang.ast.Literal(new lang.ast.PredicateSymbol(ctx.scopePrefix + name),
+		// 													headVars);
+
+		// 	// ID(n_id, v) :- P(nodeKind, n_id, idx, t_id, _), P("Terminal", t_id, _, _, v).
+		// 	lang.ast.List<lang.ast.Term> body0Vars = new lang.ast.List<lang.ast.Term>()
+		// 		.add(new lang.ast.StringConstant(nodeKind))
+		// 		.add(new lang.ast.Variable("n_id"))
+		// 		.add(new lang.ast.IntConstant("" + idx))
+		// 		.add(new lang.ast.Variable("t_id"))
+		// 		.add(new lang.ast.Wildcard());
+
+		// 	lang.ast.List<lang.ast.Term> body1Vars = new lang.ast.List<lang.ast.Term>()
+		// 		.add(new lang.ast.StringConstant("Terminal"))
+		// 		.add(new lang.ast.Variable("t_id"))
+		// 		.add(new lang.ast.Wildcard())
+		// 		.add(new lang.ast.Wildcard())
+		// 		.add(new lang.ast.Variable(convertFunctor != null ? "w" : "v"));
+
+		// 	headList.add(head);
+		// 	bodyList.add(new lang.ast.Literal(new lang.ast.PredicateSymbol(ctx.progRelName), body0Vars))
+		// 		.add(new lang.ast.Literal(new lang.ast.PredicateSymbol(ctx.progRelName), body1Vars));
+
+		// 	if (convertFunctor != null) {
+		// 		// name(n_id, v) :- P(nodeKind, n_id, idx, t_id, _), P("Terminal", t_id, _, _, w), BIND(v, convertFunctor(w))
+		// 		bodyList.add(BIND(new lang.ast.Variable("v"),
+		// 						  new lang.ast.Functor(new lang.ast.FunctorSymbol(convertFunctor),
+		// 											   new lang.ast.List<lang.ast.Expr>()
+		// 											   .add(new lang.ast.Variable("w")))));
+		// 	}
+
+		// 	return new lang.ast.Rule(headList, bodyList);
+		// }
+
 		public static lang.ast.Rule makeIdentifierRule(AnalyzeContext ctx,
-													   String nodeKind,
-													   String name,
-													   int idx,
-													   String convertFunctor) {
-			lang.ast.List<lang.ast.CommonLiteral> headList = new lang.ast.List<>();
-			lang.ast.List<lang.ast.CommonLiteral> bodyList = new  lang.ast.List<>();
-
-			lang.ast.List<lang.ast.Term> headVars = new lang.ast.List<>();
-			headVars.add(new lang.ast.Variable("n_id"));
-			headVars.add(new lang.ast.Variable("v"));
-			lang.ast.CommonLiteral head = new lang.ast.Literal(new lang.ast.PredicateSymbol(ctx.scopePrefix + name),
-															headVars);
-
-			// ID(n_id, v) :- P(nodeKind, n_id, idx, t_id, _), P("Terminal", t_id, _, _, v).
-			lang.ast.List<lang.ast.Term> body0Vars = new lang.ast.List<lang.ast.Term>()
-				.add(new lang.ast.StringConstant(nodeKind))
-				.add(new lang.ast.Variable("n_id"))
-				.add(new lang.ast.IntConstant("" + idx))
-				.add(new lang.ast.Variable("t_id"))
-				.add(new lang.ast.Wildcard());
-
-			lang.ast.List<lang.ast.Term> body1Vars = new lang.ast.List<lang.ast.Term>()
-				.add(new lang.ast.StringConstant("Terminal"))
-				.add(new lang.ast.Variable("t_id"))
-				.add(new lang.ast.Wildcard())
-				.add(new lang.ast.Wildcard())
-				.add(new lang.ast.Variable(convertFunctor != null ? "w" : "v"));
-
-			headList.add(head);
-			bodyList.add(new lang.ast.Literal(new lang.ast.PredicateSymbol(ctx.progRelName), body0Vars))
-				.add(new lang.ast.Literal(new lang.ast.PredicateSymbol(ctx.progRelName), body1Vars));
-
-			if (convertFunctor != null) {
-				// name(n_id, v) :- P(nodeKind, n_id, idx, t_id, _), P("Terminal", t_id, _, _, w), BIND(v, convertFunctor(w))
-				bodyList.add(BIND(new lang.ast.Variable("v"),
-								  new lang.ast.Functor(new lang.ast.FunctorSymbol(convertFunctor),
-													   new lang.ast.List<lang.ast.Expr>()
-													   .add(new lang.ast.Variable("w")))));
-			}
-
-			return new lang.ast.Rule(headList, bodyList);
+													   String parentNodeKind,
+													   String tokenKind,
+													   String predicateName) {
+			return rule(literal(ctx.scopePrefix + predicateName, var("n_id"), var("v")),
+						literal(ctx.progRelName, str(tokenKind), var("t_id"), "_", "_", var("v")),
+						literal(ctx.progRelName, str(parentNodeKind), var("n_id"), "_", var("t_id"), "_"));
 		}
+
+		public static lang.ast.Rule makeIdentifierRule(AnalyzeContext ctx,
+													   String parentNodeKind,
+													   String tokenKind,
+													   String predicateName,
+													   String convertFunctor) {
+			return rule(literal(ctx.scopePrefix + predicateName, var("n_id"), var("w")),
+						literal(ctx.progRelName, str(tokenKind), var("t_id"), "_", "_", var("v")),
+						literal(ctx.progRelName, str(parentNodeKind), var("n_id"), "_", var("t_id"), "_"),
+						BIND(var("w"), functor(convertFunctor, var("v"))));
+		}
+
 
 		/**
 		   Build a rule ID(t_id, s) :- P("Terminal", t_id, _, _, s).
 		 */
 		public static lang.ast.Rule makeTerminalToIdentifierRule(AnalyzeContext ctx,
-																 String name) {
-			lang.ast.List<lang.ast.CommonLiteral> headList = new lang.ast.List<>();
-			lang.ast.List<lang.ast.CommonLiteral> bodyList = new  lang.ast.List<>();
-
-			lang.ast.List<lang.ast.Term> headVars = new lang.ast.List<>();
-			headVars.add(new lang.ast.Variable("t_id"));
-			headVars.add(new lang.ast.Variable("v"));
-			lang.ast.CommonLiteral head = new lang.ast.Literal(new lang.ast.PredicateSymbol(ctx.scopePrefix + name),
-															headVars);
-
-			lang.ast.List<lang.ast.Term> bodyVars = new lang.ast.List<lang.ast.Term>()
-				.add(new lang.ast.StringConstant("Terminal"))
-				.add(new lang.ast.Variable("t_id"))
-				.add(new lang.ast.Wildcard())
-				.add(new lang.ast.Wildcard())
-				.add(new lang.ast.Variable("v"));
-
-			headList.add(head);
-			bodyList.add(new lang.ast.Literal(new lang.ast.PredicateSymbol(ctx.progRelName), bodyVars));
-
-			return new lang.ast.Rule(headList, bodyList);
+																 String tokenKind,
+																 String predicateName) {
+			return rule(literal(ctx.scopePrefix + predicateName, var("t_id"), var("v")),
+						literal(ctx.progRelName, str(tokenKind), var("t_id"), "_", "_", var("v")));
 		}
 
 

@@ -322,7 +322,6 @@ public class DatalogProjection2 {
 		return res;
 	}
 
-
 	private static Map<Class<?>, java.util.List<Pair<String, Method>>> tokenAccessors = new HashMap<>();
 
 	private static java.util.List<Pair<String, Method>> getTokenAccessors(ASTNode<?> n) {
@@ -354,6 +353,14 @@ public class DatalogProjection2 {
 	   tokens of the current AST node
 	 */
 	public static java.util.List<Pair<String, String>> namedTokens(ASTNode<?> n) {
+		if (n instanceof ParseName) {
+			// TODO: In ExtendJ ParseName.nameParts is not accessible; resort to
+			// spliting the string as a workaround
+			ParseName p = (ParseName) n;
+			String[] parts = p.name().split("\\.");
+			return Arrays.asList(parts).stream().map(part -> Pair.of("Token.ParseName", part)).collect(Collectors.toList());
+		}
+
 		java.util.List<Pair<String, String>> tokens = new ArrayList<>();
 		for (Pair<String, Method> accessor : getTokenAccessors(n)) {
 			try {
@@ -368,47 +375,7 @@ public class DatalogProjection2 {
 	}
 
 	private List<String> tokens(ASTNode<?> n) {
-		if (n instanceof ParseName) {
-			// TODO: In ExtendJ ParseName.nameParts is not accessible; resort to
-			// spliting the string as a workaround
-			ParseName p = (ParseName) n;
-			String[] parts = p.name().split("\\.");
-			return Arrays.asList(parts);
-		} else {
-			return namedTokens(n).stream().map(Pair::getRight).collect(Collectors.toList());
-		}
-
-		// CastWrapper w = new CastWrapper(n);
-		// w.bind((org.extendj.ast.Literal l) -> r.add(l.getLITERAL()))
-		// 	.bind((org.extendj.ast.Literal l) -> r.add(l.getLITERAL()))
-		// 	.bind((org.extendj.ast.CompilationUnit l) -> r.add(l.getPackageDecl()))
-		// 	.bind((org.extendj.ast.PackageAccess l) -> r.add(l.getPackage()))
-		// 	.bind((org.extendj.ast.IdUse id) -> r.add(id.getID()))
-		// 	.bind((org.extendj.ast.Modifier m) -> r.add(m.getID()))
-		// 	.bind((org.extendj.ast.LabeledStmt s) -> r.add(s.getLabel()))
-		// 	.bind((org.extendj.ast.BreakStmt b) -> r.add(b.getLabel()))
-		// 	.bind((org.extendj.ast.ContinueStmt c) -> r.add(c.getLabel()))
-		// 	.bind((org.extendj.ast.ParseName p) -> {
-		// 			// TODO: In ExtendJ ParseName.nameParts is not accessible; resort to
-		// 			// spliting the string as a workaround
-		// 			String[] parts = p.name().split("\\.");
-		// 			r.addAll(Arrays.asList(parts));
-		// 		})
-		// 	.bind((org.extendj.ast.ASTNode nn) -> {
-		// 			try {
-		// 				Method m = getMethodForClass(nn.getClass(), "getID");
-		// 				if (m == null) {
-		// 					// do nothing
-		// 				} else {
-		// 					String id = (String)m.invoke(n);
-		// 					assert id != null;
-		// 					r.add(id);
-		// 				}
-		// 			} catch (ReflectiveOperationException e) {
-		// 				// do nothing
-		// 			}
-		// 		});
-		// return r;
+		return namedTokens(n).stream().map(Pair::getRight).collect(Collectors.toList());
 	}
 
 	private String cleanTerminal(String s) {
@@ -449,7 +416,7 @@ public class DatalogProjection2 {
 		}
 
 		// other tokens attached to the node
-		for (String t : tokens(n)) {
+		for (Pair<String, String> t : namedTokens(n)) {
 			// For every token, we generate two tuples
 			// ("NodeKind", CurrentNodeId, ChildIdx, ChildId, "")
 			// ("Token", ChildId, 0, 0, "TokenAsString")
@@ -457,7 +424,7 @@ public class DatalogProjection2 {
 			// Add a tuple to the current node relation
 			astTupleSink.insertTuple(relName, nid, childIndex++, tid, "");
 			// Add a tuple to Token relation
-			astTupleSink.insertTuple("Terminal", tid, 0, 0, cleanTerminal(t));
+			astTupleSink.insertTuple(t.getLeft(), tid, 0, 0, cleanTerminal(t.getRight()));
 		}
 
 		if (childIndex == 0) {

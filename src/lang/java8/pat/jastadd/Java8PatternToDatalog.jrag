@@ -22,7 +22,8 @@ aspect LanguageSpecific {
 	// 	}
 	// }
 
-	@Override public java.util.List<String> ArrayTypeAccess.tokens() {
+
+	@Override public java.util.List<Pair<String, String>> ArrayTypeAccess.namedTokens() {
 		// ArrayTypeAccess : TypeAccess ::= /<Package:String>/ /<ID:String>/ Access;
 		// ArrayTypeAccess overrides the Package and ID tokens with
 		// nonterminal tokens. These means that those tokens are not
@@ -54,11 +55,12 @@ aspect LanguageSpecific {
 	// eq ContinueStmt.tokens() {
 	// 	return Collections.singletonList(getLabel());
 	// }
-	@Override public java.util.List<String> ParseName.tokens() {
-		java.util.List<String>  tokenList = new ArrayList<>();
-		for (NamePart np : nameParts)
-			tokenList.add(np.toString());
-		return tokenList;
+	@Override public java.util.List<Pair<String, String>> ParseName.namedTokens() {
+		return nameParts.stream().map(np -> Pair.of("Token.ParseName", np.toString())).collect(Collectors.toList());
+		// java.util.List<String>  tokenList = new ArrayList<>();
+		// for (NamePart np : nameParts)
+		// 	tokenList.add(np.toString());
+		// return tokenList;
 	}
 
 	public static java.util.List<lang.ast.Clause> PatLang.makeAttributeRule(AnalyzeContext ctx, String attrName, String predName) {
@@ -95,35 +97,46 @@ aspect LanguageSpecific {
 		java.util.List<lang.ast.Clause> ret = new java.util.ArrayList<>();
 		// Identifiers
 		if (used.contains("ID")) {
-			ret.add(makeIdentifierRule(ctx, "IdUse", "ID", 0, null));
-			ret.add(makeIdentifierRule(ctx, "ParseName", "ID", 0, null));
-			ret.add(makeIdentifierRule(ctx, "EnumConstant", "ID", 3, null));
-			ret.add(makeIdentifierRule(ctx, "FieldDeclarator", "ID", 2, null));
-			ret.add(makeIdentifierRule(ctx, "VariableDeclarator", "ID", 2, null));
-			ret.add(makeIdentifierRule(ctx, "VarAccess", "ID", 0, null));
-			ret.add(makeIdentifierRule(ctx, "TypeAccess", "ID", 0, null)); // TODO: give access to the package name too
-			ret.add(makeTerminalToIdentifierRule(ctx, "ID"));
+			ret.add(makeIdentifierRule(ctx, "IdUse", "ID", "ID"));
+			ret.add(makeIdentifierRule(ctx, "ParseName", "Token.ParseName", "ID"));
+			ret.add(makeIdentifierRule(ctx, "EnumConstant", "ID", "ID"));
+			ret.add(makeIdentifierRule(ctx, "FieldDeclarator", "ID", "ID"));
+			ret.add(makeIdentifierRule(ctx, "VariableDeclarator", "ID", "ID"));
+			ret.add(makeIdentifierRule(ctx, "VarAccess", "ID", "ID"));
+			ret.add(makeIdentifierRule(ctx, "TypeAccess", "ID", "ID"));
+			ret.add(makeTerminalToIdentifierRule(ctx, "ID", "ID"));
+		}
+		// Labels
+		if (used.contains("LABEL")) {
+			ret.add(makeIdentifierRule(ctx, "LabeledStmt", "Label", "LABEL"));
+			ret.add(makeIdentifierRule(ctx, "BreakStmt", "Label", "LABEL"));
+			ret.add(makeIdentifierRule(ctx, "ContinueStmt", "Label", "LABEL"));
+		}
+		// Packages for qualified names
+		if (used.contains("PACKAGE")) {
+			ret.add(makeIdentifierRule(ctx, "TypeAccess", "Package", "PACKAGE"));
+			ret.add(makeIdentifierRule(ctx, "PrimitiveTypeAccess", "Package", "PACKAGE"));
 		}
 		// Modifiers
 		if (used.contains("MOD"))
-			ret.add(makeIdentifierRule(ctx, "Modifier", "MOD", 0, null));
+			ret.add(makeIdentifierRule(ctx, "Modifier", "ID", "MOD"));
 		// Literals
 		if (used.contains("CHAR"))
-			ret.add(makeIdentifierRule(ctx, "CharacterLiteral", "CHAR", 0, null));
+			ret.add(makeIdentifierRule(ctx, "CharacterLiteral", "LITERAL", "CHAR"));
 		if (used.contains("BOOLEAN"))
-			ret.add(makeIdentifierRule(ctx, "BooleanLiteral", "BOOLEAN", 0, null));
+			ret.add(makeIdentifierRule(ctx, "BooleanLiteral", "LITERAL", "BOOLEAN"));
 		if (used.contains("STRING"))
-			ret.add(makeIdentifierRule(ctx, "StringLiteral", "STRING", 0, null));
+			ret.add(makeIdentifierRule(ctx, "StringLiteral", "LITERAL", "STRING"));
 		if (used.contains("NULL"))
-			ret.add(makeIdentifierRule(ctx, "NullLiteral", "NULL", 0, null));
+			ret.add(makeIdentifierRule(ctx, "NullLiteral", "LITERAL", "NULL"));
 		if (used.contains("INT"))
-			ret.add(makeIdentifierRule(ctx, "IntegerLiteral", "INT", 0, null));
+			ret.add(makeIdentifierRule(ctx, "IntegerLiteral", "LITERAL", "INT"));
 		if (used.contains("LONG"))
-			ret.add(makeIdentifierRule(ctx, "LongLiteral", "LONG", 0, null));
+			ret.add(makeIdentifierRule(ctx, "LongLiteral", "LITERAL", "LONG"));
 		if (used.contains("FLOAT"))
-			ret.add(makeIdentifierRule(ctx, "FloatingPointLiteral", "FLOAT", 0, null));
+			ret.add(makeIdentifierRule(ctx, "FloatingPointLiteral", "LITERAL", "FLOAT"));
 		if (used.contains("DOUBLE"))
-			ret.add(makeIdentifierRule(ctx, "DoubleLiteral", "DOUBLE", 0, null));
+			ret.add(makeIdentifierRule(ctx, "DoubleLiteral", "LITERAL", "DOUBLE"));
 		// Insert a relation to represent the source location of the node
 		// represented by a metavariable
 		if (used.contains("SRC"))

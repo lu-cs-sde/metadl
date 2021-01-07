@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.lang.reflect.ParameterizedType;
 import lang.io.StringUID;
 import org.apache.commons.lang3.mutable.MutableInt;
+import org.apache.commons.lang3.tuple.Pair;
 
 aspect DatalogProjection {
 	/**
@@ -89,11 +90,11 @@ aspect DatalogProjection {
 		}
 
 		// other tokens attached to the node
-		for (String t : tokens()) {
+		for (Pair<String, String> t : namedTokens()) {
 			// For every token, we generate two tuples
 			// ("NodeKind", CurrentNodeId, ChildIdx, ChildId, "")
 			// ("Token", ChildId, 0, 0, "TokenAsString")
-			int tokenUID = StringUID.getInstance().uid(t);
+			int tokenUID = StringUID.getInstance().uid(t.getRight());
 			{
 				// Add a tuple to the current node relation
 				lang.ast.StringConstant Kind = new lang.ast.StringConstant(relName);
@@ -106,11 +107,11 @@ aspect DatalogProjection {
 
 			{
 				// Add a tuple to Token relation
-				lang.ast.StringConstant Kind = new lang.ast.StringConstant("Terminal");
+				lang.ast.StringConstant Kind = new lang.ast.StringConstant(t.getLeft());
 				lang.ast.IntConstant ChildId = new lang.ast.IntConstant("0");
 				lang.ast.IntConstant CurrentNodeId = new lang.ast.IntConstant("" + tokenUID);
 				lang.ast.IntConstant ChildIdx = new lang.ast.IntConstant("0");
-				lang.ast.StringConstant Token = new lang.ast.StringConstant(t);
+				lang.ast.StringConstant Token = new lang.ast.StringConstant(t.getRight());
 				ret.add(new PseudoTuple(Kind, CurrentNodeId, ChildIdx, ChildId, Token));
 			}
 		}

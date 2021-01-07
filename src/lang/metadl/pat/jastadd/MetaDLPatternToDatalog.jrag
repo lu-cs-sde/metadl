@@ -35,16 +35,16 @@ aspect LanguageSpecific {
 
 		// Add two new rules, to map variables and predicates to their predicates
 		if (used.contains("ID")) {
-			ret.add(makeIdentifierRule(ctx, "Variable", "ID", 0, null));
-			ret.add(makeIdentifierRule(ctx, "PredicateSymbol", "ID", 0, null));
-			ret.add(makeIdentifierRule(ctx, "FunctorSymbol", "ID", 0, null));
+			ret.add(makeIdentifierRule(ctx, "Variable", "VAR_ID", "ID"));
+			ret.add(makeIdentifierRule(ctx, "PredicateSymbol", "PRED_ID", "ID"));
+			ret.add(makeIdentifierRule(ctx, "FunctorSymbol", "FUNC_ID", "ID"));
 		}
 		if (used.contains("INT"))
-			ret.add(makeIdentifierRule(ctx, "IntConstant", "INT", 0, "to_number"));
+			ret.add(makeIdentifierRule(ctx, "IntConstant", "NUMERAL", "INT", "to_number"));
 		if (used.contains("STR"))
-			ret.add(makeIdentifierRule(ctx, "StringConstant", "STR", 0, null));
+			ret.add(makeIdentifierRule(ctx, "StringConstant", "STRING", "STR"));
 		if (used.contains("REF"))
-			ret.add(makeIdentifierRule(ctx, "PredicateRef", "REF", 0, null));
+			ret.add(makeIdentifierRule(ctx, "PredicateRef", "PRED_ID", "REF"));
 
 		// Insert a relation to represent the source location of the node
 		// represented by a metavariable

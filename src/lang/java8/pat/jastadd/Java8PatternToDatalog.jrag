@@ -10,19 +10,6 @@ import lang.io.StringUID;
 import java.util.Arrays;
 
 aspect LanguageSpecific {
-	// TODO: the token list should be generated
-	// syn java.util.List<String> ASTNode.tokens() {
-	// 	try {
-	// 		Method m = getClass().getMethod("getID");
-	// 		String id = (String)m.invoke(this);
-	// 		assert id != null;
-	// 		return Collections.singletonList(id);
-	// 	} catch (ReflectiveOperationException e) {
-	// 		return Collections.emptyList();
-	// 	}
-	// }
-
-
 	@Override public java.util.List<Pair<String, String>> ArrayTypeAccess.namedTokens() {
 		// ArrayTypeAccess : TypeAccess ::= /<Package:String>/ /<ID:String>/ Access;
 		// ArrayTypeAccess overrides the Package and ID tokens with
@@ -31,36 +18,8 @@ aspect LanguageSpecific {
 		return Collections.emptyList();
 	}
 
-	// eq Literal.tokens() {
-	// 	return Collections.singletonList(getLITERAL());
-	// }
-	// eq CompilationUnit.tokens() {
-	// 	return Collections.singletonList(getPackageDecl());
-	// }
-	// eq PackageAccess.tokens() {
-	// 	return Collections.singletonList(getPackage());
-	// }
-	// eq IdUse.tokens() {
-	// 	return Collections.singletonList(getID());
-	// }
-	// eq Modifier.tokens() {
-	// 	return Collections.singletonList(getID());
-	// }
-	// eq LabeledStmt.tokens() {
-	// 	return Collections.singletonList(getLabel());
-	// }
-	// eq BreakStmt.tokens() {
-	// 	return Collections.singletonList(getLabel());
-	// }
-	// eq ContinueStmt.tokens() {
-	// 	return Collections.singletonList(getLabel());
-	// }
 	@Override public java.util.List<Pair<String, String>> ParseName.namedTokens() {
 		return nameParts.stream().map(np -> Pair.of("Token.ParseName", np.toString())).collect(Collectors.toList());
-		// java.util.List<String>  tokenList = new ArrayList<>();
-		// for (NamePart np : nameParts)
-		// 	tokenList.add(np.toString());
-		// return tokenList;
 	}
 
 	public static java.util.List<lang.ast.Clause> PatLang.makeAttributeRule(AnalyzeContext ctx, String attrName, String predName) {
@@ -196,6 +155,8 @@ aspect LanguageSpecific {
 		case "TYPE":
 		case "DECL":
 		case "GENERIC":
+		case "LABEL":
+		case "PACKAGE":
 		// Expose the program representation through the AST context predicate.
 		case "AST":
 		case "PROVENANCE":
@@ -217,6 +178,8 @@ aspect LanguageSpecific {
 		case "LONG":
 		case "FLOAT":
 		case "DOUBLE":
+		case "LABEL":
+		case "PACKAGE":
 			return new lang.ast.PredicateType(lang.ast.ASTNodeType.get(),
 											  lang.ast.StringType.get());
 		case "SRC":

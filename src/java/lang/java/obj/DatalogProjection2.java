@@ -9,6 +9,7 @@ import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -33,6 +34,42 @@ import org.extendj.ast.Program;
 import lang.io.SimpleLogger;
 import lang.relation.RelationWrapper;
 import lang.relation.TupleInserter;
+
+class ASTNodeEnumerator implements Iterable<Pair<Integer, ASTNode>> {
+	final ASTNode n;
+	final boolean visitNoTransform;
+
+	private class ASTNodeIteratorAdapter implements Iterator<Pair<Integer, ASTNode>> {
+		int i = 0;
+		private ASTNodeIteratorAdapter() {
+		}
+
+		@Override
+		public boolean hasNext() {
+			return i < (visitNoTransform ? n.getNumChildNoTransform() : n.getNumChild());
+		}
+
+		@Override
+		public Pair<Integer, ASTNode> next() {
+			Pair<Integer, ASTNode> ret = Pair.of(i, visitNoTransform ? n.getChildNoTransform(i) : n.getChild(i));
+			i++;
+			return ret;
+		}
+	}
+
+	public Iterator<Pair<Integer, ASTNode>> iterator() {
+		return new ASTNodeIteratorAdapter();
+	}
+
+	private ASTNodeEnumerator(ASTNode n, boolean visitNoTransform) {
+		this.n = n;
+		this.visitNoTransform = visitNoTransform;
+	}
+
+	public static ASTNodeEnumerator of(ASTNode n, boolean visitNoTransform) {
+		return new ASTNodeEnumerator(n, visitNoTransform);
+	}
+}
 
 public class DatalogProjection2 {
 	private long NTANum = 1;
@@ -148,19 +185,9 @@ public class DatalogProjection2 {
 								   tupleSink.getProvenance(), attrs);
 				}
 				// add the children to the worklist
-				for (int i = 0; i < q.getNumChildNoTransform(); ++i) {
-					ASTNode<?> childNT = q.getChildNoTransform(i);
-					// TODO: ExtendJ sometimes returns null for childNT. Understand why.
-					if (childNT != null) {
-						currentCUNodes.add(childNT);
-						if (visitRewrittenChildren && childNT.mayHaveRewrite()) {
-							ASTNode<?> child = q.getChild(i);
-							if (child != childNT) {
-								currentCUNodes.add(child);
-								recordRewrittenNode(childNT, child, tupleSink.getAttributes());
-							}
-						}
-					}
+				for (Pair<Integer, ASTNode> indexedChild : ASTNodeEnumerator.of(q, !visitRewrittenChildren)) {
+					if (indexedChild.getRight() != null)
+						currentCUNodes.add(indexedChild.getRight());
 				}
 			}
 
@@ -178,19 +205,10 @@ public class DatalogProjection2 {
 					mapAttributes(q, currentCU, otherCompilationUnits, currentCUNodes, NTANodes, tupleSink.getAttributes(),
 								   tupleSink.getProvenance(), attrs);
 				}
-				// add the children to the worklist
-				for (int i = 0; i < q.getNumChildNoTransform(); ++i) {
-					ASTNode<?> childNT = q.getChildNoTransform(i);
-					// TODO: ExtendJ sometimes returns null for childNT. Understand why.
-					if (childNT != null) {
-						NTANodes.add(childNT);
-						if (visitRewrittenChildren && childNT.mayHaveRewrite()) {
-							ASTNode<?> child = q.getChild(i);
-							if (child != childNT) {
-								NTANodes.add(child);
-								recordRewrittenNode(childNT, child, tupleSink.getAttributes());
-							}
-						}
+
+				for (Pair<Integer, ASTNode> indexedChild : ASTNodeEnumerator.of(q, !visitRewrittenChildren)) {
+					if (indexedChild.getRight() != null) {
+						NTANodes.add(indexedChild.getRight());
 					}
 				}
 			}
@@ -400,17 +418,9 @@ public class DatalogProjection2 {
 
 		// the children in the tree
 		int childIndex = 0;
-		for (int i = 0; i < n.getNumChildNoTransform(); ++i) {
-			ASTNode<?> child = n.getChildNoTransform(i);
-			// TODO: ExtendJ sometimes returns null for child. Understand why.
-			if (child != null) {
-				astTupleSink.insertTuple(relName, nodeId(n), childIndex, nodeId(child), "");
-				if (visitRewrittenChildren && child.mayHaveRewrite()) {
-					ASTNode<?> childT = n.getChild(i);
-					if (childT != child) {
-						astTupleSink.insertTuple(relName, nodeId(n), childIndex, nodeId(childT), "");
-					}
-				}
+		for (Pair<Integer, ASTNode> indexedChild : ASTNodeEnumerator.of(n, !visitRewrittenChildren)) {
+			if (indexedChild.getRight() != null) {
+				astTupleSink.insertTuple(relName, nodeId(n), indexedChild.getLeft(), nodeId(indexedChild.getRight()), "");
 			}
 			childIndex++;
 		}

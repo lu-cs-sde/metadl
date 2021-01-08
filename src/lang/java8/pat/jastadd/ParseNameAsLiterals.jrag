@@ -1,7 +1,32 @@
 aspect ParseNameAsLiterals {
+	// public void NamePart.toAccess(AnalyzeContext ctx, String varName, java.util.List<lang.ast.CommonLiteral> lits) {
+	// 	lits.add(literal(ctx.progRelName, "Access", var(varName), "_", var(varName + "_c"), "_"));
+	// 	lits.add(literal(ctx.progRelName, "ID", var(varName + "_c"), "_", "_", this.toString()));
+	// }
+
+	// @Override public void ParseName.literals2(AnalyzeContext ctx, lang.ast.CommonVariable root,
+	// 										  java.util.List<lang.ast.CommonLiteral> lits) {
+	// 	String dotVarName = null;
+	// 	for (int i = nameParts.size() - 1; i >= 0; --i) {
+	// 		NamePart p = nameParts.get(i);
+	// 		if (dotVarName == null) {
+	// 			dotVarName = i == 0 ? varName("") : varName("_" + i);
+	// 			p.toAccess(ctx, dotVarName, lits);
+	// 		} else {
+	// 			p.toAccess(ctx, varName("_" + i), lits);
+	// 			String nextDotVarName = i == 0 ? varName("") : varName("_" + i + "_dot");
+	// 			lits.add(literal(ctx.progRelName, "Dot", var(nextDotVarName), integer(0), var(varName("_" + i)), "_"));
+	// 			lits.add(literal(ctx.progRelName, "Dot", var(nextDotVarName), integer(1), var(dotVarName), "_"));
+	// 			dotVarName = nextDotVarName;
+	// 		}
+	// 	}
+	// }
 	@Override public void ParseName.literals2(AnalyzeContext ctx, lang.ast.CommonVariable root,
 											  java.util.List<lang.ast.CommonLiteral> lits) {
+		assert nameParts.size() == 1;
+		lits.add(literal(ctx.progRelName, var(varName("_kind")), root != null ? root : var(varName("")), "_", var(varName("_c")), "_"));
+		lits.add(literal(ctx.prefix("SUPERTYPE"), var(varName("_kind")), str("Access")));
+		lits.add(literal(ctx.progRelName, "ID", var(varName("_c")), "_", "_", str(this.nameParts.get(0).toString())));
 
-		super.literals2(ctx, root, lits);
 	}
 }

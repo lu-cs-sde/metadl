@@ -99,10 +99,7 @@ public class DatalogProjection2 {
 		}
 
 		if (!n.numberOnDemand(fileIdDb, nodeToId)) {
-			// throw new RuntimeException("Node numbering failed.");
-			// System.out.print("Do NTA node numbering at " + n + " from " + NTANum);
 			NTANum = n.doNodeNumberingNTA(NTANum, nodeToId);
-			// System.out.println(" until " + NTANum);
 		}
 
 		id = nodeToId.get(n);

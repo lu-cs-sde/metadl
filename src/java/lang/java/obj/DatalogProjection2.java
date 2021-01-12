@@ -250,10 +250,6 @@ public class DatalogProjection2 {
 		}
 	}
 
-	private void recordRewrittenNode(ASTNode<?> original, ASTNode<?> target, TupleInserter attributes) {
-		attributes.insertTuple("rewriteTo", nodeId(original), nodeId(target));
-	}
-
 	private static String getRelation(ASTNode<?> n) {
 		String nodeName = n.getClass().getName();
 		String[] splitNodeName = nodeName.split("\\.");
@@ -278,7 +274,6 @@ public class DatalogProjection2 {
 						   beaver.Symbol.getColumn(n.getEnd()),
 						   srcFile);
 	}
-
 
 	private Map<Pair<Class<?>, String>, Method>  reflectCache = new HashMap<>();
 	private Set<Pair<Class<?>, String>> noSuchMethodCache = new HashSet<>();

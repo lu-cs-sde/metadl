@@ -23,27 +23,10 @@ aspect LanguageSpecific {
 	}
 
 	public static java.util.List<lang.ast.Clause> PatLang.makeAttributeRule(AnalyzeContext ctx, String attrName, String predName) {
-		return Arrays.asList(
-							 rule(
+		return Arrays.asList(rule(
 								  literal(ctx.prefix(predName), "$n", "$t"),
-								  literal(ctx.attrRelName, "rewriteTo", "$n", "$n_rw"),
-								  literal(ctx.attrRelName, str(attrName), "$n_rw", "$t_rw"),
-								  literal(ctx.attrRelName, "rewriteTo", "$t_rw", "$t")),
-							 rule(
-								  literal(ctx.prefix(predName), "$n", "$t"),
-								  literal(ctx.attrRelName, "rewriteTo", "$n", "$n_rw"),
-								  literal(ctx.attrRelName, str(attrName), "$n_rw", "$t"),
-								  NOT(literal(ctx.attrRelName, "rewriteTo", "$t", "_"))),
-							 rule(
-								  literal(ctx.prefix(predName), "$n", "$t"),
-								  literal(ctx.attrRelName, str(attrName), "$n", "$t_rw"),
-								  NOT(literal(ctx.attrRelName, "rewriteTo", "$n", "_")),
-								  literal(ctx.attrRelName, "rewriteTo", "$t_rw", "$t")),
-							 rule(
-								  literal(ctx.prefix(predName), "$n", "$t"),
-								  literal(ctx.attrRelName, str(attrName), "$n", "$t"),
-								  NOT(literal(ctx.attrRelName, "rewriteTo", "$n", "_")),
-								  NOT(literal(ctx.attrRelName, "rewriteTo", "$t", "_"))));
+								  literal(ctx.attrRelName, str(attrName), "$n", "$t")
+								  ));
 	}
 
 	public static lang.ast.Rule PatLang.makeASTRule(AnalyzeContext ctx) {

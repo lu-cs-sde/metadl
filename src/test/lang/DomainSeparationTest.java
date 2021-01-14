@@ -8,6 +8,7 @@ import lang.ast.Program;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.util.Collections;
 import java.util.Set;
 
 import org.junit.jupiter.api.Test;
@@ -73,5 +74,31 @@ public class DomainSeparationTest {
 		// B and C use the DECL attribute, which is global
 		assertTrue(B.isLocal());
 		assertTrue(C.isLocal());
+	}
+
+	@Test public void testLocal1() {
+		Program p = loadAndCompile("locals1.mdl");
+
+		FormalPredicateMap predMap = p.formalPredicateMap();
+		FormalPredicate P = predMap.get("P");
+		assertEquals(P.localTerms(), Collections.emptySet());
+
+		FormalPredicate Q = predMap.get("Q");
+		assertEquals(Q.localTerms(), Set.of(0));
+
+		FormalPredicate R = predMap.get("R");
+		assertEquals(R.localTerms(), Set.of(2));
+
+		FormalPredicate S = predMap.get("S");
+		assertEquals(S.localTerms(), Collections.emptySet());
+
+		FormalPredicate T = predMap.get("T");
+		assertEquals(T.localTerms(), Set.of(0, 1));
+
+		FormalPredicate U = predMap.get("U");
+		assertEquals(U.localTerms(), Set.of(0));
+
+		FormalPredicate V = predMap.get("V");
+		assertEquals(V.localTerms(), Collections.emptySet());
 	}
 }

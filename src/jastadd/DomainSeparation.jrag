@@ -1,5 +1,6 @@
 import org.jgrapht.alg.util.UnionFind;
 import java.util.stream.IntStream;
+import java.util.stream.StreamSupport;
 import org.apache.commons.collections4.SetUtils;
 
 aspect DomainSeparation {
@@ -319,6 +320,56 @@ aspect DomainSeparation {
 				return true;
 		}
 		return isASTPredicate();
+	}
+
+	syn Set<Integer> FormalPredicate.initialLocalTerms() {
+		if (getProgramRepresentationKind().isPresent()) {
+			// By convention, use the equivalence class of the first term with AST node type,
+			// if that exists.
+			// This accidentally matches the predicates we have for Java. For more
+			// flexibility we should delegate this selection to the analyzed language.
+			return domainSignature().equivalenceSets().stream().min((d1, d2) -> Integer.compare(Collections.min(d1), Collections.min(d2)))
+				.orElse(Collections.emptySet());
+		}
+		return Set.copyOf(astIndices());
+	}
+
+	syn Set<Integer> FormalPredicate.localTerms() circular [initialLocalTerms()] {
+		Set<Integer> currentLocalTerms = localTerms();
+		// iterate over all the definitions of this predicate
+		for (Literal l : literals()) {
+			if (l.isDef() && l.clause() instanceof Rule) {
+				Rule r = (Rule) l.clause();
+				Set<String> localVariables = r.localVariables();
+				Set<Integer> localTerms = new HashSet<Integer>();
+				for (int i : l.astIndices()) {
+					String vi = ((CommonVariable)l.getTerms(i)).dsName();
+					if (localVariables.contains(vi)) {
+						for (int j : l.astIndices()) {
+							if (domainSignature().inSameSet(i, j)) {
+								localTerms.add(j);
+							}
+						}
+					}
+				}
+				currentLocalTerms = SetUtils.intersection(localTerms, currentLocalTerms);
+			}
+		}
+		return currentLocalTerms;
+	}
+
+	/**
+	   The intersection for of all the local variables for each predicate in the clause
+	 */
+	syn Set<String> Clause.localVariables() circular [Collections.emptySet()];
+	eq Fact.localVariables() = Collections.emptySet();
+	eq Rule.localVariables() {
+		return StreamSupport.stream(getBodys().spliterator(), false).map(CommonLiteral::asLiteral).filter(l -> l != null)
+			.map(l -> l.astIndices().stream()
+				 .filter(i -> l.getPredicate().formalpredicate().localTerms().contains(i))
+				 .map(i -> ((CommonVariable) l.getTerms(i)).dsName())
+				 .collect(Collectors.toSet()))
+			.reduce((s1, s2) -> SetUtils.intersection(s1, s2)).orElse(Collections.emptySet());
 	}
 
 	syn lazy boolean FormalPredicate.hasLocalUse() {

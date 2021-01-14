@@ -100,5 +100,8 @@ public class DomainSeparationTest {
 
 		FormalPredicate V = predMap.get("V");
 		assertEquals(V.localTerms(), Collections.emptySet());
+
+		FormalPredicate W = predMap.get("W");
+		assertEquals(W.localTerms(), Set.of(0));
 	}
 }

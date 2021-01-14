@@ -209,79 +209,31 @@ aspect DomainSeparation {
 
 	// A predicate is local iff its relation can be computed separately for each
 	// translation unit.
-	syn boolean FormalPredicate.isLocal() circular [true] {
-		if (getContextPredicateType() != null) {
-			// this is a context predicate and all context predicates are local
+	syn boolean FormalPredicate.isLocal() {
+		if (getContextPredicateType() != null)
 			return true;
-		}
+
+		if (!localTerms().isEmpty())
+			return true;
 
 		for (Clause c : definedIn()) {
 			if (!c.isLocal()) {
 				return false;
 			}
 		}
+
 		return true;
 	}
 
 	// A clause is local iff it can be computed for each translation unit
 	// in separation.
-	syn boolean Clause.isLocal() circular [true];
+	syn boolean Clause.isLocal();
 	eq Fact.isLocal() = true;
 	eq Rule.isLocal() {
-		java.util.List<Literal> astLiterals = new ArrayList<>();
-
-		// all the AST literals are single domain
-		for (CommonLiteral c : getBodys()) {
-			Literal l = c.asLiteral();
-			if (l == null)
-				continue;
-			FormalPredicate pred = l.getPredicate().formalpredicate();
-			// this rule uses a non-local predicate
-			if (!pred.isLocal())
-				return false;
-			if (pred.isASTPredicate()) {
-				// check that the predicate has exactly one equivalence set;
-				// this means that the predicate contains information about
-				// exactly one AST and has witnesses for that
-				if (l.astVariables().isEmpty())
-					return false;
-
-				// ensure that all AST variables are in the same domain, either
-				// constrained by the predicate, or constrained by other variables
-				// in the clause.
-				DomainSignature<Integer> literalSig = l.getPredicate().formalpredicate().domainSignature();
-
-				for (int i : l.astIndices()) {
-					String vi = ((CommonVariable)l.getTerms(i)).dsName();
-					for (int j : l.astIndices()) {
-						String vj = ((CommonVariable)l.getTerms(j)).dsName();
-						if (!literalSig.inSameSet(i, j) && !domainSignature().inSameSet(vi, vj))
-							return false;
-					}
-				}
-
-				// collect the literals that depend on AST facts
-				astLiterals.add(l);
-			}
-		}
-
-		// no literals depend on AST, then this can be computed locally
-		// (or globally), it doesn't matter.
-		if (astLiterals.isEmpty())
+		if (!isASTClause())
 			return true;
 
-		// some literals depend on the AST, check that they are all connected
-		DomainSignature<Literal> s = new DomainSignature<>(astLiterals);
-		for (int i = 0; i < astLiterals.size(); ++i) {
-			Literal li = astLiterals.get(i);
-			for (int j = i + 1; j < astLiterals.size(); ++j) {
-				Literal lj = astLiterals.get(j);
-				if (!SetUtils.intersection(li.astVariables(), lj.astVariables()).isEmpty())
-					s.union(li, lj);
-			}
-		}
-
-		return s.equivalenceSets().size() == 1;
+		return !localVariables().isEmpty();
 	}
 
 	syn boolean FormalPredicate.initialIsASTPredicate() {
@@ -326,7 +278,7 @@ aspect DomainSeparation {
 		if (getProgramRepresentationKind().isPresent()) {
 			// By convention, use the equivalence class of the first term with AST node type,
 			// if that exists.
-			// This accidentally matches the predicates we have for Java. For more
+			// TODO: This accidentally matches the predicates we have for Java. For more
 			// flexibility we should delegate this selection to the analyzed language.
 			return domainSignature().equivalenceSets().stream().min((d1, d2) -> Integer.compare(Collections.min(d1), Collections.min(d2)))
 				.orElse(Collections.emptySet());
@@ -358,18 +310,34 @@ aspect DomainSeparation {
 		return currentLocalTerms;
 	}
 
+	syn Set<String> Literal.selectDSVariables(Collection<Integer> indices) =
+		indices.stream().map(i -> ((CommonVariable) getTerms(i)).dsName()).collect(Collectors.toSet());
+
 	/**
 	   The intersection for of all the local variables for each predicate in the clause
 	 */
 	syn Set<String> Clause.localVariables() circular [Collections.emptySet()];
 	eq Fact.localVariables() = Collections.emptySet();
 	eq Rule.localVariables() {
-		return StreamSupport.stream(getBodys().spliterator(), false).map(CommonLiteral::asLiteral).filter(l -> l != null)
-			.map(l -> l.astIndices().stream()
-				 .filter(i -> l.getPredicate().formalpredicate().localTerms().contains(i))
-				 .map(i -> ((CommonVariable) l.getTerms(i)).dsName())
-				 .collect(Collectors.toSet()))
-			.reduce((s1, s2) -> SetUtils.intersection(s1, s2)).orElse(Collections.emptySet());
+		for (Set<String> varEqSet : domainSignature().equivalenceSets()) {
+			boolean intersectsAllLiterals = true;
+			for (CommonLiteral c : getBodys()) {
+				Literal l = c.asLiteral();
+				if (l == null)
+					continue;
+				if (!l.getPredicate().formalpredicate().isASTPredicate())
+					continue;
+				Set<String> localVars = l.selectDSVariables(l.getPredicate().formalpredicate().localTerms());
+				if (SetUtils.intersection(localVars, varEqSet).isEmpty()) {
+					intersectsAllLiterals = false;
+					break;
+				}
+			}
+			if (intersectsAllLiterals) {
+				return varEqSet;
+			}
+		}
+		return Collections.emptySet();
 	}
 
 	syn lazy boolean FormalPredicate.hasLocalUse() {

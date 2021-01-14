@@ -111,7 +111,7 @@ public class IncrementalTest {
 	}
 
 	static Stream<String> initialRunTests() {
-		String[] tests = {"reference-equality", "switch-no-default", "operator-precedence"};
+		String[] tests = {"reference-equality", "switch-no-default", "operator-precedence", "type-param-unused-in-formals"};
 		return Arrays.stream(tests);
 	}
 

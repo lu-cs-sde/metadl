@@ -297,6 +297,7 @@ aspect SoufflePrinting {
 			pr.printComment("AST clause");
 		}
 		pr.printComment(isLocal() ? "Local clause" : "Global clause");
+		pr.printComment("Local variables: " + localVariables());
 		pr.printComment("Domains: " + domainSignature().equivalenceSets().toString());
 
 		prettyPrint(pr);
@@ -341,14 +342,15 @@ aspect SoufflePrinting {
 		return false;
 	}
 
+	public String FormalPredicate.prettyDomainSeparationInfo() {
+		return "AST: " + isASTPredicate() + "; Local: " + isLocal() + "; Global use: " + hasGlobalUse()
+			+ "; Global def: " + hasGlobalDef() + "; Local use: " + hasLocalUse() + "; Local def: " + hasLocalDef();
+	}
+
     public void FormalPredicate.soufflePrint(PrettyPrinter pr) {
 		pr.printComment("Domains: " + domainSignature().equivalenceSets());
-		if (isASTPredicate()) {
-			pr.printComment("AST predicate");
-		}
-		if (isLocal()) {
-			pr.printComment("Local predicate");
-		}
+		pr.printComment("Local terms: " + localTerms());
+		pr.printComment(prettyDomainSeparationInfo());
         pr.out.print(".decl " + predicateName() + "(");
         ArrayList<PredicateSymbol> constants = new ArrayList<PredicateSymbol>();
         for(int i = 0; i != realArity(); ++i) {

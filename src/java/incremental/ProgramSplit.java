@@ -62,6 +62,7 @@ public class ProgramSplit {
 	private void splitPredicates() {
 		List<FormalPredicate> splitPreds = new ArrayList<>();
 		for (FormalPredicate p : program.getFormalPredicates()) {
+			//System.err.println(p.getPRED_ID() + " " + p.prettyDomainSeparationInfo());
 			if (p.hasLocalDef() && p.hasGlobalDef()) {
 				splitPreds.add(p);
 			}

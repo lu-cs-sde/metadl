@@ -1,0 +1,20 @@
+Src("", "") :- NEQ(0, 0).
+
+java ('Src) {
+     P(x) :- DECL(x, y).
+     P(y) :- DECL(x, y).
+
+     Q(x) :- DECL(x, y).
+
+     R(x, y, z) :- DECL(z, x), DECL(z, y).
+
+     S(x, y, z) :- DECL(x, z), DECL(y, z).
+
+     T(x, y) :- DECL(x, y), PARENT(x, y).
+
+     U(x, y) :- DECL(x, y), NOT(PARENT(x, y)).
+
+     V(x, y) :- DECL(x, y), NOT(DECL(_, _)).
+
+     W(x, y) :- DECL(x, y), DECL(z, w), PARENT(x, z).
+}

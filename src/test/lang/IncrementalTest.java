@@ -16,6 +16,7 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.stream.Stream;
 
+import org.apache.commons.collections4.SetUtils;
 import org.apache.commons.io.FileUtils;
 
 import org.junit.jupiter.api.Test;
@@ -103,8 +104,10 @@ public class IncrementalTest {
 			RelationWrapper expectedRelW = new RelationWrapper(ctx, expectedRel, pred.type());
 
 			if (!expectedRelW.tuples().equals(relW.tuples())) {
-				System.err.println(expectedRelW.tuples());
-				System.err.println(relW.tuples());
+				System.err.println("Missing in EXPECTED:");
+				System.err.println(SetUtils.difference(relW.tuples(), expectedRelW.tuples()));
+				System.err.println("Missing in ACTUAL:");
+				System.err.println(SetUtils.difference(expectedRelW.tuples(), relW.tuples()));
 			}
 			assertEquals(expectedRelW.tuples(), relW.tuples(), "Relation " + predName + " differs.");
 		}

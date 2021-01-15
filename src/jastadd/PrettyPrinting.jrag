@@ -343,7 +343,7 @@ aspect SoufflePrinting {
 	}
 
 	public String FormalPredicate.prettyDomainSeparationInfo() {
-		return "AST: " + isASTPredicate() + "; Local: " + isLocal() + "; Global use: " + hasGlobalUse()
+		return "AST: " + isASTPredicate() + "; Global use: " + hasGlobalUse()
 			+ "; Global def: " + hasGlobalDef() + "; Local use: " + hasLocalUse() + "; Local def: " + hasLocalDef();
 	}
 

@@ -33,31 +33,38 @@ public class DomainSeparationTest {
 		Program p = loadAndCompile("domain.mdl");
 		FormalPredicateMap predMap = p.formalPredicateMap();
 		FormalPredicate Name = predMap.get("Name");
-		assertTrue(Name.isLocal());
+		assertTrue(Name.hasLocalDef());
+		assertFalse(Name.hasGlobalDef());
 		assertTrue(Name.isASTPredicate());
 
 		FormalPredicate A1 = predMap.get("A1");
-		assertFalse(A1.isLocal());
+		assertFalse(A1.hasLocalDef());
+		assertTrue(A1.hasGlobalDef());
 		assertTrue(A1.isASTPredicate());
 
 		FormalPredicate A2 = predMap.get("A2");
-		assertFalse(A2.isLocal());
+		assertTrue(A2.hasGlobalDef());
+		assertFalse(A2.hasLocalDef());
 		assertTrue(A2.isASTPredicate());
 
 		FormalPredicate A3 = predMap.get("A3");
-		assertTrue(A3.isLocal());
+		assertTrue(A3.hasLocalDef());
+		assertFalse(A3.hasGlobalDef());
 		assertTrue(A3.isASTPredicate());
 
 		FormalPredicate B = predMap.get("B");
-		assertFalse(B.isLocal());
+		assertFalse(B.hasLocalDef());
+		assertTrue(B.hasGlobalDef());
 		assertTrue(B.isASTPredicate());
 
 		FormalPredicate C = predMap.get("C");
-		assertTrue(C.isLocal());
+		assertTrue(C.hasLocalDef());
+		assertFalse(C.hasGlobalDef());
 		assertTrue(C.isASTPredicate());
 
 		FormalPredicate Pat = predMap.get("Pat");
-		assertTrue(Pat.isLocal());
+		assertTrue(Pat.hasLocalDef());
+		assertFalse(Pat.hasGlobalDef());
 		assertTrue(Pat.isASTPredicate());
 	}
 
@@ -72,8 +79,10 @@ public class DomainSeparationTest {
 		assertTrue(B.isASTPredicate());
 		assertTrue(C.isASTPredicate());
 		// B and C use the DECL attribute, which is global
-		assertTrue(B.isLocal());
-		assertTrue(C.isLocal());
+		assertTrue(B.hasLocalDef());
+		assertFalse(B.hasGlobalDef());
+		assertTrue(C.hasLocalDef());
+		assertFalse(C.hasGlobalDef());
 	}
 
 	@Test public void testLocal1() {

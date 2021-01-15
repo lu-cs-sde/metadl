@@ -129,10 +129,12 @@ aspect DomainSeparation {
 	syn DomainSignature<Integer> FormalPredicate.domainSignature() circular [initialDomainSignature()] {
 		// iterate over all the heads and merge their signatures
 		DomainSignature<Integer> predSig = new DomainSignature<>(domainSignature());
+
 		for (Literal l : literals()) {
 			if (l.isDef() && l.clause() instanceof Rule) {
 				DomainSignature<Integer> literalSig = new DomainSignature<>(astIndices());
 				DomainSignature<String> clauseSig = ((Rule)l.clause()).domainSignature();
+
 				for (int i : l.astIndices()) {
 					String vi = ((CommonVariable)l.getTerms(i)).dsName();
 					for (int j : l.astIndices()) {
@@ -144,6 +146,7 @@ aspect DomainSeparation {
 				predSig = DomainSignature.merge(predSig, literalSig);
 			}
 		}
+
 		return predSig;
 	}
 
@@ -176,7 +179,7 @@ aspect DomainSeparation {
 	eq Pattern.asLiteral() = getLiteral();
 	eq Constraint.asLiteral() = null;
 
-	syn DomainSignature<String> Rule.domainSignature() circular [initialDomainSignature()] {
+	public DomainSignature<String> Rule.domainSignature() {
 		DomainSignature<String> ruleSig = initialDomainSignature();
 
 		for (CommonLiteral c : getBodys()) {
@@ -197,6 +200,7 @@ aspect DomainSeparation {
 				}
 			}
 		}
+
 		return ruleSig;
 	}
 
@@ -205,24 +209,6 @@ aspect DomainSeparation {
 			ps.print(p.getPRED_ID() + " : " + p.type());
 			ps.println(" " + p.domainSignature().equivalenceSets());
 		}
-	}
-
-	// A predicate is local iff its relation can be computed separately for each
-	// translation unit.
-	syn boolean FormalPredicate.isLocal() {
-		if (getContextPredicateType() != null)
-			return true;
-
-		if (!localTerms().isEmpty())
-			return true;
-
-		for (Clause c : definedIn()) {
-			if (!c.isLocal()) {
-				return false;
-			}
-		}
-
-		return true;
 	}
 
 	// A clause is local iff it can be computed for each translation unit
@@ -316,9 +302,11 @@ aspect DomainSeparation {
 	/**
 	   The intersection for of all the local variables for each predicate in the clause
 	 */
-	syn Set<String> Clause.localVariables() circular [Collections.emptySet()];
-	eq Fact.localVariables() = Collections.emptySet();
-	eq Rule.localVariables() {
+	public abstract Set<String> Clause.localVariables();
+	@Override public Set<String> Fact.localVariables() {
+		return Collections.emptySet();
+	}
+	@Override public Set<String> Rule.localVariables() {
 		for (Set<String> varEqSet : domainSignature().equivalenceSets()) {
 			boolean intersectsAllLiterals = true;
 			for (CommonLiteral c : getBodys()) {

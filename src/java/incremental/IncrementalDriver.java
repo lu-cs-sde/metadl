@@ -121,9 +121,10 @@ public class IncrementalDriver {
 
 	private ProgramSplit progSplit;
 
-	private boolean useSouffle = true;
+	private boolean useSouffle;
 
-	public IncrementalDriver(File root, ProgramSplit progSplit) {
+	public IncrementalDriver(File root, ProgramSplit progSplit, boolean useSouffle) {
+		this.useSouffle = useSouffle;
 		this.progSplit = progSplit;
 		// folders
 		this.common = new File(root, "common");
@@ -431,7 +432,8 @@ public class IncrementalDriver {
 
 		List<File> visitFiles;
 		List<File> deletedFiles;
-		if (opts.getAction() == CmdLineOpts.Action.INCREMENTAL_INIT) {
+		if (opts.getAction() == CmdLineOpts.Action.INCREMENTAL_INIT ||
+			opts.getAction() == CmdLineOpts.Action.INCREMENTAL_INIT_INTERNAL) {
 			visitFiles = analyzedSrcs.tuples().stream().map(t -> new File(t.getAsString(0))).collect(Collectors.toList());
 			deletedFiles = Collections.emptyList();
 			logger().debug("Initial incremental run with files " + visitFiles + ".");

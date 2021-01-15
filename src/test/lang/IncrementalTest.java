@@ -15,6 +15,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import org.apache.commons.collections4.SetUtils;
 import org.apache.commons.io.FileUtils;
@@ -72,7 +73,7 @@ public class IncrementalTest {
 		return res;
 	}
 
-	private static void runProgramAndExtractResults(String name) throws SQLException, IOException {
+	private static void runProgramAndExtractResults(String name, boolean useSouffle) throws SQLException, IOException {
 		String src = new File(PROGRAM_DIR, name + ".mdl").getPath();
 
 		File output = new File(OUTPUT_DIR, name);
@@ -80,7 +81,7 @@ public class IncrementalTest {
 
 		// Build the command-line options
 		CmdLineOpts opts = new CmdLineOpts();
-		opts.setAction(CmdLineOpts.Action.INCREMENTAL_INIT);
+		opts.setAction(useSouffle ? CmdLineOpts.Action.INCREMENTAL_INIT : CmdLineOpts.Action.INCREMENTAL_INIT_INTERNAL);
 		opts.setOutputDir(output.getPath());
 		opts.setCacheDir(output.getPath());
 		opts.setFactsDir(".");
@@ -113,15 +114,28 @@ public class IncrementalTest {
 		}
 	}
 
-	static Stream<String> initialRunTests() {
-		String[] tests = {"reference-equality", "switch-no-default", "operator-precedence", "type-param-unused-in-formals"};
+	static Stream<String> initialRunTestsSouffle() {
+		String[] tests = {"reference-equality"};
 		return Arrays.stream(tests);
 	}
 
-	@DisplayName("Test the initial run of the incremental evaluation driver.")
+	@DisplayName("Test the initial run of the incremental evaluation driver using Souffle.")
 	@ParameterizedTest
-	@MethodSource("initialRunTests")
-	public void testInitialRun(String name) throws Exception {
-		runProgramAndExtractResults(name);
+	@MethodSource("initialRunTestsSouffle")
+	public void testInitialRunSouffle(String name) throws Exception {
+		runProgramAndExtractResults(name, true);
+	}
+
+	static Stream<String> initialRunTestsInternal() {
+		// Exclude the java7 test since it contains a 0 arity predicate and the
+		// cache database does not handle 0-arity predicates
+		return EvaluationTest.metadlJavaTests().filter(t -> !t.equals("java7"));
+	}
+
+	@DisplayName("Test the initial run of the incremental evaluation driver using the internal evaluator.")
+	@ParameterizedTest
+	@MethodSource("initialRunTestsInternal")
+	public void testInitialRunInternal(String name) throws Exception {
+		runProgramAndExtractResults(name, false);
 	}
 }

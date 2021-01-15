@@ -123,7 +123,7 @@ public class Compiler {
 		SimpleLogger.logger().time("Run Souffle program: " + souffleRunTimer.getTime() + "ms");
 	}
 
-	public static void generateIncrementalProgram(Program prog, CmdLineOpts opts) throws IOException, SQLException {
+	public static void generateIncrementalProgram(Program prog, CmdLineOpts opts, boolean useSouffle) throws IOException, SQLException {
 		// evaluate the EDB and IMPORT predicate, to ensure
 		// that the inputs to the analyze blocks can be evaluated in turn
 		prog.evalEDB(prog.evalCtx(), opts);
@@ -138,7 +138,7 @@ public class Compiler {
 		Profile.profile().stopTimer("main", "local_and_global_split");
 
 		Profile.profile().startTimer("main", "incremental_driver");
-		IncrementalDriver incDriver = new IncrementalDriver(new File(opts.getCacheDir()), split);
+		IncrementalDriver incDriver = new IncrementalDriver(new File(opts.getCacheDir()), split, useSouffle);
 		incDriver.init();
 
 		incDriver.update(opts);
@@ -216,7 +216,11 @@ public class Compiler {
 			case INCREMENTAL_UPDATE:
 			case INCREMENTAL_INIT:
 				checkProgram(prog, opts);
-				generateIncrementalProgram(prog, opts);
+				generateIncrementalProgram(prog, opts, true);
+				break;
+			case INCREMENTAL_INIT_INTERNAL:
+				checkProgram(prog, opts);
+				generateIncrementalProgram(prog, opts, false);
 				break;
 			}
 

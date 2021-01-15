@@ -164,7 +164,7 @@ public class ProgramSplit {
 		List<PredicateIOInfo> outputs = getIOPredicateInfo(GlobalNames.OUTPUT_NAME);
 		for (PredicateIOInfo output : outputs) {
 			// outputs are always in the global program
-			globalProgram.addCommonClause(fact(literal(GlobalNames.OUTPUT_NAME, str(output.p.getPRED_ID()), str(output.fileName), str(output.format))));
+			globalProgram.addCommonClause(fact(literal(GlobalNames.OUTPUT_NAME, ref(output.p.getPRED_ID()), str(output.fileName), str(output.format))));
 		}
 
 		Set<FormalPredicate> outputPreds = outputs.stream().map(e -> e.p).collect(Collectors.toSet());

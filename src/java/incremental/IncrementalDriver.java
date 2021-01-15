@@ -380,7 +380,7 @@ public class IncrementalDriver {
 			for (ProgramRepresentation r : ProgramRepresentation.values()) {
 				deleteEntries(conn, relPrefix + r.getPredicateName(), fileId);
 			}
-			for (String localTable  : progSplit.getLocalOutputs()) {
+			for (String localTable  : progSplit.getCachedPredicates()) {
 				deleteEntries(conn, localTable, fileId);
 			}
 		}

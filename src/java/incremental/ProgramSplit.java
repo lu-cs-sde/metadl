@@ -39,65 +39,12 @@ public class ProgramSplit {
 	private Program localProgram;
 	private Program globalProgram;
 	private Program updateProgram;
-	private Set<String> localOutputs = new TreeSet<>();
-	private Set<Clause> forcedGlobalClauses = new HashSet<>();
-	private Set<FormalPredicate> forcedGlobalPredicates = new HashSet<>();
+	private Set<String> cachedPredicates = new TreeSet<>();
 
 	public ProgramSplit(Program program) {
 		this.program = program;
-		splitPredicates();
 		split();
 		generateUpdateProgram();
-	}
-
-	/** Split the predicates that have a local and a global definition.
-		E.g. P(x, y) :- PARENT(x, y). # local definition
-		     P(x, y) :- PARENT(x, _), PARENT(_, y). # global definition
-		to:
-		     P_local(x, y) :- PARENT(x, y). # local definition
-			 P_global(x, y) :- PARENT(x, _), PARENT(_, y). # global definition
-			 P(x, y) :- P_local(x, y). # in global program
-			 P(x, y) :- P_global(x, y). # in global program
-	 */
-	private void splitPredicates() {
-		List<FormalPredicate> splitPreds = new ArrayList<>();
-		for (FormalPredicate p : program.getFormalPredicates()) {
-			//System.err.println(p.getPRED_ID() + " " + p.prettyDomainSeparationInfo());
-			if (p.hasLocalDef() && p.hasGlobalDef()) {
-				splitPreds.add(p);
-			}
-		}
-
-		for (FormalPredicate p : splitPreds) {
-			for (PredicateSymbol sym : p.predicates()) {
-				Literal l = sym.parentLiteral();
-				if (l.isDef()) {
-					Clause c = l.clause();
-					if (c.isLocal()) {
-						sym.setPRED_ID(sym.getPRED_ID() + "_local");
-					} else {
-						sym.setPRED_ID(sym.getPRED_ID() + "_global");
-					}
-				}
-			}
-
-			// now introduce a clause that gathers everything to the original predicate
-			String[] varNames = new String[p.type().arity()];
-			for (int i = 0; i < p.type().arity(); ++i) {
-				varNames[i] = "$v" + i;
-			}
-
-			Rule localRule = rule(literal(p.getPRED_ID(), (Object []) varNames), literal(p.getPRED_ID() + "_local", (Object []) varNames));
-			forcedGlobalClauses.add(localRule);
-			forcedGlobalPredicates.add(p);
-			Rule globalRule = rule(literal(p.getPRED_ID(), (Object []) varNames), literal(p.getPRED_ID() + "_global", (Object []) varNames));
-
-			program.addCommonClause(localRule);
-			program.addCommonClause(globalRule);
-		}
-
-		// recompute all the attributes after the program has been modified
-		program.flushTreeCache();
 	}
 
 	private static CommonLiteral copyLiteral(CommonLiteral l) {
@@ -158,85 +105,85 @@ public class ProgramSplit {
 		return rule(literal(predName, (Object[]) terms), NEQ(integer(0), integer(0)));
 	}
 
-	/**
-	   Compute all the EDB predicates of the original program and emit the
-	   new EDB facts in the corresponding partition.
-	 */
-	private void splitEDB() {
-		FormalPredicate fpEDB = program.formalPredicateMap().get(GlobalNames.EDB_NAME);
+	static class PredicateIOInfo {
+		FormalPredicate p;
+		String format;
+		String fileName;
 
-		if (fpEDB == null) {
+		static PredicateIOInfo of(FormalPredicate p, String fileName, String format) {
+			PredicateIOInfo ret = new PredicateIOInfo();
+			ret.p = p;
+			ret.format = format;
+			ret.fileName = fileName;
+			return ret;
+		}
+	}
+
+	/**
+	   Compute all the EDB or OUTPUT predicates of the original program
+	 */
+	private List<PredicateIOInfo> getIOPredicateInfo(String predName) {
+		assert predName == GlobalNames.EDB_NAME || predName == GlobalNames.OUTPUT_NAME;
+
+		FormalPredicate fp = program.formalPredicateMap().get(predName);
+
+		if (fp == null) {
 			// no EDB in the program, nothing to do
-			return;
+			return Collections.emptyList();
 		}
 
-		fpEDB.eval(program.evalCtx());
+		fp.eval(program.evalCtx());
 
-		RelationWrapper EDBs = new RelationWrapper(program.evalCtx(), fpEDB.relation2(), fpEDB.type());
+		List<PredicateIOInfo> predInfo = new ArrayList<>();
+		RelationWrapper EDBs = new RelationWrapper(program.evalCtx(), fp.relation2(), fp.type());
 		for (RelationWrapper.TupleWrapper t : EDBs.tuples()) {
 			String pred = t.getAsString(0);
 			String file = t.getAsString(1);
 			String format = t.getAsString(2);
 
 			FormalPredicate p = program.formalPredicateMap().get(pred);
-			if (p.hasLocalUse()) {
-				localProgram.addCommonClause(fact(literal(GlobalNames.EDB_NAME, ref(pred), str(file), str(format))));
-			}
-			if (p.hasGlobalUse()) {
-				globalProgram.addCommonClause(fact(literal(GlobalNames.EDB_NAME, ref(pred), str(file), str(format))));
-			}
+			predInfo.add(PredicateIOInfo.of(p, file, format));
 		}
-	}
-
-	/**
-	   Compute all the OUTPUT predicates of the original program and emit the
-	   new OUTPUT facts in the corresponding partition.
-	 */
-	private Set<FormalPredicate> splitOUTPUT() {
-		FormalPredicate fpOUTPUT = program.formalPredicateMap().get(GlobalNames.OUTPUT_NAME);
-		if (fpOUTPUT == null) {
-			// no OUTPUT in the program, nothing to do
-			return Collections.emptySet();
-		}
-
-		Set<FormalPredicate> outputs = new HashSet<>();
-		fpOUTPUT.eval(program.evalCtx());
-
-		RelationWrapper OUTPUTs = new RelationWrapper(program.evalCtx(), fpOUTPUT.relation2(), fpOUTPUT.type());
-		for (RelationWrapper.TupleWrapper t : OUTPUTs.tuples()) {
-			String pred = t.getAsString(0);
-			String file = t.getAsString(1);
-			String format = t.getAsString(2);
-
-			FormalPredicate p = program.formalPredicateMap().get(pred);
-			outputs.add(p);
-			globalProgram.addCommonClause(fact(literal(GlobalNames.OUTPUT_NAME, ref(pred), str(file), str(format))));
-		}
-
-		return outputs;
+		return predInfo;
 	}
 
 	private void split() {
 		localProgram = new Program();
 		globalProgram = new Program();
 
-		splitEDB();
-		Set<FormalPredicate> outputPreds = splitOUTPUT();
+		List<PredicateIOInfo> edbs = getIOPredicateInfo(GlobalNames.EDB_NAME);
+		for (PredicateIOInfo edb : edbs) {
+			if (edb.p.hasLocalUse()) {
+				localProgram.addCommonClause(fact(literal(GlobalNames.EDB_NAME, str(edb.p.getPRED_ID()), str(edb.fileName), str(edb.format))));
+			}
+			if (edb.p.hasGlobalUse()) {
+				localProgram.addCommonClause(fact(literal(GlobalNames.EDB_NAME, str(edb.p.getPRED_ID()), str(edb.fileName), str(edb.format))));
+			}
+		}
+
+		List<PredicateIOInfo> outputs = getIOPredicateInfo(GlobalNames.OUTPUT_NAME);
+		for (PredicateIOInfo output : outputs) {
+			// outputs are always in the global program
+			globalProgram.addCommonClause(fact(literal(GlobalNames.OUTPUT_NAME, str(output.p.getPRED_ID()), str(output.fileName), str(output.format))));
+		}
+
+		Set<FormalPredicate> outputPreds = outputs.stream().map(e -> e.p).collect(Collectors.toSet());
 
 		for (FormalPredicate p : program.getFormalPredicates()) {
 			if (p.hasLocalDef() && (p.hasGlobalUse() || outputPreds.contains(p))) {
 				localProgram.addCommonClause(fact(literal(GlobalNames.OUTPUT_NAME, ref(p.getPRED_ID()), str(INTERNAL_DB_NAME), str("sqlite"))));
 				globalProgram.addCommonClause(fact(literal(GlobalNames.EDB_NAME, ref(p.getPRED_ID()), str(INTERNAL_DB_NAME), str("sqlite"))));
-				localOutputs.add(p.getPRED_ID());
+				cachedPredicates.add(p.getPRED_ID());
 			}
 
 			if (p.hasLocalUse() && p.getProgramRepresentationKind().isPresent()) {
 				localProgram.addCommonClause(fact(literal(GlobalNames.EDB_NAME, ref(p.getPRED_ID()), str(INTERNAL_DB_NAME), str("sqlite"))));
+				cachedPredicates.add(p.getPRED_ID());
 			}
 
 			if ((p.hasGlobalUse() || outputPreds.contains(p)) && p.getProgramRepresentationKind().isPresent()) {
 				globalProgram.addCommonClause(fact(literal(GlobalNames.EDB_NAME, ref(p.getPRED_ID()), str(INTERNAL_DB_NAME), str("sqlite"))));
-				localOutputs.add(p.getPRED_ID());
+				cachedPredicates.add(p.getPRED_ID());
 			}
 
 			if (p.hasGlobalUse() || p.hasGlobalDef() || outputPreds.contains(p)) {
@@ -249,7 +196,7 @@ public class ProgramSplit {
 		}
 
 		Consumer<Clause> clauseSeparator = (Clause c) -> {
-			if (c.isLocal() && !forcedGlobalClauses.contains(c))
+			if (c.isLocal())
 				localProgram.addCommonClause(copyClause(c));
 			else
 				globalProgram.addCommonClause(copyClause(c));
@@ -295,8 +242,8 @@ public class ProgramSplit {
 		String ATTR_PROVENANCE = b.getContext().provenanceRelName;
 		String SRC_LOC = b.getContext().srcRelName;
 
-		localOutputs.add(ATTR_PROVENANCE);
-		localOutputs.add(SRC_LOC);
+		cachedPredicates.add(ATTR_PROVENANCE);
+		cachedPredicates.add(SRC_LOC);
 
 		// read the analyzed sources
 		p.addCommonClause(fact(literal(GlobalNames.EDB_NAME, ref(ANALYZED_SOURCES_RELATION), str(INTERNAL_DB_NAME), str("sqlite"))));
@@ -310,9 +257,6 @@ public class ProgramSplit {
 
 		p.addCommonClause(implicitTypeDeclaration(ATTR_PROVENANCE,
 												  FormalPredicate.programRepresentationType(ProgramRepresentation.ATTR_PROVENANCE)));
-		p.addCommonClause(implicitTypeDeclaration(SRC_LOC,
-												  FormalPredicate.programRepresentationType(ProgramRepresentation.SRC)));
-
 
 		// AST_REMOVE_RELATION - files to remove
 		p.addCommonClause(rule(literal(AST_REMOVE_RELATION, var("f")), literal(ANALYZED_SOURCES_RELATION, var("f"), str("D"))));
@@ -333,7 +277,6 @@ public class ProgramSplit {
 		// Input
 		// The ANALYZED_SOURCES_RELATION predicate relation should be filled in by the caller
 		p.addCommonClause(fact(literal(GlobalNames.EDB_NAME, ref(ATTR_PROVENANCE), str(INTERNAL_DB_NAME), str("sqlite"))));
-		p.addCommonClause(fact(literal(GlobalNames.EDB_NAME, ref(SRC_LOC), str(INTERNAL_DB_NAME), str("sqlite"))));
 
 		// Output
 		p.addCommonClause(fact(literal(GlobalNames.OUTPUT_NAME, ref(AST_VISIT_RELATION), str(INTERNAL_DB_NAME), str("sqlite"))));
@@ -343,7 +286,6 @@ public class ProgramSplit {
 		if (false) {
 			p.addCommonClause(fact(literal(GlobalNames.OUTPUT_NAME, ref(AST_VISIT_RELATION), str("AST_VISIT"), str("csv"))));
 			p.addCommonClause(fact(literal(GlobalNames.OUTPUT_NAME, ref(ATTR_PROVENANCE), str("ATTR_PROV"), str("csv"))));
-			p.addCommonClause(fact(literal(GlobalNames.OUTPUT_NAME, ref(SRC_LOC), str("SRC_LOC"), str("csv"))));
 		}
 	}
 
@@ -368,8 +310,8 @@ public class ProgramSplit {
 		return program;
 	}
 
-	public Set<String> getLocalOutputs() {
-		return Collections.unmodifiableSet(localOutputs);
+	public Set<String> getCachedPredicates() {
+		return Collections.unmodifiableSet(cachedPredicates);
 	}
 
 	public static class AnalysisInfo {

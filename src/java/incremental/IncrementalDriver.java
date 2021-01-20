@@ -437,6 +437,11 @@ public class IncrementalDriver {
 			visitFiles = analyzedSrcs.tuples().stream().map(t -> new File(t.getAsString(0))).collect(Collectors.toList());
 			deletedFiles = Collections.emptyList();
 			logger().debug("Initial incremental run with files " + visitFiles + ".");
+
+			profile().setCounter("file_delta", "n_D", 0);
+			profile().setCounter("file_delta", "n_A", visitFiles.size());
+			profile().setCounter("file_delta", "n_M", 0);
+			profile().setCounter("file_delta", "n_analyzed", visitFiles.size());
 		} else {
 			assert opts.getAction() == CmdLineOpts.Action.INCREMENTAL_UPDATE;
 			RelationWrapper visitFilesRel;

@@ -177,19 +177,19 @@ public class IncrementalDriver {
 		if (useSouffle) {
 			// generate the Souffle executables
 			if (!localSouffleProg.exists()) {
-				generateSouffleProgram(progSplit.getLocalProgram(), localSouffleProg, "-j 4");
+				generateSouffleProgram(progSplit.getLocalProgram(), localSouffleProg, "-j 4 -p local.profile");
 			} else {
 				logger().info("Using existing Souffle local program from " + localSouffleProg);
 			}
 
 			if (!globalSouffleProg.exists()) {
-				generateSouffleProgram(progSplit.getGlobalProgram(), globalSouffleProg, "-j 4");
+				generateSouffleProgram(progSplit.getGlobalProgram(), globalSouffleProg, "-j 4 -p global.profile");
 			} else {
 				logger().info("Using existing Souffle global program from " + globalSouffleProg);
 			}
 
 			if (!updateSouffleProg.exists()) {
-				generateSouffleProgram(progSplit.getUpdateProgram(), updateSouffleProg, "-j 4");
+				generateSouffleProgram(progSplit.getUpdateProgram(), updateSouffleProg, "-j 4 -p update.profile");
 			} else {
 				logger().info("Using existing Souffle update program from " + updateSouffleProg);
 			}
@@ -206,7 +206,7 @@ public class IncrementalDriver {
 	private void compileSouffleProgram(File src, File exec, String extraArgs) throws IOException {
 		// The -j 4 argument ensures that Souffle uses OpenMP in the generated code.
 		// The number of threads is selected dynamically and the value 4 is not relevant.
-		String cmd = "souffle " + extraArgs + " -p inc.prof -w " + src.getPath() + " -o " + exec.getPath();
+		String cmd = "souffle " + extraArgs + " -w " + src.getPath() + " -o " + exec.getPath();
 		logger().debug("Compiling Souffle program with: " + cmd);
 		FileUtil.run(cmd);
 	}

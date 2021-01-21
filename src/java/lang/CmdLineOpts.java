@@ -9,6 +9,9 @@ import org.apache.commons.cli.ParseException;
 import lang.io.FileUtil;
 
 import org.apache.commons.cli.HelpFormatter;
+
+import java.sql.Connection;
+
 import org.apache.commons.cli.CommandLine;
 
 
@@ -20,7 +23,7 @@ public class CmdLineOpts {
 	private String inputFile;
 	private String libFile;
 	private String profileFile;
-	private String sqlDbFile; // Internal option
+	private Connection sqlDbConnection; // Internal option
 	private Integer dbEntryTag = null; // Internal option
 	private Action action = Action.EVAL_INTERNAL;
 	private boolean warningsEnabled = false;
@@ -61,12 +64,12 @@ public class CmdLineOpts {
 		this.dbEntryTag = dbEntryTag;
 	}
 
-	public String getSqlDbFile() {
-		return sqlDbFile;
+	public Connection getSqlDbConnection() {
+		return sqlDbConnection;
 	}
 
-	public void setSqlDbFile(String sqlDbFile) {
-		this.sqlDbFile = sqlDbFile;
+	public void setSqlDbConnection(Connection conn) {
+		this.sqlDbConnection = conn;
 	}
 
 	public boolean isWarningsEnabled() {
@@ -171,14 +174,12 @@ public class CmdLineOpts {
 			.desc("Library file to use for hybrid evaluation.").argName("FILE").build();
 		Option enableWarnings = Option.builder("w").longOpt("warn").hasArg(false)
 			.desc("Print warnings.").build();
-		Option sqldb = Option.builder("q").longOpt("sqldb").numberOfArgs(1)
-			.desc("SQLite database file.").argName("FILE").build();
 		Option profile = Option.builder("P").longOpt("profile").numberOfArgs(1)
 			.desc("Enable profiling and dump the results in JSON format").argName("FILE").build();
 
 		Options options = new Options().addOptionGroup(actions)
 			.addOption(factDir).addOption(outDir).addOption(genDir).addOption(outFile)
-			.addOption(libFile).addOption(enableWarnings).addOption(sqldb).addOption(profile);
+			.addOption(libFile).addOption(enableWarnings).addOption(profile);
 
 		try {
 			CommandLine cmd = parser.parse(options, args);
@@ -232,10 +233,6 @@ public class CmdLineOpts {
 					printHelp(options);
 					throw new RuntimeException();
 				}
-			}
-
-			if (cmd.hasOption("q")) {
-				ret.setSqlDbFile(cmd.getOptionValue("q"));
 			}
 
 			if (cmd.hasOption("P")) {

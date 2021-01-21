@@ -1,15 +1,16 @@
-import lang.io.SQLUtil;
+import java.nio.file.Paths;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.LinkedHashMap;
+import java.util.concurrent.Executors;
+import lang.CmdLineOpts;
 import lang.io.CSVUtil;
 import lang.io.FileUtil;
-import org.apache.commons.collections4.map.DefaultedMap;
-import java.util.LinkedHashMap;
+import lang.io.SQLUtil;
 import lang.relation.RelationWrapper;
 import lang.relation.TupleInserter;
+import org.apache.commons.collections4.map.DefaultedMap;
 import org.apache.commons.lang3.mutable.MutableInt;
-import lang.CmdLineOpts;
-import java.util.concurrent.Executors;
-import java.sql.SQLException;
-import java.nio.file.Paths;
 
 aspect Eval {
 	public void Program.populateProgramRepresentation(FormalPredicate srcs,
@@ -66,9 +67,19 @@ aspect Eval {
 			Relation2 rel = dstPred.relation2();
 
 			if (format.equals("sqlite")) {
+				Connection conn;
+				if (file.equals("__internal__")) {
+					conn = opts.getSqlDbConnection();
+				} else {
+					conn = SQLUtil.connect(Paths.get(opts.getFactsDir(), file).toString());
+				}
+
 				SQLUtil.readRelation(ctx, dstPred.type(), dstPred.relation2(),
-									 file.equals("__internal__") ? opts.getSqlDbFile() : Paths.get(opts.getFactsDir(), file).toString(),
-									 pred, opts.getDbEntryTag());
+									 conn, pred, opts.getDbEntryTag());
+
+				if (!file.equals("__internal__")) {
+					conn.close();
+				}
 			} else if (format.equals("csv")) {
 				CSVUtil.readRelation(ctx, dstPred.type(), dstPred.relation2(), Paths.get(opts.getFactsDir(), file).toString());
 			} else {
@@ -125,9 +136,19 @@ aspect Eval {
 
 			FormalPredicate srcPred = formalPredicateMap().get(pred);
 			if (format.equals("sqlite")) {
+				Connection conn;
+				if (file.equals("__internal__")) {
+					conn = opts.getSqlDbConnection();
+				} else {
+					conn = SQLUtil.connect(Paths.get(opts.getFactsDir(), file).toString());
+				}
+
 				SQLUtil.writeRelation(ctx, srcPred.type(), srcPred.relation2(),
-									  file.equals("__internal__") ? opts.getSqlDbFile() : Paths.get(opts.getOutputDir(), file).toString(),
-									  pred, opts.getDbEntryTag());
+									  conn, pred, opts.getDbEntryTag());
+
+				if (!file.equals("__internal__")) {
+					conn.close();
+				}
 			} else if (format.equals("csv")) {
 				CSVUtil.writeRelation(ctx, srcPred.type(), srcPred.relation2(), Paths.get(opts.getOutputDir(), file).toString());
 			} else {
@@ -174,8 +195,8 @@ aspect Eval {
 		// to CSV files.
 		for (FormalPredicate srcPred : getFormalPredicates()) {
 			if (srcPred.getProgramRepresentationKind().isPresent()) {
-				if (opts.getSqlDbFile() != null) {
-					SQLUtil.writeRelation(evalCtx(), srcPred.type(), srcPred.relation2(), opts.getSqlDbFile(),
+				if (opts.getSqlDbConnection() != null) {
+					SQLUtil.writeRelation(evalCtx(), srcPred.type(), srcPred.relation2(), opts.getSqlDbConnection(),
 										  srcPred.getPRED_ID(), opts.getDbEntryTag());
 				} else {
 					CSVUtil.writeRelation(evalCtx(), srcPred.type(), srcPred.relation2(),

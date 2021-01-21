@@ -1,6 +1,7 @@
 package lang.java.obj;
 
 import java.io.IOException;
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
@@ -45,9 +46,9 @@ public class FileIdDatabase implements org.extendj.ast.FileIdStorage {
 		return ret;
 	}
 
-	public static FileIdDatabase loadFromTable(String path, String table) throws SQLException {
+	public static FileIdDatabase loadFromTable(Connection conn, String table) throws SQLException {
 		FileIdDatabase ret = new FileIdDatabase();
-		SQLUtil.readMap(ret.fileToIdMap, path, table);
+		SQLUtil.readMap(ret.fileToIdMap, conn, table);
 		for (Map.Entry<String, Integer> e : ret.fileToIdMap.entrySet()) {
 			ret.runningId = Integer.max(ret.runningId, e.getValue() + 1);
 			ret.idToFileMap.put(e.getValue(), e.getKey());
@@ -59,7 +60,7 @@ public class FileIdDatabase implements org.extendj.ast.FileIdStorage {
 		CSVUtil.writeMap(fileToIdMap, path);
 	}
 
-	public void storeToTable(String path, String table) throws SQLException {
-		SQLUtil.writeMap(fileToIdMap, path, table);
+	public void storeToTable(Connection conn, String table) throws SQLException {
+		SQLUtil.writeMap(fileToIdMap, conn, table);
 	}
 }

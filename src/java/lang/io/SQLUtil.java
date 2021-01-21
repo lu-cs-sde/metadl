@@ -65,11 +65,14 @@ public class SQLUtil {
 		return ret;
 	}
 
-	public static void writeMap(Map<String, Integer> m, String path, String table) throws SQLException {
+	public static Connection connect(String path) throws SQLException{
 		Connection conn = DriverManager.getConnection("jdbc:sqlite:" + path);
-		Statement tbl = conn.createStatement();
-
 		conn.setAutoCommit(false);
+		return conn;
+	}
+
+	public static void writeMap(Map<String, Integer> m, Connection conn, String table) throws SQLException {
+		Statement tbl = conn.createStatement();
 
 		tbl.executeUpdate(String.format("DROP TABLE IF EXISTS %s", table));
 		tbl.executeUpdate(String.format("CREATE TABLE %s (key TEXT, val INTEGER)", table));
@@ -83,26 +86,19 @@ public class SQLUtil {
 
 		ps.executeBatch();
 		conn.commit();
-		conn.close();
 	}
 
-	public static void readMap(Map<String, Integer> m, String path, String table) throws SQLException {
-		Connection conn = DriverManager.getConnection("jdbc:sqlite:" + path);
-
+	public static void readMap(Map<String, Integer> m, Connection conn, String table) throws SQLException {
 		Statement select = conn.createStatement();
 		ResultSet rs = select.executeQuery("SELECT * FROM " + table);
 		while (rs.next()) {
 			m.put(rs.getString(1), rs.getInt(2));
 		}
-
-		conn.close();
 	}
 
-	public static void writeRelation(EvaluationContext ctx, PredicateType t, Relation2 rel, String path, String table, Integer tag) throws SQLException {
-		Connection conn = DriverManager.getConnection("jdbc:sqlite:" + path);
+	public static void writeRelation(EvaluationContext ctx, PredicateType t, Relation2 rel,
+									 Connection conn, String table, Integer tag) throws SQLException {
 		Statement tbl = conn.createStatement();
-
-		conn.setAutoCommit(false);
 
 		tbl.executeUpdate(String.format("CREATE TABLE IF NOT EXISTS %s %s", table, tableType(t, tag)));
 		if (tag != null) {
@@ -126,14 +122,11 @@ public class SQLUtil {
 		}
 
 		ps.executeBatch();
-
 		conn.commit();
-		conn.close();
 	}
 
-	public static void readRelation(EvaluationContext ctx, PredicateType t, Relation2 rel, String path, String table, Integer tag) throws SQLException {
-		Connection conn = DriverManager.getConnection("jdbc:sqlite:" + path);
-
+	public static void readRelation(EvaluationContext ctx, PredicateType t, Relation2 rel,
+									Connection conn, String table, Integer tag) throws SQLException {
 		Statement select = conn.createStatement();
 		String query = "SELECT * FROM '" + table + "'";
 		if (tag != null) {
@@ -158,31 +151,33 @@ public class SQLUtil {
 			}
 			rel.insert(tup);
 		}
-
-		conn.close();
 	}
 
-	public static void clearRelation(String path, String table) throws SQLException {
-		Connection conn = DriverManager.getConnection("jdbc:sqlite:" + path);
+	public static void clearRelation(Connection conn, String table) throws SQLException {
 		Statement del = conn.createStatement();
 		try {
 			del.executeUpdate("DELETE FROM '" + table + "'");
 		} catch(SQLException e) {
 			SimpleLogger.logger().debug("Dropped SQL exception " + e);
-		} finally {
-			conn.close();
 		}
 	}
 
-	public static RelationWrapper readRelation(String path, String table, PredicateType t) throws SQLException {
+	public static RelationWrapper readRelation(Connection conn, String table, PredicateType t) throws SQLException {
 		Relation2 rel = new Relation2(t.arity());
 		EvaluationContext ctx = new EvaluationContext();
-		readRelation(ctx, t, rel, path, table, null);
+		readRelation(ctx, t, rel, conn, table, null);
 		RelationWrapper result = new RelationWrapper(ctx, rel, t);
 		return result;
 	}
 
-	public static void writeRelation(String path, String table, RelationWrapper rel) throws SQLException {
-		writeRelation(rel.getContext(), rel.type(), rel.getRelation(), path, table, null);
+	public static void writeRelation(Connection conn, String table, RelationWrapper rel) throws SQLException {
+		writeRelation(rel.getContext(), rel.type(), rel.getRelation(), conn, table, null);
+	}
+
+	public static boolean containsTable(Connection conn, String table) throws SQLException {
+		Statement select = conn.createStatement();
+		String query = "SELECT name FROM sqlite_master WHERE type='table' AND name='" + table + "'";
+		ResultSet rs = select.executeQuery(query);
+		return rs.next();
 	}
 }

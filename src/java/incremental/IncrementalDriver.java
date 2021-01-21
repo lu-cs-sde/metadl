@@ -96,13 +96,13 @@ class StandaloneDatalogProjectionSink extends DatalogProjectionSink {
 		return relations.get(ProgramRepresentation.NTA);
 	}
 
-	private void writeToDBHelper(RelationWrapper rel, File dbFile, String table) throws SQLException {
-		SQLUtil.writeRelation(rel.getContext(), rel.type(), rel.getRelation(), dbFile.getPath(), table, fileTag);
+	private void writeToDBHelper(RelationWrapper rel, Connection conn, String table) throws SQLException {
+		SQLUtil.writeRelation(rel.getContext(), rel.type(), rel.getRelation(), conn, table, fileTag);
 	}
 
-	public void writeToDB(File dbFile) throws SQLException {
+	public void writeToDB(Connection conn) throws SQLException {
 		for (ProgramRepresentation pr : ProgramRepresentation.values()) {
-			writeToDBHelper(relations.get(pr), dbFile, relPrefix + pr.getPredicateName());
+			writeToDBHelper(relations.get(pr), conn, relPrefix + pr.getPredicateName());
 		}
 	}
 }
@@ -112,7 +112,7 @@ public class IncrementalDriver {
 	private File prog;
 	private File srcs;
 
-	private File fileIdDbFile;
+	private Connection progDbConnection;
 	private File progDbFile;
 	private File localSouffleProg;
 	private File globalSouffleProg;
@@ -130,8 +130,6 @@ public class IncrementalDriver {
 		this.common = new File(root, "common");
 		this.prog = new File(root, "prog");
 		this.srcs = new File(root, "srcs");
-		// files
-		this.fileIdDbFile = new File(common, "fileid.csv");
 		// program database
 		this.progDbFile = new File(srcs, "program.db");
 		// external classes
@@ -156,12 +154,14 @@ public class IncrementalDriver {
 		prog.mkdir();
 		srcs.mkdir();
 
+		progDbConnection = SQLUtil.connect(progDbFile.getPath());
+
 		// load the file id database
-		if (!progDbFile.exists()) {
+		if (!SQLUtil.containsTable(progDbConnection, ProgramSplit.FILE_ID)) {
 			logger().info("Using a fresh file ID database");
 			fileIdDb = new FileIdDatabase();
 		} else {
-			fileIdDb = FileIdDatabase.loadFromTable(progDbFile.getPath(), ProgramSplit.FILE_ID);
+			fileIdDb = FileIdDatabase.loadFromTable(progDbConnection, ProgramSplit.FILE_ID);
 		}
 
 		// load the external classes
@@ -172,7 +172,7 @@ public class IncrementalDriver {
 
 		dumpProgram(progSplit.getLocalProgram(), new File(prog, "local.mdl"));
 		dumpProgram(progSplit.getGlobalProgram(), new File(prog, "global.mdl"));
-		dumpProgram(progSplit.getUpdateProgram(),  new File(prog, "update.mdl"));
+		dumpProgram(progSplit.getUpdateProgram(), new File(prog, "update.mdl"));
 
 		if (useSouffle) {
 			// generate the Souffle executables
@@ -198,9 +198,12 @@ public class IncrementalDriver {
 
 	public void shutdown() throws IOException, SQLException {
 		// store the file-id database
-		fileIdDb.storeToTable(progDbFile.getPath(), ProgramSplit.FILE_ID);
+		fileIdDb.storeToTable(progDbConnection, ProgramSplit.FILE_ID);
 		// store the external classes file
 		CSVUtil.writeMap(externalClasses, externalClassesFile.getPath());
+		// the connection to the program db is closed only once for each
+		// incremental run
+		progDbConnection.close();
 	}
 
 	private void compileSouffleProgram(File src, File exec, String extraArgs) throws IOException {
@@ -283,7 +286,7 @@ public class IncrementalDriver {
 		profile().stopTimer("object_file_generate_relations", f.getPath());
 
 		profile().startTimer("object_file_db_write", f.getPath());
-		sink.writeToDB(progDbFile);
+		sink.writeToDB(progDbConnection);
 		profile().stopTimer("object_file_db_write", f.getPath());
 
 		return externalClasses;
@@ -308,7 +311,7 @@ public class IncrementalDriver {
 		profile().stopTimer("object_file_generate_relations", src.relativeName());
 
 		profile().startTimer("object_file_db_write", src.relativeName());
-		sink.writeToDB(progDbFile);
+		sink.writeToDB(progDbConnection);
 		profile().stopTimer("object_file_db_write", src.relativeName());
 
 		return Collections.emptyList();
@@ -366,28 +369,24 @@ public class IncrementalDriver {
 		return externalFiles;
 	}
 
-	private void deleteEntries(Connection conn, String table, int fileId) throws SQLException {
+	private static void deleteEntries(Connection conn, String table, int fileId) throws SQLException {
 		Statement stmt = conn.createStatement();
 		stmt.executeUpdate("DELETE FROM '" + table + "' WHERE _tag = " + fileId);
 	}
 
 	private void delete(List<File> sourceFiles, String relPrefix) throws SQLException {
-		Connection conn = DriverManager.getConnection("jdbc:sqlite:" + progDbFile.getPath());
-		conn.setAutoCommit(false);
-
 		for (File f : sourceFiles) {
 			int fileId = fileIdDb.getIdForFile(f.getPath());
 
 			for (ProgramRepresentation r : ProgramRepresentation.values()) {
-				deleteEntries(conn, relPrefix + r.getPredicateName(), fileId);
+				deleteEntries(progDbConnection, relPrefix + r.getPredicateName(), fileId);
 			}
 			for (String localTable  : progSplit.getCachedPredicates()) {
-				deleteEntries(conn, localTable, fileId);
+				deleteEntries(progDbConnection, localTable, fileId);
 			}
 		}
 
-		conn.commit();
-		conn.close();
+		progDbConnection.commit();
 	}
 
 	private RelationWrapper computeAnalyzedSources(String factDir) throws IOException, SQLException {
@@ -450,19 +449,23 @@ public class IncrementalDriver {
 			profile().startTimer("update_program", "total");
 
 			if (useSouffle) {
-				SQLUtil.clearRelation(progDbFile.getPath(), ProgramSplit.ANALYZED_SOURCES_RELATION);
-				SQLUtil.writeRelation(progDbFile.getPath(), ProgramSplit.ANALYZED_SOURCES_RELATION, analyzedSrcs);
+				SQLUtil.clearRelation(progDbConnection, ProgramSplit.ANALYZED_SOURCES_RELATION);
+				SQLUtil.writeRelation(progDbConnection, ProgramSplit.ANALYZED_SOURCES_RELATION, analyzedSrcs);
 
 				// Run the update program
 				String cmd = updateSouffleProg + " -D " + opts.getOutputDir() + " -F " + opts.getFactsDir()
 					+ " -d " + progDbFile;
 				logger().debug("Souffle command: " + cmd);
+
+				// Souffle opens its own connection to the database, so we'll close the current one
+				progDbConnection.close();
 				FileUtil.run(cmd);
+				progDbConnection = SQLUtil.connect(progDbFile.getPath());
 
 				// Now read back the results
-				visitFilesRel = SQLUtil.readRelation(progDbFile.getPath(), ProgramSplit.AST_VISIT_RELATION,
+				visitFilesRel = SQLUtil.readRelation(progDbConnection, ProgramSplit.AST_VISIT_RELATION,
 													 ProgramSplit.getTypeForUpdateRelation(ProgramSplit.AST_VISIT_RELATION));
-				removeFilesRel = SQLUtil.readRelation(progDbFile.getPath(), ProgramSplit.AST_REMOVE_RELATION,
+				removeFilesRel = SQLUtil.readRelation(progDbConnection, ProgramSplit.AST_REMOVE_RELATION,
 													  ProgramSplit.getTypeForUpdateRelation(ProgramSplit.AST_REMOVE_RELATION));
 			} else {
 				Program update = progSplit.getUpdateProgram();
@@ -471,7 +474,7 @@ public class IncrementalDriver {
 
 				CmdLineOpts updateOpts = new CmdLineOpts();
 				updateOpts.setAction(CmdLineOpts.Action.EVAL_INTERNAL);
-				updateOpts.setSqlDbFile(progDbFile.getPath());
+				updateOpts.setSqlDbConnection(progDbConnection);
 				updateOpts.setOutputDir(".");
 
 				// evaluate the update program
@@ -542,12 +545,14 @@ public class IncrementalDriver {
 			String cmd = localSouffleProg.getPath() + " -D " + opts.getOutputDir() + " -F " + opts.getFactsDir() +
 				" -d " + progDbFile + " -t " + fileId + "";
 			logger().debug("Souffle command: " + cmd);
+			progDbConnection.close();
 			FileUtil.run(cmd);
+			progDbConnection = SQLUtil.connect(progDbFile.getPath());
 		} else {
 			Program local = progSplit.getLocalProgram();
 			CmdLineOpts internalOpts = new CmdLineOpts();
 			internalOpts.setAction(CmdLineOpts.Action.EVAL_INTERNAL);
-			internalOpts.setSqlDbFile(progDbFile.getPath());
+			internalOpts.setSqlDbConnection(progDbConnection);
 			internalOpts.setFactsDir(opts.getFactsDir());
 			internalOpts.setOutputDir(opts.getOutputDir());
 			internalOpts.setDbEntryTag(fileId);
@@ -571,12 +576,14 @@ public class IncrementalDriver {
 			String cmd = globalSouffleProg.getPath() + " -D " + opts.getOutputDir()  + " -F " + opts.getFactsDir() +
 				" -d " + progDbFile;
 			logger().debug("Souffle command: " + cmd);
+			progDbConnection.close();
 			FileUtil.run(cmd);
+			progDbConnection = SQLUtil.connect(progDbFile.getPath());
 		} else {
 			Program global = progSplit.getGlobalProgram();
 			CmdLineOpts internalOpts = new CmdLineOpts();
 			internalOpts.setAction(CmdLineOpts.Action.EVAL_INTERNAL);
-			internalOpts.setSqlDbFile(progDbFile.getPath());
+			internalOpts.setSqlDbConnection(progDbConnection);
 			internalOpts.setOutputDir(opts.getOutputDir());
 			internalOpts.setFactsDir(opts.getFactsDir());
 			Compiler.checkProgram(global, internalOpts);

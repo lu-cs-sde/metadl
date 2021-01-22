@@ -67,6 +67,9 @@ public class SQLUtil {
 
 	public static Connection connect(String path) throws SQLException{
 		Connection conn = DriverManager.getConnection("jdbc:sqlite:" + path);
+		Statement s = conn.createStatement();
+		s.executeUpdate("PRAGMA synchronous=OFF");
+		s.executeUpdate("PRAGMA journal_mode=MEMORY");
 		conn.setAutoCommit(false);
 		return conn;
 	}

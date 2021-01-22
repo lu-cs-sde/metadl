@@ -219,6 +219,7 @@ public class Compiler {
 				generateIncrementalProgram(prog, opts, true);
 				break;
 			case INCREMENTAL_INIT_INTERNAL:
+			case INCREMENTAL_UPDATE_INTERNAL:
 				checkProgram(prog, opts);
 				generateIncrementalProgram(prog, opts, false);
 				break;

@@ -442,7 +442,8 @@ public class IncrementalDriver {
 			profile().setCounter("file_delta", "n_M", 0);
 			profile().setCounter("file_delta", "n_analyzed", visitFiles.size());
 		} else {
-			assert opts.getAction() == CmdLineOpts.Action.INCREMENTAL_UPDATE;
+			assert opts.getAction() == CmdLineOpts.Action.INCREMENTAL_UPDATE ||
+				opts.getAction() == CmdLineOpts.Action.INCREMENTAL_UPDATE_INTERNAL;
 			RelationWrapper visitFilesRel;
 			RelationWrapper removeFilesRel;
 

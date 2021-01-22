@@ -42,7 +42,7 @@ public class CmdLineOpts {
 		INCREMENTAL_INIT_INTERNAL,
 		GEN_HYBRID,
 		CHECK
-	}
+	, INCREMENTAL_UPDATE_INTERNAL}
 
 	public void setOutputDir(String str) {
 		this.outputDir = str;
@@ -228,6 +228,10 @@ public class CmdLineOpts {
 					ret.setAction(Action.INCREMENTAL_INIT);
 				} else if (cmd.getOptionValue("s").equals("update")) {
 					ret.setAction(Action.INCREMENTAL_UPDATE);
+				} else if (cmd.getOptionValue("s").equals("init-metadl")) {
+					ret.setAction(Action.INCREMENTAL_INIT_INTERNAL);
+				} else if (cmd.getOptionValue("s").equals("update-metadl")) {
+					ret.setAction(Action.INCREMENTAL_UPDATE_INTERNAL);
 				} else {
 					System.err.println("Invalid argument to '--incremental' option");
 					printHelp(options);

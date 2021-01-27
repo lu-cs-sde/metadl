@@ -1,13 +1,17 @@
 package incremental;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.HashSet;
 import java.util.function.Consumer;
+import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import lang.ast.ASTNodeType;
 import lang.ast.AnalyzeBlock;
@@ -15,6 +19,7 @@ import lang.ast.AnalyzeContext;
 import lang.ast.Clause;
 import lang.ast.CommonClause;
 import lang.ast.CommonLiteral;
+import lang.ast.Constraint;
 import lang.ast.Fact;
 import lang.ast.FormalPredicate;
 import lang.ast.GlobalNames;
@@ -30,30 +35,33 @@ import lang.ast.ProgramRepresentation;
 import lang.ast.Rule;
 import lang.ast.StringType;
 import lang.ast.Term;
+import lang.ast.Variable;
 import lang.relation.RelationWrapper;
 
 import static lang.ast.Constructors.*;
 
 public class ProgramSplit {
-	private Program program;
+	private final Program program;
 	private Program localProgram;
 	private Program globalProgram;
 	private Program updateProgram;
-	private Set<String> cachedPredicates = new TreeSet<>();
+	private Program fusedProgram;
+	private final Set<String> cachedPredicates = new TreeSet<>();
 
-	public ProgramSplit(Program program) {
+	public ProgramSplit(final Program program) {
 		this.program = program;
 		split();
 		generateUpdateProgram();
+		generateFusedProgram();
 	}
 
-	private static CommonLiteral copyLiteral(CommonLiteral l) {
+	private static CommonLiteral copyLiteral(final CommonLiteral l) {
 		if (l instanceof Pattern) {
 			return ((Pattern) l).getLiteral().treeCopy();
 		}
 		if (l instanceof Literal) {
-			Literal ll = (Literal) l;
-			Literal c = ll.treeCopy();
+			final Literal ll = (Literal) l;
+			final Literal c = ll.treeCopy();
 			if (ll.isOUTPUT()) {
 				c.setPredicate(new PredicateSymbol("OUTPUT_"));
 			} else if (ll.isEDB()) {
@@ -64,18 +72,18 @@ public class ProgramSplit {
 		return l.treeCopy();
 	}
 
-	private static Clause copyClause(Clause c) {
-		lang.ast.List<CommonLiteral> head = new lang.ast.List<>();
+	private static Clause copyClause(final Clause c) {
+		final lang.ast.List<CommonLiteral> head = new lang.ast.List<>();
 
 
-		for (CommonLiteral l : c.getHeadss()) {
+		for (final CommonLiteral l : c.getHeadss()) {
 			head.add(copyLiteral(l));
 		}
 
 		if (c instanceof Rule) {
-			lang.ast.List<CommonLiteral> body = new lang.ast.List<>();
-			Rule r = (Rule) c;
-			for (CommonLiteral l : r.getBodys()) {
+			final lang.ast.List<CommonLiteral> body = new lang.ast.List<>();
+			final Rule r = (Rule) c;
+			for (final CommonLiteral l : r.getBodys()) {
 				body.add(copyLiteral(l));
 			}
 			return new Rule(head, body);
@@ -84,12 +92,12 @@ public class ProgramSplit {
 		}
 	}
 
-	private static Rule implicitTypeDeclaration(FormalPredicate p) {
+	private static Rule implicitTypeDeclaration(final FormalPredicate p) {
 		return implicitTypeDeclaration(p.getPRED_ID(), p.type());
 	}
 
-	private static Rule implicitTypeDeclaration(String predName, PredicateType t) {
-		Term[] terms = new Term[t.arity()];
+	private static Rule implicitTypeDeclaration(final String predName, final PredicateType t) {
+		final Term[] terms = new Term[t.arity()];
 		for (int i = 0; i < t.arity(); ++i) {
 			if (t.get(i) == IntegerType.get() ||
 				t.get(i) == ASTNodeType.get()) {
@@ -110,8 +118,8 @@ public class ProgramSplit {
 		String format;
 		String fileName;
 
-		static PredicateIOInfo of(FormalPredicate p, String fileName, String format) {
-			PredicateIOInfo ret = new PredicateIOInfo();
+		static PredicateIOInfo of(final FormalPredicate p, final String fileName, final String format) {
+			final PredicateIOInfo ret = new PredicateIOInfo();
 			ret.p = p;
 			ret.format = format;
 			ret.fileName = fileName;
@@ -122,10 +130,10 @@ public class ProgramSplit {
 	/**
 	   Compute all the EDB or OUTPUT predicates of the original program
 	 */
-	private List<PredicateIOInfo> getIOPredicateInfo(String predName) {
+	private List<PredicateIOInfo> getIOPredicateInfo(final String predName) {
 		assert predName == GlobalNames.EDB_NAME || predName == GlobalNames.OUTPUT_NAME;
 
-		FormalPredicate fp = program.formalPredicateMap().get(predName);
+		final FormalPredicate fp = program.formalPredicateMap().get(predName);
 
 		if (fp == null) {
 			// no EDB in the program, nothing to do
@@ -134,42 +142,205 @@ public class ProgramSplit {
 
 		fp.eval(program.evalCtx());
 
-		List<PredicateIOInfo> predInfo = new ArrayList<>();
-		RelationWrapper EDBs = new RelationWrapper(program.evalCtx(), fp.relation2(), fp.type());
-		for (RelationWrapper.TupleWrapper t : EDBs.tuples()) {
-			String pred = t.getAsString(0);
-			String file = t.getAsString(1);
-			String format = t.getAsString(2);
+		final List<PredicateIOInfo> predInfo = new ArrayList<>();
+		final RelationWrapper EDBs = new RelationWrapper(program.evalCtx(), fp.relation2(), fp.type());
+		for (final RelationWrapper.TupleWrapper t : EDBs.tuples()) {
+			final String pred = t.getAsString(0);
+			final String file = t.getAsString(1);
+			final String format = t.getAsString(2);
 
-			FormalPredicate p = program.formalPredicateMap().get(pred);
+			final FormalPredicate p = program.formalPredicateMap().get(pred);
 			predInfo.add(PredicateIOInfo.of(p, file, format));
 		}
 		return predInfo;
+	}
+
+	static private Literal copyLiteralWithTag(Literal l, String tagVarName) {
+		List <Term> terms = new ArrayList<>();
+		for (Term t : l.getTermss()) {
+			terms.add(t.treeCopy());
+		}
+		terms.add(new Variable(tagVarName));
+		return literal(l.getPredicate().getPRED_ID() + "_local", terms.toArray());
+	}
+
+	private static String selectTagVariable(Clause c) {
+		Set<String> localVars = c.localVariables();
+		return localVars.stream().min((s1, s2) -> s1.compareTo(s2)).get();
+	}
+
+	private static boolean isTaggedPredicate(FormalPredicate p, Set<FormalPredicate> outputs) {
+		return p.isASTPredicate() && (p.hasGlobalUse() || outputs.contains(p));
+	}
+
+	private static Clause transformLocalClause(Clause c, Set<FormalPredicate> outputs) {
+		Clause ret = c instanceof Rule ? new Rule() : new Fact();
+
+		String tagVariable = "_tag";
+
+		boolean usedTag = false;
+		boolean definedTag = false;
+
+		for (CommonLiteral cl : c.getHeadss()) {
+			Literal l = cl.asLiteral();
+			if (isTaggedPredicate(l.getPredicate().formalpredicate(), outputs)) {
+				// global predicate defined in a local clause
+				assert c instanceof Rule;
+				ret.addHeads(copyLiteralWithTag(l, tagVariable));
+				usedTag = true;
+			} else {
+				ret.addHeads(l.treeCopy());
+			}
+		}
+
+		if (c instanceof Rule) {
+			Rule r = (Rule) c;
+
+			for (CommonLiteral cl : r.getBodys()) {
+				Literal l = cl.asLiteral();
+				if (l == null) {
+					assert cl instanceof Constraint;
+					((Rule) ret).addBody(cl.treeCopy());
+				} else if (isTaggedPredicate(l.getPredicate().formalpredicate(), outputs)) {
+					usedTag = true;
+					definedTag = true;
+					((Rule) ret).addBody(copyLiteralWithTag(l, tagVariable));
+				} else {
+					((Rule) ret).addBody(l.treeCopy());
+				}
+			}
+
+			if (usedTag && !definedTag) {
+				((Rule) ret).addBody(BIND(var(tagVariable), functor("bshru", var(selectTagVariable(c)), integer(32))));
+			}
+		}
+
+		return ret;
+	}
+
+	private static CommonLiteral transformLiteral(CommonLiteral l) {
+		if (l instanceof Pattern) {
+			return ((Pattern) l).getLiteral().treeCopy();
+		}
+		if (l instanceof Literal) {
+			final Literal ll = (Literal) l;
+			final Literal c = ll.treeCopy();
+			return c;
+		}
+		return l.treeCopy();
+	}
+
+	private static Clause transformClause(Clause c) {
+				final lang.ast.List<CommonLiteral> head = new lang.ast.List<>();
+
+		for (final CommonLiteral l : c.getHeadss()) {
+			head.add(transformLiteral(l));
+		}
+
+		if (c instanceof Rule) {
+			final lang.ast.List<CommonLiteral> body = new lang.ast.List<>();
+			final Rule r = (Rule) c;
+			for (CommonLiteral l : r.getBodys()) {
+				body.add(transformLiteral(l));
+			}
+			return new Rule(head, body);
+		} else {
+			return new Fact(head);
+		}
+
+	}
+
+	private void generateFusedProgram() {
+		fusedProgram = new Program();
+		final List<PredicateIOInfo> outputs = getIOPredicateInfo(GlobalNames.OUTPUT_NAME);
+		final Set<FormalPredicate> outputPreds = outputs.stream().map(e -> e.p).collect(Collectors.toSet());
+
+		for (final CommonClause c : program.getCommonClauses()) {
+			if (c instanceof AnalyzeBlock) {
+				for (final Clause d : ((AnalyzeBlock) c).getExpandedClauses()) {
+					if (d.isLocal() && d.isASTClause()) {
+						fusedProgram.addCommonClause(transformLocalClause(d, outputPreds));
+					} else {
+						fusedProgram.addCommonClause(transformClause(d));
+					}
+				}
+				for (final Clause d : ((AnalyzeBlock) c).getClauses()) {
+					if (d.isLocal() && d.isASTClause()) {
+						fusedProgram.addCommonClause(transformLocalClause(d, outputPreds));
+					} else {
+						fusedProgram.addCommonClause(transformClause(d));
+					}
+				}
+			} else {
+				final Clause d = (Clause) c;
+				if (d.isLocal() && d.isASTClause()) {
+					fusedProgram.addCommonClause(transformLocalClause(d, outputPreds));
+				} else {
+					fusedProgram.addCommonClause(transformClause(d));
+				}
+			}
+		}
+
+		for (FormalPredicate p : program.getFormalPredicates()) {
+			implicitTypeDeclaration(p);
+			if (p.hasLocalDef() && isTaggedPredicate(p, outputPreds)) {
+				// P(x) :- P_local(x, _tag).
+				fusedProgram.addCommonClause(rule(literal(p.getPRED_ID(),
+														  IntStream.range(0, p.realArity()).mapToObj(i -> var("v_" + i)).toArray()),
+												  literal(p.getPRED_ID() + "_local",
+														  IntStream.range(0, p.realArity() + 1).mapToObj(i -> var("v_" + i)).toArray())));
+				// P(x) :- P_global(x, _tag).
+				fusedProgram.addCommonClause(rule(literal(p.getPRED_ID(),
+														  IntStream.range(0, p.realArity()).mapToObj(i -> var("v_" + i)).toArray()),
+												  literal(p.getPRED_ID() + "_cache",
+														  IntStream.range(0, p.realArity() + 1).mapToObj(i -> var("v_" + i)).toArray())));
+
+				PredicateType predType = p.type();
+				PredicateType cachePredType = new PredicateType(predType.arity() + 1);
+				for (int i = 0; i < predType.arity(); ++i) {
+					cachePredType.joinAt(i, predType.get(i));
+				}
+				cachePredType.joinAt(predType.arity(), IntegerType.get());
+
+				// Implicit type declaration for P_cache. P_local does not need an implicit type declaration
+				// since the compiler should always be able to deduce it.
+				fusedProgram.addCommonClause(implicitTypeDeclaration(p.getPRED_ID() + "_cache", cachePredType));
+
+
+				// Output P_local to the cache
+				fusedProgram.addCommonClause(fact(literal(GlobalNames.OUTPUT_NAME, ref(p.getPRED_ID() + "_local"),
+														  str(INTERNAL_DB_NAME), str("sqlite"))));
+
+				// Read in P_cache from cache
+				fusedProgram.addCommonClause(fact(literal(GlobalNames.EDB_NAME, ref(p.getPRED_ID() + "_cache"),
+														  str(INTERNAL_DB_NAME), str("sqlite"))));
+			}
+		}
 	}
 
 	private void split() {
 		localProgram = new Program();
 		globalProgram = new Program();
 
-		List<PredicateIOInfo> edbs = getIOPredicateInfo(GlobalNames.EDB_NAME);
-		for (PredicateIOInfo edb : edbs) {
+		final List<PredicateIOInfo> edbs = getIOPredicateInfo(GlobalNames.EDB_NAME);
+		for (final PredicateIOInfo edb : edbs) {
 			if (edb.p.hasLocalUse()) {
-				localProgram.addCommonClause(fact(literal(GlobalNames.EDB_NAME, str(edb.p.getPRED_ID()), str(edb.fileName), str(edb.format))));
+				localProgram.addCommonClause(fact(literal(GlobalNames.EDB_NAME, ref(edb.p.getPRED_ID()), str(edb.fileName), str(edb.format))));
 			}
 			if (edb.p.hasGlobalUse()) {
-				localProgram.addCommonClause(fact(literal(GlobalNames.EDB_NAME, str(edb.p.getPRED_ID()), str(edb.fileName), str(edb.format))));
+				localProgram.addCommonClause(fact(literal(GlobalNames.EDB_NAME, ref(edb.p.getPRED_ID()), str(edb.fileName), str(edb.format))));
 			}
 		}
 
-		List<PredicateIOInfo> outputs = getIOPredicateInfo(GlobalNames.OUTPUT_NAME);
-		for (PredicateIOInfo output : outputs) {
+		final List<PredicateIOInfo> outputs = getIOPredicateInfo(GlobalNames.OUTPUT_NAME);
+		for (final PredicateIOInfo output : outputs) {
 			// outputs are always in the global program
 			globalProgram.addCommonClause(fact(literal(GlobalNames.OUTPUT_NAME, ref(output.p.getPRED_ID()), str(output.fileName), str(output.format))));
 		}
 
-		Set<FormalPredicate> outputPreds = outputs.stream().map(e -> e.p).collect(Collectors.toSet());
+		final Set<FormalPredicate> outputPreds = outputs.stream().map(e -> e.p).collect(Collectors.toSet());
 
-		for (FormalPredicate p : program.getFormalPredicates()) {
+		for (final FormalPredicate p : program.getFormalPredicates()) {
 			if (p.hasLocalDef() && (p.hasGlobalUse() || outputPreds.contains(p))) {
 				localProgram.addCommonClause(fact(literal(GlobalNames.OUTPUT_NAME, ref(p.getPRED_ID()), str(INTERNAL_DB_NAME), str("sqlite"))));
 				globalProgram.addCommonClause(fact(literal(GlobalNames.EDB_NAME, ref(p.getPRED_ID()), str(INTERNAL_DB_NAME), str("sqlite"))));
@@ -195,19 +366,19 @@ public class ProgramSplit {
 			}
 		}
 
-		Consumer<Clause> clauseSeparator = (Clause c) -> {
+		final Consumer<Clause> clauseSeparator = (final Clause c) -> {
 			if (c.isLocal())
 				localProgram.addCommonClause(copyClause(c));
 			else
 				globalProgram.addCommonClause(copyClause(c));
 		};
 
-		for (CommonClause c : program.getCommonClauses()) {
+		for (final CommonClause c : program.getCommonClauses()) {
 			if (c instanceof AnalyzeBlock) {
-				for (Clause d : ((AnalyzeBlock) c).getExpandedClauses()) {
+				for (final Clause d : ((AnalyzeBlock) c).getExpandedClauses()) {
 					clauseSeparator.accept(d);
 				}
-				for (Clause d : ((AnalyzeBlock) c).getClauses()) {
+				for (final Clause d : ((AnalyzeBlock) c).getClauses()) {
 					clauseSeparator.accept(d);
 				}
 			} else {
@@ -222,7 +393,7 @@ public class ProgramSplit {
 	public final static String FILE_ID = "FILE_ID";
 	public final static String EXTERNAL_FILE = "EXTERNAL_FILE";
 
-	public static PredicateType getTypeForUpdateRelation(String name) {
+	public static PredicateType getTypeForUpdateRelation(final String name) {
 		switch (name) {
 		case AST_VISIT_RELATION:
 		case AST_REMOVE_RELATION:
@@ -238,9 +409,9 @@ public class ProgramSplit {
 
 	public static String INTERNAL_DB_NAME = "__internal__";
 
-	private void generateUpdateClauses(Program p, AnalyzeBlock b) {
-		String ATTR_PROVENANCE = b.getContext().provenanceRelName;
-		String SRC_LOC = b.getContext().srcRelName;
+	private void generateUpdateClauses(final Program p, final AnalyzeBlock b) {
+		final String ATTR_PROVENANCE = b.getContext().provenanceRelName;
+		final String SRC_LOC = b.getContext().srcRelName;
 
 		cachedPredicates.add(ATTR_PROVENANCE);
 		cachedPredicates.add(SRC_LOC);
@@ -310,6 +481,10 @@ public class ProgramSplit {
 		return program;
 	}
 
+	public Program getFusedProgram() {
+		return fusedProgram;
+	}
+
 	public Set<String> getCachedPredicates() {
 		return Collections.unmodifiableSet(cachedPredicates);
 	}
@@ -318,7 +493,7 @@ public class ProgramSplit {
 		public AnalyzeContext ctx;
 		public String srcRelName;
 
-		public AnalysisInfo(AnalyzeContext ctx, String srcRelName) {
+		public AnalysisInfo(final AnalyzeContext ctx, final String srcRelName) {
 			this.ctx = ctx;
 			this.srcRelName = srcRelName;
 		}

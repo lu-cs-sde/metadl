@@ -11,6 +11,7 @@ import lang.relation.RelationWrapper;
 import lang.relation.TupleInserter;
 import org.apache.commons.collections4.map.DefaultedMap;
 import org.apache.commons.lang3.mutable.MutableInt;
+import incremental.ProgramSplit;
 
 aspect Eval {
 	public void Program.populateProgramRepresentation(FormalPredicate srcs,
@@ -66,22 +67,18 @@ aspect Eval {
 			FormalPredicate dstPred = formalPredicateMap().get(pred);
 			Relation2 rel = dstPred.relation2();
 
-			if (format.equals("sqlite")) {
-				Connection conn;
-				if (file.equals("__internal__")) {
-					conn = opts.getSqlDbConnection();
-				} else {
-					conn = SQLUtil.connect(Paths.get(opts.getFactsDir(), file).toString());
-				}
-
+			if (ProgramSplit.isInternalDbDesc(file)) {
+				// special path for the internal DB
+				Connection conn = opts.getSqlDbConnection();
 				SQLUtil.readRelation(ctx, dstPred.type(), dstPred.relation2(),
-									 conn, pred, opts.getDbEntryTag());
-
-				if (!file.equals("__internal__")) {
-					conn.close();
-				}
+									 conn, ProgramSplit.getInternalDbTable(file), opts.getDbEntryTag());
 			} else if (format.equals("csv")) {
 				CSVUtil.readRelation(ctx, dstPred.type(), dstPred.relation2(), Paths.get(opts.getFactsDir(), file).toString());
+			} else if (format.equals("sqlite")) {
+				Connection conn = SQLUtil.connect(Paths.get(opts.getFactsDir(), file).toString());
+				SQLUtil.readRelation(ctx, dstPred.type(), dstPred.relation2(),
+									 conn, pred, opts.getDbEntryTag());
+				conn.close();
 			} else {
 				throw new RuntimeException("Unknown format for EDB, " + format + ".");
 			}
@@ -135,20 +132,21 @@ aspect Eval {
 			String format = t.getAsString(2);
 
 			FormalPredicate srcPred = formalPredicateMap().get(pred);
-			if (format.equals("sqlite")) {
-				Connection conn;
-				if (file.equals("__internal__")) {
-					conn = opts.getSqlDbConnection();
-				} else {
-					conn = SQLUtil.connect(Paths.get(opts.getFactsDir(), file).toString());
-				}
+			if (ProgramSplit.isInternalDbDesc(file)) {
+				String table = ProgramSplit.getInternalDbTable(file);
+				String mode = ProgramSplit.getInternalDbMode(file);
 
+				// the current write mode is always append
+				assert mode.equals("append");
+
+				Connection conn = opts.getSqlDbConnection();
+				SQLUtil.writeRelation(ctx, srcPred.type(), srcPred.relation2(),
+									  conn, table, opts.getDbEntryTag());
+			} else if (format.equals("sqlite")) {
+				Connection conn = SQLUtil.connect(Paths.get(opts.getFactsDir(), file).toString());
 				SQLUtil.writeRelation(ctx, srcPred.type(), srcPred.relation2(),
 									  conn, pred, opts.getDbEntryTag());
-
-				if (!file.equals("__internal__")) {
-					conn.close();
-				}
+				conn.close();
 			} else if (format.equals("csv")) {
 				CSVUtil.writeRelation(ctx, srcPred.type(), srcPred.relation2(), Paths.get(opts.getOutputDir(), file).toString());
 			} else {

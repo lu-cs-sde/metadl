@@ -13,6 +13,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import org.apache.commons.lang3.tuple.Pair;
 import lang.ast.ASTNodeType;
 import lang.ast.AnalyzeBlock;
 import lang.ast.AnalyzeContext;
@@ -309,11 +310,13 @@ public class ProgramSplit {
 
 				// Output P_local to the cache
 				fusedProgram.addCommonClause(fact(literal(GlobalNames.OUTPUT_NAME, ref(p.getPRED_ID() + "_local"),
-														  str(INTERNAL_DB_NAME), str("sqlite"))));
+														  str(makeInternalDbDesc(p.getPRED_ID(), "append")),
+														  str("sqlite"))));
 
 				// Read in P_cache from cache
 				fusedProgram.addCommonClause(fact(literal(GlobalNames.EDB_NAME, ref(p.getPRED_ID() + "_cache"),
-														  str(INTERNAL_DB_NAME), str("sqlite"))));
+														  str(makeInternalDbDesc(p.getPRED_ID(), "read")),
+														  str("sqlite"))));
 			}
 		}
 	}
@@ -342,18 +345,26 @@ public class ProgramSplit {
 
 		for (final FormalPredicate p : program.getFormalPredicates()) {
 			if (p.hasLocalDef() && (p.hasGlobalUse() || outputPreds.contains(p))) {
-				localProgram.addCommonClause(fact(literal(GlobalNames.OUTPUT_NAME, ref(p.getPRED_ID()), str(INTERNAL_DB_NAME), str("sqlite"))));
-				globalProgram.addCommonClause(fact(literal(GlobalNames.EDB_NAME, ref(p.getPRED_ID()), str(INTERNAL_DB_NAME), str("sqlite"))));
+				localProgram.addCommonClause(fact(literal(GlobalNames.OUTPUT_NAME, ref(p.getPRED_ID()),
+														  makeInternalDbDesc(p.getPRED_ID(), "append"),
+														  str("sqlite"))));
+				globalProgram.addCommonClause(fact(literal(GlobalNames.EDB_NAME, ref(p.getPRED_ID()),
+														   makeInternalDbDesc(p.getPRED_ID(), "read"),
+														   str("sqlite"))));
 				cachedPredicates.add(p.getPRED_ID());
 			}
 
 			if (p.hasLocalUse() && p.getProgramRepresentationKind().isPresent()) {
-				localProgram.addCommonClause(fact(literal(GlobalNames.EDB_NAME, ref(p.getPRED_ID()), str(INTERNAL_DB_NAME), str("sqlite"))));
+				localProgram.addCommonClause(fact(literal(GlobalNames.EDB_NAME, ref(p.getPRED_ID()),
+														  makeInternalDbDesc(p.getPRED_ID(), "read"),
+														  str("sqlite"))));
 				cachedPredicates.add(p.getPRED_ID());
 			}
 
 			if ((p.hasGlobalUse() || outputPreds.contains(p)) && p.getProgramRepresentationKind().isPresent()) {
-				globalProgram.addCommonClause(fact(literal(GlobalNames.EDB_NAME, ref(p.getPRED_ID()), str(INTERNAL_DB_NAME), str("sqlite"))));
+				globalProgram.addCommonClause(fact(literal(GlobalNames.EDB_NAME, ref(p.getPRED_ID()),
+														   makeInternalDbDesc(p.getPRED_ID(), "read"),
+														   str("sqlite"))));
 				cachedPredicates.add(p.getPRED_ID());
 			}
 
@@ -409,6 +420,35 @@ public class ProgramSplit {
 
 	public static String INTERNAL_DB_NAME = "__internal__";
 
+	public static String makeInternalDbDesc(String table, String mode) {
+		return INTERNAL_DB_NAME + ":" + table + ":" + mode;
+	}
+
+	public static boolean isInternalDbDesc(String dbname) {
+		return dbname.startsWith(INTERNAL_DB_NAME);
+	}
+
+	public static String getInternalDbTable(String desc) {
+		String[] parts = desc.split(":");
+		if (parts.length != 3)
+			return null;
+		return parts[1];
+	}
+
+	public static String getInternalDbMode(String desc) {
+		String[] parts = desc.split(":");
+		if (parts.length != 3)
+			return "default";
+		return parts[2];
+	}
+
+	public static Pair<String, String> parseInternalDbName(String dbname) {
+		String[] parts = dbname.split(":");
+		if (parts.length != 3)
+			return Pair.of(null, "default");
+		return Pair.of(parts[1], parts[2]);
+	}
+
 	private void generateUpdateClauses(final Program p, final AnalyzeBlock b) {
 		final String ATTR_PROVENANCE = b.getContext().provenanceRelName;
 		final String SRC_LOC = b.getContext().srcRelName;
@@ -417,9 +457,10 @@ public class ProgramSplit {
 		cachedPredicates.add(SRC_LOC);
 
 		// read the analyzed sources
-		p.addCommonClause(fact(literal(GlobalNames.EDB_NAME, ref(ANALYZED_SOURCES_RELATION), str(INTERNAL_DB_NAME), str("sqlite"))));
+		p.addCommonClause(fact(literal(GlobalNames.EDB_NAME, ref(ANALYZED_SOURCES_RELATION),
+									   str(makeInternalDbDesc(ANALYZED_SOURCES_RELATION, "read")), str("sqlite"))));
 		// read the file Id database
-		p.addCommonClause(fact(literal(GlobalNames.EDB_NAME, ref(FILE_ID), str(INTERNAL_DB_NAME), str("sqlite"))));
+		p.addCommonClause(fact(literal(GlobalNames.EDB_NAME, ref(FILE_ID), str(makeInternalDbDesc(FILE_ID, "read")), str("sqlite"))));
 
 		// Type declarations
 		p.addCommonClause(implicitTypeDeclaration(ANALYZED_SOURCES_RELATION, getTypeForUpdateRelation(ANALYZED_SOURCES_RELATION)));
@@ -447,11 +488,15 @@ public class ProgramSplit {
 
 		// Input
 		// The ANALYZED_SOURCES_RELATION predicate relation should be filled in by the caller
-		p.addCommonClause(fact(literal(GlobalNames.EDB_NAME, ref(ATTR_PROVENANCE), str(INTERNAL_DB_NAME), str("sqlite"))));
+		p.addCommonClause(fact(literal(GlobalNames.EDB_NAME, ref(ATTR_PROVENANCE),
+									   makeInternalDbDesc(ATTR_PROVENANCE, "read"),
+									   str("sqlite"))));
 
 		// Output
-		p.addCommonClause(fact(literal(GlobalNames.OUTPUT_NAME, ref(AST_VISIT_RELATION), str(INTERNAL_DB_NAME), str("sqlite"))));
-		p.addCommonClause(fact(literal(GlobalNames.OUTPUT_NAME, ref(AST_REMOVE_RELATION), str(INTERNAL_DB_NAME), str("sqlite"))));
+		p.addCommonClause(fact(literal(GlobalNames.OUTPUT_NAME, ref(AST_VISIT_RELATION),
+									   makeInternalDbDesc(AST_VISIT_RELATION, "append"), str("sqlite"))));
+		p.addCommonClause(fact(literal(GlobalNames.OUTPUT_NAME, ref(AST_REMOVE_RELATION),
+									   makeInternalDbDesc(AST_REMOVE_RELATION, "append"), str("sqlite"))));
 
 		// Output (Enable for debug purposes)
 		if (false) {

@@ -364,7 +364,7 @@ aspect SoufflePrinting {
 			pr.out.print(" inline");
     }
 
-	private static void Program.printIODescription(PrettyPrinter pr, String file, String format) {
+	private static void Program.printIODescription(PrettyPrinter pr, String file, String format, String table, String mode) {
 		pr.out.print("(IO=");
 		if (format.equals("csv")) {
 			pr.out.print("file");
@@ -373,6 +373,12 @@ aspect SoufflePrinting {
 		} else {
 			pr.out.print(format);
 			pr.out.print(", dbname=\"" + file + "\"");
+			if (table != null) {
+				pr.out.print(", table=\"" + table + "\"");
+			}
+			if (mode != null) {
+				pr.out.print(", mode=\"" + mode + "\"");
+			}
 		}
 		pr.out.println(")");
 	}
@@ -393,10 +399,18 @@ aspect SoufflePrinting {
 			String pred = t.getAsString(0);
 			String file = t.getAsString(1);
 			String format = t.getAsString(2);
+			String table = null;
+			String mode = null;
+
+			if (ProgramSplit.isInternalDbDesc(file)) {
+				table = ProgramSplit.getInternalDbTable(file);
+				mode = ProgramSplit.getInternalDbMode(file);
+				file = ProgramSplit.INTERNAL_DB_NAME;
+			}
 
 			pr.out.print(".input ");
 			pr.out.print(pred);
-			printIODescription(pr, file, format);
+			printIODescription(pr, file, format, table, mode);
 			pr.out.println();
 		}
 	}
@@ -415,8 +429,17 @@ aspect SoufflePrinting {
 			String pred = t.getAsString(0);
 			String file = t.getAsString(1);
 			String format = t.getAsString(2);
+			String table = null;
+			String mode = null;
+
+			if (ProgramSplit.isInternalDbDesc(file)) {
+				table = ProgramSplit.getInternalDbTable(file);
+				mode = ProgramSplit.getInternalDbMode(file);
+				file = ProgramSplit.INTERNAL_DB_NAME;
+			}
+
 			pr.out.print(".output " + pred);
-			printIODescription(pr, file, format);
+			printIODescription(pr, file, format, table, mode);
 			pr.out.println();
 		}
 	}

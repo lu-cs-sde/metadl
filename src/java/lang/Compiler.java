@@ -136,22 +136,14 @@ public class Compiler {
 			throw new RuntimeException("Cannot evaluate this program incrementally.");
 		}
 
-		{
-			StandardPrettyPrinter<Program> spp = new StandardPrettyPrinter<>(new PrintStream(System.out));
-			spp.prettyPrint(split.getFusedProgram());
-			Compiler.checkProgram(prog, opts);
-			// System.exit(0);
-		}
-
 		Profile.profile().stopTimer("main", "local_and_global_split");
 
 		Profile.profile().startTimer("main", "incremental_driver");
 		IncrementalDriver incDriver = new IncrementalDriver(new File(opts.getCacheDir()), split, useSouffle);
 		incDriver.init();
-
 		incDriver.update(opts);
 
-		incDriver.runGlobalProgram(opts);
+		// incDriver.runGlobalProgram(opts);
 
 		incDriver.shutdown();
 		Profile.profile().stopTimer("main", "incremental_driver");

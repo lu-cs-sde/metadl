@@ -1,5 +1,6 @@
 package swig;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -18,9 +19,14 @@ import lang.relation.TupleInserter;
 
 public class SWIGUtil {
 	public static Pair<SWIGSouffleProgram, Map<FormalPredicate, TupleInserter>> loadSWIGProgram(Program prog, CmdLineOpts opts) {
-		System.load(opts.getLibFile());
-
+		File libFile = new File(opts.getLibFile());
 		String progName = FileUtil.fileNameNoExtension(opts.getInputFile());
+		return loadSWIGProgram(prog, libFile, progName);
+	}
+
+	public static Pair<SWIGSouffleProgram, Map<FormalPredicate, TupleInserter>> loadSWIGProgram(Program prog, File libFile, String progName) {
+		System.load(libFile.getPath());
+
 		System.out.println(progName);
 		SWIGSouffleProgram swigProg = SwigInterface.newInstance(progName.replace("-", "_"));
 		Map<FormalPredicate, TupleInserter> fpToSoufflePredMap = new HashMap<>();
@@ -38,9 +44,10 @@ public class SWIGUtil {
 		}
 
 		return Pair.of(swigProg, fpToSoufflePredMap);
+
 	}
 
-	private static void runSWIGProgram(SWIGSouffleProgram swigProg, CmdLineOpts opts) {
+	public static void runSWIGProgram(SWIGSouffleProgram swigProg, CmdLineOpts opts) {
 		int hwThreads = Runtime.getRuntime().availableProcessors();
 		StopWatch timer = StopWatch.createStarted();
 		swigProg.setNumThreads(Math.max(1, hwThreads / 2));

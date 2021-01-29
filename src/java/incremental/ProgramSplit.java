@@ -43,54 +43,14 @@ import static lang.ast.Constructors.*;
 
 public class ProgramSplit {
 	private final Program program;
-	private Program localProgram;
-	private Program globalProgram;
 	private Program updateProgram;
 	private Program fusedProgram;
 	private final Set<String> cachedPredicates = new TreeSet<>();
 
 	public ProgramSplit(final Program program) {
 		this.program = program;
-		split();
 		generateUpdateProgram();
 		generateFusedProgram();
-	}
-
-	private static CommonLiteral copyLiteral(final CommonLiteral l) {
-		if (l instanceof Pattern) {
-			return ((Pattern) l).getLiteral().treeCopy();
-		}
-		if (l instanceof Literal) {
-			final Literal ll = (Literal) l;
-			final Literal c = ll.treeCopy();
-			if (ll.isOUTPUT()) {
-				c.setPredicate(new PredicateSymbol("OUTPUT_"));
-			} else if (ll.isEDB()) {
-				c.setPredicate(new PredicateSymbol("EDB_"));
-			}
-			return c;
-		}
-		return l.treeCopy();
-	}
-
-	private static Clause copyClause(final Clause c) {
-		final lang.ast.List<CommonLiteral> head = new lang.ast.List<>();
-
-
-		for (final CommonLiteral l : c.getHeadss()) {
-			head.add(copyLiteral(l));
-		}
-
-		if (c instanceof Rule) {
-			final lang.ast.List<CommonLiteral> body = new lang.ast.List<>();
-			final Rule r = (Rule) c;
-			for (final CommonLiteral l : r.getBodys()) {
-				body.add(copyLiteral(l));
-			}
-			return new Rule(head, body);
-		} else {
-			return new Fact(head);
-		}
 	}
 
 	private static Rule implicitTypeDeclaration(final FormalPredicate p) {
@@ -317,83 +277,8 @@ public class ProgramSplit {
 				fusedProgram.addCommonClause(fact(literal(GlobalNames.EDB_NAME, ref(p.getPRED_ID() + "_cache"),
 														  str(makeInternalDbDesc(p.getPRED_ID(), "read")),
 														  str("sqlite"))));
-			}
-		}
-	}
 
-	private void split() {
-		localProgram = new Program();
-		globalProgram = new Program();
-
-		final List<PredicateIOInfo> edbs = getIOPredicateInfo(GlobalNames.EDB_NAME);
-		for (final PredicateIOInfo edb : edbs) {
-			if (edb.p.hasLocalUse()) {
-				localProgram.addCommonClause(fact(literal(GlobalNames.EDB_NAME, ref(edb.p.getPRED_ID()), str(edb.fileName), str(edb.format))));
-			}
-			if (edb.p.hasGlobalUse()) {
-				localProgram.addCommonClause(fact(literal(GlobalNames.EDB_NAME, ref(edb.p.getPRED_ID()), str(edb.fileName), str(edb.format))));
-			}
-		}
-
-		final List<PredicateIOInfo> outputs = getIOPredicateInfo(GlobalNames.OUTPUT_NAME);
-		for (final PredicateIOInfo output : outputs) {
-			// outputs are always in the global program
-			globalProgram.addCommonClause(fact(literal(GlobalNames.OUTPUT_NAME, ref(output.p.getPRED_ID()), str(output.fileName), str(output.format))));
-		}
-
-		final Set<FormalPredicate> outputPreds = outputs.stream().map(e -> e.p).collect(Collectors.toSet());
-
-		for (final FormalPredicate p : program.getFormalPredicates()) {
-			if (p.hasLocalDef() && (p.hasGlobalUse() || outputPreds.contains(p))) {
-				localProgram.addCommonClause(fact(literal(GlobalNames.OUTPUT_NAME, ref(p.getPRED_ID()),
-														  makeInternalDbDesc(p.getPRED_ID(), "append"),
-														  str("sqlite"))));
-				globalProgram.addCommonClause(fact(literal(GlobalNames.EDB_NAME, ref(p.getPRED_ID()),
-														   makeInternalDbDesc(p.getPRED_ID(), "read"),
-														   str("sqlite"))));
 				cachedPredicates.add(p.getPRED_ID());
-			}
-
-			if (p.hasLocalUse() && p.getProgramRepresentationKind().isPresent()) {
-				localProgram.addCommonClause(fact(literal(GlobalNames.EDB_NAME, ref(p.getPRED_ID()),
-														  makeInternalDbDesc(p.getPRED_ID(), "read"),
-														  str("sqlite"))));
-				cachedPredicates.add(p.getPRED_ID());
-			}
-
-			if ((p.hasGlobalUse() || outputPreds.contains(p)) && p.getProgramRepresentationKind().isPresent()) {
-				globalProgram.addCommonClause(fact(literal(GlobalNames.EDB_NAME, ref(p.getPRED_ID()),
-														   makeInternalDbDesc(p.getPRED_ID(), "read"),
-														   str("sqlite"))));
-				cachedPredicates.add(p.getPRED_ID());
-			}
-
-			if (p.hasGlobalUse() || p.hasGlobalDef() || outputPreds.contains(p)) {
-				globalProgram.addCommonClause(implicitTypeDeclaration(p));
-			}
-
-			if (p.hasLocalUse() || p.hasLocalDef()) {
-				localProgram.addCommonClause(implicitTypeDeclaration(p));
-			}
-		}
-
-		final Consumer<Clause> clauseSeparator = (final Clause c) -> {
-			if (c.isLocal())
-				localProgram.addCommonClause(copyClause(c));
-			else
-				globalProgram.addCommonClause(copyClause(c));
-		};
-
-		for (final CommonClause c : program.getCommonClauses()) {
-			if (c instanceof AnalyzeBlock) {
-				for (final Clause d : ((AnalyzeBlock) c).getExpandedClauses()) {
-					clauseSeparator.accept(d);
-				}
-				for (final Clause d : ((AnalyzeBlock) c).getClauses()) {
-					clauseSeparator.accept(d);
-				}
-			} else {
-				clauseSeparator.accept((Clause) c);
 			}
 		}
 	}
@@ -451,10 +336,8 @@ public class ProgramSplit {
 
 	private void generateUpdateClauses(final Program p, final AnalyzeBlock b) {
 		final String ATTR_PROVENANCE = b.getContext().provenanceRelName;
-		final String SRC_LOC = b.getContext().srcRelName;
 
 		cachedPredicates.add(ATTR_PROVENANCE);
-		cachedPredicates.add(SRC_LOC);
 
 		// read the analyzed sources
 		p.addCommonClause(fact(literal(GlobalNames.EDB_NAME, ref(ANALYZED_SOURCES_RELATION),
@@ -510,16 +393,8 @@ public class ProgramSplit {
 		generateUpdateClauses(updateProgram, program.analyzeBlocks().get(0));
 	}
 
-	public Program getGlobalProgram() {
-		return globalProgram;
-	}
-
 	public Program getUpdateProgram() {
 		return updateProgram;
-	}
-
-	public Program getLocalProgram() {
-		return localProgram;
 	}
 
 	public Program getProgram() {
@@ -543,7 +418,6 @@ public class ProgramSplit {
 			this.srcRelName = srcRelName;
 		}
 	}
-
 
 	public List<AnalysisInfo> getAnalyzeContexts() {
 		return program.analyzeBlocks().stream().map(b -> new AnalysisInfo(b.getContext(), b.getProgramRef().getPRED_ID()))

@@ -47,12 +47,12 @@ public class SWIGSouffleProgram {
     SwigInterfaceJNI.SWIGSouffleProgram_runAll(swigCPtr, this, inputDirectory, outputDirectory);
   }
 
-  public void loadAll(String inputDirectory) {
-    SwigInterfaceJNI.SWIGSouffleProgram_loadAll(swigCPtr, this, inputDirectory);
+  public void loadAll(String inputDirectory, String internalDB) {
+    SwigInterfaceJNI.SWIGSouffleProgram_loadAll(swigCPtr, this, inputDirectory, internalDB);
   }
 
-  public void printAll(String outputDirectory) {
-    SwigInterfaceJNI.SWIGSouffleProgram_printAll(swigCPtr, this, outputDirectory);
+  public void printAll(String outputDirectory, String internalDB) {
+    SwigInterfaceJNI.SWIGSouffleProgram_printAll(swigCPtr, this, outputDirectory, internalDB);
   }
 
   public void dumpInputs(SWIGTYPE_p_std__ostream out) {

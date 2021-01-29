@@ -52,7 +52,7 @@ public class SWIGUtil {
 		StopWatch timer = StopWatch.createStarted();
 		swigProg.setNumThreads(Math.max(1, hwThreads / 2));
 		swigProg.run();
-		swigProg.printAll(opts.getOutputDir());
+		swigProg.printAll(opts.getOutputDir(), "");
 		swigProg.finalize();
 		timer.stop();
 		SimpleLogger.logger().time("Run SWIG program: " + timer.getTime() + "ms");

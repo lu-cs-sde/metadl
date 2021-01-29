@@ -32,8 +32,8 @@ public class SwigInterfaceJNI {
   public final static native void delete_SWIGSouffleProgram(long jarg1);
   public final static native void SWIGSouffleProgram_run(long jarg1, SWIGSouffleProgram jarg1_);
   public final static native void SWIGSouffleProgram_runAll(long jarg1, SWIGSouffleProgram jarg1_, String jarg2, String jarg3);
-  public final static native void SWIGSouffleProgram_loadAll(long jarg1, SWIGSouffleProgram jarg1_, String jarg2);
-  public final static native void SWIGSouffleProgram_printAll(long jarg1, SWIGSouffleProgram jarg1_, String jarg2);
+  public final static native void SWIGSouffleProgram_loadAll(long jarg1, SWIGSouffleProgram jarg1_, String jarg2, String jarg3);
+  public final static native void SWIGSouffleProgram_printAll(long jarg1, SWIGSouffleProgram jarg1_, String jarg2, String jarg3);
   public final static native void SWIGSouffleProgram_dumpInputs__SWIG_0(long jarg1, SWIGSouffleProgram jarg1_, long jarg2);
   public final static native void SWIGSouffleProgram_dumpInputs__SWIG_1(long jarg1, SWIGSouffleProgram jarg1_);
   public final static native void SWIGSouffleProgram_dumpOutputs__SWIG_0(long jarg1, SWIGSouffleProgram jarg1_, long jarg2);

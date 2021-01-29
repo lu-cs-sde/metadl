@@ -511,7 +511,7 @@ public class IncrementalDriver {
 			// out whether they are used in the fused progam, if they are, then set the proper
 			// inserters in the sink
 			for (ProgramRepresentation pr : ProgramRepresentation.values()) {
-				String predName = b.getScopePrefix() + pr.getPredicateName();
+				String predName = b.getContext().prefix(pr.getPredicateName());
 				TupleInserter ti = tupleInsertersByName.get(predName);
 				if (ti != null) {
 					logger().debug("Writing directly to the souffle relation " + predName);
@@ -528,12 +528,22 @@ public class IncrementalDriver {
 			// fusedProgram.evalEDB(fusedProgram.evalCtx(), opts);
 			// fusedProgram.evalIMPORT(fusedProgram.evalCtx(), opts);
 
-			// TODO: set the path to the database
-			SWIGUtil.runSWIGProgram(swigProg.getLeft(), opts);
+			progDbConnection.close();
+			runHybridProgram(swigProg.getLeft(), opts);
+			progDbConnection = SQLUtil.connect(progDbFile.getPath());
 		}
 
 
 		// runLocalProgram(Stream.concat(visitFiles.stream(), externalFiles.stream()).collect(Collectors.toList()), opts);
+	}
+
+	private void runHybridProgram(SWIGSouffleProgram swigProg, CmdLineOpts opts) {
+		int hwThreads = Math.max(Runtime.getRuntime().availableProcessors() / 2, 1);
+		swigProg.setNumThreads(hwThreads);
+		swigProg.loadAll(opts.getFactsDir(), progDbFile.getPath());
+		swigProg.run();
+		swigProg.printAll(opts.getOutputDir(), progDbFile.getPath());
+		// swigProg.finalize();
 	}
 
 	// private void runLocalProgram(List<File> visitFiles, CmdLineOpts opts) throws IOException, SQLException {

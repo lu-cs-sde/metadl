@@ -23,6 +23,7 @@ import lang.ast.CommonLiteral;
 import lang.ast.Constraint;
 import lang.ast.Fact;
 import lang.ast.FormalPredicate;
+import lang.ast.Functor;
 import lang.ast.GlobalNames;
 import lang.ast.IntegerType;
 import lang.ast.Literal;
@@ -172,7 +173,7 @@ public class ProgramSplit {
 			}
 
 			if (usedTag && !definedTag) {
-				((Rule) ret).addBody(BIND(var(tagVariable), functor("bshru", var(selectTagVariable(c)), integer(32))));
+				((Rule) ret).addBody(BIND(var(tagVariable), extractFileIdFromASTNodeId(var(selectTagVariable(c)))));
 			}
 		}
 
@@ -281,6 +282,17 @@ public class ProgramSplit {
 				cachedPredicates.add(p.getPRED_ID());
 			}
 		}
+
+		// Add all the program representation predicates as dummy inputs. This prevents
+		// Souffle to remove them as dead code.
+		for (AnalyzeBlock b : program.analyzeBlocks()) {
+			for (ProgramRepresentation pr : ProgramRepresentation.values()) {
+				String predName = b.getContext().prefix(pr.getPredicateName());
+				if (program.formalPredicateMap().containsKey(predName)) {
+					fusedProgram.addCommonClause(fact(literal(GlobalNames.EDB_NAME, ref(predName), "__dummy__", "csv")));
+				}
+			}
+		}
 	}
 
 	public final static String AST_VISIT_RELATION = "AST_VISIT";
@@ -334,6 +346,10 @@ public class ProgramSplit {
 		return Pair.of(parts[1], parts[2]);
 	}
 
+	private static Functor extractFileIdFromASTNodeId(Variable n) {
+		return functor("band", functor("bshru", n, integer(32)), integer((1 << 30) - 1));
+	}
+
 	private void generateUpdateClauses(final Program p, final AnalyzeBlock b) {
 		final String ATTR_PROVENANCE = b.getContext().provenanceRelName;
 
@@ -365,7 +381,7 @@ public class ProgramSplit {
 		// TODO: this can be refined, to only compute the attributes, not traverse the entire file
 		p.addCommonClause(rule(literal(AST_VISIT_RELATION, var("f")), literal(ANALYZED_SOURCES_RELATION, var("f_attr"), "_"),
 							   literal(ATTR_PROVENANCE, var("n"), "_", var("f_attr")),
-							   BIND(var("fid"), functor("band", functor("bshru", var("n"), integer(32)), integer((1 << 30) - 1))),
+							   BIND(var("fid"), extractFileIdFromASTNodeId(var("n"))),
 							   literal(FILE_ID, var("f"), var("fid")),
 							   NOT(literal(AST_REMOVE_RELATION, var("f")))));
 

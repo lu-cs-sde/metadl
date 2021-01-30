@@ -121,7 +121,8 @@ public class IncrementalTest {
 
 	@DisplayName("Test the initial run of the incremental evaluation driver using Souffle.")
 	@ParameterizedTest
-	@MethodSource("initialRunTestsSouffle")
+	// @MethodSource("initialRunTestsSouffle")
+	@MethodSource("initialRunTestsInternal")
 	public void testInitialRunSouffle(String name) throws Exception {
 		runProgramAndExtractResults(name, true);
 	}
@@ -132,10 +133,10 @@ public class IncrementalTest {
 		return EvaluationTest.metadlJavaTests().filter(t -> !t.equals("java7"));
 	}
 
-	@DisplayName("Test the initial run of the incremental evaluation driver using the internal evaluator.")
-	@ParameterizedTest
-	@MethodSource("initialRunTestsInternal")
-	public void testInitialRunInternal(String name) throws Exception {
-		runProgramAndExtractResults(name, false);
-	}
+	// @DisplayName("Test the initial run of the incremental evaluation driver using the internal evaluator.")
+	// @ParameterizedTest
+	// @MethodSource("initialRunTestsInternal")
+	// public void testInitialRunInternal(String name) throws Exception {
+	// 	runProgramAndExtractResults(name, false);
+	// }
 }

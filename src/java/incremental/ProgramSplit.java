@@ -251,7 +251,7 @@ public class ProgramSplit {
 														  IntStream.range(0, p.realArity()).mapToObj(i -> var("v_" + i)).toArray()),
 												  literal(p.getPRED_ID() + "_local",
 														  IntStream.range(0, p.realArity() + 1).mapToObj(i -> var("v_" + i)).toArray())));
-				// P(x) :- P_global(x, _tag).
+				// P(x) :- P_cache(x, _tag).
 				fusedProgram.addCommonClause(rule(literal(p.getPRED_ID(),
 														  IntStream.range(0, p.realArity()).mapToObj(i -> var("v_" + i)).toArray()),
 												  literal(p.getPRED_ID() + "_cache",
@@ -292,6 +292,22 @@ public class ProgramSplit {
 					fusedProgram.addCommonClause(fact(literal(GlobalNames.EDB_NAME, ref(predName), "__dummy__", "csv")));
 				}
 			}
+
+			// cache the provenance relation
+			String provPredName = b.getContext().provenanceRelName;
+			if (!cachedPredicates.contains(provPredName)) {
+				fusedProgram.addCommonClause(implicitTypeDeclaration(provPredName,
+																	 FormalPredicate.programRepresentationType(ProgramRepresentation.ATTR_PROVENANCE)));
+				fusedProgram.addCommonClause(rule(literal(provPredName + "_local", var("n"), var("attr"), var("file"), var("file_id")),
+												  literal(provPredName, var("n"), var("attr"), var("file")),
+												  BIND(var("file_id"), extractFileIdFromASTNodeId(var("n")))));
+				fusedProgram.addCommonClause(fact(literal(GlobalNames.OUTPUT_NAME, ref(provPredName + "_local"),
+														  str(makeInternalDbDesc(provPredName, "append")),
+														  str("sqlite"))));
+				fusedProgram.addCommonClause(fact(literal(GlobalNames.EDB_NAME, ref(provPredName), "__dummy__", "csv")));
+
+				cachedPredicates.add(provPredName);
+			}
 		}
 	}
 
@@ -299,7 +315,6 @@ public class ProgramSplit {
 	public final static String AST_REMOVE_RELATION = "AST_REMOVE";
 	public final static String ANALYZED_SOURCES_RELATION = "ANALYZED_SOURCES";
 	public final static String FILE_ID = "FILE_ID";
-	public final static String EXTERNAL_FILE = "EXTERNAL_FILE";
 
 	public static PredicateType getTypeForUpdateRelation(final String name) {
 		switch (name) {
@@ -352,8 +367,6 @@ public class ProgramSplit {
 
 	private void generateUpdateClauses(final Program p, final AnalyzeBlock b) {
 		final String ATTR_PROVENANCE = b.getContext().provenanceRelName;
-
-		cachedPredicates.add(ATTR_PROVENANCE);
 
 		// read the analyzed sources
 		p.addCommonClause(fact(literal(GlobalNames.EDB_NAME, ref(ANALYZED_SOURCES_RELATION),

@@ -157,8 +157,6 @@ public class IncrementalDriver {
 			CSVUtil.readMap(externalClasses, Function.identity(), Function.identity(), externalClassesFile.getPath());
 		}
 
-		// dumpProgram(progSplit.getLocalProgram(), new File(prog, "local.mdl"));
-		// dumpProgram(progSplit.getGlobalProgram(), new File(prog, "global.mdl"));
 		dumpProgram(progSplit.getUpdateProgram(), new File(prog, "update.mdl"));
 		dumpProgram(progSplit.getFusedProgram(), new File(prog, "fused.mdl"));
 
@@ -176,22 +174,6 @@ public class IncrementalDriver {
 			}
 
 		}
-
-		// if (useSouffle) {
-		// 	// generate the Souffle executables
-		// 	if (!localSouffleProg.exists()) {
-		// 		generateSouffleProgram(progSplit.getLocalProgram(), localSouffleProg, "-j 4 -p local.profile");
-		// 	} else {
-		// 		logger().info("Using existing Souffle local program from " + localSouffleProg);
-		// 	}
-
-		// 	if (!globalSouffleProg.exists()) {
-		// 		generateSouffleProgram(progSplit.getGlobalProgram(), globalSouffleProg, "-j 4 -p global.profile");
-		// 	} else {
-		// 		logger().info("Using existing Souffle global program from " + globalSouffleProg);
-		// 	}
-
-		// }
 	}
 
 	public void shutdown() throws IOException, SQLException {
@@ -218,10 +200,13 @@ public class IncrementalDriver {
 		compileSouffleProgram(tmp, path, extraArgs);
 	}
 
-	private void compileSouffleLib(File src, File exec) throws IOException {
+	private static synchronized void compileSouffleLib(File src, File exec) throws IOException {
 		String cmd = "souffle -j 4 -s java -w -p " + FileUtil.fileNameNoExtension(src.getPath()) + ".prof " + src.getPath();
 		logger().debug("Compiling Souffle library with: " + cmd);
 		FileUtil.run(cmd);
+		// The output of the command is always a file called libSwigInterface.so. This method
+		// is synchronized to be able to run two incremental runs in parallel (for example in the
+		// test suite).
 		Files.move(Paths.get("libSwigInterface.so"), exec.toPath(), StandardCopyOption.REPLACE_EXISTING);
 	}
 
@@ -366,9 +351,9 @@ public class IncrementalDriver {
 			int fileId = fileIdDb.getIdForFile(f.getPath());
 
 			for (String localTable  : progSplit.getCachedPredicates()) {
-				FormalPredicate p = progSplit.getProgram().formalPredicateMap().get(localTable);
+				FormalPredicate p = progSplit.getFusedProgram().formalPredicateMap().get(localTable);
 				// cached predicates are extended to the right with a tag field
-				int tagIndex = p.realArity() + 1;
+				int tagIndex = p.realArity();
 				deleteEntries(progDbConnection, localTable, tagIndex, fileId);
 			}
 		}
@@ -532,9 +517,6 @@ public class IncrementalDriver {
 			runHybridProgram(swigProg.getLeft(), opts);
 			progDbConnection = SQLUtil.connect(progDbFile.getPath());
 		}
-
-
-		// runLocalProgram(Stream.concat(visitFiles.stream(), externalFiles.stream()).collect(Collectors.toList()), opts);
 	}
 
 	private void runHybridProgram(SWIGSouffleProgram swigProg, CmdLineOpts opts) {
@@ -543,84 +525,5 @@ public class IncrementalDriver {
 		swigProg.loadAll(opts.getFactsDir(), progDbFile.getPath());
 		swigProg.run();
 		swigProg.printAll(opts.getOutputDir(), progDbFile.getPath());
-		// swigProg.finalize();
 	}
-
-	// private void runLocalProgram(List<File> visitFiles, CmdLineOpts opts) throws IOException, SQLException {
-	// 	profile().startTimer("local_program", "total");
-
-	// 	StopWatch timer = StopWatch.createStarted();
-	// 	for (File file : visitFiles) {
-	// 		runLocalProgram(opts, file);
-	// 	}
-
-	// 	profile().stopTimer("local_program", "total");
-	// 	timer.stop();
-	// 	logger().time("Running the local program on " + visitFiles.size() + " files:" + timer.getTime() + " ms");
-	// }
-
-	// /**
-	//    Run the local program on all the files in the file database
-	//  */
-	// private void runLocalProgram(CmdLineOpts opts, File file) throws IOException, SQLException {
-	// 	logger().debug("Running the local program on " + file + ".");
-
-	// 	int fileId = fileIdDb.getIdForFile(file.getPath());
-
-	// 	StopWatch timer = StopWatch.createStarted();
-	// 	profile().startTimer("local_program", file.getPath());
-	// 	if (useSouffle) {
-	// 		String cmd = localSouffleProg.getPath() + " -D " + opts.getOutputDir() + " -F " + opts.getFactsDir() +
-	// 			" -d " + progDbFile + " -t " + fileId + "";
-	// 		logger().debug("Souffle command: " + cmd);
-	// 		progDbConnection.close();
-	// 		FileUtil.run(cmd);
-	// 		progDbConnection = SQLUtil.connect(progDbFile.getPath());
-	// 	} else {
-	// 		Program local = progSplit.getLocalProgram();
-	// 		CmdLineOpts internalOpts = new CmdLineOpts();
-	// 		internalOpts.setAction(CmdLineOpts.Action.EVAL_INTERNAL);
-	// 		internalOpts.setSqlDbConnection(progDbConnection);
-	// 		internalOpts.setFactsDir(opts.getFactsDir());
-	// 		internalOpts.setOutputDir(opts.getOutputDir());
-	// 		internalOpts.setDbEntryTag(fileId);
-
-	// 		Compiler.checkProgram(local, internalOpts);
-	// 		local.eval(internalOpts);
-	// 		local.clearRelations();
-	// 	}
-	// 	timer.stop();
-	// 	profile().stopTimer("local_program", file.getPath());
-
-	// 	logger().time("Running local program on " + file + ":" + timer.getTime() + " ms");
-	// }
-
-	// public void runGlobalProgram(CmdLineOpts opts) throws SQLException, IOException {
-	// 	logger().debug("Running the global program");
-
-	// 	StopWatch timer = StopWatch.createStarted();
-	// 	profile().startTimer("global_program", "total");
-	// 	if (useSouffle) {
-	// 		String cmd = globalSouffleProg.getPath() + " -D " + opts.getOutputDir()  + " -F " + opts.getFactsDir() +
-	// 			" -d " + progDbFile;
-	// 		logger().debug("Souffle command: " + cmd);
-	// 		progDbConnection.close();
-	// 		FileUtil.run(cmd);
-	// 		progDbConnection = SQLUtil.connect(progDbFile.getPath());
-	// 	} else {
-	// 		Program global = progSplit.getGlobalProgram();
-	// 		CmdLineOpts internalOpts = new CmdLineOpts();
-	// 		internalOpts.setAction(CmdLineOpts.Action.EVAL_INTERNAL);
-	// 		internalOpts.setSqlDbConnection(progDbConnection);
-	// 		internalOpts.setOutputDir(opts.getOutputDir());
-	// 		internalOpts.setFactsDir(opts.getFactsDir());
-	// 		Compiler.checkProgram(global, internalOpts);
-	// 		global.eval(internalOpts);
-	// 	}
-	// 	timer.stop();
-	// 	profile().stopTimer("global_program", "total");
-
-	// 	logger().time("Running the global program: " + timer.getTime() + " ms.");
-
-	// }
 }

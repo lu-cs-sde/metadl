@@ -533,5 +533,7 @@ public class IncrementalDriver {
 		profile().startTimer("hybrid_program", "print");
 		swigProg.printAll(opts.getOutputDir(), progDbFile.getPath());
 		profile().stopTimer("hybrid_program", "print");
+
+		swigProg.delete();
 	}
 }

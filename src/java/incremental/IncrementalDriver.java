@@ -522,8 +522,16 @@ public class IncrementalDriver {
 	private void runHybridProgram(SWIGSouffleProgram swigProg, CmdLineOpts opts) {
 		int hwThreads = Math.max(Runtime.getRuntime().availableProcessors() / 2, 1);
 		swigProg.setNumThreads(hwThreads);
+		profile().startTimer("hybrid_program", "load");
 		swigProg.loadAll(opts.getFactsDir(), progDbFile.getPath());
+		profile().stopTimer("hybrid_program", "load");
+
+		profile().startTimer("hybrid_program", "run");
 		swigProg.run();
+		profile().stopTimer("hybrid_program", "run");
+
+		profile().startTimer("hybrid_program", "print");
 		swigProg.printAll(opts.getOutputDir(), progDbFile.getPath());
+		profile().stopTimer("hybrid_program", "print");
 	}
 }

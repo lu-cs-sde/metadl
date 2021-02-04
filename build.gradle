@@ -33,7 +33,7 @@ dependencies {
     compile 'org.junit.jupiter:junit-jupiter-engine:5.3.1'
     compile 'org.apache.commons:commons-lang3:3.8'
     compile 'org.apache.commons:commons-collections4:4.4'
-    compile 'com.fasterxml.jackson.core:jackson-databind:2.10.0'
+    compile 'org.json:json:20200518'
     compile group: 'commons-io', name: 'commons-io', version: '2.6'
     compile group: 'commons-cli', name: 'commons-cli', version: '1.4'
     compile group: 'org.jgrapht', name: 'jgrapht-core', version: '1.4.0'

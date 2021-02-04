@@ -2,17 +2,17 @@ package prof;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.FileWriter;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
 
 import lang.io.SimpleLogger;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectWriter;
-import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
-
 import org.apache.commons.lang3.time.StopWatch;
+
+import org.json.JSONObject;
+import org.json.JSONWriter;
 
 public class Profile {
     private static Profile PROFILE = new Profile();
@@ -72,10 +72,9 @@ public class Profile {
 		if (output == null)
 			return;
 
-		try {
-			ObjectMapper mapper = new ObjectMapper();
-			ObjectWriter writer = mapper.writer(new DefaultPrettyPrinter());
-			writer.writeValue(output, data);
+		try (FileWriter fileWriter = new FileWriter(output)) {
+			JSONObject json = new JSONObject(data);
+			json.write(fileWriter, 2, 0);
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}

@@ -87,10 +87,12 @@ public class DatalogProjection2 {
 		this.prov = prov;
 	}
 
+	private int fileId(CompilationUnit cu) {
+		return fileIdDb.getIdForFile(cu.getClassSource().relativeName());
+	}
+
 	private Map<ASTNode, Long> nodeToId = new HashMap<>();
-	private long nodeId(ASTNode<?> n) {
-		// if (n.javaDLNodeId >= 0)
-		// 	return n.javaDLNodeId;
+	private long nodeId(ASTNode<?> n, int fileId) {
  		// TODO: consider caching this on the node itself
 		Long id = nodeToId.get(n);
 		if (id != null) {
@@ -99,7 +101,17 @@ public class DatalogProjection2 {
 		}
 
 		if (!n.numberOnDemand(fileIdDb, nodeToId)) {
-			NTANum = n.doNodeNumberingNTA(NTANum, nodeToId);
+			// The node id of an NTA node is:
+			// bit 63: 0
+			// bit 62: 1
+			// bit 32-61: file id
+			// bit 0-31: node id
+
+			// NTANum is used as node id and is incremented for each traversed
+			// NTA AST
+			long startNTANum = NTAFileId(fileId) | NTANum;
+			long endNTANum = n.doNodeNumberingNTA(startNTANum, nodeToId);
+			NTANum = endNTANum & ((1l << 32) - 1);
 		}
 
 		id = nodeToId.get(n);
@@ -108,13 +120,11 @@ public class DatalogProjection2 {
 	}
 
 	private static int NTA_FILE_ID_BIT = 1 << 30; // use bit 30 to get positive IDs
-	private long NTAFileId(long fileId) {
+	private static long NTAFileId(long fileId) {
 		return (((long) (fileId)) | NTA_FILE_ID_BIT) << 32;
 	}
 
 	public Set<CompilationUnit> generate(CompilationUnit cu, DatalogProjectionSink tupleSink) {
-		NTANum = NTAFileId(fileIdDb.getIdForFile(cu.getClassSource().relativeName()));
-
 		Set<CompilationUnit> externalCUs = traverseAndMapAttributes(cu, cu, tupleSink, "type", "decl", "genericDecl");
 
 		tupleSink.getAST().done();
@@ -152,13 +162,15 @@ public class DatalogProjection2 {
 														 String ...attrs) {
 
 		boolean mapAttributes = !isLibraryNode(currentCU) || deepAnalysis;
-		boolean visitRewrittenChildren = currentCU.fromSource();
+		boolean fromSource = currentCU.fromSource();
 
 		Queue<ASTNode<?>> currentCUNodes = new ArrayDeque<>();
 		Queue<ASTNode<?>> NTANodes = new ArrayDeque<>();
 
 		Set<ASTNode<?>> processed = new HashSet<>();
 		Set<CompilationUnit> otherCompilationUnits = new LinkedHashSet<>();
+
+		int fileId = fileId(currentCU);
 
 		// seed the worklist
 		currentCUNodes.add(n);
@@ -173,16 +185,16 @@ public class DatalogProjection2 {
 				// mark visited
 				processed.add(q);
 				// add the tuples to the relation
-				toTuples(q, tupleSink.getAST(), visitRewrittenChildren);
+				toTuples(q, fileId, tupleSink.getAST(), fromSource);
 				// record source location
-				srcLoc(q, tupleSink.getSrcLoc());
+				srcLoc(q, fileId, tupleSink.getSrcLoc());
 				// now process the attributes
 				if (mapAttributes) {
-					mapAttributes(q, currentCU, otherCompilationUnits, currentCUNodes, NTANodes, tupleSink.getAttributes(),
+					mapAttributes(q, currentCU, fileId, otherCompilationUnits, currentCUNodes, NTANodes, tupleSink.getAttributes(),
 								   tupleSink.getProvenance(), attrs);
 				}
 				// add the children to the worklist
-				for (Pair<Integer, ASTNode> indexedChild : ASTNodeEnumerator.of(q, !visitRewrittenChildren)) {
+				for (Pair<Integer, ASTNode> indexedChild : ASTNodeEnumerator.of(q, !fromSource)) {
 					if (indexedChild.getRight() != null)
 						currentCUNodes.add(indexedChild.getRight());
 				}
@@ -196,14 +208,14 @@ public class DatalogProjection2 {
 				// mark visited
 				processed.add(q);
 				// add the tuples to the relation
-				toTuples(q, tupleSink.getNTA(), visitRewrittenChildren);
+				toTuples(q, fileId, tupleSink.getNTA(), fromSource);
 				// now process the attributes
 				if (mapAttributes) {
-					mapAttributes(q, currentCU, otherCompilationUnits, currentCUNodes, NTANodes, tupleSink.getAttributes(),
+					mapAttributes(q, currentCU, fileId, otherCompilationUnits, currentCUNodes, NTANodes, tupleSink.getAttributes(),
 								   tupleSink.getProvenance(), attrs);
 				}
 
-				for (Pair<Integer, ASTNode> indexedChild : ASTNodeEnumerator.of(q, !visitRewrittenChildren)) {
+				for (Pair<Integer, ASTNode> indexedChild : ASTNodeEnumerator.of(q, !fromSource)) {
 					if (indexedChild.getRight() != null) {
 						NTANodes.add(indexedChild.getRight());
 					}
@@ -214,13 +226,14 @@ public class DatalogProjection2 {
 	}
 
 	private void mapAttributes(ASTNode<?> n,
-								CompilationUnit currentCU,
-								Set<CompilationUnit> otherCUs,
-								Queue<ASTNode<?>> currentCUNodes,
-								Queue<ASTNode<?>> ntaNodes,
-								TupleInserter attributes,
-								TupleInserter attributeProvenance,
-								String ...attrs) {
+							   CompilationUnit currentCU,
+							   int fileId,
+							   Set<CompilationUnit> otherCUs,
+							   Queue<ASTNode<?>> currentCUNodes,
+							   Queue<ASTNode<?>> ntaNodes,
+							   TupleInserter attributes,
+							   TupleInserter attributeProvenance,
+							   String ...attrs) {
 		for (String attrName : attrs) {
 			ASTNode<?> r = nodeAttribute(n, attrName);
 
@@ -230,10 +243,10 @@ public class DatalogProjection2 {
 			// log the attribute's provenance information
 			Set<String> srcs = attrProvenance(n, attrName);
 			for (String src : srcs) {
-				attributeProvenance.insertTuple(nodeId(n), attrName, src);
+				attributeProvenance.insertTuple(nodeId(n, fileId), attrName, src);
 			}
 
-			attributes.insertTuple(attrName, nodeId(n), nodeId(r));
+			attributes.insertTuple(attrName, nodeId(n, fileId), nodeId(r, fileId));
 
 			if (r.parentCompilationUnit() == null) {
 				// this is an NTA
@@ -261,8 +274,8 @@ public class DatalogProjection2 {
 		return false;
 	}
 
-	private void srcLoc(ASTNode<?> n, TupleInserter srcLoc) {
-		long nid = nodeId(n);
+	private void srcLoc(ASTNode<?> n, int fileId, TupleInserter srcLoc) {
+		long nid = nodeId(n, fileId);
 		String srcFile = n.sourceFile();
 		srcLoc.insertTuple(nid,
 						   beaver.Symbol.getLine(n.getStart()),
@@ -397,22 +410,21 @@ public class DatalogProjection2 {
 	}
 
 	private int tokenUID = Integer.MAX_VALUE;
-	private long freshTokenId(ASTNode<?> n) {
+	private long freshTokenId(int fileId) {
 		// give a token id that is file specific
-		long fileId = nodeId(n) >> 32;
 		tokenUID--;
-		return (fileId << 32) | tokenUID;
+		return (((long) fileId) << 32) | tokenUID;
 	}
 
-	private void toTuples(ASTNode<?> n, TupleInserter astTupleSink, boolean visitRewrittenChildren) {
-		long nid = nodeId(n);
+	private void toTuples(ASTNode<?> n, int fileId, TupleInserter astTupleSink, boolean visitRewrittenChildren) {
+		long nid = nodeId(n, fileId);
 		String relName = getRelation(n);
 
 		// the children in the tree
 		int childIndex = 0;
 		for (Pair<Integer, ASTNode> indexedChild : ASTNodeEnumerator.of(n, !visitRewrittenChildren)) {
 			if (indexedChild.getRight() != null) {
-				astTupleSink.insertTuple(relName, nodeId(n), indexedChild.getLeft(), nodeId(indexedChild.getRight()), "");
+				astTupleSink.insertTuple(relName, nodeId(n, fileId), indexedChild.getLeft(), nodeId(indexedChild.getRight(), fileId), "");
 			}
 			childIndex++;
 		}
@@ -422,7 +434,7 @@ public class DatalogProjection2 {
 			// For every token, we generate two tuples
 			// ("NodeKind", CurrentNodeId, ChildIdx, ChildId, "")
 			// ("Token", ChildId, 0, 0, "TokenAsString")
-			long tid = freshTokenId(n);
+			long tid = freshTokenId(fileId);
 			// Add a tuple to the current node relation
 			astTupleSink.insertTuple(relName, nid, childIndex++, tid, "");
 			// Add a tuple to Token relation

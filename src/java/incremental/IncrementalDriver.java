@@ -248,25 +248,18 @@ public class IncrementalDriver {
 		}
 	}
 
-
-	private Collection<ClassSource> generateFromSrc(File f, DatalogProjectionSink sink) throws IOException, SQLException {
+	private Collection<ClassSource> generateFromSrc(File f,
+													CompilationUnit cu,
+													DatalogProjection2 proj,
+													DatalogProjectionSink sink) throws IOException {
 		List<ClassSource> externalClasses = new ArrayList<>();
 
 		profile().startTimer("object_file_compile", f.getPath());
 		logger().debug("Extracting AST facts from source " + f.getPath() + ".");
-		// TODO: is the Program object needed, or is the CU enough?
-		org.extendj.ast.Program p = createProgram(fileIdDb);
-		org.extendj.ast.CompilationUnit cu = p.addSourceFile(f.getPath());
-		checkProgram(p);
 
 		profile().stopTimer("object_file_compile", f.getPath());
 
-		int fileTag = fileIdDb.getIdForFile(f.getPath());
-
 		profile().startTimer("object_file_generate_relations", f.getPath());
-
-		// generate the Datalog projection
-		DatalogProjection2 proj = new DatalogProjection2(fileIdDb, p.provenance);
 
 		Set<CompilationUnit> externalCUs = proj.generate(cu, sink);
 		externalCUs.stream().filter(u -> !u.fromSource())
@@ -277,7 +270,8 @@ public class IncrementalDriver {
 		return externalClasses;
 	}
 
-	private Collection<ClassSource> generateFromLib(ClassSource src, DatalogProjectionSink sink) throws IOException, SQLException {
+	private Collection<ClassSource> generateFromLib(ClassSource src, DatalogProjection2 proj,
+													DatalogProjectionSink sink) throws IOException {
 		org.extendj.ast.Program externalClassProgram = createProgram(fileIdDb);
 
 		// this class file is not in the database
@@ -287,10 +281,10 @@ public class IncrementalDriver {
 		profile().startTimer("object_file_compile", src.relativeName());
 		CompilationUnit externalCU = src.parseCompilationUnit(externalClassProgram);
 		profile().stopTimer("object_file_compile", src.relativeName());
-		int fileTag = fileIdDb.getIdForFile(src.relativeName());
 
 		profile().startTimer("object_file_generate_relations", src.relativeName());
-		DatalogProjection2 proj = new DatalogProjection2(fileIdDb, externalClassProgram.provenance);
+
+
 		proj.generate(externalCU, sink);
 		profile().stopTimer("object_file_generate_relations", src.relativeName());
 
@@ -301,31 +295,35 @@ public class IncrementalDriver {
 	   Generate the program representation for the given source files, and store it
 	   to predicates with a given prefix
 	 */
-	private void generate(List<File> sourceFiles, DatalogProjectionSink sink) throws IOException, SQLException {
-		StopWatch timer = StopWatch.createStarted();
+	private void generate(List<File> sourceFiles, DatalogProjectionSink sink) throws IOException {
+		org.extendj.ast.Program p = createProgram(fileIdDb);
+		DatalogProjection2 proj = new DatalogProjection2(fileIdDb, p.provenance);
 
 		Set<ClassSource> externalClasses = new TreeSet<>(new Comparator<ClassSource>() {
-			@Override
-			public int compare(ClassSource arg0, ClassSource arg1) {
-				return arg0.relativeName().compareTo(arg1.relativeName());
-			}
+				@Override
+				public int compare(ClassSource arg0, ClassSource arg1) {
+					return arg0.relativeName().compareTo(arg1.relativeName());
+				}
 			});
 
-		// sourceFiles.parallelStream().filter(File::exists).map(f -> {
-		// 													  try { return generateFromSrc(f, relPrefix); }
-		// 													  catch (Exception e) { throw new RuntimeException(e);}
-		// 													  finally { return Collections.<ClassSource>emptyList(); }})
-		// 	.forEach(externalClasses::addAll);
-
+		List<Pair<File, CompilationUnit>> srcCUs = new ArrayList<>();
+		// build a program from all the CUs; all the other CUs that are loaded on-demand
+		// (e.g. from imports), will be shared
 		for (File f : sourceFiles) {
 			if (!f.exists()) {
 				logger().info("Skipping file " + f + ". File does not exist. ");
 				continue;
 			}
 
-			externalClasses.addAll(generateFromSrc(f, sink));
+			CompilationUnit cu = p.addSourceFile(f.getPath());
+			srcCUs.add(Pair.of(f, cu));
 		}
+		checkProgram(p);
 
+		// Now generate the program representation only for the added sources
+		for (Pair<File, CompilationUnit> pair : srcCUs) {
+			externalClasses.addAll(generateFromSrc(pair.getLeft(), pair.getRight(), proj, sink));
+		}
 
 		for (ClassSource src : externalClasses) {
 			if (this.externalClasses.put(src.relativeName(), src.relativeName()) != null) {
@@ -334,11 +332,8 @@ public class IncrementalDriver {
 				continue;
 			}
 
-			generateFromLib(src, sink);
+			generateFromLib(src, proj, sink);
 		}
-
-		timer.stop();
-		logger().time("Fact extraction from " + sourceFiles.size() + " files: " + timer.getTime() + " ms");
 	}
 
 	private static void deleteEntries(Connection conn, String table, int tagIndex, int fileId) throws SQLException {
@@ -424,6 +419,9 @@ public class IncrementalDriver {
 
 			if (useSouffle) {
 				SQLUtil.clearRelation(progDbConnection, ProgramSplit.ANALYZED_SOURCES_RELATION);
+				SQLUtil.clearRelation(progDbConnection, ProgramSplit.AST_VISIT_RELATION);
+				SQLUtil.clearRelation(progDbConnection, ProgramSplit.AST_REMOVE_RELATION);
+
 				SQLUtil.writeRelation(progDbConnection, ProgramSplit.ANALYZED_SOURCES_RELATION, analyzedSrcs);
 
 				// Run the update program

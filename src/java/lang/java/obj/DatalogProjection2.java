@@ -243,7 +243,7 @@ public class DatalogProjection2 {
 			// log the attribute's provenance information
 			Set<String> srcs = attrProvenance(n, attrName);
 			for (String src : srcs) {
-				attributeProvenance.insertTuple(nodeId(n, fileId), attrName, src);
+				attributeProvenance.insertTuple(fileId, fileIdDb.getIdForFile(src));
 			}
 
 			attributes.insertTuple(attrName, nodeId(n, fileId), nodeId(r, fileId));

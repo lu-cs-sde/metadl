@@ -298,9 +298,9 @@ public class ProgramSplit {
 			if (!cachedPredicates.contains(provPredName)) {
 				fusedProgram.addCommonClause(implicitTypeDeclaration(provPredName,
 																	 FormalPredicate.programRepresentationType(ProgramRepresentation.ATTR_PROVENANCE)));
-				fusedProgram.addCommonClause(rule(literal(provPredName + "_local", var("n"), var("attr"), var("file"), var("file_id")),
-												  literal(provPredName, var("n"), var("attr"), var("file")),
-												  BIND(var("file_id"), extractFileIdFromASTNodeId(var("n")))));
+				fusedProgram.addCommonClause(rule(literal(provPredName + "_local", var("file_id"), var("other_file_id"), var("file_id")),
+												  literal(provPredName, var("file_id"), var("other_file_id"))));
+
 				fusedProgram.addCommonClause(fact(literal(GlobalNames.OUTPUT_NAME, ref(provPredName + "_local"),
 														  str(makeInternalDbDesc(provPredName, "append")),
 														  str("sqlite"))));
@@ -393,8 +393,7 @@ public class ProgramSplit {
 		// visit the files where attributes affected by a file change are computed
 		// TODO: this can be refined, to only compute the attributes, not traverse the entire file
 		p.addCommonClause(rule(literal(AST_VISIT_RELATION, var("f")), literal(ANALYZED_SOURCES_RELATION, var("f_attr"), "_"),
-							   literal(ATTR_PROVENANCE, var("n"), "_", var("f_attr")),
-							   BIND(var("fid"), extractFileIdFromASTNodeId(var("n"))),
+							   literal(ATTR_PROVENANCE, var("fid"), var("f_atttr")),
 							   literal(FILE_ID, var("f"), var("fid")),
 							   NOT(literal(AST_REMOVE_RELATION, var("f")))));
 

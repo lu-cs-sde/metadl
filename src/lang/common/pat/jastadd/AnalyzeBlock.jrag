@@ -156,8 +156,8 @@ aspect AnalyzeBlock {
 		}
 
 		public static lang.ast.Rule makeProvenanceRule(AnalyzeContext ctx) {
-			return rule(literal(ctx.scopePrefix + "PROVENANCE", "$x", "$y", "$z"),
-						literal(ctx.provenanceRelName, "$x", "$y", "$z"));
+			return rule(literal(ctx.scopePrefix + "PROVENANCE", "$x", "$y"),
+						literal(ctx.provenanceRelName, "$x", "$y"));
 		}
 
 		public static lang.ast.Rule makeNTARule(AnalyzeContext ctx) {

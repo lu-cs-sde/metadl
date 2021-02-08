@@ -139,13 +139,9 @@ public class Compiler {
 
 		profile().startTimer("main", "incremental_driver");
 		IncrementalDriver incDriver = new IncrementalDriver(new File(opts.getCacheDir()), split, useSouffle);
-		profile().startTimer("incremental_driver", "init");
 		incDriver.init();
-		profile().stopTimer("incremental_driver", "init");
-		profile().startTimer("incremental_driver", "update");
-		incDriver.update(opts);
-		profile().stopTimer("incremental_driver", "update");
 
+		incDriver.update(opts);
 
 		profile().startTimer("incremental_driver", "shutdown");
 		incDriver.shutdown();

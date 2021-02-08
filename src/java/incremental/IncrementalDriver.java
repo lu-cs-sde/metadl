@@ -136,6 +136,8 @@ public class IncrementalDriver {
 	 * @throws SQLException
 	 */
 	public void init() throws IOException, SQLException {
+		profile().startTimer("incremental_driver", "init");
+
 		// ensure that all directories exist
 		common.mkdir();
 		prog.mkdir();
@@ -174,9 +176,12 @@ public class IncrementalDriver {
 			}
 
 		}
+
+		profile().stopTimer("incremental_driver", "init");
 	}
 
 	public void shutdown() throws IOException, SQLException {
+		profile().startTimer("incremental_driver", "shutdown");
 		// store the file-id database
 		fileIdDb.storeToTable(progDbConnection, ProgramSplit.FILE_ID);
 		// store the external classes file
@@ -184,6 +189,7 @@ public class IncrementalDriver {
 		// the connection to the program db is closed only once for each
 		// incremental run
 		progDbConnection.close();
+		profile().stopTimer("incremental_driver", "shutdown");
 	}
 
 	private static void compileSouffleProgram(File src, File exec, String extraArgs) throws IOException {
@@ -393,6 +399,7 @@ public class IncrementalDriver {
 	   Update the program representation for the given files.
 	 */
 	public void update(CmdLineOpts opts) throws IOException, SQLException {
+		profile().startTimer("incremental_driver", "update");
 		RelationWrapper analyzedSrcs = computeAnalyzedSources(opts.getFactsDir());
 
 		List<File> visitFiles;
@@ -482,8 +489,10 @@ public class IncrementalDriver {
 			if (opts.getAction() == CmdLineOpts.Action.INCREMENTAL_UPDATE) {
 				// remove the information for the deleted files, but also for the files
 				// that need revisiting
+				profile().startTimer("incremental_driver", "delete_facts");
 				delete(Stream.concat(deletedFiles.stream(), visitFiles.stream()).collect(Collectors.toList()),
 					   b.getContext().scopePrefix);
+				profile().stopTimer("incremental_driver", "delete_facts");
 			}
 
 
@@ -513,6 +522,8 @@ public class IncrementalDriver {
 			runHybridProgram(swigProg.getLeft(), opts);
 			progDbConnection = SQLUtil.connect(progDbFile.getPath());
 		}
+
+		profile().stopTimer("incremental_driver", "update");
 	}
 
 	private void runHybridProgram(SWIGSouffleProgram swigProg, CmdLineOpts opts) {

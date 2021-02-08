@@ -31,7 +31,7 @@ import lang.ast.SemanticError;
 import lang.io.FileUtil;
 import lang.io.SimpleLogger;
 import lang.relation.RelationWrapper;
-import prof.Profile;
+import static prof.Profile.profile;
 import swig.SWIGUtil;
 
 /**
@@ -48,18 +48,18 @@ public class Compiler {
 	public static Program parseProgram(CmdLineOpts opts) throws IOException, beaver.Parser.Exception {
 		String path = opts.getInputFile();
 		StopWatch timer = StopWatch.createStarted();
-		Profile.profile().startTimer("main", "parsing");
+		profile().startTimer("main", "parsing");
 		Program program = (Program) FileUtil.parse(new File(path));
 		Compiler.DrAST_root_node = program; // Enable debugging with DrAST
 		timer.stop();
-		Profile.profile().stopTimer("main", "parsing");
+		profile().stopTimer("main", "parsing");
 		SimpleLogger.logger().time("Parsing: " + timer.getTime() + "ms");
 		return program;
 	}
 
 	public static void checkProgram(Program program, CmdLineOpts opts) {
 		StopWatch timer = StopWatch.createStarted();
-		Profile.profile().startTimer("main", "sema_and_type_check");
+		profile().startTimer("main", "sema_and_type_check");
 		if (program.hasSemanticErrors()) {
 			System.err.println(program.errorReport());
 			System.err.println("Compilation failed with semantic errors.");
@@ -78,7 +78,7 @@ public class Compiler {
 				System.err.println(e.reportPosition());
 			}
 		}
-		Profile.profile().stopTimer("main", "sema_and_type_check");
+		profile().stopTimer("main", "sema_and_type_check");
 		timer.stop();
 		SimpleLogger.logger().time("Semantic and type analysis: " + timer.getTime() + "ms");
 	}
@@ -128,24 +128,29 @@ public class Compiler {
 		prog.evalEDB(prog.evalCtx(), opts);
 		prog.evalIMPORT(prog.evalCtx(), opts);
 
-		Profile.profile().startTimer("main", "local_and_global_split");
+		profile().startTimer("main", "local_and_global_split");
 		// split program into local and global parts
 		ProgramSplit split = new ProgramSplit(prog);
 		if (!split.canEvaluateIncrementally()) {
 			throw new RuntimeException("Cannot evaluate this program incrementally.");
 		}
 
-		Profile.profile().stopTimer("main", "local_and_global_split");
+		profile().stopTimer("main", "local_and_global_split");
 
-		Profile.profile().startTimer("main", "incremental_driver");
+		profile().startTimer("main", "incremental_driver");
 		IncrementalDriver incDriver = new IncrementalDriver(new File(opts.getCacheDir()), split, useSouffle);
+		profile().startTimer("incremental_driver", "init");
 		incDriver.init();
+		profile().stopTimer("incremental_driver", "init");
+		profile().startTimer("incremental_driver", "update");
 		incDriver.update(opts);
+		profile().stopTimer("incremental_driver", "update");
 
-		// incDriver.runGlobalProgram(opts);
 
+		profile().startTimer("incremental_driver", "shutdown");
 		incDriver.shutdown();
-		Profile.profile().stopTimer("main", "incremental_driver");
+		profile().stopTimer("incremental_driver", "shutdown");
+		profile().stopTimer("main", "incremental_driver");
 	}
 
 	public static String getCSVSeparatorEscaped() {
@@ -248,19 +253,19 @@ public class Compiler {
 		CmdLineOpts opts = CmdLineOpts.parseCmdLineArgs(args);
 		if (opts.getProfileFile() != null) {
 			// set the output file  for the profiling information
-			Profile.profile().setOutput(new File(opts.getProfileFile()));
+			profile().setOutput(new File(opts.getProfileFile()));
 		}
 
-		Profile.profile().startTimer("main", "total");
+		profile().startTimer("main", "total");
 		run(opts);
-		Profile.profile().stopTimer("main", "total");
+		profile().stopTimer("main", "total");
 
 		totalTime.stop();
 		SimpleLogger.logger().time("Total: " + totalTime.getTime() + "ms ");
 
 		if (opts.getProfileFile() != null) {
 			// write out the profiling information
-			Profile.profile().writeOut();
+			profile().writeOut();
 		}
 	}
 }

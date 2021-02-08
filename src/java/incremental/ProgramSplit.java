@@ -391,10 +391,10 @@ public class ProgramSplit {
 		// visit new files
 		p.addCommonClause(rule(literal(AST_VISIT_RELATION, var("f")), literal(ANALYZED_SOURCES_RELATION, var("f"), str("A"))));
 		// visit the files where attributes affected by a file change are computed
-		// TODO: this can be refined, to only compute the attributes, not traverse the entire file
 		p.addCommonClause(rule(literal(AST_VISIT_RELATION, var("f")), literal(ANALYZED_SOURCES_RELATION, var("f_attr"), "_"),
-							   literal(ATTR_PROVENANCE, var("fid"), var("f_atttr")),
+							   literal(ATTR_PROVENANCE, var("fid"), var("fid_attr")),
 							   literal(FILE_ID, var("f"), var("fid")),
+							   literal(FILE_ID, var("f_attr"), var("fid_attr")),
 							   NOT(literal(AST_REMOVE_RELATION, var("f")))));
 
 		// Input

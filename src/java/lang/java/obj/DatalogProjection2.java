@@ -34,6 +34,7 @@ import org.extendj.ast.Program;
 import lang.io.SimpleLogger;
 import lang.relation.RelationWrapper;
 import lang.relation.TupleInserter;
+import static prof.Profile.profile;
 
 class ASTNodeEnumerator implements Iterable<Pair<Integer, ASTNode>> {
 	final ASTNode n;
@@ -138,11 +139,16 @@ public class DatalogProjection2 {
 
 	public void generate(Program p, DatalogProjectionSink tupleSink) {
 		Set<CompilationUnit> worklist = new LinkedHashSet<>();
-		for (CompilationUnit cu : p.getCompilationUnits()) {
-			worklist.addAll(generate(cu, tupleSink));
-		}
-
 		Set<CompilationUnit> traversed = new HashSet<>();
+
+		profile().setCounter("file_delta", "n_A", p.getNumCompilationUnit());
+
+		for (CompilationUnit cu : p.getCompilationUnits()) {
+			profile().startTimer("object_file_generate_relations", cu.getClassSource().relativeName());
+			worklist.addAll(generate(cu, tupleSink));
+			profile().stopTimer("object_file_generate_relations", cu.getClassSource().relativeName());
+			traversed.add(cu);
+		}
 
 		while (!worklist.isEmpty()) {
 			// pop a CU from the set
@@ -152,8 +158,12 @@ public class DatalogProjection2 {
 				continue;
 			}
 
+			profile().startTimer("object_file_generate_relations", cu.getClassSource().relativeName());
 			worklist.addAll(generate(cu, tupleSink));
+			profile().stopTimer("object_file_generate_relations", cu.getClassSource().relativeName());
 		}
+
+		profile().setCounter("file_delta", "n_analyzed", traversed.size());
 	}
 
 	private Set<CompilationUnit> traverseAndMapAttributes(CompilationUnit currentCU,

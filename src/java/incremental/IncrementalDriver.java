@@ -51,7 +51,7 @@ import lang.io.FileUtil;
 import lang.io.SQLUtil;
 import lang.Compiler;
 import static lang.io.SimpleLogger.*;
-import static prof.Profile.*;
+import static prof.Profile.profile;
 import lang.java.obj.DatalogProjection2;
 import lang.java.obj.DatalogProjectionSink;
 import lang.java.obj.FileIdDatabase;
@@ -254,10 +254,7 @@ public class IncrementalDriver {
 													DatalogProjectionSink sink) throws IOException {
 		List<ClassSource> externalClasses = new ArrayList<>();
 
-		profile().startTimer("object_file_compile", f.getPath());
 		logger().debug("Extracting AST facts from source " + f.getPath() + ".");
-
-		profile().stopTimer("object_file_compile", f.getPath());
 
 		profile().startTimer("object_file_generate_relations", f.getPath());
 
@@ -314,8 +311,9 @@ public class IncrementalDriver {
 				logger().info("Skipping file " + f + ". File does not exist. ");
 				continue;
 			}
-
+			profile().startTimer("object_file_compile", f.getPath());
 			CompilationUnit cu = p.addSourceFile(f.getPath());
+			profile().stopTimer("object_file_compile", f.getPath());
 			srcCUs.add(Pair.of(f, cu));
 		}
 		checkProgram(p);

@@ -38,6 +38,7 @@ import lang.relation.RelationWrapper;
 import lang.relation.TupleInserter;
 import lang.java.obj.DatalogProjectionSink;
 import lang.java.obj.FileIdDatabase;
+import static prof.Profile.profile;
 
 public class FileUtil {
 	public static String changeExtension(String filename, String newExtension) {
@@ -125,7 +126,9 @@ public class FileUtil {
 		// 	p.addSourceFile(src.getPath());
 		// }
 		for (String src : srcs) {
+			profile().startTimer("object_file_compile", src);
 			p.addSourceFile(src);
+			profile().stopTimer("object_file_compile", src);
 		}
 
 		// Some sanity check
@@ -139,6 +142,7 @@ public class FileUtil {
 
 		// Generate the program relation
 		lang.java.obj.DatalogProjection2 proj2 = new lang.java.obj.DatalogProjection2(p.fileIdStorage, null);
+
 		proj2.generate(p, tupleSink);
 	}
 

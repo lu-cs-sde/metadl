@@ -14,8 +14,8 @@ import lang.ast.FormalPredicate;
 import lang.ast.Program;
 import lang.io.FileUtil;
 import lang.io.SimpleLogger;
-import lang.java.obj.DatalogProjectionSink;
 import lang.relation.TupleInserter;
+import static prof.Profile.profile;
 
 public class SWIGUtil {
 	public static Pair<SWIGSouffleProgram, Map<FormalPredicate, TupleInserter>> loadSWIGProgram(Program prog, CmdLineOpts opts) {
@@ -50,8 +50,12 @@ public class SWIGUtil {
 		int hwThreads = Runtime.getRuntime().availableProcessors();
 		StopWatch timer = StopWatch.createStarted();
 		swigProg.setNumThreads(Math.max(1, hwThreads / 2));
+		profile().startTimer("hybrid_program", "run");
 		swigProg.run();
+		profile().stopTimer("hybrid_program", "run");
+		profile().startTimer("hybrid_program", "print");
 		swigProg.printAll(opts.getOutputDir(), "");
+		profile().stopTimer("hybrid_program", "print");
 		swigProg.finalize();
 		timer.stop();
 		SimpleLogger.logger().time("Run SWIG program: " + timer.getTime() + "ms");

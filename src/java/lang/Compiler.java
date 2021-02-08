@@ -143,9 +143,8 @@ public class Compiler {
 
 		incDriver.update(opts);
 
-		profile().startTimer("incremental_driver", "shutdown");
 		incDriver.shutdown();
-		profile().stopTimer("incremental_driver", "shutdown");
+
 		profile().stopTimer("main", "incremental_driver");
 	}
 

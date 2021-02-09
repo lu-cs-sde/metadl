@@ -343,6 +343,8 @@ public class IncrementalDriver {
 	private static void deleteEntries(Connection conn, String table, int tagIndex, int fileId) throws SQLException {
 		Statement stmt = conn.createStatement();
 		stmt.executeUpdate("PRAGMA secure_delete=OFF");
+		stmt.executeUpdate("CREATE INDEX IF NOT EXISTS " + table + "_index ON " + table + "('" + tagIndex + "')");
+		conn.commit();
 		stmt.executeUpdate("DELETE FROM '" + table + "' WHERE '" + table + "'.'" + tagIndex + "' = " + fileId);
 	}
 

@@ -2,6 +2,15 @@ IMPORT('P, "tests/evaluation/metadl-java/src/operator-precedence/", "*.java").
 P("", "") :- NEQ("", "").
 
 java('P) {
+	    NoParen(`e) :- <: `e :>, ID(`e, _).
+	    NoParen(e) :- e <: `_.`_ :>.
+	    NoParen(e) :- e <: `f(..) :>.
+	    NoParen(e) :- e <: `_.`_(..) :>.
+	    NoParen(e) :- e <: `_[`_] :>.
+	    NoParen(e) :- e <: new `_(..) :>.
+	    NoParen(e) :- e <: `_ :: `_ :>.
+	    NoParen(e) :- e <: `_ -> `_ :>.
+
 	    Conditional(e, `l, `r), Prec(e, "cand") :- e <: `l && `r :>.
 	    Conditional(e, `l, `r), Prec(e, "cor") :- e <: `l || `r :>.
 	    Conditional(e, `l, `r), Prec(e, "xor") :- e <: `l ^ `r :>.
@@ -38,6 +47,9 @@ java('P) {
 
 	    SafePrec("cand"), SafePrec("cor"), SafePrec("xor"), SafePrec("and"), SafePrec("or").
 	    ExtraParen(parent, child) :- Paren(parent, child), PARENT(gparent, parent), Prec(gparent, p), Prec(child, p), SafePrec(p).
+
+	    ExtraParen(parent, child) :- Paren(parent, child), NoParen(child).
+
 	    ExtraParenDetail(l, c, file) :- ExtraParen(p, _), SRC(p, l, c, _, _, file).
 }
 

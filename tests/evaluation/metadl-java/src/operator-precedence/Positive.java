@@ -38,7 +38,7 @@ class Test2 {
 
 
 // public void extraParenthesis()
-class Test3 {,
+class Test3 {
     void f(boolean a, boolean b, boolean c, boolean d, boolean e) {
 	// EXTRAPAREN, BUG
 	boolean g = (a || (b && c && d) && e);
@@ -67,4 +67,23 @@ class Test6 {
 	// BUG, EXTRAPAREN
 	boolean g = (a || (b && c && d) && e);
     }
+}
+
+class Test7 {
+	Test7 f() {
+		// BUG, EXTRAPAREN
+		return (new Test7());
+	}
+
+	int g() {
+		// BUG, EXTRAPAREN
+		return (g());
+	}
+
+	int h() {
+		// BUG, EXTRAPAREN
+		int t[] = new int[3];
+		return (t[1]);
+
+	}
 }

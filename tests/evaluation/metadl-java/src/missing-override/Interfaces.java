@@ -8,3 +8,7 @@ interface I2 {
 
 interface I12 extends I1, I2 {
 }
+
+interface I4 {
+	void foo3(String t[]);
+}

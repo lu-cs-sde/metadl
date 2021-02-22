@@ -60,8 +60,8 @@ java('P) {
 java('P) {
 	    OverrideInBetween(m1, m2, p) :- Override(m1, p), Override(p, m2), NEQ(p, m1), NEQ(p, m2).
 	    ClosestOverride(m1, m2) :- Override(m1, m2), NOT(OverrideInBetween(m1, m2, _)).
-	    ClosestOverrideIsAbstract(m1) :- ClosestOverride(m1, m2), m2 <: .. abstract .. `t `n (..) ; :>.
-	    ClosestOverrideIsAbstract(m1) :- ClosestOverride(m1, `m2), <: interface `_ { .. `m2 .. } :>.
+	    # ClosestOverrideIsAbstract(m1) :- ClosestOverride(m1, m2), m2 <: .. abstract .. `t `n (..) ; :>.
+	    # ClosestOverrideIsAbstract(m1) :- ClosestOverride(m1, `m2), <: interface `_ { .. `m2 .. } :>.
 
 	    HasOverride(m) :- m <: .. @Override .. `t `n(..) ; :>.
 	    MissingOverride(m) :- Override(m, _), NOT(HasOverride(m)), NOT(ClosestOverrideIsAbstract(m)).

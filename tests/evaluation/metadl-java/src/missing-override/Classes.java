@@ -49,3 +49,27 @@ class C5 extends C3 {
 		return false;
 	}
 }
+
+class C6 implements I4 {
+	void foo3(String[] x) {
+	}
+}
+
+abstract class C7 {
+	abstract void foo4();
+}
+
+class C8 extends C7 {
+	void foo4() {
+	}
+}
+
+class C9 implements Comparable<C9> {
+	public boolean equals(Object o) {
+		return false;
+	}
+
+	public int compareTo(C9 c9) {
+		return 0;
+	}
+}

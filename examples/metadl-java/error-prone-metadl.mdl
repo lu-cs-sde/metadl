@@ -92,10 +92,10 @@ OUTPUT('TypeUnusedInFormalsDetail, "TypeUnusedInFormalsDetail.csv", "csv").
 
 	    # Covariant return type
 	    OverrideCandidate(m, super) :- MethodSig1(m, n, ret), MethodSig1(super, n, ret_super), TSuperType(ret, ret_super),
-                                  ClassForMethod(c1, m), ClassForMethod(c2, super), TSuperType(c1, c2).
+                                  ClassForMethod(m, c1), ClassForMethod(super, c2), TSuperType(c1, c2).
 	    # Equal return type
 	    OverrideCandidate(m, super) :- MethodSig1(m, n, ret), MethodSig1(super, n, ret),
-                                  ClassForMethod(c1, m), ClassForMethod(c2, super), TSuperType(c1, c2).
+                                  ClassForMethod(m, c1), ClassForMethod(super, c2), TSuperType(c1, c2).
 
 	    DiffNumParams(m1, m2), DiffNumParams(m2, m1) :- OverrideCandidate(m1, m2), MethodSig2(m1, i, _),
 	                                                    MethodSig2(m2, _, _), NOT(MethodSig2(m2, i, _)), NEQ(m1, m2).
@@ -172,13 +172,13 @@ OUTPUT('TypeUnusedInFormalsDetail, "TypeUnusedInFormalsDetail.csv", "csv").
 
 # Missing override
 
-	    OverrideInBetween(m1, m2, p) :- Override(m1, p), Override(p, m2), NEQ(p, m1), NEQ(p, m2).
-	    ClosestOverride(m1, m2) :- Override(m1, m2), NOT(OverrideInBetween(m1, m2, _)).
-	    ClosestOverrideIsAbstract(m1) :- ClosestOverride(m1, m2), m2 <: .. abstract .. `t `n (..) ; :>.
-	    ClosestOverrideIsAbstract(m1) :- ClosestOverride(m1, `m2), <: interface `_ { .. `m2 .. } :>.
+	    # OverrideInBetween(m1, m2, p) :- Override(m1, p), Override(p, m2), NEQ(p, m1), NEQ(p, m2).
+	    # ClosestOverride(m1, m2) :- Override(m1, m2), NOT(OverrideInBetween(m1, m2, _)).
+	    # ClosestOverrideIsAbstract(m1) :- ClosestOverride(m1, m2), m2 <: .. abstract .. `t `n (..) ; :>.
+	    # ClosestOverrideIsAbstract(m1) :- ClosestOverride(m1, `m2), <: interface `_ { .. `m2 .. } :>.
 
 	    HasOverride(m) :- m <: .. @Override .. `t `n(..) ; :>.
-	    MissingOverride(m) :- Override(m, _), NOT(HasOverride(m)), NOT(ClosestOverrideIsAbstract(m)).
+	    MissingOverride(m) :- Override(m, _), NOT(HasOverride(m)). #, NOT(ClosestOverrideIsAbstract(m)).
 	    MissingOverrideDetail(l, c, file) :- MissingOverride(m), SRC(m, l, c, _, _, file), GT(l, 0).
 
 
@@ -203,6 +203,14 @@ OUTPUT('MissingOverrideDetail, "MissingOverrideDetail.csv", "csv").
 
 # Operator precedence
 
+	    NoParen(`e) :- <: `e :>, ID(`e, _).
+	    NoParen(e) :- e <: `_.`_ :>.
+	    NoParen(e) :- e <: `f(..) :>.
+	    NoParen(e) :- e <: `_.`_(..) :>.
+	    NoParen(e) :- e <: `_[`_] :>.
+	    NoParen(e) :- e <: new `_(..) :>.
+	    NoParen(e) :- e <: `_ :: `_ :>.
+	    NoParen(e) :- e <: `_ -> `_ :>.
 
 	    Conditional(e, `l, `r), Prec(e, "cand") :- e <: `l && `r :>.
 	    Conditional(e, `l, `r), Prec(e, "cor") :- e <: `l || `r :>.
@@ -240,6 +248,7 @@ OUTPUT('MissingOverrideDetail, "MissingOverrideDetail.csv", "csv").
 
 	    SafePrec("cand"), SafePrec("cor"), SafePrec("xor"), SafePrec("and"), SafePrec("or").
 	    ExtraParen(parent, child) :- Paren(parent, child), PARENT(gparent, parent), Prec(gparent, p), Prec(child, p), SafePrec(p).
+	    ExtraParen(parent, child) :- Paren(parent, child), NoParen(child).
 	    ExtraParenDetail(l, c, file) :- ExtraParen(p, _), SRC(p, l, c, _, _, file), GT(l, 0).
 
 

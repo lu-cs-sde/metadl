@@ -67,7 +67,7 @@ class ASTNodeEnumerator implements Iterable<Pair<Integer, ASTNode>> {
 		this.visitNoTransform = visitNoTransform;
 	}
 
-	public static ASTNodeEnumerator of(ASTNode n, boolean visitNoTransform) {
+	public static ASTNodeEnumerator childrenOf(ASTNode n, boolean visitNoTransform) {
 		return new ASTNodeEnumerator(n, visitNoTransform);
 	}
 }
@@ -94,30 +94,7 @@ public class DatalogProjection2 {
 
 	private Map<ASTNode, Long> nodeToId = new HashMap<>();
 	private long nodeId(ASTNode<?> n, int fileId) {
- 		// TODO: consider caching this on the node itself
-		Long id = nodeToId.get(n);
-		if (id != null) {
-			n.javaDLNodeId = id;
-			return id;
-		}
-
-		if (!n.numberOnDemand(fileIdDb, nodeToId)) {
-			// The node id of an NTA node is:
-			// bit 63: 0
-			// bit 62: 1
-			// bit 32-61: file id
-			// bit 0-31: node id
-
-			// NTANum is used as node id and is incremented for each traversed
-			// NTA AST
-			long startNTANum = NTAFileId(fileId) | NTANum;
-			long endNTANum = n.doNodeNumberingNTA(startNTANum, nodeToId);
-			NTANum = endNTANum & ((1l << 32) - 1);
-		}
-
-		id = nodeToId.get(n);
-		n.javaDLNodeId = id;
-		return id;
+		return n.nodeId(fileIdDb, nodeToId);
 	}
 
 	private static int NTA_FILE_ID_BIT = 1 << 30; // use bit 30 to get positive IDs
@@ -175,7 +152,7 @@ public class DatalogProjection2 {
 		boolean fromSource = currentCU.fromSource();
 
 		Queue<ASTNode<?>> currentCUNodes = new ArrayDeque<>();
-		Queue<ASTNode<?>> NTANodes = new ArrayDeque<>();
+		//Queue<ASTNode<?>> NTANodes = new ArrayDeque<>();
 
 		Set<ASTNode<?>> processed = new HashSet<>();
 		Set<CompilationUnit> otherCompilationUnits = new LinkedHashSet<>();
@@ -186,50 +163,26 @@ public class DatalogProjection2 {
 		currentCUNodes.add(n);
 
 		// run the worklist
-		while (!(currentCUNodes.isEmpty() && NTANodes.isEmpty())) {
-			while (!currentCUNodes.isEmpty()) {
-				ASTNode<?> q = currentCUNodes.poll();
-				if (processed.contains(q)) {
-					continue;
-				}
-				// mark visited
-				processed.add(q);
-				// add the tuples to the relation
-				toTuples(q, fileId, tupleSink.getAST(), fromSource);
-				// record source location
-				srcLoc(q, fileId, tupleSink.getSrcLoc());
-				// now process the attributes
-				if (mapAttributes) {
-					mapAttributes(q, currentCU, fileId, otherCompilationUnits, currentCUNodes, NTANodes, tupleSink.getAttributes(),
-								   tupleSink.getProvenance(), attrs);
-				}
-				// add the children to the worklist
-				for (Pair<Integer, ASTNode> indexedChild : ASTNodeEnumerator.of(q, !fromSource)) {
-					if (indexedChild.getRight() != null)
-						currentCUNodes.add(indexedChild.getRight());
-				}
+		while (!currentCUNodes.isEmpty()) {
+			ASTNode<?> q = currentCUNodes.poll();
+			if (processed.contains(q)) {
+				continue;
 			}
-
-			while (!NTANodes.isEmpty()) {
-				ASTNode<?> q = NTANodes.poll();
-				if (processed.contains(q)) {
-					continue;
-				}
-				// mark visited
-				processed.add(q);
-				// add the tuples to the relation
-				toTuples(q, fileId, tupleSink.getNTA(), fromSource);
-				// now process the attributes
-				if (mapAttributes) {
-					mapAttributes(q, currentCU, fileId, otherCompilationUnits, currentCUNodes, NTANodes, tupleSink.getAttributes(),
-								   tupleSink.getProvenance(), attrs);
-				}
-
-				for (Pair<Integer, ASTNode> indexedChild : ASTNodeEnumerator.of(q, !fromSource)) {
-					if (indexedChild.getRight() != null) {
-						NTANodes.add(indexedChild.getRight());
-					}
-				}
+			// mark visited
+			processed.add(q);
+			// add the tuples to the relation
+			toTuples(q, fileId, tupleSink.getAST(), fromSource);
+			// record source location
+			srcLoc(q, fileId, tupleSink.getSrcLoc());
+			// now process the attributes
+			if (mapAttributes) {
+				mapAttributes(q, currentCU, fileId, otherCompilationUnits, currentCUNodes, tupleSink.getAttributes(),
+							  tupleSink.getProvenance(), attrs);
+			}
+			// add the children to the worklist
+			for (Pair<Integer, ASTNode> indexedChild : ASTNodeEnumerator.childrenOf(q, !fromSource)) {
+				if (indexedChild.getRight() != null)
+					currentCUNodes.add(indexedChild.getRight());
 			}
 		}
 		return otherCompilationUnits;
@@ -240,7 +193,6 @@ public class DatalogProjection2 {
 							   int fileId,
 							   Set<CompilationUnit> otherCUs,
 							   Queue<ASTNode<?>> currentCUNodes,
-							   Queue<ASTNode<?>> ntaNodes,
 							   TupleInserter attributes,
 							   TupleInserter attributeProvenance,
 							   String ...attrs) {
@@ -256,16 +208,36 @@ public class DatalogProjection2 {
 				attributeProvenance.insertTuple(fileId, fileIdDb.getIdForFile(src));
 			}
 
-			attributes.insertTuple(attrName, nodeId(n, fileId), nodeId(r, fileId));
+			long nid = nodeId(n, fileId);
+			long rid = nodeId(r, fileId);
 
-			if (r.parentCompilationUnit() == null) {
+			if (rid > 0) {
+				attributes.insertTuple(attrName, nid, rid);
+			} else {
+				System.err.println("Dropping NTA node " + r.getClass());
+				continue;
+			}
+
+			CompilationUnit parentCU = r.parentCompilationUnit();
+			if (parentCU == null) {
 				// this is an NTA
-				ntaNodes.add(r);
-			} else if (r.parentCompilationUnit() == currentCU) {
-				// this is another node from the current compilation unit
+				ASTNode u = r.unwrapNTANode();
+				if (u != null) {
+					parentCU = u.parentCompilationUnit();
+					r = u;
+				} else {
+					// this is an NTA representing a fundamental type; throw it into
+					// the current compilation unit
+					parentCU = currentCU;
+				}
+			}
+
+			if (parentCU == currentCU) {
+				// this is another node from the current compilation unit or
+				// a special NTA
 				currentCUNodes.add(r);
 			} else {
-				otherCUs.add(r.parentCompilationUnit());
+				otherCUs.add(parentCU);
 			}
 		}
 	}
@@ -432,7 +404,7 @@ public class DatalogProjection2 {
 
 		// the children in the tree
 		int childIndex = 0;
-		for (Pair<Integer, ASTNode> indexedChild : ASTNodeEnumerator.of(n, !visitRewrittenChildren)) {
+		for (Pair<Integer, ASTNode> indexedChild : ASTNodeEnumerator.childrenOf(n, !visitRewrittenChildren)) {
 			if (indexedChild.getRight() != null) {
 				astTupleSink.insertTuple(relName, nodeId(n, fileId), indexedChild.getLeft(), nodeId(indexedChild.getRight(), fileId), "");
 			}

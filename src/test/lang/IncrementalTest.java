@@ -121,6 +121,7 @@ public class IncrementalTest {
 
 	@DisplayName("Test the initial run of the incremental evaluation driver using Souffle.")
 	@ParameterizedTest
+	@Disabled
 	// @MethodSource("initialRunTestsSouffle")
 	@MethodSource("initialRunTestsInternal")
 	public void testInitialRunSouffle(String name) throws Exception {

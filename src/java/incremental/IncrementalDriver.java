@@ -265,8 +265,14 @@ public class IncrementalDriver {
 		profile().startTimer("object_file_generate_relations", f.getPath());
 
 		Set<CompilationUnit> externalCUs = proj.generate(cu, sink);
-		externalCUs.stream().filter(u -> !u.fromSource())
-			.map(CompilationUnit::getClassSource).forEachOrdered(externalClasses::add);
+		for (CompilationUnit u : externalCUs) {
+			if (!u.fromSource()) {
+				ClassSource src = u.getClassSource();
+				externalClasses.add(src);
+			}
+		}
+		// externalCUs.stream().filter(u -> !u.fromSource())
+		// 	.map(CompilationUnit::getClassSource).forEachOrdered(externalClasses::add);
 
 		profile().stopTimer("object_file_generate_relations", f.getPath());
 

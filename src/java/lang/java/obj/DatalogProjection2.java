@@ -209,27 +209,26 @@ public class DatalogProjection2 {
 			}
 
 			long nid = nodeId(n, fileId);
-			long rid = nodeId(r, fileId);
+
+			long rid = -1;
+			ASTNode originalr = r;
+			while (r != null && (rid = nodeId(r, fileId)) < 0) {
+				r = r.unwrapNTANode();
+			}
 
 			if (rid > 0) {
 				attributes.insertTuple(attrName, nid, rid);
 			} else {
-				System.err.println("Dropping NTA node " + r.getClass());
+				System.err.println("Dropping NTA node " + originalr.getClass());
 				continue;
 			}
 
 			CompilationUnit parentCU = r.parentCompilationUnit();
+
 			if (parentCU == null) {
-				// this is an NTA
-				ASTNode u = r.unwrapNTANode();
-				if (u != null) {
-					parentCU = u.parentCompilationUnit();
-					r = u;
-				} else {
-					// this is an NTA representing a fundamental type; throw it into
-					// the current compilation unit
-					parentCU = currentCU;
-				}
+				// this is an NTA representing a fundamental type; throw it into
+				// the current compilation unit
+				parentCU = currentCU;
 			}
 
 			if (parentCU == currentCU) {

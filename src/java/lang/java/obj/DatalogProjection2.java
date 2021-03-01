@@ -38,7 +38,7 @@ import static prof.Profile.profile;
 
 class ASTNodeEnumerator implements Iterable<Pair<Integer, ASTNode>> {
 	final ASTNode n;
-	final boolean visitNoTransform = false;;
+	final boolean visitNoTransform;
 
 	private class ASTNodeIteratorAdapter implements Iterator<Pair<Integer, ASTNode>> {
 		int i = 0;
@@ -62,12 +62,13 @@ class ASTNodeEnumerator implements Iterable<Pair<Integer, ASTNode>> {
 		return new ASTNodeIteratorAdapter();
 	}
 
-	private ASTNodeEnumerator(ASTNode n) {
+	private ASTNodeEnumerator(ASTNode n, boolean visitNoTransform) {
 		this.n = n;
+		this.visitNoTransform = visitNoTransform;
 	}
 
-	public static ASTNodeEnumerator childrenOf(ASTNode n) {
-		return new ASTNodeEnumerator(n);
+	public static ASTNodeEnumerator childrenOf(ASTNode n, boolean visitNoTransform) {
+		return new ASTNodeEnumerator(n, visitNoTransform);
 	}
 }
 
@@ -179,7 +180,7 @@ public class DatalogProjection2 {
 							  tupleSink.getProvenance(), attrs);
 			}
 			// add the children to the worklist
-			for (Pair<Integer, ASTNode> indexedChild : ASTNodeEnumerator.childrenOf(q)) {
+			for (Pair<Integer, ASTNode> indexedChild : ASTNodeEnumerator.childrenOf(q, !fromSource)) {
 				if (indexedChild.getRight() != null)
 					currentCUNodes.add(indexedChild.getRight());
 			}
@@ -402,7 +403,7 @@ public class DatalogProjection2 {
 
 		// the children in the tree
 		int childIndex = 0;
-		for (Pair<Integer, ASTNode> indexedChild : ASTNodeEnumerator.childrenOf(n)) {
+		for (Pair<Integer, ASTNode> indexedChild : ASTNodeEnumerator.childrenOf(n, !visitRewrittenChildren)) {
 			if (indexedChild.getRight() != null) {
 				astTupleSink.insertTuple(relName, nodeId(n, fileId), indexedChild.getLeft(), nodeId(indexedChild.getRight(), fileId), "");
 			}

@@ -279,10 +279,10 @@ public class IncrementalDriver {
 		return externalClasses;
 	}
 
-	private Collection<ClassSource> generateFromLib(ClassSource src, DatalogProjection2 proj,
+	private Collection<ClassSource> generateFromLib(ClassSource src,
+													org.extendj.ast.Program externalClassProgram,
+													DatalogProjection2 proj,
 													DatalogProjectionSink sink) throws IOException {
-		org.extendj.ast.Program externalClassProgram = createProgram(fileIdDb);
-
 		// this class file is not in the database
 		logger().debug("Adding class file to database " + src.relativeName() + ".");
 		src.openInputStream();
@@ -342,7 +342,7 @@ public class IncrementalDriver {
 				continue;
 			}
 
-			generateFromLib(src, proj, sink);
+			generateFromLib(src, p, proj, sink);
 		}
 	}
 

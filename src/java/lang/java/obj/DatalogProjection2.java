@@ -397,13 +397,13 @@ public class DatalogProjection2 {
 		return (((long) fileId) << 32) | tokenUID;
 	}
 
-	private void toTuples(ASTNode<?> n, int fileId, TupleInserter astTupleSink, boolean visitRewrittenChildren) {
+	private void toTuples(ASTNode<?> n, int fileId, TupleInserter astTupleSink, boolean fromSource) {
 		long nid = nodeId(n, fileId);
 		String relName = getRelation(n);
 
 		// the children in the tree
 		int childIndex = 0;
-		for (Pair<Integer, ASTNode> indexedChild : ASTNodeEnumerator.childrenOf(n, !visitRewrittenChildren)) {
+		for (Pair<Integer, ASTNode> indexedChild : ASTNodeEnumerator.childrenOf(n, !fromSource)) {
 			if (indexedChild.getRight() != null) {
 				astTupleSink.insertTuple(relName, nodeId(n, fileId), indexedChild.getLeft(), nodeId(indexedChild.getRight(), fileId), "");
 			}

@@ -3,7 +3,7 @@ package prof;
 import java.io.File;
 import java.io.IOException;
 import java.io.FileWriter;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -19,7 +19,7 @@ public class Profile {
     private File output;
 
     private Map<String, Map<String, Long>> data = new TreeMap<>();
-    private Map<String, Map<String, StopWatch>> timers = new HashMap<>();;
+    private Map<String, Map<String, StopWatch>> timers = new LinkedHashMap<>();;
 
     public static Profile profile() {
 		return PROFILE;
@@ -36,7 +36,7 @@ public class Profile {
 
 		Map<String, StopWatch> tg = timers.get(group);
 		if (tg == null) {
-			tg = new HashMap<>();
+			tg = new LinkedHashMap<>();
 			timers.put(group, tg);
 		}
 

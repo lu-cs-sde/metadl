@@ -123,7 +123,11 @@ public class ProgramSplit {
 			terms.add(t.treeCopy());
 		}
 		terms.add(new Variable(tagVarName));
-		return literal(l.getPredicate().getPRED_ID() + "_local", terms.toArray());
+		Literal r = literal(l.getPredicate().getPRED_ID() + "_local", terms.toArray());
+		if (l.hasNot())
+			return NOT(r);
+		else
+			return r;
 	}
 
 	private static String selectTagVariable(Clause c) {

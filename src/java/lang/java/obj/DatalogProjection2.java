@@ -31,10 +31,12 @@ import org.extendj.ast.FileIdStorage;
 import org.extendj.ast.ParseName;
 import org.extendj.ast.Program;
 
-import lang.io.SimpleLogger;
+import static lang.io.SimpleLogger.*;
 import lang.relation.RelationWrapper;
 import lang.relation.TupleInserter;
 import static prof.Profile.profile;
+
+
 
 class ASTNodeEnumerator implements Iterable<Pair<Integer, ASTNode>> {
 	final ASTNode n;
@@ -219,7 +221,7 @@ public class DatalogProjection2 {
 			if (rid > 0) {
 				attributes.insertTuple(attrName, nid, rid);
 			} else {
-				System.err.println("Dropping NTA node " + originalr.getClass());
+				logger().debug("Dropping NTA node " + originalr.getClass());
 				continue;
 			}
 

@@ -73,7 +73,7 @@ aspect PretyPrinting {
     public void Rule.prettyPrint(PrettyPrinter pr) {
         printCollection(getHeadss(), "", "", ",", pr);
         pr.out.print(" :- ");
-        printCollection(getBodys(), "", ".\n", ", ", pr);
+        printCollection(getBodys(), "\n\t", ".\n", ",\n\t", pr);
     }
 
     public void Fact.prettyPrint(PrettyPrinter pr) {

@@ -92,4 +92,27 @@ aspect NodeConstructors {
   public static Stmt AssignExpr.asStmt(Expr left, Expr right) {
     return new ExprStmt(new AssignSimpleExpr(left, right));
   }
+
+  public EnumConstant.EnumConstant(Modifiers mods, String name, List<Expr> args,
+      List<BodyDecl> bds) {
+    this(mods, name, args, new Opt<Expr>(new EnumInstanceExpr(createOptAnonymousDecl(bds))));
+  }
+
+  public EnumConstant.EnumConstant(Modifiers mods, beaver.Symbol name, List<Expr> args,
+      List<BodyDecl> bds) {
+    this(mods, name, args, new Opt<Expr>(new EnumInstanceExpr(createOptAnonymousDecl(bds))));
+  }
+
+  private static Opt<TypeDecl> EnumConstant.createOptAnonymousDecl(List<BodyDecl> bds) {
+    if (bds.getNumChildNoTransform() == 0) {
+      return new Opt<TypeDecl>();
+    }
+    return new Opt<TypeDecl>(
+      new AnonymousDecl(
+        new Modifiers(),
+        "Anonymous",
+        bds
+      )
+    );
+  }
 }

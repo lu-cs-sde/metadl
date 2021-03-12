@@ -217,6 +217,7 @@ public class EvaluationTest {
 			"reference-equality", "boxed-primitive-constructor", "operator-precedence",
 			"type-param-unused-in-formals", "paper-examples", "java7", "java8",
 			// "attr-provenance": provenance information is not produced in non-incremental mode
+			"class-hierarchy-utils",
 			"names"
 		};
 		return Arrays.stream(tests);

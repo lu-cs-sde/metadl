@@ -221,7 +221,7 @@ aspect PatternToDatalog {
 		if (parent == null)
 			return false;
 
-		if (parent.name().equals("Opt") || parent.name().equals("List")) {
+		while (parent.name().equals("Opt") || parent.name().equals("List")) {
 			parent = parent.getParent();
 			child = child.getParent();
 		}

@@ -32,7 +32,7 @@ List enum_constants =
 
 BodyDecl enum_constant =
     annotations? IDENTIFIER.id arguments? class_body
-  {: return new EnumConstant(new Modifiers(annotations), id, arguments, new Opt(class_body)); :}
+  {: return new EnumConstant(new Modifiers(annotations), id, arguments, class_body); :}
   | annotations? IDENTIFIER.id arguments?
   {: return new EnumConstant(new Modifiers(annotations), id, arguments, new Opt()); :}
   ;

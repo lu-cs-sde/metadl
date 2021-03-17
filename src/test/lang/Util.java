@@ -14,8 +14,10 @@ import java.util.LinkedList;
 import java.util.Scanner;
 
 import lang.io.FileUtil;
+import lang.relation.RelationWrapper;
+import org.apache.commons.collections4.SetUtils;
 
-/** Utility methods for running tests. */
+/** {@link Util} methods for running tests. */
 public final class Util {
 	private static String SYS_LINE_SEP = System.getProperty("line.separator");
 
@@ -103,7 +105,7 @@ public final class Util {
 			System.setErr(prevErr);
 		}
 	}
-	
+
 	@SuppressWarnings("javadoc")
 	public static Iterable<Object[]> getTestParameters(File testDirectory, String extension) {
 		Collection<Object[]> tests = new LinkedList<Object[]>();
@@ -116,5 +118,14 @@ public final class Util {
 			}
 		}
 		return tests;
+	}
+
+	public static void printSimmetricDifference(RelationWrapper expected, RelationWrapper actual) {
+		if (!expected.tuples().equals(actual.tuples())) {
+			System.err.println("Present in ACTUAL, but missing in EXPECTED:");
+			System.err.println(SetUtils.difference(actual.tuples(), expected.tuples()));
+			System.err.println("Present in EXPECTED, but missing in ACTUAL:");
+			System.err.println(SetUtils.difference(expected.tuples(), actual.tuples()));
+		}
 	}
 }

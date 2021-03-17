@@ -241,16 +241,19 @@ public class EvaluationTest {
 								 expectedRel,
 								 expectedF);
 
-			if (!expectedRel.equals(rel.getValue().getRelation())) {
-				System.out.println(rel.getKey() + " expects ");
-				RelationWrapper expectedRelWrapper = new RelationWrapper(rel.getValue().getContext(),
-																		 expectedRel,
-																		 rel.getValue().type());
-				System.out.println(expectedRelWrapper.tuples());
-				System.out.println(rel.getKey() + " actual ");
-				System.out.println(rel.getValue().tuples());
+			RelationWrapper expectedRelWrapper = new RelationWrapper(rel.getValue().getContext(),
+																	 expectedRel,
+																	 rel.getValue().type());
 
-			}
+			// if (!expectedRel.equals(rel.getValue().getRelation())) {
+			// 	System.out.println(rel.getKey() + " expects ");
+			// 	System.out.println(expectedRelWrapper.tuples());
+			// 	System.out.println(rel.getKey() + " actual ");
+			// 	System.out.println(rel.getValue().tuples());
+
+			// }
+			Util.printSimmetricDifference(expectedRelWrapper, rel.getValue());
+
 			String msg = "Mismatch in test " + fileName + ", relation " + rel.getKey();
 			assertEquals(expectedRel, rel.getValue().getRelation(), msg);
 		}

@@ -48,62 +48,56 @@ OUTPUT('TypeUnusedInFormalsDetail, "TypeUnusedInFormalsDetail.csv", "csv").
 
 # ReferenceEquality
 
-	    SuperClass1(c, d) :- c <: class `_ extends `d { .. } :>, DECL(`d, d).
-	    SuperClass1(c, d) :- c <: class `_ <..> extends `d { .. } :>, DECL(`d, d).
+	   SuperClass(c, d) :- c <: class `_ extends `d { .. } :>, DECL(`d, d).
+	   SuperClass(c, d) :- c <: class `_<..> extends `d { .. } :>, DECL(`d, d).
 
-	    # Lookup the declaration for Object
+	   SuperInterface(c, d) :- c <: class `_ implements ..,`d,.. { .. } :>, DECL(`d, d).
+	   SuperInterface(c, d) :- c <: class `_<..> implements .., `d,.. { .. } :>, DECL(`d, d).
+
+	   SuperInterface(c, d) :- c <: interface `_ extends .., `d,.. { .. } :>, DECL(`d, d).
+	   SuperInterface(c, d) :- c <: interface `_<..> extends .., `d,.. { .. } :>, DECL(`d, d).
+
+	   SuperType(t, s) :- SuperClass(t, s).
+	   SuperType(t, s) :- SuperInterface(t, s).
+	   # SuperType(`f, e) :- e <: enum `_ { .., `f , .. ; .. } :>, `f <: `_(..) { .. } :>.
+	   # SuperType(e, t) :- e <: new `t(..) { .. } :>, DECL(`t, t).
+#
+           StaticMethod(m) :- m <: .. static .. `rett `name(..) ; :>.
+
+	   MethodRet(m, name, ret) :- m <: .. `rett `name (..) ; :>,
+				      DECL(`rett, ret), ID(`name, name).
+
+	   MethodParam(m, i, t) :- m <: .. `rett `name(.., `t `_, ..) ; :>,
+				      DECL(`t, t), PARENT(param, `t), INDEX(param, i).
+
+	   MethodArity(m, n) :- MethodParam(m, n_minus_1, _), NOT(MethodParam(m, n, _)), BIND(n, n_minus_1 + 1).
+	   MethodArity(m, 0) :- MethodRet(m, _, _), NOT(MethodParam(m, _, _)).
+
+	   SameSig(m1, m2) :- MethodRet(m1, name, _), MethodRet(m2, name, _), MethodArity(m1, 0), MethodArity(m2, 0).
+	   DiffParams(m1, m2) :- MethodRet(m1, name, _), MethodRet(m2, name, _), MethodParam(m1, i, t1), MethodParam(m2, i, t2), NEQ(t1, t2).
+
+           SameSig(m1, m2) :- MethodRet(m1, name, _), MethodRet(m2, name, _), NEQ(m1, m2), MethodArity(m1, a), MethodArity(m2, a), NOT(DiffParams(m1, m2)).
+
+
+	   SuperTypeT(t1, t2) :- SuperType(t1, t2).
+	   SuperTypeT(t1, t2) :- SuperType(t1, t), SuperTypeT(t, t2).
+	   # m1 overrides m2
+	   Override(m1, m2) :- SameSig(m1, m2), PARENT(l1, m1), PARENT(c1, l1), PARENT(l2, m2), PARENT(c2, l2), SuperTypeT(c1, c2), NOT(StaticMethod(m1)),
+	   		NOT(StaticMethod(m2)).
+
+	   Override(m1, m2) :- SameSig(m1, m2), PARENT(l1, m1), PARENT(c1, l1), PARENT(l2, m2), PARENT(c2, l2), SuperTypeT(c1, c2),
+	   	        NOT(StaticMethod(m1)), NOT(StaticMethod(m2)).
+
+	   # Pattern to handle anonymous class declarations
+	   Override(`m1, m2) :- e <: new `t(..) { .. `m1 .. } :>, `m1 <: .. `rett `name(..) { .. } :>, SameSig(m1, m2),
+	   			       DECL(`t, t), PARENT(t, l), PARENT(l, m2).
+
+	   # Enum constants can also override methods declared in the enum body
+	   Override(`m1, `m2) :-  <: enum `_ { .. , `k { .. `m1 .. } , .. ; ..  `m2 .. } :>, SameSig(`m1, `m2).
+
 	    ObjectDecl(o) :- u <: Object :>, DECL(u, o).
 
-	    # If the class does not extend any other class, then it extends Object
-	    SuperClass(c, o) :- c <: class `_ { .. } :>, NOT(SuperClass1(c, _)), ObjectDecl(o).
-	    SuperClass(c, o) :- c <: class `_ <..> { .. } :>, NOT(SuperClass1(c, _)), ObjectDecl(o).
-
-	    SuperClass(c, d) :- SuperClass1(c, d).
-
-	    SuperInterface(c, d) :- c <: class `_ implements .., `i, .. { .. } :>, DECL(`i, d).
-	    SuperInterface(c, d) :- c <: class `_ <..> implements .., `i, .. { .. } :>, DECL(`i, d).
-
-	    SuperInterface(c, d) :- c <: enum `_ implements .., `i, .. { .. } :>, DECL(`i, d).
-	    SuperInterface(c, d) :- c <: interface `_ extends .. ,`i, .. { .. } :>, DECL(`i, d).
-	    SuperInterface(c, d) :- c <: interface `_ <..> extends .. ,`i, .. { .. } :>, DECL(`i, d).
-
-
-	    SuperType(t, s) :- SuperClass(t, s).
-	    SuperType(t, s) :- SuperInterface(t, s).
-
-
-	    TSuperType(t, s) :- SuperType(t, s).
-	    TSuperType(t, s) :- TSuperType(t, s1), SuperType(s1, s).
-
-
-# Code for finding if a method overrides another method
-	    # TODO: The MethodSig1 relation will not contain Object.equals(Object o), since the DECL attribute
-	    # is not exported for Object because it is an NTA.
-	    MethodSig1(m, name, ret) :- m <: `rett `name(..) ; :>,
-	    		  DECL(`rett, ret), ID(`name, name).
-
-	    MethodSig2Local(m, i, `pt) :- m <: `rett `name(.., `pt `_, ..) ; :>,
-	        		 PARENT(param, `pt), INDEX(param, i).
-	    MethodSig2(m, i, pt) :- MethodSig2Local(m, i, `pt), DECL(`pt, pt).
-
-	    MethodHasNoParams(m) :- MethodSig1(m, _, _), NOT(MethodSig2(m, _, _)).
-
-	    ClassForMethod(m, c) :- m <: `rett `name(..) ; :>, PARENT(p, m), PARENT(c, p).
-
-	    # Covariant return type
-	    OverrideCandidate(m, super) :- MethodSig1(m, n, ret), MethodSig1(super, n, ret_super), TSuperType(ret, ret_super),
-                                  ClassForMethod(m, c1), ClassForMethod(super, c2), TSuperType(c1, c2).
-	    # Equal return type
-	    OverrideCandidate(m, super) :- MethodSig1(m, n, ret), MethodSig1(super, n, ret),
-                                  ClassForMethod(m, c1), ClassForMethod(super, c2), TSuperType(c1, c2).
-
-	    DiffNumParams(m1, m2), DiffNumParams(m2, m1) :- OverrideCandidate(m1, m2), MethodSig2(m1, i, _),
-	                                                    MethodSig2(m2, _, _), NOT(MethodSig2(m2, i, _)), NEQ(m1, m2).
-	    DiffNumParams(m1, m2), DiffNumParams(m2, m1) :- OverrideCandidate(m1, m2), MethodSig2(m1, _, _), MethodHasNoParams(m2).
-
-
-	    # Covariant return type
-	    Override(m, super) :- OverrideCandidate(m, super), NOT(DiffNumParams(m, super)).
+################################################################################
 
 	    ClassEq(c, `d) :- c <: class `_ { .. `d .. } :>, `d <: .. public .. boolean equals(`t `o) ;:>.
 	    ClassEq(c, `d) :- c <: class `_ <..> { .. `d .. } :>, `d <: .. public .. boolean equals(`t `o) ;:>.
@@ -137,7 +131,7 @@ OUTPUT('TypeUnusedInFormalsDetail, "TypeUnusedInFormalsDetail.csv", "csv").
 	    # A object of type T must use equals if any supertype of T, including T, excluding Object,
 	    # defines the equals method.
 	    MustUseEquals(c) :- ClassEq(c, e), NOT(MethodIsAbstract(e)), NOT(ObjectDecl(c)).
-	    MustUseEquals(c) :- TSuperType(c, s), ClassEq(s, e), NOT(ObjectDecl(s)).
+	    MustUseEquals(c) :- SuperTypeT(c, s), ClassEq(s, e), NOT(ObjectDecl(s)).
 
 	    # We're using PARENT, because in concrete grammar `t is a token, but we actually we need
 	    # the type parameter node in DECL
@@ -150,8 +144,6 @@ OUTPUT('TypeUnusedInFormalsDetail, "TypeUnusedInFormalsDetail.csv", "csv").
 
 	    # OUTPUT('ClassEq).
 	    # OUTPUT('MustUseEquals).
-
-	    TSuperTypeDetail(f1, f2) :- TSuperType(s1, s2), SRC(s1, _, _, _, _, f1), SRC(s2, _, _, _, _, f2).
 	    # OUTPUT('TSuperTypeDetail).
 	    # OUTPUT('ObjectDecl).
 

@@ -2,69 +2,64 @@ IMPORT('P, "tests/evaluation/metadl-java/src/missing-override/", "*.java").
 
 P("", "") :- P("", "").
 
+java('P) {
 # Code for extracting the type hierarchy
-java('P) {
-	    SuperClass1(c, d) :- c <: class `_ extends `d { .. } :>, DECL(`d, d).
+	   SuperClass(c, d) :- c <: class `_ extends `d { .. } :>, DECL(`d, d).
+	   SuperClass(c, d) :- c <: class `_<..> extends `d { .. } :>, DECL(`d, d).
 
-	    # Lookup the declaration for Object
-	    ObjectDecl(o) :- u <: Object :>, DECL(u, o).
+	   SuperInterface(c, d) :- c <: class `_ implements ..,`d,.. { .. } :>, DECL(`d, d).
+	   SuperInterface(c, d) :- c <: class `_<..> implements .., `d,.. { .. } :>, DECL(`d, d).
 
-	    # If the class does not extend any other class, then it extends Object
-	    SuperClass(c, o) :- c <: class `_ { .. } :>, NOT(SuperClass1(c, _)), ObjectDecl(o).
-	    SuperClass(c, d) :- SuperClass1(c, d).
+	   SuperInterface(c, d) :- c <: interface `_ extends .., `d,.. { .. } :>, DECL(`d, d).
+	   SuperInterface(c, d) :- c <: interface `_<..> extends .., `d,.. { .. } :>, DECL(`d, d).
 
-	    SuperInterface(c, d) :- c <: class `_ implements .., `i, .. { .. } :>, DECL(`i, d).
-	    SuperInterface(c, d) :- c <: enum `_ implements .., `i, .. { .. } :>, DECL(`i, d).
-	    SuperInterface(c, d) :- c <: interface `_ extends .. ,`i, .. { .. } :>, DECL(`i, d).
-	    SuperType(t, s) :- SuperClass(t, s).
-	    SuperType(t, s) :- SuperInterface(t, s).
+	   SuperType(t, s) :- SuperClass(t, s).
+	   SuperType(t, s) :- SuperInterface(t, s).
+	   # SuperType(`f, e) :- e <: enum `_ { .., `f , .. ; .. } :>, `f <: `_(..) { .. } :>.
+	   # SuperType(e, t) :- e <: new `t(..) { .. } :>, DECL(`t, t).
+#
+           StaticMethod(m) :- m <: .. static .. `rett `name(..) ; :>.
 
+	   MethodRet(m, name, ret) :- m <: .. `rett `name (..) ; :>,
+				      DECL(`rett, ret), ID(`name, name).
 
-	    TSuperType(t, s) :- SuperType(t, s).
-	    TSuperType(t, s) :- TSuperType(t, s1), SuperType(s1, s).
-}
+	   MethodParam(m, i, t) :- m <: .. `rett `name(.., `t `_, ..) ; :>,
+				      DECL(`t, t), PARENT(param, `t), INDEX(param, i).
 
-# Code for finding if a method overrides another method
-java('P) {
-	    MethodSig2(m, i, pt) :- m <: `rett `name(.., `pt `_, ..) ; :>,
-	    		  DECL(`pt, pt), PARENT(param, `pt), INDEX(param, i).
-	    # TODO: The MethodSig1 relation will not contain Object.equals(Object o), since the DECL attribute
-	    # is not exported for Object because it is an NTA.
-	    MethodSig1(m, name, ret) :- m <: `rett `name(..) ; :>,
-	    		  DECL(`rett, ret), ID(`name, name).
+	   MethodArity(m, n) :- MethodParam(m, n_minus_1, _), NOT(MethodParam(m, n, _)), BIND(n, n_minus_1 + 1).
+	   MethodArity(m, 0) :- MethodRet(m, _, _), NOT(MethodParam(m, _, _)).
 
-	    MethodHasNoParams(m) :- MethodSig1(m, _, _), NOT(MethodSig2(m, _, _)).
+	   SameSig(m1, m2) :- MethodRet(m1, name, _), MethodRet(m2, name, _), MethodArity(m1, 0), MethodArity(m2, 0).
+	   DiffParams(m1, m2) :- MethodRet(m1, name, _), MethodRet(m2, name, _), MethodParam(m1, i, t1), MethodParam(m2, i, t2), NEQ(t1, t2).
+
+           SameSig(m1, m2) :- MethodRet(m1, name, _), MethodRet(m2, name, _), NEQ(m1, m2), MethodArity(m1, a), MethodArity(m2, a), NOT(DiffParams(m1, m2)).
 
 
+	   SuperTypeT(t1, t2) :- SuperType(t1, t2).
+	   SuperTypeT(t1, t2) :- SuperType(t1, t), SuperTypeT(t, t2).
+	   # m1 overrides m2
+	   Override(m1, m2) :- SameSig(m1, m2), PARENT(l1, m1), PARENT(c1, l1), PARENT(l2, m2), PARENT(c2, l2), SuperTypeT(c1, c2), NOT(StaticMethod(m1)),
+	   		NOT(StaticMethod(m2)).
 
+	   Override(m1, m2) :- SameSig(m1, m2), PARENT(l1, m1), PARENT(c1, l1), PARENT(l2, m2), PARENT(c2, l2), SuperTypeT(c1, c2),
+	   	        NOT(StaticMethod(m1)), NOT(StaticMethod(m2)).
 
-	    GrandParent(g, c) :- PARENT(g, p), PARENT(p, c).
+	   # Pattern to handle anonymous class declarations
+	   Override(`m1, m2) :- e <: new `t(..) { .. `m1 .. } :>, `m1 <: .. `rett `name(..) { .. } :>, SameSig(m1, m2),
+	   			       DECL(`t, t), PARENT(t, l), PARENT(l, m2).
 
-	    # Covariant return type
-	    OverrideCandidate(m, super) :- MethodSig1(m, n, ret), MethodSig1(super, n, ret_super), TSuperType(ret, ret_super),
-                                  GrandParent(c1, m), GrandParent(c2, super), TSuperType(c1, c2).
-	    # Equal return type
-	    OverrideCandidate(m, super) :- MethodSig1(m, n, ret), MethodSig1(super, n, ret),
-                                  GrandParent(c1, m), GrandParent(c2, super), TSuperType(c1, c2).
+	   # Enum constants can also override methods declared in the enum body
+	   Override(`m1, `m2) :-  <: enum `_ { .. , `k { .. `m1 .. } , .. ; ..  `m2 .. } :>, SameSig(`m1, `m2).
 
-	    DiffNumParams(m1, m2), DiffNumParams(m2, m1) :- OverrideCandidate(m1, m2), MethodSig2(m1, i, _),
-	                                                    MethodSig2(m2, _, _), NOT(MethodSig2(m2, i, _)), NEQ(m1, m2).
-	    DiffNumParams(m1, m2), DiffNumParams(m2, m1) :- OverrideCandidate(m1, m2), MethodSig2(m1, _, _), MethodHasNoParams(m2).
+################################
 
-
-	    # Covariant return type
-	    Override(m, super) :- OverrideCandidate(m, super), NOT(DiffNumParams(m, super)).
-}
-
-# Analysis
-java('P) {
 	    OverrideInBetween(m1, m2, p) :- Override(m1, p), Override(p, m2), NEQ(p, m1), NEQ(p, m2).
 	    ClosestOverride(m1, m2) :- Override(m1, m2), NOT(OverrideInBetween(m1, m2, _)).
 	    # ClosestOverrideIsAbstract(m1) :- ClosestOverride(m1, m2), m2 <: .. abstract .. `t `n (..) ; :>.
 	    # ClosestOverrideIsAbstract(m1) :- ClosestOverride(m1, `m2), <: interface `_ { .. `m2 .. } :>.
 
 	    HasOverride(m) :- m <: .. @Override .. `t `n(..) ; :>.
-	    MissingOverride(m) :- Override(m, _), NOT(HasOverride(m)), NOT(ClosestOverrideIsAbstract(m)).
+	    MissingOverride(m) :- Override(m, _), NOT(HasOverride(m)).#, NOT(ClosestOverrideIsAbstract(m)).
 	    MissingOverrideDetail(l, c, file) :- MissingOverride(m), SRC(m, l, c, _, _, file).
 }
 

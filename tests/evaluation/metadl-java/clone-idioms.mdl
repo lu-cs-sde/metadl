@@ -13,7 +13,7 @@ java('P) {
 
 	    GoodCloneMethod(c) :- CloneMethod(c), SuperClone(s), Contains(c, s).
 	    BadCloneReport(f, ls, cs, le, ce, "CN_IDIOM_NO_SUPER_CALL") :- CloneMethod(c),
-                                       NOT(GoodCloneMethod(c)), SRC(c, ls, cs, le, ce, f).
+                                       NOT(GoodCloneMethod(c)), SRC(c, ls, cs, le, ce, f), GT(ls, 0).
 
 	    Iface(k, iname) :- k <: .. class `_ implements .. ,`i , .. { .. } :>, ID(`i, iname).
 	    ImplementsClone(k) :- k <: .. class `_ implements .. { .. `d .. } :>,

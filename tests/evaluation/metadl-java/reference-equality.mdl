@@ -7,6 +7,8 @@ java('P) {
 	   SuperClass(c, d) :- c <: class `_ extends `d { .. } :>, DECL(`d, d).
 	   SuperClass(c, d) :- c <: class `_<..> extends `d { .. } :>, DECL(`d, d).
 
+	   SuperType(c, o) :- c <: class `_ { .. } :>, NOT(SuperClass(c, _)), o <: public class Object { .. } :>.
+
 	   SuperInterface(c, d) :- c <: class `_ implements ..,`d,.. { .. } :>, DECL(`d, d).
 	   SuperInterface(c, d) :- c <: class `_<..> implements .., `d,.. { .. } :>, DECL(`d, d).
 
@@ -74,7 +76,7 @@ java('P) {
 	    DebugEq(t1, t2) :- EqualityTest(`t1, `t2), RealType(`t1, t1), RealType(`t2, t2).
 	    # OUTPUT('DebugEq, "DebugEq.csv", "csv").
 
-	    BadEqDetail(l, c, file) :- BadEq(t1, _), SRC(t1, l, c, _, _, file).
+	    BadEqDetail(l, c, file) :- BadEq(t1, _), SRC(t1, l, c, _, _, file), GT(l, 0).
 	    # OUTPUT('BadEq, "BadEq.csv", "csv").
 	    OUTPUT('BadEqDetail, "BadEqDetail.csv", "csv").
 

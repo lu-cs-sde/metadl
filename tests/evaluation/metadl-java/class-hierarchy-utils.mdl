@@ -4,6 +4,8 @@ java('Src) {
 	   SuperClass(c, d) :- c <: class `_ extends `d { .. } :>, DECL(`d, d).
 	   SuperClass(c, d) :- c <: class `_<..> extends `d { .. } :>, DECL(`d, d).
 
+	   SuperType(c, o) :- c <: class `_ { .. } :>, NOT(SuperClass(c, _)), o <: public class Object { .. } :>.
+
 	   SuperInterface(c, d) :- c <: class `_ implements ..,`d,.. { .. } :>, DECL(`d, d).
 	   SuperInterface(c, d) :- c <: class `_<..> implements .., `d,.. { .. } :>, DECL(`d, d).
 
@@ -74,7 +76,8 @@ java('Src) {
 		   		   AST(ckind, c, _, _, _),
 				   AST(dkind, d, _, _, _),
 				   SRC(c, cl, _, _, _, cf),
-				   SRC(d, dl, _, _, _, df).
+				   SRC(d, dl, _, _, _, df),
+				   GT(cl, 0), GT(dl, 0).
 
 
 	   OUTPUT('OverrideDetail, "OverrideDetail.csv", "csv").

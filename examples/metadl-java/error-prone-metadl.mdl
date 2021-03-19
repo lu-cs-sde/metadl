@@ -38,7 +38,7 @@ java('Srcs) {
 	    TypeUnusedInFormals(t1) :- GenericMethod(m, t1, r, _), NOT(TypeForParam(t1)), NOT(TypeForTypeBound(t1)), NOT(TypeForReturn(t1)).
 	    TypeUnusedInFormals(t1) :- GenericMethodVoid(m, t1, r), NOT(TypeForTypeBound(t1)), NOT(TypeForReturn(t1)).
 
-	    TypeUnusedInFormalsDetail(l, c, file) :- TypeUnusedInFormals(t), SRC(t, l, c, _, _, file), GT(l, 0).
+	    TypeUnusedInFormalsDetail(ls, le, file) :- TypeUnusedInFormals(t), SRC(t, ls, _, le, _, file), GT(ls, 0).
 
 
 OUTPUT('TypeUnusedInFormalsDetail, "TypeUnusedInFormalsDetail.csv", "csv").
@@ -50,6 +50,8 @@ OUTPUT('TypeUnusedInFormalsDetail, "TypeUnusedInFormalsDetail.csv", "csv").
 
 	   SuperClass(c, d) :- c <: class `_ extends `d { .. } :>, DECL(`d, d).
 	   SuperClass(c, d) :- c <: class `_<..> extends `d { .. } :>, DECL(`d, d).
+
+	   SuperType(c, o) :- c <: class `_ { .. } :>, NOT(SuperClass(c, _)), o <: public class Object { .. } :>.
 
 	   SuperInterface(c, d) :- c <: class `_ implements ..,`d,.. { .. } :>, DECL(`d, d).
 	   SuperInterface(c, d) :- c <: class `_<..> implements .., `d,.. { .. } :>, DECL(`d, d).
@@ -121,7 +123,7 @@ OUTPUT('TypeUnusedInFormalsDetail, "TypeUnusedInFormalsDetail.csv", "csv").
 	    DebugEq(t1, t2) :- EqualityTest(`t1, `t2), RealType(`t1, t1), RealType(`t2, t2).
 	    # OUTPUT('DebugEq).
 
-	    BadEqDetail(l, c, file) :- BadEq(t1, _), SRC(t1, l, c, _, _, file), GT(l, 0).
+	    BadEqDetail(ls, le, file) :- BadEq(t1, _), SRC(t1, ls, _, le, _, file), GT(ls, 0).
 	    # OUTPUT('BadEq).
 	    OUTPUT('BadEqDetail, "BadEqDetail.csv", "csv").
 
@@ -171,7 +173,7 @@ OUTPUT('TypeUnusedInFormalsDetail, "TypeUnusedInFormalsDetail.csv", "csv").
 
 	    HasOverride(m) :- m <: .. @Override .. `t `n(..) ; :>.
 	    MissingOverride(m) :- Override(m, _), NOT(HasOverride(m)). #, NOT(ClosestOverrideIsAbstract(m)).
-	    MissingOverrideDetail(l, c, file) :- MissingOverride(m), SRC(m, l, c, _, _, file), GT(l, 0).
+	    MissingOverrideDetail(ls, le, file) :- MissingOverride(m), SRC(m, ls, _, le, _, file), GT(ls, 0).
 
 
 OUTPUT('MissingOverrideDetail, "MissingOverrideDetail.csv", "csv").
@@ -185,7 +187,7 @@ OUTPUT('MissingOverrideDetail, "MissingOverrideDetail.csv", "csv").
             TypeName("Byte"), TypeName("Float"), TypeName("Double"), TypeName("Boolean").
 
 	    PrimitiveCtor(e) :- e <: new `c(`_) :>, DECL(`c, c), c <: class `name { .. } :>, ID(`name, t), TypeName(t).
-	    PrimitiveCtorDetailEP(l, c, file) :- PrimitiveCtor(e), SRC(e, l, c, _, _, file), GT(l, 0).
+	    PrimitiveCtorDetailEP(ls, le, file) :- PrimitiveCtor(e), SRC(e, ls, _, le, _, file), GT(ls, 0).
 	    OUTPUT('PrimitiveCtorDetailEP, "PrimitiveCtorDetailEP.csv", "csv").
 
 
@@ -232,7 +234,7 @@ OUTPUT('MissingOverrideDetail, "MissingOverrideDetail.csv", "csv").
 	    Confusing(parent, child) :- Arithmetic(parent, child, _), Shift(child, _, _).
 	    Confusing(parent, child) :- Arithmetic(parent, _, child), Shift(child, _, _).
 
-	    ConfusingDetail(l, c, file) :- Confusing(p, _), SRC(p, l, c, _, _, file), GT(l, 0).
+	    ConfusingDetail(ls, le, file) :- Confusing(p, _), SRC(p, ls, _, le, _, file), GT(ls, 0).
 
 
 	    Paren(e, `c) :- e <: (`c ) :>.
@@ -241,7 +243,7 @@ OUTPUT('MissingOverrideDetail, "MissingOverrideDetail.csv", "csv").
 	    SafePrec("cand"), SafePrec("cor"), SafePrec("xor"), SafePrec("and"), SafePrec("or").
 	    ExtraParen(parent, child) :- Paren(parent, child), PARENT(gparent, parent), Prec(gparent, p), Prec(child, p), SafePrec(p).
 	    ExtraParen(parent, child) :- Paren(parent, child), NoParen(child).
-	    ExtraParenDetail(l, c, file) :- ExtraParen(p, _), SRC(p, l, c, _, _, file), GT(l, 0).
+	    ExtraParenDetail(ls, le, file) :- ExtraParen(p, _), SRC(p, ls, _, le, _, file), GT(ls, 0).
 
 
 OUTPUT('ConfusingDetail, "ConfusingDetail.csv", "csv").

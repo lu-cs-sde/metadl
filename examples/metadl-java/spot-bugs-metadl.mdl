@@ -10,22 +10,19 @@ Srcs("", "") :- NEQ(0,0).
 # NM_METHOD_NAMING_CONVENTION, NM_FIELD_NAMING_CONVENTION, NM_CLASS_NAMING_CONVENTION
 
 java('Srcs) {
-	    NotLibrary(n) :- SRC(n, l, _, _, _, _), NEQ(l, 0).
-
 	    Decl(`d), Type(c, name) :- c <: class `name { .. `d .. } :>, ID(`name, name).
 	    Decl(`d), Type(e, name) :- e <: enum `name { .. ,`d, .. ; .. } :>, ID(`name, name).
 	    Decl(`d), Type(i, name) :- i <: interface `name { .. `d .. } :>, ID(`name, name).
 
 	    # Type names should start with uppercase
-	    WarningTypeName(l, c, file, name) :- Type(t, name), NOT(MATCH("[A-Z].*", name)), SRC(t, l, c, _, _, file), NotLibrary(t).
+	    WarningTypeName(ls, le, file, name) :- Type(t, name), NOT(MATCH("[A-Z].*", name)), SRC(t, ls, _, le, _, file), GT(ls, 0).
 
-	    Field1(`f, name) :- Decl(d), d <: .. `t .. , `f , .. ; :>, ID(`f, name), NotLibrary(d).
+	    Field1(`f, name) :- Decl(d), d <: .. `t .. , `f , .. ; :>, ID(`f, name), SRC(d, l, _, _, _, _), GT(l, 0).
 	    FinalField(`f) :- Decl(d), d <: .. final .. `t .. , `f, .. ; :>.
-	    Method(d, name) :- Decl(d), d <: `t `m ( .. ) ; :>, ID(`m, name), NotLibrary(d).
+	    Method(d, name) :- Decl(d), d <: `t `m ( .. ) ; :>, ID(`m, name), SRC(d, l, _, _, _, _), GT(l, 0).
 
-	    WarningFieldName(l, c, file, name) :- Field1(f, name), NOT(FinalField(f)), NOT(MATCH("[a-z].*", name)), SRC(f, l, c, _, _, file).
-	    WarningMethodName(l, c, file, name) :- Method(m, name), NOT(MATCH("[a-z].*", name)), SRC(m, l, c, _, _, file).
-
+	    WarningFieldName(ls, le, file, name) :- Field1(f, name), NOT(FinalField(f)), NOT(MATCH("[a-z].*", name)), SRC(f, ls, _, le, _, file).
+	    WarningMethodName(ls, le, file, name) :- Method(m, name), NOT(MATCH("[a-z].*", name)), SRC(m, ls, _, le, _, file).
 
 
 OUTPUT('WarningTypeName, "WarningTypeName.csv", "csv").
@@ -49,7 +46,7 @@ OUTPUT('WarningMethodName, "WarningMethodName.csv", "csv").
 
 	    SwitchWithoutDefault(s) :- Switch(s), NOT(SwitchWithDefault(s)), NOT(SwitchOnAllEnumMembers(s)).
 
-	    SwitchWithoutDefaultDetail(l, c, file) :- SwitchWithoutDefault(s), SRC(s, l, c, _, _, file), GT(l, 0).
+	    SwitchWithoutDefaultDetail(ls, le, file) :- SwitchWithoutDefault(s), SRC(s, ls, _, le, _, file), GT(ls, 0).
 
 
 OUTPUT('SwitchWithoutDefaultDetail, "SwitchWithoutDefaultDetail.csv", "csv").
@@ -79,7 +76,7 @@ OUTPUT('SwitchWithoutDefaultDetail, "SwitchWithoutDefaultDetail.csv", "csv").
 
 	    NonPublicFieldReturn(s, f) :- s <: return `f ; :>, DECL(`f, f), FieldInClass1(_, _, f, m), NOT(IsPublic(f)), NOT(IsFinal(f)).
 	    NonPublicFieldReturn(s, f) :- s <: return this.`f; :>, DECL(`f, f), FieldInClass1(_, _, f, m), NOT(IsPublic(f)), NOT(IsFinal(f)).
-	    NonPublicFieldReturnDetail(l, c, file) :- NonPublicFieldReturn(s, _), SRC(s, l, c, _, _, file).
+	    NonPublicFieldReturnDetail(ls, le, file) :- NonPublicFieldReturn(s, _), SRC(s, ls, _, le, _, file), GT(ls, 0).
 
 	    ParamToVariable(m, `p, `v) :- m <: .. `_ `_(.., `p, ..) { .. } :>, DECL(`p2, `p), <: `v = `p2 :>.
 	    ParamToVariable(m, `p, `v) :- m <: .. `_ `_(.., `p, ..) { .. } :>, DECL(`p2, `p), <: `v = `p2 :>.
@@ -92,7 +89,7 @@ OUTPUT('SwitchWithoutDefaultDetail, "SwitchWithoutDefaultDetail.csv", "csv").
 
 
 	    ParamToNonPublicField(m) :- ParamToVariable(m, p, v), DECL(v, f), FieldInClass1(_, _, f, _), NOT(IsPublic(f)).
-	    ParamToNonPublicFieldDetail(l, c, file) :- ParamToNonPublicField(m), SRC(m, l, c, _, _, file).
+	    ParamToNonPublicFieldDetail(ls, le, file) :- ParamToNonPublicField(m), SRC(m, ls, _, le, _, file), GT(ls, 0).
 
 
 OUTPUT('ParamToNonPublicFieldDetail, "ParamToNonPublicFieldDetail.csv", "csv").
@@ -174,10 +171,10 @@ OUTPUT('NonPublicFieldReturnDetail, "NonPublicFieldReturnDetail.csv", "csv").
 	    Warn_UWF_UNWRITTEN_FIELD(f) :- Warning(f), NOT(IsPublicOrProtected(f)).
 	    Warn_UWF_UNWRITTEN_PUBLIC_OR_PROTECTED_FIELD(f) :- Warning(f), IsPublicOrProtected(f).
 
-	    Warn_UWF_UNWRITTEN_PUBLIC_OR_PROTECTED_FIELD_Detail(l, c, file) :- Warn_UWF_UNWRITTEN_PUBLIC_OR_PROTECTED_FIELD(f),
-							   SRC(f, l, c, _, _, file), GT(l, 0).
-	    Warn_UWF_UNWRITTEN_FIELD_Detail(l, c, file) :- Warn_UWF_UNWRITTEN_FIELD(f),
-	    				       	  SRC(f, l, c, _, _, file), GT(l, 0).
+	    Warn_UWF_UNWRITTEN_PUBLIC_OR_PROTECTED_FIELD_Detail(ls, le, file) :- Warn_UWF_UNWRITTEN_PUBLIC_OR_PROTECTED_FIELD(f),
+							   SRC(f, ls, _, le, _, file), GT(ls, 0).
+	    Warn_UWF_UNWRITTEN_FIELD_Detail(ls, le, file) :- Warn_UWF_UNWRITTEN_FIELD(f),
+	    				       	  SRC(f, ls, _, le, _, file), GT(ls, 0).
 
 
 OUTPUT('Warn_UWF_UNWRITTEN_PUBLIC_OR_PROTECTED_FIELD_Detail, "Warn_UWF_UNWRITTEN_PUBLIC_OR_PROTECTED_FIELD_Detail.csv", "csv").
@@ -193,9 +190,9 @@ TypeName("Byte"), TypeName("Float"), TypeName("Double"), TypeName("Boolean").
 
 
 	    PrimitiveCtor(e) :- e <: new `c(`_) :>, DECL(`c, c), c <: class `name { .. } :>, ID(`name, t), TypeName(t).
-	    PrimitiveCtorDetail(l, c, file) :- PrimitiveCtor(e), SRC(e, l, c, _, _, file).
+	    PrimitiveCtorDetail(ls, le, file) :- PrimitiveCtor(e), SRC(e, ls, _, le, _, file), GT(ls, 0).
 	    PrimitiveStringCtor(e) :- e <: new `c(`_) :>, DECL(`c, c), c <: class `name { .. } :>, ID(`name, "String").
-	    PrimitiveStringCtorDetail(l, c, file) :- PrimitiveStringCtor(e), SRC(e, l, c, _, _, file), GT(l, 0).
+	    PrimitiveStringCtorDetail(ls, le, file) :- PrimitiveStringCtor(e), SRC(e, ls, _, le, _, file), GT(ls, 0).
 
 
 OUTPUT('PrimitiveCtorDetail, "PrimitiveCtorDetail.csv", "csv").

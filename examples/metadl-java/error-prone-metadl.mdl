@@ -219,14 +219,15 @@ OUTPUT('MissingOverrideDetail, "MissingOverrideDetail.csv", "csv").
 	    Arithmetic(e, `l, `r), Prec(e, "additive") :- e <: `l + `r :>.
 	    Arithmetic(e, `l, `r), Prec(e, "multiplicative") :- e <: `l / `r :>.
 	    Arithmetic(e, `l, `r), Prec(e, "multiplicative") :- e <: `l * `r :>.
+	    Arithmetic(e, `l, `r), Prec(e, "multiplicative") :- e <: `l % `r :>.
 	    Arithmetic(e, `l, `r), Prec(e, "additive") :- e <: `l - `r :>.
 
 	    SafeAssoc(e, `l, `r) :- e <: `l + `r :>.
 	    SafeAssoc(e, `l, `r) :- e <: `l && `r :>.
 	    SafeAssoc(e, `l, `r) :- e <: `l || `r :>.
 
-	    Confusing(parent, child) :- Conditional(parent, child, _), Conditional(child, _, _). #Prec(parent, pp), Prec(child, pc), NEQ(pp, pc).
-	    Confusing(parent, child) :- Conditional(parent, _, child), Conditional(child, _, _). # Prec(parent, pp), Prec(child, pc), NEQ(pp, pc).
+	    Confusing(parent, child) :- Conditional(parent, child, _), Conditional(child, _, _), Prec(parent, pp), Prec(child, pc), NEQ(pp, pc).
+	    Confusing(parent, child) :- Conditional(parent, _, child), Conditional(child, _, _), Prec(parent, pp), Prec(child, pc), NEQ(pp, pc).
 
 	    Confusing(parent, child) :- Shift(parent, child, _), Arithmetic(child, _, _).
 	    Confusing(parent, child) :- Shift(parent, _, child), Arithmetic(child, _, _).

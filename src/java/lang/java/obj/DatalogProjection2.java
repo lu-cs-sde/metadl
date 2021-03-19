@@ -150,7 +150,7 @@ public class DatalogProjection2 {
 														 DatalogProjectionSink tupleSink,
 														 String ...attrs) {
 
-		boolean skipNonPublicNodes = isLibraryNode(currentCU) && !deepAnalysis;
+		boolean mapAttributes = !isLibraryNode(currentCU) || deepAnalysis;
 		boolean fromSource = currentCU.fromSource();
 
 		Queue<ASTNode<?>> currentCUNodes = new ArrayDeque<>();
@@ -172,18 +172,15 @@ public class DatalogProjection2 {
 			}
 			// mark visited
 			processed.add(q);
-
-			if (skipNonPublicNodes && q.isPrivateOrPackage()) {
-				continue;
-			}
-
 			// add the tuples to the relation
 			toTuples(q, fileId, tupleSink.getAST(), fromSource);
 			// record source location
 			srcLoc(q, fileId, tupleSink.getSrcLoc());
 			// now process the attributes
-			mapAttributes(q, currentCU, fileId, otherCompilationUnits, currentCUNodes, tupleSink.getAttributes(),
-						  tupleSink.getProvenance(), attrs);
+			if (mapAttributes) {
+				mapAttributes(q, currentCU, fileId, otherCompilationUnits, currentCUNodes, tupleSink.getAttributes(),
+							  tupleSink.getProvenance(), attrs);
+			}
 			// add the children to the worklist
 			for (Pair<Integer, ASTNode> indexedChild : ASTNodeEnumerator.childrenOf(q, !fromSource)) {
 				if (indexedChild.getRight() != null)

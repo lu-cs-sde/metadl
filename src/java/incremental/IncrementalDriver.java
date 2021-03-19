@@ -159,6 +159,9 @@ public class IncrementalDriver {
 			CSVUtil.readMap(externalClasses, Function.identity(), Function.identity(), externalClassesFile.getPath());
 		}
 
+		profile().stopTimer("incremental_driver", "init");
+
+		profile().startTimer("incremental_driver", "generate_programs");
 		dumpProgram(progSplit.getUpdateProgram(), new File(prog, "update.mdl"));
 		dumpProgram(progSplit.getFusedProgram(), new File(prog, "fused.mdl"));
 
@@ -177,7 +180,7 @@ public class IncrementalDriver {
 
 		}
 
-		profile().stopTimer("incremental_driver", "init");
+		profile().stopTimer("incremental_driver", "generate_programs");
 	}
 
 	public void shutdown() throws IOException, SQLException {

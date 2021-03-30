@@ -199,13 +199,14 @@ public class DatalogProjection2 {
 							   TupleInserter attributeProvenance,
 							   String ...attrs) {
 		for (String attrName : attrs) {
+			attrProvenanceReset();
 			ASTNode<?> r = nodeAttribute(n, attrName);
 
 			if (r == null)
 				continue;
 
 			// log the attribute's provenance information
-			Set<String> srcs = attrProvenance(n, attrName);
+			Set<String> srcs = attrProvenanceGet();
 			for (String src : srcs) {
 				attributeProvenance.insertTuple(fileId, fileIdDb.getIdForFile(src));
 			}
@@ -319,12 +320,17 @@ public class DatalogProjection2 {
 		}
 	}
 
-	private Set<String> attrProvenance(ASTNode<?> n, String attrName) {
+
+	private void attrProvenanceReset() {
+		if (prov != null)
+			prov.reset();
+	}
+
+	private Set<String> attrProvenanceGet() {
 		if (prov == null)
 			return Collections.emptySet();
 
-		Set<String> res =  prov.getSources(n, attrName + "()");
-		prov.reset();
+		Set<String> res = prov.getSourcesFromTopOfStack();
 		return res;
 	}
 

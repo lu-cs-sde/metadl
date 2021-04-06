@@ -78,7 +78,9 @@ OUTPUT('TypeUnusedInFormalsDetail, "TypeUnusedInFormalsDetail.csv", "csv").
 	   SameSig(m1, m2) :- MethodRet(m1, name, _), MethodRet(m2, name, _), MethodArity(m1, 0), MethodArity(m2, 0).
 	   DiffParams(m1, m2) :- MethodRet(m1, name, _), MethodRet(m2, name, _), MethodParam(m1, i, t1), MethodParam(m2, i, t2), NEQ(t1, t2).
 
+	   # Local rules to avoid carying PARENT and SRC relation into the global program
 	   ClassForMethod(c, m) :- MethodRet(m, _, _), PARENT(l, m), PARENT(c, l).
+	   SrcLocForMethod(ls, le, file, m) :- MethodRet(m, _, _), SRC(m, ls, _, le, _, file), GT(ls, 0).
 
            SameSig(m1, m2) :- MethodRet(m1, name, _), MethodRet(m2, name, _), NEQ(m1, m2), MethodArity(m1, a), MethodArity(m2, a), NOT(DiffParams(m1, m2)).
 
@@ -90,7 +92,7 @@ OUTPUT('TypeUnusedInFormalsDetail, "TypeUnusedInFormalsDetail.csv", "csv").
 	   		NOT(StaticMethod(m1)), NOT(StaticMethod(m2)).
 
 	   # Pattern to handle anonymous class declarations
-	   Override(`m1, m2) :- e <: new `t(..) { .. `m1 .. } :>, `m1 <: .. `rett `name(..) { .. } :>, SameSig(m1, m2),
+	   Override(`m1, m2) :- e <: new `t(..) { .. `m1 .. } :>, `m1 <: .. `rett `name(..) { .. } :>, SameSig(`m1, m2),
 	   			       DECL(`t, t), ClassForMethod(t, m2).
 
 	   # Enum constants can also override methods declared in the enum body
@@ -113,16 +115,17 @@ OUTPUT('TypeUnusedInFormalsDetail, "TypeUnusedInFormalsDetail.csv", "csv").
 	    # - in case of bounded types, the upper bound of the type
 	    RealType(t, u) :- TYPE(t, tv), TypeVariableUpperBound(tv, u).
 
-	    EqualityTest(`t1, `t2) :- <: `t1 == `t2 :>.
-	    EqualityTest(`t1, `t2) :- <: `t1 != `t2 :>.
+	    EqualityTest(`t1, `t2, ls, le, file) :- <: `t1 == `t2 :>, SRC(`t1, ls, _, le, _, file).
+	    EqualityTest(`t1, `t2, ls, le, file) :- <: `t1 != `t2 :>, SRC(`t1, ls, _, le, _, file).
 
-	    BadEq(`t1, `t2) :- EqualityTest(`t1, `t2), RealType(`t1, t1), RealType(`t2, t2), MustUseEquals(t1), MustUseEquals(t2),
+	    BadEq(`t1, `t2, ls, le, file) :- EqualityTest(`t1, `t2, ls, le, file),
+	    	       RealType(`t1, t1), RealType(`t2, t2), MustUseEquals(t1), MustUseEquals(t2),
 	    	       NOT(IsExcludedThis(`t1)), NOT(IsExcludedThis(`t2)).
 
-	    DebugEq(t1, t2) :- EqualityTest(`t1, `t2), RealType(`t1, t1), RealType(`t2, t2).
+	    # DebugEq(t1, t2) :- EqualityTest(`t1, `t2), RealType(`t1, t1), RealType(`t2, t2).
 	    # OUTPUT('DebugEq).
 
-	    BadEqDetail(ls, le, file) :- BadEq(t1, _), SRC(t1, ls, _, le, _, file), GT(ls, 0).
+	    BadEqDetail(ls, le, file) :- BadEq(t1, _, ls, le, file), GT(ls, 0).
 	    # OUTPUT('BadEq).
 	    OUTPUT('BadEqDetail, "BadEqDetail.csv", "csv").
 
@@ -139,7 +142,7 @@ OUTPUT('TypeUnusedInFormalsDetail, "TypeUnusedInFormalsDetail.csv", "csv").
 	    TypeVariableUpperBoundLocal(t, `u) :- <: class `_ <.. ,`t extends .. & `u & .. , .. >   { .. } :>, PARENT(t, `t).
 	    TypeVariableUpperBound(t, u) :- TypeVariableUpperBoundLocal(t, `u), DECL(`u, u).
 
-	    MustUseEqualsDetail(l, c, file) :- MustUseEquals(cl), SRC(cl, l, c, _, _, file).
+	    # MustUseEqualsDetail(l, c, file) :- MustUseEquals(cl), SRC(cl, l, c, _, _, file).
 
 	    # OUTPUT('MustUseEqualsDetail).
 
@@ -172,7 +175,7 @@ OUTPUT('TypeUnusedInFormalsDetail, "TypeUnusedInFormalsDetail.csv", "csv").
 
 	    HasOverride(m) :- m <: .. @Override .. `t `n(..) ; :>.
 	    MissingOverride(m) :- Override(m, _), NOT(HasOverride(m)). #, NOT(ClosestOverrideIsAbstract(m)).
-	    MissingOverrideDetail(ls, le, file) :- MissingOverride(m), SRC(m, ls, _, le, _, file), GT(ls, 0).
+	    MissingOverrideDetail(ls, le, file) :- MissingOverride(m), SrcLocForMethod(ls, le, file, m).
 
 
 OUTPUT('MissingOverrideDetail, "MissingOverrideDetail.csv", "csv").
@@ -187,10 +190,10 @@ OUTPUT('MissingOverrideDetail, "MissingOverrideDetail.csv", "csv").
 
 	    PrimitiveType(c) :- c <: class `name { .. } :>, ID(`name, t), TypeName(t).
 
-	    PrimitiveCtor(e) :- e <: new `c(`_) :>, DECL(`c, c), PrimitiveType(c).
-	    PrimitiveCtorDetailEP(ls, le, file) :- PrimitiveCtor(e), SRC(e, ls, _, le, _, file), GT(ls, 0).
-	    OUTPUT('PrimitiveCtorDetailEP, "PrimitiveCtorDetailEP.csv", "csv").
+	    Constructor(ls, le, file, c) :- e <: new `c(`_) :>, DECL(`c, c), SRC(e, ls, _, le, _, file), GT(ls, 0).
 
+	    PrimitiveCtorDetailEP(ls, le, file) :- Constructor(ls, le, file, c), PrimitiveType(c).
+	    OUTPUT('PrimitiveCtorDetailEP, "PrimitiveCtorDetailEP.csv", "csv").
 
 
 ####################################################################################################

@@ -167,8 +167,10 @@ OUTPUT('NonPublicFieldReturnDetail, "NonPublicFieldReturnDetail.csv", "csv").
 
 	    IsPublicOrProtected(f) :- FieldInClass(_, _, f, m), MOD(m, "public").
 	    IsPublicOrProtected(f) :- FieldInClass(_, _, f, m), MOD(m, "protected").
+	    IsTransient(f) :- FieldInClass(_, _, f, m), MOD(m, "transient").
 
-	    Warn_UWF_UNWRITTEN_FIELD(f) :- Warning(f), NOT(IsPublicOrProtected(f)).
+	    Warn_UWF_UNWRITTEN_FIELD(f) :- Warning(f), NOT(IsPublicOrProtected(f)), NOT(IsTransient(f)).
+	    # Exclude transient fields to match what SpotBugs is doing.
 	    Warn_UWF_UNWRITTEN_PUBLIC_OR_PROTECTED_FIELD(f) :- Warning(f), IsPublicOrProtected(f).
 
 	    Warn_UWF_UNWRITTEN_PUBLIC_OR_PROTECTED_FIELD_Detail(ls, le, file) :- Warn_UWF_UNWRITTEN_PUBLIC_OR_PROTECTED_FIELD(f),
@@ -188,10 +190,12 @@ OUTPUT('Warn_UWF_UNWRITTEN_FIELD_Detail, "Warn_UWF_UNWRITTEN_FIELD_Detail.csv", 
 TypeName("Character"), TypeName("Integer"), TypeName("Long"), TypeName("Short"),
 TypeName("Byte"), TypeName("Float"), TypeName("Double"), TypeName("Boolean").
 
+            PrimitiveType(c) :- c <: class `name { .. } :>, ID(`name, t), TypeName(t).
+	    StringType(c) :- c <: class `name { .. } :>, ID(`name, "String").
 
-	    PrimitiveCtor(e) :- e <: new `c(`_) :>, DECL(`c, c), c <: class `name { .. } :>, ID(`name, t), TypeName(t).
+	    PrimitiveCtor(e) :- e <: new `c(`_) :>, DECL(`c, c), PrimitiveType(c).
 	    PrimitiveCtorDetail(ls, le, file) :- PrimitiveCtor(e), SRC(e, ls, _, le, _, file), GT(ls, 0).
-	    PrimitiveStringCtor(e) :- e <: new `c(`_) :>, DECL(`c, c), c <: class `name { .. } :>, ID(`name, "String").
+	    PrimitiveStringCtor(e) :- e <: new `c(`t) :>, DECL(`c, c), TYPE(`t, c), StringType(c).
 	    PrimitiveStringCtorDetail(ls, le, file) :- PrimitiveStringCtor(e), SRC(e, ls, _, le, _, file), GT(ls, 0).
 
 

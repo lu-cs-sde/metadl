@@ -155,3 +155,15 @@ class Test11 {
 	return (T) new Integer(o.hashCode());
     }
 }
+
+class Test11 {
+	String foo(String s) {
+		return new String(s);
+	}
+}
+
+class Test12 {
+	{
+		String s = new String((String) null);
+	}
+}

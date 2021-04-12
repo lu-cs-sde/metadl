@@ -6,7 +6,14 @@ TypeName("Character"), TypeName("Integer"), TypeName("Long"), TypeName("Short"),
 TypeName("Byte"), TypeName("Float"), TypeName("Double"), TypeName("Boolean").
 
 java('P) {
-	    PrimitiveCtor(e) :- e <: new `c(`_) :>, DECL(`c, c), c <: class `name { .. } :>, ID(`name, t), TypeName(t).
-	    PrimitiveCtorDetail(l, c, file) :- PrimitiveCtor(e), SRC(e, l, c, _, _, file).
+            PrimitiveType(c) :- c <: class `name { .. } :>, ID(`name, t), TypeName(t).
+	    StringType(c) :- c <: class `name { .. } :>, ID(`name, "String").
+
+	    PrimitiveCtor(e) :- e <: new `c(`_) :>, DECL(`c, c), PrimitiveType(c).
+	    PrimitiveCtorDetail(ls, cs, file) :- PrimitiveCtor(e), SRC(e, ls, cs, _, _, file), GT(ls, 0).
+	    PrimitiveStringCtor(e) :- e <: new `c(`t) :>, DECL(`c, c), TYPE(`t, c), StringType(c).
+	    PrimitiveStringCtorDetail(ls, cs, file) :- PrimitiveStringCtor(e), SRC(e, ls, cs, _, _, file), GT(ls, 0).
+
 	    OUTPUT('PrimitiveCtorDetail, "PrimitiveCtorDetail.csv", "csv").
+	    OUTPUT('PrimitiveStringCtorDetail, "PrimitiveStringCtorDetail.csv", "csv").
 }

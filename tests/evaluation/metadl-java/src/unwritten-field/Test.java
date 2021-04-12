@@ -34,6 +34,13 @@ class C {
 	public Object anotherBug() {
 		return externalObject;
 	}
+
+	@NoWarning("UWF_UNWRITTEN_FIELD")
+	private transient int unwrittenButOK;
+	public int read() {
+		return unwrittenButOK;
+	}
+
 }
 
 

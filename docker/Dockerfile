@@ -80,11 +80,51 @@ RUN cd /work/metadl && ./gradlew jar
 ENV PATH="${PATH}:/work/souffle/src"
 RUN cd /work/metadl/examples/metadl-java/ && touch srcs.csv && ./gen-hybrid.sh
 
+# Check out the evaluation framework
 RUN cd /work && git clone $JAVADL_INC_EVAL_GIT javadl-inc-eval
 RUN cd /work/javadl-inc-eval && git checkout $JAVADL_INC_EVAL_HASH
+
 
 RUN cd /work && git clone $JAVADL_EVAL_GIT javadl-eval-1
 RUN cd /work && git clone $JAVADL_EVAL_GIT javadl-eval-2
 
 
-# Check out the evaluation framework
+# Change to Java 8
+USER root
+RUN echo "2" | sudo update-alternatives --config java && java -version
+RUN echo "2" | sudo update-alternatives --config javac && javac -version
+RUN apt-get -y install curl unzip subversion
+RUN perl -MCPAN -e 'install Bundle::DBI'
+
+USER javadl
+RUN pip3 install joblib
+
+RUN cd /work/javadl-eval-1 && ./scripts/download_defects4j.sh
+RUN cd /work/javadl-eval-2 && ./scripts/download_defects4j.sh
+
+# Change back to Java 11
+USER root
+RUN echo "0" | sudo update-alternatives --config java && java -version
+RUN echo "0" | sudo update-alternatives --config javac && javac -version
+
+RUN apt-get -y install wget
+USER javadl
+
+RUN cd /work/javadl-eval-1 && ./scripts/download_static_checkers.sh ; echo "Success"
+RUN cd /work/javadl-eval-2 && ./scripts/download_static_checkers.sh ; echo "Success"
+
+RUN cd /work/javadl-eval-1 && cp -r /work/metadl ./static-checkers
+
+COPY --chown=javadl:javadl run_quality.bash /work
+
+# Point to rt.jar
+ENV METADL_JAVA_RT=/usr/lib/jvm/java-1.8.0-openjdk-amd64/jre/lib/rt.jar
+
+# RUN cd /work/javadl-eval-1 && \
+# 	echo "2" | sudo update-alternatives --config java && \
+# 	echo "2" | sudo update-alternatives --config javac && \
+# 	javac -version && \
+# 	./scripts/download_defects4j.sh && \
+# 	echo "0" | sudo update-alternatives --config java && \
+# 	echo "0" | sudo update-alternatives --config javac && \
+# 	javac -version

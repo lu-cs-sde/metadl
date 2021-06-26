@@ -8,7 +8,7 @@ docker build \
        --build-arg SOUFFLE_GIT=https://github.com/alexdura/souffle \
        --build-arg SOUFFLE_HASH=oopsla21 \
        --build-arg JAVADL_GIT=https://oauth2:$JAVADL_TOKEN@git.cs.lth.se/al7330du/metadl \
-       --build-arg JAVADL_HASH=bcc61d51230536659383e8ff4b485b96894c935c \
+       --build-arg JAVADL_HASH=cf5a8ffde175b0d6a8bcaf4a5e9b199324f22859 \
        --build-arg JAVADL_INC_EVAL_GIT=https://oauth2:$JAVADL_INC_EVAL_TOKEN@git.cs.lth.se/al7330du/metadl-inc-eval \
        --build-arg JAVADL_INC_EVAL_HASH=oopsla21 \
        --build-arg JAVADL_EVAL_GIT=https://oauth2:$JAVADL_EVAL_TOKEN@git.cs.lth.se/al7330du/metadl-eval \

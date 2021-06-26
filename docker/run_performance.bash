@@ -78,4 +78,25 @@ python3 python/src/gather_data.py \
 	$PROJECTS_DIR out_baseline_$OUT_SB $PROJECT_REGEX baseline
 mv all_data.csv data/all_data_sb_baseline.csv
 
+
+################################################################################
+# Gather commit data
+################################################################################
+python3 python/src/provenance.py \
+	$PROJECTS_DIR out_inc_$OUT_EP $PROJECT_REGEX
+
+mv provenance.csv data/provenance.csv
+
+################################################################################
+# Do the plots
+################################################################################
+mkdir -p plots_ep
+python3 python/src/plot_change_vs_analyzed.py \
+	"{\"projects_dir\":\"$PROJECTS_DIR\", \"main_data_file\":\"data/all_data_ep_inc.csv\", \"project_filter\":\"$PROJECT_REGEX\", \"other_data_files\":[\"data/all_data_ep_exh.csv\", \"data/all_data_ep_baseline.csv\"], \"provenance_data_file\":\"data/provenance.csv\"}"
+mv *.svg plots_ep
+
+python3 python/src/plot_change_vs_analyzed.py \
+	"{\"projects_dir\":\"$PROJECTS_DIR\", \"main_data_file\":\"data/all_data_sb_inc.csv\", \"project_filter\":\"$PROJECT_REGEX\", \"other_data_files\":[\"data/all_data_sb_exh.csv\", \"data/all_data_sb_baseline.csv\"], \"provenance_data_file\":\"data/provenance.csv\"}"
+mv *.svg plots_sb
+
 popd

@@ -31,8 +31,19 @@ When building, make sure to enable 64-bit domains and SWIG (needed only for the 
 make
 #+END_SRC
 
-For analyzing Java, MetaDL needs access to a Java 7 runtime library (you can download it [[https://www.oracle.com/java/technologies/javase/javase7-archive-downloads.html#license-lightbox][here]]). Set ~METADL_JAVA_RT=/path/to/jre/lib/rt.jr~ in your environment to let MetaDL know where to find this library.
+For analyzing Java, MetaDL needs access to a Java 8 runtime library. Set ~METADL_JAVA_RT=/path/to/jre/lib/rt.jr~ in your environment to let MetaDL know where to find this library.
 Run ~./gradlew :jar~ to build MetaDL and  ~./gradlew :test~ to test it. For the tests to run, you need the ~souffle~ executable in your executable path.
+
+** Docker
+We provide a Docker image which contains MetaDL and evaluation scripts, packaged together with all the required dependencies.
+#+BEGIN_SRC
+cd docker
+./build.sh
+#+END_SRC
+then run the image using:
+#+BEGIN_SRC
+docker run -it javadl:oopsla21
+#+END_SRC
 
 * Running
 MetaDL support multiple running modes, which represent a trade-off between speed and external dependencies.

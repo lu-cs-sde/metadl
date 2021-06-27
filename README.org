@@ -44,6 +44,13 @@ then run the image using:
 #+BEGIN_SRC
 docker run -it javadl:oopsla21
 #+END_SRC
+Inside the Docker image, run the evaluation scripts using:
+#+BEGIN_SRC
+cd /work
+./run_quality.bash
+./run_performance.bash
+#+END_SRC
+The analysis quality evaluation script prints its results to standard output. The performance evaluation script produces the data in ~/work/javadl-inc-eval/data/~ and the plots in ~/work/javadl-inc-eval/{plots_ep,plots_sb}~.
 
 * Running
 MetaDL support multiple running modes, which represent a trade-off between speed and external dependencies.

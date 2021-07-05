@@ -7,6 +7,7 @@ import lang.ast.FormalPredicateMap;
 import lang.ast.Program;
 
 import static org.junit.jupiter.api.Assertions.*;
+import org.apache.commons.collections4.SetUtils;
 
 import java.util.Collections;
 import java.util.Set;
@@ -74,8 +75,8 @@ public class DomainSeparationTest {
 		FormalPredicateMap predMap = p.formalPredicateMap();
 		FormalPredicate B = predMap.get("B");
 		FormalPredicate C = predMap.get("C");
-		assertEquals(Set.of(Set.of(0, 1)), B.domainSignature().equivalenceSets());
-		assertEquals(Set.of(Set.of(0, 1)), C.domainSignature().equivalenceSets());
+		assertEquals(SetUtils.<Set<Integer>>unmodifiableSet(SetUtils.unmodifiableSet(0, 1)), B.domainSignature().equivalenceSets());
+		assertEquals(SetUtils.<Set<Integer>>unmodifiableSet(SetUtils.unmodifiableSet(0, 1)), C.domainSignature().equivalenceSets());
 		assertTrue(B.isASTPredicate());
 		assertTrue(C.isASTPredicate());
 		// B and C use the DECL attribute, which is global
@@ -93,24 +94,24 @@ public class DomainSeparationTest {
 		assertEquals(P.localTerms(), Collections.emptySet());
 
 		FormalPredicate Q = predMap.get("Q");
-		assertEquals(Q.localTerms(), Set.of(0));
+		assertEquals(Q.localTerms(), SetUtils.unmodifiableSet(0));
 
 		FormalPredicate R = predMap.get("R");
-		assertEquals(R.localTerms(), Set.of(2));
+		assertEquals(R.localTerms(), SetUtils.unmodifiableSet(2));
 
 		FormalPredicate S = predMap.get("S");
 		assertEquals(S.localTerms(), Collections.emptySet());
 
 		FormalPredicate T = predMap.get("T");
-		assertEquals(T.localTerms(), Set.of(0, 1));
+		assertEquals(T.localTerms(), SetUtils.unmodifiableSet(0, 1));
 
 		FormalPredicate U = predMap.get("U");
-		assertEquals(U.localTerms(), Set.of(0));
+		assertEquals(U.localTerms(), SetUtils.unmodifiableSet(0));
 
 		FormalPredicate V = predMap.get("V");
 		assertEquals(V.localTerms(), Collections.emptySet());
 
 		FormalPredicate W = predMap.get("W");
-		assertEquals(W.localTerms(), Set.of(0));
+		assertEquals(W.localTerms(), SetUtils.unmodifiableSet(0));
 	}
 }

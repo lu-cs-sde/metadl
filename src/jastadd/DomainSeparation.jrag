@@ -1,6 +1,7 @@
 import org.jgrapht.alg.util.UnionFind;
 import java.util.stream.IntStream;
 import java.util.stream.StreamSupport;
+import java.util.HashSet;
 import org.apache.commons.collections4.SetUtils;
 
 aspect DomainSeparation {
@@ -269,7 +270,7 @@ aspect DomainSeparation {
 			return domainSignature().equivalenceSets().stream().min((d1, d2) -> Integer.compare(Collections.min(d1), Collections.min(d2)))
 				.orElse(Collections.emptySet());
 		}
-		return Set.copyOf(astIndices());
+		return new HashSet<Integer>(astIndices());
 	}
 
 	syn Set<Integer> FormalPredicate.localTerms() circular [initialLocalTerms()] {

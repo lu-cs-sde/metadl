@@ -6,6 +6,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Collections;
@@ -15,7 +16,7 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.time.StopWatch;
 
 import incremental.IncrementalDriver;
@@ -49,7 +50,11 @@ public class Compiler {
 		String path = opts.getInputFile();
 		StopWatch timer = StopWatch.createStarted();
 		profile().startTimer("main", "parsing");
-		Program program = (Program) FileUtil.parse(new File(path));
+		final String file_body =  FileUtils.readFileToString(new File(path), StandardCharsets.UTF_8);
+		Program program = (Program) FileUtil.parse(file_body);
+		if (program != null) {
+			program.setProgramSourceString(file_body);
+		}
 		Compiler.DrAST_root_node = program; // Enable debugging with DrAST
 		timer.stop();
 		profile().stopTimer("main", "parsing");

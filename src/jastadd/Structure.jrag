@@ -1,12 +1,22 @@
+import java.util.Base64;
 import java.util.HashSet;
 import java.util.HashMap;
 import java.util.TreeSet;
 import java.util.TreeMap;
 import java.util.Set;
 import lang.io.SimpleLogger;
+import java.security.MessageDigest;
 import java.util.Collections;
 
 aspect Utility {
+	public class Hash {
+		public static String sha256(String input) {
+			final MessageDigest digest = MessageDigest.getInstance("SHA-256");
+			final byte[] hashed = digest.digest(text.getBytes(StandardCharsets.UTF_8));
+			return Base64.getEncoder().encodetoString(hash);
+		}
+	}
+
 	public class MapEntry<Key, Value> {
 		public Key k;
 		public Value v;
@@ -102,6 +112,15 @@ aspect Program {
 
 	coll TreeSet<Literal> Program.predefinedLiterals() [new TreeSet<Literal>(Literal.literalComparator)] with add;
 	Literal contributes this when isPredefined() to Program.predefinedLiterals();
+
+	private String Program.program_source = null;
+	public void Program.setProgramSourceString(String source) {
+	    this.program_source = source;
+	}
+	public String Program.getProgramSourceString() {
+	    return this.program_source;
+	}
+	syn String Program.programHash() = Hash.sha256(this.getProgramSourceString());
 }
 
 aspect Clause {

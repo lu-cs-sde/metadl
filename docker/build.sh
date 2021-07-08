@@ -10,7 +10,7 @@ docker build \
        --build-arg JAVADL_GIT=https://oauth2:$JAVADL_TOKEN@git.cs.lth.se/al7330du/metadl \
        --build-arg JAVADL_HASH=cf5a8ffde175b0d6a8bcaf4a5e9b199324f22859 \
        --build-arg JAVADL_INC_EVAL_GIT=https://oauth2:$JAVADL_INC_EVAL_TOKEN@git.cs.lth.se/al7330du/metadl-inc-eval \
-       --build-arg JAVADL_INC_EVAL_HASH=oopsla21 \
+       --build-arg JAVADL_INC_EVAL_HASH=780c6c746c4260d4c5758feafa3c0dc2c21b3ef3 \
        --build-arg JAVADL_EVAL_GIT=https://oauth2:$JAVADL_EVAL_TOKEN@git.cs.lth.se/al7330du/metadl-eval \
        --build-arg JAVADL_EVAL_HASH=oospla21 \
        -t javadl:oopsla21 .

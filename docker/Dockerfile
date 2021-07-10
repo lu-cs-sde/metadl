@@ -95,6 +95,7 @@ RUN pip3 install -r /work/javadl-inc-eval/python/requirements.txt
 
 RUN cd /work && git clone $JAVADL_EVAL_GIT javadl-eval-1
 RUN cd /work && git clone $JAVADL_EVAL_GIT javadl-eval-2
+RUN cd /work && git clone $JAVADL_EVAL_GIT javadl-eval-3
 
 
 # Change to Java 8
@@ -109,6 +110,8 @@ RUN pip3 install joblib
 ENV JAVA_TOOL_OPTIONS="-Dfile.encoding=UTF8"
 RUN cd /work/javadl-eval-1 && ./scripts/download_defects4j.sh
 RUN cd /work/javadl-eval-2 && ./scripts/download_defects4j.sh
+RUN cd /work/javadl-eval-3 && ./scripts/download_defects4j.sh
+
 
 # Change back to Java 11
 # USER root
@@ -121,6 +124,7 @@ RUN apt-get -y install wget
 # USER javadl
 RUN cd /work/javadl-eval-1 && ./scripts/download_static_checkers.sh ; echo "Success"
 RUN cd /work/javadl-eval-2 && ./scripts/download_static_checkers.sh ; echo "Success"
+RUN cd /work/javadl-eval-3 && ./scripts/download_static_checkers.sh ; echo "Success"
 # Copy over JavaDL to the static checkers folder (TODO: symlink instead)
 RUN cd /work/javadl-eval-1 && cp -r /work/metadl ./static-checkers
 

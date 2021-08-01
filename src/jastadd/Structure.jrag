@@ -7,13 +7,21 @@ import java.util.Set;
 import lang.io.SimpleLogger;
 import java.security.MessageDigest;
 import java.util.Collections;
+import java.nio.charset.StandardCharsets;
 
 aspect Utility {
 	public class Hash {
+		static private MessageDigest digest = null;
 		public static String sha256(String input) {
-			final MessageDigest digest = MessageDigest.getInstance("SHA-256");
-			final byte[] hashed = digest.digest(text.getBytes(StandardCharsets.UTF_8));
-			return Base64.getEncoder().encodetoString(hash);
+			if (Hash.digest == null) {
+				try {
+					Hash.digest = MessageDigest.getInstance("SHA-256");
+				} catch (java.security.NoSuchAlgorithmException exn) {
+					throw new RuntimeException(exn);
+				}
+			}
+			final byte[] hashed = digest.digest(input.getBytes(StandardCharsets.UTF_8));
+			return Base64.getEncoder().encodeToString(hashed);
 		}
 	}
 

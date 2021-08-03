@@ -17,7 +17,9 @@ import java.nio.CharBuffer;
 aspect HybridFastPath {
 
 	public class HFPProgram {
-		private static final String HEADER = "MDLHFP0";
+		public static final String FILE_SUFFIX = ".hfp";
+
+		private static final String HEADER = "MDLHFP0:";
 
 		private java.util.List<HFPProgram.Op> ops;
 		private Op formal_predicates;
@@ -383,7 +385,6 @@ aspect HybridFastPath {
 			public Op
 			deserialize(Deserializer dser) {
 				int count = dser.getInt();
-	System.err.println("got int: " + count);
 				this.body = new String[count];
 				for (int i = 0; i < count; ++i) {
 					this.body[i] = dser.getString();
@@ -478,8 +479,6 @@ aspect HybridFastPath {
 			int bufpos = 0;
 			char[] buf = new char[16];
 
-			System.err.print(" * " + i + " -> ");
-
 			// must reverse order
 			while (i > 0) {
 				char c = (char) (((int)'0') + (i & MASK));
@@ -487,10 +486,8 @@ aspect HybridFastPath {
 				i >>= SHIFT;
 			}
 			for (i = bufpos - 1; i >= 0; --i) {
-				System.err.print(buf[i]);
 				sb.append(buf[i]);
 			}
-			System.err.println("");
 			sb.append('#');
 		}
 

@@ -6,7 +6,13 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
+import java.nio.channels.Channels;
+import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.StandardOpenOption;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Collections;
@@ -24,6 +30,7 @@ import incremental.ProgramSplit;
 import lang.CmdLineOpts.Action;
 import lang.ast.AnalyzeBlock;
 import lang.ast.FormalPredicate;
+import lang.ast.HFPProgram;
 import lang.ast.Program;
 import lang.ast.SoufflePrettyPrinter;
 import lang.ast.StandardPrettyPrinter;
@@ -132,6 +139,44 @@ public class Compiler {
 		SimpleLogger.logger().time("Run Souffle program: " + souffleRunTimer.getTime() + "ms");
 	}
 
+	/**
+	 * Emit HybridFastPath summary code (or delete code file if fast path not feasible)
+	 */
+	public static void generateSouffleHFPSummary(Program program, CmdLineOpts opts) throws IOException {
+		final String summaryFileName = opts.getOutputFile() + HFPProgram.FILE_SUFFIX;
+		final HFPProgram hfprog = program.getHFPProgram();
+		if (hfprog == null) {
+			// fast path not feasible; make sure any obsolete fastpath program is deleted
+			SimpleLogger.logger().log("Cannot emit HybridFastPath summary; ensuring that there is no conflicting '" + summaryFileName + "'");
+			Files.deleteIfExists(Paths.get(summaryFileName));
+		} else {
+			SimpleLogger.logger().log("Emitting HybridFastPath summary to '" + summaryFileName + "'");
+			Files.write(Paths.get(summaryFileName), hfprog.serialize().getBytes());
+		}
+	}
+
+	public static HFPProgram loadSouffleHFPSummary(CmdLineOpts opts) throws IOException {
+		final String summaryFileName = opts.getLibFile() + HFPProgram.FILE_SUFFIX;
+		Path file = Paths.get(summaryFileName);
+		if (Files.exists(file) && Files.isReadable(file)) {
+			try {
+				final String file_body =  FileUtils.readFileToString(file.toFile(), StandardCharsets.UTF_8);
+				HFPProgram prog = HFPProgram.deserialize(file_body);
+				perr("Loaded '" + summaryFileName + "', will use HybridFastPath");
+				SimpleLogger.logger().log("Loaded '" + summaryFileName + "', will use HybridFastPath");
+				return prog;
+			} catch (IOException exn) {
+				exn.printStackTrace();
+				perr("HybridFastPath error: failed to deserialize '" + summaryFileName +  "': " + exn);
+				SimpleLogger.logger().log("HybridFastPath error: failed to deserialize '" + summaryFileName +  "': " + exn);
+				return null;
+			}
+		}
+		perr("No '" + summaryFileName + "' found, will not try HybridFastPath");
+		SimpleLogger.logger().log("No '" + summaryFileName + "' found, will not try HybridFastPath");
+		return null;
+	}
+
 	public static void generateIncrementalProgram(Program prog, CmdLineOpts opts, boolean useSouffle) throws IOException, SQLException {
 		// evaluate the EDB and IMPORT predicate, to ensure
 		// that the inputs to the analyze blocks can be evaluated in turn
@@ -167,7 +212,11 @@ public class Compiler {
 	public static Program run(CmdLineOpts opts) {
 		try {
 			perr("parse starts");
-			Program prog = parseProgram(opts);
+			Program prog = null;
+			if (opts.getAction() != CmdLineOpts.Action.EVAL_HYBRID) {
+				// not always needed
+				prog = parseProgram(opts);
+			}
 			perr("parse ends");
 
 			switch (opts.getAction()) {
@@ -215,29 +264,20 @@ public class Compiler {
 				prog.clauseDependencyGraph().dump();
 				break;
 			case GEN_HYBRID:
-				perr("GEN: checkProgram starts");
 				checkProgram(prog, opts);
-				perr("GEN: evalEDB starts");
 				prog.evalEDB(prog.evalCtx(), opts);
-				perr("GEN: evalIMPORT starts");
 				prog.evalIMPORT(prog.evalCtx(), opts);
-				perr("GEN: generateSouffleSWIGProgram starts");
 				generateSouffleSWIGProgram(prog, opts);
-				perr("GEN: generateSouffleSWIGProgram completed");
+				generateSouffleHFPSummary(prog, opts);
 				break;
 			case EVAL_HYBRID:
-				perr("checkProgram starts");
-				checkProgram(prog, opts);
-				perr("checkProgram ends, evalHybridProgram starts");
-				lang.ast.HFPProgram hprog = prog.getHFPProgram();
-				perr("HFP program:\n" + hprog);
-				String serialised = hprog.serialize();
-				perr("serialised = " + serialised);
-				hprog = lang.ast.HFPProgram.deserialize(serialised);
-				perr("HFP serialized and deserialized:\n" + hprog);
-				//SWIGUtil.evalHybridProgram(prog, opts);
-				SWIGUtil.evalHFPProgram(prog.getHFPProgram(), opts);
-				//perr("evalHybridProgram ends");
+				HFPProgram fastpath = loadSouffleHFPSummary(opts);
+				if (fastpath != null) {
+					SWIGUtil.evalHFPProgram(fastpath, opts);
+				} else {
+					prog = parseProgram(opts);
+					SWIGUtil.evalHybridProgram(prog, opts);
+				}
 				break;
 			case INCREMENTAL_UPDATE:
 			case INCREMENTAL_INIT:

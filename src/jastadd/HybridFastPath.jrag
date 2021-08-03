@@ -1,0 +1,610 @@
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.sql.SQLException;
+import java.nio.CharBuffer;
+
+/**
+ * Hybrid execution fast path
+ *
+ * This module checks if the MDL program matches the common structure of bug checkers,
+ * i.e., almost all work being done in 'analyze' blocks and the toplevel using
+ * trivial computations to determine the files to be analysed.  If so, it provides
+ * a quick evaluator.
+ *
+ * @author creichen
+ */
+aspect HybridFastPath {
+
+	public class HFPProgram {
+		private static final String HEADER = "MDLHFP0";
+
+		private java.util.List<HFPProgram.Op> ops;
+		private Op formal_predicates;
+		private HFPProgram() {};
+
+		public String serialize() {
+			StringBuffer sb = new StringBuffer();
+			sb.append(HFPProgram.HEADER);
+			this.formal_predicates.serialize(sb);
+			serializeNonnegativeInt(sb, this.ops.size());
+			for (Op op : this.ops) {
+				op.serialize(sb);
+			}
+			return sb.toString();
+		}
+
+		public static HFPProgram
+		deserialize(CharSequence string) {
+			CharBuffer buf;
+			if (string instanceof CharBuffer) {
+				buf = (CharBuffer) string;
+			} else {
+				buf = CharBuffer.wrap(string);
+			}
+			return new Deserializer(buf).getProgram();
+		}
+
+		private HFPProgram
+		deserialize(Deserializer dser) {
+			dser.expect(HFPProgram.HEADER);
+			this.formal_predicates = dser.getOp();
+			int count = dser.getInt();
+			this.ops = new java.util.ArrayList<Op>(count);
+			for (int i = 0; i < count; ++i) {
+				this.ops.add(dser.getOp());
+			}
+			if (!dser.isDone()) {
+				throw new RuntimeException("Trailing garbage at end of deserialized HSPProgram");
+			}
+			return this;
+		}
+
+		public static LinkedList<Op>
+		makeAnalyze(String lang, FormalPredicate pred, AbstractTuple targets, DatalogProjectionSink psink) {
+			if (!lang.equals("java8")) {
+				throw new RuntimeException("Unsupported language");
+			}
+			LinkedList<Op> list = new LinkedList<Op>();
+			addTypeInfo(list, pred);
+			HFPProgram.addLoadAbstractTuple(list, pred, targets);
+
+			java.util.List<FormalPredicate> sink_predicates = psink.predicates();
+			String args[] = new String[2 + sink_predicates.size()];
+			args[0] = lang;
+			args[1] = pred.getPRED_ID();
+			for (int i = 0; i < sink_predicates.size(); ++i) {
+				final FormalPredicate sink_pred = sink_predicates.get(i);
+				String name = "";
+				if (sink_pred != null) {
+					name = sink_pred.getPRED_ID();
+				} else {
+					System.err.println("Warning: unknown predicate for Java->SWIG sink at " + i + "; not binding");
+				}
+				args[i + 2] = name;
+			}
+			list.add(Op.make(HFPProgram.ANALYZE, args));
+			return list;
+		}
+
+		public static void
+		addLoadAbstractTuple(LinkedList<Op> list, FormalPredicate pred, AbstractTuple tuple) {
+			addTypeInfo(list, pred);
+			for (AITuple tup : tuple.concreteTuples()) {
+				HFPProgram.addAddTuple(list, pred, tup);
+			}
+			for (AbstractTuple.SourceInfo filesource : tuple.fileSources()) {
+				HFPProgram.addLoad(list, pred, filesource.getFileSource(), filesource.getFormat());
+			}
+		}
+
+		public static void
+		addAddTuple(LinkedList<Op> list, FormalPredicate pred, AITuple elements) {
+			addTypeInfo(list, pred);
+			String[] args = new String[1 + elements.size()];
+			args[0] = pred.getPRED_ID();
+			for (int i = 0; i < elements.size(); ++i) {
+				// Only String types supported right now; need to extend
+				// serialisation scheme for non-strings, e.g., by
+				// prefixing type information for supported types
+				args[i + 1] = (String) elements.get(i);
+			}
+			list.add(Op.make(HFPProgram.ADDTO, args));
+		}
+
+		public static void
+		addTypeInfo(LinkedList<Op> list, FormalPredicate pred) {
+			PredicateType ty = pred.type();
+			String[] typeinfo = new String[1 + ty.arity()];
+			typeinfo[0] = pred.getPRED_ID();
+			for (int i = 0; i < ty.arity(); ++i) {
+				typeinfo[1 + i] = ty.get(i).toString();
+			}
+			list.add(Op.make(HFPProgram.PREDICATE_TYPE, typeinfo));
+		}
+
+		public static void
+		addLoad(LinkedList<Op> list, FormalPredicate pred, String filename, String format) {
+			addTypeInfo(list, pred);
+			list.add(Op.make(HFPProgram.LOAD, pred.getPRED_ID(), filename, format));
+		}
+
+		public Iterable<String>
+		getFormalPredicates() {
+			ArrayList<String> retval = new ArrayList<String>();
+			for (int i = 1; i < this.formal_predicates.body.length; ++i) {
+				retval.add(this.formal_predicates.body[i]);
+			}
+			return retval;
+		}
+
+		public static HFPProgram
+		make(Iterable<FormalPredicate> formal_predicates, java.util.List<HFPProgram.Op> ops) {
+			if (ops == null) {
+				return null;
+			}
+			HFPProgram prog = new HFPProgram();
+			ArrayList<String> formal_preds = new ArrayList<String>();
+			for (FormalPredicate fp : formal_predicates) {
+				formal_preds.add(fp.getPRED_ID());
+			}
+			String[] formal_pred_strings = new String[formal_preds.size()];
+			formal_preds.toArray(formal_pred_strings);
+			prog.formal_predicates = Op.make(DECL, formal_pred_strings);
+
+			prog.ops = new ArrayList<>(ops);
+			Collections.sort(prog.ops);
+
+			// remove dupes
+			int index = 0;
+			while (index < prog.ops.size() - 1) {
+				Op op0 = prog.ops.get(index);
+				Op op1 = prog.ops.get(index + 1);
+				if (op0.compareTo(op1) == 0) {
+					prog.ops.remove(index);
+				} else {
+					++index;
+				}
+			}
+			return prog;
+		}
+
+		public void
+		run(Map<String, TupleInserter> fpToSoufflePredMap, CmdLineOpts opts) throws IOException, SQLException {
+			State state = new  State(new EvaluationContext(), fpToSoufflePredMap, opts);
+			for (Op op : this.ops) {
+				op.run(state);
+			}
+		}
+
+		@Override
+		public String
+		toString() {
+			StringBuffer buf = new StringBuffer();
+			buf.append("HFP:start\n");
+			for (HFPProgram.Op op : this.ops) {
+				buf.append("  ");
+				buf.append(op);
+				buf.append("\n");
+			}
+			buf.append("HFP:end\n");
+			return buf.toString();
+		}
+
+		// Command pattern
+		private static abstract class Action {
+			private static HashMap<String, Action> actions = new HashMap<String, Action>();
+
+			public String marker;
+			public Action(String marker) {
+				this.marker = marker;
+				Action.actions.put(marker, this);
+			};
+
+			public static Action
+			getAction(String action_marker) {
+				Action action = Action.actions.get(action_marker);
+				if (action == null) {
+					throw new RuntimeException("Unknown action '" + action_marker + "'");
+				}
+				return action;
+			}
+
+			// args[0] is always the name of the action
+			public abstract void run(State pstate, String[] args) throws IOException, SQLException;
+		}
+
+		/**
+		 * Analyze input files
+		 */
+		// Analyze is the only action with a lower case marker
+		private static final Action ANALYZE = new Action("a") {
+				public void run(State pstate, String[] args) throws IOException, SQLException {
+					final String lang = args[1];
+					final String pred_name = args[2];
+
+					if (!lang.equals("java8")) {
+						throw new RuntimeException("Unsupported language: " + lang);
+					}
+
+					// Prepare output sink
+					ArrayList<TupleInserter> inserters = new ArrayList<>();
+					for (int i = 3; i < args.length; ++i) {
+						if (args[i].equals("")) {
+							// Not used in source program, we already warned
+							// when translating into HFP
+							inserters.add(TupleInserter.NULL);
+							continue;
+						}
+						TupleInserter inserter = pstate.souffle_pred_map.get(args[i]);
+						if (inserter == null) {
+							System.err.println("Warning: could not bind predicate '" + args[i] + "' to SWIG");
+							inserter = TupleInserter.NULL;
+						}
+						inserters.add(inserter);
+					}
+
+					DatalogProjectionSink tupleSink =
+						DatalogProjectionSink.fromInserters(pstate.ctx,
+										    inserters);
+
+					// Collect source files
+					final Relation2 pred_rel2 = pstate.relation(pred_name);
+					final PredicateType pred_type = pstate.type(pred_name);
+					java.util.List<String> sources = new ArrayList<>();
+					RelationWrapper sources_wrapped =
+						new RelationWrapper(pstate.ctx,
+								    pred_rel2, pred_type);
+					for (RelationWrapper.TupleWrapper t : sources_wrapped.tuples()) {
+						sources.add(t.getAsString(0));
+					}
+
+					// And load sources
+					FileUtil.loadJavaSources(pstate.ctx,
+								 tupleSink,
+								 sources);
+				}
+			};
+
+		// Assign tuple to predicate
+		private static final Action ADDTO = new Action("T") {
+				public void run(State pstate, String[] args) {
+					throw new RuntimeException("FIXME: ADDTO");
+				}
+			};
+
+		// Load from file
+		private static final Action LOAD = new Action("L") {
+				public void run(State pstate, String[] args) throws IOException, SQLException {
+					final String pred = args[1];
+					final String source_file = args[2];
+					final String format = args[3];
+					Program.loadEDB(pred, pstate.relation(pred), pstate.type(pred),
+							source_file, format, pstate.ctx, pstate.opts);
+				}
+			};
+
+		// Numeric actions come first
+		// General metainformation
+		private static final Action DECL = new Action("0") {
+				public void run(State pstate, String[] args) {
+					// no-op
+				}
+			};
+
+		// defines a predicate type
+		private static final Action PREDICATE_TYPE = new Action("1") {
+				public void run(State pstate, String[] args) {
+					final String pred = args[1];
+					Type[] types = new Type[args.length - 2];
+					for (int i = 0; i < args.length - 2; ++i) {
+						String tyname = args[i + 2];
+						types[i] = TYPES.get(tyname);
+						if (types[i] == null) {
+							throw new RuntimeException("Unknown type at index " + i + " for " + this);
+						}
+					}
+					pstate.local_types.put(pred, new PredicateType(types));
+				}
+			};
+
+		public static class Op implements Comparable<Op> {
+			public String[] body;
+			private Action action = null;
+
+			public Action
+			getAction() {
+				if (this.action == null) {
+					this.action = Action.getAction(this.body[0]);
+				}
+				return this.action;
+			}
+
+			public void
+			run(State pstate) throws IOException, SQLException {
+				this.getAction().run(pstate, this.body);
+			}
+
+			private Op() {}
+
+			public static Op
+			make(String ...args) {
+				Op op = new Op();
+				op.body = args;
+				return op;
+			}
+
+			public static Op
+			make(Action action, String ...args) {
+				Op op = new Op();
+				op.action = action;
+				op.body = new String[args.length + 1];
+				System.arraycopy(args, 0, op.body, 1, args.length);
+				op.body[0] = action.marker;
+				return op;
+			}
+
+			public int
+			compareTo(Op other) {
+				// first by the operator
+				String atobj = this.body[0];
+				String aoobj = other.body[0];
+				int adiff = atobj.compareTo(aoobj);
+				if (adiff != 1) {
+					return adiff;
+				}
+
+				// second by length
+				int ldiff = this.body.length - other.body.length;
+				if (ldiff != 0) {
+					return ldiff;
+				}
+
+				// third by the parameters
+				for (int i = 1; i < this.body.length; ++i) {
+					String tobj = this.body[i];
+					String oobj = other.body[i];
+					int diff = tobj.compareTo(oobj);
+					if (diff != 0) {
+						return diff;
+					}
+				}
+				return 0;
+			}
+
+			public void
+			serialize(StringBuffer sb) {
+				serializeNonnegativeInt(sb, this.body.length);
+				for (String s : this.body) {
+					serializeString(sb, s);
+				}
+			}
+
+			public Op
+			deserialize(Deserializer dser) {
+				int count = dser.getInt();
+	System.err.println("got int: " + count);
+				this.body = new String[count];
+				for (int i = 0; i < count; ++i) {
+					this.body[i] = dser.getString();
+				}
+				return this;
+			}
+
+			@Override
+			public String
+			toString() {
+				StringBuffer buf = new StringBuffer(body[0]);
+				buf.append("(");
+				for (int i = 1; i < this.body.length; ++i) {
+					if (i > 1) {
+						buf.append(", ");
+					}
+					buf.append(this.body[i]);
+				}
+				buf.append(")");
+				return buf.toString();
+			}
+		}
+
+		private static final int SERIALIZATION_MASK = 0x3;
+		private static final int SERIALIZATION_SHIFT = 2;
+
+		/**
+		 * Serialisation and deserialisation helper
+		 */
+		static class Deserializer {
+			int offset = 0;
+			CharBuffer buf;
+
+			public Deserializer(CharBuffer buf) {
+				this.buf = buf;
+			}
+
+			public int
+			getInt() {
+				final int MASK = SERIALIZATION_MASK;
+				final int SHIFT = SERIALIZATION_SHIFT;
+
+				char c = this.buf.get();
+				int result = 0;
+				while (c != '#') {
+					result <<= SHIFT;
+					result |= (((int)c) - ((int)'0')) & MASK;
+					c = this.buf.get();
+				}
+				return result;
+			}
+
+			public void
+			expect(String code) {
+				final char[] characters = new char[code.length()];
+				this.buf.get(characters);
+				String actual = new String(characters);
+				if (!code.equals(actual)) {
+					throw new RuntimeException("Error while decoding: expected '"+code+"' but read '"+actual+"'");
+				}
+
+			}
+
+			public String
+			getString() {
+				int size = getInt();
+				final char[] characters = new char[size];
+				this.buf.get(characters);
+				return new String(characters);
+			}
+
+			public Op
+			getOp() {
+				return (new Op()).deserialize(this);
+			}
+
+			public HFPProgram
+			getProgram() {
+				return (new HFPProgram()).deserialize(this);
+			}
+
+			public boolean
+			isDone() {
+				return this.buf.position() >= this.buf.length();
+			}
+		}
+
+		private static final void
+		serializeNonnegativeInt(StringBuffer sb, int i) {
+			final int MASK = SERIALIZATION_MASK;
+			final int SHIFT = SERIALIZATION_SHIFT;
+			int bufpos = 0;
+			char[] buf = new char[16];
+
+			System.err.print(" * " + i + " -> ");
+
+			// must reverse order
+			while (i > 0) {
+				char c = (char) (((int)'0') + (i & MASK));
+				buf[bufpos++] = c;
+				i >>= SHIFT;
+			}
+			for (i = bufpos - 1; i >= 0; --i) {
+				System.err.print(buf[i]);
+				sb.append(buf[i]);
+			}
+			System.err.println("");
+			sb.append('#');
+		}
+
+		private static final void
+		serializeString(StringBuffer sb, String s) {
+			serializeNonnegativeInt(sb, s.length());
+			sb.append(s);
+		}
+
+		// Evaluation state
+		public final class State {
+			public EvaluationContext ctx;
+			public HashMap<String, Relation2> local_predicates = new HashMap<>();
+			public HashMap<String, PredicateType> local_types = new HashMap<>();
+			public Map<String, TupleInserter> souffle_pred_map;
+			public CmdLineOpts opts;
+
+			public Relation2
+			relation(String pred) {
+				Relation2 rel = local_predicates.get(pred);
+				if (rel == null) {
+					PredicateType type = this.type(pred);
+					if (type == null) {
+						System.err.println(this.local_types);
+						throw new RuntimeException("Can't create relation for '" + pred + "' because we lack type information");
+					}
+					rel = new Relation2(type.arity());
+					local_predicates.put(pred, rel);
+				}
+				return rel;
+			}
+
+			public PredicateType
+			type(String pred) {
+				return this.local_types.get(pred);
+			}
+
+			public State(EvaluationContext ctx, Map<String, TupleInserter> souffle_pred_map, CmdLineOpts opts) {
+				this.ctx = ctx;
+				this.opts = opts;
+				this.souffle_pred_map = souffle_pred_map;
+			}
+		}
+
+		public static HashMap<String, Type> TYPES = new HashMap<>();
+		static {
+			for (Type ty : new Type[] {
+					ASTNodeType.get(),
+					IntegerType.get(),
+					StringType.get(),
+					PredicateRefType.get(),
+					UnknownType.get()
+				}) {
+				TYPES.put(ty.name(), ty);
+			}
+		}
+	}
+
+	/**
+	 * Derives a HFPProgram, if possible, otherwise null
+	 */
+	syn HFPProgram Program.getHFPProgram() {
+		ArrayList<HFPProgram.Op> ops = new ArrayList<>();
+		for (CommonClause c : this.getCommonClauseList()) {
+			LinkedList<HFPProgram.Op> additions = c.getHFP();
+			if (additions == null) {
+				System.out.println("Hybrid Fast Path (HFP) construction failed (optimisation disabled) for:\n  " + c);
+				return null;
+			}
+			ops.addAll(additions);
+		}
+		return HFPProgram.make(this.getFormalPredicates(), ops);
+	}
+
+	/**
+	 * HFPops to run, or null if not supported
+	 */
+	syn LinkedList<HFPProgram.Op> CommonClause.getHFP() = null;
+
+	eq Clause.getHFP() {
+		LinkedList<HFPProgram.Op> list = new LinkedList<>();
+		if (AITruth.TOP == this.aiBodySatisfied()) {
+			return null;
+		}
+		for (CommonLiteral hlit : this.getHeadsList()) {
+			LinkedList<HFPProgram.Op> subops = hlit.getHFPasHead();
+			if (subops == null) {
+				return null;
+			}
+			list.addAll(subops);
+		}
+		return list;
+	}
+
+	eq AnalyzeBlock.getHFP() {
+		Object lang_o = this.getLang().aiValue();
+		if (!(lang_o instanceof String)) {
+			return null;
+		}
+		String lang = (String) lang_o;
+		AbstractTuple targets = this.getProgramRef().aiTuple();
+		if (AbstractTuple.TOP == targets) {
+			return null;
+		}
+		return HFPProgram.makeAnalyze(lang,this.getProgramRef().formalpredicate(), targets,
+					      program().getDatalogProjectionSink(this));
+	}
+
+	syn LinkedList<HFPProgram.Op> CommonLiteral.getHFPasHead() {
+		if (this.aiPredicateRefContribution() == null
+		    && this.aiTuple() == null) {
+			return null; // Can't tell what to do with them
+		}
+		return new LinkedList<HFPProgram.Op>(); // Leave it to the AnalyzeBlocks to track their dependencies
+	}
+}
+

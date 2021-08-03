@@ -41,6 +41,11 @@ import swig.SWIGUtil;
 public class Compiler {
 	public static Object DrAST_root_node; // Enable debugging with DrAST
 
+	public static final long START = System.currentTimeMillis(); // FIXME: remove
+	public static void perr(String s) {
+		System.err.println(String.format("[% 6d] %s", System.currentTimeMillis() - START, s));
+	}
+
 	public static char getCSVSeparator() {
 		// TODO: make this a cmd line option
 		return ',';
@@ -161,7 +166,9 @@ public class Compiler {
 
 	public static Program run(CmdLineOpts opts) {
 		try {
+			perr("parse starts");
 			Program prog = parseProgram(opts);
+			perr("parse ends");
 
 			switch (opts.getAction()) {
 			case EVAL_INTERNAL:
@@ -208,14 +215,29 @@ public class Compiler {
 				prog.clauseDependencyGraph().dump();
 				break;
 			case GEN_HYBRID:
+				perr("GEN: checkProgram starts");
 				checkProgram(prog, opts);
+				perr("GEN: evalEDB starts");
 				prog.evalEDB(prog.evalCtx(), opts);
+				perr("GEN: evalIMPORT starts");
 				prog.evalIMPORT(prog.evalCtx(), opts);
+				perr("GEN: generateSouffleSWIGProgram starts");
 				generateSouffleSWIGProgram(prog, opts);
+				perr("GEN: generateSouffleSWIGProgram completed");
 				break;
 			case EVAL_HYBRID:
+				perr("checkProgram starts");
 				checkProgram(prog, opts);
-				SWIGUtil.evalHybridProgram(prog, opts);
+				perr("checkProgram ends, evalHybridProgram starts");
+				lang.ast.HFPProgram hprog = prog.getHFPProgram();
+				perr("HFP program:\n" + hprog);
+				String serialised = hprog.serialize();
+				perr("serialised = " + serialised);
+				hprog = lang.ast.HFPProgram.deserialize(serialised);
+				perr("HFP serialized and deserialized:\n" + hprog);
+				//SWIGUtil.evalHybridProgram(prog, opts);
+				SWIGUtil.evalHFPProgram(prog.getHFPProgram(), opts);
+				//perr("evalHybridProgram ends");
 				break;
 			case INCREMENTAL_UPDATE:
 			case INCREMENTAL_INIT:

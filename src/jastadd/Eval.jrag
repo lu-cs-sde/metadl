@@ -47,11 +47,33 @@ aspect Eval {
 		}
 	}
 
+	public static void Program.loadEDB(final String pred, Relation2 rel, PredicateType type,
+					   final String file, final String format,
+					   EvaluationContext ctx,
+					   CmdLineOpts opts) throws IOException, SQLException {
+		if (ProgramSplit.isInternalDbDesc(file)) {
+			// special path for the internal DB
+			Connection conn = opts.getSqlDbConnection();
+			SQLUtil.readRelation(ctx, type, rel,
+					     conn, ProgramSplit.getInternalDbTable(file), opts.getDbEntryTag());
+		} else if (format.equals("csv")) {
+			CSVUtil.readRelation(ctx, type, rel, Paths.get(opts.getFactsDir(), file).toString());
+		} else if (format.equals("sqlite")) {
+			Connection conn = SQLUtil.connect(Paths.get(opts.getFactsDir(), file).toString());
+			SQLUtil.readRelation(ctx, type, rel,
+					     conn, pred, opts.getDbEntryTag());
+			conn.close();
+		} else {
+			throw new RuntimeException("Unknown format for EDB, " + format + ".");
+		}
+	}
+
 	public void Program.evalEDB(EvaluationContext ctx, CmdLineOpts opts) throws IOException, SQLException {
 		FormalPredicate fpEDB = formalPredicateMap().get(GlobalNames.EDB_NAME);
 
+		lang.Compiler.perr("fpEDB = " + fpEDB);
 		if (fpEDB == null) {
-			// no IMPORT in the program, nothing to do
+			// no EDB in the program, nothing to do
 			return;
 		}
 
@@ -64,30 +86,18 @@ aspect Eval {
 			String pred = t.getAsString(0);
 			String file = t.getAsString(1);
 			String format = t.getAsString(2);
+
 			FormalPredicate dstPred = formalPredicateMap().get(pred);
 			Relation2 rel = dstPred.relation2();
-
-			if (ProgramSplit.isInternalDbDesc(file)) {
-				// special path for the internal DB
-				Connection conn = opts.getSqlDbConnection();
-				SQLUtil.readRelation(ctx, dstPred.type(), dstPred.relation2(),
-									 conn, ProgramSplit.getInternalDbTable(file), opts.getDbEntryTag());
-			} else if (format.equals("csv")) {
-				CSVUtil.readRelation(ctx, dstPred.type(), dstPred.relation2(), Paths.get(opts.getFactsDir(), file).toString());
-			} else if (format.equals("sqlite")) {
-				Connection conn = SQLUtil.connect(Paths.get(opts.getFactsDir(), file).toString());
-				SQLUtil.readRelation(ctx, dstPred.type(), dstPred.relation2(),
-									 conn, pred, opts.getDbEntryTag());
-				conn.close();
-			} else {
-				throw new RuntimeException("Unknown format for EDB, " + format + ".");
-			}
+			Program.loadEDB(pred, rel, dstPred.type(),
+					file, format, ctx, opts);
 		}
 	}
 
 	public void Program.evalIMPORT(EvaluationContext ctx, CmdLineOpts opts) throws IOException {
 		FormalPredicate fpIMPORT = formalPredicateMap().get(GlobalNames.IMPORT_NAME);
 
+		lang.Compiler.perr("fpIMPORT = " + fpIMPORT);
 		if (fpIMPORT == null) {
 			// no IMPORT in the program, nothing to do
 			return;
@@ -161,9 +171,14 @@ aspect Eval {
 			if (c instanceof AnalyzeBlock) {
 				AnalyzeBlock block = (AnalyzeBlock) c;
 				FormalPredicate srcPred = block.getProgramRef().formalpredicate();
+				lang.Compiler.perr("Analyze block found on " + srcPred);
 
 				// evaluate the predicate representing the input program paths
+				lang.Compiler.perr("  (ai predicts:");
+				lang.Compiler.perr("   pred = " + srcPred.aiTuple());
+				lang.Compiler.perr("   lang = " + block.getLang().aiValue());
 				srcPred.eval(ctx);
+				lang.Compiler.perr("  (input path evaluated)");
 
 				// now populate the relations associated with the analyze block
 				DatalogProjectionSink tupleSink = getDatalogProjectionSink(block);
@@ -173,11 +188,12 @@ aspect Eval {
 				if (fpToSoufflePredMap != null) {
 					tupleSink = tupleSink.remap(fpToSoufflePredMap);
 				}
-
+				lang.Compiler.perr("  populating program representation");
 				populateProgramRepresentation(srcPred,
 											  tupleSink,
 											  block.getLang().getSTRING(),
 											  ctx);
+				lang.Compiler.perr("-- block done");
 			}
 		}
 	}

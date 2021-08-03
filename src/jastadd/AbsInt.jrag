@@ -1,0 +1,478 @@
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.ArrayList;
+
+/**
+ * Abstract interpretation of clauses
+ *
+ * Tries to construct a simplified program representation for predicates that can be analysed
+ * without AnalyzeBlocks.
+ */
+aspect AbsInt {
+	enum AITruth {
+		TRUE {
+			@Override public AITruth negate() { return FALSE; }
+		},
+		FALSE {
+			@Override public AITruth negate() { return TRUE; }
+		},
+		TOP {
+			@Override public AITruth negate() { return TOP; }
+		};
+
+		static AITruth fromBool(Boolean b) {
+			if (b == null) {
+				return TOP;
+			}
+			if (b) {
+				return AITruth.TRUE;
+			} else {
+				return AITruth.FALSE;
+			}
+		}
+
+		public abstract AITruth negate();
+
+		/**
+		 * Assuming that "values" model "top" as null
+		 */
+		public static AITruth
+		fromEqualValues(Object a, Object b) {
+			if (a == null || b == null) {
+				return AITruth.TOP;
+			}
+			return fromBool(a.equals(b));
+		}
+	}
+
+	/**
+	 * Abstract Interpretation tuple.
+	 * Works like a regular tuple, for now.
+	 */
+	class AITuple implements Comparable<AITuple> {
+		private Object[] atoms;
+		public AITuple(Object... atoms) {
+			this.atoms = atoms;
+		}
+
+		public int
+		size() {
+			return this.atoms.length;
+		}
+
+		public Object
+		get(int index) {
+			return this.atoms[index];
+		}
+
+		// returns null if tuple is null
+		public static
+		Object getMaybe(AITuple t, int index) {
+			if (t == null) {
+				return null;
+			}
+			return t.get(index);
+		}
+
+		@Override
+		public String
+		toString() {
+			return "<" + java.util.Arrays.toString(this.atoms) + ">";
+		}
+
+		@Override
+		public int
+		compareTo(AITuple other) {
+			int ldiff = this.atoms.length - other.atoms.length;
+			if (ldiff != 0) {
+				return ldiff;
+			}
+			for (int i = 0; i < this.atoms.length; ++i) {
+				Object tobj = this.atoms[i];
+				Object oobj = other.atoms[i];
+				if (tobj.getClass() != oobj.getClass()) {
+					return tobj.getClass().toString().compareTo(oobj.getClass().toString());
+				}
+				int diff = ((Comparable)tobj).compareTo((Comparable)oobj);
+				if (diff != 0) {
+					return diff;
+				}
+			}
+			return 0;
+		}
+	}
+
+	/**
+	 * AbstractTuples represent the AI of a predicate, if one is constructable.
+	 * This object accumulates disjunctive information.
+	 */
+	class AbstractTuple {
+		public static final AbstractTuple TOP = null;
+
+		private HashSet<AITuple> tuples = new HashSet<>();
+		private HashSet<SourceInfo> file_sources = new HashSet<>();
+
+		public void
+		add(AITuple tuple) {
+			this.tuples.add(tuple);
+		}
+
+		public void
+		addFileSource(String file_source, String file_format) {
+			this.file_sources.add(new SourceInfo(file_source, file_format));
+		}
+
+		/**
+		 * Iterate over all concrete tuples
+		 */
+		public Iterable<AITuple>
+		concreteTuples() {
+			return this.tuples;
+		}
+
+		public Iterable<SourceInfo>
+		fileSources() {
+			return this.file_sources;
+		}
+
+		public static AbstractTuple
+		fromTuple(AITuple tuple) {
+			if (tuple == null) {
+				return AbstractTuple.TOP;
+			}
+			AbstractTuple abstuple = new AbstractTuple();
+			abstuple.add(tuple);
+			return abstuple;
+		}
+
+		public static AbstractTuple
+		fromFileSource(String file_source, String format) {
+			if (file_source == null) {
+				return AbstractTuple.TOP;
+			}
+			AbstractTuple abstuple = new AbstractTuple();
+			abstuple.addFileSource(file_source, format);
+			return abstuple;
+		}
+
+		public static AbstractTuple
+		merge(AbstractTuple lhs, AbstractTuple rhs) {
+			if (lhs == AbstractTuple.TOP || rhs == AbstractTuple.TOP) {
+				return AbstractTuple.TOP;
+			}
+			for (AITuple t : lhs.concreteTuples()) {
+				rhs.add(t);
+			}
+			for (SourceInfo s : lhs.fileSources()) {
+				rhs.file_sources.add(s);
+			}
+			return rhs;
+		}
+
+		@Override
+		public String
+		toString() {
+			String tup = null;
+			if (!this.tuples.isEmpty()) {
+				tup = this.tuples.toString();
+			}
+
+			String fs = null;
+			if (!this.file_sources.isEmpty()) {
+				fs = this.file_sources.toString();
+			}
+
+			String s = "";
+			if (tup == null && fs == null) {
+				s = "{}";
+			} else {
+				if (tup != null) {
+					s += tup;
+				}
+				if (fs != null) {
+					if (s.length() > 0) {
+						s += " + ";
+					}
+
+					s += "{ t | t <- edb(f), f <- " + fs + "}";
+				}
+			}
+			return "[" + s + "]";
+		}
+
+		public static class SourceInfo {
+			private String file;
+			private String format;
+			public String getFileSource() { return file; }
+			public String getFormat() { return format; }
+			public SourceInfo(String filename, String format) {
+				this.file = filename;
+				this.format = format;
+			}
+		}
+
+	}
+
+	class AIPredicateMap {
+		// Universal predicate name: captures contributions to _all_ predicates.
+		// We use this to mark all predicates as 'TOP' if we can't resolve the target
+		// predicate reference to an EDB clause.
+		public static final String UNIVERSAL_PREDICATE = "";
+
+		private HashMap<String, AbstractTuple> map = new HashMap<>();
+
+		public AbstractTuple
+		get(String pred_name) {
+			if (!this.map.containsKey(pred_name)) {
+				return AbstractTuple.TOP;
+			}
+			AbstractTuple t = this.map.get(pred_name);
+			if (this.map.containsKey(UNIVERSAL_PREDICATE)) {
+				t = AbstractTuple.merge(t, this.map.get(UNIVERSAL_PREDICATE));
+			}
+			return t;
+		}
+
+		public void add(Object p) {
+			// work around type info limitations in JastAdd
+			this.add((Pair) p);
+		}
+
+		public void add(Pair p) {
+			AbstractTuple tuple = p.tuple;
+			if (this.map.containsKey(p.predicate_name)) {
+				tuple = AbstractTuple.merge(
+					this.map.get(p.predicate_name),
+					tuple);
+			}
+			this.map.put(p.predicate_name, tuple);
+		}
+
+		public static class Pair {
+			private String predicate_name;
+			private AbstractTuple tuple;
+			public Pair(String pname, AbstractTuple t) {
+				this.predicate_name = pname;
+				this.tuple = (t == null)? AbstractTuple.TOP : t;
+			}
+		}
+
+		@Override
+		public String
+		toString() {
+			StringBuffer sb = new StringBuffer();
+			sb.append("{{\n");
+			if (this.map.containsKey(UNIVERSAL_PREDICATE)) {
+				sb.append("\t for all: " + this.map.get(UNIVERSAL_PREDICATE) + "\n");
+			}
+			for (String pname : map.keySet()) {
+				if (!pname.equals(UNIVERSAL_PREDICATE)) {
+					sb.append("\t" + pname + "\t-> " + this.map.get(pname) + "\n");
+				}
+			}
+			sb.append("}}\n");
+			return sb.toString();
+		}
+	}
+
+	inh boolean ASTNode.inAnalyzeBlock();
+
+	eq Program.getChild().inAnalyzeBlock() = false;
+	eq AnalyzeBlock.getClause().inAnalyzeBlock() = true;
+
+	/**
+	 * Predicates that do not occur in the body of an Analyze block
+	 */
+	syn Set<String> Program.nonAnalyzeBlockPredicates() {
+		HashSet<String> p_names = new HashSet<>();
+		HashSet<String> analyze_p_names = new HashSet<>();
+		for (PredicateInterface psym : this.predicateSymbols()) {
+			p_names.add(psym.getPRED_ID());
+			if (psym instanceof ASTNode && ((ASTNode)psym).inAnalyzeBlock()) {
+				analyze_p_names.add(psym.getPRED_ID());
+			}
+		}
+		p_names.removeAll(analyze_p_names);
+		return p_names;
+	}
+
+	/**
+	 * Do we know the result statically?
+	 * null (Top), Boolean.TRUE (always true) or Boolean.FALSE (always false)
+	 */
+	syn AITruth CommonLiteral.aiSatisfied() = (this.hasNot())? this.aiValue().negate() : this.aiValue();
+
+	/**
+	 * Do we know for sure whether the body is satisfiable?
+	 */
+	syn AITruth Clause.aiBodySatisfied() = AITruth.TOP;
+	syn AITruth Rule.aiBodySatisfied()  {
+		for (CommonLiteral b : this.getBodyList()) {
+			if (b.aiSatisfied() == AITruth.FALSE) {
+				return AITruth.FALSE;
+			}
+			if (b.aiSatisfied() == AITruth.TOP) {
+				return AITruth.TOP;
+			}
+		}
+		return AITruth.TRUE;
+	}
+	syn AITruth Fact.aiBodySatisfied() = AITruth.TRUE;
+
+
+	/// CommonLiteral.aiValue
+	syn AITruth CommonLiteral.aiValue() = AITruth.TOP;
+	// Specific constraints
+	syn AITruth EQLiteral.aiValue() {
+		final AITuple t = this.aiTuple();
+		return AITruth.fromEqualValues(AITuple.getMaybe(t, 0), AITuple.getMaybe(t, 1));
+	}
+	syn AITruth NEQLiteral.aiValue() {
+		final AITuple t = this.aiTuple();
+		return AITruth.fromEqualValues(AITuple.getMaybe(t, 0), AITuple.getMaybe(t, 1)).negate();
+	}
+
+
+	/**
+	 * Do we know expr contents statically?
+	 * Uses 'null' for TOP
+	 */
+	syn Object Expr.aiValue() = null;
+
+	syn Object IntConstant.aiValue() = Long.parseLong(getNUMERAL());
+	syn Object StringConstant.aiValue() = getSTRING();
+	syn Object PredicateRef.aiValue() = this;
+
+	/**
+	 * Do we know  term contents statically?
+	 */
+	syn Object Term.aiValue() = null;
+
+
+	syn AITuple CommonLiteral.aiTuple() = null;
+	syn AITuple Literal.aiTuple() {
+		final Object[] args = new Object[this.getNumTerms()];
+		for (int i = 0; i < this.getNumTerms(); ++i) {
+			final Object v = this.getTerms(i).aiValue();
+			if (v == null) {
+				return null;
+			}
+			args[i] = v;
+		}
+		return new AITuple(args);
+	}
+	syn AITuple Constraint.aiTuple() {
+		final Object[] args = new Object[this.getNumExpr()];
+		for (int i = 0; i < this.getNumExpr(); ++i) {
+			final Object v = this.getExpr(i).aiValue();
+			if (v == null) {
+				return null;
+			}
+			args[i] = v;
+		}
+		return new AITuple(args);
+	}
+
+	/**
+	 * Predicate contribution nontrivial, can't statically predict
+	 */
+	coll AIPredicateMap Program.aiPredicateMap()
+		[new AIPredicateMap()]
+		with add;
+
+	Clause contributes each aiHeadPredicate()
+		when !inAnalyzeBlock()
+		to Program.aiPredicateMap();
+
+	Clause contributes each aiHeadPredicateRef()
+		when !inAnalyzeBlock()
+		to Program.aiPredicateMap();
+
+
+	// Direct predicate contributions
+	syn java.util.List<AIPredicateMap.Pair> Clause.aiHeadPredicate() {
+		java.util.List<AIPredicateMap.Pair> list = new ArrayList<>();
+
+		AITruth bodyTruth = this.aiBodySatisfied();
+		if (bodyTruth == AITruth.FALSE) {
+			// can't satisfy the body, so this rule doesn't contribute anything
+			return list;
+		}
+
+		for (CommonLiteral hlit : this.getHeadsList()) {
+			PredicateSymbol psym = hlit.predicate();
+			// if (psym == null) {
+			// 	continue; // shouldn't be happening in the head, unless we later add aggregation
+			// }
+			String pred = psym.getPRED_ID();
+			AbstractTuple t;
+			if (bodyTruth == AITruth.TOP) {
+				t = AbstractTuple.TOP; // we dont' know if we will satisfy the body, so we are conservative
+			} else {
+				t = AbstractTuple.fromTuple(hlit.aiTuple());
+			}
+			list.add(new AIPredicateMap.Pair(pred, t));
+		}
+		return list;
+	}
+
+	syn AIPredicateMap.Pair CommonLiteral.aiPredicateRefContribution() = null;
+	syn AIPredicateMap.Pair Literal.aiPredicateRefContribution() {
+		if (!this.isEDB() || getNumTerms() < 3) {
+			// no impact?
+			return null;
+		}
+		Object atom_0 = getTerms(0).aiValue();
+		Object atom_1 = getTerms(1).aiValue();
+		Object atom_2 = getTerms(2).aiValue();
+		if (!(atom_0 instanceof PredicateRef)) {
+			// EDB, but we don't know what we're loading into?  Must give up entirely
+			return new AIPredicateMap.Pair(AIPredicateMap.UNIVERSAL_PREDICATE, AbstractTuple.TOP);
+		}
+		String pred = ((PredicateRef)atom_0).getPRED_ID();
+		String file_to_load = null; // Top value;
+		String format = null; // Top value;
+		if (atom_1 instanceof String) {
+			file_to_load = (String) atom_1;
+		}
+		if (atom_2 instanceof String) {
+			format= (String) atom_2;
+		}
+		if (atom_1 == null || atom_2 == null) {
+			return null; // Can't currently handle
+		}
+		return new AIPredicateMap.Pair(pred, AbstractTuple.fromFileSource(file_to_load, format));
+	}
+
+	// Contributions via predicate references
+	syn java.util.List<AIPredicateMap.Pair> Clause.aiHeadPredicateRef() {
+		java.util.List<AIPredicateMap.Pair> list = new ArrayList<>();
+
+		AITruth bodyTruth = this.aiBodySatisfied();
+		if (bodyTruth == AITruth.FALSE) {
+			// can't satisfy the body, so this rule doesn't contribute anything
+			return list;
+		}
+
+		for (CommonLiteral hlit : this.getHeadsList()) {
+			AIPredicateMap.Pair pair = hlit.aiPredicateRefContribution();
+			if (pair != null) {
+				list.add(pair);
+			}
+		}
+		return list;
+	}
+
+	syn AbstractTuple Program.aiPredicate(String pred_id) {
+		if (this.nonAnalyzeBlockPredicates().contains(pred_id)) {
+			return this.aiPredicateMap().get(pred_id);
+		} else {
+			System.err.println("Pred is blocked: " + pred_id);
+		}
+		return AbstractTuple.TOP;
+	}
+
+	syn AbstractTuple PredicateRef.aiTuple() = this.program().aiPredicate(this.getPRED_ID());
+	syn AbstractTuple FormalPredicate.aiTuple() = this.program().aiPredicate(this.getPRED_ID());
+	syn AbstractTuple PredicateSymbol.aiTuple() = this.program().aiPredicate(this.getPRED_ID());
+}

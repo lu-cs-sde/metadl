@@ -491,7 +491,7 @@ public class IncrementalDriver {
 		}
 
 		Pair<SWIGSouffleProgram, Map<FormalPredicate, TupleInserter>> swigProg =
-			SWIGUtil.loadSWIGProgram(progSplit.getFusedProgram(), fusedSouffleLib.getAbsoluteFile(), "fused");
+			SWIGUtil.loadSWIGProgram(progSplit.getFusedProgram().getFormalPredicates(), fusedSouffleLib.getAbsoluteFile(), "fused");
 
 		Map<String, TupleInserter> tupleInsertersByName = swigProg.getRight().entrySet().stream()
 			.collect(Collectors.toMap(e -> e.getKey().getPRED_ID(), e -> e.getValue()));

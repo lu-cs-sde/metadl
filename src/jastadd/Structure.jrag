@@ -20,7 +20,7 @@ aspect Utility {
 					throw new RuntimeException(exn);
 				}
 			}
-			final byte[] hashed = digest.digest(input.getBytes(StandardCharsets.UTF_8));
+			final byte[] hashed = Hash.digest.digest(input.getBytes(StandardCharsets.UTF_8));
 			return Base64.getEncoder().encodeToString(hashed);
 		}
 	}

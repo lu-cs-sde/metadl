@@ -65,6 +65,37 @@ public class DatalogProjectionSink {
 
 	protected DatalogProjectionSink() { }
 
+	// Returns the relevant predicates in a predetermined order
+	public java.util.List<FormalPredicate> predicates() {
+		java.util.List<FormalPredicate> predicates = new java.util.ArrayList<>();
+		predicates.add(this.astPredicate);
+		predicates.add(this.provenancePredicate);
+		predicates.add(this.attributesPredicate);
+		predicates.add(this.srcLocPredicate);
+		predicates.add(this.ntaPredicate);
+		return predicates;
+	}
+
+	/**
+	 * Constructs a projection sink, given tuple inserters
+	 *
+	 * @param The inserters must have the same order as returned by 'predicates()'
+	 */
+	public static DatalogProjectionSink
+	fromInserters(EvaluationContext ctx, java.util.List<TupleInserter> inserters) {
+		DatalogProjectionSink res = new DatalogProjectionSink();
+		if (inserters.size() != 5) {
+			throw new RuntimeException("Must have length 5: " + inserters);
+		}
+		res.ast = inserters.get(0);
+		res.provenance = inserters.get(1);
+		res.attributes = inserters.get(2);
+		res.srcLoc = inserters.get(3);
+		res.nta = inserters.get(4);
+
+		return res;
+	}
+
 	public DatalogProjectionSink remap(Map<FormalPredicate, TupleInserter> sinkRemap) {
 		DatalogProjectionSink res = new DatalogProjectionSink();
 		res.astPredicate = astPredicate;

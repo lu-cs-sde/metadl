@@ -71,7 +71,6 @@ aspect Eval {
 	public void Program.evalEDB(EvaluationContext ctx, CmdLineOpts opts) throws IOException, SQLException {
 		FormalPredicate fpEDB = formalPredicateMap().get(GlobalNames.EDB_NAME);
 
-		lang.Compiler.perr("fpEDB = " + fpEDB);
 		if (fpEDB == null) {
 			// no EDB in the program, nothing to do
 			return;
@@ -97,7 +96,6 @@ aspect Eval {
 	public void Program.evalIMPORT(EvaluationContext ctx, CmdLineOpts opts) throws IOException {
 		FormalPredicate fpIMPORT = formalPredicateMap().get(GlobalNames.IMPORT_NAME);
 
-		lang.Compiler.perr("fpIMPORT = " + fpIMPORT);
 		if (fpIMPORT == null) {
 			// no IMPORT in the program, nothing to do
 			return;

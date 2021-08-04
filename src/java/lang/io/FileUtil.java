@@ -50,12 +50,15 @@ public class FileUtil {
 		}
 	}
 
-    public static String fileNameNoExtension(String path) {
-        String fn = fileName(path);
-        int index = fn.lastIndexOf('.');
-        if(index == -1) return fn;
-        return fn.substring(0, index);
-    }
+	public static String fileNameNoExtension(String path) {
+		return filePathNoExtension(fileName(path));
+	}
+
+	public static String filePathNoExtension(String fn) {
+		int index = fn.lastIndexOf('.');
+		if(index == -1) return fn;
+		return fn.substring(0, index);
+	}
 
 	public static String fileName(String path) {
 		Path p = Paths.get(path);

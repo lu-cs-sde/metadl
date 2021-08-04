@@ -95,13 +95,7 @@ public class SWIGUtil {
 
 	public static void evalHFPProgram(HFPProgram fprog, CmdLineOpts opts) throws IOException, SQLException {
 		Pair<SWIGSouffleProgram, Map<String, TupleInserter>> progInfoPair = loadSWIGProgramStringLinkage(fprog.getFormalPredicates(), opts);
-		// prog.evalEDB(prog.evalCtx(), opts);
-		// prog.evalIMPORT(prog.evalCtx(), opts);
-		// prog.evalAnalyzeBlocks(prog.evalCtx(), opts, progInfoPair.getRight());
-		lang.Compiler.perr("evaHFPProgram starting");
 		fprog.run(progInfoPair.getRight(), opts);
-		lang.Compiler.perr("SWIG program executing");
 		runSWIGProgram(progInfoPair.getLeft(), opts);
-		lang.Compiler.perr("Completed");
 	}
 }

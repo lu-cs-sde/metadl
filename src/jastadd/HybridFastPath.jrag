@@ -21,14 +21,73 @@ aspect HybridFastPath {
 
 		private static final String HEADER = "MDLHFP0:";
 
-		private java.util.List<HFPProgram.Op> ops;
+		public static final int ANNOTATIONS_SIZE = 2;
+		public static final int ANNOTATION_SOURCE_RELATION = 1;
+
+		// Start of serialised elements
+		private Op annotations;
 		private Op formal_predicates;
-		private HFPProgram() {};
+		private Op cached_predicates;;
+		private java.util.List<HFPProgram.Op> ops;
+		// End of serialised elements
+
+		private HFPProgram() {
+			String[] annotations_arr = new String[HFPProgram.ANNOTATIONS_SIZE];
+			for (int i = 1; i < HFPProgram.ANNOTATIONS_SIZE; ++i) {
+				annotations_arr[i] = "";
+			}
+			this.annotations = Op.make(DECL, annotations_arr);
+			this.cached_predicates = Op.make(DECL, new String[]{null});
+		};
+
+		public void
+		setAnnotation(int annotation_id, String value) {
+			if (value == null) {
+				throw new RuntimeException("Annotations must not be null");
+			}
+			this.annotations.body[annotation_id] = value;
+		}
+
+		public String
+		getAnnotation(int annotation_id) {
+			return this.annotations.body[annotation_id];
+		}
+
+		public void
+		setCachedPredicates(Program prog,
+				    Collection<? extends String> cached_predicate_collection) {
+			final String[] data = new String[cached_predicate_collection.size() + 1];
+			int pos = 1;
+			LinkedList<Op> ll = new LinkedList<>();
+			for (String pred : cached_predicate_collection) {
+				data[pos++] = pred;
+				if (prog.formalPredicateMap().get(pred) == null) {
+					throw new RuntimeException("All hands abandon ship!");
+				}
+				HFPProgram.addTypeInfo(ll, prog.formalPredicateMap().get(pred));
+			}
+			this.cached_predicates = Op.make(DECL, data);
+			this.ops.addAll(ll);
+			this.sortOps();
+		}
+
+		public Collection<String>
+		getCachedPredicates() {
+			String[] data = this.cached_predicates.body;
+			ArrayList<String> result = new ArrayList<>(data.length - 1);
+			for (int i = 1; i < data.length; ++i) {
+				result.add(data[i]);
+			}
+			return result;
+		}
 
 		public String serialize() {
+			System.out.println(this);
 			StringBuffer sb = new StringBuffer();
 			sb.append(HFPProgram.HEADER);
+			this.annotations.serialize(sb);
 			this.formal_predicates.serialize(sb);
+			this.cached_predicates.serialize(sb);
 			serializeNonnegativeInt(sb, this.ops.size());
 			for (Op op : this.ops) {
 				op.serialize(sb);
@@ -50,7 +109,9 @@ aspect HybridFastPath {
 		private HFPProgram
 		deserialize(Deserializer dser) {
 			dser.expect(HFPProgram.HEADER);
+			this.annotations = dser.getOp();
 			this.formal_predicates = dser.getOp();
+			this.cached_predicates = dser.getOp();
 			int count = dser.getInt();
 			this.ops = new java.util.ArrayList<Op>(count);
 			for (int i = 0; i < count; ++i) {
@@ -63,7 +124,7 @@ aspect HybridFastPath {
 		}
 
 		public static LinkedList<Op>
-		makeAnalyze(String lang, FormalPredicate pred, AbstractTuple targets, DatalogProjectionSink psink) {
+		makeAnalyze(String lang, String prefix, FormalPredicate pred, AbstractTuple targets, DatalogProjectionSink psink) {
 			if (!lang.equals("java8")) {
 				throw new RuntimeException("Unsupported language");
 			}
@@ -72,9 +133,11 @@ aspect HybridFastPath {
 			HFPProgram.addLoadAbstractTuple(list, pred, targets);
 
 			java.util.List<FormalPredicate> sink_predicates = psink.predicates();
-			String args[] = new String[2 + sink_predicates.size()];
-			args[0] = lang;
-			args[1] = pred.getPRED_ID();
+			final int HEADER_SIZE = HFPProgram.ANALYZE_HEADER_SIZE;
+			String args[] = new String[HEADER_SIZE + sink_predicates.size()];
+			args[ANALYZE_LANG] = lang;
+			args[ANALYZE_PREFIX] = prefix;
+			args[ANALYZE_PREDICATE] = pred.getPRED_ID();
 			for (int i = 0; i < sink_predicates.size(); ++i) {
 				final FormalPredicate sink_pred = sink_predicates.get(i);
 				String name = "";
@@ -83,7 +146,7 @@ aspect HybridFastPath {
 				} else {
 					System.err.println("Warning: unknown predicate for Java->SWIG sink at " + i + "; not binding");
 				}
-				args[i + 2] = name;
+				args[i + HEADER_SIZE] = name;
 			}
 			list.add(Op.make(HFPProgram.ANALYZE, args));
 			return list;
@@ -103,13 +166,13 @@ aspect HybridFastPath {
 		public static void
 		addAddTuple(LinkedList<Op> list, FormalPredicate pred, AITuple elements) {
 			addTypeInfo(list, pred);
-			String[] args = new String[1 + elements.size()];
-			args[0] = pred.getPRED_ID();
+			String[] args = new String[ADDTO_HEADER_SIZE + elements.size()];
+			args[ADDTO_PREDICATE] = pred.getPRED_ID();
 			for (int i = 0; i < elements.size(); ++i) {
 				// Only String types supported right now; need to extend
 				// serialisation scheme for non-strings, e.g., by
 				// prefixing type information for supported types
-				args[i + 1] = (String) elements.get(i);
+				args[i + ADDTO_HEADER_SIZE] = (String) elements.get(i);
 			}
 			list.add(Op.make(HFPProgram.ADDTO, args));
 		}
@@ -117,10 +180,10 @@ aspect HybridFastPath {
 		public static void
 		addTypeInfo(LinkedList<Op> list, FormalPredicate pred) {
 			PredicateType ty = pred.type();
-			String[] typeinfo = new String[1 + ty.arity()];
-			typeinfo[0] = pred.getPRED_ID();
+			String[] typeinfo = new String[PREDICATE_TYPE_HEADER_SIZE + ty.arity()];
+			typeinfo[PREDICATE_TYPE_PREDICATE] = pred.getPRED_ID();
 			for (int i = 0; i < ty.arity(); ++i) {
-				typeinfo[1 + i] = ty.get(i).toString();
+				typeinfo[PREDICATE_TYPE_HEADER_SIZE + i] = ty.get(i).toString();
 			}
 			list.add(Op.make(HFPProgram.PREDICATE_TYPE, typeinfo));
 		}
@@ -128,7 +191,7 @@ aspect HybridFastPath {
 		public static void
 		addLoad(LinkedList<Op> list, FormalPredicate pred, String filename, String format) {
 			addTypeInfo(list, pred);
-			list.add(Op.make(HFPProgram.LOAD, pred.getPRED_ID(), filename, format));
+			list.add(Op.make(HFPProgram.LOAD, null, pred.getPRED_ID(), filename, format));
 		}
 
 		public Iterable<String>
@@ -150,39 +213,61 @@ aspect HybridFastPath {
 			for (FormalPredicate fp : formal_predicates) {
 				formal_preds.add(fp.getPRED_ID());
 			}
-			String[] formal_pred_strings = new String[formal_preds.size()];
+			String[] formal_pred_strings = new String[1 + formal_preds.size()];
 			formal_preds.toArray(formal_pred_strings);
+			System.arraycopy(formal_pred_strings, 0,
+					 formal_pred_strings, 1,
+					 formal_pred_strings.length - 1);
+			formal_pred_strings[0] = null;
 			prog.formal_predicates = Op.make(DECL, formal_pred_strings);
 
 			prog.ops = new ArrayList<>(ops);
-			Collections.sort(prog.ops);
-
-			// remove dupes
-			int index = 0;
-			while (index < prog.ops.size() - 1) {
-				Op op0 = prog.ops.get(index);
-				Op op1 = prog.ops.get(index + 1);
-				if (op0.compareTo(op1) == 0) {
-					prog.ops.remove(index);
-				} else {
-					++index;
-				}
-			}
+			prog.sortOps();
 			return prog;
 		}
 
 		public void
-		run(Map<String, TupleInserter> fpToSoufflePredMap, CmdLineOpts opts) throws IOException, SQLException {
-			State state = new  State(new EvaluationContext(), fpToSoufflePredMap, opts);
-			for (Op op : this.ops) {
-				op.run(state);
+		sortOps() {
+			Collections.sort(this.ops);
+
+			// remove dupes
+			int index = 0;
+			while (index < this.ops.size() - 1) {
+				Op op0 = this.ops.get(index);
+				Op op1 = this.ops.get(index + 1);
+				if (op0.compareTo(op1) == 0) {
+					this.ops.remove(index);
+				} else {
+					++index;
+				}
 			}
+		}
+
+		public Runner
+		runner(Map<String, TupleInserter> tuple_inserters, CmdLineOpts opts) {
+			return new Runner(new EvaluationContext(), tuple_inserters, opts);
+		}
+
+		public void
+		run(Map<String, TupleInserter> fpToSoufflePredMap, CmdLineOpts opts) throws IOException, SQLException {
+			Runner runner = this.runner(fpToSoufflePredMap, opts);
+			runner.runUntil(null);
 		}
 
 		@Override
 		public String
 		toString() {
 			StringBuffer buf = new StringBuffer();
+			buf.append("HFP:decl\n");
+			buf.append("  annotations: ");
+			buf.append(this.annotations);
+			buf.append('\n');
+			buf.append("  formal_pred: ");
+			buf.append(this.formal_predicates);
+			buf.append('\n');
+			buf.append("  cached_pred: ");
+			buf.append(this.cached_predicates);
+			buf.append('\n');
 			buf.append("HFP:start\n");
 			for (HFPProgram.Op op : this.ops) {
 				buf.append("  ");
@@ -213,74 +298,90 @@ aspect HybridFastPath {
 			}
 
 			// args[0] is always the name of the action
-			public abstract void run(State pstate, String[] args) throws IOException, SQLException;
+			public abstract void run(Runner pstate, String[] args) throws IOException, SQLException;
+		}
+
+		static final int ANALYZE_HEADER_SIZE = 4;
+		static final int ANALYZE_LANG = 1;
+		static final int ANALYZE_PREFIX = 2;
+		static final int ANALYZE_PREDICATE = 3;
+
+		// Analyze is the only action with a lower case marker
+		protected static final class Analyze extends Action {
+			public Analyze() {
+				super("a");
+			}
+
+			public void run(Runner pstate, String[] args) throws IOException, SQLException {
+				final String lang = args[ANALYZE_LANG];
+				final String pred_name = args[ANALYZE_PREDICATE];
+
+				if (!lang.equals("java8")) {
+					throw new RuntimeException("Unsupported language: " + lang);
+				}
+
+				// Prepare output sink
+				ArrayList<TupleInserter> inserters = new ArrayList<>();
+				for (int i = ANALYZE_HEADER_SIZE; i < args.length; ++i) {
+					if (args[i].equals("")) {
+						// Not used in source program, we already warned
+						// when translating into HFP
+						inserters.add(TupleInserter.NULL);
+						continue;
+					}
+					TupleInserter inserter = pstate.souffle_pred_map.get(args[i]);
+					if (inserter == null) {
+						System.err.println("Warning: could not bind predicate '" + args[i] + "' to SWIG");
+						inserter = TupleInserter.NULL;
+					}
+					inserters.add(inserter);
+				}
+
+				DatalogProjectionSink tupleSink =
+					DatalogProjectionSink.fromInserters(pstate.ctx,
+									    inserters);
+
+				// Collect source files
+				RelationWrapper sources_wrapped = pstate.getRelationWrapper(pred_name);
+				java.util.List<String> sources = new ArrayList<>();
+				for (RelationWrapper.TupleWrapper t : sources_wrapped.tuples()) {
+					sources.add(t.getAsString(0));
+				}
+
+				// And load sources
+				FileUtil.loadJavaSources(pstate.ctx,
+							 tupleSink,
+							 sources);
+			}
+
 		}
 
 		/**
 		 * Analyze input files
 		 */
-		// Analyze is the only action with a lower case marker
-		private static final Action ANALYZE = new Action("a") {
-				public void run(State pstate, String[] args) throws IOException, SQLException {
-					final String lang = args[1];
-					final String pred_name = args[2];
+		public static final Action ANALYZE = new Analyze();
 
-					if (!lang.equals("java8")) {
-						throw new RuntimeException("Unsupported language: " + lang);
-					}
-
-					// Prepare output sink
-					ArrayList<TupleInserter> inserters = new ArrayList<>();
-					for (int i = 3; i < args.length; ++i) {
-						if (args[i].equals("")) {
-							// Not used in source program, we already warned
-							// when translating into HFP
-							inserters.add(TupleInserter.NULL);
-							continue;
-						}
-						TupleInserter inserter = pstate.souffle_pred_map.get(args[i]);
-						if (inserter == null) {
-							System.err.println("Warning: could not bind predicate '" + args[i] + "' to SWIG");
-							inserter = TupleInserter.NULL;
-						}
-						inserters.add(inserter);
-					}
-
-					DatalogProjectionSink tupleSink =
-						DatalogProjectionSink.fromInserters(pstate.ctx,
-										    inserters);
-
-					// Collect source files
-					final Relation2 pred_rel2 = pstate.relation(pred_name);
-					final PredicateType pred_type = pstate.type(pred_name);
-					java.util.List<String> sources = new ArrayList<>();
-					RelationWrapper sources_wrapped =
-						new RelationWrapper(pstate.ctx,
-								    pred_rel2, pred_type);
-					for (RelationWrapper.TupleWrapper t : sources_wrapped.tuples()) {
-						sources.add(t.getAsString(0));
-					}
-
-					// And load sources
-					FileUtil.loadJavaSources(pstate.ctx,
-								 tupleSink,
-								 sources);
-				}
-			};
+		static final int ADDTO_HEADER_SIZE = 2;
+		static final int ADDTO_PREDICATE = 1;
 
 		// Assign tuple to predicate
 		private static final Action ADDTO = new Action("T") {
-				public void run(State pstate, String[] args) {
+				public void run(Runner pstate, String[] args) {
 					throw new RuntimeException("FIXME: ADDTO");
 				}
 			};
 
+
+		static final int LOAD_HEADER_SIZE = 4;
+		static final int LOAD_PRED = 1;
+		static final int LOAD_SOURCE_FILE = 2;
+		static final int LOAD_FORMAT = 3;
 		// Load from file
 		private static final Action LOAD = new Action("L") {
-				public void run(State pstate, String[] args) throws IOException, SQLException {
-					final String pred = args[1];
-					final String source_file = args[2];
-					final String format = args[3];
+				public void run(Runner pstate, String[] args) throws IOException, SQLException {
+					final String pred = args[LOAD_PRED];
+					final String source_file = args[LOAD_SOURCE_FILE];
+					final String format = args[LOAD_FORMAT];
 					Program.loadEDB(pred, pstate.relation(pred), pstate.type(pred),
 							source_file, format, pstate.ctx, pstate.opts);
 				}
@@ -289,18 +390,21 @@ aspect HybridFastPath {
 		// Numeric actions come first
 		// General metainformation
 		private static final Action DECL = new Action("0") {
-				public void run(State pstate, String[] args) {
+				public void run(Runner pstate, String[] args) {
 					// no-op
 				}
 			};
 
+		static final int PREDICATE_TYPE_HEADER_SIZE = 2;
+		static final int PREDICATE_TYPE_PREDICATE = 1;
+
 		// defines a predicate type
 		private static final Action PREDICATE_TYPE = new Action("1") {
-				public void run(State pstate, String[] args) {
-					final String pred = args[1];
-					Type[] types = new Type[args.length - 2];
-					for (int i = 0; i < args.length - 2; ++i) {
-						String tyname = args[i + 2];
+				public void run(Runner pstate, String[] args) {
+					final String pred = args[PREDICATE_TYPE_PREDICATE];
+					Type[] types = new Type[args.length - PREDICATE_TYPE_HEADER_SIZE];
+					for (int i = 0; i < args.length - PREDICATE_TYPE_HEADER_SIZE; ++i) {
+						String tyname = args[i + PREDICATE_TYPE_HEADER_SIZE];
 						types[i] = TYPES.get(tyname);
 						if (types[i] == null) {
 							throw new RuntimeException("Unknown type at index " + i + " for " + this);
@@ -323,7 +427,7 @@ aspect HybridFastPath {
 			}
 
 			public void
-			run(State pstate) throws IOException, SQLException {
+			run(Runner pstate) throws IOException, SQLException {
 				this.getAction().run(pstate, this.body);
 			}
 
@@ -336,12 +440,14 @@ aspect HybridFastPath {
 				return op;
 			}
 
+			/**
+			 * args[0] must be null, will automatically be filled with action.marker
+			 */
 			public static Op
 			make(Action action, String ...args) {
 				Op op = new Op();
 				op.action = action;
-				op.body = new String[args.length + 1];
-				System.arraycopy(args, 0, op.body, 1, args.length);
+				op.body = args;
 				op.body[0] = action.marker;
 				return op;
 			}
@@ -352,7 +458,7 @@ aspect HybridFastPath {
 				String atobj = this.body[0];
 				String aoobj = other.body[0];
 				int adiff = atobj.compareTo(aoobj);
-				if (adiff != 1) {
+				if (adiff != 0) {
 					return adiff;
 				}
 
@@ -498,12 +604,22 @@ aspect HybridFastPath {
 		}
 
 		// Evaluation state
-		public final class State {
-			public EvaluationContext ctx;
-			public HashMap<String, Relation2> local_predicates = new HashMap<>();
-			public HashMap<String, PredicateType> local_types = new HashMap<>();
-			public Map<String, TupleInserter> souffle_pred_map;
-			public CmdLineOpts opts;
+		public final class Runner {
+			EvaluationContext ctx;
+			HashMap<String, Relation2> local_predicates = new HashMap<>();
+			HashMap<String, PredicateType> local_types = new HashMap<>();
+			Map<String, TupleInserter> souffle_pred_map;
+			CmdLineOpts opts;
+
+			private int pos = 0;
+
+			public RelationWrapper
+			getRelationWrapper(String pred_name) {
+				final Relation2 pred_rel2 = this.relation(pred_name);
+				final PredicateType pred_type = this.type(pred_name);
+				return new RelationWrapper(this.ctx,
+							   pred_rel2, pred_type);
+			}
 
 			public Relation2
 			relation(String pred) {
@@ -511,6 +627,7 @@ aspect HybridFastPath {
 				if (rel == null) {
 					PredicateType type = this.type(pred);
 					if (type == null) {
+						System.err.println("Error in Runner for HFPProgram:\n" + HFPProgram.this);
 						System.err.println(this.local_types);
 						throw new RuntimeException("Can't create relation for '" + pred + "' because we lack type information");
 					}
@@ -525,12 +642,87 @@ aspect HybridFastPath {
 				return this.local_types.get(pred);
 			}
 
-			public State(EvaluationContext ctx, Map<String, TupleInserter> souffle_pred_map, CmdLineOpts opts) {
+			public boolean
+			isDone() {
+				return this.pos >= HFPProgram.this.ops.size();
+			}
+
+			/**
+			 * Execute one step
+			 */
+			public void
+			step() throws IOException, SQLException {
+				Op op = HFPProgram.this.ops.get(this.pos++);
+				op.run(this);
+			}
+
+			/**
+			 * Execute one step, unless the next step would be an ANALYZE (AnalyzeBlock).
+			 *
+			 * In the latter case it returns AnalyzeInfo instead and expects the caller to handle
+			 * the relevant processing.
+			 */
+			public AnalyzeInfo
+			stepOverAnalyze() throws IOException, SQLException {
+				Op op = HFPProgram.this.ops.get(this.pos);
+				if (op.getAction() == ANALYZE) {
+					this.pos++;
+					return new AnalyzeInfo(op, this);
+				} else {
+					op.run(this);
+				}
+				return null;
+			}
+
+			public Op
+			getNextOp() {
+				if (this.isDone()) {
+					return null;
+				}
+				return HFPProgram.this.ops.get(this.pos);
+			}
+
+			/**
+			 * Execute until either done or the next step is an action of the specified type
+			 *
+			 * Type 'null' allows running to the end
+			 */
+			public void
+			runUntil(Action action) throws IOException, SQLException {
+				while (!this.isDone()
+				    && (action == null
+					|| getNextOp().getAction() != action)) {
+					step();
+				}
+			}
+
+			public Runner(EvaluationContext ctx, Map<String, TupleInserter> souffle_pred_map, CmdLineOpts opts) {
 				this.ctx = ctx;
 				this.opts = opts;
 				this.souffle_pred_map = souffle_pred_map;
 			}
 		}
+
+		public class AnalyzeInfo {
+			private Op op;
+			private Runner runner;
+
+			AnalyzeInfo(Op op, Runner runner) {
+				this.runner = runner;
+				this.op = op;
+			}
+
+			public String
+			getPrefix() {
+				return this.op.body[ANALYZE_PREFIX];
+			}
+
+			public String
+			prefix(String pred) {
+				return this.getPrefix() + pred;
+			}
+		}
+
 
 		public static HashMap<String, Type> TYPES = new HashMap<>();
 		static {
@@ -544,7 +736,9 @@ aspect HybridFastPath {
 				TYPES.put(ty.name(), ty);
 			}
 		}
+
 	}
+
 
 	/**
 	 * Derives a HFPProgram, if possible, otherwise null
@@ -592,7 +786,10 @@ aspect HybridFastPath {
 		if (AbstractTuple.TOP == targets) {
 			return null;
 		}
-		return HFPProgram.makeAnalyze(lang,this.getProgramRef().formalpredicate(), targets,
+		return HFPProgram.makeAnalyze(lang,
+					      this.getContext().scopePrefix,
+					      this.getProgramRef().formalpredicate(),
+					      targets,
 					      program().getDatalogProjectionSink(this));
 	}
 

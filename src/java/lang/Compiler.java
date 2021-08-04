@@ -58,10 +58,16 @@ public class Compiler {
 		return ',';
 	}
 
-	public static Program parseProgram(CmdLineOpts opts) throws IOException, beaver.Parser.Exception {
+	public static Program parseProgram(String owner_module, CmdLineOpts opts) throws IOException, beaver.Parser.Exception {
+		try {
+			throw new RuntimeException("Who called parseProgram()?");
+		} catch (RuntimeException exn) {
+			exn.printStackTrace();
+		}
+		perr("Parsing program (THIS SHOULD ONLY HAPPEN ON COMPILATION)");
 		String path = opts.getInputFile();
 		StopWatch timer = StopWatch.createStarted();
-		profile().startTimer("main", "parsing");
+		profile().startTimer(owner_module, "parsing");
 		final String file_body =  FileUtils.readFileToString(new File(path), StandardCharsets.UTF_8);
 		Program program = (Program) FileUtil.parse(file_body);
 		if (program != null) {
@@ -69,7 +75,7 @@ public class Compiler {
 		}
 		Compiler.DrAST_root_node = program; // Enable debugging with DrAST
 		timer.stop();
-		profile().stopTimer("main", "parsing");
+		profile().stopTimer(owner_module, "parsing");
 		SimpleLogger.logger().time("Parsing: " + timer.getTime() + "ms");
 		return program;
 	}
@@ -141,22 +147,37 @@ public class Compiler {
 
 	/**
 	 * Emit HybridFastPath summary code (or delete code file if fast path not feasible)
+	 *
+	 * @param lib_name Name of the Soufflé library file ("/path/foo.so") relative to which to generate
 	 */
-	public static void generateSouffleHFPSummary(Program program, CmdLineOpts opts) throws IOException {
-		final String summaryFileName = opts.getOutputFile() + HFPProgram.FILE_SUFFIX;
-		final HFPProgram hfprog = program.getHFPProgram();
+	public static void generateSouffleHFPSummary(Program program, String lib_name) throws IOException {
+		writeSouffleHFPSummary(program.getHFPProgram(), lib_name);
+	}
+
+	/**
+	 * Emit HybridFastPath summary code (or delete code file if fast path not feasible)
+	 *
+	 * @param lib_name Name of the Soufflé library file ("/path/foo.so") relative to which to generate
+	 */
+	public static void writeSouffleHFPSummary(HFPProgram hfprog, String lib_name) throws IOException {
+		final String summaryFileName = FileUtil.filePathNoExtension(lib_name) + HFPProgram.FILE_SUFFIX;
 		if (hfprog == null) {
 			// fast path not feasible; make sure any obsolete fastpath program is deleted
-			SimpleLogger.logger().log("Cannot emit HybridFastPath summary; ensuring that there is no conflicting '" + summaryFileName + "'");
+			SimpleLogger.logger().log("Cannot get HybridFastPath summary => making sure to remove any existing '" + summaryFileName + "'");
 			Files.deleteIfExists(Paths.get(summaryFileName));
+			perr("HFP: [!!] FAILED TO GENERATE, DELETED ANY " + summaryFileName);
 		} else {
 			SimpleLogger.logger().log("Emitting HybridFastPath summary to '" + summaryFileName + "'");
 			Files.write(Paths.get(summaryFileName), hfprog.serialize().getBytes());
+			perr("HFP: -> Wrote " + summaryFileName);
 		}
 	}
 
-	public static HFPProgram loadSouffleHFPSummary(CmdLineOpts opts) throws IOException {
-		final String summaryFileName = opts.getLibFile() + HFPProgram.FILE_SUFFIX;
+	/**
+	 * @param lib_name Name of the Soufflé library file ("/path/foo.so") relative to which to load
+	 */
+	public static HFPProgram loadSouffleHFPSummary(String lib_name) {
+		final String summaryFileName = FileUtil.filePathNoExtension(lib_name) + HFPProgram.FILE_SUFFIX;
 		Path file = Paths.get(summaryFileName);
 		if (Files.exists(file) && Files.isReadable(file)) {
 			try {
@@ -177,30 +198,26 @@ public class Compiler {
 		return null;
 	}
 
-	public static void generateIncrementalProgram(Program prog, CmdLineOpts opts, boolean useSouffle) throws IOException, SQLException {
+	public static void generateIncrementalProgram(CompilerInput cinput, CmdLineOpts opts, boolean useSouffle) throws IOException, SQLException {
 		// evaluate the EDB and IMPORT predicate, to ensure
 		// that the inputs to the analyze blocks can be evaluated in turn
-		prog.evalEDB(prog.evalCtx(), opts);
-		prog.evalIMPORT(prog.evalCtx(), opts);
 
-		profile().startTimer("main", "local_and_global_split");
-		// split program into local and global parts
-		ProgramSplit split = new ProgramSplit(prog);
-		if (!split.canEvaluateIncrementally()) {
-			throw new RuntimeException("Cannot evaluate this program incrementally.");
-		}
+		// CR: postponed
+		// prog.evalEDB(prog.evalCtx(), opts);
+		// prog.evalIMPORT(prog.evalCtx(), opts);
 
-		profile().stopTimer("main", "local_and_global_split");
 
+		cinput.setTimerParent("incremental_driver");
 		profile().startTimer("main", "incremental_driver");
-		IncrementalDriver incDriver = new IncrementalDriver(new File(opts.getCacheDir()), split, useSouffle);
+		IncrementalDriver incDriver = new IncrementalDriver(new File(opts.getCacheDir()), cinput, useSouffle);
 		incDriver.init();
 
-		incDriver.update(opts);
+		incDriver.update();
 
 		incDriver.shutdown();
 
 		profile().stopTimer("main", "incremental_driver");
+		cinput.setTimerParent("main");
 	}
 
 	public static String getCSVSeparatorEscaped() {
@@ -211,83 +228,71 @@ public class Compiler {
 
 	public static Program run(CmdLineOpts opts) {
 		try {
-			perr("parse starts");
 			Program prog = null;
-			if (opts.getAction() != CmdLineOpts.Action.EVAL_HYBRID) {
-				// not always needed
-				prog = parseProgram(opts);
-			}
-			perr("parse ends");
+			CompilerInput cinput = new CompilerInput(opts);
 
 			switch (opts.getAction()) {
 			case EVAL_INTERNAL:
-				checkProgram(prog, opts);
-				prog.eval(opts);
+				cinput.getProgram().eval(opts);
 				break;
 			case EVAL_INTERNAL_PARALLEL:
-				checkProgram(prog, opts);
-				prog.evalParallel(opts);
+				cinput.getProgram().evalParallel(opts);
 				break;
 			case EVAL_SOUFFLE:
-				checkProgram(prog, opts);
-				prog.evalEDB(prog.evalCtx(), opts);
-				prog.evalIMPORT(prog.evalCtx(), opts);
+				prog = cinput.getProgram();
+				cinput.evalIDBandIMPORT();
 				prog.generateObjectProgramRelations(opts);
 				evalSouffleProgram(prog, opts);
 				break;
 			case PRETTY_SOUFFLE:
-				checkProgram(prog, opts);
-				prog.evalEDB(prog.evalCtx(), opts);
-				prog.evalIMPORT(prog.evalCtx(), opts);
+				prog = cinput.getProgram();
+				cinput.evalIDBandIMPORT();
 				prettyPrintSouffle(prog, opts.getOutputDir() + "/" + opts.getOutputFile());
 				break;
 			case PRETTY_INTERNAL:
+				prog = cinput.getUncheckedProgram();
 				StandardPrettyPrinter<Program> spp = new StandardPrettyPrinter<>(new PrintStream(System.out));
 				spp.prettyPrint(prog);
-				checkProgram(prog, opts);
+				cinput.checkProgram();
 				break;
 			case PRETTY_TYPES:
+				prog = cinput.getUncheckedProgram();
 				prog.dumpTypes(System.out);
 				prog.dumpDomainSignatures(System.out);
-				checkProgram(prog, opts);
+				cinput.checkProgram();
 				break;
 			case EVAL_IMPORT:
 				// TODO: rename EVAL_IMPORT to EVAL_ANALYZE_BLOCKS or just remove the option
-				checkProgram(prog, opts);
-				prog.evalEDB(prog.evalCtx(), opts);
-				prog.evalIMPORT(prog.evalCtx(), opts);
+				prog = cinput.getProgram();
+				cinput.evalIDBandIMPORT();
 				prog.generateObjectProgramRelations(opts);
 				break;
 			case CHECK:
-				checkProgram(prog, opts);
+				prog = cinput.getProgram();
 				prog.dumpStrata();
 				prog.clauseDependencyGraph().dump();
 				break;
 			case GEN_HYBRID:
-				checkProgram(prog, opts);
-				prog.evalEDB(prog.evalCtx(), opts);
-				prog.evalIMPORT(prog.evalCtx(), opts);
+				prog = cinput.getProgram();
+				cinput.evalIDBandIMPORT();
 				generateSouffleSWIGProgram(prog, opts);
-				generateSouffleHFPSummary(prog, opts);
+				generateSouffleHFPSummary(prog, opts.getLibFile());
 				break;
 			case EVAL_HYBRID:
-				HFPProgram fastpath = loadSouffleHFPSummary(opts);
+				HFPProgram fastpath = loadSouffleHFPSummary(opts.getLibFile());
 				if (fastpath != null) {
 					SWIGUtil.evalHFPProgram(fastpath, opts);
 				} else {
-					prog = parseProgram(opts);
-					SWIGUtil.evalHybridProgram(prog, opts);
+					SWIGUtil.evalHybridProgram(cinput.getProgram(), opts);
 				}
 				break;
 			case INCREMENTAL_UPDATE:
 			case INCREMENTAL_INIT:
-				checkProgram(prog, opts);
-				generateIncrementalProgram(prog, opts, true);
+				generateIncrementalProgram(cinput, opts, true);
 				break;
 			case INCREMENTAL_INIT_INTERNAL:
 			case INCREMENTAL_UPDATE_INTERNAL:
-				checkProgram(prog, opts);
-				generateIncrementalProgram(prog, opts, false);
+				generateIncrementalProgram(cinput, opts, false);
 				break;
 			}
 
@@ -296,9 +301,11 @@ public class Compiler {
 			throw new RuntimeException(e);
 		} catch (SQLException e) {
 			throw new RuntimeException(e);
-		} catch (beaver.Parser.Exception e) {
-			System.err.println("Failed to parse the input program\n" + e.toString());
-			throw new RuntimeException(e);
+		} catch (RuntimeException exn) {
+			if (exn.getCause() instanceof beaver.Parser.Exception) {
+				System.err.println("Failed to parse the input program\n" + exn.getCause().toString());
+			}
+			throw exn;
 		}
 	}
 
@@ -330,4 +337,5 @@ public class Compiler {
 			profile().writeOut();
 		}
 	}
+
 }

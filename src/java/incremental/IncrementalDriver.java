@@ -144,7 +144,7 @@ public class IncrementalDriver {
 	getHFPBase() {
 		if (this.hfpBase == null && !this.hfpBaseTriedLoad) {
 			this.hfpBaseTriedLoad = true;
-			this.hfpBase = Compiler.loadSouffleHFPSummary(this.baseHFPProgram.getPath());
+			this.hfpBase = Compiler.loadSouffleHFPSummary(this.baseHFPProgram.getPath(), this.cinput.getOpts());
 		}
 		return this.hfpBase;
 	}
@@ -191,7 +191,9 @@ public class IncrementalDriver {
 		}
 
 		if (useSouffle) {
-			if (this.cinput.isOutOfDate(this.baseHFPProgram)) {
+			// update HFP program as approrpiate
+			if (this.cinput.getOpts().isHFPEnabled()
+			    && this.cinput.isOutOfDate(this.baseHFPProgram)) {
 				ProgramSplit progSplit = this.cinput.getProgramSplit();
 
 				this.hfpBase = null;
@@ -426,8 +428,6 @@ public class IncrementalDriver {
 
 	private void delete(List<File> sourceFiles, String relPrefix) throws SQLException {
 		//ProgramSplit progSplit = this.cinput.getProgramSplit();
-		Compiler.perr("Deleting from source files: " + sourceFiles);
-		Compiler.perr("Deleting from prefix: " + relPrefix);
 		for (File f : sourceFiles) {
 			int fileId = fileIdDb.getIdForFile(f.getPath());
 
@@ -608,8 +608,6 @@ public class IncrementalDriver {
 													  ProgramSplit.getTypeForUpdateRelation(ProgramSplit.AST_REMOVE_RELATION));
 			} else {
 				// No fast path available without Soufflé
-				if (logger() != null) throw new RuntimeException("Interpreted IncrementalDriver.update(): this path is probably not what you want");
-
 				ProgramSplit progSplit = this.cinput.getProgramSplit();
 				Program update = progSplit.getUpdateProgram();
 
@@ -648,6 +646,8 @@ public class IncrementalDriver {
 		Map<String, TupleInserter> tupleInsertersByName = this.getSWIGTupleInserter();
 
 		// populate the program representation relations for each analyze block
+		// first collect the prefix names for all analyze blocks
+		List<String> analyze_prefixes = new ArrayList<>();
 		if (this.getHFPBase() != null) {
 			// fast path
 			HFPProgram hfprog = this.getHFPBase();
@@ -657,59 +657,39 @@ public class IncrementalDriver {
 				if (analyze == null) {
 					continue;
 				}
-
-				if (opts.getAction() == CmdLineOpts.Action.INCREMENTAL_UPDATE) {
-					// remove the information for the deleted files, but also for the files
-					// that need revisiting
-					profile().startTimer("incremental_driver", "delete_facts");
-					delete(Stream.concat(deletedFiles.stream(), visitFiles.stream()).collect(Collectors.toList()),
-					       analyze.getPrefix());
-					profile().stopTimer("incremental_driver", "delete_facts");
-				}
-				HybridDatalogProjectionSink sink = new HybridDatalogProjectionSink();
-				// go over the program representation relations in this analyze block and figure
-				// out whether they are used in the fused progam, if they are, then set the proper
-				// inserters in the sink
-				for (ProgramRepresentation pr : ProgramRepresentation.values()) {
-					String predName = analyze.prefix(pr.getPredicateName());
-					TupleInserter ti = tupleInsertersByName.get(predName);
-					if (ti != null) {
-						logger().debug("Writing directly to the souffle relation " + predName);
-						sink.setTupleInserter(pr, ti);
-					}
-				}
-
-				generate(visitFiles, sink);
+				analyze_prefixes.add(analyze.getPrefix());
 			}
 		} else {
 			// slow path
 			ProgramSplit progSplit = this.cinput.getProgramSplit();
 			for (AnalyzeBlock b : progSplit.getProgram().analyzeBlocks()) {
-				if (opts.getAction() == CmdLineOpts.Action.INCREMENTAL_UPDATE) {
-					// remove the information for the deleted files, but also for the files
-					// that need revisiting
-					profile().startTimer("incremental_driver", "delete_facts");
-					delete(Stream.concat(deletedFiles.stream(), visitFiles.stream()).collect(Collectors.toList()),
-					       b.getContext().scopePrefix);
-					profile().stopTimer("incremental_driver", "delete_facts");
-				}
-
-
-				HybridDatalogProjectionSink sink = new HybridDatalogProjectionSink();
-				// go over the program representation relations in this analyze block and figure
-				// out whether they are used in the fused progam, if they are, then set the proper
-				// inserters in the sink
-				for (ProgramRepresentation pr : ProgramRepresentation.values()) {
-					String predName = b.getContext().prefix(pr.getPredicateName());
-					TupleInserter ti = tupleInsertersByName.get(predName);
-					if (ti != null) {
-						logger().debug("Writing directly to the souffle relation " + predName);
-						sink.setTupleInserter(pr, ti);
-					}
-				}
-
-				generate(visitFiles, sink);
+				analyze_prefixes.add(b.getContext().scopePrefix);
 			}
+		}
+
+		// now emit program relations for all these prefixes
+		for (String prefix : analyze_prefixes) {
+			if (opts.getAction() == CmdLineOpts.Action.INCREMENTAL_UPDATE) {
+				// remove the information for the deleted files, but also for the files
+				// that need revisiting
+				profile().startTimer("incremental_driver", "delete_facts");
+				delete(Stream.concat(deletedFiles.stream(), visitFiles.stream()).collect(Collectors.toList()),
+				       prefix);
+				profile().stopTimer("incremental_driver", "delete_facts");
+			}
+			HybridDatalogProjectionSink sink = new HybridDatalogProjectionSink();
+			// go over the program representation relations in this analyze block and figure
+			// out whether they are used in the fused progam, if they are, then set the proper
+			// inserters in the sink
+			for (ProgramRepresentation pr : ProgramRepresentation.values()) {
+				String predName = prefix + pr.getPredicateName();
+				TupleInserter ti = tupleInsertersByName.get(predName);
+				if (ti != null) {
+					logger().debug("Writing directly to the souffle relation " + predName);
+					sink.setTupleInserter(pr, ti);
+				}
+			}
+			generate(visitFiles, sink);
 		}
 
 		// now run the hybrid program

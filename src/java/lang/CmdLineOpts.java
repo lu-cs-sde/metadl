@@ -27,6 +27,7 @@ public class CmdLineOpts {
 	private Integer dbEntryTag = null; // Internal option
 	private Action action = Action.EVAL_INTERNAL;
 	private boolean warningsEnabled = false;
+	private boolean hybridFastPathEnabled = true;
 
 	public enum Action {
 		EVAL_SOUFFLE,
@@ -74,6 +75,14 @@ public class CmdLineOpts {
 
 	public boolean isWarningsEnabled() {
 		return warningsEnabled;
+	}
+
+	public boolean isHFPEnabled() {
+		return this.hybridFastPathEnabled;
+	}
+
+	public void setHFPEnabled(boolean v) {
+		this.hybridFastPathEnabled = v;
 	}
 
 	public void setWarningsEnabled(boolean warningsEnabled) {
@@ -174,12 +183,14 @@ public class CmdLineOpts {
 			.desc("Library file to use for hybrid evaluation.").argName("FILE").build();
 		Option enableWarnings = Option.builder("w").longOpt("warn").hasArg(false)
 			.desc("Print warnings.").build();
+		Option disableHybridFastPath = Option.builder("u").longOpt("disable-hfp").hasArg(false)
+			.desc("Disable the hybrid fast path optimization.").build();
 		Option profile = Option.builder("P").longOpt("profile").numberOfArgs(1)
 			.desc("Enable profiling and dump the results in JSON format").argName("FILE").build();
 
 		Options options = new Options().addOptionGroup(actions)
 			.addOption(factDir).addOption(outDir).addOption(genDir).addOption(outFile)
-			.addOption(libFile).addOption(enableWarnings).addOption(profile);
+			.addOption(libFile).addOption(enableWarnings).addOption(profile).addOption(disableHybridFastPath);
 
 		try {
 			CommandLine cmd = parser.parse(options, args);
@@ -251,6 +262,7 @@ public class CmdLineOpts {
 												 FileUtil.changeExtension(FileUtil.fileName(ret.getInputFile()), ".dl")));
 			ret.setLibFile(cmd.getOptionValue("l", "libSwigInterface.so"));
 			ret.setWarningsEnabled(cmd.hasOption("w"));
+			ret.setHFPEnabled(!cmd.hasOption("u"));
 		} catch (ParseException e) {
 			printHelp(options);
 			throw new RuntimeException(e);

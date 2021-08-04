@@ -49,22 +49,17 @@ public class Compiler {
 	public static Object DrAST_root_node; // Enable debugging with DrAST
 
 	public static final long START = System.currentTimeMillis(); // FIXME: remove
-	public static void perr(String s) {
-		System.err.println(String.format("[% 6d] %s", System.currentTimeMillis() - START, s));
-	}
-
 	public static char getCSVSeparator() {
 		// TODO: make this a cmd line option
 		return ',';
 	}
 
 	public static Program parseProgram(String owner_module, CmdLineOpts opts) throws IOException, beaver.Parser.Exception {
-		try {
-			throw new RuntimeException("Who called parseProgram()?");
-		} catch (RuntimeException exn) {
-			exn.printStackTrace();
-		}
-		perr("Parsing program (THIS SHOULD ONLY HAPPEN ON COMPILATION)");
+		// try {
+		// 	throw new RuntimeException("Who called parseProgram()?");
+		// } catch (RuntimeException exn) {
+		// 	exn.printStackTrace();
+		// }
 		String path = opts.getInputFile();
 		StopWatch timer = StopWatch.createStarted();
 		profile().startTimer(owner_module, "parsing");
@@ -165,35 +160,34 @@ public class Compiler {
 			// fast path not feasible; make sure any obsolete fastpath program is deleted
 			SimpleLogger.logger().log("Cannot get HybridFastPath summary => making sure to remove any existing '" + summaryFileName + "'");
 			Files.deleteIfExists(Paths.get(summaryFileName));
-			perr("HFP: [!!] FAILED TO GENERATE, DELETED ANY " + summaryFileName);
 		} else {
 			SimpleLogger.logger().log("Emitting HybridFastPath summary to '" + summaryFileName + "'");
 			Files.write(Paths.get(summaryFileName), hfprog.serialize().getBytes());
-			perr("HFP: -> Wrote " + summaryFileName);
 		}
 	}
 
 	/**
 	 * @param lib_name Name of the Soufflé library file ("/path/foo.so") relative to which to load
 	 */
-	public static HFPProgram loadSouffleHFPSummary(String lib_name) {
+	public static HFPProgram loadSouffleHFPSummary(String lib_name, CmdLineOpts opts) {
 		final String summaryFileName = FileUtil.filePathNoExtension(lib_name) + HFPProgram.FILE_SUFFIX;
+		if (!opts.isHFPEnabled()) {
+			SimpleLogger.logger().log("HybridFastPath explicitly disabled via command line option, not attempting to work with '" + summaryFileName + "'");
+			return null;
+		}
 		Path file = Paths.get(summaryFileName);
 		if (Files.exists(file) && Files.isReadable(file)) {
 			try {
 				final String file_body =  FileUtils.readFileToString(file.toFile(), StandardCharsets.UTF_8);
 				HFPProgram prog = HFPProgram.deserialize(file_body);
-				perr("Loaded '" + summaryFileName + "', will use HybridFastPath");
 				SimpleLogger.logger().log("Loaded '" + summaryFileName + "', will use HybridFastPath");
 				return prog;
 			} catch (IOException exn) {
 				exn.printStackTrace();
-				perr("HybridFastPath error: failed to deserialize '" + summaryFileName +  "': " + exn);
 				SimpleLogger.logger().log("HybridFastPath error: failed to deserialize '" + summaryFileName +  "': " + exn);
 				return null;
 			}
 		}
-		perr("No '" + summaryFileName + "' found, will not try HybridFastPath");
 		SimpleLogger.logger().log("No '" + summaryFileName + "' found, will not try HybridFastPath");
 		return null;
 	}
@@ -226,7 +220,7 @@ public class Compiler {
 		return "\\t";
 	}
 
-	public static Program run(CmdLineOpts opts) {
+	public static CompilerInput run(CmdLineOpts opts) {
 		try {
 			Program prog = null;
 			CompilerInput cinput = new CompilerInput(opts);
@@ -276,10 +270,12 @@ public class Compiler {
 				prog = cinput.getProgram();
 				cinput.evalIDBandIMPORT();
 				generateSouffleSWIGProgram(prog, opts);
-				generateSouffleHFPSummary(prog, opts.getLibFile());
+				if (opts.isHFPEnabled()) {
+					generateSouffleHFPSummary(prog, opts.getLibFile());
+				}
 				break;
 			case EVAL_HYBRID:
-				HFPProgram fastpath = loadSouffleHFPSummary(opts.getLibFile());
+				HFPProgram fastpath = loadSouffleHFPSummary(opts.getLibFile(), opts);
 				if (fastpath != null) {
 					SWIGUtil.evalHFPProgram(fastpath, opts);
 				} else {
@@ -296,7 +292,7 @@ public class Compiler {
 				break;
 			}
 
-			return prog;
+			return cinput;
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		} catch (SQLException e) {

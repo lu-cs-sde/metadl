@@ -88,7 +88,8 @@ public class IncrementalTest {
 		opts.setInputFile(src);
 
 		// Run the split program
-		Program p = Compiler.run(opts);
+		opts.setHFPEnabled(false);
+		Program p = Compiler.run(opts).getProgram();
 
 		Set<String> outputRelations = computeOutputRelations(p);
 		for (String predName : outputRelations) {

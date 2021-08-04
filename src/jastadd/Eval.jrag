@@ -169,14 +169,9 @@ aspect Eval {
 			if (c instanceof AnalyzeBlock) {
 				AnalyzeBlock block = (AnalyzeBlock) c;
 				FormalPredicate srcPred = block.getProgramRef().formalpredicate();
-				lang.Compiler.perr("Analyze block found on " + srcPred);
 
 				// evaluate the predicate representing the input program paths
-				lang.Compiler.perr("  (ai predicts:");
-				lang.Compiler.perr("   pred = " + srcPred.aiTuple());
-				lang.Compiler.perr("   lang = " + block.getLang().aiValue());
 				srcPred.eval(ctx);
-				lang.Compiler.perr("  (input path evaluated)");
 
 				// now populate the relations associated with the analyze block
 				DatalogProjectionSink tupleSink = getDatalogProjectionSink(block);
@@ -186,12 +181,10 @@ aspect Eval {
 				if (fpToSoufflePredMap != null) {
 					tupleSink = tupleSink.remap(fpToSoufflePredMap);
 				}
-				lang.Compiler.perr("  populating program representation");
 				populateProgramRepresentation(srcPred,
 											  tupleSink,
 											  block.getLang().getSTRING(),
 											  ctx);
-				lang.Compiler.perr("-- block done");
 			}
 		}
 	}

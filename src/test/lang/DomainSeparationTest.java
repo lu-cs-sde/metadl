@@ -22,7 +22,7 @@ public class DomainSeparationTest {
 		opts.setInputFile(path);
 
 		try {
-			Program p = Compiler.parseProgram(opts);
+			Program p = Compiler.parseProgram("test", opts);
 			Compiler.checkProgram(p, opts);
 			return p;
 		} catch (Exception e) {

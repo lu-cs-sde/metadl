@@ -28,6 +28,7 @@ public class CmdLineOpts {
 	private Action action = Action.EVAL_INTERNAL;
 	private boolean warningsEnabled = false;
 	private boolean hybridFastPathEnabled = true;
+	private boolean forceRebuild = false;
 
 	public enum Action {
 		EVAL_SOUFFLE,
@@ -79,6 +80,14 @@ public class CmdLineOpts {
 
 	public boolean isHFPEnabled() {
 		return this.hybridFastPathEnabled;
+	}
+
+	public void setForceRebuild(boolean v) {
+		this.forceRebuild = v;
+	}
+
+	public boolean getForceRebuild() {
+		return this.forceRebuild;
 	}
 
 	public void setHFPEnabled(boolean v) {
@@ -185,12 +194,15 @@ public class CmdLineOpts {
 			.desc("Print warnings.").build();
 		Option disableHybridFastPath = Option.builder("u").longOpt("disable-hfp").hasArg(false)
 			.desc("Disable the hybrid fast path optimization.").build();
+		Option forceRebuild = Option.builder("f").longOpt("force-rebuild").hasArg(false)
+			.desc("Force rebuilding dynamic library and hfp files even if cached versions exist.").build();
 		Option profile = Option.builder("P").longOpt("profile").numberOfArgs(1)
 			.desc("Enable profiling and dump the results in JSON format").argName("FILE").build();
 
 		Options options = new Options().addOptionGroup(actions)
 			.addOption(factDir).addOption(outDir).addOption(genDir).addOption(outFile)
-			.addOption(libFile).addOption(enableWarnings).addOption(profile).addOption(disableHybridFastPath);
+			.addOption(libFile).addOption(enableWarnings).addOption(profile)
+			.addOption(disableHybridFastPath).addOption(forceRebuild);
 
 		try {
 			CommandLine cmd = parser.parse(options, args);
@@ -263,6 +275,7 @@ public class CmdLineOpts {
 			ret.setLibFile(cmd.getOptionValue("l", "libSwigInterface.so"));
 			ret.setWarningsEnabled(cmd.hasOption("w"));
 			ret.setHFPEnabled(!cmd.hasOption("u"));
+			ret.setForceRebuild(cmd.hasOption("f"));
 		} catch (ParseException e) {
 			printHelp(options);
 			throw new RuntimeException(e);

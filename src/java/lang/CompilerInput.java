@@ -92,8 +92,9 @@ public class CompilerInput {
 	 */
 	public boolean
 	isOutOfDate(File file) {
-		return (!file.exists()
-			|| getSourceFile().lastModified() > file.lastModified());
+		return (this.opts.getForceRebuild()
+			|| (!file.exists()
+			    || getSourceFile().lastModified() > file.lastModified()));
 	}
 
 	/**

@@ -72,6 +72,8 @@ public class Compiler {
 		timer.stop();
 		profile().stopTimer(owner_module, "parsing");
 		SimpleLogger.logger().time("Parsing: " + timer.getTime() + "ms");
+		// always print so we can see if hfp failed
+		System.out.println("Parsing completed in " + timer.getTime() + "ms [=> no hfp]");
 		return program;
 	}
 
@@ -180,15 +182,15 @@ public class Compiler {
 			try {
 				final String file_body =  FileUtils.readFileToString(file.toFile(), StandardCharsets.UTF_8);
 				HFPProgram prog = HFPProgram.deserialize(file_body);
-				SimpleLogger.logger().log("Loaded '" + summaryFileName + "', will use HybridFastPath");
+				SimpleLogger.logger().log("Loaded '" + summaryFileName + "', will use HybridFastPath [hfp]");
 				return prog;
 			} catch (IOException exn) {
 				exn.printStackTrace();
-				SimpleLogger.logger().log("HybridFastPath error: failed to deserialize '" + summaryFileName +  "': " + exn);
+				SimpleLogger.logger().log("HybridFastPath [hfp] error: failed to deserialize '" + summaryFileName +  "': " + exn);
 				return null;
 			}
 		}
-		SimpleLogger.logger().log("No '" + summaryFileName + "' found, will not try HybridFastPath");
+		SimpleLogger.logger().log("No '" + summaryFileName + "' found, will not try HybridFastPath [hfp]");
 		return null;
 	}
 

@@ -149,6 +149,41 @@ public class IncrementalDriver {
 		return this.hfpBase;
 	}
 
+	private boolean gen_timer_started = false;
+	private boolean gen_timer_started_with_split = false;
+	/**
+	 * Starts the program generation timer, optionally after producing a Program Split.
+	 *
+	 * Can be called more than once, but not if the first call did NOT request a ProgramSplit.
+	 *
+	 * This avoids timer overlap and simplifies the timing logic in init().
+	 */
+	private ProgramSplit
+	startProgramGenerationTimer(boolean get_program_split) {
+		ProgramSplit retval = null;
+		if (get_program_split) {
+			if (this.gen_timer_started && !this.gen_timer_started_with_split) {
+				throw new RuntimeException("Invalid use would mess up timing");
+			}
+			retval = this.cinput.getProgramSplit();
+		}
+		if (!this.gen_timer_started) {
+			profile().startTimer("incremental_driver", "generate_programs");
+			this.gen_timer_started = true;
+			this.gen_timer_started_with_split = get_program_split;
+		}
+		return retval;
+	}
+
+	private void
+	stopProgramGenerationTimer() {
+		if (!gen_timer_started) {
+			this.startProgramGenerationTimer(false);
+		}
+		profile().stopTimer("incremental_driver", "generate_programs");
+		gen_timer_started = false;
+	}
+
 	/**
 	   Creates the directory structure of the cache and ensures that
 	   the local, global and update programs exist.
@@ -182,10 +217,12 @@ public class IncrementalDriver {
 		File update_prog = new File(prog, "update.mdl");
 		File fused_prog = new File(prog, "fused.mdl");
 
+		// Start program generation timer as late as possible to avoid overlap with
+		// parsing / program analysis
+
 		if (this.cinput.isOutOfDate(update_prog)
 		    || this.cinput.isOutOfDate(fused_prog)) {
-			ProgramSplit progSplit = this.cinput.getProgramSplit();
-			profile().startTimer("incremental_driver", "generate_programs");
+			ProgramSplit progSplit = this.startProgramGenerationTimer(true);
 			dumpProgram(progSplit.getUpdateProgram(), update_prog);
 			dumpProgram(progSplit.getFusedProgram(), fused_prog);
 		}
@@ -194,7 +231,7 @@ public class IncrementalDriver {
 			// update HFP program as approrpiate
 			if (this.cinput.getOpts().isHFPEnabled()
 			    && this.cinput.isOutOfDate(this.baseHFPProgram)) {
-				ProgramSplit progSplit = this.cinput.getProgramSplit();
+				ProgramSplit progSplit = this.startProgramGenerationTimer(true);
 
 				this.hfpBase = null;
 				Collection<String> cached_predicates = this.getCachedPredicates();
@@ -210,7 +247,7 @@ public class IncrementalDriver {
 			}
 
 			if (this.cinput.isOutOfDate(fusedSouffleLib)) {
-				ProgramSplit progSplit = this.cinput.getProgramSplit();
+				ProgramSplit progSplit = this.startProgramGenerationTimer(true);
 
 				File tmp = new File(prog, "fused.dl");
 				Compiler.prettyPrintSouffle(progSplit.getFusedProgram(), tmp.getPath());
@@ -218,16 +255,17 @@ public class IncrementalDriver {
 			}
 
 			if (this.cinput.isOutOfDate(updateSouffleProg)) {
-				ProgramSplit progSplit = this.cinput.getProgramSplit();
+				ProgramSplit progSplit = this.startProgramGenerationTimer(true);
 
 				generateSouffleProgram(progSplit.getUpdateProgram(), updateSouffleProg, "-j 4 -p update.profile");
 			} else {
+				this.startProgramGenerationTimer(false);
 				logger().info("Using existing Souffle update program from " + updateSouffleProg);
 			}
 
 		}
 
-		profile().stopTimer("incremental_driver", "generate_programs");
+		this.stopProgramGenerationTimer();
 	}
 
 	public void shutdown() throws IOException, SQLException {

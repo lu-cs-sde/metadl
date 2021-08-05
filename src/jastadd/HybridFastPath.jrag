@@ -19,7 +19,7 @@ aspect HybridFastPath {
 	public class HFPProgram {
 		public static final String FILE_SUFFIX = ".hfp";
 
-		private static final String HEADER = "MDLHFP0:";
+		private static final String HEADER = "MDLHFP1:";
 
 		public static final int ANNOTATIONS_SIZE = 2;
 		public static final int ANNOTATION_SOURCE_RELATION = 1;
@@ -514,8 +514,8 @@ aspect HybridFastPath {
 			}
 		}
 
-		private static final int SERIALIZATION_MASK = 0x3;
-		private static final int SERIALIZATION_SHIFT = 2;
+		private static final int SERIALIZATION_MASK = 0x3f;
+		private static final int SERIALIZATION_SHIFT = 6;
 
 		/**
 		 * Serialisation and deserialisation helper

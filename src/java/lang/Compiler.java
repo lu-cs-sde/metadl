@@ -77,9 +77,9 @@ public class Compiler {
 		return program;
 	}
 
-	public static void checkProgram(Program program, CmdLineOpts opts) {
+	public static void checkProgram(String timer_owner, Program program, CmdLineOpts opts) {
 		StopWatch timer = StopWatch.createStarted();
-		profile().startTimer("main", "sema_and_type_check");
+		profile().startTimer(timer_owner, "sema_and_type_check");
 		if (program.hasSemanticErrors()) {
 			System.err.println(program.errorReport());
 			System.err.println("Compilation failed with semantic errors.");
@@ -98,7 +98,7 @@ public class Compiler {
 				System.err.println(e.reportPosition());
 			}
 		}
-		profile().stopTimer("main", "sema_and_type_check");
+		profile().stopTimer(timer_owner, "sema_and_type_check");
 		timer.stop();
 		SimpleLogger.logger().time("Semantic and type analysis: " + timer.getTime() + "ms");
 	}

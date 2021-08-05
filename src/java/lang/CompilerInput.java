@@ -60,7 +60,7 @@ public class CompilerInput {
 	public void
 	checkProgram() {
 		if (!this.checked) {
-			Compiler.checkProgram(this.getUncheckedProgram(), this.opts);
+			Compiler.checkProgram(this.timer_parent, this.getUncheckedProgram(), this.opts);
 			this.checked = true;
 		}
 	}

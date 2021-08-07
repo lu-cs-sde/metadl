@@ -23,7 +23,7 @@ public class DomainSeparationTest {
 
 		try {
 			Program p = Compiler.parseProgram("test", opts);
-			Compiler.checkProgram(p, opts);
+			Compiler.checkProgram("test", p, opts);
 			return p;
 		} catch (Exception e) {
 			return null;

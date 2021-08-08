@@ -53,6 +53,18 @@ aspect HybridFastPath {
 			return this.annotations.body[annotation_id];
 		}
 
+		/**
+		 * Set the name of the tuple sink for provenance
+		 */
+		public void
+		setProvenanceSink(String provenance_sink_suffix) {
+			for (HFPProgram.Op op : this.ops) {
+				if (op.getAction() == ANALYZE ) {
+					ANALYZE.setProvenanceSink(op, provenance_sink_suffix);
+				}
+			}
+		}
+
 		public void
 		setCachedPredicates(Program prog,
 				    Collection<? extends String> cached_predicate_collection) {
@@ -305,11 +317,18 @@ aspect HybridFastPath {
 		static final int ANALYZE_LANG = 1;
 		static final int ANALYZE_PREFIX = 2;
 		static final int ANALYZE_PREDICATE = 3;
+		static final int ANALYZE_PROVENANCE_SINK = 5;
 
 		// Analyze is the only action with a lower case marker
 		protected static final class Analyze extends Action {
 			public Analyze() {
 				super("a");
+			}
+
+			public void setProvenanceSink(Op op, String analyze_sink_suffix) {
+				final String prefix = op.body[ANALYZE_PREFIX];
+				final String pred = prefix + analyze_sink_suffix;
+				op.body[ANALYZE_PROVENANCE_SINK] = pred;
 			}
 
 			public void run(Runner pstate, String[] args) throws IOException, SQLException {
@@ -359,7 +378,7 @@ aspect HybridFastPath {
 		/**
 		 * Analyze input files
 		 */
-		public static final Action ANALYZE = new Analyze();
+		public static final Analyze ANALYZE = new Analyze();
 
 		static final int ADDTO_HEADER_SIZE = 2;
 		static final int ADDTO_PREDICATE = 1;

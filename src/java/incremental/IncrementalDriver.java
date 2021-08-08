@@ -239,6 +239,7 @@ public class IncrementalDriver {
 				this.hfpBase = this.cinput.getProgram().getHFPProgram();
 				if (this.hfpBase != null) {
 					this.hfpBase.setAnnotation(HFPProgram.ANNOTATION_SOURCE_RELATION, progSplit.getSourceRelation().getPRED_ID());
+					this.hfpBase.setProvenanceSink(ProgramRepresentation.ATTR_PROVENANCE.getPredicateName());
 					this.hfpBase.setCachedPredicates(progSplit.getFusedProgram(),
 									 cached_predicates);
 				}
@@ -468,6 +469,7 @@ public class IncrementalDriver {
 		//ProgramSplit progSplit = this.cinput.getProgramSplit();
 		for (File f : sourceFiles) {
 			int fileId = fileIdDb.getIdForFile(f.getPath());
+			//System.err.println("Deleting source file '" + f + "' with ID=" + fileId);
 
 			for (String localTable : this.getCachedPredicates()) {
 				// cached predicates are extended to the right with a tag field

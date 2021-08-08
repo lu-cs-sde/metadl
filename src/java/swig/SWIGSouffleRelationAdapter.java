@@ -84,7 +84,7 @@ public class SWIGSouffleRelationAdapter implements TupleInserter {
 			}
 			totalSize += requiredSize;
 			totalTuples++;
-			if (totalTuples % 1_000_000 == 0) {
+			if ((totalTuples & ((1024 * 1024) - 1)) == 0) {
 				SimpleLogger.logger().debug("Pushed " + totalTuples + " tuples to relation " + name + " through the SWIG interface.");
 			}
 		} else {

@@ -96,6 +96,11 @@ class HybridDatalogProjectionSink extends DatalogProjectionSink {
 	@Override public TupleInserter getNTA() {
 		return relations.getOrDefault(ProgramRepresentation.NTA, TupleInserter.NULL);
 	}
+	@Override
+	public String toString() {
+		return "HybridDatalogProjectionSink{" + this.relations + "}";
+	}
+
 }
 
 public class IncrementalDriver {
@@ -142,8 +147,9 @@ public class IncrementalDriver {
 
 	private HFPProgram
 	getHFPBase() {
-		if (this.hfpBase == null && !this.hfpBaseTriedLoad) {
+		if (this.hfpBase == null && !this.hfpBaseTriedLoad && this.cinput.getOpts().isHFPEnabled()) {
 			this.hfpBaseTriedLoad = true;
+			// FIXME: where are you loading from???
 			this.hfpBase = Compiler.loadSouffleHFPSummary(this.baseHFPProgram.getPath(), this.cinput.getOpts());
 		}
 		return this.hfpBase;
@@ -684,6 +690,7 @@ public class IncrementalDriver {
 
 
 		Map<String, TupleInserter> tupleInsertersByName = this.getSWIGTupleInserter();
+		//System.err.println("[GEN] tuple-inserters = " + tupleInsertersByName);
 
 		// populate the program representation relations for each analyze block
 		// first collect the prefix names for all analyze blocks
@@ -718,17 +725,22 @@ public class IncrementalDriver {
 				profile().stopTimer("incremental_driver", "delete_facts");
 			}
 			HybridDatalogProjectionSink sink = new HybridDatalogProjectionSink();
+			//System.err.println("[GEN] : -- start --");
+			//System.err.println("[GEN] : initial sink= " + sink);;
 			// go over the program representation relations in this analyze block and figure
 			// out whether they are used in the fused progam, if they are, then set the proper
 			// inserters in the sink
 			for (ProgramRepresentation pr : ProgramRepresentation.values()) {
 				String predName = prefix + pr.getPredicateName();
 				TupleInserter ti = tupleInsertersByName.get(predName);
+				//System.err.println("[GEN] testing pred: '"+predName+"' -> " +ti);
 				if (ti != null) {
 					logger().debug("Writing directly to the souffle relation " + predName);
 					sink.setTupleInserter(pr, ti);
 				}
 			}
+			//System.err.println("[GEN] : visitFiles= " + visitFiles);;
+			//System.err.println("[GEN] : sink= " + sink);;
 			generate(visitFiles, sink);
 		}
 

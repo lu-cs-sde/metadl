@@ -88,7 +88,7 @@ public class IncrementalTest {
 		opts.setInputFile(src);
 
 		// Run the split program
-		opts.setHFPEnabled(false);
+		opts.setHFPDisabled(true);
 		Program p = Compiler.run(opts).getProgram();
 
 		Set<String> outputRelations = computeOutputRelations(p);

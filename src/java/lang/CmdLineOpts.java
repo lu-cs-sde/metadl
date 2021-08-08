@@ -27,8 +27,8 @@ public class CmdLineOpts {
 	private Integer dbEntryTag = null; // Internal option
 	private Action action = Action.EVAL_INTERNAL;
 	private boolean warningsEnabled = false;
-	private boolean hybridFastPathEnabled = true;
-	private boolean forceRebuild = false;
+	private boolean hybridFastPathDisabled = false;
+	private boolean forceRebuild = true;
 
 	public enum Action {
 		EVAL_SOUFFLE,
@@ -79,7 +79,7 @@ public class CmdLineOpts {
 	}
 
 	public boolean isHFPEnabled() {
-		return this.hybridFastPathEnabled;
+		return !this.hybridFastPathDisabled;
 	}
 
 	public void setForceRebuild(boolean v) {
@@ -90,8 +90,8 @@ public class CmdLineOpts {
 		return this.forceRebuild;
 	}
 
-	public void setHFPEnabled(boolean v) {
-		this.hybridFastPathEnabled = v;
+	public void setHFPDisabled(boolean v) {
+		this.hybridFastPathDisabled = v;
 	}
 
 	public void setWarningsEnabled(boolean warningsEnabled) {
@@ -274,7 +274,9 @@ public class CmdLineOpts {
 												 FileUtil.changeExtension(FileUtil.fileName(ret.getInputFile()), ".dl")));
 			ret.setLibFile(cmd.getOptionValue("l", "libSwigInterface.so"));
 			ret.setWarningsEnabled(cmd.hasOption("w"));
-			ret.setHFPEnabled(!cmd.hasOption("u"));
+			if (cmd.hasOption("u")) {
+				ret.setHFPDisabled(true);
+			}
 			ret.setForceRebuild(cmd.hasOption("f"));
 		} catch (ParseException e) {
 			printHelp(options);

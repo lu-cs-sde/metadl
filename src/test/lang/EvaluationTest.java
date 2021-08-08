@@ -34,7 +34,7 @@ import lang.relation.RelationWrapper;
 
 public class EvaluationTest {
 	public Map<String, RelationWrapper> doSingleEvaluation(CmdLineOpts d1) throws Exception {
-		d1.setHFPEnabled(false);
+		d1.setHFPDisabled(true);
 		CompilerInput cinput = Compiler.run(d1);
 		Program program1 = cinput.getProgram();
 		FormalPredicate fpOut1 = program1.formalPredicateMap().get(GlobalNames.OUTPUT_NAME);

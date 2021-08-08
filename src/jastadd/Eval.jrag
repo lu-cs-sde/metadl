@@ -88,6 +88,7 @@ aspect Eval {
 
 			FormalPredicate dstPred = formalPredicateMap().get(pred);
 			Relation2 rel = dstPred.relation2();
+
 			Program.loadEDB(pred, rel, dstPred.type(),
 					file, format, ctx, opts);
 		}

@@ -45,10 +45,21 @@ public class SWIGSouffleRelationAdapter implements TupleInserter {
 		rel.add(tpl);
 	}
 
+	//private static String name_old = null;
+
 	@Override public void insertTuple(Object... elems) {
 		// arity
 		int requiredSize = Integer.BYTES;
 		int minRequiredSize = Integer.BYTES;
+		// System.out.println("adding: " + name + "(" + java.util.Arrays.toString(elems) + ")");
+		// if (name != name_old) {
+		//     name_old = name;
+		//     try {
+		// 	throw new RuntimeException();
+		//     } catch (RuntimeException exn) {
+		// 	exn.printStackTrace();
+		//     }
+		// }
 		for (Object elem : elems) {
 			if (elem instanceof Integer ||
 				elem instanceof Long) {

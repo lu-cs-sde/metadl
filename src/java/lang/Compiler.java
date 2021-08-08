@@ -173,6 +173,7 @@ public class Compiler {
 	 */
 	public static HFPProgram loadSouffleHFPSummary(String lib_name, CmdLineOpts opts) {
 		final String summaryFileName = FileUtil.filePathNoExtension(lib_name) + HFPProgram.FILE_SUFFIX;
+		System.err.println("[HFP] HybridFastPath load at '" + summaryFileName + "' attempted");
 		if (!opts.isHFPEnabled()) {
 			SimpleLogger.logger().log("HybridFastPath explicitly disabled via command line option, not attempting to work with '" + summaryFileName + "'");
 			return null;

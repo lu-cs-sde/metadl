@@ -53,6 +53,22 @@ aspect HybridFastPath {
 			return this.annotations.body[annotation_id];
 		}
 
+		public void
+		addFormalPredicate(String pred) {
+			for (String s : this.formal_predicates.body) {
+				if (pred.equals(s)) {
+					return;
+				}
+			}
+			String[] args = new String[this.formal_predicates.body.length + 1];
+			System.arraycopy(this.formal_predicates.body, 0,
+					 args, 0,
+					 args.length - 1);
+			args[args.length - 1] = pred;
+			this.formal_predicates = Op.make(this.formal_predicates.getAction(),
+							 args);
+		}
+
 		/**
 		 * Set the name of the tuple sink for provenance
 		 */
@@ -60,7 +76,7 @@ aspect HybridFastPath {
 		setProvenanceSink(String provenance_sink_suffix) {
 			for (HFPProgram.Op op : this.ops) {
 				if (op.getAction() == ANALYZE ) {
-					ANALYZE.setProvenanceSink(op, provenance_sink_suffix);
+					ANALYZE.setProvenanceSink(this, op, provenance_sink_suffix);
 				}
 			}
 		}
@@ -325,10 +341,11 @@ aspect HybridFastPath {
 				super("a");
 			}
 
-			public void setProvenanceSink(Op op, String analyze_sink_suffix) {
+			public void setProvenanceSink(HFPProgram p, Op op, String analyze_sink_suffix) {
 				final String prefix = op.body[ANALYZE_PREFIX];
 				final String pred = prefix + analyze_sink_suffix;
 				op.body[ANALYZE_PROVENANCE_SINK] = pred;
+				p.addFormalPredicate(pred);
 			}
 
 			public void run(Runner pstate, String[] args) throws IOException, SQLException {

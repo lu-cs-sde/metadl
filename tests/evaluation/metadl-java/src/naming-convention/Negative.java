@@ -6,4 +6,6 @@ class negative {
     }
 
     public native void Native();
+
+	int VALUE_1 = 1;
 }

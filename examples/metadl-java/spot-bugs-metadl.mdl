@@ -16,12 +16,16 @@ java('Srcs) {
 
 	    # Type names should start with uppercase
 	    WarningTypeName(ls, le, file, name) :- Type(t, name), NOT(MATCH("[A-Z].*", name)), SRC(t, ls, _, le, _, file), GT(ls, 0).
+	    # AllowedStaticField(`f) :- Field1(`f, name), MATCH("[_0-9A-Z]*", name).
+
 
 	    Field1(`f, name) :- Decl(d), d <: .. `t .. , `f , .. ; :>, ID(`f, name), SRC(d, l, _, _, _, _), GT(l, 0).
 	    FinalField(`f) :- Decl(d), d <: .. final .. `t .. , `f, .. ; :>.
 	    Method(d, name) :- Decl(d), d <: `t `m ( .. ) ; :>, ID(`m, name), SRC(d, l, _, _, _, _), GT(l, 0).
 
-	    WarningFieldName(ls, le, file, name) :- Field1(f, name), NOT(FinalField(f)), NOT(MATCH("[a-z].*", name)), SRC(f, ls, _, le, _, file).
+	    # All the field that start with a capital lettern and contain no underscores should be disallowed
+	    WarningFieldName(ls, le, file, name) :- Field1(f, name), NOT(FinalField(f)), MATCH("[A-Z][a-z].*", name),
+	    			 NOT(MATCH(".*_.*", name)), SRC(f, ls, _, le, _, file).
 	    WarningMethodName(ls, le, file, name) :- Method(m, name), NOT(MATCH("[a-z].*", name)), SRC(m, ls, _, le, _, file).
 
 
@@ -188,12 +192,14 @@ OUTPUT('Warn_UWF_UNWRITTEN_FIELD_Detail, "Warn_UWF_UNWRITTEN_FIELD_Detail.csv", 
 # same as the one for ErrorProne
 
 TypeName("Character"), TypeName("Integer"), TypeName("Long"), TypeName("Short"),
-TypeName("Byte"), TypeName("Float"), TypeName("Double"), TypeName("Boolean").
+TypeName("Byte"),
+# TypeName("Float"), TypeName("Double"),
+TypeName("Boolean").
 
             PrimitiveType(c) :- c <: class `name { .. } :>, ID(`name, t), TypeName(t).
 	    StringType(c) :- c <: class `name { .. } :>, ID(`name, "String").
 
-	    PrimitiveCtor(e) :- e <: new `c(`_) :>, DECL(`c, c), PrimitiveType(c).
+	    PrimitiveCtor(e) :- e <: new `c(`t) :>, DECL(`c, c), PrimitiveType(c), TYPE(`t, t), NOT(StringType(t)).
 	    PrimitiveCtorDetail(ls, le, file) :- PrimitiveCtor(e), SRC(e, ls, _, le, _, file), GT(ls, 0).
 	    PrimitiveStringCtor(e) :- e <: new `c(`t) :>, DECL(`c, c), TYPE(`t, c), StringType(c).
 	    PrimitiveStringCtorDetail(ls, le, file) :- PrimitiveStringCtor(e), SRC(e, ls, _, le, _, file), GT(ls, 0).

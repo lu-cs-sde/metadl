@@ -55,18 +55,10 @@ aspect HybridFastPath {
 
 		public void
 		addFormalPredicate(String pred) {
-			for (String s : this.formal_predicates.body) {
-				if (pred.equals(s)) {
-					return;
-				}
+			if (this.formal_predicates.containsAtOrAfter(pred, 1)) {
+				return;
 			}
-			String[] args = new String[this.formal_predicates.body.length + 1];
-			System.arraycopy(this.formal_predicates.body, 0,
-					 args, 0,
-					 args.length - 1);
-			args[args.length - 1] = pred;
-			this.formal_predicates = Op.make(this.formal_predicates.getAction(),
-							 args);
+			this.formal_predicates.append(pred);
 		}
 
 		/**
@@ -460,6 +452,26 @@ aspect HybridFastPath {
 					this.action = Action.getAction(this.body[0]);
 				}
 				return this.action;
+			}
+
+			public boolean
+			containsAtOrAfter(String s, int offset) {
+				for (int i = offset; i < this.body.length; ++i) {
+					if (this.body[i].equals(s)) {
+						return true;
+					}
+				}
+				return false;
+			}
+
+			public void
+			append(String s) {
+				String[] args = new String[this.body.length + 1];
+				System.arraycopy(this.body, 0,
+						 args, 0,
+						 args.length - 1);
+				args[args.length - 1] = s;
+				this.body = args;
 			}
 
 			public void

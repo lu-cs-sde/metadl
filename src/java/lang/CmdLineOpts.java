@@ -28,7 +28,7 @@ public class CmdLineOpts {
 	private Action action = Action.EVAL_INTERNAL;
 	private boolean warningsEnabled = false;
 	private boolean hybridFastPathDisabled = false;
-	private boolean forceRebuild = true;
+	private boolean forceRebuild = false;
 
 	public enum Action {
 		EVAL_SOUFFLE,

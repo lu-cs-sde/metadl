@@ -9,7 +9,7 @@ java('P) {
             PrimitiveType(c) :- c <: class `name { .. } :>, ID(`name, t), TypeName(t).
 	    StringType(c) :- c <: class `name { .. } :>, ID(`name, "String").
 
-	    PrimitiveCtor(e) :- e <: new `c(`_) :>, DECL(`c, c), PrimitiveType(c).
+	    PrimitiveCtor(e) :- e <: new `c(`t) :>, DECL(`c, c), PrimitiveType(c).# SB-only , TYPE(`t, t), NOT(StringType(t)).
 	    PrimitiveCtorDetail(ls, cs, file) :- PrimitiveCtor(e), SRC(e, ls, cs, _, _, file), GT(ls, 0).
 	    PrimitiveStringCtor(e) :- e <: new `c(`t) :>, DECL(`c, c), TYPE(`t, c), StringType(c).
 	    PrimitiveStringCtorDetail(ls, cs, file) :- PrimitiveStringCtor(e), SRC(e, ls, cs, _, _, file), GT(ls, 0).

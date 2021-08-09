@@ -16,6 +16,18 @@ class Test2 {
 	}
 
 	String bar(byte[] bs) {
-		return new String(bs);
+		return new String(bs) + new String(bs, "abc");
 	}
+
+	String foobar(int x) {
+		return new String(x);
+	}
+
+	// Integer fooInt(String s) {
+	// 	return new Integer(s);
+	// }
+
+	// Float fooFloat(String s) {
+	// 	return new Float(s);
+	// }
 }

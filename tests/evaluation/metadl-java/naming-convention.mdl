@@ -16,7 +16,9 @@ java('P) {
 	    FinalField(`f) :- Decl(d), d <: .. final .. `t .. , `f, .. ; :>.
 	    Method(d, name) :- Decl(d), d <: `t `m ( .. ) ; :>, ID(`m, name), NotLibrary(d).
 
-	    WarningFieldName(l, c, file, name) :- Field(f, name), NOT(FinalField(f)), NOT(MATCH("[a-z].*", name)), SRC(f, l, c, _, _, file).
+	    AllowedStaticField(`f) :- Field(`f, name), <: .. static .. `_ .. , `f, .. ; :> , MATCH("[_0-9A-Z]*", name).
+	    WarningFieldName(l, c, file, name) :- Field(f, name), NOT(FinalField(f)),
+			NOT(AllowedStaticField(f)), NOT(MATCH("[a-z].*", name)), SRC(f, l, c, _, _, file).
 	    WarningMethodName(l, c, file, name) :- Method(m, name), NOT(MATCH("[a-z].*", name)), SRC(m, l, c, _, _, file).
 
 }

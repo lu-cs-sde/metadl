@@ -8,4 +8,8 @@ class Positive {
     public native void goodNative();
 
 	final String FINALString = "final";
+
+	static int VALUE_1 = 1;
+
+	static int VALUE_2 = 2;
 }

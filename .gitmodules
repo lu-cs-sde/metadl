@@ -1,12 +1,12 @@
 [submodule "deps/metajap"]
 	path = deps/metajap
-	url = git@git.cs.lth.se:al7330du/metajap.git
+	url = git@github.com:lu-cs-sde/metadl-jastaddparser.git
 [submodule "deps/metajastadd2"]
 	path = deps/metajastadd2
-	url = git@git.cs.lth.se:al7330du/metajastadd2.git
+	url = git@github.com:lu-cs-sde/metadl-jastadd.git
 [submodule "deps/sppf-earley-parser"]
 	path = deps/sppf-earley-parser
-	url = git@git.cs.lth.se:al7330du/sppf-earley-parser.git
+	url = git@github.com:lu-cs-sde/sppf-earley-parser.git
 [submodule "deps/extendj"]
 	path = deps/extendj
-	url = git@git.cs.lth.se:al7330du/extendj.git
+	url = git@github.com:lu-cs-sde/metadl-extendj.git

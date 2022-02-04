@@ -133,6 +133,15 @@ PredicateRef pred_ref = PRED_REF.id {: return new PredicateRef(id); :};
 
 Variable variable = VAR_ID.id {: return new Variable(id); :};
 
+EquivalenceClause equiv_clause = LABEL.id COLON pattern_list {: return new EquivalenceClause(id,pattern_list); :}
+
+EquivPattern equiv_pattern = LABEL.id COLON PATTERN.pat {: return new EquivPattern(pat,id); :};
+
+List pattern_list = pattern {: return new List().add(pattern); :}
+              | pattern_list.list TILDE pattern {: return list.add(pattern); :}
+              ;
+
+
 IntConstant int_constant    = NUMERAL.num {: return new IntConstant(num); :};
 
 StringConstant string_constant = STRING.str {: return new StringConstant(str); :};

@@ -49,12 +49,14 @@ String  = \"[^\"]*\"
 "{"        {  return  sym(Terminals.LBRACE);         }
 "}"        {  return  sym(Terminals.RBRACE);         }
 ":-"       {  return  sym(Terminals.IMPLIED_BY);     }
+":"        {  return  sym(Terminals.COLON);          }
 "."        {  return  sym(Terminals.DOT);            }
 ","        {  return  sym(Terminals.COMMA);          }
 "+"        {  return  sym(Terminals.ADD);            }
 "-"        {  return  sym(Terminals.SUB);            }
 "*"        {  return  sym(Terminals.MUL);            }
 "/"        {  return  sym(Terminals.DIV);            }
+"~"        {  return  sym(Terminals.TILDE);          }
 "EQ"       {  return  sym(Terminals.EQ);             }
 "NEQ"      {  return  sym(Terminals.NEQ);            }
 "LT"       {  return  sym(Terminals.LT);             }

@@ -14,17 +14,11 @@ import org.apache.commons.lang3.mutable.MutableInt;
 import incremental.ProgramSplit;
 
 aspect Eval {
-	public void Program.populateProgramRepresentation(FormalPredicate srcs,
+	public void Program.populateProgramRepresentation(Map<String, String> srcs,
 													  DatalogProjectionSink tupleSink,
 													  String srcLang,
 													  EvaluationContext ctx) throws IOException {
-		RelationWrapper sourceFilesAndFolders = new RelationWrapper(ctx, srcs.relation2(), srcs.type());
-		java.util.List<String> locs = new ArrayList<>();
-		for (RelationWrapper.TupleWrapper t : sourceFilesAndFolders.tuples()) {
-			String loc = t.getAsString(0);
-			locs.add(loc);
-		}
-
+		java.util.List<String> locs = srcs.keySet().stream().collect(Collectors.toList());
 		if (srcLang.equals("java8")) {
 			FileUtil.loadJavaSources(ctx,
 									 tupleSink,
@@ -157,13 +151,10 @@ aspect Eval {
 
 	public void Program.evalAnalyzeBlocks(EvaluationContext ctx, CmdLineOpts opts,
 										  Map<FormalPredicate, TupleInserter> fpToSoufflePredMap) throws IOException {
+
 		for (CommonClause c : getCommonClauses()) {
 			if (c instanceof AnalyzeBlock) {
 				AnalyzeBlock block = (AnalyzeBlock) c;
-				FormalPredicate srcPred = block.getProgramRef().formalpredicate();
-
-				// evaluate the predicate representing the input program paths
-				srcPred.eval(ctx);
 
 				// now populate the relations associated with the analyze block
 				DatalogProjectionSink tupleSink = getDatalogProjectionSink(block);
@@ -174,7 +165,7 @@ aspect Eval {
 					tupleSink = tupleSink.remap(fpToSoufflePredMap);
 				}
 
-				populateProgramRepresentation(srcPred,
+				populateProgramRepresentation(opts.getSrcs(),
 											  tupleSink,
 											  block.getLang().getSTRING(),
 											  ctx);

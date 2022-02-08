@@ -5,12 +5,24 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.OptionGroup;
 import org.apache.commons.cli.ParseException;
+import org.apache.commons.io.filefilter.WildcardFileFilter;
 
+import lang.io.CSVUtil;
 import lang.io.FileUtil;
 
 import org.apache.commons.cli.HelpFormatter;
 
+import java.io.File;
+import java.io.IOException;
 import java.sql.Connection;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.apache.commons.cli.CommandLine;
 
@@ -27,6 +39,8 @@ public class CmdLineOpts {
 	private Integer dbEntryTag = null; // Internal option
 	private Action action = Action.EVAL_INTERNAL;
 	private boolean warningsEnabled = false;
+	private Lang lang;
+	private Map<String, String> srcs;
 
 	public enum Action {
 		EVAL_SOUFFLE,
@@ -44,8 +58,17 @@ public class CmdLineOpts {
 		CHECK
 	, INCREMENTAL_UPDATE_INTERNAL}
 
+	public enum Lang {
+		JAVA,
+		METADL
+	}
+
 	public void setOutputDir(String str) {
 		this.outputDir = str;
+	}
+
+	public Map<String, String> getSrcs() {
+		return srcs;
 	}
 
 	public String getProfileFile() {
@@ -158,6 +181,8 @@ public class CmdLineOpts {
 			.desc("Generate a hybrid MetaDL-Souffle program.").build();
 		Option incremental = Option.builder("s").longOpt("incremental").numberOfArgs(1)
 			.desc("Incrementally evaluate the program (init = initial run, update = subsequent runs).").build();
+		Option lang = Option.builder("L").longOpt("lang").numberOfArgs(1)
+			.desc("The language of the analyzed sources (arg = java or arg = metadl).").build();
 
 		OptionGroup actions = new OptionGroup().addOption(eval).addOption(prettyPrint).addOption(check)
 			.addOption(imp).addOption(gen).addOption(incremental);
@@ -170,6 +195,8 @@ public class CmdLineOpts {
 			.desc("Incremental evaluation cache.").argName("DIR").build();
 		Option outFile = Option.builder("o").longOpt("output").numberOfArgs(1)
 			.desc("Output file.").argName("FILE").build();
+		Option srcs = Option.builder("S").longOpt("sources").numberOfArgs(1)
+			.desc("Source directories or files.").argName("SRCS").build();
 		Option libFile = Option.builder("l").longOpt("lib").numberOfArgs(1)
 			.desc("Library file to use for hybrid evaluation.").argName("FILE").build();
 		Option enableWarnings = Option.builder("w").longOpt("warn").hasArg(false)
@@ -178,7 +205,9 @@ public class CmdLineOpts {
 			.desc("Enable profiling and dump the results in JSON format").argName("FILE").build();
 
 		Options options = new Options().addOptionGroup(actions)
-			.addOption(factDir).addOption(outDir).addOption(genDir).addOption(outFile)
+			.addOption(factDir).addOption(outDir)
+			.addOption(srcs).addOption(lang)
+			.addOption(genDir).addOption(outFile)
 			.addOption(libFile).addOption(enableWarnings).addOption(profile);
 
 		try {
@@ -243,6 +272,42 @@ public class CmdLineOpts {
 				ret.setProfileFile(cmd.getOptionValue("P"));
 			}
 
+			if (cmd.hasOption("S")) {
+				WildcardFileFilter csvFilter = new WildcardFileFilter("*.csv");
+				File csvFile = new File(cmd.getOptionValue("S"));
+				if (csvFile.exists() && csvFilter.accept(csvFile)) {
+					// This is a CSV file listing all the files to be analyzed
+					try {
+						ret.srcs = new TreeMap<>();
+						CSVUtil.readMap(ret.srcs, Function.identity(), Function.identity(), csvFile.getAbsolutePath());
+					} catch (IOException e) {
+						throw new RuntimeException(e);
+					}
+				} else {
+					ret.srcs = new TreeMap<>();
+					for (String f : cmd.getOptionValue("S").split(":")) {
+						String[] fileAndMod = f.split(",");
+						if (fileAndMod.length != 2) {
+							throw new RuntimeException("Error parsing the -sources [-S] argument.");
+						} else {
+							ret.srcs.put(fileAndMod[0], fileAndMod[1]);
+						}
+					}
+				}
+			} else {
+				ret.srcs = Collections.emptyMap();
+			}
+
+			if (!cmd.hasOption("L") || cmd.getOptionValue("L").equals("java")) {
+				ret.lang = Lang.JAVA;
+			} else if (cmd.getOptionValue("L").equals("metadl")) {
+				ret.lang = Lang.METADL;
+			} else {
+				System.err.println("Unsupported language for the --lang option.");
+				printHelp(options);
+				throw new RuntimeException();
+			}
+
 			ret.setFactsDir(cmd.getOptionValue("F", "."));
 			ret.setOutputDir(cmd.getOptionValue("D", "."));
 			ret.setCacheDir(cmd.getOptionValue("C", ret.getOutputDir()));
@@ -265,5 +330,13 @@ public class CmdLineOpts {
 
 		HelpFormatter formatter = new HelpFormatter();
 		formatter.printHelp("metadl PROGRAM", header, options, footer, true);
+	}
+
+	public Lang getLang() {
+		return lang;
+	}
+
+	public void setLang(Lang lang) {
+		this.lang = lang;
 	}
 }

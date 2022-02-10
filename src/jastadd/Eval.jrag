@@ -26,6 +26,9 @@ aspect Eval {
 		} else if (srcLang.equals("metadl")) {
 			MutableInt nodeCounter = new MutableInt(1);
 			try {
+				if (locs.size() == 0)
+					return;
+
 				if (locs.size() != 1) {
 					throw new RuntimeException("MetaDL for MetaDL is limited to analyzing a single file");
 				}

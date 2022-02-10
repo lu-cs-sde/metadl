@@ -6,11 +6,21 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.File;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Iterator;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.io.filefilter.FileFileFilter;
+import org.apache.commons.io.filefilter.IOFileFilter;
+import org.apache.commons.io.filefilter.WildcardFileFilter;
+import org.apache.commons.io.filefilter.TrueFileFilter;
+
+import org.apache.commons.io.FileUtils;
 import org.junit.Ignore;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
@@ -162,8 +172,7 @@ public class EvaluationTest {
 						   // "evalTest_17", Disabled, due to stricter type checking
 						   // TODO: re-enable evalTest_17 once conversion functors node -> int and int -> node
 						   // are introduced
-						   "evalTest_18",
-						   "evalTest_19"
+						   "evalTest_18"
 		};
 		return Arrays.stream(tests);
 	}
@@ -171,9 +180,13 @@ public class EvaluationTest {
 	@DisplayName("Evaluate programs containing patterns using Souffle")
 	@ParameterizedTest
 	@MethodSource("metadlPatternTests")
-	void evaluationTestPatternsSouffle(String fileName) throws Exception {
+ 	void evaluationTestPatternsSouffle(String fileName) throws Exception {
+		IOFileFilter ff = new WildcardFileFilter(fileName + "_input*");
+		Iterator<File> analyzedFileIt = FileUtils.iterateFiles(new File("./tests/evaluation/withimport"), ff, null);
+
 		singleEvaluationTest("./tests/output/souffle",
 							 "./tests/evaluation/withimport/facts",
+							 analyzedFileIt.hasNext() ? Collections.singletonList(analyzedFileIt.next()) : Collections.emptyList(),
 							 "./tests/evaluation/withimport",
 							 "./tests/evaluation/withimport/expected",
 							 fileName,
@@ -185,8 +198,12 @@ public class EvaluationTest {
 	@ParameterizedTest
 	@MethodSource("metadlPatternTests")
 	void evaluationTestPatternsInternal(String fileName) throws Exception {
+		IOFileFilter ff = new WildcardFileFilter(fileName + "_input*");
+		Iterator<File> analyzedFileIt = FileUtils.iterateFiles(new File("./tests/evaluation/withimport"), ff, null);
+
 		singleEvaluationTest("./tests/output/souffle",
 							 "./tests/evaluation/withimport/facts",
+							 analyzedFileIt.hasNext() ? Collections.singletonList(analyzedFileIt.next()) : Collections.emptyList(),
 							 "./tests/evaluation/withimport",
 							 "./tests/evaluation/withimport/expected",
 							 fileName,
@@ -223,11 +240,20 @@ public class EvaluationTest {
 		return Arrays.stream(tests);
 	}
 
-	void singleEvaluationTest(String outputDir, String factDir, String srcDir, String expectedDir,
+	void singleEvaluationTest(String outputDir, String factDir,
+							  List<File>  analyzedFiles,
+							  String srcDir, String expectedDir,
 							  String fileName, String fileExt,
 							  String cmd) throws Exception {
+
+		String sources = analyzedFiles.stream().map(f -> f.getPath() + ",A").collect(Collectors.joining(":"));
+
 		CmdLineOpts d1 = FileUtil.parseDescription(
-		   cmd + " -D " + outputDir + " -F " + factDir + " " + srcDir + "/"
+		   cmd
+		   + " -D " + outputDir
+		   + " -F " + factDir
+		   + (sources.isEmpty() ? " " : " -S ") + sources
+		   + " " + srcDir + "/"
 		   + fileName + fileExt);
 
 		Map<String, RelationWrapper> outRelations = doSingleEvaluation(d1);
@@ -264,10 +290,14 @@ public class EvaluationTest {
 	@ParameterizedTest
 	@MethodSource("metadlJavaTests")
 	void evaluationTestMetaDLJavaSouffle(String fileName) throws Exception {
-		singleEvaluationTest("./tests/output/souffle",
-							 "./tests/evaluation/metadl-java/facts",
-							 "./tests/evaluation/metadl-java",
-							 "./tests/evaluation/metadl-java/expected",
+		String analyzedFilesDir = "tests/evaluation/metadl-java/src";
+		List<File> analyzedFiles = FileUtil.flattenFilesAndDirs(Collections.singletonList(new File(analyzedFilesDir, fileName)), "*.java");
+
+		singleEvaluationTest("tests/output/souffle",
+							 "tests/evaluation/metadl-java/facts",
+							 analyzedFiles,
+							 "tests/evaluation/metadl-java",
+							 "tests/evaluation/metadl-java/expected",
 							 fileName,
 							 ".mdl",
 							 "-e souffle");
@@ -277,10 +307,14 @@ public class EvaluationTest {
 	@ParameterizedTest
 	@MethodSource("metadlJavaTests")
 	void evaluationTestMetaDLJavaInternal(String fileName) throws Exception {
-		singleEvaluationTest("./tests/output/",
-							 "./tests/evaluation/metadl-java/facts",
-							 "./tests/evaluation/metadl-java",
-							 "./tests/evaluation/metadl-java/expected",
+		String analyzedFilesDir = "tests/evaluation/metadl-java/src";
+		List<File> analyzedFiles = FileUtil.flattenFilesAndDirs(Collections.singletonList(new File(analyzedFilesDir, fileName)), "*.java");
+
+		singleEvaluationTest("tests/output/",
+							 "tests/evaluation/metadl-java/facts",
+							 analyzedFiles,
+							 "tests/evaluation/metadl-java",
+							 "tests/evaluation/metadl-java/expected",
 							 fileName,
 							 ".mdl",
 							 "-e metadl");

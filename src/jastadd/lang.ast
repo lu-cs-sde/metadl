@@ -10,7 +10,6 @@ abstract CommonClause;
 abstract Clause : CommonClause ::= Heads:CommonLiteral*;
 Rule:Clause ::= Body:CommonLiteral*;
 Fact:Clause;
-EquivalenceClause: Clause ::= <LABEL> Pattern*;
 AnalyzeBlock:CommonClause ::= ProgramRef:PredicateRef Lang:StringConstant Clause* /ExpandedClause:Clause*/;
 
 /**
@@ -68,8 +67,13 @@ FunctorSymbol ::= <FUNC_ID>;
 **/
 Pattern : CommonLiteral ::= <PATTERN> /Literal/;
 BoundedPattern : Pattern ::= CommonVariable;
-EquivPattern : Pattern ::= <LABEL>;
+EquivalencePattern : Pattern ::= <LABEL>;
 
+/**
+   Equivalence
+**/
+
+EquivalenceDecl:CommonClause ::= <LABEL> Pattern*;
 
 /**
    Internal AST Nodes

@@ -21,6 +21,7 @@ Clause inner_clause = rule
 
 CommonClause clause = inner_clause
                     | analyze_block
+                    | equivalence_decl
                     ;
 
 AnalyzeBlock analyze_block = JAVA LPARA pred_ref.prog_ref RPARA LBRACE inner_clause.clauses+ RBRACE {: return new AnalyzeBlock(prog_ref, new StringConstant("java8"), clauses); :}
@@ -32,6 +33,7 @@ Fact fact = lit_list.heads DOT {: return new Fact(heads); :};
 
 CommonLiteral common_literal = literal
                              | constraint
+                             | equiv_pattern
                              | pattern
                              | bounded_pattern
                              ;
@@ -133,9 +135,9 @@ PredicateRef pred_ref = PRED_REF.id {: return new PredicateRef(id); :};
 
 Variable variable = VAR_ID.id {: return new Variable(id); :};
 
-EquivalenceClause equiv_clause = LABEL.id COLON pattern_list {: return new EquivalenceClause(id,pattern_list); :}
+EquivalenceDecl equivalence_decl = LABEL.id COLON pattern_list {: return new EquivalenceDecl(id,pattern_list); :};
 
-EquivPattern equiv_pattern = LABEL.id COLON PATTERN.pat {: return new EquivPattern(pat,id); :};
+EquivalencePattern equiv_pattern = LABEL COLON PATTERN {: return new EquivalencePattern(new Opt(),PATTERN,LABEL); :};
 
 List pattern_list = pattern {: return new List().add(pattern); :}
               | pattern_list.list TILDE pattern {: return list.add(pattern); :}

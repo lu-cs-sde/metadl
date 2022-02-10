@@ -112,6 +112,7 @@ aspect Clause {
 	eq Rule.isRule() = true;
 	eq Fact.isRule() = false;
 	eq AnalyzeBlock.isRule() = false;
+	eq EquivalenceDecl.isRule() = false;
 
 	syn TreeSet<Variable> Rule.variables() {
 		TreeSet<Variable> variables = new TreeSet<Variable>(Term.termComparator);

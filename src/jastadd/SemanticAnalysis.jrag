@@ -37,7 +37,7 @@ aspect ErrorCollection {
 
 	coll TreeSet<SemanticError> Program.semanticErrors() [new TreeSet<SemanticError>()] with add;
 	coll Set<SemanticError> Program.semanticWarnings() [new TreeSet<SemanticError>()] with add;
-	AnalyzeBlock contributes nta getExpandedClauses() to Program.semanticErrors();
+	Program contributes nta getExpandedClauses() to Program.semanticErrors();
 	Pattern contributes nta getLiteral() to Program.semanticErrors();
 
 	syn boolean Program.hasSemanticErrors() = !semanticErrors().isEmpty();
@@ -78,9 +78,6 @@ aspect ErrorCollection {
 	Functor contributes new SemanticError(this, "Free variable(s) " + freeVars() + " in " + this + " in rule " + literal().clause())
 		when !freeVars().isEmpty()
 		to Program.semanticErrors();
-
-	Pattern contributes new SemanticError(this, "Patterns are not allowed outside analyze blocks: " + this + ".") when
-		enclosingAnalyzeBlock() == null to Program.semanticErrors();
 
 	Wildcard contributes new SemanticError(this, this + " is not allowed inside constraints.") when
 		literal() instanceof Constraint to Program.semanticErrors();

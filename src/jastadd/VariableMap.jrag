@@ -25,6 +25,6 @@ aspect VariableMap {
 
 	coll VariableMap Clause.varMap() [new VariableMap()] with add;
 	Variable contributes this when literal() != null to Clause.varMap() for literal().clause();
-	AnalyzeBlock contributes nta getExpandedClauses() to Clause.varMap();
+	Program contributes nta getExpandedClauses() to Clause.varMap();
 	Pattern contributes nta getLiteral() to Clause.varMap();
 }

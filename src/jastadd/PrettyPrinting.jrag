@@ -41,6 +41,12 @@ aspect PretyPrinting {
         return bytes.toString();
     }
 
+	public void Program.prettyPrint(PrettyPrinter pr) {
+		printCollection(getCommonClauses(), "", "\n", "\n", pr);
+		printCollection(getExpandedClauses(), "", "\n", "\n", pr);
+
+	}
+
     public void ASTNode.prettyPrint(PrintStream out) {
         prettyPrint(new StandardPrettyPrinter(out));
     }
@@ -121,11 +127,6 @@ aspect PretyPrinting {
 		pr.out.print(":>");
 		if (hasNot())
 			pr.negationSuffix();
-	}
-
-	public void AnalyzeBlock.prettyPrint(PrettyPrinter pr) {
-		printCollection(getExpandedClauses(), "", "", "", pr);
-		printCollection(getClauses(), "", "", "", pr);
 	}
 
 	public void Wildcard.prettyPrint(PrettyPrinter pr) {

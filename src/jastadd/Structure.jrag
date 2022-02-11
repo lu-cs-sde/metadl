@@ -71,8 +71,16 @@ aspect Utility {
 }
 
 aspect Program {
+	private CmdLineOpts.Lang Program.analyzedLang;
+	public void Program.setLang(CmdLineOpts.Lang l) { analyzedLang = l; }
+	public CmdLineOpts.Lang Program.getLang() { return analyzedLang; }
+
 	inh Program CommonClause.program();
 	eq Program.getChild().program() = this;
+	inh Program FormalPredicate.program();
+	inh Program PredicateSymbol.program();
+	inh Program PredicateRef.program();
+	inh Program CommonLiteral.program();
 
 	coll HashSet<PredicateInterface> Program.predicateSymbols() [new HashSet<PredicateInterface>()] with add;
 	PredicateSymbol contributes this to Program.predicateSymbols();

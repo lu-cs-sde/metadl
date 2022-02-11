@@ -51,6 +51,7 @@ public class Compiler {
 		profile().startTimer("main", "parsing");
 		Program program = (Program) FileUtil.parse(new File(path));
 		Compiler.DrAST_root_node = program; // Enable debugging with DrAST
+		program.setLang(opts.getLang());
 		timer.stop();
 		profile().stopTimer("main", "parsing");
 		SimpleLogger.logger().time("Parsing: " + timer.getTime() + "ms");

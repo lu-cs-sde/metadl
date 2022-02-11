@@ -87,10 +87,10 @@ aspect Stratification {
 	}
 
 	Clause contributes pdgContribution() to Program.clauseDependencyGraph();
-	AnalyzeBlock contributes nta getExpandedClauses() to Program.clauseDependencyGraph();
+	Program contributes nta getExpandedClauses() to Program.clauseDependencyGraph();
 
 	Literal contributes clause() when isDef() to FormalPredicate.definedIn() for getPredicate().formalpredicate();
-	AnalyzeBlock contributes nta getExpandedClauses() to FormalPredicate.definedIn();
+	Program contributes nta getExpandedClauses() to FormalPredicate.definedIn();
 
 
 	public static Stratum Program.genStratum(EvaluationContext ctx, ClauseDependencyGraph pdg,
@@ -283,6 +283,7 @@ aspect StratificationError {
 	}
 	inh Map<Clause, Graph<Clause, DefaultEdge>> CommonClause.clauseToSCCMap();
 	eq Program.getCommonClause().clauseToSCCMap() = clauseToSCCMap();
+	eq Program.getExpandedClause().clauseToSCCMap() = clauseToSCCMap();
 	inh Map<Clause, Graph<Clause, DefaultEdge>> Clause.clauseToSCCMap();
 
 	syn Graph<Clause, DefaultEdge> Clause.getSCC() {

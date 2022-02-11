@@ -497,32 +497,32 @@ public class IncrementalDriver {
 			.collect(Collectors.toMap(e -> e.getKey().getPRED_ID(), e -> e.getValue()));
 
 		// populate the program representation relations for each analyze block
-		for (AnalyzeBlock b : progSplit.getProgram().analyzeBlocks()) {
-			if (opts.getAction() == CmdLineOpts.Action.INCREMENTAL_UPDATE) {
-				// remove the information for the deleted files, but also for the files
-				// that need revisiting
-				profile().startTimer("incremental_driver", "delete_facts");
-				delete(Stream.concat(deletedFiles.stream(), visitFiles.stream()).collect(Collectors.toList()),
-					   b.getContext().scopePrefix);
-				profile().stopTimer("incremental_driver", "delete_facts");
-			}
 
-
-			HybridDatalogProjectionSink sink = new HybridDatalogProjectionSink();
-			// go over the program representation relations in this analyze block and figure
-			// out whether they are used in the fused progam, if they are, then set the proper
-			// inserters in the sink
-			for (ProgramRepresentation pr : ProgramRepresentation.values()) {
-				String predName = b.getContext().prefix(pr.getPredicateName());
-				TupleInserter ti = tupleInsertersByName.get(predName);
-				if (ti != null) {
-					logger().debug("Writing directly to the souffle relation " + predName);
-					sink.setTupleInserter(pr, ti);
-				}
-			}
-
-			generate(visitFiles, sink);
+		if (opts.getAction() == CmdLineOpts.Action.INCREMENTAL_UPDATE) {
+			// remove the information for the deleted files, but also for the files
+			// that need revisiting
+			profile().startTimer("incremental_driver", "delete_facts");
+			delete(Stream.concat(deletedFiles.stream(), visitFiles.stream()).collect(Collectors.toList()),
+				   progSplit.getProgram().getAnalysisContext().scopePrefix);
+			profile().stopTimer("incremental_driver", "delete_facts");
 		}
+
+
+		HybridDatalogProjectionSink sink = new HybridDatalogProjectionSink();
+		// go over the program representation relations in this analyze block and figure
+		// out whether they are used in the fused progam, if they are, then set the proper
+		// inserters in the sink
+		for (ProgramRepresentation pr : ProgramRepresentation.values()) {
+			String predName = progSplit.getProgram().getAnalysisContext().prefix(pr.getPredicateName());
+			TupleInserter ti = tupleInsertersByName.get(predName);
+			if (ti != null) {
+				logger().debug("Writing directly to the souffle relation " + predName);
+				sink.setTupleInserter(pr, ti);
+			}
+		}
+
+		generate(visitFiles, sink);
+
 
 		// now run the hybrid program
 		{

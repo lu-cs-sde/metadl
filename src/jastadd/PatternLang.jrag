@@ -16,21 +16,8 @@ import se.lth.sep.*;
 import static se.lth.sep.Util.*;
 
 aspect PatternLang {
-	/**
-	   enclosingAnalyzeBlock - the enclosing analyze block if it exists
-	 */
-	inh AnalyzeBlock CommonClause.enclosingAnalyzeBlock();
-	inh AnalyzeBlock PredicateSymbol.enclosingAnalyzeBlock();
-	inh AnalyzeBlock CommonLiteral.enclosingAnalyzeBlock();
-	inh AnalyzeBlock Pattern.enclosingAnalyzeBlock();
-	inh AnalyzeBlock PredicateRef.enclosingAnalyzeBlock();
-
-	eq Program.getCommonClause().enclosingAnalyzeBlock() = null;
-	eq AnalyzeBlock.getClause().enclosingAnalyzeBlock() = this;
-	eq AnalyzeBlock.getExpandedClause().enclosingAnalyzeBlock() = this;
-
-    syn String AnalyzeBlock.getScopePrefix() = "A_" + getLine(getStart()) + "_" + getColumn(getStart()) + "_";
-	syn AnalyzeContext AnalyzeBlock.getContext() {
+	syn String Program.getScopePrefix() = "A_";
+	syn AnalyzeContext Program.getAnalysisContext() {
 		return new AnalyzeContext(getScopePrefix(),
 								  getProgramRepresentationPredicateName(ProgramRepresentation.AST),
 								  getProgramRepresentationPredicateName(ProgramRepresentation.ATTR_PROVENANCE),
@@ -39,15 +26,14 @@ aspect PatternLang {
 								  getProgramRepresentationPredicateName(ProgramRepresentation.NTA));
 	}
 
-
-	syn String AnalyzeBlock.getProgramRepresentationPredicateName(ProgramRepresentation r) {
+	syn String Program.getProgramRepresentationPredicateName(ProgramRepresentation r) {
 		return getScopePrefix() + r.getPredicateName();
 	}
 
-	coll ArrayList<Pattern> AnalyzeBlock.patterns() [new ArrayList<Pattern>()] root AnalyzeBlock;
-	Pattern contributes this to AnalyzeBlock.patterns();
+	coll ArrayList<Pattern> Program.patterns() [new ArrayList<Pattern>()];
+	Pattern contributes this to Program.patterns();
 
-	syn nta List<Clause> AnalyzeBlock.getExpandedClauseList() {
+	syn nta List<Clause> Program.getExpandedClauseList() {
 		List<Clause> cls = new List<>();
 		cls.addAll(generateHelperRelations());
 		for (Pattern p : patterns()) {
@@ -56,34 +42,34 @@ aspect PatternLang {
 		return cls;
 	}
 
-	AnalyzeBlock contributes nta getExpandedClauses() to Program.predicateSymbols();
+	Program contributes nta getExpandedClauses() to Program.predicateSymbols();
 	Pattern contributes nta getLiteral() to Program.predicateSymbols();
 
-	public String AnalyzeBlock.translatePredicateName(String predName) {
-		switch (getLang().getSTRING()) {
-		case "metadl":
-			return lang.metadl.pat.ast.PatLang.translatePredicateName(getContext(), predName);
-		case "java8":
-			return lang.java8.pat.ast.PatLang.translatePredicateName(getContext(), predName);
+	public String Program.translatePredicateName(String predName) {
+		switch (getLang()) {
+		case METADL:
+			return lang.metadl.pat.ast.PatLang.translatePredicateName(getAnalysisContext(), predName);
+		case JAVA:
+			return lang.java8.pat.ast.PatLang.translatePredicateName(getAnalysisContext(), predName);
 		}
 		return null;
 	}
 
-	public java.util.List<lang.ast.Clause> AnalyzeBlock.generateHelperRelations() {
-		switch (getLang().getSTRING()) {
-		case "metadl":
-			return lang.metadl.pat.ast.PatLang.generateHelperRelations(getContext(), usedContextPredicates());
-		case "java8":
-			return lang.java8.pat.ast.PatLang.generateHelperRelations(getContext(), usedContextPredicates());
+	public java.util.List<lang.ast.Clause> Program.generateHelperRelations() {
+		switch (getLang()) {
+		case METADL:
+			return lang.metadl.pat.ast.PatLang.generateHelperRelations(getAnalysisContext(), usedContextPredicates());
+		case JAVA:
+			return lang.java8.pat.ast.PatLang.generateHelperRelations(getAnalysisContext(), usedContextPredicates());
 		}
 		return null;
 	}
 
-	public PredicateType AnalyzeBlock.contextPredicateType(String predName) {
-		switch (getLang().getSTRING()) {
-		case "metadl":
+	public PredicateType Program.contextPredicateType(String predName) {
+		switch (getLang()) {
+		case METADL:
 			return lang.metadl.pat.ast.PatLang.contextPredicateType(predName);
-		case "java8":
+		case JAVA:
 			return lang.java8.pat.ast.PatLang.contextPredicateType(predName);
 		}
 		return null;
@@ -94,10 +80,9 @@ aspect PatternLang {
 		return contextPredicateName;
 	}
 	rewrite PredicateSymbol {
-		when (enclosingAnalyzeBlock() != null &&
-			  enclosingAnalyzeBlock().translatePredicateName(getPRED_ID()) != null)
+		when (program().translatePredicateName(getPRED_ID()) != null)
 			to PredicateSymbol {
-			PredicateSymbol ps = new PredicateSymbol(enclosingAnalyzeBlock().translatePredicateName(getPRED_ID()));
+			PredicateSymbol ps = new PredicateSymbol(program().translatePredicateName(getPRED_ID()));
 			ps.contextPredicateName = getPRED_ID();
 			return ps;
 		}
@@ -108,10 +93,9 @@ aspect PatternLang {
 		return contextPredicateName;
 	}
 	rewrite PredicateRef {
-		when (enclosingAnalyzeBlock() != null &&
-			  enclosingAnalyzeBlock().translatePredicateName(getPRED_ID()) != null)
+		when (program().translatePredicateName(getPRED_ID()) != null)
 			to PredicateRef {
-			PredicateRef pr = new PredicateRef(enclosingAnalyzeBlock().translatePredicateName(getPRED_ID()));
+			PredicateRef pr = new PredicateRef(program().translatePredicateName(getPRED_ID()));
 			pr.contextPredicateName = getPRED_ID();
 			return pr;
 		}
@@ -121,7 +105,7 @@ aspect PatternLang {
 	eq BoundedPattern.getClauses() = getClausesHelper(getCommonVariable());
 
 	public java.util.List<Clause> Pattern.getClausesHelper(CommonVariable bindVar) {
-		AnalyzeContext ctx = enclosingAnalyzeBlock().getContext();
+		AnalyzeContext ctx = program().getAnalysisContext();
 		ArrayList<Clause> ret = new ArrayList<>();
 		for (ObjLangASTNode n : altParse()) {
 			Literal head = getLiteralHelper(bindVar);
@@ -151,10 +135,7 @@ aspect PatternLang {
 	eq BoundedPattern.predName() = hash(getPATTERN() + "bounded");
 
 	protected Literal Pattern.getLiteralHelper(CommonVariable bindVar) {
-		if (enclosingAnalyzeBlock() == null)
-			return Constructors.literal("ERROR", 0);
-
-		String predName = enclosingAnalyzeBlock().getContext().prefix(predName());
+		String predName = program().getAnalysisContext().prefix(predName());
 
 		List<Term> headVars = new List<>();
 		// The assumption is that any parse tree of a pattern contains
@@ -185,7 +166,6 @@ aspect PatternLang {
 	}
 
 	syn lazy java.util.List<ObjLangASTNode> Pattern.altParse() {
-		String srcLang = enclosingAnalyzeBlock().getLang().getSTRING();
 		java.util.List<Category> tokens = new ArrayList<Category>();
 		java.util.List<Symbol> symbols = new ArrayList<Symbol>();
 
@@ -195,8 +175,8 @@ aspect PatternLang {
 		java.util.List<Category> startSymbols = null;
 
 
-		switch (srcLang) {
-		case "metadl":
+		switch (program().getLang()) {
+		case METADL:
 			scanner = new lang.metadl.pat.ast.LangScanner(new StringReader(getPATTERN()));
 			tokenNames = lang.metadl.pat.ast.PatLangParserSEP.Terminals.NAMES;
 			astBuilder = lang.metadl.pat.ast.ASTBuilder.getInstance();
@@ -204,7 +184,7 @@ aspect PatternLang {
 										 lang.metadl.pat.ast.PatLangParserSEP.n_common_literal,
 										 lang.metadl.pat.ast.PatLangParserSEP.n_expr);
 			break;
-		case "java8":
+		case JAVA:
 			scanner = new lang.java8.pat.ast.PatLangScanner(new StringReader(getPATTERN()));
 			tokenNames = lang.java8.pat.ast.PatLangParserSEP.Terminals.NAMES;
 			astBuilder = lang.java8.pat.ast.ASTBuilder.getInstance();
@@ -373,9 +353,7 @@ aspect PatternLang {
 	}
 
 	syn boolean PredicateSymbol.isProgramRepresentation(ProgramRepresentation r) {
-		if (enclosingAnalyzeBlock() == null)
-			return false;
-		return enclosingAnalyzeBlock().getProgramRepresentationPredicateName(r).equals(getPRED_ID());
+		return program().getProgramRepresentationPredicateName(r).equals(getPRED_ID());
 	}
 
 	syn lazy boolean FormalPredicate.isProgramRepresentation(ProgramRepresentation r) {
@@ -449,10 +427,7 @@ aspect PatternLang {
 	syn lazy PredicateType FormalPredicate.getContextPredicateType() {
 		for (PredicateSymbol ps : predicates()) {
 			if (ps.getContextPredicateName() != null) {
-				AnalyzeBlock b = ps.enclosingAnalyzeBlock();
-				if (b == null)
-					continue;
-				PredicateType ptype = b.contextPredicateType(ps.getContextPredicateName());
+				PredicateType ptype = program().contextPredicateType(ps.getContextPredicateName());
 				if (ptype != null)
 					return ptype;
 			}
@@ -460,10 +435,7 @@ aspect PatternLang {
 
 		for (PredicateRef pr : predicateRefs()) {
 			if (pr.getContextPredicateName() != null) {
-				AnalyzeBlock b = pr.enclosingAnalyzeBlock();
-				if (b == null)
-					continue;
-				PredicateType ptype = b.contextPredicateType(pr.getContextPredicateName());
+				PredicateType ptype = program().contextPredicateType(pr.getContextPredicateName());
 				if (ptype != null)
 					return ptype;
 			}
@@ -471,18 +443,18 @@ aspect PatternLang {
 		return null;
 	}
 
-	coll Set<String> AnalyzeBlock.usedContextPredicates() [new HashSet<String>()] root AnalyzeBlock;
+	coll Set<String> Program.usedContextPredicates() [new HashSet<String>()] root Program;
 	PredicateSymbol contributes getContextPredicateName() when
-		getContextPredicateName() != null to AnalyzeBlock.usedContextPredicates();
+		getContextPredicateName() != null to Program.usedContextPredicates();
 	PredicateRef contributes getContextPredicateName() when
-		getContextPredicateName() != null to AnalyzeBlock.usedContextPredicates();
+		getContextPredicateName() != null to Program.usedContextPredicates();
 
-	syn DatalogProjectionSink Program.getDatalogProjectionSink(AnalyzeBlock block) {
-		FormalPredicate ast = formalPredicateMap().get(block.getProgramRepresentationPredicateName(ProgramRepresentation.AST));
-		FormalPredicate provenance = formalPredicateMap().get(block.getProgramRepresentationPredicateName(ProgramRepresentation.ATTR_PROVENANCE));
-		FormalPredicate srcLoc = formalPredicateMap().get(block.getProgramRepresentationPredicateName(ProgramRepresentation.SRC));
-		FormalPredicate attr = formalPredicateMap().get(block.getProgramRepresentationPredicateName(ProgramRepresentation.ATTR));
-		FormalPredicate nta = formalPredicateMap().get(block.getProgramRepresentationPredicateName(ProgramRepresentation.NTA));
+	syn DatalogProjectionSink Program.getDatalogProjectionSink() {
+		FormalPredicate ast = formalPredicateMap().get(getProgramRepresentationPredicateName(ProgramRepresentation.AST));
+		FormalPredicate provenance = formalPredicateMap().get(getProgramRepresentationPredicateName(ProgramRepresentation.ATTR_PROVENANCE));
+		FormalPredicate srcLoc = formalPredicateMap().get(getProgramRepresentationPredicateName(ProgramRepresentation.SRC));
+		FormalPredicate attr = formalPredicateMap().get(getProgramRepresentationPredicateName(ProgramRepresentation.ATTR));
+		FormalPredicate nta = formalPredicateMap().get(getProgramRepresentationPredicateName(ProgramRepresentation.NTA));
 
 		return new DatalogProjectionSink(evalCtx(), ast, provenance, attr, srcLoc, nta);
 	}

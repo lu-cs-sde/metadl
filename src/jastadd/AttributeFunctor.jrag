@@ -58,43 +58,43 @@ aspect AttributeFunctor {
 		return false;
 	}
 
-	rewrite Rule {
-		when (enclosingAnalyzeBlock() != null &&
-			  containsASTFunctor()) to Rule {
-			int freshVarCount = 0;
-			AnalyzeContext ctx = enclosingAnalyzeBlock().getContext();
+	// rewrite Rule {
+	// 	when (enclosingAnalyzeBlock() != null &&
+	// 		  containsASTFunctor()) to Rule {
+	// 		int freshVarCount = 0;
+	// 		AnalyzeContext ctx = enclosingAnalyzeBlock().getContext();
 
-			List<CommonLiteral> head = new List();
-			List<CommonLiteral> body = new List();
+	// 		List<CommonLiteral> head = new List();
+	// 		List<CommonLiteral> body = new List();
 
-			for (CommonLiteral l : getHeadss()) {
-				head.add(l.treeCopy());
-			}
+	// 		for (CommonLiteral l : getHeadss()) {
+	// 			head.add(l.treeCopy());
+	// 		}
 
-			for (CommonLiteral l : getBodys()) {
-				if (l.containsASTFunctor()) {
-					BINDLiteral bind = (BINDLiteral) l;
-					Variable v = (Variable) bind.getDst();
-					Functor f = (Functor) bind.getSrc();
+	// 		for (CommonLiteral l : getBodys()) {
+	// 			if (l.containsASTFunctor()) {
+	// 				BINDLiteral bind = (BINDLiteral) l;
+	// 				Variable v = (Variable) bind.getDst();
+	// 				Functor f = (Functor) bind.getSrc();
 
-					body.add(BIND(v.treeCopy(), new InternalFunctor(f.getFunc().treeCopy(), f.getArgList().treeCopy())));
-					head.add(literal(ctx.progRelName, "$_v0_" + freshVarCount,
-									 "$_v1_" + freshVarCount,
-									 "$_v2_" + freshVarCount,
-									 "$_v3_" + freshVarCount,
-									 "$_v4_" + freshVarCount));
-					body.add(new InternalLiteral(new Opt(), new PredicateSymbol("_ASTSubtree"),
-												 new List<Term>().add(v.treeCopy())
-												 .add(new Variable("_v0_" + freshVarCount))
-												 .add(new Variable("_v1_" + freshVarCount))
-												 .add(new Variable("_v2_" + freshVarCount))
-												 .add(new Variable("_v3_" + freshVarCount))
-												 .add(new Variable("_v4_" + freshVarCount))));
-				} else {
-					body.add(l.treeCopy());
-				}
-			}
-			return new Rule(head, body);
-		}
-	}
+	// 				body.add(BIND(v.treeCopy(), new InternalFunctor(f.getFunc().treeCopy(), f.getArgList().treeCopy())));
+	// 				head.add(literal(ctx.progRelName, "$_v0_" + freshVarCount,
+	// 								 "$_v1_" + freshVarCount,
+	// 								 "$_v2_" + freshVarCount,
+	// 								 "$_v3_" + freshVarCount,
+	// 								 "$_v4_" + freshVarCount));
+	// 				body.add(new InternalLiteral(new Opt(), new PredicateSymbol("_ASTSubtree"),
+	// 											 new List<Term>().add(v.treeCopy())
+	// 											 .add(new Variable("_v0_" + freshVarCount))
+	// 											 .add(new Variable("_v1_" + freshVarCount))
+	// 											 .add(new Variable("_v2_" + freshVarCount))
+	// 											 .add(new Variable("_v3_" + freshVarCount))
+	// 											 .add(new Variable("_v4_" + freshVarCount))));
+	// 			} else {
+	// 				body.add(l.treeCopy());
+	// 			}
+	// 		}
+	// 		return new Rule(head, body);
+	// 	}
+	// }
 }

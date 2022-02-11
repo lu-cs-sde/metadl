@@ -222,28 +222,19 @@ public class ProgramSplit {
 		final Set<FormalPredicate> outputPreds = outputs.stream().map(e -> e.p).collect(Collectors.toSet());
 
 		for (final CommonClause c : program.getCommonClauses()) {
-			if (c instanceof AnalyzeBlock) {
-				for (final Clause d : ((AnalyzeBlock) c).getExpandedClauses()) {
-					if (d.isLocal() && d.isASTClause()) {
-						fusedProgram.addCommonClause(transformLocalClause(d, outputPreds));
-					} else {
-						fusedProgram.addCommonClause(transformClause(d));
-					}
-				}
-				for (final Clause d : ((AnalyzeBlock) c).getClauses()) {
-					if (d.isLocal() && d.isASTClause()) {
-						fusedProgram.addCommonClause(transformLocalClause(d, outputPreds));
-					} else {
-						fusedProgram.addCommonClause(transformClause(d));
-					}
-				}
+			final Clause d = (Clause) c;
+			if (d.isLocal() && d.isASTClause()) {
+				fusedProgram.addCommonClause(transformLocalClause(d, outputPreds));
 			} else {
-				final Clause d = (Clause) c;
-				if (d.isLocal() && d.isASTClause()) {
-					fusedProgram.addCommonClause(transformLocalClause(d, outputPreds));
-				} else {
-					fusedProgram.addCommonClause(transformClause(d));
-				}
+				fusedProgram.addCommonClause(transformClause(d));
+			}
+		}
+
+		for (final Clause d : program.getExpandedClauses()) {
+			if (d.isLocal() && d.isASTClause()) {
+				fusedProgram.addCommonClause(transformLocalClause(d, outputPreds));
+			} else {
+				fusedProgram.addCommonClause(transformClause(d));
 			}
 		}
 
@@ -289,30 +280,29 @@ public class ProgramSplit {
 
 		// Add all the program representation predicates as dummy inputs. This prevents
 		// Souffle to remove them as dead code.
-		for (AnalyzeBlock b : program.analyzeBlocks()) {
-			for (ProgramRepresentation pr : ProgramRepresentation.values()) {
-				String predName = b.getContext().prefix(pr.getPredicateName());
-				if (program.formalPredicateMap().containsKey(predName)) {
-					fusedProgram.addCommonClause(fact(literal(GlobalNames.EDB_NAME, ref(predName), "__dummy__", "csv")));
-				}
-			}
-
-			// cache the provenance relation
-			String provPredName = b.getContext().provenanceRelName;
-			if (!cachedPredicates.contains(provPredName)) {
-				fusedProgram.addCommonClause(implicitTypeDeclaration(provPredName,
-																	 FormalPredicate.programRepresentationType(ProgramRepresentation.ATTR_PROVENANCE)));
-				fusedProgram.addCommonClause(rule(literal(provPredName + "_local", var("file_id"), var("other_file_id"), var("file_id")),
-												  literal(provPredName, var("file_id"), var("other_file_id"))));
-
-				fusedProgram.addCommonClause(fact(literal(GlobalNames.OUTPUT_NAME, ref(provPredName + "_local"),
-														  str(makeInternalDbDesc(provPredName, "append")),
-														  str("sqlite"))));
-				fusedProgram.addCommonClause(fact(literal(GlobalNames.EDB_NAME, ref(provPredName), "__dummy__", "csv")));
-
-				cachedPredicates.add(provPredName);
+		for (ProgramRepresentation pr : ProgramRepresentation.values()) {
+			String predName = program.getAnalysisContext().prefix(pr.getPredicateName());
+			if (program.formalPredicateMap().containsKey(predName)) {
+				fusedProgram.addCommonClause(fact(literal(GlobalNames.EDB_NAME, ref(predName), "__dummy__", "csv")));
 			}
 		}
+
+		// cache the provenance relation
+		String provPredName = program.getAnalysisContext().provenanceRelName;
+		if (!cachedPredicates.contains(provPredName)) {
+			fusedProgram.addCommonClause(implicitTypeDeclaration(provPredName,
+																 FormalPredicate.programRepresentationType(ProgramRepresentation.ATTR_PROVENANCE)));
+			fusedProgram.addCommonClause(rule(literal(provPredName + "_local", var("file_id"), var("other_file_id"), var("file_id")),
+											  literal(provPredName, var("file_id"), var("other_file_id"))));
+
+			fusedProgram.addCommonClause(fact(literal(GlobalNames.OUTPUT_NAME, ref(provPredName + "_local"),
+													  str(makeInternalDbDesc(provPredName, "append")),
+													  str("sqlite"))));
+			fusedProgram.addCommonClause(fact(literal(GlobalNames.EDB_NAME, ref(provPredName), "__dummy__", "csv")));
+
+			cachedPredicates.add(provPredName);
+		}
+
 	}
 
 	public final static String AST_VISIT_RELATION = "AST_VISIT";
@@ -369,8 +359,8 @@ public class ProgramSplit {
 		return functor("band", functor("bshru", n, integer(32)), integer((1 << 30) - 1));
 	}
 
-	private void generateUpdateClauses(final Program p, final AnalyzeBlock b) {
-		final String ATTR_PROVENANCE = b.getContext().provenanceRelName;
+	private void generateUpdateClauses(final Program p) {
+		final String ATTR_PROVENANCE = program.getAnalysisContext().provenanceRelName;
 
 		// read the analyzed sources
 		p.addCommonClause(fact(literal(GlobalNames.EDB_NAME, ref(ANALYZED_SOURCES_RELATION),
@@ -422,7 +412,7 @@ public class ProgramSplit {
 
 	private void generateUpdateProgram() {
 		updateProgram = new Program();
-		generateUpdateClauses(updateProgram, program.analyzeBlocks().get(0));
+		generateUpdateClauses(updateProgram);
 	}
 
 	public Program getUpdateProgram() {
@@ -451,28 +441,7 @@ public class ProgramSplit {
 		}
 	}
 
-	public List<AnalysisInfo> getAnalyzeContexts() {
-		return program.analyzeBlocks().stream().map(b -> new AnalysisInfo(b.getContext(), b.getProgramRef().getPRED_ID()))
-													.collect(Collectors.toList());
-	}
-
 	public boolean canEvaluateIncrementally() {
-		if (program.analyzeBlocks().isEmpty()) {
-			// the program must have at least one analyze block
-			return false;
-		}
-
-		if (program.analyzeBlocks().stream()
-			.map(b -> b.getProgramRef().getPRED_ID()).distinct().count() != 1) {
-			// all analyze blocks must use the same program relation
-			return false;
-		}
-
-		if (program.analyzeBlocks().stream()
-			.anyMatch(b -> !b.getLang().getSTRING().equals("java8"))) {
-			// all analyze blocks must use the Java language
-			return false;
-		}
 		return true;
 	}
 

@@ -160,7 +160,7 @@ aspect Eval {
 				AnalyzeBlock block = (AnalyzeBlock) c;
 
 				// now populate the relations associated with the analyze block
-				DatalogProjectionSink tupleSink = getDatalogProjectionSink(block);
+				DatalogProjectionSink tupleSink = getDatalogProjectionSink();
 
 				// use the fpToSoufflePredMap to remap inserters in the
 				// DatalogProjectionSink

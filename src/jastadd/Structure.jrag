@@ -160,6 +160,7 @@ aspect Literal {
 	eq Literal.predicate() = getPredicate();
 
 	inh boolean CommonLiteral.isFact();
+	eq EquivalenceDecl.getChild().isFact() = false;
 	eq Clause.getChild().isFact()		 = false;
 	eq Fact.getHeads(int index).isFact() =	true;
 

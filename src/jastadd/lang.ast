@@ -3,14 +3,25 @@
 **/
 Program  ::= CommonClause* /FormalPredicate*/;
 
+
+
 /**
-   Clause
+   Clause   
 **/
 abstract CommonClause;
 abstract Clause : CommonClause ::= Heads:CommonLiteral*;
 Rule:Clause ::= Body:CommonLiteral*;
 Fact:Clause;
-AnalyzeBlock:CommonClause ::= ProgramRef:PredicateRef Lang:StringConstant Clause* /ExpandedClause:Clause*/;
+AnalyzeBlock:CommonClause ::= ProgramRef:PredicateRef Lang:StringConstant EquivalenceDecl* Clause* /ExpandedClause:Clause*/;
+
+
+/**  
+Equivalence
+EquivalenceDecls come before Clauses in the AnalyzeBlocks
+**/
+
+EquivalenceDecl::= <LABEL> Pattern*;
+
 
 /**
    Marker AST node for negated Literals
@@ -73,7 +84,7 @@ EquivalencePattern : Pattern ::= <LABEL>;
    Equivalence
 **/
 
-EquivalenceDecl:CommonClause ::= <LABEL> Pattern*;
+
 
 /**
    Internal AST Nodes

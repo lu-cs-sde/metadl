@@ -21,11 +21,10 @@ Clause inner_clause = rule
 
 CommonClause clause = inner_clause
                     | analyze_block
-                    | equivalence_decl
                     ;
 
-AnalyzeBlock analyze_block = JAVA LPARA pred_ref.prog_ref RPARA LBRACE inner_clause.clauses+ RBRACE {: return new AnalyzeBlock(prog_ref, new StringConstant("java8"), clauses); :}
-                           | METADL LPARA pred_ref.prog_ref RPARA LBRACE inner_clause.clauses+ RBRACE {: return new AnalyzeBlock(prog_ref, new StringConstant("metadl"), clauses); :}
+AnalyzeBlock analyze_block = JAVA LPARA pred_ref.prog_ref RPARA LBRACE equivalence_decl.eq* inner_clause.clauses+ RBRACE {: return new AnalyzeBlock(prog_ref, new StringConstant("java8"), eq, clauses); :}
+                           | METADL LPARA pred_ref.prog_ref RPARA LBRACE equivalence_decl.eq* inner_clause.clauses+ RBRACE {: return new AnalyzeBlock(prog_ref, new StringConstant("metadl"), eq, clauses); :}
                            ;
 
 Rule rule = lit_list.heads IMPLIED_BY lit_list.body DOT {: return new Rule(heads, body); :};
@@ -135,9 +134,9 @@ PredicateRef pred_ref = PRED_REF.id {: return new PredicateRef(id); :};
 
 Variable variable = VAR_ID.id {: return new Variable(id); :};
 
-EquivalenceDecl equivalence_decl = LABEL.id COLON pattern_list {: return new EquivalenceDecl(id,pattern_list); :};
+EquivalenceDecl equivalence_decl = VAR_ID.id COLON COLON pattern_list DOT {: return new EquivalenceDecl(id,pattern_list); :};
 
-EquivalencePattern equiv_pattern = LABEL COLON PATTERN {: return new EquivalencePattern(new Opt(),PATTERN,LABEL); :};
+EquivalencePattern equiv_pattern = VAR_ID.id COLON PATTERN.pat {: return new EquivalencePattern(new Opt(),pat,id); :};
 
 List pattern_list = pattern {: return new List().add(pattern); :}
               | pattern_list.list TILDE pattern {: return list.add(pattern); :}

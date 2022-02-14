@@ -1,0 +1,10 @@
+IMPORT('P, "extension/javafiles", "*.java").
+
+P("", "") :- P("", "").
+
+java('P) {
+    NewArray(l, c, file) :- e <: new `t[] { .. } :>, SRC(e, l, c, _, _, file).
+}
+
+
+OUTPUT('NewArray, "NewArray.csv", "csv").

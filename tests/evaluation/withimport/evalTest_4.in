@@ -1,6 +1,3 @@
-Program("./tests/evaluation/withimport/evalTest_4_input.mdl").
-
-metadl('Program) {
 	IConstant(c) :- <:...,$p(...,$v,...),... .:>, INT($v, c).
 	IConstant(c) :- <:...,$p(...,$v,...),... :- ... .:>, INT($v, c).
 	IConstant(c) :- <:... :- ...,$p(...,$v,...),... .:>, INT($v, c).
@@ -16,7 +13,7 @@ metadl('Program) {
 	SConstant(c) :- <:...,$p(...,$v,...),... .:>, STR($v, c).
 	SConstant(c) :- <:...,$p(...,$v,...),... :- ... .:>, STR($v, c).
 	SConstant(c) :- <:... :- ...,$p(...,$v,...),... .:>, STR($v, c).
-}
+
 
 OUTPUT('IConstant, "IConstant.csv", "csv").
 OUTPUT('SConstant, "SConstant.csv", "csv").

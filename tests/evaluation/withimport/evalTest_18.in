@@ -1,6 +1,3 @@
-Q("tests/evaluation/withimport/evalTest_18_input.java").
-
-java('Q) {
 	Scope(p, `c) :- p <: class `n { .. `c .. } :>.
 	Scope(p, `b) :- p <: .. `t `f (..) `b :>.
 	Scope(p, `t) :- p <: .. `t `f (..,`t,..) { .. } :>.
@@ -38,7 +35,7 @@ java('Q) {
 
 	DefUseDetail(name, ld, cd, lu, cu) :-
 			   DefUse(d, u), NameUse(name, u), SRC(d, ld, cd, _, _, _), SRC(u, lu, cu, _, _, _).
-}
+
 
 
 OUTPUT('DefUseDetail, "DefUseDetail.csv", "csv").

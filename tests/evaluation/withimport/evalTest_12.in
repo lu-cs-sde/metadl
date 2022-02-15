@@ -1,8 +1,5 @@
-P("tests/evaluation/withimport/evalTest_12_input.java").
-
-java('P) {
 	IsClass("A") :- <: class A {  } :>.
 	IsClass("D") :- <: class D {  } :>.
-}
+
 
 OUTPUT('IsClass, "IsClass.csv", "csv").

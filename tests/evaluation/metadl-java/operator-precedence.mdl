@@ -1,7 +1,3 @@
-IMPORT('P, "tests/evaluation/metadl-java/src/operator-precedence/", "*.java").
-P("", "") :- NEQ("", "").
-
-java('P) {
 	    NoParen(`e) :- <: `e :>, ID(`e, _).
 	    NoParen(e) :- e <: `_.`_ :>.
 	    NoParen(e) :- e <: `f(..) :>.
@@ -51,7 +47,7 @@ java('P) {
 	    ExtraParen(parent, child) :- Paren(parent, child), NoParen(child).
 
 	    ExtraParenDetail(l, c, file) :- ExtraParen(p, _), SRC(p, l, c, _, _, file).
-}
+
 
 OUTPUT('ConfusingDetail, "ConfusingDetail.csv", "csv").
 OUTPUT('ExtraParenDetail, "ExtraParenDetail.csv", "csv").

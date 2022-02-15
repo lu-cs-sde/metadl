@@ -1,9 +1,7 @@
-Program("./tests/evaluation/withimport/evalTest_3_input.mdl").
 
-metadl('Program) {
    Positive(name) :- <:... :- ..., $p(...) , ... .:>, ID($p, name).
    Negative(name) :- <:... :- ..., NOT($p(...)), ... .:>, ID($p, name).
-}
+
 
 OUTPUT('Positive, "Positive.csv", "csv").
 OUTPUT('Negative, "Negative.csv", "csv").

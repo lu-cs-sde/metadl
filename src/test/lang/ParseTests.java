@@ -28,7 +28,6 @@ public class ParseTests {
         ,"parseTest_13.in"
         ,"parseTest_14.in"
         ,"parseTest_15.in"
-        ,"parseTest_16.in"
     };
     private static final String[] INVALID_TESTS = {
          "parseTest_1.in"

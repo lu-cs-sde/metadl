@@ -1,6 +1,3 @@
-P("tests/evaluation/withimport/evalTest_15_input.java").
-
-java('P) {
 	ClassImplementsInterface(c, i) :-
 		<: class `c implements .., `i, .. { .. } :>,
 		ID(`c, c), ID(`i, i).
@@ -13,7 +10,7 @@ java('P) {
 	ClassImplementsInterface(c, i), ClassExtendsClass(c, d) :-
 		<: class `c extends `d implements .., `i, .. { .. } :>,
 		ID(`c, c), ID(`d, d), ID(`i, i).
-}
+
 
 SuperClass(c, s) :- ClassExtendsClass(c, s).
 SuperClass(c, s) :- ClassExtendsClass(c, d), SuperClass(d, s).

@@ -1,6 +1,3 @@
-P("tests/evaluation/withimport/evalTest_11_input.mdl").
-
-metadl('P) {
 	    Expr($p, 0, $q, "+"), Expr($p, 1, $r, "+") :- $p <:$q + $r:>.
 	    Expr($p, 0, $q, "*"), Expr($p, 1, $r, "*") :- $p <:$q * $r:>.
 	    Expr($p, 0, $q, "-"), Expr($p, 1, $r, "-") :- $p <:$q - $r:>.
@@ -13,6 +10,6 @@ metadl('P) {
 	    Eval(e, v) :- Expr(e, 0, l, "/"), Expr(e, 1, r, "/"), Eval(l, lv), Eval(r, rv), BIND(v, lv / rv).
 
 	    OurExprEval(v) :- <: ... :- ..., BIND($v, x*y + $e), ... .:>, Eval($e, v).
-}
+
 
 OUTPUT('OurExprEval, "OurExprEval.csv", "csv").

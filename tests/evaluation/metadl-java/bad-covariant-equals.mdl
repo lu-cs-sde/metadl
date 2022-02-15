@@ -1,27 +1,22 @@
-IMPORT('P, "tests/evaluation/metadl-java/src/bad-covariant-equals/", "*.java").
+# equals method where the class has another correct equals, probably a helper
+CovariantEquals(`d1) :- <: .. class `k  { .. `d1 ..  } :> ,
+`d1 <: .. public .. boolean equals(`t `_) ; :>, ID(`t, t), ID(`k, k), EQ(t, k).
 
-P("", "") :- P("", "").
+CovariantEquals(`d1) :- <: .. enum `k  {  .. , `e1 , .. ; ..  `d1  ..    } :> ,
+`d1 <: .. public .. boolean equals(`t `_) ; :>, ID(`t, t), ID(`k, k), EQ(t, k).
 
-java('P) {
-	# equals method where the class has another correct equals, probably a helper
-	CovariantEquals(`d1) :- <: .. class `k  { .. `d1 ..  } :> ,
-                                `d1 <: .. public .. boolean equals(`t `_) ; :>, ID(`t, t), ID(`k, k), EQ(t, k).
+# the correct one using native methods
+GoodEquals(n) :- n <: .. public ..  boolean equals(Object `_) ; :>.
 
-	CovariantEquals(`d1) :- <: .. enum `k  {  .. , `e1 , .. ; ..  `d1  ..    } :> ,
-                                `d1 <: .. public .. boolean equals(`t `_) ; :>, ID(`t, t), ID(`k, k), EQ(t, k).
+ClassHasGoodEquals(`k) :- <: .. class `k  { .. `d .. } :> , GoodEquals(`d).
+ClassHasGoodEquals(`k) :- <: .. enum `k  { .. ; .. `d .. } :> , GoodEquals(`d).
 
-	# the correct one using native methods
-	GoodEquals(n) :- n <: .. public ..  boolean equals(Object `_) ; :>.
-
-	ClassHasGoodEquals(`k) :- <: .. class `k  { .. `d .. } :> , GoodEquals(`d).
-	ClassHasGoodEquals(`k) :- <: .. enum `k  { .. ; .. `d .. } :> , GoodEquals(`d).
-
-	BadEquals(`d) :- <: .. class `k { .. `d .. } :>, CovariantEquals(`d), NOT(ClassHasGoodEquals(`k)).
-	BadEquals(`d) :- <: .. enum `k { .. ; .. `d .. } :>, CovariantEquals(`d), NOT(ClassHasGoodEquals(`k)).
+BadEquals(`d) :- <: .. class `k { .. `d .. } :>, CovariantEquals(`d), NOT(ClassHasGoodEquals(`k)).
+BadEquals(`d) :- <: .. enum `k { .. ; .. `d .. } :>, CovariantEquals(`d), NOT(ClassHasGoodEquals(`k)).
 
 
-	BadEqualsReport(f, ls, cs, le, ce) :- BadEquals(d), NOT(d <: @SuppressWarnings("CovariantEquals") .. `_ `_(..) {..} :>),
-	                                      SRC(d, ls, cs, le, ce, f), GT(ls, 0).
-}
+BadEqualsReport(f, ls, cs, le, ce) :- BadEquals(d), NOT(d <: @SuppressWarnings("CovariantEquals") .. `_ `_(..) {..} :>),
+SRC(d, ls, cs, le, ce, f), GT(ls, 0).
+
 
 OUTPUT('BadEqualsReport, "BadEqualsReport.csv", "csv").

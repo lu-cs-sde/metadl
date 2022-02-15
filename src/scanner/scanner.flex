@@ -46,8 +46,6 @@ String  = \"[^\"]*\"
 // token definitions
 "("        {  return  sym(Terminals.LPARA);          }
 ")"        {  return  sym(Terminals.RPARA);          }
-"{"        {  return  sym(Terminals.LBRACE);         }
-"}"        {  return  sym(Terminals.RBRACE);         }
 ":-"       {  return  sym(Terminals.IMPLIED_BY);     }
 "."        {  return  sym(Terminals.DOT);            }
 ","        {  return  sym(Terminals.COMMA);          }
@@ -64,8 +62,6 @@ String  = \"[^\"]*\"
 "MATCH"    {  return  sym(Terminals.MATCH);          }
 "NOT"      {  return  sym(Terminals.NOT);            }
 "BIND"     {  return  sym(Terminals.BIND);           }
-"java"     {  return  sym(Terminals.JAVA);           }
-"metadl"   {  return  sym(Terminals.METADL);         }
 "_"        {  return  sym(Terminals.WILDCARD);       }
 {Numeral}  {  return  sym(Terminals.NUMERAL);        }
 {VAR_ID}   {  return  sym(Terminals.VAR_ID);         }

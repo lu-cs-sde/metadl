@@ -1,7 +1,5 @@
-IMPORT('P, "tests/evaluation/metadl-java/src/unwritten-field/", "*.java").
-P("", "") :- P("", "").
 
-java('P) {
+
 ### Analysis
 	    FieldInClassWithInit(c, `t, `f, `i) :- c <: class `_ { .. `d .. } :>, `d <: .. `t .. , `f = `i, .. ; :>,
 				    SRC(c, l, col, _,_,_), NEQ(col, 0).
@@ -86,7 +84,7 @@ java('P) {
 
 	    Result("pass") :- NOT(Mismatch(_)).
 	    Result("fail") :- Mismatch(_).
-}
+
 
 OUTPUT('WarningDetails, "WarningDetails.csv", "csv").
 OUTPUT('Result, "Result.csv", "csv").

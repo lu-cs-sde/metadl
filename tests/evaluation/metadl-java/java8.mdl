@@ -1,12 +1,8 @@
-IMPORT('P, "tests/evaluation/metadl-java/src/java8/", "*.java").
-
-P("", "") :- NEQ(0, 0).
-
 # A first test case for java8
-java('P) {
-	    Lambda1(0) :- <: `p -> `e :>.
-	    MethodRef(0) :- <: this::`m :>.
-}
+
+Lambda1(0) :- <: `p -> `e :>.
+MethodRef(0) :- <: this::`m :>.
+
 
 OUTPUT('Lambda1, "Lambda1.csv", "csv").
 OUTPUT('MethodRef, "MethodRef.csv", "csv").

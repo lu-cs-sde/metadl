@@ -1,6 +1,3 @@
-Program("./tests/evaluation/withimport/evalTest_1.in").
-
-metadl('Program) {
 	# Constants
 	PredType(pred_name, $i, "String") :- <:..., $p(...,$v,...), ... .:>, INDEX($v, $i), ID($p, pred_name), STR($v, x).
 	PredType(pred_name, $i, "Int") :- <:..., $p(...,$v,...), ... .:>, INDEX($v, $i), ID($p, pred_name), INT($v, x).
@@ -41,7 +38,7 @@ metadl('Program) {
 
 	IsTyped(p_name, i) :- PredType(p_name, i, x).
 	IncompleteTyped(p_name, i) :- TermIndex(p_name, i), NOT(IsTyped(p_name, i)).
-}
+
 
 OUTPUT('PredType, "PredType.csv", "csv").
 OUTPUT('InconsistentTyped, "InconsistentTyped.csv", "csv").

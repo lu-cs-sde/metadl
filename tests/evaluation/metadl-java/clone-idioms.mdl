@@ -1,33 +1,27 @@
-IMPORT('P, "tests/evaluation/metadl-java/src/clone-idioms/", "*.java").
+Contains(n1, n2) :- PARENT(n1, n2).
+Contains(n1, n2) :- Contains(n1, t), Contains(t, n2).
 
-P("", "") :- P("", "").
+CloneMethod(c) :- c <: public Object clone() `body :>.
+CloneMethod(c) :- c <: .. .. public .. Object clone() `body :>.
 
-java('P) {
-	    Contains(n1, n2) :- PARENT(n1, n2).
-	    Contains(n1, n2) :- Contains(n1, t), Contains(t, n2).
+SuperClone(s) :- s <: super.clone() :>.
 
-	    CloneMethod(c) :- c <: public Object clone() `body :>.
-	    CloneMethod(c) :- c <: .. .. public .. Object clone() `body :>.
+GoodCloneMethod(c) :- CloneMethod(c), SuperClone(s), Contains(c, s).
+BadCloneReport(f, ls, cs, le, ce, "CN_IDIOM_NO_SUPER_CALL") :- CloneMethod(c),
+		  NOT(GoodCloneMethod(c)), SRC(c, ls, cs, le, ce, f), GT(ls, 0).
 
-	    SuperClone(s) :- s <: super.clone() :>.
+Iface(k, iname) :- k <: .. class `_ implements .. ,`i , .. { .. } :>, ID(`i, iname).
+ImplementsClone(k) :- k <: .. class `_ implements .. { .. `d .. } :>,
+		   CloneMethod(d).
+ImplementsClone(k) :- k <: .. class `_ { .. `d .. } :>,
+		   CloneMethod(d).
 
-	    GoodCloneMethod(c) :- CloneMethod(c), SuperClone(s), Contains(c, s).
-	    BadCloneReport(f, ls, cs, le, ce, "CN_IDIOM_NO_SUPER_CALL") :- CloneMethod(c),
-                                       NOT(GoodCloneMethod(c)), SRC(c, ls, cs, le, ce, f), GT(ls, 0).
+BadCloneReport(f, ls, cs, le, ce, "CN_IMPLEMENTS_CLONE_BUT_NOT_CLONEABLE") :- ImplementsClone(c),
+		  NOT(Iface(c, "Cloneable")),
+		  SRC(c, ls, cs, le, ce, f),
+		  # Exclude classes
+		  NEQ(ls, 0).
 
-	    Iface(k, iname) :- k <: .. class `_ implements .. ,`i , .. { .. } :>, ID(`i, iname).
-	    ImplementsClone(k) :- k <: .. class `_ implements .. { .. `d .. } :>,
-            			   CloneMethod(d).
-	    ImplementsClone(k) :- k <: .. class `_ { .. `d .. } :>,
-            			   CloneMethod(d).
-
-	    BadCloneReport(f, ls, cs, le, ce, "CN_IMPLEMENTS_CLONE_BUT_NOT_CLONEABLE") :- ImplementsClone(c),
-	                                    NOT(Iface(c, "Cloneable")),
-                                            SRC(c, ls, cs, le, ce, f),
-					    # Exclude classes
-					    NEQ(ls, 0).
-
-	    GoodCloneMethodReport(c, f, ls, cs, le, ce) :- GoodCloneMethod(c), SRC(c, ls, cs, le, ce, f).
-}
+GoodCloneMethodReport(c, f, ls, cs, le, ce) :- GoodCloneMethod(c), SRC(c, ls, cs, le, ce, f).
 
 OUTPUT('BadCloneReport, "BadCloneReport.csv", "csv").

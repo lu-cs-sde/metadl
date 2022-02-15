@@ -1,6 +1,6 @@
 P("tests/evaluation/withimport/evalTest_16_input.java").
 
-metadl('P,  "java8") {
+
 	Class1(c) :- <: class `c implements `a, .. { .. } :>, ID(`c, c).
 	Class2(c) :- <: class `c extends `a implements `b, .. { .. } :>, ID(`c, c).
 	Class3(c) :- <: class `c { .. } :>, ID(`c, c).
@@ -20,7 +20,7 @@ metadl('P,  "java8") {
 	Class2_public_abstract(c) :- <: public abstract class `c extends `a implements `b, .. { .. } :>, ID(`c, c).
 	Class3_public_abstract(c) :- <: public abstract class `c { .. } :>, ID(`c, c).
 	Class4_public_abstract(c) :- <: public abstract class `c extends `a { .. } :>, ID(`c, c).
-}
+
 
 OUTPUT('Class1, "Class1.csv", "csv").
 OUTPUT('Class2, "Class2.csv", "csv").

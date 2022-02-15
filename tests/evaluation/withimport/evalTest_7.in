@@ -2,9 +2,9 @@
 # CartesianProjectionWarning(P, i, Q): Field i in predicate P is always a projection of the same field in Q, without any filtering of Q's records.
 # FIXME: include the offending rule (is that possible?)
 
-Program("tests/evaluation/withimport/evalTest_7_input.mdl").
 
-metadl('Program) {
+
+
   InputVar($p, $i, v) :- <: ... :- ..., $p(..., $x, ...), ... .:>, INDEX($x, $i), ID($x, v).
   InputVar($p, $i, v) :- <: ... :- ..., NOT($p(..., $x, ...)), ... .:>, INDEX($x, $i), ID($x, v).
 
@@ -46,6 +46,6 @@ metadl('Program) {
       ID($p, p),
       NOT(MultipleInputVars(q, $i)),
       NOT(MultipleOccurrencesOfInputVar($q, v)).
-}
+
 
 OUTPUT('CartesianProjectionWarning, "CartesianProjectionWarning.csv", "csv").

@@ -1,6 +1,3 @@
-P("tests/evaluation/withimport/evalTest_14_input.mdl").
-
-metadl('P) {
 	IsNeq(pname, qname) :- <: ... :-
 		     ..., $p(..., $x, ... ), ..., NEQ($xx, $yy), ..., $q(..., $y, ...), ... . :>,
 		     ID($p, pname), ID($q, qname),
@@ -9,6 +6,6 @@ metadl('P) {
 		     EQ(name_x, name_xx), EQ(name_y, name_yy),
 		     NEQ($p, $q).
 
-}
+
 
 OUTPUT('IsNeq, "IsNeq.csv", "csv").

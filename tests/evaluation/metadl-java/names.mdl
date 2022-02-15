@@ -1,6 +1,3 @@
-Src("tests/evaluation/metadl-java/src/names/Names.java").
-
-java('Src) {
      Cat(n, c) :- AST(c, n, _, _, _).
      Fields(`f, `g, cf, cg) :- <: `f.`g :>, Cat(`f, cf), Cat(`g, cg), SRC(`f, l, c, _, _, _), GT(l, 0).
      FieldNames(n, m) :- Fields(f, g, _, _), ID(f, n), ID(g, m).
@@ -8,4 +5,3 @@ java('Src) {
      MethodNames(n, m) :- Method(`b, `f), ID(`b, n), ID(`f, m).
      OUTPUT('FieldNames, "FieldNames.csv", "csv").
      OUTPUT('MethodNames, "MethodNames.csv", "csv").
-}

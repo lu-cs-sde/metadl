@@ -1,0 +1,51 @@
+import org.apache.commons.collections4.MultiValuedMap;
+import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
+
+
+aspect EquivalencePatterns {
+	inh AnalyzeBlock EquivalenceDecl.enclosingAnalyzeBlock();
+
+	syn lazy MultiValuedMap<String, EquivalenceDecl> AnalyzeBlock.equivalenceLabelDecls() {
+		MultiValuedMap<String, EquivalenceDecl> label2decl = new ArrayListValuedHashMap<>();
+		for (EquivalenceDecl eDecl : getEquivalenceDecls()) {
+			label2decl.put(eDecl.getLABEL(), eDecl);
+		}
+
+		return label2decl;
+	}
+
+	syn lazy java.util.List<Clause> EquivalencePatternDecl.getClauses() {
+		/* TODO: Generate a new predicate that represents all the equivalent patterns */
+		return Collections.emptyList();
+	}
+
+	@Override public java.util.List<Clause> EquivalencePattern.getClausesHelper(CommonVariable bindVar) {
+		if (bindVar != null) {
+			throw new RuntimeException("Rooted equivalence patterns are not supported for now");
+		}
+
+		Collection<EquivalenceDecl> equivalenceDecls = enclosingAnalyzeBlock()
+			.equivalenceLabelDecls().get(getLABEL());
+
+		/*
+		  TODO: generate clauses for this pattern
+		*/
+		return Collections.emptyList();
+	}
+
+	@Override protected Literal EquivalencePattern.getLiteralHelper(CommonVariable bindVar) {
+		if (bindVar != null) {
+			throw new RuntimeException("Rooted equivalence patterns are not supported for now");
+		}
+
+		/*
+		  TODO: generate a literal that represents the equivalence
+		 */
+
+		return literal("Equiv_Pattern_" + getLABEL(), str("Here be the variables contained in the pattern."));
+	}
+
+	/* For now, don't allow multiple equivalence declarations to share the same label */
+	EquivalenceDecl contributes new SemanticError(this, "Multiple equivalence declarations with the same label: " + this.getLABEL())
+		when (enclosingAnalyzeBlock() != null && enclosingAnalyzeBlock().equivalenceLabelDecls().get(getLABEL()).size() != 1) to Program.semanticErrors();
+}

@@ -4,6 +4,8 @@ P("", "") :- P("", "").
 
 java('P) {
     myLabel :: <: `x + 1 :> ~ <: 1 + `x :>.
-    NewArray(l, c, file) :- e <: new `t[] { .. } :>, SRC(e, l, c, _, _, file).
-}
+    # myLabel :: <: `x + `y :> ~ <: `y + `x :>.
 
+    NewArray(l, c, file) :- myLabel : <: new `t[] { .. } :>, SRC(e, l, c, _, _, file).
+    Q(0) :- Q(0).
+}

@@ -6,7 +6,7 @@ Program  ::= CommonClause* /FormalPredicate*/;
 
 
 /**
-   Clause   
+   Clause
 **/
 abstract CommonClause;
 abstract Clause : CommonClause ::= Heads:CommonLiteral*;
@@ -15,12 +15,13 @@ Fact:Clause;
 AnalyzeBlock:CommonClause ::= ProgramRef:PredicateRef Lang:StringConstant EquivalenceDecl* Clause* /ExpandedClause:Clause*/;
 
 
-/**  
+/**
 Equivalence
 EquivalenceDecls come before Clauses in the AnalyzeBlocks
 **/
 
-EquivalenceDecl::= <LABEL> Pattern*;
+EquivalencePatternDecl ::= <PATTERN>;
+EquivalenceDecl ::= <LABEL> EquivalencePatternDecl*;
 
 
 /**

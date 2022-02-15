@@ -138,9 +138,11 @@ EquivalenceDecl equivalence_decl = VAR_ID.id COLON COLON pattern_list DOT {: ret
 
 EquivalencePattern equiv_pattern = VAR_ID.id COLON PATTERN.pat {: return new EquivalencePattern(new Opt(),pat,id); :};
 
-List pattern_list = pattern {: return new List().add(pattern); :}
-              | pattern_list.list TILDE pattern {: return list.add(pattern); :}
-              ;
+List pattern_list = equivalence_pattern_decl {: return new List().add(equivalence_pattern_decl); :}
+                  | pattern_list.list TILDE equivalence_pattern_decl {: return list.add(equivalence_pattern_decl); :}
+                  ;
+
+EquivalencePatternDecl equivalence_pattern_decl = PATTERN {: return new EquivalencePatternDecl(PATTERN); :}
 
 
 IntConstant int_constant    = NUMERAL.num {: return new IntConstant(num); :};

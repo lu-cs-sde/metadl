@@ -82,12 +82,6 @@ BoundedPattern : Pattern ::= CommonVariable;
 EquivalencePattern : Pattern ::= <LABEL>;
 
 /**
-   Equivalence
-**/
-
-
-
-/**
    Internal AST Nodes
 **/
 InternalLiteral : Literal;

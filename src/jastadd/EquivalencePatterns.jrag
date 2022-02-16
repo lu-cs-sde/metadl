@@ -16,6 +16,7 @@ aspect EquivalencePatterns {
 
 	syn lazy java.util.List<Clause> EquivalencePatternDecl.getClauses() {
 		/* TODO: Generate a new predicate that represents all the equivalent patterns */
+		
 		return Collections.emptyList();
 	}
 
@@ -24,13 +25,24 @@ aspect EquivalencePatterns {
 			throw new RuntimeException("Rooted equivalence patterns are not supported for now");
 		}
 
+		
+		
 		Collection<EquivalenceDecl> equivalenceDecls = enclosingAnalyzeBlock()
-			.equivalenceLabelDecls().get(getLABEL());
+		.equivalenceLabelDecls().get(getLABEL());
+		
+		AnalyzeContext ctx = enclosingAnalyzeBlock().getContext();
+		ArrayList<Clause> ret = new ArrayList<>();
 
+		for (ObjLangASTNode n : altParse()) {
+			Literal head = getLiteralHelper(bindVar);
+			Rule r = new Rule(new List<CommonLiteral>().add(head),
+							  new List<CommonLiteral>().addAll(n.literals(ctx,bindVar)));
+			ret.add(r);
+		}
 		/*
 		  TODO: generate clauses for this pattern
 		*/
-		return Collections.emptyList();
+		return ret;
 	}
 
 	@Override protected Literal EquivalencePattern.getLiteralHelper(CommonVariable bindVar) {
@@ -38,12 +50,26 @@ aspect EquivalencePatterns {
 			throw new RuntimeException("Rooted equivalence patterns are not supported for now");
 		}
 
+		List<Term> headVars = new List<>();
+		ObjLangASTNode n = altParse().iterator().next();
+		for (Variable v : n.metavariables())
+			headVars.add(v.treeCopy());
 		/*
 		  TODO: generate a literal that represents the equivalence
 		 */
-
-		return literal("Equiv_Pattern_" + getLABEL(), str("Here be the variables contained in the pattern."));
+	
+		return new Literal(new PredicateSymbol("Equiv_Pattern_" + getLABEL()), 
+							headVars);
 	}
+
+
+	syn nta Literal EquivalencePattern.getLiteral() {
+		Literal l = getLiteralHelper(null);
+		if(hasNot())
+			l.setNot(new Not());
+		return l;
+	}
+
 
 	/* For now, don't allow multiple equivalence declarations to share the same label */
 	EquivalenceDecl contributes new SemanticError(this, "Multiple equivalence declarations with the same label: " + this.getLABEL())

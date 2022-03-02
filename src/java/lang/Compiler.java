@@ -169,15 +169,11 @@ public class Compiler {
 				break;
 			case EVAL_SOUFFLE:
 				checkProgram(prog, opts);
-				prog.evalEDB(prog.evalCtx(), opts);
-				prog.evalIMPORT(prog.evalCtx(), opts);
 				prog.generateObjectProgramRelations(opts);
 				evalSouffleProgram(prog, opts);
 				break;
 			case PRETTY_SOUFFLE:
 				checkProgram(prog, opts);
-				prog.evalEDB(prog.evalCtx(), opts);
-				prog.evalIMPORT(prog.evalCtx(), opts);
 				prettyPrintSouffle(prog, opts.getOutputDir() + "/" + opts.getOutputFile());
 				break;
 			case PRETTY_INTERNAL:
@@ -204,8 +200,6 @@ public class Compiler {
 				break;
 			case GEN_HYBRID:
 				checkProgram(prog, opts);
-				prog.evalEDB(prog.evalCtx(), opts);
-				prog.evalIMPORT(prog.evalCtx(), opts);
 				generateSouffleSWIGProgram(prog, opts);
 				break;
 			case EVAL_HYBRID:

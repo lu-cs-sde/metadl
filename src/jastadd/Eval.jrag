@@ -14,37 +14,6 @@ import org.apache.commons.lang3.mutable.MutableInt;
 import incremental.ProgramSplit;
 
 aspect Eval {
-	public void Program.populateProgramRepresentation(Map<String, String> srcs,
-													  DatalogProjectionSink tupleSink,
-													  CmdLineOpts.Lang srcLang,
-													  EvaluationContext ctx) throws IOException {
-		java.util.List<String> locs = srcs.keySet().stream().collect(Collectors.toList());
-		switch (srcLang) {
-		case JAVA:
-			FileUtil.loadJavaSources(ctx,
-									 tupleSink,
-									 locs);
-			break;
-		case METADL:
-			MutableInt nodeCounter = new MutableInt(1);
-			try {
-				if (locs.size() == 0)
-					return;
-
-				if (locs.size() != 1) {
-					throw new RuntimeException("MetaDL for MetaDL is limited to analyzing a single file");
-				}
-				lang.metadl.obj.ast.Program importedProgram = lang.metadl.obj.ast.Program.fromFileLoc(locs.get(0));
-				importedProgram.assignIds(nodeCounter);
-				RelationWrapper rw = (RelationWrapper) tupleSink.getAST();
-				rw.insertTuples(importedProgram.datalogProjection().tuples());
-			} catch (beaver.Parser.Exception exception) {
-				throw new RuntimeException(exception);
-			}
-			break;
-		}
-	}
-
 	public void Program.evalEDB(EvaluationContext ctx, CmdLineOpts opts) throws IOException, SQLException {
 		FormalPredicate fpEDB = formalPredicateMap().get(GlobalNames.EDB_NAME);
 
@@ -153,8 +122,8 @@ aspect Eval {
 		}
 	}
 
-	public void Program.evalAnalyzeBlocks(EvaluationContext ctx, CmdLineOpts opts,
-										  Map<FormalPredicate, TupleInserter> fpToSoufflePredMap) throws IOException {
+	public void Program.populateProgramRepresentation(EvaluationContext ctx, CmdLineOpts opts,
+													  Map<FormalPredicate, TupleInserter> fpToSoufflePredMap) throws IOException {
 		// now populate the relations associated with the analyze block
 		DatalogProjectionSink tupleSink = getDatalogProjectionSink();
 
@@ -197,7 +166,7 @@ aspect Eval {
 		StopWatch progRelTimer = StopWatch.createStarted();
 
 		// Evaluate the analyze blocks
-		evalAnalyzeBlocks(evalCtx(), opts, null);
+		populateProgramRepresentation(evalCtx(), opts, null);
 
 		// Iterate over all the program representation predicates and dump their relations
 		// to CSV files.
@@ -236,7 +205,7 @@ aspect Eval {
 
 		evalEDB(ctx, opts);
 		evalIMPORT(ctx, opts);
-		evalAnalyzeBlocks(ctx, opts, null);
+		populateProgramRepresentation(ctx, opts, null);
 
 		for (Stratum s : strata) {
 			s.eval();
@@ -251,7 +220,7 @@ aspect Eval {
 		EvaluationContext ctx = evalCtx();
 
 		evalEDB(ctx, opts);
-		evalAnalyzeBlocks(ctx, opts, null);
+		populateProgramRepresentation(ctx, opts, null);
 
 		dumpStrata();
 		clauseDependencyGraph().dump();

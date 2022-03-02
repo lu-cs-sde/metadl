@@ -63,9 +63,7 @@ public class SWIGUtil {
 
 	public static void evalHybridProgram(Program prog, CmdLineOpts opts) throws IOException, SQLException {
 		Pair<SWIGSouffleProgram, Map<FormalPredicate, TupleInserter>> progInfoPair = loadSWIGProgram(prog, opts);
-		prog.evalEDB(prog.evalCtx(), opts);
-		prog.evalIMPORT(prog.evalCtx(), opts);
-		prog.evalAnalyzeBlocks(prog.evalCtx(), opts, progInfoPair.getRight());
+		prog.populateProgramRepresentation(prog.evalCtx(), opts, progInfoPair.getRight());
 		runSWIGProgram(progInfoPair.getLeft(), opts);
 	}
 }

@@ -119,7 +119,6 @@ aspect Clause {
 	syn boolean CommonClause.isRule();
 	eq Rule.isRule() = true;
 	eq Fact.isRule() = false;
-	eq AnalyzeBlock.isRule() = false;
 
 	syn TreeSet<Variable> Rule.variables() {
 		TreeSet<Variable> variables = new TreeSet<Variable>(Term.termComparator);
@@ -254,7 +253,6 @@ aspect Predicate {
 
 	eq Literal.getChild().literal() = this;
 	eq Constraint.getChild().literal() = this;
-	eq AnalyzeBlock.getChild().literal() = null;
 
 	public interface PredicateInterface {
 		public boolean isRef();
@@ -371,18 +369,4 @@ aspect Constraint {
 	syn Expr MATCHLiteral.getRight() = getExpr(1);
 	syn Expr BINDLiteral.getDst() = getExpr(0);
 	syn Expr BINDLiteral.getSrc() = getExpr(1);
-}
-
-aspect AnalyzeBlock {
-	syn boolean CommonClause.isAnalyzeBlock() = false;
-	eq AnalyzeBlock.isAnalyzeBlock() = true;
-	syn java.util.List<AnalyzeBlock> Program.analyzeBlocks() {
-		java.util.List<AnalyzeBlock> l = new ArrayList<>();
-		for (CommonClause c : getCommonClauses()) {
-			if (c.isAnalyzeBlock()) {
-				l.add((AnalyzeBlock) c);
-			}
-		}
-		return l;
-	}
 }

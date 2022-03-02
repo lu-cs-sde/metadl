@@ -436,8 +436,6 @@ aspect TypeInference {
 	eq Constraint.getExpr(int i).indexInLiteral() = -1;
 	eq Literal.getChild().indexInLiteral() = -1;
 	eq Expr.getChild().indexInLiteral() = -1;
-	eq AnalyzeBlock.getProgramRef().indexInLiteral() = -1;
-	eq AnalyzeBlock.getLang().indexInLiteral() = -1;
 
 	IntConstant contributes (new PredicateType.Index(indexInLiteral(), IntegerType.get()))
 		when indexInLiteral() >= 0

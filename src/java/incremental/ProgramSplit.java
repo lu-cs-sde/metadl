@@ -15,7 +15,6 @@ import java.util.stream.Stream;
 
 import org.apache.commons.lang3.tuple.Pair;
 import lang.ast.ASTNodeType;
-import lang.ast.AnalyzeBlock;
 import lang.ast.AnalyzeContext;
 import lang.ast.Clause;
 import lang.ast.CommonClause;
@@ -443,9 +442,5 @@ public class ProgramSplit {
 
 	public boolean canEvaluateIncrementally() {
 		return true;
-	}
-
-	public FormalPredicate getSourceRelation() {
-		return program.formalPredicateMap().get(program.analyzeBlocks().get(0).getProgramRef().getPRED_ID());
 	}
 }

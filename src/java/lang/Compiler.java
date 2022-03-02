@@ -21,7 +21,6 @@ import org.apache.commons.lang3.time.StopWatch;
 import incremental.IncrementalDriver;
 import incremental.ProgramSplit;
 import lang.CmdLineOpts.Action;
-import lang.ast.AnalyzeBlock;
 import lang.ast.FormalPredicate;
 import lang.ast.Program;
 import lang.ast.SoufflePrettyPrinter;

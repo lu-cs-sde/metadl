@@ -40,12 +40,13 @@ import org.extendj.ast.CompilationUnit;
 import eval.EvaluationContext;
 import eval.Relation2;
 import lang.CmdLineOpts;
-import lang.ast.AnalyzeBlock;
 import lang.ast.FormalPredicate;
+import lang.ast.MapEntry;
 import lang.ast.PredicateType;
 import lang.ast.Program;
 import lang.ast.ProgramRepresentation;
 import lang.ast.StandardPrettyPrinter;
+import lang.ast.StringType;
 import lang.io.CSVUtil;
 import lang.io.FileUtil;
 import lang.io.SQLUtil;
@@ -372,23 +373,15 @@ public class IncrementalDriver {
 		progDbConnection.commit();
 	}
 
-	private RelationWrapper computeAnalyzedSources(String factDir) throws IOException, SQLException {
+	private RelationWrapper computeAnalyzedSources(CmdLineOpts opts) throws IOException, SQLException {
 		Program prog = progSplit.getProgram();
-		CmdLineOpts opts = new CmdLineOpts();
-		opts.setAction(CmdLineOpts.Action.EVAL_INTERNAL);
-		opts.setFactsDir(factDir);
-
-		// evaluate the EDB and IMPORT predicate, to ensure
-		// that the inputs to the analyze blocks can be evaluated in turn
-		prog.evalEDB(prog.evalCtx(), opts);
-		prog.evalIMPORT(prog.evalCtx(), opts);
-
-		// find out which predicate defines the analyzed sources
-		FormalPredicate srcPred = progSplit.getSourceRelation();
-		srcPred.eval(prog.evalCtx());
 
 		// copy the tuples from one relation to another
-		RelationWrapper srcWrapper = new RelationWrapper(prog.evalCtx(), srcPred.relation2(), srcPred.type());
+		RelationWrapper srcWrapper = new RelationWrapper(prog.evalCtx(), new Relation2(2), new PredicateType(StringType.get(), StringType.get()));
+
+		for (Map.Entry<String, String> src : opts.getSrcs().entrySet()) {
+			srcWrapper.insertTuple(src.getKey(), src.getValue());
+		}
 
 		return srcWrapper;
 	}
@@ -412,7 +405,7 @@ public class IncrementalDriver {
 	 */
 	public void update(CmdLineOpts opts) throws IOException, SQLException {
 		profile().startTimer("incremental_driver", "update");
-		RelationWrapper analyzedSrcs = computeAnalyzedSources(opts.getFactsDir());
+		RelationWrapper analyzedSrcs = computeAnalyzedSources(opts);
 
 		List<File> visitFiles;
 		List<File> deletedFiles;

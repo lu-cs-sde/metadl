@@ -16,14 +16,16 @@ import incremental.ProgramSplit;
 aspect Eval {
 	public void Program.populateProgramRepresentation(Map<String, String> srcs,
 													  DatalogProjectionSink tupleSink,
-													  String srcLang,
+													  CmdLineOpts.Lang srcLang,
 													  EvaluationContext ctx) throws IOException {
 		java.util.List<String> locs = srcs.keySet().stream().collect(Collectors.toList());
-		if (srcLang.equals("java8")) {
+		switch (srcLang) {
+		case JAVA:
 			FileUtil.loadJavaSources(ctx,
 									 tupleSink,
 									 locs);
-		} else if (srcLang.equals("metadl")) {
+			break;
+		case METADL:
 			MutableInt nodeCounter = new MutableInt(1);
 			try {
 				if (locs.size() == 0)
@@ -39,8 +41,7 @@ aspect Eval {
 			} catch (beaver.Parser.Exception exception) {
 				throw new RuntimeException(exception);
 			}
-		} else {
-			throw new RuntimeException("Unknown language for analyze blocks: " + srcLang + ".");
+			break;
 		}
 	}
 
@@ -154,25 +155,40 @@ aspect Eval {
 
 	public void Program.evalAnalyzeBlocks(EvaluationContext ctx, CmdLineOpts opts,
 										  Map<FormalPredicate, TupleInserter> fpToSoufflePredMap) throws IOException {
+		// now populate the relations associated with the analyze block
+		DatalogProjectionSink tupleSink = getDatalogProjectionSink();
 
-		for (CommonClause c : getCommonClauses()) {
-			if (c instanceof AnalyzeBlock) {
-				AnalyzeBlock block = (AnalyzeBlock) c;
+		// use the fpToSoufflePredMap to remap inserters in the
+		// DatalogProjectionSink
+		if (fpToSoufflePredMap != null) {
+			tupleSink = tupleSink.remap(fpToSoufflePredMap);
+		}
 
-				// now populate the relations associated with the analyze block
-				DatalogProjectionSink tupleSink = getDatalogProjectionSink();
+		java.util.List<String> locs = opts.getSrcs().keySet().stream().collect(Collectors.toList());
 
-				// use the fpToSoufflePredMap to remap inserters in the
-				// DatalogProjectionSink
-				if (fpToSoufflePredMap != null) {
-					tupleSink = tupleSink.remap(fpToSoufflePredMap);
+		switch (opts.getLang()) {
+		case JAVA:
+			FileUtil.loadJavaSources(ctx,
+									 tupleSink,
+									 locs);
+			break;
+		case METADL:
+			MutableInt nodeCounter = new MutableInt(1);
+			try {
+				if (locs.size() == 0)
+					return;
+
+				if (locs.size() != 1) {
+					throw new RuntimeException("MetaDL for MetaDL is limited to analyzing a single file");
 				}
-
-				populateProgramRepresentation(opts.getSrcs(),
-											  tupleSink,
-											  block.getLang().getSTRING(),
-											  ctx);
+				lang.metadl.obj.ast.Program importedProgram = lang.metadl.obj.ast.Program.fromFileLoc(locs.get(0));
+				importedProgram.assignIds(nodeCounter);
+				RelationWrapper rw = (RelationWrapper) tupleSink.getAST();
+				rw.insertTuples(importedProgram.datalogProjection().tuples());
+			} catch (beaver.Parser.Exception exception) {
+				throw new RuntimeException(exception);
 			}
+			break;
 		}
 	}
 

@@ -31,8 +31,7 @@ public class SemanticErrorTests {
 	@ParameterizedTest(name = "Evaluation Tests Valid")
 	@ValueSource(strings = { "semantic1.in", "semantic2.in", "semantic3.in",
 							 "semantic4.in", "semantic5.in", "semantic6.in",
-							 "semantic7.in", "semantic8.in", "semantic9.in",
-							 "semantic10.in"
+							 "semantic8.in", "semantic9.in", "semantic10.in"
 						   })
 	public void semanticTests(String fileName) {
 		String dir = "tests/semantic/";

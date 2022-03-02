@@ -1,1 +1,0 @@
-Patterns are not allowed outside analyze blocks: <:R(1) :- $q(...,$i:$x,...).:>.

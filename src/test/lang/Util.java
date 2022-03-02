@@ -16,6 +16,8 @@ import java.util.Scanner;
 import lang.io.FileUtil;
 import lang.relation.RelationWrapper;
 import org.apache.commons.collections4.SetUtils;
+import org.apache.commons.lang3.tuple.Pair;
+
 
 /** {@link Util} methods for running tests. */
 public final class Util {
@@ -126,6 +128,17 @@ public final class Util {
 			System.err.println(SetUtils.difference(actual.tuples(), expected.tuples()));
 			System.err.println("Present in EXPECTED, but missing in ACTUAL:");
 			System.err.println(SetUtils.difference(expected.tuples(), actual.tuples()));
+		}
+	}
+
+	public static String[] parseTestDescription(String desc) {
+		String[] split = desc.split(":");
+
+		if (split.length != 2) {
+			fail("Could not parse test description " + desc + ".");
+			return null;
+		} else {
+			return split;
 		}
 	}
 }

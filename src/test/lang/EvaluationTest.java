@@ -139,7 +139,7 @@ public class EvaluationTest {
 	}
 
     @DisplayName("Compare Internal Evaluation to Souffle WithMeta")
-    @ParameterizedTest(name = "Evaluation Tests Valid")
+    @ParameterizedTest
 	@ValueSource(strings = {/* "evalTest_1.in", */ "evalTest_2.in", "evalTest_3.in" })
     void evaluationTestsBottomUpNaiveCompareWithMeta(String fileName) throws Exception {
         CmdLineOpts d1 = FileUtil.parseDescription(
@@ -150,7 +150,7 @@ public class EvaluationTest {
     }
 
 	@DisplayName("Compare Internal Evaluation to Souffle WithWildcard")
-	@ParameterizedTest(name = "Evaluation Tests Valid")
+	@ParameterizedTest
 	@ValueSource(strings = {"evalTest_1.in", "evalTest_2.in"})
 	void evaluationTestsBottomUpNaiveCompareWithWildcard(String fileName) throws Exception {
 		CmdLineOpts d1 = FileUtil.parseDescription(
@@ -161,18 +161,18 @@ public class EvaluationTest {
 	}
 
 	static Stream<String> metadlPatternTests() {
-		String[] tests = { "evalTest_2", "evalTest_3", "evalTest_4",
-						   "evalTest_5", "evalTest_6", "evalTest_7",
+		String[] tests = { "evalTest_2:metadl", "evalTest_3:metadl", "evalTest_4:metadl",
+						   "evalTest_5:metadl", "evalTest_6:metadl", "evalTest_7:metadl",
 						   // "evalTest_8", TODO: re-enable once MetaDL uses DatalogProjection2
-						   "evalTest_9",
+						   "evalTest_9:metadl",
 						   // "evalTest_10", TODO: re-enable once MetaDL uses DatalogProjection2
-						   "evalTest_11", "evalTest_12", "evalTest_13",
-						   "evalTest_14", "evalTest_15",
+						   "evalTest_11:metadl", "evalTest_12:java", "evalTest_13:java",
+						   "evalTest_14:metadl", "evalTest_15:java",
 						   // "evalTest_16", Disabled, due to introduction of inexact matches
 						   // "evalTest_17", Disabled, due to stricter type checking
 						   // TODO: re-enable evalTest_17 once conversion functors node -> int and int -> node
 						   // are introduced
-						   "evalTest_18"
+						   "evalTest_18:java"
 		};
 		return Arrays.stream(tests);
 	}
@@ -180,7 +180,10 @@ public class EvaluationTest {
 	@DisplayName("Evaluate programs containing patterns using Souffle")
 	@ParameterizedTest
 	@MethodSource("metadlPatternTests")
- 	void evaluationTestPatternsSouffle(String fileName) throws Exception {
+ 	void evaluationTestPatternsSouffle(String testDesc) throws Exception {
+		String fileName = Util.parseTestDescription(testDesc)[0];
+		String lang = Util.parseTestDescription(testDesc)[1];
+
 		IOFileFilter ff = new WildcardFileFilter(fileName + "_input*");
 		Iterator<File> analyzedFileIt = FileUtils.iterateFiles(new File("./tests/evaluation/withimport"), ff, null);
 
@@ -191,13 +194,17 @@ public class EvaluationTest {
 							 "./tests/evaluation/withimport/expected",
 							 fileName,
 							 ".in",
+							 lang,
 							 "-e souffle");
 	}
 
 	@DisplayName("Evaluate programs containing patterns using internal evaluator")
 	@ParameterizedTest
 	@MethodSource("metadlPatternTests")
-	void evaluationTestPatternsInternal(String fileName) throws Exception {
+	void evaluationTestPatternsInternal(String testDesc) throws Exception {
+		String fileName = Util.parseTestDescription(testDesc)[0];
+		String lang = Util.parseTestDescription(testDesc)[1];
+
 		IOFileFilter ff = new WildcardFileFilter(fileName + "_input*");
 		Iterator<File> analyzedFileIt = FileUtils.iterateFiles(new File("./tests/evaluation/withimport"), ff, null);
 
@@ -208,6 +215,7 @@ public class EvaluationTest {
 							 "./tests/evaluation/withimport/expected",
 							 fileName,
 							 ".in",
+							 lang,
 							 "-e metadl");
 	}
 
@@ -244,12 +252,14 @@ public class EvaluationTest {
 							  List<File>  analyzedFiles,
 							  String srcDir, String expectedDir,
 							  String fileName, String fileExt,
+							  String lang,
 							  String cmd) throws Exception {
 
 		String sources = analyzedFiles.stream().map(f -> f.getPath() + ",A").collect(Collectors.joining(":"));
 
 		CmdLineOpts d1 = FileUtil.parseDescription(
 		   cmd
+		   + " -L " + lang
 		   + " -D " + outputDir
 		   + " -F " + factDir
 		   + (sources.isEmpty() ? " " : " -S ") + sources
@@ -300,6 +310,7 @@ public class EvaluationTest {
 							 "tests/evaluation/metadl-java/expected",
 							 fileName,
 							 ".mdl",
+							 "java",
 							 "-e souffle");
 	}
 
@@ -317,6 +328,7 @@ public class EvaluationTest {
 							 "tests/evaluation/metadl-java/expected",
 							 fileName,
 							 ".mdl",
+							 "java",
 							 "-e metadl");
 	}
 

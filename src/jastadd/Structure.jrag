@@ -71,7 +71,7 @@ aspect Utility {
 }
 
 aspect Program {
-	private CmdLineOpts.Lang Program.analyzedLang;
+	private CmdLineOpts.Lang Program.analyzedLang = CmdLineOpts.Lang.JAVA;
 	public void Program.setLang(CmdLineOpts.Lang l) { analyzedLang = l; }
 	public CmdLineOpts.Lang Program.getLang() { return analyzedLang; }
 

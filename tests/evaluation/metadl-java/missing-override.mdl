@@ -58,4 +58,6 @@
 	    HasOverride(m) :- m <: .. @Override .. `t `n(..) ; :>.
 	    MissingOverride(m) :- Override(m, _), NOT(HasOverride(m)).#, NOT(ClosestOverrideIsAbstract(m)).
 	    MissingOverrideDetail(l, c, file) :- MissingOverride(m), SRC(m, l, c, _, _, file), GT(l, 0).
-}
+
+
+OUTPUT('MissingOverrideDetail, "MissingOverrideDetail.csv", "csv").

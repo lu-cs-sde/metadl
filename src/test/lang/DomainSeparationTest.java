@@ -20,6 +20,7 @@ public class DomainSeparationTest {
 		CmdLineOpts opts = new CmdLineOpts();
 		opts.setAction(CmdLineOpts.Action.CHECK);
 		opts.setInputFile(path);
+		opts.setLang(CmdLineOpts.Lang.JAVA);
 
 		try {
 			Program p = Compiler.parseProgram(opts);

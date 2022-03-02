@@ -101,6 +101,14 @@ public class CSVUtil {
 	public static void writeRelation(EvaluationContext ctx, PredicateType t, Relation2 rel, String path) throws IOException {
 		StopWatch timer = StopWatch.createStarted();
 
+		File fpath = new File(path);
+		if (!fpath.exists()) {
+			File parent = fpath.getParentFile();
+			if (parent != null && !parent.exists()) {
+				parent.mkdirs();
+			}
+		}
+
 		CSVWriter writer = new CSVWriter(new OutputStreamWriter(new FileOutputStream(path)),
 										 Compiler.getCSVSeparator(),
 										 CSVWriter.NO_QUOTE_CHARACTER,

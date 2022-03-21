@@ -1,44 +1,42 @@
 # 5 ErrorProne checks
 
 # Read the sources
-EDB('Srcs, "srcs.csv", "csv").
-Srcs("", "") :- NEQ(0, 0).
 
 ####################################################################################################
 
 # TypeParamNotUsedInFormals
 
-java('Srcs) {
-	    GenericMethod(m, `t1, `t2, `pt) :- m <: <.., `t1, ..> `t2 `_(.. , `pt `p, ..) ; :>.
-	    GenericMethodVoid(m, `t1, `t2) :-  m <: <.., `t1, ..> `t2 `_() ; :>, NOT(GenericMethod(m, _, _, _)).
 
-	    IsTypeBound(this, `t) :- this <: `_ extends .. & `t & ..  :>.
-	    IsTypeParam(`t, `t1) :- `t <: `_ < .. , `t1 , .. > :>.
+GenericMethod(m, `t1, `t2, `pt) :- m <: <.., `t1, ..> `t2 `_(.. , `pt `p, ..) ; :>.
+GenericMethodVoid(m, `t1, `t2) :-  m <: <.., `t1, ..> `t2 `_() ; :>, NOT(GenericMethod(m, _, _, _)).
 
-	    TypeBound(t, b) :- GenericMethod(m, t, _, _), IsTypeBound(t, b).
+IsTypeBound(this, `t) :- this <: `_ extends .. & `t & ..  :>.
+IsTypeParam(`t, `t1) :- `t <: `_ < .. , `t1 , .. > :>.
 
-	    T_IsTypeParam(t, t1) :- IsTypeParam(t, t1).
-	    T_IsTypeParam(t, t1) :- T_IsTypeParam(t, t2), IsTypeParam(t2, t1).
+TypeBound(t, b) :- GenericMethod(m, t, _, _), IsTypeBound(t, b).
 
-	    # Type qualifies parameter
-	    TypeForParam(`t1) :- GenericMethod(m, `t1, `t2, `pt), DECL(`pt, `t1).
-	    TypeForParam(`t1) :- GenericMethod(m, `t1, `t2, `pt), IsTypeParam(`pt, t), DECL(t, `t1).
+T_IsTypeParam(t, t1) :- IsTypeParam(t, t1).
+T_IsTypeParam(t, t1) :- T_IsTypeParam(t, t2), IsTypeParam(t2, t1).
 
-	    GenericMethod3(m, t1, t2) :- GenericMethod(m, t1, t2, _).
-	    GenericMethod3(m, t1, t2) :- GenericMethodVoid(m, t1, t2).
-	    # < T, U extends T>
-	    TypeForTypeBound(t1) :- GenericMethod3(m, t1, _), GenericMethod3(m, t2, _), IsTypeBound(t2, b), DECL(b, t1).
-	    # <T, U extends<V<T>>
-	    TypeForTypeBound(t1) :- GenericMethod3(m, t1, _), GenericMethod3(m, t2, _), IsTypeBound(t2, b), T_IsTypeParam(b, tp), DECL(tp, t1).
+# Type qualifies parameter
+TypeForParam(`t1) :- GenericMethod(m, `t1, `t2, `pt), DECL(`pt, `t1).
+TypeForParam(`t1) :- GenericMethod(m, `t1, `t2, `pt), IsTypeParam(`pt, t), DECL(t, `t1).
 
-	    # Type used to build the return type
-	    TypeForReturn(t1) :- GenericMethod3(m, t1, r), T_IsTypeParam(r, p), DECL(p, t1).
+GenericMethod3(m, t1, t2) :- GenericMethod(m, t1, t2, _).
+GenericMethod3(m, t1, t2) :- GenericMethodVoid(m, t1, t2).
+# < T, U extends T>
+TypeForTypeBound(t1) :- GenericMethod3(m, t1, _), GenericMethod3(m, t2, _), IsTypeBound(t2, b), DECL(b, t1).
+# <T, U extends<V<T>>
+TypeForTypeBound(t1) :- GenericMethod3(m, t1, _), GenericMethod3(m, t2, _), IsTypeBound(t2, b), T_IsTypeParam(b, tp), DECL(tp, t1).
+
+# Type used to build the return type
+TypeForReturn(t1) :- GenericMethod3(m, t1, r), T_IsTypeParam(r, p), DECL(p, t1).
 
 
-	    TypeUnusedInFormals(t1) :- GenericMethod(m, t1, r, _), NOT(TypeForParam(t1)), NOT(TypeForTypeBound(t1)), NOT(TypeForReturn(t1)).
-	    TypeUnusedInFormals(t1) :- GenericMethodVoid(m, t1, r), NOT(TypeForTypeBound(t1)), NOT(TypeForReturn(t1)).
+TypeUnusedInFormals(t1) :- GenericMethod(m, t1, r, _), NOT(TypeForParam(t1)), NOT(TypeForTypeBound(t1)), NOT(TypeForReturn(t1)).
+TypeUnusedInFormals(t1) :- GenericMethodVoid(m, t1, r), NOT(TypeForTypeBound(t1)), NOT(TypeForReturn(t1)).
 
-	    TypeUnusedInFormalsDetail(ls, le, file) :- TypeUnusedInFormals(t), SRC(t, ls, _, le, _, file), GT(ls, 0).
+TypeUnusedInFormalsDetail(ls, le, file) :- TypeUnusedInFormals(t), SRC(t, ls, _, le, _, file), GT(ls, 0).
 
 
 OUTPUT('TypeUnusedInFormalsDetail, "TypeUnusedInFormalsDetail.csv", "csv").
@@ -48,119 +46,119 @@ OUTPUT('TypeUnusedInFormalsDetail, "TypeUnusedInFormalsDetail.csv", "csv").
 
 # ReferenceEquality
 
-	   SuperClass(c, d) :- c <: class `_ extends `d { .. } :>, DECL(`d, d).
-	   SuperClass(c, d) :- c <: class `_<..> extends `d { .. } :>, DECL(`d, d).
+SuperClass(c, d) :- c <: class `_ extends `d { .. } :>, DECL(`d, d).
+SuperClass(c, d) :- c <: class `_<..> extends `d { .. } :>, DECL(`d, d).
 
-	   SuperType(c, o) :- c <: class `_ { .. } :>, NOT(SuperClass(c, _)), o <: public class Object { .. } :>.
+SuperType(c, o) :- c <: class `_ { .. } :>, NOT(SuperClass(c, _)), o <: public class Object { .. } :>.
 
-	   SuperInterface(c, d) :- c <: class `_ implements ..,`d,.. { .. } :>, DECL(`d, d).
-	   SuperInterface(c, d) :- c <: class `_<..> implements .., `d,.. { .. } :>, DECL(`d, d).
+SuperInterface(c, d) :- c <: class `_ implements ..,`d,.. { .. } :>, DECL(`d, d).
+SuperInterface(c, d) :- c <: class `_<..> implements .., `d,.. { .. } :>, DECL(`d, d).
 
-	   SuperInterface(c, d) :- c <: interface `_ extends .., `d,.. { .. } :>, DECL(`d, d).
-	   SuperInterface(c, d) :- c <: interface `_<..> extends .., `d,.. { .. } :>, DECL(`d, d).
+SuperInterface(c, d) :- c <: interface `_ extends .., `d,.. { .. } :>, DECL(`d, d).
+SuperInterface(c, d) :- c <: interface `_<..> extends .., `d,.. { .. } :>, DECL(`d, d).
 
-	   SuperType(t, s) :- SuperClass(t, s).
-	   SuperType(t, s) :- SuperInterface(t, s).
-	   # SuperType(`f, e) :- e <: enum `_ { .., `f , .. ; .. } :>, `f <: `_(..) { .. } :>.
-	   # SuperType(e, t) :- e <: new `t(..) { .. } :>, DECL(`t, t).
+SuperType(t, s) :- SuperClass(t, s).
+SuperType(t, s) :- SuperInterface(t, s).
+# SuperType(`f, e) :- e <: enum `_ { .., `f , .. ; .. } :>, `f <: `_(..) { .. } :>.
+# SuperType(e, t) :- e <: new `t(..) { .. } :>, DECL(`t, t).
 #
-           StaticMethod(m) :- m <: .. static .. `rett `name(..) ; :>.
+StaticMethod(m) :- m <: .. static .. `rett `name(..) ; :>.
 
-	   MethodRet(m, name, ret) :- m <: .. `rett `name (..) ; :>,
-				      DECL(`rett, ret), ID(`name, name).
+MethodRet(m, name, ret) :- m <: .. `rett `name (..) ; :>,
+DECL(`rett, ret), ID(`name, name).
 
-	   MethodParam(m, i, t) :- m <: .. `rett `name(.., `t `_, ..) ; :>,
-				      DECL(`t, t), PARENT(param, `t), INDEX(param, i).
+MethodParam(m, i, t) :- m <: .. `rett `name(.., `t `_, ..) ; :>,
+DECL(`t, t), PARENT(param, `t), INDEX(param, i).
 
-	   MethodArity(m, n) :- MethodParam(m, n_minus_1, _), NOT(MethodParam(m, n, _)), BIND(n, n_minus_1 + 1).
-	   MethodArity(m, 0) :- MethodRet(m, _, _), NOT(MethodParam(m, _, _)).
+MethodArity(m, n) :- MethodParam(m, n_minus_1, _), NOT(MethodParam(m, n, _)), BIND(n, n_minus_1 + 1).
+MethodArity(m, 0) :- MethodRet(m, _, _), NOT(MethodParam(m, _, _)).
 
-	   SameSig(m1, m2) :- MethodRet(m1, name, _), MethodRet(m2, name, _), MethodArity(m1, 0), MethodArity(m2, 0).
-	   DiffParams(m1, m2) :- MethodRet(m1, name, _), MethodRet(m2, name, _), MethodParam(m1, i, t1), MethodParam(m2, i, t2), NEQ(t1, t2).
+SameSig(m1, m2) :- MethodRet(m1, name, _), MethodRet(m2, name, _), MethodArity(m1, 0), MethodArity(m2, 0).
+DiffParams(m1, m2) :- MethodRet(m1, name, _), MethodRet(m2, name, _), MethodParam(m1, i, t1), MethodParam(m2, i, t2), NEQ(t1, t2).
 
-	   # Local rules to avoid carying PARENT and SRC relation into the global program
-	   ClassForMethod(c, m) :- MethodRet(m, _, _), PARENT(l, m), PARENT(c, l).
-	   SrcLocForMethod(ls, le, file, m) :- MethodRet(m, _, _), SRC(m, ls, _, le, _, file), GT(ls, 0).
+# Local rules to avoid carying PARENT and SRC relation into the global program
+ClassForMethod(c, m) :- MethodRet(m, _, _), PARENT(l, m), PARENT(c, l).
+SrcLocForMethod(ls, le, file, m) :- MethodRet(m, _, _), SRC(m, ls, _, le, _, file), GT(ls, 0).
 
-           SameSig(m1, m2) :- MethodRet(m1, name, _), MethodRet(m2, name, _), NEQ(m1, m2), MethodArity(m1, a), MethodArity(m2, a), NOT(DiffParams(m1, m2)).
+SameSig(m1, m2) :- MethodRet(m1, name, _), MethodRet(m2, name, _), NEQ(m1, m2), MethodArity(m1, a), MethodArity(m2, a), NOT(DiffParams(m1, m2)).
 
 
-	   SuperTypeT(t1, t2) :- SuperType(t1, t2).
-	   SuperTypeT(t1, t2) :- SuperType(t1, t), SuperTypeT(t, t2).
-	   # m1 overrides m2
-	   Override(m1, m2) :- SameSig(m1, m2), ClassForMethod(c1, m1), ClassForMethod(c2, m2), SuperTypeT(c1, c2),
-	   		NOT(StaticMethod(m1)), NOT(StaticMethod(m2)).
+SuperTypeT(t1, t2) :- SuperType(t1, t2).
+SuperTypeT(t1, t2) :- SuperType(t1, t), SuperTypeT(t, t2).
+# m1 overrides m2
+Override(m1, m2) :- SameSig(m1, m2), ClassForMethod(c1, m1), ClassForMethod(c2, m2), SuperTypeT(c1, c2),
+NOT(StaticMethod(m1)), NOT(StaticMethod(m2)).
 
-	   # Pattern to handle anonymous class declarations
-	   Override(`m1, m2) :- e <: new `t(..) { .. `m1 .. } :>, `m1 <: .. `rett `name(..) { .. } :>, SameSig(`m1, m2),
-	   			       DECL(`t, t), ClassForMethod(t, m2).
+# Pattern to handle anonymous class declarations
+Override(`m1, m2) :- e <: new `t(..) { .. `m1 .. } :>, `m1 <: .. `rett `name(..) { .. } :>, SameSig(`m1, m2),
+DECL(`t, t), ClassForMethod(t, m2).
 
-	   # Enum constants can also override methods declared in the enum body
-	   Override(`m1, `m2) :-  <: enum `_ { .. , `k { .. `m1 .. } , .. ; ..  `m2 .. } :>, SameSig(`m1, `m2).
+# Enum constants can also override methods declared in the enum body
+Override(`m1, `m2) :-  <: enum `_ { .. , `k { .. `m1 .. } , .. ; ..  `m2 .. } :>, SameSig(`m1, `m2).
 
-	    ObjectDecl(o) :- u <: Object :>, DECL(u, o).
+ObjectDecl(o) :- u <: Object :>, DECL(u, o).
 
 ################################################################################
 
-	    ClassEq(c, `d) :- c <: class `_ { .. `d .. } :>, `d <: .. public .. boolean equals(`t `o) ;:>.
-	    ClassEq(c, `d) :- c <: class `_ <..> { .. `d .. } :>, `d <: .. public .. boolean equals(`t `o) ;:>.
+ClassEq(c, `d) :- c <: class `_ { .. `d .. } :>, `d <: .. public .. boolean equals(`t `o) ;:>.
+ClassEq(c, `d) :- c <: class `_ <..> { .. `d .. } :>, `d <: .. public .. boolean equals(`t `o) ;:>.
 
-	    ClassEqDetail(l, c, file) :- ClassEq(cl, d), SRC(cl, l, c, _, _, file).
-	    # OUTPUT('ClassEqDetail).
+ClassEqDetail(l, c, file) :- ClassEq(cl, d), SRC(cl, l, c, _, _, file).
+# OUTPUT('ClassEqDetail).
 
-	    # RealType - the most precise type known for the term
-	    # - in case of generic type instances, this is the generic type declaration they instantiate
-	    RealType(t, r) :- TYPE(t, r), NOT(GENERIC(r, _)), NOT(TypeVariableUpperBound(r, _)).
-	    RealType(t, r) :- TYPE(t, r1), GENERIC(r1, r).
-	    # - in case of bounded types, the upper bound of the type
-	    RealType(t, u) :- TYPE(t, tv), TypeVariableUpperBound(tv, u).
+# RealType - the most precise type known for the term
+# - in case of generic type instances, this is the generic type declaration they instantiate
+RealType(t, r) :- TYPE(t, r), NOT(GENERIC(r, _)), NOT(TypeVariableUpperBound(r, _)).
+RealType(t, r) :- TYPE(t, r1), GENERIC(r1, r).
+# - in case of bounded types, the upper bound of the type
+RealType(t, u) :- TYPE(t, tv), TypeVariableUpperBound(tv, u).
 
-	    EqualityTest(`t1, `t2, ls, le, file) :- <: `t1 == `t2 :>, SRC(`t1, ls, _, le, _, file).
-	    EqualityTest(`t1, `t2, ls, le, file) :- <: `t1 != `t2 :>, SRC(`t1, ls, _, le, _, file).
+EqualityTest(`t1, `t2, ls, le, file) :- <: `t1 == `t2 :>, SRC(`t1, ls, _, le, _, file).
+EqualityTest(`t1, `t2, ls, le, file) :- <: `t1 != `t2 :>, SRC(`t1, ls, _, le, _, file).
 
-	    BadEq(`t1, `t2, ls, le, file) :- EqualityTest(`t1, `t2, ls, le, file),
-	    	       RealType(`t1, t1), RealType(`t2, t2), MustUseEquals(t1), MustUseEquals(t2),
-	    	       NOT(IsExcludedThis(`t1)), NOT(IsExcludedThis(`t2)).
+BadEq(`t1, `t2, ls, le, file) :- EqualityTest(`t1, `t2, ls, le, file),
+RealType(`t1, t1), RealType(`t2, t2), MustUseEquals(t1), MustUseEquals(t2),
+NOT(IsExcludedThis(`t1)), NOT(IsExcludedThis(`t2)).
 
-	    # DebugEq(t1, t2) :- EqualityTest(`t1, `t2), RealType(`t1, t1), RealType(`t2, t2).
-	    # OUTPUT('DebugEq).
+# DebugEq(t1, t2) :- EqualityTest(`t1, `t2), RealType(`t1, t1), RealType(`t2, t2).
+# OUTPUT('DebugEq).
 
-	    BadEqDetail(ls, le, file) :- BadEq(t1, _, ls, le, file), GT(ls, 0).
-	    # OUTPUT('BadEq).
-	    OUTPUT('BadEqDetail, "BadEqDetail.csv", "csv").
+BadEqDetail(ls, le, file) :- BadEq(t1, _, ls, le, file), GT(ls, 0).
+# OUTPUT('BadEq).
+OUTPUT('BadEqDetail, "BadEqDetail.csv", "csv").
 
-	    MethodIsAbstract(m) :- m <: .. abstract .. `t `m(..) ; :>.
+MethodIsAbstract(m) :- m <: .. abstract .. `t `m(..) ; :>.
 
 
-	    # A object of type T must use equals if any supertype of T, including T, excluding Object,
-	    # defines the equals method.
-	    MustUseEquals(c) :- ClassEq(c, e), NOT(MethodIsAbstract(e)), NOT(ObjectDecl(c)).
-	    MustUseEquals(c) :- SuperTypeT(c, s), ClassEq(s, e), NOT(ObjectDecl(s)).
+# A object of type T must use equals if any supertype of T, including T, excluding Object,
+# defines the equals method.
+MustUseEquals(c) :- ClassEq(c, e), NOT(MethodIsAbstract(e)), NOT(ObjectDecl(c)).
+MustUseEquals(c) :- SuperTypeT(c, s), ClassEq(s, e), NOT(ObjectDecl(s)).
 
-	    # We're using PARENT, because in concrete grammar `t is a token, but we actually we need
-	    # the type parameter node in DECL
-	    TypeVariableUpperBoundLocal(t, `u) :- <: class `_ <.. ,`t extends .. & `u & .. , .. >   { .. } :>, PARENT(t, `t).
-	    TypeVariableUpperBound(t, u) :- TypeVariableUpperBoundLocal(t, `u), DECL(`u, u).
+# We're using PARENT, because in concrete grammar `t is a token, but we actually we need
+# the type parameter node in DECL
+TypeVariableUpperBoundLocal(t, `u) :- <: class `_ <.. ,`t extends .. & `u & .. , .. >   { .. } :>, PARENT(t, `t).
+TypeVariableUpperBound(t, u) :- TypeVariableUpperBoundLocal(t, `u), DECL(`u, u).
 
-	    # MustUseEqualsDetail(l, c, file) :- MustUseEquals(cl), SRC(cl, l, c, _, _, file).
+# MustUseEqualsDetail(l, c, file) :- MustUseEquals(cl), SRC(cl, l, c, _, _, file).
 
-	    # OUTPUT('MustUseEqualsDetail).
+# OUTPUT('MustUseEqualsDetail).
 
-	    # OUTPUT('ClassEq).
-	    # OUTPUT('MustUseEquals).
-	    # OUTPUT('TSuperTypeDetail).
-	    # OUTPUT('ObjectDecl).
+# OUTPUT('ClassEq).
+# OUTPUT('MustUseEquals).
+# OUTPUT('TSuperTypeDetail).
+# OUTPUT('ObjectDecl).
 
-	    # Exclude all the comparisons with this is compareTo and equals methods
-	    ExcludedMethods(`m) :- <: class `_ implements Comparable<`t> { .. `m .. } :>, `m <: public int compareTo(..) ; :>.
-	    ExcludedMethods(`m) :- `m <: public boolean equals(Object `o); :>.
-	    ExcludedTerms(t) :- ExcludedMethods(m), PARENT(m, t).
-	    ExcludedTerms(c) :- ExcludedTerms(p), NOT(p <: `_ `_ ( .. ) ; :>), PARENT(p, c).
-	    IsThis(`t) :- `t <: this :>.
-	    IsExcludedThis(t) :- IsThis(t), ExcludedTerms(t).
-	    # OUTPUT('IsThis).
-	    # OUTPUT('ExcludedMethods).
-	    # OUTPUT('IsExcludedThis).
+# Exclude all the comparisons with this is compareTo and equals methods
+ExcludedMethods(`m) :- <: class `_ implements Comparable<`t> { .. `m .. } :>, `m <: public int compareTo(..) ; :>.
+ExcludedMethods(`m) :- `m <: public boolean equals(Object `o); :>.
+ExcludedTerms(t) :- ExcludedMethods(m), PARENT(m, t).
+ExcludedTerms(c) :- ExcludedTerms(p), NOT(p <: `_ `_ ( .. ) ; :>), PARENT(p, c).
+IsThis(`t) :- `t <: this :>.
+IsExcludedThis(t) :- IsThis(t), ExcludedTerms(t).
+# OUTPUT('IsThis).
+# OUTPUT('ExcludedMethods).
+# OUTPUT('IsExcludedThis).
 
 
 ####################################################################################################
@@ -168,14 +166,14 @@ OUTPUT('TypeUnusedInFormalsDetail, "TypeUnusedInFormalsDetail.csv", "csv").
 
 # Missing override
 
-	    # OverrideInBetween(m1, m2, p) :- Override(m1, p), Override(p, m2), NEQ(p, m1), NEQ(p, m2).
-	    # ClosestOverride(m1, m2) :- Override(m1, m2), NOT(OverrideInBetween(m1, m2, _)).
-	    # ClosestOverrideIsAbstract(m1) :- ClosestOverride(m1, m2), m2 <: .. abstract .. `t `n (..) ; :>.
-	    # ClosestOverrideIsAbstract(m1) :- ClosestOverride(m1, `m2), <: interface `_ { .. `m2 .. } :>.
+# OverrideInBetween(m1, m2, p) :- Override(m1, p), Override(p, m2), NEQ(p, m1), NEQ(p, m2).
+# ClosestOverride(m1, m2) :- Override(m1, m2), NOT(OverrideInBetween(m1, m2, _)).
+# ClosestOverrideIsAbstract(m1) :- ClosestOverride(m1, m2), m2 <: .. abstract .. `t `n (..) ; :>.
+# ClosestOverrideIsAbstract(m1) :- ClosestOverride(m1, `m2), <: interface `_ { .. `m2 .. } :>.
 
-	    HasOverride(m) :- m <: .. @Override .. `t `n(..) ; :>.
-	    MissingOverride(m) :- Override(m, _), NOT(HasOverride(m)). #, NOT(ClosestOverrideIsAbstract(m)).
-	    MissingOverrideDetail(ls, le, file) :- MissingOverride(m), SrcLocForMethod(ls, le, file, m).
+HasOverride(m) :- m <: .. @Override .. `t `n(..) ; :>.
+MissingOverride(m) :- Override(m, _), NOT(HasOverride(m)). #, NOT(ClosestOverrideIsAbstract(m)).
+MissingOverrideDetail(ls, le, file) :- MissingOverride(m), SrcLocForMethod(ls, le, file, m).
 
 
 OUTPUT('MissingOverrideDetail, "MissingOverrideDetail.csv", "csv").
@@ -185,15 +183,15 @@ OUTPUT('MissingOverrideDetail, "MissingOverrideDetail.csv", "csv").
 
 
 # Boxed primitive constructor
-            TypeName("Character"), TypeName("Integer"), TypeName("Long"), TypeName("Short"),
-            TypeName("Byte"), TypeName("Float"), TypeName("Double"), TypeName("Boolean").
+TypeName("Character"), TypeName("Integer"), TypeName("Long"), TypeName("Short"),
+TypeName("Byte"), TypeName("Float"), TypeName("Double"), TypeName("Boolean").
 
-	    PrimitiveType(c) :- c <: class `name { .. } :>, ID(`name, t), TypeName(t).
+PrimitiveType(c) :- c <: class `name { .. } :>, ID(`name, t), TypeName(t).
 
-	    Constructor(ls, le, file, c) :- e <: new `c(`_) :>, DECL(`c, c), SRC(e, ls, _, le, _, file), GT(ls, 0).
+Constructor(ls, le, file, c) :- e <: new `c(`_) :>, DECL(`c, c), SRC(e, ls, _, le, _, file), GT(ls, 0).
 
-	    PrimitiveCtorDetailEP(ls, le, file) :- Constructor(ls, le, file, c), PrimitiveType(c).
-	    OUTPUT('PrimitiveCtorDetailEP, "PrimitiveCtorDetailEP.csv", "csv").
+PrimitiveCtorDetailEP(ls, le, file) :- Constructor(ls, le, file, c), PrimitiveType(c).
+OUTPUT('PrimitiveCtorDetailEP, "PrimitiveCtorDetailEP.csv", "csv").
 
 
 ####################################################################################################
@@ -201,56 +199,55 @@ OUTPUT('MissingOverrideDetail, "MissingOverrideDetail.csv", "csv").
 
 # Operator precedence
 
-	    NoParen(`e) :- <: `e :>, ID(`e, _).
-	    NoParen(e) :- e <: `_.`_ :>.
-	    NoParen(e) :- e <: `f(..) :>.
-	    NoParen(e) :- e <: `_.`_(..) :>.
-	    NoParen(e) :- e <: `_[`_] :>.
-	    NoParen(e) :- e <: new `_(..) :>.
-	    NoParen(e) :- e <: `_ :: `_ :>.
-	    NoParen(e) :- e <: `_ -> `_ :>.
+NoParen(`e) :- <: `e :>, ID(`e, _).
+NoParen(e) :- e <: `_.`_ :>.
+NoParen(e) :- e <: `f(..) :>.
+NoParen(e) :- e <: `_.`_(..) :>.
+NoParen(e) :- e <: `_[`_] :>.
+NoParen(e) :- e <: new `_(..) :>.
+NoParen(e) :- e <: `_ :: `_ :>.
+NoParen(e) :- e <: `_ -> `_ :>.
 
-	    Conditional(e, `l, `r), Prec(e, "cand") :- e <: `l && `r :>.
-	    Conditional(e, `l, `r), Prec(e, "cor") :- e <: `l || `r :>.
-	    Conditional(e, `l, `r), Prec(e, "xor") :- e <: `l ^ `r :>.
-	    Conditional(e, `l, `r), Prec(e, "and") :- e <: `l & `r :>.
-	    Conditional(e, `l, `r), Prec(e, "or") :- e <: `l | `r :>.
+Conditional(e, `l, `r), Prec(e, "cand") :- e <: `l && `r :>.
+Conditional(e, `l, `r), Prec(e, "cor") :- e <: `l || `r :>.
+Conditional(e, `l, `r), Prec(e, "xor") :- e <: `l ^ `r :>.
+Conditional(e, `l, `r), Prec(e, "and") :- e <: `l & `r :>.
+Conditional(e, `l, `r), Prec(e, "or") :- e <: `l | `r :>.
 
-	    Shift(e, `l, `r), Prec(e, "shift") :- e <: `l >> `r :>.
-	    Shift(e, `l, `r), Prec(e, "shift") :- e <: `l >>> `r :>.
-	    Shift(e, `l, `r), Prec(e, "shift") :- e <: `l << `r :>.
+Shift(e, `l, `r), Prec(e, "shift") :- e <: `l >> `r :>.
+Shift(e, `l, `r), Prec(e, "shift") :- e <: `l >>> `r :>.
+Shift(e, `l, `r), Prec(e, "shift") :- e <: `l << `r :>.
 
-	    Arithmetic(e, `l, `r), Prec(e, "additive") :- e <: `l + `r :>.
-	    Arithmetic(e, `l, `r), Prec(e, "multiplicative") :- e <: `l / `r :>.
-	    Arithmetic(e, `l, `r), Prec(e, "multiplicative") :- e <: `l * `r :>.
-	    Arithmetic(e, `l, `r), Prec(e, "multiplicative") :- e <: `l % `r :>.
-	    Arithmetic(e, `l, `r), Prec(e, "additive") :- e <: `l - `r :>.
+Arithmetic(e, `l, `r), Prec(e, "additive") :- e <: `l + `r :>.
+Arithmetic(e, `l, `r), Prec(e, "multiplicative") :- e <: `l / `r :>.
+Arithmetic(e, `l, `r), Prec(e, "multiplicative") :- e <: `l * `r :>.
+Arithmetic(e, `l, `r), Prec(e, "multiplicative") :- e <: `l % `r :>.
+Arithmetic(e, `l, `r), Prec(e, "additive") :- e <: `l - `r :>.
 
-	    SafeAssoc(e, `l, `r) :- e <: `l + `r :>.
-	    SafeAssoc(e, `l, `r) :- e <: `l && `r :>.
-	    SafeAssoc(e, `l, `r) :- e <: `l || `r :>.
+SafeAssoc(e, `l, `r) :- e <: `l + `r :>.
+SafeAssoc(e, `l, `r) :- e <: `l && `r :>.
+SafeAssoc(e, `l, `r) :- e <: `l || `r :>.
 
-	    Confusing(parent, child) :- Conditional(parent, child, _), Conditional(child, _, _), Prec(parent, pp), Prec(child, pc), NEQ(pp, pc).
-	    Confusing(parent, child) :- Conditional(parent, _, child), Conditional(child, _, _), Prec(parent, pp), Prec(child, pc), NEQ(pp, pc).
+Confusing(parent, child) :- Conditional(parent, child, _), Conditional(child, _, _), Prec(parent, pp), Prec(child, pc), NEQ(pp, pc).
+Confusing(parent, child) :- Conditional(parent, _, child), Conditional(child, _, _), Prec(parent, pp), Prec(child, pc), NEQ(pp, pc).
 
-	    Confusing(parent, child) :- Shift(parent, child, _), Arithmetic(child, _, _).
-	    Confusing(parent, child) :- Shift(parent, _, child), Arithmetic(child, _, _).
+Confusing(parent, child) :- Shift(parent, child, _), Arithmetic(child, _, _).
+Confusing(parent, child) :- Shift(parent, _, child), Arithmetic(child, _, _).
 
-	    Confusing(parent, child) :- Arithmetic(parent, child, _), Shift(child, _, _).
-	    Confusing(parent, child) :- Arithmetic(parent, _, child), Shift(child, _, _).
+Confusing(parent, child) :- Arithmetic(parent, child, _), Shift(child, _, _).
+Confusing(parent, child) :- Arithmetic(parent, _, child), Shift(child, _, _).
 
-	    ConfusingDetail(ls, le, file) :- Confusing(p, _), SRC(p, ls, _, le, _, file), GT(ls, 0).
+ConfusingDetail(ls, le, file) :- Confusing(p, _), SRC(p, ls, _, le, _, file), GT(ls, 0).
 
 
-	    Paren(e, `c) :- e <: (`c ) :>.
-	    Paren(e, `c) :- Paren(e, e1), e1 <: (`c) :>.
+Paren(e, `c) :- e <: (`c ) :>.
+Paren(e, `c) :- Paren(e, e1), e1 <: (`c) :>.
 
-	    SafePrec("cand"), SafePrec("cor"), SafePrec("xor"), SafePrec("and"), SafePrec("or").
-	    ExtraParen(parent, child) :- Paren(parent, child), PARENT(gparent, parent), Prec(gparent, p), Prec(child, p), SafePrec(p).
-	    ExtraParen(parent, child) :- Paren(parent, child), NoParen(child).
-	    ExtraParenDetail(ls, le, file) :- ExtraParen(p, _), SRC(p, ls, _, le, _, file), GT(ls, 0).
+SafePrec("cand"), SafePrec("cor"), SafePrec("xor"), SafePrec("and"), SafePrec("or").
+ExtraParen(parent, child) :- Paren(parent, child), PARENT(gparent, parent), Prec(gparent, p), Prec(child, p), SafePrec(p).
+ExtraParen(parent, child) :- Paren(parent, child), NoParen(child).
+ExtraParenDetail(ls, le, file) :- ExtraParen(p, _), SRC(p, ls, _, le, _, file), GT(ls, 0).
 
 
 OUTPUT('ConfusingDetail, "ConfusingDetail.csv", "csv").
 OUTPUT('ExtraParenDetail, "ExtraParenDetail.csv", "csv").
-}

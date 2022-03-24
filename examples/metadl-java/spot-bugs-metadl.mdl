@@ -1,32 +1,27 @@
 # Top 5 warnings, as reported by How many of all bugs do we find? a study of static bug detectors [Habib & Pradel]
 
-# Read the sources
-EDB('Srcs, "srcs.csv", "csv").
-
-Srcs("", "") :- NEQ(0,0).
-
 ####################################################################################################
 
 # NM_METHOD_NAMING_CONVENTION, NM_FIELD_NAMING_CONVENTION, NM_CLASS_NAMING_CONVENTION
 
-java('Srcs) {
-	    Decl(`d), Type(c, name) :- c <: class `name { .. `d .. } :>, ID(`name, name).
-	    Decl(`d), Type(e, name) :- e <: enum `name { .. ,`d, .. ; .. } :>, ID(`name, name).
-	    Decl(`d), Type(i, name) :- i <: interface `name { .. `d .. } :>, ID(`name, name).
 
-	    # Type names should start with uppercase
-	    WarningTypeName(ls, le, file, name) :- Type(t, name), NOT(MATCH("[A-Z].*", name)), SRC(t, ls, _, le, _, file), GT(ls, 0).
-	    # AllowedStaticField(`f) :- Field1(`f, name), MATCH("[_0-9A-Z]*", name).
+Decl(`d), Type(c, name) :- c <: class `name { .. `d .. } :>, ID(`name, name).
+Decl(`d), Type(e, name) :- e <: enum `name { .. ,`d, .. ; .. } :>, ID(`name, name).
+Decl(`d), Type(i, name) :- i <: interface `name { .. `d .. } :>, ID(`name, name).
+
+# Type names should start with uppercase
+WarningTypeName(ls, le, file, name) :- Type(t, name), NOT(MATCH("[A-Z].*", name)), SRC(t, ls, _, le, _, file), GT(ls, 0).
+# AllowedStaticField(`f) :- Field1(`f, name), MATCH("[_0-9A-Z]*", name).
 
 
-	    Field1(`f, name) :- Decl(d), d <: .. `t .. , `f , .. ; :>, ID(`f, name), SRC(d, l, _, _, _, _), GT(l, 0).
-	    FinalField(`f) :- Decl(d), d <: .. final .. `t .. , `f, .. ; :>.
-	    Method(d, name) :- Decl(d), d <: `t `m ( .. ) ; :>, ID(`m, name), SRC(d, l, _, _, _, _), GT(l, 0).
+Field1(`f, name) :- Decl(d), d <: .. `t .. , `f , .. ; :>, ID(`f, name), SRC(d, l, _, _, _, _), GT(l, 0).
+FinalField(`f) :- Decl(d), d <: .. final .. `t .. , `f, .. ; :>.
+Method(d, name) :- Decl(d), d <: `t `m ( .. ) ; :>, ID(`m, name), SRC(d, l, _, _, _, _), GT(l, 0).
 
-	    # All the field that start with a capital lettern and contain no underscores should be disallowed
-	    WarningFieldName(ls, le, file, name) :- Field1(f, name), NOT(FinalField(f)), MATCH("[A-Z][a-z].*", name),
-	    			 NOT(MATCH(".*_.*", name)), SRC(f, ls, _, le, _, file).
-	    WarningMethodName(ls, le, file, name) :- Method(m, name), NOT(MATCH("[a-z].*", name)), SRC(m, ls, _, le, _, file).
+# All the field that start with a capital lettern and contain no underscores should be disallowed
+WarningFieldName(ls, le, file, name) :- Field1(f, name), NOT(FinalField(f)), MATCH("[A-Z][a-z].*", name),
+NOT(MATCH(".*_.*", name)), SRC(f, ls, _, le, _, file).
+WarningMethodName(ls, le, file, name) :- Method(m, name), NOT(MATCH("[a-z].*", name)), SRC(m, ls, _, le, _, file).
 
 
 OUTPUT('WarningTypeName, "WarningTypeName.csv", "csv").
@@ -38,19 +33,19 @@ OUTPUT('WarningMethodName, "WarningMethodName.csv", "csv").
 
 # SF_SWITCH_NO_DEFAULT
 
-	    SwitchWithDefault(s) :- s <: switch (`_) { .. default: .. } :>.
-	    Switch(s) :- s <: switch (`_) { .. } :>.
+SwitchWithDefault(s) :- s <: switch (`_) { .. default: .. } :>.
+Switch(s) :- s <: switch (`_) { .. } :>.
 
-	    CaseOnEnum(s, e, d) :- s <: switch (`v) { .. case `c : .. } :>, TYPE(`v, e), e <: enum `_ { .. } :>, DECL(`c, d).
-	    # `m can be either an enum member or an enum constant, use ID to discriminate between the two
-	    EnumMember(e, `m) :- e <: enum `_  { .., `m , .. ; .. } :>,  ID(`m, _).
+CaseOnEnum(s, e, d) :- s <: switch (`v) { .. case `c : .. } :>, TYPE(`v, e), e <: enum `_ { .. } :>, DECL(`c, d).
+# `m can be either an enum member or an enum constant, use ID to discriminate between the two
+EnumMember(e, `m) :- e <: enum `_  { .., `m , .. ; .. } :>,  ID(`m, _).
 
-	    SwitchWithoutEnumMember(s, e) :- CaseOnEnum(s, e, _), EnumMember(e, m), NOT(CaseOnEnum(s, e, m)).
-	    SwitchOnAllEnumMembers(s) :- CaseOnEnum(s, e, _), NOT(SwitchWithoutEnumMember(s, e)).
+SwitchWithoutEnumMember(s, e) :- CaseOnEnum(s, e, _), EnumMember(e, m), NOT(CaseOnEnum(s, e, m)).
+SwitchOnAllEnumMembers(s) :- CaseOnEnum(s, e, _), NOT(SwitchWithoutEnumMember(s, e)).
 
-	    SwitchWithoutDefault(s) :- Switch(s), NOT(SwitchWithDefault(s)), NOT(SwitchOnAllEnumMembers(s)).
+SwitchWithoutDefault(s) :- Switch(s), NOT(SwitchWithDefault(s)), NOT(SwitchOnAllEnumMembers(s)).
 
-	    SwitchWithoutDefaultDetail(ls, le, file) :- SwitchWithoutDefault(s), SRC(s, ls, _, le, _, file), GT(ls, 0).
+SwitchWithoutDefaultDetail(ls, le, file) :- SwitchWithoutDefault(s), SRC(s, ls, _, le, _, file), GT(ls, 0).
 
 
 OUTPUT('SwitchWithoutDefaultDetail, "SwitchWithoutDefaultDetail.csv", "csv").
@@ -63,37 +58,37 @@ OUTPUT('SwitchWithoutDefaultDetail, "SwitchWithoutDefaultDetail.csv", "csv").
 
 
 ### Analysis
-	    FieldInClass1(c, `tt, `ff, `mm) :- FieldInClass(c, `tt, `ff, `mm), NOT(FundamentalTypeUse(`tt)).
+FieldInClass1(c, `tt, `ff, `mm) :- FieldInClass(c, `tt, `ff, `mm), NOT(FundamentalTypeUse(`tt)).
 
-	    FundamentalTypeUse(t) :- t <: int :>.
-	    FundamentalTypeUse(t) :- t <: char :>.
-	    FundamentalTypeUse(t) :- t <: byte :>.
-	    FundamentalTypeUse(t) :- t <: long :>.
-	    FundamentalTypeUse(t) :- t <: short :>.
-	    FundamentalTypeUse(t) :- t <: float :>.
-	    FundamentalTypeUse(t) :- t <: double :>.
-	    FundamentalTypeUse(t) :- t <: boolean :>.
-
-
-	    IsPublic(f) :- FieldInClass1(_, _, f, m), MOD(m, "public").
-	    IsFinal(f) :- FieldInClass1(_, _, f, m), MOD(m, "final").
-
-	    NonPublicFieldReturn(s, f) :- s <: return `f ; :>, DECL(`f, f), FieldInClass1(_, _, f, m), NOT(IsPublic(f)), NOT(IsFinal(f)).
-	    NonPublicFieldReturn(s, f) :- s <: return this.`f; :>, DECL(`f, f), FieldInClass1(_, _, f, m), NOT(IsPublic(f)), NOT(IsFinal(f)).
-	    NonPublicFieldReturnDetail(ls, le, file) :- NonPublicFieldReturn(s, _), SRC(s, ls, _, le, _, file), GT(ls, 0).
-
-	    ParamToVariable(m, `p, `v) :- m <: .. `_ `_(.., `p, ..) { .. } :>, DECL(`p2, `p), <: `v = `p2 :>.
-	    ParamToVariable(m, `p, `v) :- m <: .. `_ `_(.., `p, ..) { .. } :>, DECL(`p2, `p), <: `v = `p2 :>.
-	    ParamToVariable(m, `p, `v) :- m <: .. `_ `_(.., `p, ..) { .. } :>, DECL(`p2, `p), <: `v = `_ ? `_ : `p2  :>.
-	    ParamToVariable(m, `p, `v) :- m <: .. `_ `_(.., `p, ..) { .. } :>, DECL(`p2, `p), <: `v = `_ ? `p2 : `_  :>.
-	    ParamToVariable(m, `p, `v) :- m <: .. `_ `_(.., `p, ..) { .. } :>, DECL(`p2, `p), <: this.`v = `p2 :>.
-	    ParamToVariable(m, `p, `v) :- m <: .. `_ `_(.., `p, ..) { .. } :>, DECL(`p2, `p), <: this.`v = `p2 :>.
-	    ParamToVariable(m, `p, `v) :- m <: .. `_ `_(.., `p, ..) { .. } :>, DECL(`p2, `p), <: this.`v = `_ ? `_ : `p2  :>.
-	    ParamToVariable(m, `p, `v) :- m <: .. `_ `_(.., `p, ..) { .. } :>, DECL(`p2, `p), <: this.`v = `_ ? `p2 : `_  :>.
+FundamentalTypeUse(t) :- t <: int :>.
+FundamentalTypeUse(t) :- t <: char :>.
+FundamentalTypeUse(t) :- t <: byte :>.
+FundamentalTypeUse(t) :- t <: long :>.
+FundamentalTypeUse(t) :- t <: short :>.
+FundamentalTypeUse(t) :- t <: float :>.
+FundamentalTypeUse(t) :- t <: double :>.
+FundamentalTypeUse(t) :- t <: boolean :>.
 
 
-	    ParamToNonPublicField(m) :- ParamToVariable(m, p, v), DECL(v, f), FieldInClass1(_, _, f, _), NOT(IsPublic(f)).
-	    ParamToNonPublicFieldDetail(ls, le, file) :- ParamToNonPublicField(m), SRC(m, ls, _, le, _, file), GT(ls, 0).
+IsPublic(f) :- FieldInClass1(_, _, f, m), MOD(m, "public").
+IsFinal(f) :- FieldInClass1(_, _, f, m), MOD(m, "final").
+
+NonPublicFieldReturn(s, f) :- s <: return `f ; :>, DECL(`f, f), FieldInClass1(_, _, f, m), NOT(IsPublic(f)), NOT(IsFinal(f)).
+NonPublicFieldReturn(s, f) :- s <: return this.`f; :>, DECL(`f, f), FieldInClass1(_, _, f, m), NOT(IsPublic(f)), NOT(IsFinal(f)).
+NonPublicFieldReturnDetail(ls, le, file) :- NonPublicFieldReturn(s, _), SRC(s, ls, _, le, _, file), GT(ls, 0).
+
+ParamToVariable(m, `p, `v) :- m <: .. `_ `_(.., `p, ..) { .. } :>, DECL(`p2, `p), <: `v = `p2 :>.
+ParamToVariable(m, `p, `v) :- m <: .. `_ `_(.., `p, ..) { .. } :>, DECL(`p2, `p), <: `v = `p2 :>.
+ParamToVariable(m, `p, `v) :- m <: .. `_ `_(.., `p, ..) { .. } :>, DECL(`p2, `p), <: `v = `_ ? `_ : `p2  :>.
+ParamToVariable(m, `p, `v) :- m <: .. `_ `_(.., `p, ..) { .. } :>, DECL(`p2, `p), <: `v = `_ ? `p2 : `_  :>.
+ParamToVariable(m, `p, `v) :- m <: .. `_ `_(.., `p, ..) { .. } :>, DECL(`p2, `p), <: this.`v = `p2 :>.
+ParamToVariable(m, `p, `v) :- m <: .. `_ `_(.., `p, ..) { .. } :>, DECL(`p2, `p), <: this.`v = `p2 :>.
+ParamToVariable(m, `p, `v) :- m <: .. `_ `_(.., `p, ..) { .. } :>, DECL(`p2, `p), <: this.`v = `_ ? `_ : `p2  :>.
+ParamToVariable(m, `p, `v) :- m <: .. `_ `_(.., `p, ..) { .. } :>, DECL(`p2, `p), <: this.`v = `_ ? `p2 : `_  :>.
+
+
+ParamToNonPublicField(m) :- ParamToVariable(m, p, v), DECL(v, f), FieldInClass1(_, _, f, _), NOT(IsPublic(f)).
+ParamToNonPublicFieldDetail(ls, le, file) :- ParamToNonPublicField(m), SRC(m, ls, _, le, _, file), GT(ls, 0).
 
 
 OUTPUT('ParamToNonPublicFieldDetail, "ParamToNonPublicFieldDetail.csv", "csv").
@@ -107,80 +102,80 @@ OUTPUT('NonPublicFieldReturnDetail, "NonPublicFieldReturnDetail.csv", "csv").
 
 
 ### Analysis
-	    FieldInClassWithInit(c, `t, `f, `i) :- c <: class `_ { .. `d .. } :>, `d <: .. `t .. , `f = `i, .. ; :>,
-				    SRC(c, l, col, _,_,_), NEQ(col, 0).
-	    FieldInClass(c, `t, `f, `m) :- c <: class `_ { .. `d .. } :>, `d <: .. `m .. `t .. , `f, .. ; :>, SRC(c, l, col, _,_,_), NEQ(col, 0).
+FieldInClassWithInit(c, `t, `f, `i) :- c <: class `_ { .. `d .. } :>, `d <: .. `t .. , `f = `i, .. ; :>,
+SRC(c, l, col, _,_,_), NEQ(col, 0).
+FieldInClass(c, `t, `f, `m) :- c <: class `_ { .. `d .. } :>, `d <: .. `m .. `t .. , `f, .. ; :>, SRC(c, l, col, _,_,_), NEQ(col, 0).
 
-	    Field(f) :- FieldInClass(_, _, f, _).
+Field(f) :- FieldInClass(_, _, f, _).
 
-	    FieldAccess(f) :- <: `f :>, DECL(`f, f), Field(f).
-	    FieldWrite(f) :- <: `f = `_ :>, DECL(`f, f), Field(f).
-	    FieldWrite(f) :- <: `base.`f = `_ :>, DECL(`f, f), Field(f).
-	    FieldWrite(f) :- FieldUpdate(f).
+FieldAccess(f) :- <: `f :>, DECL(`f, f), Field(f).
+FieldWrite(f) :- <: `f = `_ :>, DECL(`f, f), Field(f).
+FieldWrite(f) :- <: `base.`f = `_ :>, DECL(`f, f), Field(f).
+FieldWrite(f) :- FieldUpdate(f).
 
-	    FieldUpdate(f) :- <: ++`f :>, DECL(`f, f), Field(f).
-	    FieldUpdate(f) :- <: ++`base.`f :>, DECL(`f, f), Field(f).
-	    FieldUpdate(f) :- <: `f ++ :>, DECL(`f, f), Field(f).
-	    FieldUpdate(f) :- <: `base.`f ++ :>, DECL(`f, f), Field(f).
-
-
-	    FieldUpdate(f) :- <: --`f :>, DECL(`f, f), Field(f).
-	    FieldUpdate(f) :- <: --`base.`f :>, DECL(`f, f), Field(f).
-	    FieldUpdate(f) :- <: `f -- :>, DECL(`f, f), Field(f).
-	    FieldUpdate(f) :- <: `base.`f -- :>, DECL(`f, f), Field(f).
-
-	    FieldUpdate(f) :- <: `f += `_ :>, DECL(`f, f), Field(f).
-	    FieldUpdate(f) :- <: `base.`f += `_ :>, DECL(`f, f), Field(f).
-
-	    FieldUpdate(f) :- <: `f -= `_ :>, DECL(`f, f), Field(f).
-	    FieldUpdate(f) :- <: `base.`f -= `_ :>, DECL(`f, f), Field(f).
+FieldUpdate(f) :- <: ++`f :>, DECL(`f, f), Field(f).
+FieldUpdate(f) :- <: ++`base.`f :>, DECL(`f, f), Field(f).
+FieldUpdate(f) :- <: `f ++ :>, DECL(`f, f), Field(f).
+FieldUpdate(f) :- <: `base.`f ++ :>, DECL(`f, f), Field(f).
 
 
-	    FieldUpdate(f) :- <: `f *= `_ :>, DECL(`f, f), Field(f).
-	    FieldUpdate(f) :- <: `base.`f *= `_ :>, DECL(`f, f), Field(f).
+FieldUpdate(f) :- <: --`f :>, DECL(`f, f), Field(f).
+FieldUpdate(f) :- <: --`base.`f :>, DECL(`f, f), Field(f).
+FieldUpdate(f) :- <: `f -- :>, DECL(`f, f), Field(f).
+FieldUpdate(f) :- <: `base.`f -- :>, DECL(`f, f), Field(f).
 
-	    FieldUpdate(f) :- <: `f /= `_ :>, DECL(`f, f), Field(f).
-	    FieldUpdate(f) :- <: `base.`f /= `_ :>, DECL(`f, f), Field(f).
+FieldUpdate(f) :- <: `f += `_ :>, DECL(`f, f), Field(f).
+FieldUpdate(f) :- <: `base.`f += `_ :>, DECL(`f, f), Field(f).
 
-	    FieldUpdate(f) :- <: `f %= `_ :>, DECL(`f, f), Field(f).
-	    FieldUpdate(f) :- <: `base.`f %= `_ :>, DECL(`f, f), Field(f).
+FieldUpdate(f) :- <: `f -= `_ :>, DECL(`f, f), Field(f).
+FieldUpdate(f) :- <: `base.`f -= `_ :>, DECL(`f, f), Field(f).
 
-	    FieldUpdate(f) :- <: `f <<= `_ :>, DECL(`f, f), Field(f).
-	    FieldUpdate(f) :- <: `base.`f <<= `_ :>, DECL(`f, f), Field(f).
 
-	    FieldUpdate(f) :- <: `f >>= `_ :>, DECL(`f, f), Field(f).
-	    FieldUpdate(f) :- <: `base.`f >>= `_ :>, DECL(`f, f), Field(f).
+FieldUpdate(f) :- <: `f *= `_ :>, DECL(`f, f), Field(f).
+FieldUpdate(f) :- <: `base.`f *= `_ :>, DECL(`f, f), Field(f).
 
-	    FieldUpdate(f) :- <: `f >>>= `_ :>, DECL(`f, f), Field(f).
-	    FieldUpdate(f) :- <: `base.`f >>>= `_ :>, DECL(`f, f), Field(f).
+FieldUpdate(f) :- <: `f /= `_ :>, DECL(`f, f), Field(f).
+FieldUpdate(f) :- <: `base.`f /= `_ :>, DECL(`f, f), Field(f).
 
-	    FieldUpdate(f) :- <: `f &= `_ :>, DECL(`f, f), Field(f).
-	    FieldUpdate(f) :- <: `base.`f &= `_ :>, DECL(`f, f), Field(f).
+FieldUpdate(f) :- <: `f %= `_ :>, DECL(`f, f), Field(f).
+FieldUpdate(f) :- <: `base.`f %= `_ :>, DECL(`f, f), Field(f).
 
-	    FieldUpdate(f) :- <: `f |= `_ :>, DECL(`f, f), Field(f).
-	    FieldUpdate(f) :- <: `base.`f |= `_ :>, DECL(`f, f), Field(f).
+FieldUpdate(f) :- <: `f <<= `_ :>, DECL(`f, f), Field(f).
+FieldUpdate(f) :- <: `base.`f <<= `_ :>, DECL(`f, f), Field(f).
 
-	    FieldUpdate(f) :- <: `f ^= `_ :>, DECL(`f, f), Field(f).
-	    FieldUpdate(f) :- <: `base.`f ^= `_ :>, DECL(`f, f), Field(f).
+FieldUpdate(f) :- <: `f >>= `_ :>, DECL(`f, f), Field(f).
+FieldUpdate(f) :- <: `base.`f >>= `_ :>, DECL(`f, f), Field(f).
 
-	    FieldRead(f) :- FieldAccess(f), NOT(FieldWrite(f)).
-	    FieldRead(f) :- FieldUpdate(f).
+FieldUpdate(f) :- <: `f >>>= `_ :>, DECL(`f, f), Field(f).
+FieldUpdate(f) :- <: `base.`f >>>= `_ :>, DECL(`f, f), Field(f).
 
-	    Warning(f) :- Field(f), FieldRead(f), NOT(FieldWrite(f)), NOT(FieldInClassWithInit(_, _, f, _)).
-	    WarningDetails(l, c, src) :- Warning(f), SRC(f, l, c, _, _, src).
+FieldUpdate(f) :- <: `f &= `_ :>, DECL(`f, f), Field(f).
+FieldUpdate(f) :- <: `base.`f &= `_ :>, DECL(`f, f), Field(f).
 
-	    IsPublicOrProtected(f) :- FieldInClass(_, _, f, m), MOD(m, "public").
-	    IsPublicOrProtected(f) :- FieldInClass(_, _, f, m), MOD(m, "protected").
-	    IsTransient(f) :- FieldInClass(_, _, f, m), MOD(m, "transient").
+FieldUpdate(f) :- <: `f |= `_ :>, DECL(`f, f), Field(f).
+FieldUpdate(f) :- <: `base.`f |= `_ :>, DECL(`f, f), Field(f).
 
-	    Warn_UWF_UNWRITTEN_FIELD(f) :- Warning(f), NOT(IsPublicOrProtected(f)), NOT(IsTransient(f)).
-	    # Exclude transient fields to match what SpotBugs is doing.
-	    Warn_UWF_UNWRITTEN_PUBLIC_OR_PROTECTED_FIELD(f) :- Warning(f), IsPublicOrProtected(f).
+FieldUpdate(f) :- <: `f ^= `_ :>, DECL(`f, f), Field(f).
+FieldUpdate(f) :- <: `base.`f ^= `_ :>, DECL(`f, f), Field(f).
 
-	    Warn_UWF_UNWRITTEN_PUBLIC_OR_PROTECTED_FIELD_Detail(ls, le, file) :- Warn_UWF_UNWRITTEN_PUBLIC_OR_PROTECTED_FIELD(f),
-							   SRC(f, ls, _, le, _, file), GT(ls, 0).
-	    Warn_UWF_UNWRITTEN_FIELD_Detail(ls, le, file) :- Warn_UWF_UNWRITTEN_FIELD(f),
-	    				       	  SRC(f, ls, _, le, _, file), GT(ls, 0).
+FieldRead(f) :- FieldAccess(f), NOT(FieldWrite(f)).
+FieldRead(f) :- FieldUpdate(f).
+
+Warning(f) :- Field(f), FieldRead(f), NOT(FieldWrite(f)), NOT(FieldInClassWithInit(_, _, f, _)).
+WarningDetails(l, c, src) :- Warning(f), SRC(f, l, c, _, _, src).
+
+IsPublicOrProtected(f) :- FieldInClass(_, _, f, m), MOD(m, "public").
+IsPublicOrProtected(f) :- FieldInClass(_, _, f, m), MOD(m, "protected").
+IsTransient(f) :- FieldInClass(_, _, f, m), MOD(m, "transient").
+
+Warn_UWF_UNWRITTEN_FIELD(f) :- Warning(f), NOT(IsPublicOrProtected(f)), NOT(IsTransient(f)).
+# Exclude transient fields to match what SpotBugs is doing.
+Warn_UWF_UNWRITTEN_PUBLIC_OR_PROTECTED_FIELD(f) :- Warning(f), IsPublicOrProtected(f).
+
+Warn_UWF_UNWRITTEN_PUBLIC_OR_PROTECTED_FIELD_Detail(ls, le, file) :- Warn_UWF_UNWRITTEN_PUBLIC_OR_PROTECTED_FIELD(f),
+SRC(f, ls, _, le, _, file), GT(ls, 0).
+Warn_UWF_UNWRITTEN_FIELD_Detail(ls, le, file) :- Warn_UWF_UNWRITTEN_FIELD(f),
+SRC(f, ls, _, le, _, file), GT(ls, 0).
 
 
 OUTPUT('Warn_UWF_UNWRITTEN_PUBLIC_OR_PROTECTED_FIELD_Detail, "Warn_UWF_UNWRITTEN_PUBLIC_OR_PROTECTED_FIELD_Detail.csv", "csv").
@@ -196,16 +191,14 @@ TypeName("Byte"),
 # TypeName("Float"), TypeName("Double"),
 TypeName("Boolean").
 
-            PrimitiveType(c) :- c <: class `name { .. } :>, ID(`name, t), TypeName(t).
-	    StringType(c) :- c <: class `name { .. } :>, ID(`name, "String").
+PrimitiveType(c) :- c <: class `name { .. } :>, ID(`name, t), TypeName(t).
+StringType(c) :- c <: class `name { .. } :>, ID(`name, "String").
 
-	    PrimitiveCtor(e) :- e <: new `c(`t) :>, DECL(`c, c), PrimitiveType(c), TYPE(`t, t), NOT(StringType(t)).
-	    PrimitiveCtorDetail(ls, le, file) :- PrimitiveCtor(e), SRC(e, ls, _, le, _, file), GT(ls, 0).
-	    PrimitiveStringCtor(e) :- e <: new `c(`t) :>, DECL(`c, c), TYPE(`t, c), StringType(c).
-	    PrimitiveStringCtorDetail(ls, le, file) :- PrimitiveStringCtor(e), SRC(e, ls, _, le, _, file), GT(ls, 0).
+PrimitiveCtor(e) :- e <: new `c(`t) :>, DECL(`c, c), PrimitiveType(c), TYPE(`t, t), NOT(StringType(t)).
+PrimitiveCtorDetail(ls, le, file) :- PrimitiveCtor(e), SRC(e, ls, _, le, _, file), GT(ls, 0).
+PrimitiveStringCtor(e) :- e <: new `c(`t) :>, DECL(`c, c), TYPE(`t, c), StringType(c).
+PrimitiveStringCtorDetail(ls, le, file) :- PrimitiveStringCtor(e), SRC(e, ls, _, le, _, file), GT(ls, 0).
 
 
 OUTPUT('PrimitiveCtorDetail, "PrimitiveCtorDetail.csv", "csv").
 OUTPUT('PrimitiveStringCtorDetail, "PrimitiveStringCtorDetail.csv", "csv").
-
-}

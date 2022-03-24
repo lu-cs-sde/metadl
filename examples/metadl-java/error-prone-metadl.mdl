@@ -175,7 +175,6 @@ HasOverride(m) :- m <: .. @Override .. `t `n(..) ; :>.
 MissingOverride(m) :- Override(m, _), NOT(HasOverride(m)). #, NOT(ClosestOverrideIsAbstract(m)).
 MissingOverrideDetail(ls, le, file) :- MissingOverride(m), SrcLocForMethod(ls, le, file, m).
 
-
 OUTPUT('MissingOverrideDetail, "MissingOverrideDetail.csv", "csv").
 
 

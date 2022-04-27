@@ -36,6 +36,12 @@ aspect AttributeFunctor {
 		case "mod":
 		case "cat":
 		case "attr":
+		case "band":
+		case "bor":
+		case "bshl":
+		case "bshr":
+		case "bshru":
+		case "bxor":
 			return 2;
 		default:
 			// return -1 to mark unknown functors

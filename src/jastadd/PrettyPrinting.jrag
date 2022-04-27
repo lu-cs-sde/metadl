@@ -154,14 +154,6 @@ aspect PretyPrinting {
 		case "div":
 			op = "/";
 			break;
-		case "band":
-		case "bor":
-		case "bxor":
-		case "lshr":
-		case "bshr":
-		case "bshru":
-			op = funcId;
-			break;
 		}
 		// arithmetic, infix notation
 		pr.out.print("(");
@@ -292,6 +284,47 @@ aspect SoufflePrinting {
         prettyPrint(pr);
         pr.out.print("\"");
     }
+
+	public void Functor.soufflePrint(PrettyPrinter pr) {
+		String op = null;
+		String funcId = getFunc().getFUNC_ID();
+		switch (funcId) {
+		default:
+			// generic functor, use prefix notation
+			pr.out.print(funcId);
+			printCollection(getArgs(), "(", ")", ", ", pr);
+			return;
+		case "add":
+			op = "+";
+			break;
+		case "sub":
+			op = "-";
+			break;
+		case "mul":
+			op = "*";
+			break;
+		case "div":
+			op = "/";
+			break;
+		case "band":
+		case "bor":
+		case "bxor":
+		case "lshr":
+		case "bshr":
+		case "bshru":
+			op = funcId;
+			break;
+		}
+		// arithmetic, infix notation
+		pr.out.print("(");
+		pr.prettyPrint(getArg(0));
+		pr.out.print(")");
+		pr.out.print(op);
+		pr.out.print("(");
+		pr.prettyPrint(getArg(1));
+		pr.out.print(")");
+
+	}
 
 	public void Rule.soufflePrint(PrettyPrinter pr) {
 		if (isASTClause()) {

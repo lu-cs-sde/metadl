@@ -88,8 +88,8 @@ aspect PatternPredicates {
 			// PARENT(n, c) :- P(t, n, _, c, _), NEQ(c, 0), NEQ(c, -1).
 			return rule(literal(ctx.prefix("PARENT"), var("n"), var("c")),
 						literal(ctx.progRelName, "_", var("n"), "_", var("c"), "_"),
-						NEQ(var("c"), integer(0)),
-						NEQ(var("c"), integer(-1)));
+						NEQ(functor("node_to_id", var("c")), integer(0)),
+						NEQ(functor("node_to_id", var("c")), integer(-1)));
 		}
 
 		public static lang.ast.Rule makeExistsRule(AnalyzeContext ctx) {

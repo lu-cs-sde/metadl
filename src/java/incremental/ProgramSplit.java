@@ -37,6 +37,7 @@ import lang.ast.Rule;
 import lang.ast.StringType;
 import lang.ast.Term;
 import lang.ast.Variable;
+import lang.ast.Expr;
 import lang.relation.RelationWrapper;
 
 import static lang.ast.Constructors.*;
@@ -58,20 +59,29 @@ public class ProgramSplit {
 	}
 
 	private static Rule implicitTypeDeclaration(final String predName, final PredicateType t) {
-		final Term[] terms = new Term[t.arity()];
+		final CommonLiteral[] literals = new CommonLiteral[t.arity() + 2];
+		final Term[] vars = new Variable[t.arity()];
+
 		for (int i = 0; i < t.arity(); ++i) {
-			if (t.get(i) == IntegerType.get() ||
-				t.get(i) == ASTNodeType.get()) {
-				terms[i] = integer(0);
+			vars[i] = var("v_" + i);
+			Expr rhs;
+			if (t.get(i) == IntegerType.get()) {
+				rhs = integer(0);
+			} else if (t.get(i) == ASTNodeType.get()) {
+				rhs = functor("id_to_node", integer(0));
 			} else if (t.get(i) == StringType.get()) {
-				terms[i] = str("");
+				rhs = str("");
 			} else {
 				assert t.get(i) == PredicateRefType.get();
-				terms[i] = new PredicateRef(predName);
+				rhs = new PredicateRef(predName);
 			}
+			literals[i + 2] = BIND(var("v_" + i), rhs);
 		}
 
-		return rule(literal(predName, (Object[]) terms), NEQ(integer(0), integer(0)));
+		literals[0] = literal(predName, (Object[]) vars);
+		literals[1] = NEQ(integer(0), integer(0));
+
+		return rule(literals);
 	}
 
 	static class PredicateIOInfo {
@@ -238,7 +248,6 @@ public class ProgramSplit {
 		}
 
 		for (FormalPredicate p : program.getFormalPredicates()) {
-			implicitTypeDeclaration(p);
 			if (p.hasLocalDef() && isTaggedPredicate(p, outputPreds)) {
 				// P(x) :- P_local(x, _tag).
 				fusedProgram.addCommonClause(rule(literal(p.getPRED_ID(),
@@ -355,7 +364,7 @@ public class ProgramSplit {
 	}
 
 	private static Functor extractFileIdFromASTNodeId(Variable n) {
-		return functor("band", functor("bshru", n, integer(32)), integer((1 << 30) - 1));
+		return functor("band", functor("bshru", functor("node_to_id", n), integer(32)), integer((1 << 30) - 1));
 	}
 
 	private void generateUpdateClauses(final Program p) {

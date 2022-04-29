@@ -190,4 +190,31 @@ public interface Operation {
 			}
 		};
 	}
+
+	public static Operation node_to_id(EvaluationContext ctx, Operation arg0)  {
+		return new Operation() {
+			@Override public long eval() {
+				// identity
+				return arg0.eval();
+			}
+
+			@Override public String prettyPrint() {
+				return "node_to_id(" + arg0.prettyPrint() + ")";
+			}
+		};
+	}
+
+	public static Operation id_to_node(EvaluationContext ctx, Operation arg0)  {
+		return new Operation() {
+			@Override public long eval() {
+				// identity
+				return arg0.eval();
+			}
+
+			@Override public String prettyPrint() {
+				return "id_to_node(" + arg0.prettyPrint() + ")";
+			}
+		};
+	}
+
 }

@@ -460,6 +460,10 @@ aspect CodeGen {
 				return Operation.bshl(arg0, arg1);
 			case "cat":
 				return Operation.cat(ctx, arg0, arg1);
+			case "node_to_id":
+				return Operation.node_to_id(ctx, arg0);
+			case "id_to_node":
+				return Operation.id_to_node(ctx, arg0);
 			}
 		}
 

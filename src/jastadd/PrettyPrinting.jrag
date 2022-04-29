@@ -101,23 +101,23 @@ aspect PretyPrinting {
     public void BinaryIntegerConstraint.prettyPrint(PrettyPrinter pr) {
 		if (hasNot())
 			pr.negationPrefix();
-    	pr.out.print(printName());
-        pr.out.print("(");
-        pr.prettyPrint(getLeft());
-        pr.out.print(",");
-        pr.prettyPrint(getRight());
-        pr.out.print(")");
+		pr.out.print(printName());
+		pr.out.print("(");
+		pr.prettyPrint(getLeft());
+		pr.out.print(",");
+		pr.prettyPrint(getRight());
+		pr.out.print(")");
 		if (hasNot())
 			pr.negationSuffix();
     }
 
-    public void BINDLiteral.prettyPrint(PrettyPrinter pr) {
-        pr.out.print("BIND(");
-    	pr.prettyPrint(getDst());
-        pr.out.print(", ");
-    	pr.prettyPrint(getSrc());
-        pr.out.print(")");
-    }
+	public void BINDLiteral.prettyPrint(PrettyPrinter pr) {
+		pr.out.print("BIND(");
+		pr.prettyPrint(getDst());
+		pr.out.print(", ");
+		pr.prettyPrint(getSrc());
+		pr.out.print(")");
+	}
 
 	public void Pattern.prettyPrint(PrettyPrinter pr) {
 		if (hasNot())
@@ -294,6 +294,14 @@ aspect SoufflePrinting {
 			pr.out.print(funcId);
 			printCollection(getArgs(), "(", ")", ", ", pr);
 			return;
+		case "node_to_id":
+		case "id_to_node":
+			// nodes are represented directly by their integer id
+			// so this is just an identity function
+			pr.out.print("(");
+			pr.prettyPrint(getArg(0));
+			pr.out.print(")");
+			return;
 		case "add":
 			op = "+";
 			break;
@@ -389,7 +397,17 @@ aspect SoufflePrinting {
         ArrayList<PredicateSymbol> constants = new ArrayList<PredicateSymbol>();
         for(int i = 0; i != realArity(); ++i) {
 			Type t = type().get(i);
-			String souffleType = t.storageType() == IntegerType.get() ? "number" : "symbol";
+
+			String souffleType;
+			if (t.storageType() == IntegerType.get()) {
+				souffleType = "number";
+			} else if (t.storageType() == StringType.get()) {
+				souffleType = "symbol";
+			} else if (t.storageType() == BadType.get()) {
+				souffleType = "bad";
+			} else {
+				souffleType = "unknown";
+			}
             constants.add(new PredicateSymbol("x_" + i + ":" + souffleType));
         }
         printCollection(constants, "", "", ", ", pr);

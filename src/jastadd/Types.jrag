@@ -33,8 +33,6 @@ aspect Type {
 			return "ASTNode";
 		}
 		@Override public Optional<Type> tryJoin(Type t) {
-			// if (t == IntegerType.get())
-			// 	return Optional.of(ASTNodeType.get());
 			return Optional.empty();
 		}
 		public static ASTNodeType get() { return astI; }
@@ -71,6 +69,9 @@ aspect Type {
 		}
 		public static PredicateRefType get() {
 			return predI;
+		}
+		@Override public Type storageType() {
+			return StringType.get();
 		}
 	}
 
@@ -376,6 +377,11 @@ aspect TypeCheck {
 			expectedType[0] = IntegerType.get();
 			expectedType[1] = StringType.get();
 			break;
+		case "node_to_id":
+			expectedType[0] = ASTNodeType.get();
+			break;
+		case "id_to_node":
+			expectedType[0] = IntegerType.get();
 		default:
 			expectedType[0] = expectedType[1] = BadType.get(); break;
 		}
@@ -524,6 +530,7 @@ aspect TypeInference {
 		case "bshl":
 		case "bshr":
 		case "bshru":
+		case "id_to_node":
 			return IntegerType.get();
 		case "cat":
 		case "to_number":
@@ -533,6 +540,8 @@ aspect TypeInference {
 				return IntegerType.get();
 			else
 				return StringType.get();
+		case "node_to_id":
+			return ASTNodeType.get();
 		default:
 			return UnknownType.get();
 		}
@@ -597,7 +606,10 @@ aspect TypeInference {
 		case "bshru":
 		case "to_number":
 		case "attr":
+		case "node_to_id":
 			t = t.join(IntegerType.get()); break;
+		case "id_to_node":
+			t = t.join(ASTNodeType.get()); break;
 		case "cat":
 			t = t.join(StringType.get()); break;
 		default:

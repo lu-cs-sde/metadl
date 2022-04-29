@@ -28,6 +28,8 @@ aspect AttributeFunctor {
 		case "type":
 		case "generic":
 		case "to_number":
+		case "node_to_id":
+		case "id_to_node":
 			return 1;
 		case "add":
 		case "mul":

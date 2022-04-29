@@ -393,8 +393,8 @@ aspect PatternLang {
 									 IntegerType.get(), // end col,
 									 StringType.get()); // file name
 		case ATTR_PROVENANCE:
-			return new PredicateType(ASTNodeType.get(), // file id
-									 ASTNodeType.get()); // file id
+			return new PredicateType(IntegerType.get(), // file id
+									 IntegerType.get()); // file id
 		}
 		return null;
 	}

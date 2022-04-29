@@ -94,12 +94,12 @@ aspect Constructors {
 			return new lang.ast.PredicateRef(s);
 		}
 
-		public static lang.ast.CommonLiteral NEQ(lang.ast.Term t1, lang.ast.Term t2) {
-			return new lang.ast.NEQLiteral(t1, t2);
+		public static lang.ast.CommonLiteral NEQ(lang.ast.Expr e1, lang.ast.Expr e2) {
+			return new lang.ast.NEQLiteral(e1, e2);
 		}
 
-		public static lang.ast.CommonLiteral EQ(lang.ast.Term t1, lang.ast.Term t2) {
-			return new lang.ast.EQLiteral(t1, t2);
+		public static lang.ast.CommonLiteral EQ(lang.ast.Expr e1, lang.ast.Term e2) {
+			return new lang.ast.EQLiteral(e1, e2);
 		}
 
 		public static lang.ast.CommonLiteral NOT(lang.ast.CommonLiteral l) {

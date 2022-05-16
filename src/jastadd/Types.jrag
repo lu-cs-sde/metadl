@@ -70,9 +70,6 @@ aspect Type {
 		public static PredicateRefType get() {
 			return predI;
 		}
-		@Override public Type storageType() {
-			return StringType.get();
-		}
 	}
 
 	public class UnknownType extends Type {

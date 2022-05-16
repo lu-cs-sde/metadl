@@ -12,6 +12,9 @@ public class EvaluationContext {
 	private List<String> longMap = new ArrayList<>();
 
 	public long internalizeString(String s) {
+		if (s == null)
+			throw new RuntimeException("Cannot interanlize null.");
+
 		Long id = stringMap.get(s);
 		if (id == null) {
 			id = stringID++;

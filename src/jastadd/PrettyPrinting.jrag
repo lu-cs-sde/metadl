@@ -403,6 +403,8 @@ aspect SoufflePrinting {
 				souffleType = "number";
 			} else if (t.storageType() == StringType.get()) {
 				souffleType = "symbol";
+			} else if (t.storageType() == PredicateRefType.get()) {
+				souffleType = "symbol";
 			} else if (t.storageType() == BadType.get()) {
 				souffleType = "bad";
 			} else {

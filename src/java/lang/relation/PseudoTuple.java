@@ -61,8 +61,6 @@ public class PseudoTuple implements Comparable<PseudoTuple> {
 		}
 	}
 
-
-
 	public static PseudoTuple of(Term ... consts) {
 		PseudoTuple pt = new PseudoTuple(consts.length);
 		for(int i = 0; i != consts.length; ++i) {
@@ -109,28 +107,6 @@ public class PseudoTuple implements Comparable<PseudoTuple> {
 		return this;
 	}
 
-	public void instantiateAll(Set<Integer> positions, Constant c) {
-		positions.forEach(i -> tuple[i] = c);
-	}
-
-	public PseudoTuple project(Set<Integer> positions) {
-		PseudoTuple t = new PseudoTuple(positions.size());
-		int i = 0;
-		for(Integer j : positions) {
-			t.tuple[i++] = tuple[j];
-		}
-		return t;
-	}
-
-	public boolean isUniInfo() {
-		if(tuple.length <= 1) return true;
-		Term first = tuple[0];
-		for(int i = 1; i != tuple.length; ++i) {
-			if(Term.termComparator.compare(first, tuple[i]) != 0) return false;
-		}
-		return true;
-	}
-
 	public void collectTuple(StringBuilder sb) {
 		if (size == 0)
 			return;
@@ -144,32 +120,6 @@ public class PseudoTuple implements Comparable<PseudoTuple> {
 			sb.append(",").append(tuple[i].toString());
 		}
 		sb.append(")");
-	}
-
-	public boolean isGround() {
-		for (int i = 0; i != size; ++i)
-			if (!instantiatedAt(i))
-				return false;
-		return true;
-	}
-
-	public Set<Integer> unboundPositions() {
-		Set<Integer> unbound = new HashSet<Integer>();
-		for (int i = 0; i != size; ++i) {
-			if(!instantiatedAt(i)) unbound.add(i);
-		}
-		return unbound;
-	}
-
-	public TreeSet<Variable> freeVariables() {
-		TreeSet<Variable> freeVars = new TreeSet<Variable>(Term.termComparator);
-		for(int i = 0; i != size; ++i) {
-			Term t = tuple[i];
-			if(t.isVariable()) {
-				freeVars.add((Variable)t);
-			}
-		}
-		return freeVars;
 	}
 
 	@Override

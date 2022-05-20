@@ -1,0 +1,29 @@
+import static lang.ast.Constructors.*;
+
+aspect Functor {
+	syn int Functor.expectedArity() {
+		switch (getFunc().getFUNC_ID()) {
+		case "to_number":
+		case "node_to_id":
+		case "id_to_node":
+			return 1;
+		case "add":
+		case "mul":
+		case "sub":
+		case "div":
+		case "mod":
+		case "cat":
+		case "attr":
+		case "band":
+		case "bor":
+		case "bshl":
+		case "bshr":
+		case "bshru":
+		case "bxor":
+			return 2;
+		default:
+			// return -1 to mark unknown functors
+			return -1;
+		}
+	}
+}

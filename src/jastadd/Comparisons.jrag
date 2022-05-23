@@ -13,13 +13,6 @@ aspect Conversion {
 }
 
 aspect Comparison {
-	public class CompareTerm implements Comparator<Term> {
-		@Override
-		public int compare(Term t1, Term t2) {
-			return t1.toString().compareTo(t2.toString());
-		}
-	}
-
 	public class ComparePredicates implements Comparator<PredicateInterface> {
 		@Override
 		public int compare(PredicateInterface t1, PredicateInterface t2) {
@@ -41,14 +34,6 @@ aspect Comparison {
 		return Program.predicateComparator.compare(this, (PredicateRef)o) == 0;
 	}
 
-	public static final CompareTerm Term.termComparator = new CompareTerm();
-
-	// @Override
-	// public boolean Term.equals(Object o) {
-	// 	if(!(o instanceof Term)) return false;
-	// 	return termComparator.compare(this, (Term)o) == 0;
-	// }
-
 	public class CompareFormalPredicate implements Comparator<FormalPredicate> {
 		@Override
 		public int compare(FormalPredicate p1, FormalPredicate p2) {
@@ -66,19 +51,5 @@ aspect Comparison {
 	@Override
 	public int FormalPredicate.hashCode() {
 		return predicateName().hashCode();
-	}
-
-	public static final CompareLiterals Literal.literalComparator = new CompareLiterals();
-	public class CompareLiterals implements Comparator<Literal> {
-		@Override
-		public int compare(Literal l1, Literal l2) {
-			return l1.hashCode() < l2.hashCode() ? -1 : l1.hashCode() == l2.hashCode() ? 0 : 1;
-		}
-	}
-
-	@Override
-	public boolean Literal.equals(Object o) {
-		if(!(o instanceof Literal)) return false;
-		return literalComparator.compare(this, (Literal)o) == 0;
 	}
 }

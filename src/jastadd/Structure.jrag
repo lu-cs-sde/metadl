@@ -107,9 +107,6 @@ aspect Program {
 	Program contributes nta getFormalPredicateList() to Program.formalPredicateMap();
 	FormalPredicate contributes new MapEntry(predicateName(), this) to Program.formalPredicateMap();
 	eq Program.getChild().formalPredicateMap() = formalPredicateMap();
-
-	coll TreeSet<Literal> Program.predefinedLiterals() [new TreeSet<Literal>(Literal.literalComparator)] with add;
-	Literal contributes this when isPredefined() to Program.predefinedLiterals();
 }
 
 aspect Clause {

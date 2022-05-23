@@ -43,7 +43,7 @@ public interface ObjLangASTNode {
 	/**
 	   Common interface for relational pattern representation
 	 */
-	TreeSet<lang.ast.Variable> metavariables();
+	TreeSet<String> metavariables();
 	ArrayList<lang.ast.CommonLiteral> literals(AnalyzeContext ctx, lang.ast.CommonVariable root);
 
 	/**

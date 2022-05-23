@@ -143,8 +143,8 @@ aspect PatternLang {
 		ObjLangASTNode n = altParse().iterator().next();
 		if (bindVar != null)
 			headVars.add(bindVar.treeCopy());
-		for (Variable v : n.metavariables())
-			headVars.add(v.treeCopy());
+		for (String v : n.metavariables())
+			headVars.add(new Variable(v));
 		// we're using a String hash  here; fingers crossed for no collisions in
 		// the same analyze block
 		Literal head = new Literal(new PredicateSymbol(predName),
@@ -289,7 +289,7 @@ aspect PatternLang {
 	}
 
 	eq Pattern.variables() {
-		TreeSet<lang.ast.Variable> vars = new TreeSet<>(lang.ast.Term.termComparator);
+		TreeSet<String> vars = new TreeSet<>();
 		for (ObjLangASTNode ast : altParse()) {
 			vars.addAll(ast.metavariables());
 		}
@@ -297,8 +297,8 @@ aspect PatternLang {
 	}
 
 	eq BoundedPattern.variables() {
-		TreeSet<lang.ast.Variable> vars = super.variables();
-		vars.add((Variable)getCommonVariable());
+		TreeSet<String> vars = super.variables();
+		vars.addAll(getCommonVariable().variables());
 		return vars;
 	}
 

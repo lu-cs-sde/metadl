@@ -104,20 +104,13 @@ aspect CodeGen {
 	eq Constraint.evalLiteralList() = new List<CommonLiteral>().add(this.treeCopy());
 
 
-	syn SortedSet<String> CommonLiteral.boundVariableNames() =
-		boundVariables().stream().map(v -> v.getVAR_ID()).collect(Collectors.toCollection(TreeSet::new));
-
-	syn SortedSet<String> CommonLiteral.variableNames() =
-		variables().stream().map(v -> v.getVAR_ID()).collect(Collectors.toCollection(TreeSet::new));
-
-
 	private boolean Rule.trySchedule(CommonLiteral l,
 									 LinkedList<CommonLiteral> schedule,
 									 Set<String> boundSoFar) {
-		if (SetUtils.difference(l.variableNames(),
-								SetUtils.union(l.boundVariableNames(), boundSoFar)).isEmpty()) {
+		if (SetUtils.difference(l.variables(),
+								SetUtils.union(l.boundVariables(), boundSoFar)).isEmpty()) {
 			schedule.add(l);
-			boundSoFar.addAll(l.variableNames());
+			boundSoFar.addAll(l.variables());
 			return true;
 		}
 		return false;
@@ -173,7 +166,7 @@ aspect CodeGen {
 		int i = 0;
 		Map<String, Integer> varMap = new HashMap<>();
 		for (CommonLiteral l : evalSchedule()) {
-			for (String v : l.variableNames()) {
+			for (String v : l.variables()) {
 				if (!varMap.containsKey(v)) {
 					varMap.put(v, i);
 					i++;
@@ -213,7 +206,7 @@ aspect CodeGen {
 		Set<String> usedInHeadVars = new HashSet<>();
 		for (CommonLiteral h : getHeadss()) {
 			currentCont = h.genCode(t, ctx, currentCont, Collections.emptySet(), Collections.emptySet(), isDelta);
-			usedInHeadVars.addAll(h.variableNames());
+			usedInHeadVars.addAll(h.variables());
 		}
 
 		java.util.List<CommonLiteral> schedule = evalSchedule();
@@ -222,14 +215,14 @@ aspect CodeGen {
 		java.util.List<Set<String>> boundVars = new ArrayList<>();
 		boundVars.add(Collections.emptySet());
 		for (int i = 1; i < schedule.size(); ++i) {
-			boundVars.add(SetUtils.union(boundVars.get(i - 1), schedule.get(i - 1).boundVariableNames()));
+			boundVars.add(SetUtils.union(boundVars.get(i - 1), schedule.get(i - 1).boundVariables()));
 		}
 
 		// the running union of the variables used after each literal in the schedule
 		java.util.List<Set<String>> referedVars = new ArrayList<>();
 		referedVars.add(usedInHeadVars);
 		for (int i = schedule.size() - 2; i >= 0; i--) {
-			referedVars.add(SetUtils.union(referedVars.get(referedVars.size() - 1), schedule.get(i + 1).variableNames()));
+			referedVars.add(SetUtils.union(referedVars.get(referedVars.size() - 1), schedule.get(i + 1).variables()));
 		}
 		Collections.reverse(referedVars);
 		//System.out.println(referedVars);

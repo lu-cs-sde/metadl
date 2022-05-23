@@ -56,15 +56,15 @@ aspect ErrorCollection {
 		when !unboundVariables().isEmpty()
 		to Program.semanticErrors();
 
-	syn TreeSet<Variable> CommonLiteral.freeVarsInNegativeLiteral() {
+	syn TreeSet<String> CommonLiteral.freeVarsInNegativeLiteral() {
 		if (!hasNot())
 			return new TreeSet<>();
 
-		TreeSet<Variable> negvars  = variables();
-		TreeSet<Variable> inclbodyvars = ((Rule)clause()).boundVariables();
-		TreeSet<Variable> free = new TreeSet<Variable>(Term.termComparator);
+		TreeSet<String> negvars  = variables();
+		TreeSet<String> inclbodyvars = ((Rule)clause()).boundVariables();
+		TreeSet<String> free = new TreeSet<>();
 
-		for(Variable v : negvars) {
+		for(String v : negvars) {
 			if(!inclbodyvars.contains(v))
 				free.add(v);
 		}

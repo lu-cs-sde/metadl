@@ -402,8 +402,8 @@ aspect PatternToDatalog {
 		return list;
 	}
 
-	syn TreeSet<lang.ast.Variable> ASTNode.metavariables() {
-		TreeSet<lang.ast.Variable> vars = new TreeSet<>(lang.ast.Term.termComparator);
+	syn TreeSet<String> ASTNode.metavariables() {
+		TreeSet<String> vars = new TreeSet<>();
 		for (ASTNode c : astChildren()) {
 			if (c != null)
 				// Gaps might have null children, because the inherit from
@@ -413,19 +413,19 @@ aspect PatternToDatalog {
 		for (String t : tokens()) {
 			// Collect any tokens that are a metavariable
 			if (isMetaVarToken(t) && !isWildcardToken(t))
-				vars.add(new lang.ast.Variable(t));
+				vars.add(t);
 		}
 		return vars;
 	}
 
 	eq MetaVariable.metavariables() {
-		TreeSet<lang.ast.Variable> vars = new TreeSet<>(lang.ast.Term.termComparator);
+		TreeSet<String> vars = new TreeSet<>();
 		if (isWildcard()) {
 			// This a wildcard, don't add any metavariable for it
 			return vars;
 		}
 
-		vars.add(new lang.ast.Variable(getID()));
+		vars.add(getID());
 		return vars;
 	}
 }

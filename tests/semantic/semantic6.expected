@@ -1,3 +1,4 @@
+Free variable(s): [y] in the RHS of BIND(z, (x)+(y)).
 Free variable(s) [y] in (x)+(y) in rule A(x) :- 
 	B(x),
 	BIND(z, (x)+(y)).

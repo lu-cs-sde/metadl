@@ -1,0 +1,8 @@
+Free variable(s): [y] in the RHS of BIND(x, y).
+Free variable(s): [z] in the RHS of BIND(y, z).
+Free variable(s): [x] in the RHS of BIND(z, x).
+Free variable(s): [x] in the RHS of BIND(x, (x)+(x)).
+Free variable(s) [x] in (x)+(x) in rule Q(1) :- 
+	BIND(x, (x)+(x)).
+
+Free variable(s): [x] in the RHS of BIND(x, x).

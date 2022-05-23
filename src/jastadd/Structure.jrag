@@ -140,7 +140,7 @@ aspect Clause {
 		return variables;
 	}
 
-	syn TreeSet<String> Rule.unboundVariables() {
+	syn TreeSet<String> Rule.freeHeadVariables() {
 		TreeSet<String> variables = new TreeSet<>();
 		for(String v : headVariables())
 			if(!bodyVariables().contains(v)) variables.add(v);
@@ -177,14 +177,15 @@ aspect Literal {
 	/**
 	   boundVariables = variables bound by the current literal
 	*/
-	syn TreeSet<String> CommonLiteral.boundVariables();
-	eq Literal.boundVariables() {
-		if (hasNot())
-			return new TreeSet<>();
-		return variables();
+	syn TreeSet<String> CommonLiteral.boundVariables() {
+		TreeSet<String> boundVars = new TreeSet<>();
+		for (String v : variables()) {
+			if (this.bindsVariable(v))
+				boundVars.add(v);
+		}
+
+		return boundVars;
 	}
-	eq Constraint.boundVariables() = new TreeSet<>();
-	eq BINDLiteral.boundVariables() = getDst().variables();
 
 	/**
 	   isDef = true iff the literal is present in a rule's head or in a fact
@@ -278,7 +279,7 @@ aspect Expression {
 		return vars;
 	}
 
-	syn TreeSet<String> Functor.freeVars() {
+	syn TreeSet<String> Functor.freeBodyVariables() {
 		TreeSet<String> inclbodyvars = ((Rule)literal().clause()).boundVariables();
 		TreeSet<String> free = new TreeSet<>();
 
@@ -354,9 +355,9 @@ aspect FormalPredicate {
 }
 
 aspect Types {
-	syn boolean Term.isVariable() = false;
+	syn boolean Expr.isVariable() = false;
 	eq Variable.isVariable() = true;
-	syn boolean Term.isConstant() = false;
+	syn boolean Expr.isConstant() = false;
 	eq Constant.isConstant() = true;
 }
 

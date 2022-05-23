@@ -1,0 +1,9 @@
+P(0).
+
+Q(3) :- BIND(x, y), BIND(y, z), BIND(z, x).
+
+Q(2) :- BIND(x, y), BIND(y, z), BIND(z, t), P(t).
+
+Q(1) :- BIND(x, x + x).
+
+Q(0) :- BIND(x, x).

@@ -27,4 +27,39 @@ aspect VariableMap {
 	Variable contributes this when literal() != null to Clause.varMap() for literal().clause();
 	Program contributes nta getExpandedClauses() to Clause.varMap();
 	Pattern contributes nta getLiteral() to Clause.varMap();
+
+
+	syn boolean Clause.bindsVariable(String varName) circular [false];
+	eq Fact.bindsVariable(String varName) = false;
+	eq Rule.bindsVariable(String varName) {
+		for (CommonLiteral l : getBodys()) {
+			if (l.bindsVariable(varName))
+				return true;
+		}
+		return false;
+	}
+
+	syn boolean CommonLiteral.bindsVariable(String varName) circular [false] = false;
+	eq Literal.bindsVariable(String varName) {
+		if (hasNot())
+			return false;
+		return variables().contains(varName);
+	}
+
+	eq BINDLiteral.bindsVariable(String varName) {
+		if (!getExpr(0).isVariable())
+			return false;
+
+		if (!getExpr(0).variables().contains(varName))
+			return false;
+
+		// if all the variables on the RHS are bound, then the variable
+		// on LHS is bound too
+		Clause c = this.clause();
+		for (String rhsVar : this.getExpr(1).variables()) {
+			if (!c.bindsVariable(rhsVar))
+				return false;
+		}
+		return true;
+	}
 }

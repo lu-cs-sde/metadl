@@ -52,8 +52,8 @@ aspect ErrorCollection {
 		when !isGround() && isFact()
 		to Program.semanticErrors();
 
-	Rule contributes new SemanticError(this, "Unbound variable(s): " + unboundVariables() + " in " + this)
-		when !unboundVariables().isEmpty()
+	Rule contributes new SemanticError(this, "Unbound variable(s): " + freeHeadVariables() + " in " + this)
+		when !freeHeadVariables().isEmpty()
 		to Program.semanticErrors();
 
 	syn TreeSet<String> CommonLiteral.freeVarsInNegativeLiteral() {
@@ -71,12 +71,26 @@ aspect ErrorCollection {
 		return free;
 	}
 
+	syn TreeSet<String> BINDLiteral.freeVarsInRHS() {
+		TreeSet<String> vars = new TreeSet<>();
+		for (String v : getExpr(1).variables()) {
+			if (!clause().bindsVariable(v)) {
+				vars.add(v);
+			}
+		}
+		return vars;
+	}
+
+	BINDLiteral contributes new SemanticError(this, "Free variable(s): " + this.freeVarsInRHS() + " in the RHS of " + this + ".")
+		when !freeVarsInRHS().isEmpty()
+		to Program.semanticErrors();
+
 	CommonLiteral contributes new SemanticError(this, "Free variable(s) " + freeVarsInNegativeLiteral() + " in " + this + " in rule " + clause())
 		when !freeVarsInNegativeLiteral().isEmpty()
 		to Program.semanticErrors();
 
-	Functor contributes new SemanticError(this, "Free variable(s) " + freeVars() + " in " + this + " in rule " + literal().clause())
-		when !freeVars().isEmpty()
+	Functor contributes new SemanticError(this, "Free variable(s) " + freeBodyVariables() + " in " + this + " in rule " + literal().clause())
+		when !freeBodyVariables().isEmpty()
 		to Program.semanticErrors();
 
 	Wildcard contributes new SemanticError(this, this + " is not allowed inside constraints.") when

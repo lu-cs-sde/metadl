@@ -379,6 +379,7 @@ aspect TypeCheck {
 			break;
 		case "id_to_node":
 			expectedType[0] = IntegerType.get();
+			break;
 		default:
 			expectedType[0] = expectedType[1] = BadType.get(); break;
 		}

@@ -354,7 +354,7 @@ public class IncrementalDriver {
 		stmt.executeUpdate("DELETE FROM '" + table + "' WHERE '" + table + "'.'" + tagIndex + "' = " + fileId);
 	}
 
-	private void delete(List<File> sourceFiles, String relPrefix) throws SQLException {
+	private void delete(List<File> sourceFiles) throws SQLException {
 		for (File f : sourceFiles) {
 			int fileId = fileIdDb.getIdForFile(f.getPath());
 
@@ -491,8 +491,7 @@ public class IncrementalDriver {
 			// remove the information for the deleted files, but also for the files
 			// that need revisiting
 			profile().startTimer("incremental_driver", "delete_facts");
-			delete(Stream.concat(deletedFiles.stream(), visitFiles.stream()).collect(Collectors.toList()),
-				   progSplit.getProgram().getAnalysisContext().scopePrefix);
+			delete(Stream.concat(deletedFiles.stream(), visitFiles.stream()).collect(Collectors.toList()));
 			profile().stopTimer("incremental_driver", "delete_facts");
 		}
 

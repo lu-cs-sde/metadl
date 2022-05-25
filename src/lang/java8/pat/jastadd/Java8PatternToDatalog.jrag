@@ -24,14 +24,14 @@ aspect LanguageSpecific {
 
 	public static java.util.List<lang.ast.Clause> PatLang.makeAttributeRule(AnalyzeContext ctx, String attrName, String predName) {
 		return Arrays.asList(rule(
-								  literal(ctx.prefix(predName), "$n", "$t"),
+								  literal(predName, "$n", "$t"),
 								  literal(ctx.attrRelName, str(attrName), "$n", "$t")
 								  ));
 	}
 
 	public static lang.ast.Rule PatLang.makeASTRule(AnalyzeContext ctx) {
 		return rule(
-					literal(ctx.prefix("AST"), "$p1", "$p2", "$p3", "$p4", "$p5"),
+					literal("AST", "$p1", "$p2", "$p3", "$p4", "$p5"),
 					literal(ctx.progRelName, "$p1", "$p2", "$p3", "$p4", "$p5"));
 	}
 
@@ -110,37 +110,6 @@ aspect LanguageSpecific {
 			ret.add(makeProvenanceRule(ctx));
 
 		return ret;
-	}
-
-	public static String PatLang.translatePredicateName(AnalyzeContext ctx, String predName) {
-		String s = null;
-		switch (predName) {
-		case "ID":
-		case "MOD":
-		case "CHAR":
-		case "BOOLEAN":
-		case "STRING":
-		case "NULL":
-		case "INT":
-		case "LONG":
-		case "FLOAT":
-		case "DOUBLE":
-		case "SRC":
-		case "INDEX":
-		case "EXISTS":
-		case "PARENT":
-		case "TYPE":
-		case "DECL":
-		case "GENERIC":
-		case "LABEL":
-		case "PACKAGE":
-		// Expose the program representation through the AST context predicate.
-		case "AST":
-		case "PROVENANCE":
-			s = predName; break;
-		default: return null;
-		}
-		return ctx. scopePrefix + s;
 	}
 
 	public static lang.ast.PredicateType PatLang.contextPredicateType(String predName) {

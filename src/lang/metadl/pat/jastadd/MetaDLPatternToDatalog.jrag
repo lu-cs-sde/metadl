@@ -65,22 +65,6 @@ aspect LanguageSpecific {
 		return ret;
 	}
 
-	public static String PatLang.translatePredicateName(AnalyzeContext ctx, String predName) {
-		String s = null;
-		switch (predName) {
-		case "INT":
-		case "STR":
-		case "ID":
-		case "REF":
-		case "SRC":
-		case "INDEX":
-		case "PARENT":
-			s = predName; break;
-		default: return null;
-		}
-		return ctx. scopePrefix + s;
-	}
-
 	public static lang.ast.PredicateType PatLang.contextPredicateType(String predName) {
 		switch (predName) {
 		case "INT":

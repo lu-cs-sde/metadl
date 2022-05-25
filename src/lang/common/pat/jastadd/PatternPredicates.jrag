@@ -24,7 +24,7 @@ aspect PatternPredicates {
 													   String parentNodeKind,
 													   String tokenKind,
 													   String predicateName) {
-			return rule(literal(ctx.scopePrefix + predicateName, var("n_id"), var("v")),
+			return rule(literal(predicateName, var("n_id"), var("v")),
 						literal(ctx.progRelName, str(tokenKind), var("t_id"), "_", "_", var("v")),
 						literal(ctx.progRelName, str(parentNodeKind), var("n_id"), "_", var("t_id"), "_"));
 		}
@@ -34,7 +34,7 @@ aspect PatternPredicates {
 													   String tokenKind,
 													   String predicateName,
 													   String convertFunctor) {
-			return rule(literal(ctx.scopePrefix + predicateName, var("n_id"), var("w")),
+			return rule(literal(predicateName, var("n_id"), var("w")),
 						literal(ctx.progRelName, str(tokenKind), var("t_id"), "_", "_", var("v")),
 						literal(ctx.progRelName, str(parentNodeKind), var("n_id"), "_", var("t_id"), "_"),
 						BIND(var("w"), functor(convertFunctor, var("v"))));
@@ -47,7 +47,7 @@ aspect PatternPredicates {
 		public static lang.ast.Rule makeTerminalToIdentifierRule(AnalyzeContext ctx,
 																 String tokenKind,
 																 String predicateName) {
-			return rule(literal(ctx.scopePrefix + predicateName, var("t_id"), var("v")),
+			return rule(literal(predicateName, var("t_id"), var("v")),
 						literal(ctx.progRelName, str(tokenKind), var("t_id"), "_", "_", var("v")));
 		}
 
@@ -60,7 +60,7 @@ aspect PatternPredicates {
 			/* SRC(n, startLine, startCol, endLine, endCol, file) :- P("SrcLocStart", n, startLine, startCol, file),
 			   P("SrcLocEnd", n, endLine, endCol, _). */
 
-			return rule(literal(ctx.scopePrefix + "SRC", "$n", "$sl", "$sc", "$el", "$ec", "$f"),
+			return rule(literal("SRC", "$n", "$sl", "$sc", "$el", "$ec", "$f"),
 						literal(ctx.srcRelName, "$n", "$sl", "$sc", "$el", "$ec", "$f"));
 		}
 
@@ -70,7 +70,7 @@ aspect PatternPredicates {
 
 			// The INDEX relation maps a node to its position inside a list
 			// INDEX(n, i) :- P("List", _, i, n, _)
-			headList.add(new lang.ast.Literal(new lang.ast.PredicateSymbol(ctx.scopePrefix + "INDEX"),
+			headList.add(new lang.ast.Literal(new lang.ast.PredicateSymbol("INDEX"),
 										   new lang.ast.List<lang.ast.Term>()
 										   .add(new lang.ast.Variable("n"))
 										   .add(new lang.ast.Variable("i"))));
@@ -86,7 +86,7 @@ aspect PatternPredicates {
 
 		public static lang.ast.Rule makeParentRule(AnalyzeContext ctx) {
 			// PARENT(n, c) :- P(t, n, _, c, _), NEQ(c, 0), NEQ(c, -1).
-			return rule(literal(ctx.prefix("PARENT"), var("n"), var("c")),
+			return rule(literal("PARENT", var("n"), var("c")),
 						literal(ctx.progRelName, "_", var("n"), "_", var("c"), "_"),
 						NEQ(functor("node_to_id", var("c")), integer(0)),
 						NEQ(functor("node_to_id", var("c")), integer(-1)));
@@ -104,7 +104,7 @@ aspect PatternPredicates {
 
 				// SUPERTYPE is reflexive
 				// SUPERTYPE(nodeType, nodeType) :- EQ(0, 0).
-				ret.add(rule(literal(ctx.scopePrefix + "SUPERTYPE", nodeType, nodeType),
+				ret.add(rule(literal(ctx.prefix("SUPERTYPE"), nodeType, nodeType),
 							 EQ(new lang.ast.IntConstant("0"), new lang.ast.IntConstant("0"))));
 
 				String nodeSuperType = PatternGrammarInfo.getNodeSuperType(nodeType);
@@ -112,7 +112,7 @@ aspect PatternPredicates {
 					continue;
 
 				// SUPERTYPE(nodeType, nodeSuperType) :- EQ(0, 0).
-				ret.add(rule(literal(ctx.scopePrefix + "SUPERTYPE", nodeType, nodeSuperType),
+				ret.add(rule(literal(ctx.prefix("SUPERTYPE"), nodeType, nodeSuperType),
 							 EQ(new lang.ast.IntConstant("0"), new lang.ast.IntConstant("0"))));
 			}
 
@@ -125,7 +125,7 @@ aspect PatternPredicates {
 		}
 
 		public static lang.ast.Rule makeProvenanceRule(AnalyzeContext ctx) {
-			return rule(literal(ctx.scopePrefix + "PROVENANCE", "$x", "$y"),
+			return rule(literal(ctx.prefix("PROVENANCE"), "$x", "$y"),
 						literal(ctx.provenanceRelName, "$x", "$y"));
 		}
 	}

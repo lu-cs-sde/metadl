@@ -44,16 +44,6 @@ aspect PatternLang {
 	Program contributes nta getExpandedClauses() to Program.predicateSymbols();
 	Pattern contributes nta getLiteral() to Program.predicateSymbols();
 
-	public String Program.translatePredicateName(String predName) {
-		switch (getLang()) {
-		case METADL:
-			return lang.metadl.pat.ast.PatLang.translatePredicateName(getAnalysisContext(), predName);
-		case JAVA:
-			return lang.java8.pat.ast.PatLang.translatePredicateName(getAnalysisContext(), predName);
-		}
-		return null;
-	}
-
 	public java.util.List<lang.ast.Clause> Program.generateHelperRelations() {
 		switch (getLang()) {
 		case METADL:
@@ -74,30 +64,12 @@ aspect PatternLang {
 		return null;
 	}
 
-	private String PredicateSymbol.contextPredicateName = null;
-	public String PredicateSymbol.getContextPredicateName() {
-		return contextPredicateName;
-	}
-	rewrite PredicateSymbol {
-		when (program().translatePredicateName(getPRED_ID()) != null)
-			to PredicateSymbol {
-			PredicateSymbol ps = new PredicateSymbol(program().translatePredicateName(getPRED_ID()));
-			ps.contextPredicateName = getPRED_ID();
-			return ps;
-		}
+	syn boolean PredicateSymbol.isContextPredicate() {
+		return program().contextPredicateType(getPRED_ID()) != null;
 	}
 
-	private String PredicateRef.contextPredicateName = null;
-	public String PredicateRef.getContextPredicateName() {
-		return contextPredicateName;
-	}
-	rewrite PredicateRef {
-		when (program().translatePredicateName(getPRED_ID()) != null)
-			to PredicateRef {
-			PredicateRef pr = new PredicateRef(program().translatePredicateName(getPRED_ID()));
-			pr.contextPredicateName = getPRED_ID();
-			return pr;
-		}
+	syn boolean PredicateRef.isContextPredicate() {
+		return program().contextPredicateType(getPRED_ID()) != null;
 	}
 
 	syn lazy java.util.List<Clause> Pattern.getClauses() = getClausesHelper(null);
@@ -304,7 +276,7 @@ aspect PatternLang {
 	eq Pattern.boundVariables() = getLiteral().boundVariables();
 
 	public class AnalyzeContext {
-		public String scopePrefix;
+		private String scopePrefix;
 		public String progRelName;
 		public String provenanceRelName;
 		public String srcRelName;
@@ -419,29 +391,14 @@ aspect PatternLang {
 	}
 
 	syn lazy PredicateType FormalPredicate.getContextPredicateType() {
-		for (PredicateSymbol ps : predicates()) {
-			if (ps.getContextPredicateName() != null) {
-				PredicateType ptype = program().contextPredicateType(ps.getContextPredicateName());
-				if (ptype != null)
-					return ptype;
-			}
-		}
-
-		for (PredicateRef pr : predicateRefs()) {
-			if (pr.getContextPredicateName() != null) {
-				PredicateType ptype = program().contextPredicateType(pr.getContextPredicateName());
-				if (ptype != null)
-					return ptype;
-			}
-		}
-		return null;
+		return program().contextPredicateType(this.getPRED_ID());
 	}
 
 	coll Set<String> Program.usedContextPredicates() [new HashSet<String>()] root Program;
-	PredicateSymbol contributes getContextPredicateName() when
-		getContextPredicateName() != null to Program.usedContextPredicates();
-	PredicateRef contributes getContextPredicateName() when
-		getContextPredicateName() != null to Program.usedContextPredicates();
+	PredicateSymbol contributes getPRED_ID() when
+		isContextPredicate() to Program.usedContextPredicates();
+	PredicateRef contributes getPRED_ID() when
+		isContextPredicate() to Program.usedContextPredicates();
 
 	syn DatalogProjectionSink Program.getDatalogProjectionSink() {
 		FormalPredicate ast = formalPredicateMap().get(getProgramRepresentationPredicateName(ProgramRepresentation.AST));

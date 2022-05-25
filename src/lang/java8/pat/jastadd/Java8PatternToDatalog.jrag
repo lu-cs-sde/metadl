@@ -89,9 +89,6 @@ aspect LanguageSpecific {
 		// Insert a relation to map nodes to their children
 		if (used.contains("PARENT"))
 			ret.add(makeParentRule(ctx));
-		// Insert a relation to check existence of nodes
-		if (used.contains("EXISTS"))
-			ret.add(makeExistsRule(ctx));
 		// Insert predicates that expose ExtendJ attributes
 		// Insert the TYPE relation
 		if (used.contains("TYPE"))
@@ -111,9 +108,6 @@ aspect LanguageSpecific {
 			ret.add(makeASTRule(ctx));
 		if (used.contains("PROVENANCE"))
 			ret.add(makeProvenanceRule(ctx));
-		// Add all the NTA tuples into the program representation
-		// TODO:
-		ret.add(makeNTARule(ctx));
 
 		return ret;
 	}

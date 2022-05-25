@@ -91,10 +91,6 @@ class HybridDatalogProjectionSink extends DatalogProjectionSink {
 	@Override public TupleInserter getSrcLoc() {
 		return relations.getOrDefault(ProgramRepresentation.SRC, TupleInserter.NULL);
 	}
-
-	@Override public TupleInserter getNTA() {
-		return relations.getOrDefault(ProgramRepresentation.NTA, TupleInserter.NULL);
-	}
 }
 
 public class IncrementalDriver {

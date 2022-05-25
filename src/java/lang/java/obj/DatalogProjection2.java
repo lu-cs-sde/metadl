@@ -75,7 +75,6 @@ class ASTNodeEnumerator implements Iterable<Pair<Integer, ASTNode>> {
 }
 
 public class DatalogProjection2 {
-	private long NTANum = 1;
 	private FileIdStorage fileIdDb;
 	private ProvenanceStackMachine prov;
 
@@ -99,11 +98,6 @@ public class DatalogProjection2 {
 		return n.nodeId(fileIdDb, nodeToId);
 	}
 
-	private static int NTA_FILE_ID_BIT = 1 << 30; // use bit 30 to get positive IDs
-	private static long NTAFileId(long fileId) {
-		return (((long) (fileId)) | NTA_FILE_ID_BIT) << 32;
-	}
-
 	public Set<CompilationUnit> generate(CompilationUnit cu, DatalogProjectionSink tupleSink) {
 		Set<CompilationUnit> externalCUs = traverseAndMapAttributes(cu, cu, tupleSink, "type", "decl", "genericDecl");
 
@@ -111,7 +105,6 @@ public class DatalogProjection2 {
 		tupleSink.getProvenance().done();
 		tupleSink.getSrcLoc().done();
 		tupleSink.getAttributes().done();
-		tupleSink.getNTA().done();
 
 		return externalCUs;
 	}

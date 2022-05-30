@@ -94,7 +94,7 @@ public class DatalogProjection2 {
 	}
 
 	private Map<ASTNode, Long> nodeToId = new HashMap<>();
-	private long nodeId(ASTNode<?> n, int fileId) {
+	private long nodeId(ASTNode<?> n) {
 		return n.nodeId(fileIdDb, nodeToId);
 	}
 
@@ -168,7 +168,7 @@ public class DatalogProjection2 {
 			// add the tuples to the relation
 			toTuples(q, fileId, tupleSink.getAST(), fromSource);
 			// record source location
-			srcLoc(q, fileId, tupleSink.getSrcLoc());
+			srcLoc(q, tupleSink.getSrcLoc());
 			// now process the attributes
 			if (mapAttributes) {
 				mapAttributes(q, currentCU, fileId, otherCompilationUnits, currentCUNodes, tupleSink.getAttributes(),
@@ -204,11 +204,11 @@ public class DatalogProjection2 {
 				attributeProvenance.insertTuple(fileId, fileIdDb.getIdForFile(src));
 			}
 
-			long nid = nodeId(n, fileId);
+			long nid = nodeId(n);
 
 			long rid = -1;
 			ASTNode originalr = r;
-			while (r != null && (rid = nodeId(r, fileId)) < 0) {
+			while (r != null && (rid = nodeId(r)) < 0) {
 				r = r.unwrapNTANode();
 			}
 
@@ -251,8 +251,8 @@ public class DatalogProjection2 {
 		return false;
 	}
 
-	private void srcLoc(ASTNode<?> n, int fileId, TupleInserter srcLoc) {
-		long nid = nodeId(n, fileId);
+	private void srcLoc(ASTNode<?> n, TupleInserter srcLoc) {
+		long nid = nodeId(n);
 		String srcFile = n.sourceFile();
 		srcLoc.insertTuple(nid,
 						   beaver.Symbol.getLine(n.getStart()),
@@ -399,14 +399,14 @@ public class DatalogProjection2 {
 	}
 
 	private void toTuples(ASTNode<?> n, int fileId, TupleInserter astTupleSink, boolean fromSource) {
-		long nid = nodeId(n, fileId);
+		long nid = nodeId(n);
 		String relName = getRelation(n);
 
 		// the children in the tree
 		int childIndex = 0;
 		for (Pair<Integer, ASTNode> indexedChild : ASTNodeEnumerator.childrenOf(n, !fromSource)) {
 			if (indexedChild.getRight() != null) {
-				astTupleSink.insertTuple(relName, nodeId(n, fileId), indexedChild.getLeft(), nodeId(indexedChild.getRight(), fileId), "");
+				astTupleSink.insertTuple(relName, nodeId(n), indexedChild.getLeft(), nodeId(indexedChild.getRight()), "");
 			}
 			childIndex++;
 		}

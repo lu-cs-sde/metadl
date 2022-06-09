@@ -100,9 +100,9 @@ aspect LanguageSpecific {
 		// to the declaration of the generic type.
 		if (used.contains("GENERIC"))
 			ret.addAll(makeAttributeRule(ctx, "genericDecl", "GENERIC"));
-
 		// Insert a rule for declaring a node's supertypes
-		ret.addAll(makeSuperTypeRelation(ctx));
+		if (used.contains("SUPERTYPE"))
+			ret.addAll(makeSuperTypeRelation(ctx));
 		// Expose the AST relation
 		if (used.contains("AST"))
 			ret.add(makeASTRule(ctx));

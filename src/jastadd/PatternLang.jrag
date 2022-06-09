@@ -399,6 +399,9 @@ aspect PatternLang {
 		isContextPredicate() to Program.usedContextPredicates();
 	PredicateRef contributes getPRED_ID() when
 		isContextPredicate() to Program.usedContextPredicates();
+	// Generate the SUPERTYPE relation only when patterns are present in the program
+	Pattern contributes "SUPERTYPE" to Program.usedContextPredicates();
+
 
 	syn DatalogProjectionSink Program.getDatalogProjectionSink() {
 		FormalPredicate ast = formalPredicateMap().get(getProgramRepresentationPredicateName(ProgramRepresentation.AST));

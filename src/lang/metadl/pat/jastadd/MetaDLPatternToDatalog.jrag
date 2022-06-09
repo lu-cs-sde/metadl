@@ -60,7 +60,8 @@ aspect LanguageSpecific {
 			ret.add(makeParentRule(ctx));
 
 		// Insert a rule for declaring a node's supertypes
-		ret.addAll(makeSuperTypeRelation(ctx));
+		if (used.contains("SUPERTYPE"))
+			ret.addAll(makeSuperTypeRelation(ctx));
 
 		return ret;
 	}

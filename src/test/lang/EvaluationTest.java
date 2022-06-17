@@ -44,6 +44,8 @@ import lang.relation.RelationWrapper;
 
 public class EvaluationTest {
 	public Map<String, RelationWrapper> doSingleEvaluation(CmdLineOpts d1) throws Exception {
+		System.out.println(d1.getInputFile());
+
 		Program program1 = Compiler.run(d1);
 		FormalPredicate fpOut1 = program1.formalPredicateMap().get(GlobalNames.OUTPUT_NAME);
 

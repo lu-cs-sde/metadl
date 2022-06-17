@@ -2,7 +2,10 @@ package lang.ast; // The generated scanner will belong to the package lang.ast
 
 import lang.ast.LangParser.Terminals; // The terminals are implicitly defined in the parser
 import lang.ast.LangParser.SyntaxError;
+
 %%
+
+%state PATTERN
 
 // define the signature for the generated scanner
 %public
@@ -18,10 +21,48 @@ import lang.ast.LangParser.SyntaxError;
 %line
 %column
 
+
+
 // this code will be inlined in the body of the generated scanner class
 %{
+  StringBuffer strbuf = new StringBuffer(128);
+  int sub_line;
+  int sub_column;
+
+  /** String literal start position. */
+  int stringStartLine, stringStartColumn;
+
   private beaver.Symbol sym(short id) {
-    return new beaver.Symbol(id, yyline + 1, yycolumn + 1, yylength(), yytext());
+    return new beaver.Symbol(id, yyline + 1, yycolumn + 1, len(), str());
+  }
+
+  private beaver.Symbol sym(short id, String value) {
+    return new beaver.Symbol(id, yyline + 1, yycolumn + 1, len(), value);
+  }
+
+  private beaver.Symbol sym(short id, String value, int start_line, int start_column, int len) {
+    return new beaver.Symbol(id, start_line, start_column, len, value);
+  }
+
+  private String str() { return yytext(); }
+  private int len() { return yylength(); }
+
+  private void error(String msg) throws beaver.Scanner.Exception {
+    throw new beaver.Scanner.Exception(yyline + 1, yycolumn + 1, msg);
+  }
+
+  private void patternStart() {
+    yybegin(PATTERN);
+    stringStartLine = yyline + 1;
+    stringStartColumn = yycolumn + 1;
+    strbuf.setLength(0);
+  }
+
+  private beaver.Symbol patternEnd() {
+    yybegin(YYINITIAL);
+    String text = strbuf.toString();
+    int length = text.length() + 2;
+    return new beaver.Symbol(Terminals.PATTERN, stringStartLine, stringStartColumn, length, text);
   }
 %}
 
@@ -29,21 +70,23 @@ import lang.ast.LangParser.SyntaxError;
 LineTerminator = \r|\n|\r\n
 InputCharacter = [^\r\n]
 WhiteSpace     = {LineTerminator} | [ \t\f]
-Comment        = "#" {InputCharacter}* {LineTerminator}?
+Comment        = "#" {InputCharacter}* {LineTerminator}? | "/*" ~ "*/" | "//" {InputCharacter}* {LineTerminator}?
 MetaVarPrefix = "$" | "`"
 VAR_ID = {MetaVarPrefix}?[a-z][a-zA-Z0-9_]*
 PRED_ID = [A-Z][a-zA-Z0-9_]*
 PRED_REF = '{PRED_ID}
-Pattern = "<:" ~":>"
 Numeral = [0-9]+
 String  = \"[^\"]*\"
 %%
 
+
+<YYINITIAL> {
 // discard whitespace information
 {WhiteSpace}  { }
 {Comment}     { }
 
 // token definitions
+"<:"       {  patternStart();                        }
 "("        {  return  sym(Terminals.LPARA);          }
 ")"        {  return  sym(Terminals.RPARA);          }
 ":-"       {  return  sym(Terminals.IMPLIED_BY);     }
@@ -72,13 +115,6 @@ String  = \"[^\"]*\"
                 return new beaver.Symbol(Terminals.PRED_REF, yyline + 1, yycolumn + 1, yylength() - 1, data);
            }
 
-{Pattern}  {
-                // Remove Quotes from Matched String.
-                String text = yytext();
-                String data = text.substring(2, text.length() - 2);
-                return new beaver.Symbol(Terminals.PATTERN, yyline + 1, yycolumn + 1, yylength() - 3, data);
-           }
-
 {String}   {
                 // Remove Quotes from Matched String.
                 String text = yytext();
@@ -89,3 +125,11 @@ String  = \"[^\"]*\"
 
 /* error fallback */
 [^]           { throw new SyntaxError("Illegal character <"+yytext()+">"); }
+}
+
+<PATTERN> {
+  "\\:>"   { strbuf.append(":>"); }
+  ":>"    { return patternEnd(); }
+  {InputCharacter}  { strbuf.append(str()); }
+  {LineTerminator}  { strbuf.append(str()); }
+}

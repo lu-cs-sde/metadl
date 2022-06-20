@@ -67,17 +67,15 @@ class Terminal:
 
 
 def main():
-    if len(sys.argv) != 5:
-        print("Run as: prel2dot.py PR.csv NTA.csv ATTR.csv SRC.csv")
+    if len(sys.argv) != 4:
+        print("Run as: prel2dot.py PR.csv ATTR.csv SRC.csv")
         exit(1)
 
     csv_file_name = sys.argv[1]
-    nta_file_name = sys.argv[2]
-    attr_file_name = sys.argv[3]
-    src_file_name = sys.argv[4]
+    attr_file_name = sys.argv[2]
+    src_file_name = sys.argv[3]
 
     pr_csv_reader = csv.reader(open(csv_file_name), delimiter=',')
-    nta_csv_reader = csv.reader(open(nta_file_name), delimiter=',')
     src_csv_reader = csv.reader(open(src_file_name), delimiter=',')
 
     nodes = dict()
@@ -89,44 +87,27 @@ def main():
         node_to_file[row[0]] = row[5]
 
 
-    clusters = defaultdict(list)
+    # clusters= defaultdict(list)
 
     for row in pr_csv_reader:
         if row[0] in ["Token.ParseName", "ID"]:
             n = Terminal(row[1], row[4])
             nodes[row[1]] = n
-            clusters[node_to_file.get(row[1], "Unknown")].append(n)
         else:
             if row[1] in nodes:
                 n = nodes[row[1]]
             else:
                 n = Node(row[0], int(row[1]))
-                clusters[node_to_file.get(row[1], "Unknown")].append(n)
                 nodes[row[1]] = n
             if int(row[2]) >= 0:
                 n.addChild(int(row[2]), int(row[3]))
 
 
 
-    for row in nta_csv_reader:
-        if row[0] in ["Token.ParseName", "ID"]:
-            nodes[row[1]] = Terminal(row[1], row[4])
-            clusters["NTA"].append(nodes[row[1]])
-        else:
-            if row[1] in nodes:
-                n = nodes[row[1]]
-            else:
-                n = Node(row[0], int(row[1]))
-                clusters["NTA"].append(n)
-                nodes[row[1]] = n
-            if int(row[2]) >= 0:
-                n.addChild(int(row[2]), int(row[3]))
-
-
-    attrs_reader = csv.reader(open(attr_file_name), delimiter=',')
-    for attr, src, tgt in attrs_reader:
-        if src in nodes:
-            nodes[src].addAttr(attr, tgt)
+    # attrs_reader = csv.reader(open(attr_file_name), delimiter=',')
+    # for attr, src, tgt in attrs_reader:
+    #     if src in nodes:
+    #         nodes[src].addAttr(attr, tgt)
 
     # for n, loc in srcLocs.items():
     #     if n in nodes and "Decl" in nodes[n].kind:
@@ -140,17 +121,8 @@ def main():
     print("node [shape=record];")
     print("compound = true;")
 
-    for i, (c, ns) in enumerate(clusters.items()):
-        print ("subgraph sg_{} {{ ".format(i))
-        print ('label = "{}";'.format(c))
-        print ("color = black;")
-        # print ("rank = same;")
-        for n in ns:
-            print(n.toDotNode(), ";")
-        print ("}")
-
-    # for n in nodes.values():
-    #     print(n.toDotNode(), ";")
+    for n in nodes.values():
+        print(n.toDotNode(), ";")
     for n in nodes.values():
         s = n.toDotEdges()
         if len(s) != 0:

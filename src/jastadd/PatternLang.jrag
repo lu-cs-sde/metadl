@@ -169,7 +169,9 @@ aspect PatternLang {
 										 lang.java8.pat.ast.PatLangParserSEP.n_type_parameter,
 										 lang.java8.pat.ast.PatLangParserSEP.n_type_argument,
 										 lang.java8.pat.ast.PatLangParserSEP.n_annotation,
-										 lang.java8.pat.ast.PatLangParserSEP.n_enum_constant);
+										 lang.java8.pat.ast.PatLangParserSEP.n_enum_constant,
+										 lang.java8.pat.ast.PatLangParserSEP.n_field_declarator,
+										 lang.java8.pat.ast.PatLangParserSEP.n_variable_declarator);
 			break;
 		}
 

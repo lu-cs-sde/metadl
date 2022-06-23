@@ -46,6 +46,12 @@ aspect VariableMap {
 		return variables().contains(varName);
 	}
 
+	eq Pattern.bindsVariable(String varName) {
+		if (hasNot())
+			return false;
+		return variables().contains(varName);
+	}
+
 	eq BINDLiteral.bindsVariable(String varName) {
 		if (!getExpr(0).isVariable())
 			return false;

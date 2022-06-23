@@ -15,7 +15,7 @@
 	NameDef(name, `n) :- <: int ..,`n, .. ; :>, ID(`n, name).
 	NameDef("unknown", `n) :- <: int ..,`n, .. ; :>, NOT(ID(`n, _)).
 	Scope(s, `n) :- p <: int ..,`n, .. ; :>, Scope(s, p).
-	NameUse(name, `n) :- <: `n :>, ID(`n, name).
+	NameUse(name, `n) :- <: `n :>, ID(`n, name), NOT(NameDef(name, `n)).
 
 	ScopeT(p, c) :- Scope(p, c).
 	ScopeT(p, c) :- ScopeT(p, s), Scope(s, c).

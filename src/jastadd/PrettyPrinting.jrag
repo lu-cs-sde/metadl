@@ -119,9 +119,16 @@ aspect PretyPrinting {
 		pr.out.print(")");
 	}
 
+	public void Pattern.printRoot(PrettyPrinter pr) { }
+	public void BoundedPattern.printRoot(PrettyPrinter pr) {
+		getCommonVariable().prettyPrint(pr);
+		pr.out.print(" ");
+	}
+
 	public void Pattern.prettyPrint(PrettyPrinter pr) {
 		if (hasNot())
 			pr.negationPrefix();
+		printRoot(pr);
 		pr.out.print("<:");
 		pr.out.print(getPATTERN());
 		pr.out.print(":>");

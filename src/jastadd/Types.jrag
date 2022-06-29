@@ -440,6 +440,7 @@ aspect TypeInference {
 	eq Constraint.getExpr(int i).indexInLiteral() = -1;
 	eq Literal.getChild().indexInLiteral() = -1;
 	eq Expr.getChild().indexInLiteral() = -1;
+	eq CommonLiteral.getChild().indexInLiteral() = -1;
 
 	IntConstant contributes (new PredicateType.Index(indexInLiteral(), IntegerType.get()))
 		when indexInLiteral() >= 0
@@ -551,6 +552,7 @@ aspect TypeInference {
 	eq GTLiteral.getExpr().itype() = IntegerType.get();
 	eq GTELiteral.getExpr().itype() = IntegerType.get();
 	eq LTELiteral.getExpr().itype() = IntegerType.get();
+	eq BoundedPattern.getCommonVariable().itype() = ASTNodeType.get();
 
 	// For an expression, return the other expression that
 	// has the same type
@@ -560,6 +562,8 @@ aspect TypeInference {
 	eq BinaryIntegerConstraint.getExpr(int i).sibling() = getExpr(1 - i);
 	eq MATCHLiteral.getExpr(int i).sibling() = getExpr(1 - i);
 	eq BINDLiteral.getExpr(int i).sibling() = getExpr(1 - i);
+	eq BoundedPattern.getCommonVariable().sibling() = null;
+
 
 	// Constant AST nodes are created inside the naive evaluator, but they
 	// have no parents, so there is no way to compute the itype() attribute for them,

@@ -186,13 +186,6 @@ public class Compiler {
 				prog.dumpDomainSignatures(System.out);
 				checkProgram(prog, opts);
 				break;
-			case EVAL_IMPORT:
-				// TODO: rename EVAL_IMPORT to EVAL_ANALYZE_BLOCKS or just remove the option
-				checkProgram(prog, opts);
-				prog.evalEDB(prog.evalCtx(), opts);
-				prog.evalIMPORT(prog.evalCtx(), opts);
-				prog.generateObjectProgramRelations(opts);
-				break;
 			case CHECK:
 				checkProgram(prog, opts);
 				prog.dumpStrata();

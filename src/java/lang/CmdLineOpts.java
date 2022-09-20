@@ -46,7 +46,6 @@ public class CmdLineOpts {
 		EVAL_SOUFFLE,
 		EVAL_INTERNAL,
 		EVAL_INTERNAL_PARALLEL,
-		EVAL_IMPORT,
 		EVAL_HYBRID,
 		PRETTY_SOUFFLE,
 		PRETTY_INTERNAL,
@@ -175,8 +174,6 @@ public class CmdLineOpts {
 			.desc("Evaluate the program using the internal (arg = metadl), parallel (arg = metadl-par), Souffle (arg = souffle), Hybrid (arg = hybrid) evaluator.").build();
 		Option check = Option.builder("c").longOpt("check").hasArg(false)
 			.desc("Check that the input represents a valid MetaDL program.").build();
-		Option imp = Option.builder("i").longOpt("import").hasArg(false)
-			.desc("Evaluate only the import statements and output the program representation relation(s).").build();
 		Option gen = Option.builder("g").longOpt("gen-hybrid").hasArg(false)
 			.desc("Generate a hybrid MetaDL-Souffle program.").build();
 		Option incremental = Option.builder("s").longOpt("incremental").numberOfArgs(1)
@@ -185,7 +182,7 @@ public class CmdLineOpts {
 			.desc("The language of the analyzed sources (arg = java or arg = metadl).").build();
 
 		OptionGroup actions = new OptionGroup().addOption(eval).addOption(prettyPrint).addOption(check)
-			.addOption(imp).addOption(gen).addOption(incremental);
+			.addOption(gen).addOption(incremental);
 
 		Option factDir = Option.builder("F").longOpt("facts").numberOfArgs(1)
 			.desc("Fact directory.").argName("DIR").build();
@@ -248,8 +245,6 @@ public class CmdLineOpts {
 				}
 			} else if (cmd.hasOption("c")) {
 				ret.setAction(Action.CHECK);
-			} else if (cmd.hasOption("i")) {
-				ret.setAction(Action.EVAL_IMPORT);
 			} else if (cmd.hasOption("g")) {
 				ret.setAction(Action.GEN_HYBRID);
 			} else if (cmd.hasOption("s")) {

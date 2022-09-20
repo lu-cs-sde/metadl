@@ -38,6 +38,7 @@ import lang.ast.StringType;
 import lang.ast.Term;
 import lang.ast.Variable;
 import lang.ast.Expr;
+import eval.EvaluationContext;
 import lang.relation.RelationWrapper;
 
 import static lang.ast.Constructors.*;
@@ -114,7 +115,8 @@ public class ProgramSplit {
 		fp.eval(program.evalCtx());
 
 		final List<PredicateIOInfo> predInfo = new ArrayList<>();
-		final RelationWrapper EDBs = new RelationWrapper(program.evalCtx(), fp.relation2(), fp.type());
+		final EvaluationContext ctx = program.evalCtx();
+		final RelationWrapper EDBs = new RelationWrapper(ctx, ctx.getRelation(fp), fp.type());
 		for (final RelationWrapper.TupleWrapper t : EDBs.tuples()) {
 			final String pred = t.getAsString(0);
 			final String file = t.getAsString(1);

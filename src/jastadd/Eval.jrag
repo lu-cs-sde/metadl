@@ -25,25 +25,25 @@ aspect Eval {
 		fpEDB.eval(ctx);
 
 		// now iterate over the tuples in the EDB relation
-		RelationWrapper edbTuples = new RelationWrapper(ctx, fpEDB.relation2(), fpEDB.type());
+		RelationWrapper edbTuples = new RelationWrapper(ctx, ctx.getRelation(fpEDB), fpEDB.type());
 
 		for (RelationWrapper.TupleWrapper t : edbTuples.tuples()) {
 			String pred = t.getAsString(0);
 			String file = t.getAsString(1);
 			String format = t.getAsString(2);
 			FormalPredicate dstPred = formalPredicateMap().get(pred);
-			Relation2 rel = dstPred.relation2();
+			Relation2 rel = ctx.getRelation(dstPred);
 
 			if (ProgramSplit.isInternalDbDesc(file)) {
 				// special path for the internal DB
 				Connection conn = opts.getSqlDbConnection();
-				SQLUtil.readRelation(ctx, dstPred.type(), dstPred.relation2(),
+				SQLUtil.readRelation(ctx, dstPred.type(), ctx.getRelation(dstPred),
 									 conn, ProgramSplit.getInternalDbTable(file), opts.getDbEntryTag());
 			} else if (format.equals("csv")) {
-				CSVUtil.readRelation(ctx, dstPred.type(), dstPred.relation2(), Paths.get(opts.getFactsDir(), file).toString());
+				CSVUtil.readRelation(ctx, dstPred.type(), ctx.getRelation(dstPred), Paths.get(opts.getFactsDir(), file).toString());
 			} else if (format.equals("sqlite")) {
 				Connection conn = SQLUtil.connect(Paths.get(opts.getFactsDir(), file).toString());
-				SQLUtil.readRelation(ctx, dstPred.type(), dstPred.relation2(),
+				SQLUtil.readRelation(ctx, dstPred.type(), ctx.getRelation(dstPred),
 									 conn, pred, opts.getDbEntryTag());
 				conn.close();
 			} else {
@@ -63,7 +63,7 @@ aspect Eval {
 		fpIMPORT.eval(ctx);
 
 		// now iterate over the tuples in the IMPORT relation
-		RelationWrapper edbTuples = new RelationWrapper(ctx, fpIMPORT.relation2(), fpIMPORT.type());
+		RelationWrapper edbTuples = new RelationWrapper(ctx, ctx.getRelation(fpIMPORT), fpIMPORT.type());
 
 		for (RelationWrapper.TupleWrapper t : edbTuples.tuples()) {
 			String pred = t.getAsString(0);
@@ -71,7 +71,7 @@ aspect Eval {
 			String wildcard = t.getAsString(2);
 
 			FormalPredicate dstPred = formalPredicateMap().get(pred);
-			Relation2 rel = dstPred.relation2();
+			Relation2 rel = ctx.getRelation(dstPred);
 			RelationWrapper relWrapper = new RelationWrapper(ctx, rel, dstPred.type());
 
 			for (File f : FileUtil.flattenFilesAndDirs(Collections.singletonList(new File(dir)), wildcard)) {
@@ -91,7 +91,7 @@ aspect Eval {
 		fpOUTPUT.eval(ctx);
 
 		// now iterate over the tuples in the OUTPUT relation
-		RelationWrapper outputTuples = new RelationWrapper(ctx, fpOUTPUT.relation2(), fpOUTPUT.type());
+		RelationWrapper outputTuples = new RelationWrapper(ctx, ctx.getRelation(fpOUTPUT), fpOUTPUT.type());
 
 		for (RelationWrapper.TupleWrapper t : outputTuples.tuples()) {
 			String pred = t.getAsString(0);
@@ -107,15 +107,15 @@ aspect Eval {
 				assert mode.equals("append");
 
 				Connection conn = opts.getSqlDbConnection();
-				SQLUtil.writeRelation(ctx, srcPred.type(), srcPred.relation2(),
+				SQLUtil.writeRelation(ctx, srcPred.type(), ctx.getRelation(srcPred),
 									  conn, table, opts.getDbEntryTag());
 			} else if (format.equals("sqlite")) {
 				Connection conn = SQLUtil.connect(Paths.get(opts.getFactsDir(), file).toString());
-				SQLUtil.writeRelation(ctx, srcPred.type(), srcPred.relation2(),
+				SQLUtil.writeRelation(ctx, srcPred.type(), ctx.getRelation(srcPred),
 									  conn, pred, opts.getDbEntryTag());
 				conn.close();
 			} else if (format.equals("csv")) {
-				CSVUtil.writeRelation(ctx, srcPred.type(), srcPred.relation2(), Paths.get(opts.getOutputDir(), file).toString());
+				CSVUtil.writeRelation(ctx, srcPred.type(), ctx.getRelation(srcPred), Paths.get(opts.getOutputDir(), file).toString());
 			} else {
 				throw new RuntimeException("Unknown format for OUTPUT, " + format + ".");
 			}
@@ -165,18 +165,20 @@ aspect Eval {
 		// Start a timer to measure the speed of the import
 		StopWatch progRelTimer = StopWatch.createStarted();
 
+		EvaluationContext ctx = evalCtx();
+
 		// Evaluate the analyze blocks
-		populateProgramRepresentation(evalCtx(), opts, null);
+		populateProgramRepresentation(ctx, opts, null);
 
 		// Iterate over all the program representation predicates and dump their relations
 		// to CSV files.
 		for (FormalPredicate srcPred : getFormalPredicates()) {
 			if (srcPred.getProgramRepresentationKind().isPresent()) {
 				if (opts.getSqlDbConnection() != null) {
-					SQLUtil.writeRelation(evalCtx(), srcPred.type(), srcPred.relation2(), opts.getSqlDbConnection(),
+					SQLUtil.writeRelation(ctx, srcPred.type(), ctx.getRelation(srcPred), opts.getSqlDbConnection(),
 										  srcPred.getPRED_ID(), opts.getDbEntryTag());
 				} else {
-					CSVUtil.writeRelation(evalCtx(), srcPred.type(), srcPred.relation2(),
+					CSVUtil.writeRelation(ctx, srcPred.type(), ctx.getRelation(srcPred),
 									  opts.getFactsDir() + "/" + srcPred.getPRED_ID() + ".csv");
 				}
 			}
@@ -190,7 +192,7 @@ aspect Eval {
 
 	public void Program.dumpAllRelations(EvaluationContext ctx) throws IOException {
 		for (FormalPredicate pred : getFormalPredicates()) {
-			CSVUtil.writeRelation(ctx, pred.type(), pred.relation2(), pred.getPRED_ID() + ".csv");
+			CSVUtil.writeRelation(ctx, pred.type(), ctx.getRelation(pred), pred.getPRED_ID() + ".csv");
 		}
 	}
 
@@ -274,16 +276,6 @@ aspect Eval {
 	public void FormalPredicate.eval(EvaluationContext ctx) {
 		for (Stratum s : strata(ctx)) {
 			s.eval();
-		}
-	}
-
-	/**
-	   Empty all the relations used in the program. This is necessary when
-	   a Program object is evaluated multiple times.
-	 */
-	public void Program.clearRelations() {
-		for (FormalPredicate p : getFormalPredicates()) {
-			p.relation2().clear();
 		}
 	}
 }

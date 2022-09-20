@@ -125,9 +125,9 @@ aspect Stratification {
 			}
 
 			java.util.List<Triple<Relation2, Relation2, Relation2>> rels = definedPreds.stream()
-				.map(p -> Triple.of(p.relation2(),
-									p.relation2next(),
-									p.relation2delta()))
+				.map(p -> Triple.of(ctx.getRelation(p),
+									ctx.getNextRelation(p),
+									ctx.getDeltaRelation(p)))
 				.collect(Collectors.toList());
 			return Stratum.fixpoint(rels, stmts, desc);
 		}

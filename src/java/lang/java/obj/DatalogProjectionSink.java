@@ -29,25 +29,25 @@ public class DatalogProjectionSink {
 		this.srcLocPredicate = srcLocPredicate;
 
 		if (astPredicate != null) {
-			ast = new RelationWrapper(ctx, astPredicate.relation2(), astPredicate.type());
+			ast = new RelationWrapper(ctx, ctx.getRelation(astPredicate), astPredicate.type());
 		} else {
 			ast = TupleInserter.NULL;
 		}
 
 		if (provenancePredicate != null) {
-			provenance = new RelationWrapper(ctx, provenancePredicate.relation2(), provenancePredicate.type());
+			provenance = new RelationWrapper(ctx, ctx.getRelation(provenancePredicate), provenancePredicate.type());
 		} else {
 			provenance = TupleInserter.NULL;
 		}
 
 		if (attributesPredicate != null) {
-			attributes = new RelationWrapper(ctx, attributesPredicate.relation2(), attributesPredicate.type());
+			attributes = new RelationWrapper(ctx, ctx.getRelation(attributesPredicate), attributesPredicate.type());
 		} else {
 			attributes = TupleInserter.NULL;
 		}
 
 		if (srcLocPredicate != null) {
-			srcLoc = new RelationWrapper(ctx, srcLocPredicate.relation2(), srcLocPredicate.type());
+			srcLoc = new RelationWrapper(ctx, ctx.getRelation(srcLocPredicate), srcLocPredicate.type());
 		} else {
 			srcLoc = TupleInserter.NULL;
 		}

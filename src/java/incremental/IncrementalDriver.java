@@ -384,14 +384,16 @@ public class IncrementalDriver {
 
 	private static void setRelation(Program prog, String relName, RelationWrapper rel) {
 		FormalPredicate pred = prog.formalPredicateMap().get(relName);
-		pred.relation2().clear();
-		RelationWrapper dst = new RelationWrapper(prog.evalCtx(), pred.relation2(), pred.type());
+		EvaluationContext ctx  = prog.evalCtx();
+		ctx.getRelation(pred).clear();
+		RelationWrapper dst = new RelationWrapper(ctx, ctx.getRelation(pred), pred.type());
 		dst.insertTuples(rel.tuples());
 	}
 
 	private static RelationWrapper getRelation(Program prog, String relName) {
 		FormalPredicate pred = prog.formalPredicateMap().get(relName);
-		RelationWrapper src = new RelationWrapper(prog.evalCtx(), pred.relation2(), pred.type());
+		EvaluationContext ctx  = prog.evalCtx();
+		RelationWrapper src = new RelationWrapper(ctx, ctx.getRelation(pred), pred.type());
 		return src;
 	}
 

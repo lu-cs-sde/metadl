@@ -57,12 +57,12 @@ public class IncrementalTest {
 		// Clear the contents of the relations (we use integers to store strings, but
 		// their mapping may have been created in a different context, so we have
 		// to clear everything before re-running.
-		p.clearRelations();
+		p.evalCtx().resetRelations();
 		FormalPredicate OUTPUT = p.formalPredicateMap().get(GlobalNames.OUTPUT_NAME);
 		EvaluationContext ctx = new EvaluationContext();
 		OUTPUT.eval(ctx);
 
-		RelationWrapper OUTPUTTuples = new RelationWrapper(ctx, OUTPUT.relation2(), OUTPUT.type());
+		RelationWrapper OUTPUTTuples = new RelationWrapper(ctx, ctx.getRelation(OUTPUT), OUTPUT.type());
 
 		// Read all the outputs from the program database
 		for (RelationWrapper.TupleWrapper t : OUTPUTTuples.tuples()) {
@@ -133,11 +133,4 @@ public class IncrementalTest {
 		// cache database does not handle 0-arity predicates
 		return EvaluationTest.metadlJavaTests().filter(t -> !t.equals("java7"));
 	}
-
-	// @DisplayName("Test the initial run of the incremental evaluation driver using the internal evaluator.")
-	// @ParameterizedTest
-	// @MethodSource("initialRunTestsInternal")
-	// public void testInitialRunInternal(String name) throws Exception {
-	// 	runProgramAndExtractResults(name, false);
-	// }
 }

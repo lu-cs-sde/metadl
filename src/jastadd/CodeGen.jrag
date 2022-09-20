@@ -340,17 +340,17 @@ aspect CodeGen {
 		FormalPredicate formalPred = getPredicate().formalpredicate();
 
 		if (hasNot()) {
-			Relation2 rel = formalPred.relation2();
+			Relation2 rel = ctx.getRelation(formalPred);
 			return genCodeNegativeLiteral(t, rel, ctx, cont);
 		} else {
 			Relation2 rel;
 			if (isDelta) {
 				if (isDef())
-					rel = formalPred.relation2next();
+					rel = ctx.getNextRelation(formalPred);
 				else
-					rel = formalPred.relation2delta();
+					rel = ctx.getDeltaRelation(formalPred);
 			} else {
-				rel = formalPred.relation2();
+				rel = ctx.getRelation(formalPred);
 			}
 			return genCodePositiveLiteral(t, rel, ctx, cont, boundVars, usedVars);
 		}
@@ -470,17 +470,5 @@ aspect CodeGen {
 	}
 	@Override public Operation Wildcard.genCode(Tuple t, EvaluationContext ctx) {
 		return null;
-	}
-
-	syn lazy Relation2 FormalPredicate.relation2() {
-		return new Relation2(realArity(), getPRED_ID());
-	}
-
-	syn lazy Relation2 FormalPredicate.relation2delta() {
-		return new Relation2(realArity(), "delta_" + getPRED_ID());
-	}
-
-	syn lazy Relation2 FormalPredicate.relation2next() {
-		return new Relation2(realArity(), "next_" + getPRED_ID());
 	}
 }

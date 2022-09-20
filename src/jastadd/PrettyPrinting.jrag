@@ -454,7 +454,8 @@ aspect SoufflePrinting {
 		fpEDB.eval(evalCtx());
 
 		// now iterate over the tuples in the EDB relation
-		RelationWrapper edbTuples = new RelationWrapper(evalCtx(), fpEDB.relation2(), fpEDB.type());
+		EvaluationContext ctx = evalCtx();
+		RelationWrapper edbTuples = new RelationWrapper(ctx, ctx.getRelation(fpEDB), fpEDB.type());
 
 		for (RelationWrapper.TupleWrapper t : edbTuples.tuples()) {
 			String pred = t.getAsString(0);
@@ -483,8 +484,9 @@ aspect SoufflePrinting {
 
 		fpOUTPUT.eval(evalCtx());
 
+		EvaluationContext ctx = evalCtx();
 		// now iterate over the tuples in the EDB relation
-		RelationWrapper outputTuples = new RelationWrapper(evalCtx(), fpOUTPUT.relation2(), fpOUTPUT.type());
+		RelationWrapper outputTuples = new RelationWrapper(ctx, ctx.getRelation(fpOUTPUT), fpOUTPUT.type());
 
 		for (RelationWrapper.TupleWrapper t : outputTuples.tuples()) {
 			String pred = t.getAsString(0);

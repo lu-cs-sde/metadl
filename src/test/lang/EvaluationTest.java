@@ -28,6 +28,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import eval.EvaluationContext;
 import eval.Relation2;
 import lang.ast.FormalPredicate;
 import lang.ast.GlobalNames;
@@ -53,7 +54,8 @@ public class EvaluationTest {
 			fail();
 		HashMap<String, RelationWrapper> nameToRel = new HashMap<>();
 
-		RelationWrapper outputTuples = new RelationWrapper(program1.evalCtx(), fpOut1.relation2(), fpOut1.type());
+		EvaluationContext ctx = program1.evalCtx();
+		RelationWrapper outputTuples = new RelationWrapper(ctx, ctx.getRelation(fpOut1), fpOut1.type());
 
 		for (RelationWrapper.TupleWrapper t : outputTuples.tuples()) {
 			String pred = t.getAsString(0);

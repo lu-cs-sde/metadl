@@ -54,7 +54,7 @@ public class EvaluationTest {
 			fail();
 		HashMap<String, RelationWrapper> nameToRel = new HashMap<>();
 
-		EvaluationContext ctx = program1.evalCtx();
+		EvaluationContext ctx = new EvaluationContext();
 		RelationWrapper outputTuples = new RelationWrapper(ctx, ctx.getRelation(fpOut1), fpOut1.type());
 
 		for (RelationWrapper.TupleWrapper t : outputTuples.tuples()) {
@@ -64,10 +64,10 @@ public class EvaluationTest {
 			File in1 = new File(d1.getOutputDir() + "/" + fp.predicateName() + ".csv");
 
 			Relation2 r1 = new Relation2(fp.realArity(), fp.getPRED_ID());
-			CSVUtil.readRelation(program1.evalCtx(), fp.type(), r1, d1.getOutputDir() + "/" + fp.predicateName() + ".csv");
+			CSVUtil.readRelation(ctx, fp.type(), r1, d1.getOutputDir() + "/" + fp.predicateName() + ".csv");
 
 			SimpleLogger.logger().log("Read relation from: " + in1.getPath(), SimpleLogger.LogLevel.Level.DEBUG);
-			nameToRel.put(fp.predicateName(), new RelationWrapper(program1.evalCtx(), r1, fp.type()));
+			nameToRel.put(fp.predicateName(), new RelationWrapper(ctx, r1, fp.type()));
 		}
 		return nameToRel;
 	}

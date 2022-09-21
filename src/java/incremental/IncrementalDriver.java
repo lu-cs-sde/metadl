@@ -105,12 +105,14 @@ public class IncrementalDriver {
 	private File externalClassesFile;
 
 	private ProgramSplit progSplit;
-
+	private EvaluationContext evalCtx;
 	private boolean useSouffle;
 
 	public IncrementalDriver(File root, ProgramSplit progSplit, boolean useSouffle) {
 		this.useSouffle = useSouffle;
 		this.progSplit = progSplit;
+		// an evaluation context for all relations and internal programs
+		this.evalCtx = new EvaluationContext();
 		// folders
 		this.common = new File(root, "common");
 		this.prog = new File(root, "prog");
@@ -373,7 +375,7 @@ public class IncrementalDriver {
 		Program prog = progSplit.getProgram();
 
 		// copy the tuples from one relation to another
-		RelationWrapper srcWrapper = new RelationWrapper(prog.evalCtx(), new Relation2(2), new PredicateType(StringType.get(), StringType.get()));
+		RelationWrapper srcWrapper = new RelationWrapper(evalCtx, new Relation2(2), new PredicateType(StringType.get(), StringType.get()));
 
 		for (Map.Entry<String, String> src : opts.getSrcs().entrySet()) {
 			srcWrapper.insertTuple(src.getKey(), src.getValue());
@@ -382,18 +384,16 @@ public class IncrementalDriver {
 		return srcWrapper;
 	}
 
-	private static void setRelation(Program prog, String relName, RelationWrapper rel) {
+	private void setRelation(Program prog, String relName, RelationWrapper rel) {
 		FormalPredicate pred = prog.formalPredicateMap().get(relName);
-		EvaluationContext ctx  = prog.evalCtx();
-		ctx.getRelation(pred).clear();
-		RelationWrapper dst = new RelationWrapper(ctx, ctx.getRelation(pred), pred.type());
+		evalCtx.getRelation(pred).clear();
+		RelationWrapper dst = new RelationWrapper(evalCtx, evalCtx.getRelation(pred), pred.type());
 		dst.insertTuples(rel.tuples());
 	}
 
-	private static RelationWrapper getRelation(Program prog, String relName) {
+	private RelationWrapper getRelation(Program prog, String relName) {
 		FormalPredicate pred = prog.formalPredicateMap().get(relName);
-		EvaluationContext ctx  = prog.evalCtx();
-		RelationWrapper src = new RelationWrapper(ctx, ctx.getRelation(pred), pred.type());
+		RelationWrapper src = new RelationWrapper(evalCtx, evalCtx.getRelation(pred), pred.type());
 		return src;
 	}
 
@@ -458,7 +458,7 @@ public class IncrementalDriver {
 				updateOpts.setOutputDir(".");
 
 				// evaluate the update program
-				update.eval(updateOpts);
+				update.eval(evalCtx, updateOpts);
 
 				visitFilesRel = getRelation(update, ProgramSplit.AST_VISIT_RELATION);
 				removeFilesRel = getRelation(update, ProgramSplit.AST_REMOVE_RELATION);
@@ -516,10 +516,6 @@ public class IncrementalDriver {
 
 		// now run the hybrid program
 		{
-			// Program fusedProgram = progSplit.getFusedProgram();
-			// fusedProgram.evalEDB(fusedProgram.evalCtx(), opts);
-			// fusedProgram.evalIMPORT(fusedProgram.evalCtx(), opts);
-
 			progDbConnection.close();
 			runHybridProgram(swigProg.getLeft(), opts);
 			progDbConnection = SQLUtil.connect(progDbFile.getPath());

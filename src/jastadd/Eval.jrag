@@ -125,7 +125,7 @@ aspect Eval {
 	public void Program.populateProgramRepresentation(EvaluationContext ctx, CmdLineOpts opts,
 													  Map<FormalPredicate, TupleInserter> fpToSoufflePredMap) throws IOException {
 		// now populate the relations associated with the analyze block
-		DatalogProjectionSink tupleSink = getDatalogProjectionSink();
+		DatalogProjectionSink tupleSink = getDatalogProjectionSink(ctx);
 
 		// use the fpToSoufflePredMap to remap inserters in the
 		// DatalogProjectionSink
@@ -161,11 +161,9 @@ aspect Eval {
 		}
 	}
 
-	public void Program.generateObjectProgramRelations(CmdLineOpts opts) throws IOException, SQLException {
+	public void Program.generateObjectProgramRelations(EvaluationContext ctx, CmdLineOpts opts) throws IOException, SQLException {
 		// Start a timer to measure the speed of the import
 		StopWatch progRelTimer = StopWatch.createStarted();
-
-		EvaluationContext ctx = evalCtx();
 
 		// Evaluate the analyze blocks
 		populateProgramRepresentation(ctx, opts, null);
@@ -196,11 +194,7 @@ aspect Eval {
 		}
 	}
 
-	syn lazy EvaluationContext Program.evalCtx() = new EvaluationContext();
-
-	public void Program.eval(CmdLineOpts opts) throws IOException, SQLException {
-		EvaluationContext ctx = evalCtx();
-
+	public void Program.eval(EvaluationContext ctx, CmdLineOpts opts) throws IOException, SQLException {
 		java.util.List<Stratum> strata = strata(ctx);
 		dumpStrata();
 		clauseDependencyGraph().dump();
@@ -216,11 +210,9 @@ aspect Eval {
 		if (false) dumpAllRelations(ctx);
 	}
 
-	public void Program.evalParallel(CmdLineOpts opts) throws IOException, SQLException {
+	public void Program.evalParallel(EvaluationContext ctx, CmdLineOpts opts) throws IOException, SQLException {
 		// TODO: this evaluation strategy is now broken, since a relation
 		// can be defined in multiple strata.
-		EvaluationContext ctx = evalCtx();
-
 		evalEDB(ctx, opts);
 		populateProgramRepresentation(ctx, opts, null);
 

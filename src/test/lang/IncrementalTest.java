@@ -51,15 +51,14 @@ public class IncrementalTest {
 		OUTPUT_DIR.mkdirs();
 	}
 
-	private static Set<String> computeOutputRelations(Program p) {
+	private static Set<String> computeOutputRelations(EvaluationContext ctx, Program p) {
 		Set<String> res = new TreeSet<>();
 		// Find out which relations are output relations in the original program
 		// Clear the contents of the relations (we use integers to store strings, but
 		// their mapping may have been created in a different context, so we have
 		// to clear everything before re-running.
-		p.evalCtx().resetRelations();
+		ctx.resetRelations();
 		FormalPredicate OUTPUT = p.formalPredicateMap().get(GlobalNames.OUTPUT_NAME);
-		EvaluationContext ctx = new EvaluationContext();
 		OUTPUT.eval(ctx);
 
 		RelationWrapper OUTPUTTuples = new RelationWrapper(ctx, ctx.getRelation(OUTPUT), OUTPUT.type());
@@ -89,13 +88,13 @@ public class IncrementalTest {
 
 		// Run the split program
 		Program p = Compiler.run(opts);
+		EvaluationContext ctx = new EvaluationContext();
 
-		Set<String> outputRelations = computeOutputRelations(p);
+		Set<String> outputRelations = computeOutputRelations(ctx, p);
 		for (String predName : outputRelations) {
 			FormalPredicate pred = p.formalPredicateMap().get(predName);
 
 			Relation2 rel = new Relation2(pred.type().arity());
-			EvaluationContext ctx = new EvaluationContext();
 			CSVUtil.readRelation(ctx, pred.type(), rel, Paths.get(output.getPath(), predName + ".csv").toString());
 			// SQLUtil.readRelation(ctx, pred.type(), rel, Paths.get(output.getPath(), "srcs", "program.db").toString(), predName);
 			RelationWrapper relW = new RelationWrapper(ctx, rel, pred.type());

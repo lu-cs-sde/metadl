@@ -15,6 +15,7 @@ import lang.ast.Program;
 import lang.io.FileUtil;
 import lang.io.SimpleLogger;
 import lang.relation.TupleInserter;
+import eval.EvaluationContext;
 import static prof.Profile.profile;
 
 public class SWIGUtil {
@@ -61,9 +62,9 @@ public class SWIGUtil {
 		SimpleLogger.logger().time("Run SWIG program: " + timer.getTime() + "ms");
 	}
 
-	public static void evalHybridProgram(Program prog, CmdLineOpts opts) throws IOException, SQLException {
+	public static void evalHybridProgram(EvaluationContext ctx, Program prog, CmdLineOpts opts) throws IOException, SQLException {
 		Pair<SWIGSouffleProgram, Map<FormalPredicate, TupleInserter>> progInfoPair = loadSWIGProgram(prog, opts);
-		prog.populateProgramRepresentation(prog.evalCtx(), opts, progInfoPair.getRight());
+		prog.populateProgramRepresentation(ctx, opts, progInfoPair.getRight());
 		runSWIGProgram(progInfoPair.getLeft(), opts);
 	}
 }

@@ -405,12 +405,12 @@ aspect PatternLang {
 	Pattern contributes "SUPERTYPE" to Program.usedContextPredicates();
 
 
-	syn DatalogProjectionSink Program.getDatalogProjectionSink() {
+	syn DatalogProjectionSink Program.getDatalogProjectionSink(EvaluationContext ctx) {
 		FormalPredicate ast = formalPredicateMap().get(getProgramRepresentationPredicateName(ProgramRepresentation.AST));
 		FormalPredicate provenance = formalPredicateMap().get(getProgramRepresentationPredicateName(ProgramRepresentation.ATTR_PROVENANCE));
 		FormalPredicate srcLoc = formalPredicateMap().get(getProgramRepresentationPredicateName(ProgramRepresentation.SRC));
 		FormalPredicate attr = formalPredicateMap().get(getProgramRepresentationPredicateName(ProgramRepresentation.ATTR));
 
-		return new DatalogProjectionSink(evalCtx(), ast, provenance, attr, srcLoc);
+		return new DatalogProjectionSink(ctx, ast, provenance, attr, srcLoc);
 	}
 }

@@ -32,6 +32,7 @@ import lang.io.SimpleLogger;
 import lang.relation.RelationWrapper;
 import static prof.Profile.profile;
 import swig.SWIGUtil;
+import eval.EvaluationContext;
 
 /**
  * Dumps the parsed Abstract Syntax Tree of a Calc program.
@@ -123,17 +124,9 @@ public class Compiler {
 	}
 
 	public static void generateIncrementalProgram(Program prog, CmdLineOpts opts, boolean useSouffle) throws IOException, SQLException {
-		// evaluate the EDB and IMPORT predicate, to ensure
-		// that the inputs to the analyze blocks can be evaluated in turn
-		prog.evalEDB(prog.evalCtx(), opts);
-		prog.evalIMPORT(prog.evalCtx(), opts);
-
 		profile().startTimer("main", "local_and_global_split");
 		// split program into local and global parts
 		ProgramSplit split = new ProgramSplit(prog);
-		if (!split.canEvaluateIncrementally()) {
-			throw new RuntimeException("Cannot evaluate this program incrementally.");
-		}
 
 		profile().stopTimer("main", "local_and_global_split");
 
@@ -161,15 +154,15 @@ public class Compiler {
 			switch (opts.getAction()) {
 			case EVAL_INTERNAL:
 				checkProgram(prog, opts);
-				prog.eval(opts);
+				prog.eval(new EvaluationContext(), opts);
 				break;
 			case EVAL_INTERNAL_PARALLEL:
 				checkProgram(prog, opts);
-				prog.evalParallel(opts);
+				prog.evalParallel(new EvaluationContext(), opts);
 				break;
 			case EVAL_SOUFFLE:
 				checkProgram(prog, opts);
-				prog.generateObjectProgramRelations(opts);
+				prog.generateObjectProgramRelations(new EvaluationContext(), opts);
 				evalSouffleProgram(prog, opts);
 				break;
 			case PRETTY_SOUFFLE:
@@ -197,7 +190,7 @@ public class Compiler {
 				break;
 			case EVAL_HYBRID:
 				checkProgram(prog, opts);
-				SWIGUtil.evalHybridProgram(prog, opts);
+				SWIGUtil.evalHybridProgram(new EvaluationContext(), prog, opts);
 				break;
 			case INCREMENTAL_UPDATE:
 			case INCREMENTAL_INIT:

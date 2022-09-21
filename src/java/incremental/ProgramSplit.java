@@ -112,10 +112,11 @@ public class ProgramSplit {
 			return Collections.emptyList();
 		}
 
-		fp.eval(program.evalCtx());
+		final EvaluationContext ctx = new EvaluationContext();
+		fp.eval(ctx);
 
 		final List<PredicateIOInfo> predInfo = new ArrayList<>();
-		final EvaluationContext ctx = program.evalCtx();
+
 		final RelationWrapper EDBs = new RelationWrapper(ctx, ctx.getRelation(fp), fp.type());
 		for (final RelationWrapper.TupleWrapper t : EDBs.tuples()) {
 			final String pred = t.getAsString(0);
@@ -449,9 +450,5 @@ public class ProgramSplit {
 			this.ctx = ctx;
 			this.srcRelName = srcRelName;
 		}
-	}
-
-	public boolean canEvaluateIncrementally() {
-		return true;
 	}
 }

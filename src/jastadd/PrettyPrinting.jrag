@@ -445,16 +445,19 @@ aspect SoufflePrinting {
 	}
 
 	private void Program.soufflePrintEDBDecl(PrettyPrinter pr) {
+
+
 		FormalPredicate fpEDB = formalPredicateMap().get(GlobalNames.EDB_NAME);
 		if (fpEDB == null) {
 			// no EDB in the program, nothing to do
 			return;
 		}
 
-		fpEDB.eval(evalCtx());
+		EvaluationContext ctx = new EvaluationContext();
+		fpEDB.eval(ctx);
 
 		// now iterate over the tuples in the EDB relation
-		EvaluationContext ctx = evalCtx();
+
 		RelationWrapper edbTuples = new RelationWrapper(ctx, ctx.getRelation(fpEDB), fpEDB.type());
 
 		for (RelationWrapper.TupleWrapper t : edbTuples.tuples()) {
@@ -482,9 +485,9 @@ aspect SoufflePrinting {
 		if(fpOUTPUT == null)
 			return;
 
-		fpOUTPUT.eval(evalCtx());
+		EvaluationContext ctx = new EvaluationContext();
+		fpOUTPUT.eval(ctx);
 
-		EvaluationContext ctx = evalCtx();
 		// now iterate over the tuples in the EDB relation
 		RelationWrapper outputTuples = new RelationWrapper(ctx, ctx.getRelation(fpOUTPUT), fpOUTPUT.type());
 

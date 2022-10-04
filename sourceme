@@ -1,0 +1,9 @@
+SOUFFLE_DEFAULT_PATH=`pwd`/../souffle/src
+
+# Java Runtime extracted from jre1.8.0_202
+export METADL_JAVA_RT=`pwd`/deps/rt.jar
+
+command souffle
+if (( $? != 0 )) ; then
+    export PATH=$SOUFFLE_DEFAULT_PATH:$PATH
+fi

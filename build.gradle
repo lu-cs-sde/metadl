@@ -124,7 +124,8 @@ jar {
 // Before compiling, we should generate some Java code:
 compileJava.dependsOn 'generateJava', 'generateScanner', 'generateParser',
     'genMetadlLang',
-    'genJava8Lang'
+    'genJava8Lang',
+    'genCLang'
 
 void makeGenerateJavaTask(String name, String outDir, String srcDir, String pkg,
 			  boolean patternGrammar = false,
@@ -389,6 +390,8 @@ def java8LexOrder = [
 
 def metadlLexOrder = ['scanner.flex']
 
+def cLexOrder = ['scanner.flex']
+
 // The order in which the parser files are concatenated
 def java8ParseOrder = [
     "Java1.4.parser",
@@ -421,7 +424,7 @@ def java8ParseOrder = [
 
 makeGenerateLangTask('genMetadlLang', 'src/gen/', 'metadl', metadlLexOrder)
 makeGeneratePatLangTask('genJava8Lang', 'src/gen/', 'java8', java8LexOrder, java8ParseOrder)
-
+makeGeneratePatLangTask('genCLang', 'src/gen', 'c', cLexOrder)
 
 makeGenerateBeaverTask('generateBeaver', 'src/gen/LangParser.beaver', 'src/parser/metadl.parser')
 makeGenerateParserTask('generateParser', 'src/gen/lang/ast', 'src/gen/LangParser.beaver')

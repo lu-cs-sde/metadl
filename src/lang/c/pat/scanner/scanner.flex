@@ -89,214 +89,164 @@ whitespace=({horizontal_white})+|({v_tab}|{c_return})+|{continuation}
 {whitespace}*({newline}|{linecomment})+{whitespace}*
 { return new Layout(yytext(), true); }
 
-
-LANGUAGE(AUTO,"auto")
-LANGUAGE(BREAK,"break")
-LANGUAGE(CASE,"case")
-LANGUAGE(CHAR,"char")
-LANGUAGE(CONST,"const")
-LANGUAGE(CONTINUE,"continue")
-LANGUAGE(DEFAULT,"default")
-LANGUAGE(DO,"do")
-LANGUAGE(DOUBLE,"double")
-LANGUAGE(ELSE,"else")
-LANGUAGE(ENUM,"enum")
-LANGUAGE(EXTERN,"extern")
-LANGUAGE(FLOAT,"float")
-LANGUAGE(FOR,"for")
-LANGUAGE(GOTO,"goto")
-LANGUAGE(IF,"if")
-LANGUAGE(INT,"int")
-LANGUAGE(LONG,"long")
-LANGUAGE(REGISTER,"register")
-LANGUAGE(RETURN,"return")
-LANGUAGE(SHORT,"short")
-LANGUAGE(SIGNED,"signed")
-LANGUAGE(SIZEOF,"sizeof")
-LANGUAGE(STATIC,"static")
-LANGUAGE(STRUCT,"struct")
-LANGUAGE(SWITCH,"switch")
-LANGUAGE(TYPEDEF,"typedef")
-LANGUAGE(UNION,"union")
-LANGUAGE(UNSIGNED,"unsigned")
-LANGUAGE(VOID,"void")
-LANGUAGE(VOLATILE,"volatile")
-LANGUAGE(WHILE,"while")
+"auto"  { return sym(Terminals.AUTO); }
+"break"  { return sym(Terminals.BREAK); }
+"case"  { return sym(Terminals.CASE); }
+"char"  { return sym(Terminals.CHAR); }
+"const"  { return sym(Terminals.CONST); }
+"continue"  { return sym(Terminals.CONTINUE); }
+"default"  { return sym(Terminals.DEFAULT); }
+"do"  { return sym(Terminals.DO); }
+"double"  { return sym(Terminals.DOUBLE); }
+"else"  { return sym(Terminals.ELSE); }
+"enum"  { return sym(Terminals.ENUM); }
+"extern"  { return sym(Terminals.EXTERN); }
+"float"  { return sym(Terminals.FLOAT); }
+"for"  { return sym(Terminals.FOR); }
+"goto"  { return sym(Terminals.GOTO); }
+"if"  { return sym(Terminals.IF); }
+"int"  { return sym(Terminals.INT); }
+"long"  { return sym(Terminals.LONG); }
+"register"  { return sym(Terminals.REGISTER); }
+"return"  { return sym(Terminals.RETURN); }
+"short"  { return sym(Terminals.SHORT); }
+"signed"  { return sym(Terminals.SIGNED); }
+"sizeof"  { return sym(Terminals.SIZEOF); }
+"static"  { return sym(Terminals.STATIC); }
+"struct"  { return sym(Terminals.STRUCT); }
+"switch"  { return sym(Terminals.SWITCH); }
+"typedef"  { return sym(Terminals.TYPEDEF); }
+"union"  { return sym(Terminals.UNION); }
+"unsigned"  { return sym(Terminals.UNSIGNED); }
+"void"  { return sym(Terminals.VOID); }
+"volatile"  { return sym(Terminals.VOLATILE); }
+"while"  { return sym(Terminals.WHILE); }
 
 //C99 keywords used by the default gnu89 dialect
-LANGUAGE(_BOOL,"_Bool")
-LANGUAGE(_COMPLEX,"_Complex")
-LANGUAGE(INLINE,"inline")
+"_Bool"  { return sym(Terminals._BOOL); }
+"_Complex"  { return sym(Terminals._COMPLEX); }
+"inline"  { return sym(Terminals.INLINE); }
 
-// LANGUAGE(RESTRICT,"restrict") // A C99 keyword not used in gnu89.
+"restrict"  { return sym(Terminals.RESTRICT); }
 
 //GCC
-LANGUAGE(__ALIGNOF,"__alignof")
-LANGUAGE(__ALIGNOF__,"__alignof__")
-LANGUAGE(ASM,"asm")
-LANGUAGE(__ASM,"__asm")
-LANGUAGE(__ASM__,"__asm__")
-LANGUAGE(__ATTRIBUTE,"__attribute")
-LANGUAGE(__ATTRIBUTE__,"__attribute__")
-LANGUAGE(__BUILTIN_OFFSETOF,"__builtin_offsetof")
-LANGUAGE(__BUILTIN_TYPES_COMPATIBLE_P,"__builtin_types_compatible_p")
-LANGUAGE(__BUILTIN_VA_ARG,"__builtin_va_arg")
-LANGUAGE(__BUILTIN_VA_LIST,"__builtin_va_list")
-LANGUAGE(__COMPLEX__,"__complex__")
-LANGUAGE(__CONST,"__const")
-LANGUAGE(__CONST__,"__const__")
-LANGUAGE(__EXTENSION__,"__extension__")
-LANGUAGE(__INLINE,"__inline")
-LANGUAGE(__INLINE__,"__inline__")
-LANGUAGE(__LABEL__,"__label__")
-LANGUAGE(__RESTRICT,"__restrict")
-LANGUAGE(__RESTRICT__,"__restrict__")
-LANGUAGE(__SIGNED,"__signed")
-LANGUAGE(__SIGNED__,"__signed__")
-LANGUAGE(__THREAD,"__thread")
-LANGUAGE(TYPEOF,"typeof")
-LANGUAGE(__TYPEOF,"__typeof")
-LANGUAGE(__TYPEOF__,"__typeof__")
-LANGUAGE(__VOLATILE,"__volatile")
-LANGUAGE(__VOLATILE__,"__volatile__")
-LANGUAGE(__INT128,"__int128")
+"__alignof"  { return sym(Terminals.__ALIGNOF); }
+"__alignof__"  { return sym(Terminals.__ALIGNOF__); }
+"asm"  { return sym(Terminals.ASM); }
+"__asm"  { return sym(Terminals.__ASM); }
+"__asm__"  { return sym(Terminals.__ASM__); }
+"__attribute"  { return sym(Terminals.__ATTRIBUTE); }
+"__attribute__"  { return sym(Terminals.__ATTRIBUTE__); }
+"__builtin_offsetof"  { return sym(Terminals.__BUILTIN_OFFSETOF); }
+"__builtin_types_compatible_p"  { return sym(Terminals.__BUILTIN_TYPES_COMPATIBLE_P); }
+"__builtin_va_arg"  { return sym(Terminals.__BUILTIN_VA_ARG); }
+"__builtin_va_list"  { return sym(Terminals.__BUILTIN_VA_LIST); }
+"__complex__"  { return sym(Terminals.__COMPLEX__); }
+"__const"  { return sym(Terminals.__CONST); }
+"__const__"  { return sym(Terminals.__CONST__); }
+"__extension__"  { return sym(Terminals.__EXTENSION__); }
+"__inline"  { return sym(Terminals.__INLINE); }
+"__inline__"  { return sym(Terminals.__INLINE__); }
+"__label__"  { return sym(Terminals.__LABEL__); }
+"__restrict"  { return sym(Terminals.__RESTRICT); }
+"__restrict__"  { return sym(Terminals.__RESTRICT__); }
+"__signed"  { return sym(Terminals.__SIGNED); }
+"__signed__"  { return sym(Terminals.__SIGNED__); }
+"__thread"  { return sym(Terminals.__THREAD); }
+"typeof"  { return sym(Terminals.TYPEOF); }
+"__typeof"  { return sym(Terminals.__TYPEOF); }
+"__typeof__"  { return sym(Terminals.__TYPEOF__); }
+"__volatile"  { return sym(Terminals.__VOLATILE); }
+"__volatile__"  { return sym(Terminals.__VOLATILE__); }
+"__int128"  { return sym(Terminals.__INT128); }
 
-TEXT(IDENTIFIER,{identifier},true)
-PREPROCESSOR_TEXT(INTEGERconstant,NUMBER,{integer_constant},false)
-PREPROCESSOR_TEXT(OCTALconstant,NUMBER,{octal_constant},false)
-PREPROCESSOR_TEXT(HEXconstant,NUMBER,{hex_constant},false)
-PREPROCESSOR_TEXT(FLOATINGconstant,NUMBER,{floating_constant},false)
-PREPROCESSOR_TEXT(PPNUM,NUMBER,{preprocessing_number},false)
-/*
-TEXT(INTEGERconstant,{integer_constant},false)
-TEXT(OCTALconstant,{octal_constant},false)
-TEXT(HEXconstant,{hex_constant},false)
-TEXT(FLOATINGconstant,{floating_constant},false)
-TEXT(PPNUM,{preprocessing_number},false)
-*/
+{identifier} { return sym(Terminals.IDENTIFIER); }
+{integer_constant} { return sym(Terminals.INTEGERConstant); }
+{octal_constant} { return sym(Terminals.OCTALConstant); }
+{hex_constant} { return sym(Terminals.HEXConstant); }
+{floating_constant} { return sym(Terminals.FLOATINGConstant); }
+{preprocessing_number} { return sym(Terminals.PPNUM); } // numeric constants supported only by the preprocessor?
 
-/* The \' doesn't mesh with the function-like invocation.  Returns an
-error that there is an unmatched ' in the parameter-list.  Circumvent
-the issue by putting the offending regular expression in a macro.  */
+"L"?\'{c_char}+\' { return sym(Terminals.CHARACTERConstant); }
+"L"?\"{s_char}*\" { return sym(Terminals.STRINGLiteral); }
 
-#define CHARACTERconstant_regex "L"?\'{c_char}+\'
-#define STRINGliteral_regex "L"?\"{s_char}*\"
+"->"  { return sym(Terminals.ARROW); }
+"++"  { return sym(Terminals.ICR); }
+"--"  { return sym(Terminals.DECR); }
+"<<"  { return sym(Terminals.LS); }
+">>"  { return sym(Terminals.RS); }
+"<="  { return sym(Terminals.LE); }
+">="  { return sym(Terminals.GE); }
+"=="  { return sym(Terminals.EQ); }
+"!="  { return sym(Terminals.NE); }
+"&&"  { return sym(Terminals.ANDAND); }
+"||"  { return sym(Terminals.OROR); }
+"+="  { return sym(Terminals.PLUSassign); }
+"-="  { return sym(Terminals.MINUSassign); }
+"*="  { return sym(Terminals.MULTassign); }
+"/="  { return sym(Terminals.DIVassign); }
+"%="  { return sym(Terminals.MODassign); }
+"<<="  { return sym(Terminals.LSassign); }
+">>="  { return sym(Terminals.RSassign); }
+"&="  { return sym(Terminals.ANDassign); }
+"^="  { return sym(Terminals.ERassign); }
+"|="  { return sym(Terminals.ORassign); }
 
-TEXT(CHARACTERconstant,CHARACTERconstant_regex,false)
-TEXT(STRINGliteral,STRINGliteral_regex,false)
+"("   { return sym(Terminals.LPAREN); } // preprocessor
+")"   { return sym(Terminals.RPAREN); } // preprocessor
+","   { return sym(Terminals.COMMA); } // preprocessor
+"#"   { return sym(Terminals.HASH); } // preprocessor
+"##"  { return sym(Terminals.DHASH); } // preprocessor
+"..." { return sym(Terminals.ELLIPSIS); } // preprocessor
 
-LANGUAGE(ARROW,"->")
-LANGUAGE(ICR,"++")
-LANGUAGE(DECR,"--")
-LANGUAGE(LS,"<<")
-LANGUAGE(RS,">>")
-LANGUAGE(LE,"<=")
-LANGUAGE(GE,">=")
-LANGUAGE(EQ,"==")
-LANGUAGE(NE,"!=")
-LANGUAGE(ANDAND,"&&")
-LANGUAGE(OROR,"||")
-LANGUAGE(PLUSassign,"+=")
-LANGUAGE(MINUSassign,"-=")
-LANGUAGE(MULTassign,"*=")
-LANGUAGE(DIVassign,"/=")
-LANGUAGE(MODassign,"%=")
-LANGUAGE(LSassign,"<<=")
-LANGUAGE(RSassign,">>=")
-LANGUAGE(ANDassign,"&=")
-LANGUAGE(ERassign,"^=")
-LANGUAGE(ORassign,"|=")
+"{"  { return sym(Terminals.LBRACE); }
+"}"  { return sym(Terminals.RBRACE); }
+"["  { return sym(Terminals.LBRACK); }
+"]"  { return sym(Terminals.RBRACK); }
+"."  { return sym(Terminals.DOT); }
+"&"  { return sym(Terminals.AND); }
+"*"  { return sym(Terminals.STAR); }
+"+"  { return sym(Terminals.PLUS); }
+"-"  { return sym(Terminals.MINUS); }
+"~"  { return sym(Terminals.NEGATE); }
+"!"  { return sym(Terminals.NOT); }
+"/"  { return sym(Terminals.DIV); }
+"%"  { return sym(Terminals.MOD); }
+"<"  { return sym(Terminals.LT); }
+">"  { return sym(Terminals.GT); }
+"^"  { return sym(Terminals.XOR); }
+"|"  { return sym(Terminals.PIPE); }
+"?"  { return sym(Terminals.QUESTION); }
+":"  { return sym(Terminals.COLON); }
+";"  { return sym(Terminals.SEMICOLON); }
+"="  { return sym(Terminals.ASSIGN); }
 
-PREPROCESSOR(LPAREN,OPEN_PAREN,"(")
-PREPROCESSOR(RPAREN,CLOSE_PAREN,")")
-PREPROCESSOR(COMMA,COMMA,",")
-PREPROCESSOR(HASH,HASH,"#")
-PREPROCESSOR(DHASH,DOUBLE_HASH,"##")
-PREPROCESSOR(ELLIPSIS,ELLIPSIS,"...")
-
-LANGUAGE(LBRACE,"{")
-LANGUAGE(RBRACE,"}")
-LANGUAGE(LBRACK,"[")
-LANGUAGE(RBRACK,"]")
-LANGUAGE(DOT,".")
-LANGUAGE(AND,"&")
-LANGUAGE(STAR,"*")
-LANGUAGE(PLUS,"+")
-LANGUAGE(MINUS,"-")
-LANGUAGE(NEGATE,"~")
-LANGUAGE(NOT,"!")
-LANGUAGE(DIV,"/")
-LANGUAGE(MOD,"%")
-LANGUAGE(LT,"<")
-LANGUAGE(GT,">")
-LANGUAGE(XOR,"^")
-LANGUAGE(PIPE,"|")
-LANGUAGE(QUESTION,"?")
-LANGUAGE(COLON,":")
-LANGUAGE(SEMICOLON,";")
-LANGUAGE(ASSIGN,"=")
-
-LANGUAGE(AT,"@")
-LANGUAGE(USD,"$")
-LANGUAGE(BACKSLASH, "\\")
+"@"  { return sym(Terminals.AT); }
+"$"  { return sym(Terminals.USD); }
+ "\\"  { return sym(Terminals.BACKSLASH); }
 
 // For c++
-//LANGUAGE(DOTSTAR,".*")
-//LANGUAGE(DCOLON,"::")
-//LANGUAGE(ARROWSTAR,"->*")
+//".*"  { return sym(Terminals.DOTSTAR); }
+//"::"  { return sym(Terminals.DCOLON); }
+//"->*"  { return sym(Terminals.ARROWSTAR); }
 
-
+"/*" {
+yybegin(COMMENT);
+comment = new StringBuilder();
+comment.append(yytext());
+commentnl = false;
 }
-// token definitions
-"("        {  return  sym(Terminals.LPARA);          }
-")"        {  return  sym(Terminals.RPARA);          }
-"{"        {  return  sym(Terminals.LBRACE);         }
-"}"        {  return  sym(Terminals.RBRACE);         }
-":-"       {  return  sym(Terminals.IMPLIED_BY);     }
-"."        {  return  sym(Terminals.DOT);            }
-","        {  return  sym(Terminals.COMMA);          }
-"+"        {  return  sym(Terminals.ADD);            }
-"-"        {  return  sym(Terminals.SUB);            }
-"*"        {  return  sym(Terminals.MUL);            }
-"/"        {  return  sym(Terminals.DIV);            }
-"EQ"       {  return  sym(Terminals.EQ);             }
-"NEQ"      {  return  sym(Terminals.NEQ);            }
-"LT"       {  return  sym(Terminals.LT);             }
-"LTE"      {  return  sym(Terminals.LTE);            }
-"GT"       {  return  sym(Terminals.GT);             }
-"GTE"      {  return  sym(Terminals.GTE);            }
-"EDB"      {  return  sym(Terminals.EDB);            }
-"OUTPUT"   {  return  sym(Terminals.OUTPUT);         }
-"NOT"      {  return  sym(Terminals.NOT);            }
-"BIND"     {  return  sym(Terminals.BIND);           }
-"IMPORT"   {  return  sym(Terminals.IMPORT);         }
-"analyze"  {  return  sym(Terminals.ANALYZE);        }
-"_"        {  return  sym(Terminals.WILDCARD);       }
-{Numeral}  {  return  sym(Terminals.NUMERAL);        }
-{VAR_ID}   {  return  sym(Terminals.VAR_ID);         }
-{PRED_ID}  {  return  sym(Terminals.PRED_ID);        }
-{GAP}      {  return  sym(Terminals.GAP);            }
-{METAVAR_ID} {  return sym(Terminals.METAVARID);     }
-{PRED_REF} {
-                String text = yytext();
-                String data = text.substring(1, text.length());
-                return new beaver.Symbol(Terminals.PRED_REF, yyline + 1, yycolumn + 1, yylength() - 1, data);
-           }
-
-{Pattern}  {
-                // Remove Quotes from Matched String.
-                String text = yytext();
-                String data = text.substring(2, text.length() - 2);
-                return new beaver.Symbol(Terminals.PATTERN, yyline + 1, yycolumn + 1, yylength() - 3, data);
-           }
-
-{String}   {
-                // Remove Quotes from Matched String.
-                String text = yytext();
-                String data = text.substring(1, text.length() - 1);
-                return new beaver.Symbol(Terminals.STRING, yyline + 1, yycolumn + 1, yylength() - 2, data);
-           }
-<<EOF>>    {  return  sym(Terminals.EOF);        }
 
 /* error fallback */
 [^]           { throw new SyntaxError("Illegal character <"+yytext()+">"); }
+}
+
+<COMMENT> {
+"*/" {
+comment.append(yytext()); yybegin(YYINITIAL);
+return new Layout(comment.toString(), false);
+}
+[^*\n]+ {comment.append(yytext());}
+"*" {comment.append(yytext());}
+\n {comment.append(yytext()); commentnl = true;}
+}

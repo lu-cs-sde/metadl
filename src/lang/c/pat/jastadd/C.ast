@@ -1,1 +1,56 @@
 TranslationUnit;
+
+
+abstract TypeQualifier;
+Const : TypeQualifier;
+Restrict : TypeQualifier;
+Volatile : TypeQualifier;
+
+abstract TypeSpecifier;
+
+
+abstract BasicTypeSpecifier : TypeSpecifier;
+VoidT : BasicTypeSpecifier;
+CharT: BasicTypeSpecifier;
+ShortT : BasicTypeSpecifier;
+IntT : BasicTypeSpecifier;
+LongT : BasicTypeSpecifier;
+Int128T : BasicTypeSpecifier;
+FloatT : BasicTypeSpecifier;
+DoubleT : BasicTypeSpecifier;
+SignedT : BasicTypeSpecifier;
+UnsignedT : BasicTypeSpecifier;
+BoolT : BasicTypeSpecifier;
+ComplexT : BasicTypeSpecifier;
+
+abstract AggregateTypeSpecifier : TypeSpecifier := AggregateDeclaration*;
+
+AggregateDeclaration := [TypeSpecifier] TypeQualifier* AggregateDeclarator*;
+StructTypeSpecifier : AggregateTypeSpecifier;
+UnionTypeSpecifier : AggregateTypeSpecifier;
+
+AggregateDeclarator := Declarator [Expression];
+
+abstract Declarator;
+Identifier : Declarator
+Abstract  : Declarator
+PointerDeclarator : Declarator := TypeQualifier* Declarator
+FunctionDeclarator : Declarator := FunctionFormalParameter* Declarator
+ArrayDeclarator : Declarator := TypeQualifier* [ArraySize] Declarator
+
+abstract ArraySize;
+ArraySizeVLA : ArraySize; /* e.g. void f(int x[*]) { } */
+
+StaticArraySize; /* e.g. void f(int x[static 5]) { } */
+ArraySizeExplicit : ArraySize := [StaticArraySize] AssignmentExpression
+
+FunctionFormalParameter = [TypeSpecifier] TypeQualifier* StorageClassSpecifier* [FunctionSpecifier] Declarator;
+
+abstract StorageClassSpecifier;
+Extern : StorageClassSpecifier;
+Static : StorageClassSpecifier;
+Auto : StorageClassSpecifier;
+Register : StorageClassSpecifier;
+
+abstract FunctionSpecifier;
+Inline : FunctionSpecifier;

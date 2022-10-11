@@ -56,10 +56,9 @@ translation_unit = external_declaration_list
 		 ;
 
 // ---------- External definitions ----------
-
-List external_declaration_list = /* empty */
-			       | external_declaration_list external_declaration
-			       ;
+external_declaration_list = /* empty */
+			  | external_declaration_list external_declaration
+			  ;
 
 external_declaration = function_definition_extension
 		     | declaration_extension

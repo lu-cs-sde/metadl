@@ -1,56 +1,248 @@
-TranslationUnit;
+// A.2.2 Declarations
 
+// (6.7) declaration:
+// declaration-specifiers init-declarator-list opt ;
+// static_assert-declaration : TODO
+Declaration ::= DeclarationSpecifier* InitDeclarator* ;
 
-abstract TypeQualifier;
-Const : TypeQualifier;
-Restrict : TypeQualifier;
-Volatile : TypeQualifier;
+// (6.7) declaration-specifiers:
+// storage-class-specifier declaration-specifiersopt
+// type-specifier declaration-specifiersopt
+// type-qualifier declaration-specifiersopt
+// function-specifier declaration-specifiersopt
+// alignment-specifier declaration-specifiersopt
+abstract DeclarationSpecifier;
+abstract StorageClassSpecifier : DeclarationSpecifier;
+abstract TypeSpecifier : DeclarationSpecifier;
+abstract TypeQualifier : DeclarationSpecifier;
+abstract FunctionSpecifier : DeclarationSpecifier;
+abstract AlignmentSpecifier : DeclarationSpecifier;
 
-abstract TypeSpecifier;
+// (6.7) init-declarator-list:
+// init-declarator
+// init-declarator-list , init-declarator
 
+// (6.7) init-declarator:
+// declarator
+// declarator = initializer
+InitDeclarator ::= Declarator [Initializer];
 
-abstract BasicTypeSpecifier : TypeSpecifier;
-VoidT : BasicTypeSpecifier;
-CharT: BasicTypeSpecifier;
-ShortT : BasicTypeSpecifier;
-IntT : BasicTypeSpecifier;
-LongT : BasicTypeSpecifier;
-Int128T : BasicTypeSpecifier;
-FloatT : BasicTypeSpecifier;
-DoubleT : BasicTypeSpecifier;
-SignedT : BasicTypeSpecifier;
-UnsignedT : BasicTypeSpecifier;
-BoolT : BasicTypeSpecifier;
-ComplexT : BasicTypeSpecifier;
-
-abstract AggregateTypeSpecifier : TypeSpecifier := AggregateDeclaration*;
-
-AggregateDeclaration := [TypeSpecifier] TypeQualifier* AggregateDeclarator*;
-StructTypeSpecifier : AggregateTypeSpecifier;
-UnionTypeSpecifier : AggregateTypeSpecifier;
-
-AggregateDeclarator := Declarator [Expression];
-
-abstract Declarator;
-Identifier : Declarator
-Abstract  : Declarator
-PointerDeclarator : Declarator := TypeQualifier* Declarator
-FunctionDeclarator : Declarator := FunctionFormalParameter* Declarator
-ArrayDeclarator : Declarator := TypeQualifier* [ArraySize] Declarator
-
-abstract ArraySize;
-ArraySizeVLA : ArraySize; /* e.g. void f(int x[*]) { } */
-
-StaticArraySize; /* e.g. void f(int x[static 5]) { } */
-ArraySizeExplicit : ArraySize := [StaticArraySize] AssignmentExpression
-
-FunctionFormalParameter = [TypeSpecifier] TypeQualifier* StorageClassSpecifier* [FunctionSpecifier] Declarator;
-
-abstract StorageClassSpecifier;
+// (6.7.1) storage-class-specifier:
+// typedef
+// extern
+// static
+// _Thread_local
+// auto
+// register
+Typedef : StorageClassSpecifier;
 Extern : StorageClassSpecifier;
 Static : StorageClassSpecifier;
+ThreadLocal : StorageClassSpecifier;
 Auto : StorageClassSpecifier;
 Register : StorageClassSpecifier;
 
-abstract FunctionSpecifier;
+// (6.7.2) type-specifier:
+// void
+// char
+// short
+// int
+// long
+// float
+// double
+// signed
+// unsigned
+// _Bool
+// _Complex
+// atomic-type-specifier
+// struct-or-union-specifier
+// enum-specifier
+// typedef-name
+Void : TypeSpecifier;
+Char : TypeSpecifier;
+Short : TypeSpecifier;
+Int : TypeSpecifier;
+Long : TypeSpecifier;
+Float : TypeSpecifier;
+Double : TypeSpecifier;
+Signed : TypeSpecifier;
+Unsigned : TypeSpecifier;
+Bool : TypeSpecifier;
+Complex : TypeSpecifier;
+
+// (6.7.2.1) struct-or-union-specifier:
+// struct-or-union identifieropt { struct-declaration-list }
+// struct-or-union identifier
+abstract StructOrUnionSpecifier : TypeSpecifier ::= [Identifier] StructDeclaration*;
+StructSpecifier : StructOrUnionSpecifier;
+UnionSpecifier : StructOrUnionSpecifier;
+
+// (6.7.2.1) struct-or-union:
+// struct
+// union
+
+// (6.7.2.1) struct-declaration-list:
+// struct-declaration
+// struct-declaration-list struct-declaration
+
+// (6.7.2.1) struct-declaration:
+// specifier-qualifier-list struct-declarator-listopt ;
+// TODO: static_assert-declaration
+StructDeclaration ::= [TypeSpecifier] [TypeQualifier] StructDeclarator*;
+
+// (6.7.2.1) specifier-qualifier-list:
+// type-specifier specifier-qualifier-listopt
+// type-qualifier specifier-qualifier-listopt
+
+// (6.7.2.1) struct-declarator-list:
+// struct-declarator
+// struct-declarator-list , struct-declarator
+
+// (6.7.2.1) struct-declarator:
+// declarator
+// declarator opt : constant-expression
+StructDeclarator ::= [Declarator] [ConstantExpression]
+
+// (6.7.2.2) enum-specifier:
+// enum identifier opt { enumerator-list }
+// enum identifier opt { enumerator-list , }
+// enum identifier
+EnumSpecifier : TypeSpecifier ::= [Identifier] Enumerator*;
+
+// (6.7.2.2) enumerator-list:
+// enumerator
+// enumerator-list , enumerator
+
+// (6.7.2.2) enumerator:
+// enumeration-constant
+// enumeration-constant = constant-expression
+Enumerator ::= EnumerationConstant ConstantExpression;
+
+// (6.7.2.4) atomic-type-specifier:
+// _Atomic ( type-name )
+AtomicTypeSpecifier : TypeSpecifier ::= TypeName
+
+// (6.7.3) type-qualifier:
+// const
+// restrict
+// volatile
+// _Atomic
+Const : TypeQualifier;
+Restrict : TypeQualifier;
+Volatile : TypeQualifier;
+Atomic : TypeQualifier;
+
+// (6.7.4) function-specifier:
+// inline
+// _Noreturn
 Inline : FunctionSpecifier;
+NoReturn : FunctionSpecifier;
+
+// (6.7.5) alignment-specifier:
+// _Alignas ( type-name )
+// _Alignas ( constant-expression )
+AlignAsType : AlignmentSpecifier ::= TypeName;
+AlignAsExpr : AlignmentSpecifier ::= ConstantExpression;
+
+// (6.7.6) declarator:
+// pointer opt direct-declarator
+abstract Declarator;
+PointerDeclarator : Declarator ::= TypeQualifier* Declarator;
+// (6.7.6) direct-declarator:
+// identifier
+// ( declarator )
+IdentifierDeclarator : Declarator ::= Identifier;
+
+// direct-declarator [ type-qualifier-list opt assignment-expressionopt ]
+// direct-declarator [ static type-qualifier-listopt assignment-expression ]
+// direct-declarator [ type-qualifier-list static assignment-expression ]
+// direct-declarator [ type-qualifier-list opt * ]
+ArrayDeclarator : Declarator ::= Declarator TypeQualifier* [AssignmentExpression] [Static]
+Static;
+ArrayDeclaratorVLA : Declarator ::= Declarator TypeQualifier*;
+// direct-declarator ( parameter-type-list )
+// direct-declarator ( identifier-listopt ) TODO
+FunctionDeclarator : Declarator ::= ParameterType*;
+
+// (6.7.6) pointer:
+// * type-qualifier-listopt
+// * type-qualifier-list opt pointer
+Pointer ::= TypeQualifier*;
+
+// (6.7.6) type-qualifier-list:
+// type-qualifier
+// type-qualifier-list type-qualifier
+
+// (6.7.6) parameter-type-list:
+// parameter-list
+// parameter-list , ...
+abstract ParameterType;
+ParameterVarArgType : ParameterType;
+
+// (6.7.6) parameter-list:
+// parameter-declaration
+// parameter-list , parameter-declaration
+ParameterDeclaration : ParameterType ::= DeclarationSpecifier* Declarator
+AbstractParameterDeclaration : ParameterType ::= DeclarationSpecifier* [AbstractDeclarator]
+
+// (6.7.6) parameter-declaration:
+// declaration-specifiers declarator
+// declaration-specifiers abstract-declaratoropt
+
+// (6.7.6) identifier-list:
+// identifier
+// identifier-list , identifier
+
+// (6.7.7) type-name:
+// specifier-qualifier-list abstract-declarator opt
+TypeName ::= TypeSpecifier* TypeQualifier* [AbstractDeclarator]
+
+// (6.7.7) abstract-declarator:
+// pointer
+// pointer opt direct-abstract-declarator
+abstract AbstractDeclarator;
+AbstractPointerDeclarator : AbstractDeclarator ::= TypeQualifier* AbstractDeclarator;
+
+// (6.7.7) direct-abstract-declarator:
+// ( abstract-declarator )
+// direct-abstract-declarator opt [ type-qualifier-list opt  assignment-expressionopt ]
+// direct-abstract-declaratoropt [ static type-qualifier-listopt  assignment-expression ]
+// direct-abstract-declaratoropt [ type-qualifier-list static assignment-expression ]
+// direct-abstract-declaratoropt [ * ]
+AbstractArrayDeclarator : AbstractDeclarator ::= AbstractDeclarator TypeQualifier* [Assignment-Expression] [Static];
+AbstractArrayDeclaratorVLA : AbstractDeclarator ::= AbstractDeclarator TypeQualifier*;
+// direct-abstract-declaratoropt ( parameter-type-list opt )
+AbstractFunctionDeclarator : AbstractDeclarator ::= ParameterType*;
+
+// (6.7.8) typedef-name:
+// identifier
+
+// (6.7.9) initializer:
+// assignment-expression
+// { initializer-list }
+// { initializer-list , }
+abstract Initializer;
+InitializerExpression : Initializer ::= AssignmentExpression;
+InitializerList : Initializer ::= InitializerListElem*;
+
+// (6.7.9) initializer-list:
+// designationopt initializer
+// initializer-list , designation opt initializer
+InitializerListElem ::= Designator* Initializer
+
+// (6.7.9) designation:
+// designator-list =
+
+// (6.7.9) designator-list:
+// designator
+// designator-list designator
+
+// (6.7.9) designator:
+// [ constant-expression ]
+// . identifier
+abstract Designator;
+ConstantExpressionDesignator : Designator ::= ConstantExpression;
+IdentifierDesignator : Designator ::= IdentifierDesignator;
+
+
+// (6.7.10) static_assert-declaration:
+// _Static_assert ( constant-expression , string-literal ) ; TODO

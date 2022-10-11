@@ -1,989 +1,365 @@
- /* Copyright (C) 1989,1990 James A. Roskind, All rights reserved.
-     This grammar was developed  and  written  by  James  A.  Roskind.
-     Copying  of  this  grammar  description, as a whole, is permitted
-     providing this notice is intact and applicable  in  all  complete
-     copies.   Translations as a whole to other parser generator input
-     languages  (or  grammar  description  languages)   is   permitted
-     provided  that  this  notice is intact and applicable in all such
-     copies,  along  with  a  disclaimer  that  the  contents  are   a
-     translation.   The reproduction of derived text, such as modified
-     versions of this grammar, or the output of parser generators,  is
-     permitted,  provided  the  resulting  work includes the copyright
-     notice "Portions Copyright (c)  1989,  1990  James  A.  Roskind".
-     Derived products, such as compilers, translators, browsers, etc.,
-     that  use  this  grammar,  must also provide the notice "Portions
-     Copyright  (c)  1989,  1990  James  A.  Roskind"  in   a   manner
-     appropriate  to  the  utility,  and in keeping with copyright law
-     (e.g.: EITHER displayed when first invoked/executed; OR displayed
-     continuously on display terminal; OR via placement in the  object
-     code  in  form  readable in a printout, with or near the title of
-     the work, or at the end of the file).  No royalties, licenses  or
-     commissions  of  any  kind are required to copy this grammar, its
-     translations, or derivative products, when the copies are made in
-     compliance with this notice. Persons or corporations that do make
-     copies in compliance with this notice may charge  whatever  price
-     is  agreeable  to  a  buyer, for such copies or derivative works.
-     THIS GRAMMAR IS PROVIDED ``AS IS'' AND  WITHOUT  ANY  EXPRESS  OR
-     IMPLIED  WARRANTIES,  INCLUDING,  WITHOUT LIMITATION, THE IMPLIED
-     WARRANTIES  OF  MERCHANTABILITY  AND  FITNESS  FOR  A  PARTICULAR
-     PURPOSE.
-
-     James A. Roskind
-     Independent Consultant
-     516 Latania Palm Drive
-     Indialantic FL, 32903
-     (407)729-4348
-     jar@ileaf.com
-
-     Modifications for GCC Extensions Copyright (C) 2009-2012 New York
-     University
-
-     Modifications for MetaDL Copyright (C) 2022 Alexandru Dura
- */
-
-
 %header {:
-	package lang.c.pat.ast;
+ package lang.c.pat.ast;
+ import lang.c.pat.ast.*;
+ import lang.c.pat.ast.PatLangScanner;
 :};
 
 %embed {:
-	static public class SyntaxError extends RuntimeException { public SyntaxError(String msg) {super(msg);}}
+  static public class SyntaxError extends RuntimeException { public SyntaxError(String msg) {super(msg);}}
 :};
 
-%goal translation_unit;
 
-translation_unit = external_declaration_list
-		 ;
-
-// ---------- External definitions ----------
-external_declaration_list = /* empty */
-			  | external_declaration_list external_declaration
-			  ;
-
-external_declaration = function_definition_extension
-		     | declaration_extension
-		     | assembly_definition
-		     | empty_definition
-		     ;
-
-empty_definition = SEMICOLON
-		 ;
-
-function_definition_extension = function_definition
-			      | __EXTENSION__ function_definition
-			      ;
-
-function_definition = function_prototype LBRACE function_compound_statement RBRACE
-                    | function_old_prototype declaration_list LBRACE function_compound_statement RBRACE
-		    ;
-
-function_compound_statement = local_label_declaration_list_opt declaration_or_statement_list
-			    ;
-
-function_prototype = identifier_declarator
-		   | declaration_specifier identifier_declarator
-		   | type_specifier identifier_declarator
-		   | declaration_qualifier_list identifier_declarator
-		   | type_qualifier_list identifier_declarator
-		   | old_function_declarator
-		   | declaration_specifier old_function_declarator
-		   | type_specifier old_function_declarator
-		   | declaration_qualifier_list old_function_declarator
-		   | type_qualifier_list old_function_declarator
-		   ;
-
-function_old_prototype = old_function_declarator
-		       | declaration_specifier old_function_declarator
-		       | type_specifier old_function_declarator
-		       | declaration_qualifier_list old_function_declarator
-		       | type_qualifier_list old_function_declarator
-		       ;
-
-nested_function_definition = nested_function_prototype LBRACE local_label_declaration_list_opt declaration_or_statement_list RBRACE
-			   | nested_function_old_prototype LBRACE declaration_list LBRACE local_label_declaration_list_opt declaration_or_statement_list RBRACE
-			   ;
-
-nested_function_prototype = declaration_specifier identifier_declarator
-			  | type_specifier identifier_declarator
-			  | declaration_qualifier_list identifier_declarator
-			  | type_qualifier_list identifier_declarator
-			  | declaration_specifier old_function_declarator
-			  | type_specifier old_function_declarator
-			  | declaration_qualifier_list old_function_declarator
-			  | type_qualifier_list old_function_declarator
-			  ;
-
-nested_function_old_prototype = declaration_specifier old_function_declarator
-			      | type_specifier old_function_declarator
-			      | declaration_qualifier_list old_function_declarator
-			      | type_qualifier_list old_function_declarator
-			      ;
-
-
-// ---------- Declarations ----------
-declaration_extension = declaration
-		      | __EXTENSION__ declaration
-		      ;
-
-declaration = SUE_declaration_specifier SEMICOLON
-	    | SUE_type_specifier SEMICOLON
-	    | declaring_list SEMICOLON
-	    | default_declaring_list SEMICOLON
-	    ;
-
-default_declaring_list = declaration_qualifier_list identifier_declarator assembly_expression_opt attribute_specifier_list_opt initializer_opt
-		       | type_qualifier_list identifier_declarator assembly_expression_opt attribute_specifier_list_opt initializer_opt
-		       | default_declaring_list COMMA attribute_specifier_list_opt identifier_declarator assembly_expression_opt attribute_specifier_list_opt initializer_opt
-		       ;
-
-declaring_list = declaration_specifier declarator assembly_expression_opt attribute_specifier_list_opt initializer_opt
-	       | type_specifier declarator assembly_expression_opt attribute_specifier_list_opt initializer_opt
-	       | declaring_list COMMA attribute_specifier_list_opt declarator assembly_expression_opt attribute_specifier_list_opt initializer_opt
-	       ;
-
-declaration_specifier = basic_declaration_specifier
-		      | SUE_declaration_specifier
-		      | typedef_declaration_specifier
-		      | var_arg_declaration_specifier
-		      | typeof_declaration_specifier
-		      ;
-
-type_specifier = basic_type_specifier
-	       | SUE_type_specifier
-	       | typedef_type_specifier
-	       | var_arg_type_specifier
-	       | typeof_type_specifier
-	       ;
-
-declaration_qualifier_list = storage_class
-			   | type_qualifier_list storage_class
-			   | declaration_qualifier_list declaration_qualifier
-			   ;
-
-type_qualifier_list = type_qualifier
-		    | type_qualifier_list type_qualifier
-		    ;
-
-declaration_qualifier = type_qualifier
-		      | storage_class
-		      ;
-
-type_qualifier = const_qualifier
-	       | volatile_qualifier
-	       | restrict_qualifier
-	       | attribute_specifier
-	       | function_specifier
-	       ;
-
-const_qualifier = CONST
-		| __CONST
-		| __CONST__
-		;
-
-volatile_qualifier = VOLATILE
-		   | __VOLATILE
-		   | __VOLATILE__
-		   ;
-
-restrict_qualifier = RESTRICT
-		   | __RESTRICT
-		   | __RESTRICT__
-		   ;
-
-function_specifier = INLINE
-		   | __INLINE
-		   | __INLINE__
-		   ;
-
-basic_declaration_specifier = basic_type_specifier storage_class
-			    | declaration_qualifier_list basic_type_name
-			    | basic_declaration_specifier declaration_qualifier
-			    | basic_declaration_specifier basic_type_name
-			    ;
-
-basic_type_specifier = basic_type_name
-		     | type_qualifier_list basic_type_name
-		     | basic_type_specifier type_qualifier
-		     | basic_type_specifier basic_type_name
-		     ;
-
-SUE_declaration_specifier = SUE_type_specifier storage_class
-			  | declaration_qualifier_list elaborated_type_name
-			  | SUE_declaration_specifier declaration_qualifier
-			  ;
-
-SUE_type_specifier = elaborated_type_name
-		   | type_qualifier_list elaborated_type_name
-		   | SUE_type_specifier type_qualifier
-		   ;
-
-typedef_declaration_specifier = typedef_type_specifier storage_class
-			      | declaration_qualifier_list typedef_name
-			      | typedef_declaration_specifier declaration_qualifier
-			      ;
-
-typedef_type_specifier = TYPEDEFname // TOOD: what is this? the lexer hack perhaps...
-		       | type_qualifier_list TYPEDEFname
-		       | typedef_type_specifier type_qualifier
-		       ;
-
-typeof_declaration_specifier = typeof_type_specifier storage_class
-			     | declaration_qualifier_list typeof_specifier
-			     | typeof_declaration_specifier declaration_qualifier
-			     | typeof_declaration_specifier typeof_specifier
-			     ;
-
-typeof_type_specifier = typeof_specifier
-		      | type_qualifier_list typeof_specifier
-		      | typeof_type_specifier type_qualifier
-		      | typeof_type_specifier typeof_specifier
-
-typeof_specifier = typeof_keyword LPAREN type_name RPAREN
-		 | typeof_keyword LPAREN expression RPAREN
-		 ;
-
-typeof_keyword = TYPEOF
-	       | __TYPEOF
-	       | __TYPEOF__
-	       ;
-
-var_arg_declaration_specifier = var_arg_type_specifier storage_class
-			      | declaration_qualifier_list var_arg_type_name
-			      | var_arg_declaration_specifier declaration_qualifier
-			      | var_arg_declaration_specifier var_arg_type_name
-			      ;
-
-var_arg_type_specifier = var_arg_type_name
-		       | type_qualifier_list var_arg_type_name
-		       | var_arg_type_specifier type_qualifier
-		       | var_arg_type_specifier var_arg_type_name
-		       ;
-
-var_arg_type_name = __BUILTIN_VA_LIST
-		  ;
-
-storage_class = TYPEDEF
-	      | EXTERN
-	      | STATIC
-	      | AUTO
-	      | REGISTER
-	      ;
-
-basic_type_name = VOID
-		| CHAR
-		| SHORT
-		| INT
-		| __INT128
-		| LONG
-		| FLOAT
-		| DOUBLE
-		| signed_keyword
-		| UNSIGNED
-		| _BOOL
-		| complex_keyword
-		;
-
-signed_keyword = SIGNED
-	       | __SIGNED
-	       | __SIGNED__
-	       ;
-
-complex_keyword = _COMPLEX
-		| __COMPLEX__
-		;
-
-elaborated_type_name = struct_specifier
-		     | union_specifier
-		     | enum_specifier
-		     ;
-
-struct_specifier = STRUCT LBRACE struct_declaration_list RBRACE
-		 | STRUCT identifier_or_typedef_name LBRACE struct_declaration_list RBRACE
-		 | STRUCT attribute_specifier_list LBRACE struct_declaration_list LBRACE
-		 | STRUCT attribute_specifier_list identifier_or_typedef_name LBRACE struct_declaration_list RBRACE
-		 | STRUCT attribute_specifier_list identifier_or_typedef_name
-		 ;
-
-union_specifier = UNION LBRACE struct_declaration_list RBRACE
-		| UNION identifier_or_typedef_name LBRACE struct_declaration_list RBRACE
-		| UNION attribute_specifier_list LBRACE struct_declaration_list LBRACE
-		| UNION attribute_specifier_list identifier_or_typedef_name LBRACE struct_declaration_list RBRACE
-		| UNION attribute_specifier_list identifier_or_typedef_name
-		;
-
-struct_declaration_list = /* empty */
-			| struct_declaration_list struct_declaration_extension
-			;
-
-struct_declaration_extension = struct_declaration
-			     | __EXTENSION__ struct_declaration
-
-struct_declaration = struct_declaring_list SEMICOLON
-		   | struct_default_declaring_list SEMICOLON
-		   | type_qualifier_list SEMICOLON
-		   | type_specifier SEMICOLON
-		   | SEMICOLON
-		   ;
-
-struct_default_declaring_list = type_qualifier_list struct_identifier_declarator attribute_specifier_list_opt
-			      | struct_default_declaring_list COMMA struct_identifier_declarator attribute_specifier_list_opt
-			      ;
-
-struct_declaring_list = type_specifier struct_declarator attribute_specifier_list_opt
-		      | struct_declaring_list COMMA struct_declarator attribute_specifier_list_opt
-		      ;
-
-struct_declarator = declarator bitfield_size_opt
-		  | bitfield_size
-		  ;
-
-bitfield_size_opt = /* empty */
-		  | bitfield_size
-		  ;
-
-bitfield_size = COLON constant_expression
-	      ;
-
-enum_specifier = ENUM LBRACE enumerator_list RBRACE
-	       | ENUM indentifier_or_typedef_name LBRACE enumerator_list RBRACE
-	       | ENUM identifier_or_typedef_name
-	       | ENUM LBRACE enumerator_list RBRACE
-	       | ENUM identifier_or_typedef_name LBRACE enumerator_list COMMA RBRACE
-	       | ENUM attribute_specifier_list LBRACE enumerator_list RBRACE
-	       | ENUM attribute_specifier_list identifier_or_typedef_name LBRACE enumerator_list RBRACE
-	       | ENUM attribute_specifier_list identifier_or_typedef_name
-	       | ENUM attribute_specifier_list LBRACE enumerator_list COMMA RBRACE
-	       | ENUM attribute_specifier_list indentifier_or_typedef_name LBRACE enumerator_list COMMA RBRACE
-	       ;
-
-enumerator_list = enumerator
-		| enumerator_list COMMA enumerator
-		;
-
-enumerator = IDENTIFIER enumerator_value_opt
-	   | TYPEDEFname enumerator_value_opt // TODO: is this needed?
-	   ;
-
-enumerator_value_opt = /* empty */
-		     | ASSIGN constant_expression
-		     ;
-
-parameter_type_list = parameter_list
-		    | paremeter_list COMMA ELLIPSIS
-		    ;
-
-parameter_list = parameter_declaration
-	       | paremeter_list COMMA parameter_declaration
-	       ;
-
-parameter_declaration = parameter_identifier_declaration
-		      | parameter_abstract_declaration
-		      ;
-
-parameter_abstract_declaration = declaration_specifier
-			       | declaration_specifier abstract_declarator
-			       | declaration_qualifier_list
-			       | declaration_qualifier_list abstract_declarator
-			       | type_specifier
-			       | type_specifier abstract_declarator
-			       | type_qualifier_list
-			       | type_qualifier_list abstract_declarator
-			       ;
-
-parameter_identifier_declaration = declaration_specifier identifier_declarator attribute_specifier_list_opt
-				 | declaration_specifier parameter_typedef_declarator attribute_specifier_list_opt
-				 | declaration_qualifier_list identifier_declarator attribute_specifier_list_opt
-				 | type_specifier identifier_declarator attribute_specifier_list_opt
-				 | type_specifier parameter_typedef_declarator attribute_specifier_list_opt
-				 | type_qualifier_list identifier_declarator attribute_specifier_list_opt
+TranslationUnit translation_unit = declaration_list {: return new TranslationUnit(declaration_list); :}
 				 ;
 
-identifier_list = identifier
-		| identifier_list COMMA identifier
-		;
-
-identifier = IDENTIFIER
-	   ;
-
-identifier_or_typedef_name = IDENTIFIER
-			   | TYPEDEFname
-			   ;
-
-type_name = type_specifier
-	  | type_specifier abstract_declarator
-	  | type_qualifier_list
-	  | type_qualifier_list abstract_declarator
-	  ;
-
-initializer_opt = /* empty */
-		| ASSIGN initializer
-		;
-
-initializer = LBRACE matched_initializer_list RBRACE
-	    | LBRACE matcher_initializer_list designated_initializer RBRACE
-	    | assignment_expression
-	    ;
-
-initializer_list = matched_initializer_list
-		 | matched_initializer_list designated_initializer
-		 ;
-
-matched_initializer_list = matched_initializer_list designated_initializer COMMA
-			 ;
-
-designated_initializer = initializer
-		       | designatation initializer
-		       ;
-
-designation = designator_list ASSIGN
-	    | obsolete_array_designation
-	    | obsolete_field_designation
-	    ;
-
-designator_list = designator
-		| designator_list designator
-		;
-
-designator = LBRACK constant_expression RBRACK
-	   | LBRACK constant_expression ELLIPSIS constant_expression RBRACK
-	   | DOT identifier
-	   | DOT TYPEDEFname
-	   ;
-
-obsolete_array_designation = LBRACK constant_expression RBRACK
-			   | LBRACK constant_expression ELLIPSIS constant_expression RBRACK
-			   ;
-
-obsolete_field_designation = IDENTIFIER COLON
-			   ;
-
-declarator = typedef_declarator
-	   | identifier_declarator
-	   ;
-
-typedef_declarator = typedef_declarator_main
-		   ;
-
-typedef_declarator_main = paren_typedef_declarator
-			| parameter_typedef_declarator
-			;
-
-parameter_typedef_declarator = TYPEDEFname
-			     | TYPEDEFname postfixing_abstract_declarator
-			     | clean_typedef_declarator
-			     ;
-
-clean_typedef_declarator = clean_postfix_typedef_declarator
-			 | STAR parameter_typedef_declarator
-			 | STAR type_qualifier_list parameter_typedef_declarator
-			 ;
-
-clean_postfix_typedef_declarator = LPAREN clean_typedef_declarator RPAREN
-				 | LPAREN clean_typedef_declarator RPAREN postfixing_abstract_declarator
-				 ;
-
-paren_typedef_declarator = paren_postfix_typedef_declarator
-			 | STAR LPAREN simple_paren_typedef_declarator RPAREN
-			 | STAR type_qualifier_list LPAREN simple_paren_typedef_declarator RPAREN
-			 | STAR paren_typedef_declarator
-			 | STAR type_qualifier_list paren_typedef_declarator
-			 ;
-
-paren_postfix_typedef_declarator = LPAREN paren_typedef_declarator RPAREN
-				 | LPAREN simple_paren_typedef_declarator postfixing_abstract_declarator RPAREN
-				 | LPAREN paren_typedef_declarator RPAREN postfixing_abstract_declarator
-				 ;
-
-simple_paren_typedef_declarator = TYPEDEFname
-				| LPAREN simple_paren_typedef_declarator RPAREN
-				;
-
-identifier_declarator = identifier_declarator_main
+List declaration_list = declaration {: return new List().add(declaration); :}
+     		      | declaration_list declaration {: return declaration_list.add(declaration); :}
 		      ;
 
-identifier_declarator_main = unary_identifier_declarator
-			   | paren_identifier_declarator
-			   ;
+// TODO: boilerplate until we have the grammar for expressions
+AssignmentExpression assignment_expression = INTEGERConstant {: return new AssignmentExpression(); :}
+		     			   ;
+ConstantExpression constant_expression = INTEGERConstant {: return new ConstantExpression(); :}
+		   		       ;
 
-unary_identifier_declarator = postfix_identifier_declarator
-			    | STAR identifier_declarator
-			    | STAR type_qualifier_list identifier_declarator
+EnumerationConstant enumeration_constant = IDENTIFIER {: return new EnumerationConstant(IDENTIFIER); :}
+		    			 ;
+Identifier identifier = IDENTIFIER {: return new Identifier(IDENTIFIER); :}
+	   	      ;
+
+// A.2.2 Declarations
+// (6.7) declaration:
+// declaration-specifiers init-declarator-list opt ;
+// static_assert-declaration : TODO
+Declaration declaration = declaration_specifiers init_declarator_list_opt {: return new Declaration(declaration_specifiers, init_declarator_list_opt); :}
+                        ;
+
+// (6.7) declaration-specifiers:
+// storage-class-specifier declaration-specifiersopt
+// type-specifier declaration-specifiersopt
+// type-qualifier declaration-specifiersopt
+// function-specifier declaration-specifiersopt
+// alignment-specifier declaration-specifiersopt
+DeclarationSpecifier declaration_specifier = storage_class_specifier
+                                           | type_specifier
+                                           | type_qualifier
+                                           | function_specifier
+                                           | alignment_specifier
+                                           ;
+
+List declaration_specifiers = declaration_specifier {: return new List().add(declaration_specifier); :}
+     			    | declaration_specifiers declaration_specifier {: return declaration_specifiers.add(declaration_specifier); :}
 			    ;
 
-postfix_identifier_declarator = function_declarator
-			      | array_declarator
-			      | attributed_declarator
-			      | LPAREN unary_identifier_declarator RPAREN postfixing_abstract_declarator
+// (6.7) init-declarator-list:
+// init-declarator
+// init-declarator-list , init-declarator
+List init_declarator_list_opt = init_declarator_list
+     			      | /* empty */  {: return new List(); :}
 			      ;
 
-attributed_declarator = LPAREN unary_identifier_declarator RPAREN
+List init_declarator_list = init_declarator {: return new List().add(init_declarator); :}
+     			  | init_declarator_list init_declarator {: return init_declarator_list.add(init_declarator); :}
+			  ;
+
+// (6.7) init-declarator:
+// declarator
+// declarator = initializer
+InitDeclarator init_declarator = declarator initializer? {: return new InitDeclarator(declarator, initializer); :}
+	       	       ;
+
+// (6.7.1) storage-class-specifier:
+// typedef
+// extern
+// static
+// _Thread_local
+// auto
+// register
+StorageClassSpecifier storage_class_specifier = TYPEDEF {: return new Typedef(); :}
+                                              | EXTERN {: return new Extern(); :}
+                                              | STATIC {: return new Static(); :}
+                                              | THREAD_LOCAL {: return new ThreadLocal(); :}
+                                              | AUTO {: return new Auto(); :}
+                                              | REGISTER {: return new Register(); :}
+                                              ;
+
+// (6.7.2) type-specifier:
+// void
+// char
+// short
+// int
+// long
+// float
+// double
+// signed
+// unsigned
+// _Bool
+// _Complex
+// atomic-type-specifier
+// struct-or-union-specifier
+// enum-specifier
+// typedef-name
+TypeSpecifier type_specifier = VOID {: return new Void(); :}
+                             | CHAR {: return new Char(); :}
+                             | SHORT {: return new Short(); :}
+                             | INT {: return new Int(); :}
+                             | LONG {: return new Long(); :}
+                             | FLOAT {: return new Float(); :}
+                             | DOUBLE {: return new Double(); :}
+                             | SIGNED {: return new Signed(); :}
+                             | UNSIGNED {: return new Unsigned(); :}
+                             | U_BOOL {: return new Bool(); :}
+                             | U_COMPLEX {: return new Complex(); :}
+                             | atomic_type_specifier
+                             | struct_specifier
+                             | union_specifier
+                             | enum_specifier
+                             | typedef_name
+                             ;
+
+// (6.7.2.1) struct-or-union-specifier:
+// struct-or-union identifieropt { struct-declaration-list }
+// struct-or-union identifier
+// (6.7.2.1) struct-or-union:
+// struct
+// union
+StructSpecifier struct_specifier = STRUCT identifier? LBRACE struct_declaration_list RBRACE {: return new StructSpecifier(identifier, struct_declaration_list); :}
+                                 | STRUCT identifier {: return new StructSpecifier(new Opt(identifier), new List()); :}
+                                 ;
+
+UnionSpecifier union_specifier = UNION identifier? LBRACE struct_declaration_list RBRACE {: return new UnionSpecifier(identifier, struct_declaration_list); :}
+                               | UNION identifier {: return new UnionSpecifier(new Opt(identifier), new List()); :}
+                               ;
+
+List struct_declaration_list = struct_declaration {: return new List().add(struct_declaration); :}
+			     | struct_declaration_list struct_declaration {: return struct_declaration_list.add(struct_declaration); :}
+			     ;
+
+// (6.7.2.1) struct-declaration-list:
+// struct-declaration
+// struct-declaration-list struct-declaration
+// (6.7.2.1) struct-declaration:
+// specifier-qualifier-list struct-declarator-listopt ;
+// static_assert-declaration : TODO
+StructDeclaration struct_declaration = specifier_qualifier_list struct_declarator_list SEMICOLON {:
+                                         return new StructDeclaration(List.filter(specifier_qualifier_list, TypeSpecifier.class),
+                                                                      List.filter(specifier_qualifier_list, TypeQualifier.class),
+                                                struct_declarator_list); :}
+                                     ;
+
+// (6.7.2.1) specifier-qualifier-list:
+// type-specifier specifier-qualifier-listopt
+// type-qualifier specifier-qualifier-listopt
+List specifier_qualifier_list = specifier_qualifier_list type_specifier {: return specifier_qualifier_list.add(type_specifier); :}
+			      | specifier_qualifier_list type_qualifier {: return specifier_qualifier_list.add(type_qualifier); :}
+			      | type_specifier {: return new List().add(type_specifier); :}
+			      | type_qualifier {: return new List().add(type_qualifier); :}
+			      ;
+
+// (6.7.2.1) struct-declarator-list:
+// struct-declarator
+// struct-declarator-list , struct-declarator
+List struct_declarator_list = struct_declarator {: return new List().add(struct_declarator); :}
+     		      	    | struct_declarator_list struct_declarator {: return  struct_declarator_list.add(struct_declarator); :}
+			    ;
+
+// (6.7.2.1) struct-declarator:
+// declarator
+// declarator opt : constant-expression
+StructDeclarator struct_declarator = declarator? COLON constant_expression {: return new StructDeclarator(declarator, new Opt(constant_expression)); :}
+		 		   | declarator {: return new StructDeclarator(new Opt(declarator), new Opt()); :}
+				   ;
+
+// (6.7.2.2) enum-specifier:
+// enum identifier opt { enumerator-list }
+// enum identifier opt { enumerator-list , }
+// enum identifier
+EnumSpecifier enum_specifier = ENUM identifier? LBRACE enumerator_list RBRACE {: return new EnumSpecifier(identifier, enumerator_list); :}
+	      		     | ENUM identifier? LBRACE enumerator_list COMMA RBRACE {: return new EnumSpecifier(identifier, enumerator_list); :}
+			     | ENUM identifier {: return new EnumSpecifier(new Opt(identifier), new List()); :}
+			     ;
+
+// (6.7.2.2) enumerator-list:
+// enumerator
+// enumerator-list , enumerator
+List enumerator_list = enumerator {: return new List().add(enumerator); :}
+     		     | enumerator_list COMMA enumerator {: return enumerator_list.add(enumerator); :}
+		     ;
+
+// (6.7.2.2) enumerator:
+// enumeration-constant
+// enumeration-constant = constant-expression
+Enumerator enumerator = enumeration_constant ASSIGN constant_expression {: return new Enumerator(enumeration_constant, new Opt(constant_expression)); :}
+	   	      | enumeration_constant {: return new Enumerator(enumeration_constant, new Opt()); :}
 		      ;
 
-function_declarator = paren_identifier_declarator postfixing_function_declarator
+// (6.7.2.4) atomic-type-specifier:
+// _Atomic ( type-name )
+AtomicTypeSpecifier atomic_type_specifier = U_ATOMIC LPAREN type_name RPAREN {: return new AtomicTypeSpecifier(type_name); :}
+		    			  ;
+
+// (6.7.3) type-qualifier:
+// const
+// restrict
+// volatile
+// _Atomic
+TypeQualifier type_qualifier = CONST {: return new Const(); :}
+	      		     | RESTRICT {: return new Restrict(); :}
+			     | VOLATILE {: return new Volatile(); :}
+			     | U_ATOMIC {: return new Atomic(); :}
+			     ;
+
+// (6.7.4) function-specifier:
+// inline
+// _Noreturn
+FunctionSpecifier function_specifier = INLINE {: return new Inline(); :}
+		  		     | NORETURN {: return new Noreturn(); :}
+				     ;
+
+// (6.7.5) alignment-specifier:
+// _Alignas ( type-name )
+// _Alignas ( constant-expression )
+AlignmentSpecifier alignment_specifier = ALIGNAS LPAREN type_name RPAREN {: return new AlignAsType(type_name); :}
+		   		       | ALIGNAS LPAREN constant_expression RPAREN {: return new AlignAsExpr(constant_expression); :}
+				       ;
+
+// (6.7.6) declarator:
+// pointer opt direct-declarator
+Declarator declarator = pointer? STAR direct_declarator {: return direct_declarator.setPointerOpt(pointer); :}
+	   	      ;
+
+// (6.7.6) direct-declarator:
+// identifier
+// ( declarator )
+// direct-declarator [ type-qualifier-list opt assignment-expressionopt ]
+// direct-declarator [ static type-qualifier-listopt assignment-expression ]
+// direct-declarator [ type-qualifier-list static assignment-expression ]
+// direct-declarator [ type-qualifier-list opt * ]
+// direct-declarator ( parameter-type-list )
+// direct-declarator ( identifier-listopt ) TODO
+Declarator direct_declarator = identifier {: return new IdentifierDeclarator(new Opt(), identifier); :}
+			     | LPAREN declarator RPAREN {: return declarator; :}
+			     | direct_declarator LBRACK type_qualifier_list_opt assignment_expression? RBRACK {: return new ArrayDeclarator(new Opt(), direct_declarator, type_qualifier_list_opt, assignment_expression, new Opt()); :}
+			     | direct_declarator LBRACK STATIC type_qualifier_list_opt assignment_expression? RBRACK {: return new ArrayDeclarator(new Opt(), direct_declarator, type_qualifier_list_opt, assignment_expression, new Opt(new Static())); :}
+			     | direct_declarator LBRACK type_qualifier_list STATIC assignment_expression? RBRACK {: return new ArrayDeclarator(new Opt(), direct_declarator, type_qualifier_list, assignment_expression, new Opt(new Static())); :}
+			     | direct_declarator LRBRACK type_qualifier_list_opt STAR RBRACK {: return new ArrayDeclaratorVLA(new Opt(), direct_declarator, type_qualifier_list_opt); :}
+			     | direct_declarator LPAREN parameter_type_list RPAREN {: return new FunctionDeclarator(new Opt(), parameter_type_list); :}
+			     ;
+
+
+// (6.7.6) pointer:
+// * type-qualifier-listopt
+// * type-qualifier-list opt pointer
+Pointer pointer = STAR type_qualifier_list_opt pointer? {: return new Pointer(type_qualifier_list_opt, pointer); :}
+		;
+
+// (6.7.6) type-qualifier-list:
+// type-qualifier
+// type-qualifier-list type-qualifier
+List type_qualifier_list_opt = /* empty */ {: return new List(); :}
+     			     | type_qualifier_list
+			     ;
+
+List type_qualifier_list = type_qualifier {: return new List().add(type_qualifier); :}
+     			 | type_qualifier_list type_qualifier {: return type_qualifier_list.add(type_qualifier); :}
+			 ;
+
+// (6.7.6) parameter-type-list:
+// parameter-list
+// parameter-list , ...
+List parameter_type_list = parameter_list COMMA ELLIPSIS {: return parameter_list.add(new ParameterVarArgType()); :}
+     			 | parameter_list {: return parameter_list; :}
+			 ;
+
+// (6.7.6) parameter-list:
+// parameter-declaration
+// parameter-list , parameter-declaration
+List parameter_list = parameter_type {: return new List().add(parameter_type); :}
+     		    | parameter_list COMMA parameter_type {: return parameter_list.add(parameter_type); :}
 		    ;
 
-postfixing_function_declarator = LPAREN parameter_type_list_opt RPAREN
-			       ;
+// (6.7.6) parameter-declaration:
+// declaration-specifiers declarator
+// declaration-specifiers abstract-declaratoropt
+ParameterType parameter_type = declaration_specifiers declarator {: return new ParameterDeclaration(declaration_specifiers, declarator); :}
+	      		     | declaration_specifiers abstract_declarator? {: return new AbstractParameterDeclaration(declaration_specifiers, abstract_declarator); :}
+			     ;
 
-array_declarator = paren_identifier_declarator array_abstract_declarator
+// (6.7.6) identifier-list: TODO
+// identifier
+// identifier-list , identifier
 
-paren_identifier_declarator = simple_declarator
-			    | LPAREN paren_identifier_declarator RPAREN
-			    ;
+// (6.7.7) type-name:
+// specifier-qualifier-list abstract-declarator opt
+TypeName type_name = specifier_qualifier_list abstract_declarator? {: return new TypeName(List.filter(specifier_qualifier_list, TypeSpecifier.class), List.filter(specifier_qualifier_list, TypeQualifier.class), abstract_declarator); :}
+	 	   ;
 
-simple_declarator = IDENTIFIER
-		  ;
+// (6.7.7) abstract-declarator:
+// pointer
+// pointer opt direct-abstract-declarator
+AbstractDeclarator abstract_declarator = pointer {: return new AbstractDeclarator().setPointer(pointer); :}
+		   		       | pointer? direct_abstract_declarator {: return direct_abstract_declarator.setPointerOpt(pointer); :}
+				       ;
 
-old_function_declarator = postfix_old_function_declarator
-			| STAR old_function_declarator
-			| STAR type_qualifier_list old_function_declarator
+// (6.7.7) direct-abstract-declarator:
+// ( abstract-declarator )
+// direct-abstract-declarator opt [ type-qualifier-list opt
+// assignment-expressionopt ]
+// direct-abstract-declaratoropt [ static type-qualifier-listopt
+// assignment-expression ]
+// direct-abstract-declaratoropt [ type-qualifier-list static
+// assignment-expression ]
+// direct-abstract-declaratoropt [ * ]
+// direct-abstract-declaratoropt ( parameter-type-list opt )
+
+AbstractDeclarator direct_abstract_declarator = LPAREN abstract_declarator RPAREN {: return abstract_declarator; :}
+		   			      | direct_abstract_declarator LBRACK type_qualifier_list_opt assignment_expression? RBRACK {: return new AbstractArrayDeclarator(new Opt(), direct_abstract_declarator, type_qualifier_list_opt, assignment_expression, new Opt()); :}
+			     		      | direct_abstract_declarator LBRACK STATIC type_qualifier_list_opt assignment_expression? RBRACK {: return new AbstractArrayDeclarator(new Opt(), direct_abstract_declarator, type_qualifier_list_opt, assignment_expression, new Opt(new Static())); :}
+					      | direct_abstract_declarator LBRACK type_qualifier_list STATIC assignment_expression? RBRACK {: return new AbstractArrayDeclarator(new Opt(), direct_abstract_declarator, type_qualifier_list, assignment_expression, new Opt(new Static())); :}
+			     		      | direct_abstract_declarator LRBRACK type_qualifier_list_opt STAR RBRACK {: return new AbstractArrayDeclaratorVLA(new Opt(), direct_abstract_declarator, type_qualifier_list_opt); :}
+					      | direct_abstract_declarator LPAREN parameter_type_list RPAREN {: return new AbstractFunctionDeclarator(new Opt(), parameter_type_list); :}
+			     		      ;
+
+
+// (6.7.8) typedef-name:
+// identifier
+TypedefName typedef_name = identifier {: return new TypedefName(identifier); :}
+	    		 ;
+
+// (6.7.9) initializer:
+// assignment-expression
+// { initializer-list }
+// { initializer-list , }
+Initializer initializer = assignment_expression {: return new InitializerExpression(assignment_expression); :}
+	    		| initializer_list {: return new InitializerList(initializer_list); :}
 			;
 
-postfix_old_function_declarator = paren_identifier_declarator LPAREN identifier_list RPAREN
-				| LPAREN old_function_declarator RPAREN
-				| LPAREN old_function_declarator RPAREN postfix_old_function_declarator
-				;
-
-abstract_declarator = unary_abstract_declarator
-		    | postfix_abstract_declarator
-		    | postfixing_abstract_declarator
-		    ;
-
-postfixing_abstract_declarator = array_abstract_declarator
-			       | postfixing_function_declarator
-			       ;
-
-parameter_type_list_opt = /* empty */
-			| parameter_type_list
-			;
-
-array_abstract_declarator = LBRACK RBRACK
-			  | LBRACK constant_expression RBRACK
-			  | array_abstract_declarator LBRACK constant_expression RBRACK
-			  ;
-
-unary_abstract_declarator = STAR
-			  | STAR type_qualifier_list
-			  | STAR abstract_declarator
-			  | STAR type_qualifier_list abstract_declarator
-			  ;
-
-postfix_abstract_declarator = LPAREN unary_abstract_declarator RPAREN
-			    | LPAREN postfix_abstract_declarator RPAREN
-			    | LPAREN postfixing_abstract_declarator RPAREN
-			    | LPAREN unary_abstract_declarator RPAREN postfixing_abstract_declarator
-			    ;
-
-
-
-// ---------- Statements ----------
-statement = labeled_statement
-	  | compound_statement
-	  | expression_statement
-	  | selection_statement
-	  | iteration_statement
-	  | jump_statement
-	  | assembly_statement
-	  ;
-
-labeled_statement = identifier_or_typedef_name COLON attribute_specifier_list_opt statement
-		  | CASE constant_expression COLON statement
-		  | CASE constant_expression ELLIPSIS constant_expression COLON statement
-		  | DEFAULT COLON statement
-		  ;
-
-compound_statement = LBRACE local_label_declaration_list_opt declaration_or_statement_list RBRACE
-		   ;
-
-local_label_declaration_list_opt = /* empty */
-				 | local_label_declaration_list
+// (6.7.9) initializer-list:
+// designationopt initializer
+// initializer-list , designation opt initializer
+List initializer_list = designator_list_opt initializer {: return new List().add(new InitializerListElem(designator_list_opt, initializer)); :}
+		      | initializer_list designator_list_opt initializer {: return initializer_list.add(new InitializerListElem(designator_list_opt, initializer)); :}
 				 ;
 
-local_label_declaration_list = local_label_declaration
-			     | local_label_declaration_list local_label_declaration
-			     ;
 
-local_label_declaration = __LABEL__ local_label_list SEMICOLON
-			;
-
-local_label_list = IDENTIFIER
-		 | local_label_list COMMA IDENTIFIER
-		 ;
-
-declaration_or_statement_list = /* empty */
-			      | declaration_or_statement_list declaration_or_statement
-			      ;
-
-declaration_or_statement = declaration_extension
-			 | statement
-			 | nested_function_definition
+// (6.7.9) designation:
+// designator-list =
+// (6.7.9) designator-list:
+// designator
+// designator-list designator
+List designator_list_opt = designator_list
+     			 | /* empty */ {: return new List(); :}
 			 ;
 
-declaration_list = declaration_extension
-		 | declaration_list declaration_extension
-		 ;
-
-expression_statement = expression_opt SEMICOLON
+List designator_list = designator {: return new List().add(designator); :}
+     		     | designator_list designator {: return designator_list.add(designator); :}
 		     ;
 
-selection_statement = IF LPAREN expression RPAREN statement
-		    | IF LPAREN expression RPAREN statement ELSE statement
-		    | SWITCH LPAREN expression RPAREN statement
-		    ;
-
-iteration_statement = WHILE LPAREN expression RPAREN statement
-		    | DO statement WHILE LPAREN expression RPAREN SEMICOLON
-		    | FOR LPAREN expression_opt SEMICOLON expression_opt SEMICOLON expression_opt RPAREN statement
-		    | FOR LPAREN declaration expression_opt SEMICOLON expression_opt RPAREN statement
-		    ;
-
-jump_statement = goto_statement
-	       | continue_statement
-	       | break_statement
-	       | return_statement
-	       ;
-
-goto_statement = GOTO indentifier_or_typedef_name SEMICOLON;
-	       | GOTO STAR expression SEMICOLON
-	       ;
-
-continue_statement = CONTINUE SEMICOLON
-		   ;
-
-break_statement = BREAK SEMICOLON
-		;
-
-return_statement = RETURN expression_opt SEMICOLON
-		 ;
-
-// ---------- Expressions ----------
-constant = FLOATINGconstant
-	 | INTEGERconstant
-	 | OCTALconstant
-	 | HEXconstant
-	 | CHARACTERconstant
-	 ;
-
-string_literal_list = string_literal
-		    | string_literal_list string_literal
-		    ;
-
-primary_expression = primary_identifier
-		   | constant
-		   | string_literal_list
-		   | LPAREN expression RPAREN
-		   | statement_as_expression
-		   | variable_argument_access
-		   ;
-
-primary_identifier = IDENTIFIER
-		   ;
-
-variable_argument_access = __BUILTIN_VA_ARG LPAREN assignment_expression COMMA type_name RPAREN
-			 ;
-
-postfix_expression = primary_expression
-		   | subscript
-		   | function_call
-		   | direct_selection
-		   | indirect_selection
-		   | increment
-		   | decrement
-		   | compound_literal
-		   ;
-
-subscript = postfix_expression LBRACK expression RBRACK
-
-function_call = postfix_expression LPAREN RPAREN
-	      | postfix_expression LPAREN expression_list RPAREN
-	      ;
-
-direct_selection = postfix_expression DOT identifier_or_typedef_name
-		 ;
-
-indirect_selection = postfix_expression ARROW indentifier_or_typedef_name
-		   ;
-
-increment = postfix_expression ICR
-	  ;
-
-decrement = postfix_expression DECR
-	  ;
-
-compound_literal = LPAREN type_name RPAREN LBRACE initializer_list RBRACE
-		 ;
-
-expression_list = assignment_expression
-		| expression_list COMMA assignment_expression
-		;
-
-unary_expression = postfix_expression
-		 | ICR unary_expression
-		 | DECR unary_expression
-		 | unary_operator cast_expression
-		 | SIZEOF unary_expression
-		 | SIZEOF LPAREN unary_expression RPAREN
-		 | label_address_expression
-		 | alignof_expression
-		 | extension_expression
-		 | offsetof_expression
-		 | type_compatibility_expression
-		 ;
-
-type_compatibility_expression = __BUILTIN_TYPES_COMPATIBLE_P LPAREN type_name COMMA type_name RPAREN
-			      ;
-
-offsetof_expression = __BUILTIN_OFFSETOF LPAREN type_name COMMA postfix_expression RPAREN
-		    ;
-
-extension_expression = __EXTENSION__ cast_expression
-		     ;
-
-alignof_expression = alignof_keyword LPAREN type_name RPAREN
-		   | alignof_keyword unary_expression
-		   ;
-
-alignof_keyword = __ALIGNOF__
-		| __ALIGNOF
-		;
-
-label_address_expression = ANDAND IDENTIFIER
-			 ;
-
-unary_operator = AND
-	       | STAR
-	       | PLUS
-	       | MINUS
-	       | NEGATE
-	       | NOT
-	       ;
-
-cast_expression = unary_expression
-		| LPAREN type_name RPAREN cast_expression
-		;
-
-multiplicative_expression = cast_expression
-			  | multiplicative_expression STAR cast_expression
-			  | multiplicative_expression DIV cast_expression
-			  | multiplicative_expression MOV cast_expression
-			  ;
-
-additive_expression = multiplicative_expression
-		    | additive_expression PLUS multiplicative_expression
-		    | additive_expression MINUS multiplicative_expression
-		    ;
-
-shift_expression = additive_expression
-		 | shift_expression LS additive_expression
-		 | shift_expression RS additive_expression
-		 ;
-
-relational_expression = shift_expression
-		      | relational_expression LT shift_expression
-		      | relational_expression GT shift_expression
-		      | relational_expression LE shift_expression
-		      | relational_expression GE shift_expression
+// (6.7.9) designator:
+// [ constant-expression ]
+// . identifier
+Designator designator = LBRACK constant_expression RBRACK {: return new ConstantExpressionDesignator(constant_expression); :}
+	    	      | DOT identifier {: return new IdentifierDesignator(identifier); :}
 		      ;
-
-equality_expression = relational_expression
-		    | equality_expression EQ relational_expression
-		    | equality_expression NE relational_expression
-		    ;
-
-and_expression = equality_expression
-	       | and_expression AND equality_expression
-	       ;
-
-exclusive_or_expression = and_expression
-			| exclusive_or_expression XOR and_expression
-			;
-
-inclusive_or_expression = exclusive_or_expression
-			| inclusive_or_expression PIPE exclusive_or_expression
-			;
-
-logical_and_expression = inclusive_or_expression
-		       | logical_and_expression ANDAND inclusive_or_expression
-		       ;
-
-logical_or_expression = logical_and_expression
-		      | logical_or_expression OROR logical_and_expression
-		      ;
-
-conditional_expression = logical_or_expression
-		       | logical_or_expression QUESTION expression COLON conditional_expression
-		       | logical_or_expression QUESTION COLON conditional_expression
-		       ;
-
-assignment_expression = conditional_expression
-		      | unary_expression assignment_operator assignment_expression
-		      ;
-
-assignment_operator = ASSIGN
-		    | MULTassign
-		    | DIVassign
-		    | MODassign
-		    | PLUSassign
-		    | MINUSassign
-		    | LSassign
-		    | RSassign
-		    | ANDassign
-		    | ERassign
-		    | ORassign
-		    ;
-
-expression_opt = /* empty */
-	       | expression
-	       ;
-
-expression = assignment_operator
-	   | expression COMMA assignment_expression
-	   ;
-
-constant_expression = conditional_expression
-		    ;
-
-attribute_specifier_list_opt = /* empty */
-			     | attribute_specifier_list attribute_specifier
-			     ;
-
-attribute_specifier = attribute_keyword LPAREN LPAREN attribute_list_op RPAREN RPAREN
-		    ;
-
-attribute_keyword = __ATTRIBUTE
-		  | __ATTRIBUTE__
-		  ;
-
-attribute_list_opt = /* empty */
-		   | attribute_list
-		   ;
-
-attribute_list = word attribute_expression_opt
-	       | attribute_list COMMA word attribute_expression_opt
-	       ;
-
-attribute_expression_opt = /* empty */
-			 | LPAREN RPAREN
-			 | LPAREN expression_list RPAREN
-			 ;
-
-word = IDENTIFIER
-     | AUTO
-     | DOUBLE
-     | INT
-     | STRUCT
-     | BREAK
-     | ELSE
-     | LONG
-     | SWITCH
-     | CASE
-     | ENUM
-     | REGISTER
-     | TYPEDEF
-     | CHAR
-     | EXTERN
-     | RETURN
-     | UNION
-     | CONST
-     | FLOAT
-     | SHORT
-     | UNSIGNED
-     | CONTINUE
-     | FOR
-     | SIGNED
-     | VOID
-     | DEFAULT
-     | GOTO
-     | SIZEOF
-     | VOLATILE
-     | DO
-     | IF
-     | STATIC
-     | WHILE
-     | ASMSYM
-     | _BOOL
-     | _COMPLEX
-     | RESTRICT
-     | __ALIGNOF
-     | __ALIGNOF__
-     | ASM
-     | __ASM
-     | __ASM__
-     | __ATTRIBUTE
-     | __ATTRIBUTE__
-     | __BUILTIN_OFFSETOF
-     | __BUILTIN_TYPES_COMPATIBLE_P
-     | __BUILTIN_VA_ARG
-     | __BUILTIN_VA_LIST
-     | __COMPLEX__
-     | __CONST
-     | __CONST__
-     | __EXTENSION__
-     | INLINE
-     | __INLINE
-     | __INLINE__
-     | __LABEL__
-     | __RESTRICT
-     | __RESTRICT__
-     | __SIGNED
-     | __SIGNED__
-     | __THREAD
-     | TYPEOF
-     | __TYPEOF
-     | __TYPEOF__
-     | __VOLATILE
-     | __VOLATILE__
-     ;
-
-assembly_definition = assembly_expression SEMICOLON
-		    ;
-
-assembly_expression = asm_keyword LPAREN StringLiteralList RPAREN
-		    ;
-
-assembly_expression_opt = /* empty */
-			| assembly_expression
-			;
-
-assembly_statement = asm_keyword LPAREN assembly_argument RPAREN SEMICOLON
-		   | asm_keyword GOTO LPAREN assembly_goto_argument RPAREN SEMICOLON
-		   | asm_keyword type_qualifier LPAREN assembly_argument RPAREN SEMICOLON
-		   ;
-
-assembly_argument = string_literal_list COLON assembly_operands_opt COLON assembly_operands_opt COLON assembly_clobbers
-		  | string_literal_list COLON assembly_operands_opt COLON assembly_operands_opt
-		  | string_literal_list COLON assembly_operands_opt
-		  | string_literal_list
-		  ;
-
-assembly_operands_opt = /* empty */
-		      | assembly_operands
-		      ;
-
-assembly_operands = assembly_operand
-		  | assembly_operands COMMA assembly_operand
-		  ;
-
-assembly_operand = string_literal_list LPAREN expression RPAREN
-		 | LBRACK word RBRACK string_literal_list LPAREN expression RPAREN
-		 ;
-
-assembly_clobbers_opt = /* empty */
-		      | assembly_clobbers
-		      ;
-
-assembly_clobbers = string_literal_list
-		  | assembly_clobbers COMMA string_literal_list
-		  ;
-
-assembly_goto_argument = string_literal_list COLON assembly_operands_opt COLON assembly_operands_opt COLLON assembly_clobbers_opt COLON assembly_jump_labels
-		       ;
-
-assembly_jump_labels = identifier
-		     | assembly_jump_labels COMMA identifier
-		     ;
-
-asm_keyword = ASM
-	    | __ASM
-	    | __ASM__
-	    ;
+// (6.7.10) static_assert-declaration: TODO
+// _Static_assert ( constant-expression , string-literal ) ;

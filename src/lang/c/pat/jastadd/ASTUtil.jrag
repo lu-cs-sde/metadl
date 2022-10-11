@@ -1,0 +1,11 @@
+aspect ASTUtil {
+	static List List.filter(List l, Class c) {
+		List r = new List();
+		for (Object e : l.astChildren()) {
+			if (c.isAssignableFrom(e.getClass())) {
+				r.add((ASTNode) e);
+			}
+		}
+		return r;
+	}
+}

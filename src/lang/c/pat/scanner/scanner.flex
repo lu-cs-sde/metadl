@@ -10,7 +10,7 @@ import lang.c.pat.ast.PatLangParserSEP.SyntaxError;
 // define the signature for the generated scanner
 %public
 %final
-%class LangScanner
+%class PatLangScanner
 %extends beaver.Scanner
 
 // the interface between the scanner and the parser is the nextToken() method
@@ -25,6 +25,14 @@ import lang.c.pat.ast.PatLangParserSEP.SyntaxError;
 %{
   private beaver.Symbol sym(short id) {
     return new beaver.Symbol(id, yyline + 1, yycolumn + 1, yylength(), yytext());
+  }
+
+  private StringBuilder comment;
+  private boolean commentnl;
+
+  static class Layout extends beaver.Symbol {
+  	 public Layout(String text, boolean newline) {
+	 }
   }
 %}
 
@@ -123,8 +131,8 @@ whitespace=({horizontal_white})+|({v_tab}|{c_return})+|{continuation}
 "while"  { return sym(Terminals.WHILE); }
 
 //C99 keywords used by the default gnu89 dialect
-"_Bool"  { return sym(Terminals._BOOL); }
-"_Complex"  { return sym(Terminals._COMPLEX); }
+"_Bool"  { return sym(Terminals.U_BOOL); }
+"_Complex"  { return sym(Terminals.U_COMPLEX); }
 "inline"  { return sym(Terminals.INLINE); }
 
 "restrict"  { return sym(Terminals.RESTRICT); }
@@ -159,6 +167,9 @@ whitespace=({horizontal_white})+|({v_tab}|{c_return})+|{continuation}
 "__volatile"  { return sym(Terminals.__VOLATILE); }
 "__volatile__"  { return sym(Terminals.__VOLATILE__); }
 "__int128"  { return sym(Terminals.__INT128); }
+
+//C11
+"_Atomic" { return sym(Terminals.U_ATOMIC); }
 
 {identifier} { return sym(Terminals.IDENTIFIER); }
 {integer_constant} { return sym(Terminals.INTEGERConstant); }

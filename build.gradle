@@ -421,10 +421,14 @@ def java8ParseOrder = [
     "VariableArityParameters.parser"
 ]
 
+def cParseOrder = [
+    "c11_prologue.parser",
+    "c11_declaration.parser"
+]
 
 makeGenerateLangTask('genMetadlLang', 'src/gen/', 'metadl', metadlLexOrder)
 makeGeneratePatLangTask('genJava8Lang', 'src/gen/', 'java8', java8LexOrder, java8ParseOrder)
-makeGeneratePatLangTask('genCLang', 'src/gen', 'c', cLexOrder)
+makeGeneratePatLangTask('genCLang', 'src/gen', 'c', cLexOrder, cParseOrder)
 
 makeGenerateBeaverTask('generateBeaver', 'src/gen/LangParser.beaver', 'src/parser/metadl.parser')
 makeGenerateParserTask('generateParser', 'src/gen/lang/ast', 'src/gen/LangParser.beaver')

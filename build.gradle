@@ -236,7 +236,7 @@ void makeGenerateSEPTask(String name, String outFile, String srcFile) {
 	inputs.file(srcFile)
 	outputs.file(outFile)
 
-	args '--sep', file(srcFile).path, file(outFile).path
+	args '--pattern_grammar', file(srcFile).path, file(outFile).path
     }
 }
 

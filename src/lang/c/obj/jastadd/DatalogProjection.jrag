@@ -1,0 +1,15 @@
+import java.util.Collections;
+
+aspect LanguageSpecific {
+	public java.util.List<Pair<String, String>> ASTNode.namedTokens() {
+		return Collections.emptyList();
+	}
+
+	public final java.util.List<String> ASTNode.tokens() {
+		return Collections.emptyList();
+	}
+
+	public String ASTNode.getSourceFile() {
+		return "";
+	}
+}

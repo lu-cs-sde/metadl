@@ -1,0 +1,60 @@
+import se.lth.sep.*;
+import beaver.Symbol;
+
+aspect ASTBuilder {
+	public class ASTBuilder implements lang.ast.ASTBuilder {
+		public Symbol buildAST(final ParseTree t, final java.util.List<Symbol> symbols) {
+			if (t.getCategory().isTerminal()) {
+				// this is a terminal, return the corresponding symbol
+				assert t.getStart() + 1 == t.getEnd();
+				return symbols.get(t.getStart());
+			}
+
+			java.util.List<Object> astChildren = new ArrayList<>();
+			java.util.List<ParseTree> children = t.getChildren();
+
+			se.lth.sep.Rule r = t.getRule();
+			assert r.getBody().size() == t.getChildren().size();
+
+			for (int i = 0; i < children.size(); ++i) {
+				Category actual = children.get(i).getCategory();
+				Category staticCat = r.getBody().get(i);
+
+				Symbol astChild = buildAST(children.get(i), symbols);
+
+				assert staticCat == actual;
+				assert astChild != null;
+				astChildren.add(astChild);
+			}
+
+			Symbol ret = (Symbol) r.getAction().act(astChildren);
+			return ret;
+		}
+
+		private Grammar grammar;
+		private EarleyParser parser;
+
+		private ASTBuilder() {
+			grammar = new Grammar();
+			ObjLangParserSEP.addRules1(grammar);
+			ObjLangParserSEP.addRules2(grammar);
+			parser = new EarleyParser(grammar);
+		}
+
+		private static ASTBuilder instance;
+		public static ASTBuilder getInstance() {
+			if (instance == null) {
+				instance = new ASTBuilder();
+			}
+			return instance;
+		}
+
+		public Grammar getGrammar() {
+			return grammar;
+		}
+
+		public EarleyParser getParser() {
+			return parser;
+		}
+	}
+}

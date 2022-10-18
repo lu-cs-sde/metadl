@@ -1,5 +1,6 @@
 import se.lth.sep.*;
 import beaver.Symbol;
+import java.io.PrintStream;
 
 aspect ASTBuilder {
 	public class ASTBuilder implements lang.ast.ASTBuilder {
@@ -56,5 +57,28 @@ aspect ASTBuilder {
 		public EarleyParser getParser() {
 			return parser;
 		}
+	}
+
+
+	syn String ASTNode.name() {
+		String nodeNameFull = this.getClass().getName();
+		String[] splitNodeName = nodeNameFull.split("\\.");
+		String nodeName = splitNodeName[splitNodeName.length - 1];
+		return nodeName;
+	}
+
+
+	public void ASTNode.debugPrintInternal(int offset, PrintStream ps) {
+		for (int i = 0; i < offset; ++i)
+			ps.print('_');
+		ps.println(name());
+		for (int i = 0; i < getNumChildNoTransform(); ++i) {
+			if (getChildNoTransform(i) != null)
+				getChildNoTransform(i).debugPrintInternal(offset + 2, ps);
+		}
+	}
+
+	public void ASTNode.debugPrint(PrintStream ps) {
+		debugPrintInternal(0, ps);
 	}
 }

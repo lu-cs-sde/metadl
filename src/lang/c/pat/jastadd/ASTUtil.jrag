@@ -1,3 +1,5 @@
+import java.io.PrintStream;
+
 aspect ASTUtil {
 	static List List.filter(List l, Class c) {
 		List r = new List();

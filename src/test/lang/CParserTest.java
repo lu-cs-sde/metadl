@@ -34,15 +34,16 @@ public class CParserTest {
 			beaver.Symbol sym;
 			try {
 				sym = scanner.nextToken();
-				System.out.println(sym);
 			} catch (Exception e) {
 				System.out.println(e);
 				return null;
 			}
-			if (sym.getId() != 0 /*EOF*/) {
-				result.add(sym);
-			} else {
+			if (sym == null) {
 				break;
+			} else if (sym.getId() > 0) {
+				result.add(sym);
+			} else if (sym.getId() == 0) {
+				// Layout symbols, ignore them
 			}
 		} while (true);
 
@@ -55,7 +56,7 @@ public class CParserTest {
 		Grammar grammar = astBuilder.getGrammar();
 
 		Category[] tokenCats = tokens.stream().map(sym -> grammar.getCategory(tokenNames[sym.getId()]))
-			.collect(Collectors.toList()).toArray(new Category[1]);
+			.collect(Collectors.toList()).toArray(new Category[0]);
 
 
 		EarleyParser parser = astBuilder.getParser();
@@ -71,14 +72,69 @@ public class CParserTest {
 		return parseTrees;
 	}
 
+	public static java.util.List<lang.c.obj.ast.ASTNode> buildAST(java.util.List<Symbol> tokens,
+															  java.util.List<ParseTree> parseTrees) {
+		var list = new ArrayList<lang.c.obj.ast.ASTNode>();
+
+		var astBuilder = ASTBuilder.getInstance();
+
+		for (ParseTree pt : parseTrees) {
+			lang.c.obj.ast.ASTNode root = (lang.c.obj.ast.ASTNode) astBuilder.buildAST(pt, tokens);
+			list.add(root);
+			root.debugPrint(System.out);
+		}
+		return list;
+	}
+
 	@Test
 	public void test1() {
-		String c = "int x;";
+		String c = "struct f { union { int x; float f; } un; int bitfield : 10; } foo(int z);";
 		Category start = lang.c.obj.ast.ObjLangParserSEP.n_declaration;
 
 		java.util.List<ParseTree> parseTrees =  parse(scan(c), start);
 		assertNotNull(parseTrees);
 
 		Util.dumpParseTrees("test1_", parseTrees);
+	}
+
+	@Test
+	public void test2() {
+		String c = "int x[10];";
+		Category start = lang.c.obj.ast.ObjLangParserSEP.n_declaration;
+
+		java.util.List<ParseTree> parseTrees =  parse(scan(c), start);
+		assertNotNull(parseTrees);
+
+		Util.dumpParseTrees("test2_", parseTrees);
+	}
+
+	@Test
+	public void test3() {
+		String c = "int (*f(int, int))(float);";
+
+		for (int i = 0; i < 0; ++i) {
+			c = c + c;
+		}
+
+		Category start = lang.c.obj.ast.ObjLangParserSEP.n_translation_unit;
+
+		java.util.List<Symbol> tokens = scan(c);
+		java.util.List<ParseTree> parseTrees =  parse(tokens, start);
+		assertNotNull(parseTrees);
+
+		// Util.dumpParseTrees("test3_", parseTrees);
+
+		buildAST(tokens, parseTrees);
+	}
+
+	@Test
+	public void test4() {
+		String c = "*";
+		Category start = lang.c.obj.ast.ObjLangParserSEP.n_pointer;
+
+		java.util.List<Symbol> tokens = scan(c);
+		java.util.List<ParseTree> parseTrees =  parse(tokens, start);
+
+		buildAST(tokens, parseTrees);
 	}
 }

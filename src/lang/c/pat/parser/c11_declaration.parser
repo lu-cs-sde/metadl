@@ -2,7 +2,7 @@
 // (6.7) declaration:
 // declaration-specifiers init-declarator-list opt ;
 // static_assert-declaration : TODO
-Declaration declaration = declaration_specifiers init_declarator_list_opt {: return new Declaration(declaration_specifiers, init_declarator_list_opt); :}
+Declaration declaration = declaration_specifiers init_declarator_list_opt SEMICOLON{: return new Declaration(declaration_specifiers, init_declarator_list_opt); :}
                         ;
 
 // (6.7) declaration-specifiers:
@@ -196,7 +196,7 @@ AlignmentSpecifier alignment_specifier = ALIGNAS LPAREN type_name RPAREN {: retu
 
 // (6.7.6) declarator:
 // pointer opt direct-declarator
-Declarator declarator = pointer? STAR direct_declarator {: return direct_declarator.setPointerOpt(pointer); :}
+Declarator declarator = pointer? direct_declarator {: return direct_declarator.setPointerOpt(pointer); :}
 	   	      ;
 
 // (6.7.6) direct-declarator:

@@ -81,7 +81,7 @@ public class CParserTest {
 		for (ParseTree pt : parseTrees) {
 			lang.c.obj.ast.ASTNode root = (lang.c.obj.ast.ASTNode) astBuilder.buildAST(pt, tokens);
 			list.add(root);
-			root.debugPrint(System.out);
+			// root.debugPrint(System.out);
 		}
 		return list;
 	}
@@ -112,7 +112,7 @@ public class CParserTest {
 	public void test3() {
 		String c = "int (*f(int, int))(float);";
 
-		for (int i = 0; i < 0; ++i) {
+		for (int i = 0; i < 10; ++i) {
 			c = c + c;
 		}
 

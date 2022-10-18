@@ -15,17 +15,23 @@ aspect ASTBuilder {
 			java.util.List<ParseTree> children = t.getChildren();
 
 			se.lth.sep.Rule r = t.getRule();
-			assert r.getBody().size() == t.getChildren().size();
 
-			for (int i = 0; i < children.size(); ++i) {
-				Category actual = children.get(i).getCategory();
-				Category staticCat = r.getBody().get(i);
+			if (r.getBody().size() == 0) {
+				// epsilon
+				assert children.size() == 1 && children.get(0).getCategory().equals(grammar.t_EPSILON);
+				astChildren = Collections.emptyList();
+			} else {
+				assert children.size() == r.getBody().size();
+				for (int i = 0; i < children.size(); ++i) {
+					Category actual = children.get(i).getCategory();
+					Category staticCat = r.getBody().get(i);
 
-				Symbol astChild = buildAST(children.get(i), symbols);
+					Symbol astChild = buildAST(children.get(i), symbols);
 
-				assert staticCat == actual;
-				assert astChild != null;
-				astChildren.add(astChild);
+					assert staticCat == actual;
+					assert astChild != null;
+					astChildren.add(astChild);
+				}
 			}
 
 			Symbol ret = (Symbol) r.getAction().act(astChildren);

@@ -1,8 +1,8 @@
 import eval.EvaluationContext;
 import eval.Relation2;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -15,10 +15,136 @@ import lang.ast.StringType;
 import lang.io.StringUID;
 import lang.relation.PseudoTuple;
 import lang.relation.RelationWrapper;
+import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.commons.lang3.tuple.Pair;
 
 
-aspect LanguageSpecific {
+
+aspect DatalogProjection {
+	/**
+	   Build the name of the relation from the dynamic type of the
+	   node.
+	 */
+	public String ASTNode.getRelation() {
+		String nodeName = this.getClass().getName();
+		String[] splitNodeName = nodeName.split("\\.");
+		String relName = splitNodeName[splitNodeName.length - 1];
+		return relName;
+	}
+
+	/**
+	   Assign a unique ID to every node in the AST
+	 */
+	public int ASTNode.UID = 0;
+	public static int ASTNode.RunningId = 0;
+	public synchronized int ASTNode.getNodeId() {
+		// if (UID == 0) {
+		// 	UID = ++ASTNode.RunningId;
+		// }
+		return UID;
+	}
+
+	public void ASTNode.assignIds(MutableInt count) {
+		// Assign node IDs using a depth first traversal;
+		// this ensures a deterministic order for the nodes
+		// inside the AST.
+		for (ASTNode c : astChildren()) {
+			c.assignIds(count);
+		}
+
+		UID = count.intValue();
+		count.increment();
+	}
+
+	syn java.util.List<PseudoTuple> ASTNode.srcLoc() {
+		java.util.List<PseudoTuple> ret = new ArrayList<>();
+		// record the source location
+		{
+			// ("SourceInfo, CurrentNodeId, StartLine, StartCol, FileName)
+			lang.ast.StringConstant Kind = new lang.ast.StringConstant("SrcLocStart");
+			lang.ast.IntConstant CurrentNodeId = new lang.ast.IntConstant("" + getNodeId());
+			lang.ast.IntConstant Line = new lang.ast.IntConstant("" + getLine(getStart()));
+			lang.ast.IntConstant Col = new lang.ast.IntConstant("" + getColumn(getStart()));
+			lang.ast.StringConstant SrcFile = new lang.ast.StringConstant(getSourceFile());
+			ret.add(new PseudoTuple(Kind, CurrentNodeId, Line, Col, SrcFile));
+		}
+
+		{
+			// ("SourceInfo, CurrentNodeId, EndLine, EndCol, "")
+			lang.ast.StringConstant Kind = new lang.ast.StringConstant("SrcLocEnd");
+			lang.ast.IntConstant CurrentNodeId = new lang.ast.IntConstant("" + getNodeId());
+			lang.ast.IntConstant Line = new lang.ast.IntConstant("" + getLine(getEnd()));
+			lang.ast.IntConstant Col = new lang.ast.IntConstant("" + getColumn(getEnd()));
+			// avoid printing the source file once again to avoid bloating the output table
+			lang.ast.StringConstant SrcFile = new lang.ast.StringConstant("");
+			ret.add(new PseudoTuple(Kind, CurrentNodeId, Line, Col, SrcFile));
+		}
+		return ret;
+	}
+
+	eq Opt.srcLoc() = Collections.emptyList();
+	eq List.srcLoc() = Collections.emptyList();
+
+	syn java.util.List<PseudoTuple> ASTNode.toTuples() {
+		String relName = getRelation();
+		java.util.List<PseudoTuple> ret = new ArrayList<>();
+
+		// the children in the tree
+		int childIndex = 0;
+		for (int i = 0; i < getNumChild(); ++i) {
+			ASTNode child = getChild(i);
+
+			lang.ast.StringConstant Kind = new lang.ast.StringConstant(relName);
+			lang.ast.IntConstant ChildId  = new lang.ast.IntConstant("" + child.getNodeId());
+			lang.ast.IntConstant CurrentNodeId = new lang.ast.IntConstant("" + getNodeId());
+			lang.ast.IntConstant ChildIdx = new lang.ast.IntConstant("" + childIndex++);
+			lang.ast.StringConstant Token = new lang.ast.StringConstant("");
+			ret.add(new PseudoTuple(Kind, CurrentNodeId, ChildIdx, ChildId, Token));
+		}
+
+		// other tokens attached to the node
+		for (Pair<String, String> t : namedTokens()) {
+			// For every token, we generate two tuples
+			// ("NodeKind", CurrentNodeId, ChildIdx, ChildId, "")
+			// ("Token", ChildId, 0, 0, "TokenAsString")
+			int tokenUID = StringUID.getInstance().uid(t.getRight());
+			{
+				// Add a tuple to the current node relation
+				lang.ast.StringConstant Kind = new lang.ast.StringConstant(relName);
+				lang.ast.IntConstant ChildId = new lang.ast.IntConstant("" + tokenUID);
+				lang.ast.IntConstant CurrentNodeId = new lang.ast.IntConstant("" + getNodeId());
+				lang.ast.IntConstant ChildIdx = new lang.ast.IntConstant("" + childIndex++);
+				lang.ast.StringConstant Token = new lang.ast.StringConstant("");
+				ret.add(new PseudoTuple(Kind, CurrentNodeId, ChildIdx, ChildId, Token));
+			}
+
+			{
+				// Add a tuple to Token relation
+				lang.ast.StringConstant Kind = new lang.ast.StringConstant(t.getLeft());
+				lang.ast.IntConstant ChildId = new lang.ast.IntConstant("0");
+				lang.ast.IntConstant CurrentNodeId = new lang.ast.IntConstant("" + tokenUID);
+				lang.ast.IntConstant ChildIdx = new lang.ast.IntConstant("0");
+				lang.ast.StringConstant Token = new lang.ast.StringConstant(t.getRight());
+				ret.add(new PseudoTuple(Kind, CurrentNodeId, ChildIdx, ChildId, Token));
+			}
+		}
+
+		if (childIndex == 0) {
+			// This node has no children, emit that
+			lang.ast.StringConstant Kind = new lang.ast.StringConstant(relName);
+			lang.ast.IntConstant ChildId  = new lang.ast.IntConstant("-1");
+			lang.ast.IntConstant CurrentNodeId = new lang.ast.IntConstant("" + getNodeId());
+			lang.ast.IntConstant ChildIdx = new lang.ast.IntConstant("-1");
+			lang.ast.StringConstant Token = new lang.ast.StringConstant("");
+			ret.add(new PseudoTuple(Kind, CurrentNodeId, ChildIdx, ChildId, Token));
+		}
+
+		// record the source location
+		ret.addAll(srcLoc());
+
+		return ret;
+	}
+
 	syn PredicateType Program.datalogProjectionType() {
 		PredicateType t = new PredicateType(5);
 		t.joinAt(0, StringType.get());

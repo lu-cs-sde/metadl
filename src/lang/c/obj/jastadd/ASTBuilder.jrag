@@ -1,6 +1,10 @@
 import se.lth.sep.*;
 import beaver.Symbol;
 import java.io.PrintStream;
+import java.util.ArrayList;
+import org.apache.commons.lang3.tuple.Pair;
+import java.util.Collections;
+
 
 aspect ASTBuilder {
 	public class ASTBuilder implements lang.ast.ASTBuilder {

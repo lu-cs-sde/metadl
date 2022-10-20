@@ -30,7 +30,7 @@ List init_declarator_list_opt = init_declarator_list
 			      ;
 
 List init_declarator_list = init_declarator {: return new List().add(init_declarator); :}
-     			  | init_declarator_list init_declarator {: return init_declarator_list.add(init_declarator); :}
+     			  | init_declarator_list COMMA init_declarator {: return init_declarator_list.add(init_declarator); :}
 			  ;
 
 // (6.7) init-declarator:

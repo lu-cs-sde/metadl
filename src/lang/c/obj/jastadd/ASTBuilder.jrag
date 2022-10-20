@@ -75,13 +75,37 @@ aspect ASTBuilder {
 
 
 	public void ASTNode.debugPrintInternal(int offset, PrintStream ps) {
-		for (int i = 0; i < offset; ++i)
-			ps.print('_');
-		ps.println(name());
+		final String bar = "\u2514--";
+		for (int i = 0; i < offset - bar.length() - 1; ++i)
+			ps.print(' ');
+		if (offset >= bar.length()) {
+			ps.print(bar);
+		}
+		ps.println(name() + " <" + prettyLoc() + ">");
 		for (int i = 0; i < getNumChildNoTransform(); ++i) {
 			if (getChildNoTransform(i) != null)
-				getChildNoTransform(i).debugPrintInternal(offset + 2, ps);
+				getChildNoTransform(i).debugPrintInternal(offset + 3, ps);
 		}
+	}
+
+	public int ASTNode.startLine() {
+		return getLine(getStart());
+	}
+
+	public int ASTNode.endLine() {
+		return getLine(getEnd());
+	}
+
+	public int ASTNode.startColumn() {
+		return getColumn(getStart());
+	}
+
+	public int ASTNode.endColumn() {
+		return getColumn(getEnd());
+	}
+
+	public String ASTNode.prettyLoc() {
+		return "" + startLine() + ":" + startColumn() + "-" + endLine() + ":" + endColumn();
 	}
 
 	public void ASTNode.debugPrint(PrintStream ps) {

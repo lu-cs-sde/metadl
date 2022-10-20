@@ -81,7 +81,6 @@ public class CParserTest {
 		for (ParseTree pt : parseTrees) {
 			lang.c.obj.ast.ASTNode root = (lang.c.obj.ast.ASTNode) astBuilder.buildAST(pt, tokens);
 			list.add(root);
-			// root.debugPrint(System.out);
 		}
 		return list;
 	}
@@ -136,5 +135,61 @@ public class CParserTest {
 		java.util.List<ParseTree> parseTrees =  parse(tokens, start);
 
 		buildAST(tokens, parseTrees);
+	}
+
+	@Test
+	public void test5() {
+		String c = "struct { int a; union { float x; } u; } my_struct;";
+		Category start = lang.c.obj.ast.ObjLangParserSEP.n_translation_unit;
+
+		java.util.List<Symbol> tokens = scan(c);
+		java.util.List<ParseTree> parseTrees = parse(tokens, start);
+
+		assertNotNull(parseTrees);
+
+		for (lang.c.obj.ast.ASTNode ast : buildAST(tokens, parseTrees)) {
+			ast.debugPrint(System.out);
+		}
+	}
+
+	public static void testAST(String c) {
+		System.out.println("================================================================================");
+		System.out.println("Parsing: \"" + c + "\"");
+		System.out.println("================================================================================");
+
+		Category start = lang.c.obj.ast.ObjLangParserSEP.n_translation_unit;
+
+		java.util.List<Symbol> tokens = scan(c);
+		java.util.List<ParseTree> parseTrees = parse(tokens, start);
+
+		assertNotNull(parseTrees);
+
+		for (lang.c.obj.ast.ASTNode ast : buildAST(tokens, parseTrees)) {
+			ast.debugPrint(System.out);
+		}
+	}
+
+	@Test
+	public void test6() {
+		String c =
+			"\ntypedef extern const volatile VFLOAT;" +
+			"\nextern const volatile float x, *y;" +
+			"\nVFLOAT z, *w;";
+
+		for (int i = 0; i < 3; ++i) {
+			c = c + c;
+		}
+
+		testAST(c);
+	}
+
+	@Test
+	public void test7() {
+		testAST("int x;");
+	}
+
+	@Test
+	public void test8() {
+		testAST("typedef struct U {int x; int y; } U;");
 	}
 }

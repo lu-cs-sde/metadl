@@ -403,7 +403,8 @@ def java8ParseOrder = [
 
 def cParseOrder = [
     "c11_prologue.parser",
-    "c11_declaration.parser"
+    "c11_declaration.parser",
+    "c11_expression.parser"
 ]
 
 // MetaDL as object language

@@ -17,10 +17,11 @@ List declaration_list = declaration {: return new List().add(declaration); :}
 		      ;
 
 // TODO: boilerplate until we have the grammar for expressions
-AssignmentExpression assignment_expression = INTEGERConstant {: return new AssignmentExpression(); :}
-		     			   ;
-ConstantExpression constant_expression = INTEGERConstant {: return new ConstantExpression(); :}
-		   		       ;
+Expression assignment_expression = INTEGERConstant {: return new AssignmentExpression(); :}
+		    		 ;
+
+Expression constant_expression = INTEGERConstant {: return new ConstantExpression(); :}
+		   		 ;
 
 EnumerationConstant enumeration_constant = IDENTIFIER {: return new EnumerationConstant(IDENTIFIER); :}
 		    			 ;

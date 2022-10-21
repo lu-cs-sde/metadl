@@ -34,6 +34,7 @@ dependencies {
     compile 'org.apache.commons:commons-lang3:3.8'
     compile 'org.apache.commons:commons-collections4:4.4'
     compile 'org.json:json:20200518'
+    compile group: 'com.google.code.gson', name: 'gson', version: '2.9.1'
     compile group: 'commons-io', name: 'commons-io', version: '2.6'
     compile group: 'commons-cli', name: 'commons-cli', version: '1.4'
     compile group: 'org.jgrapht', name: 'jgrapht-core', version: '1.4.0'

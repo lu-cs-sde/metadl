@@ -138,7 +138,7 @@ List struct_declarator_list = struct_declarator {: return new List().add(struct_
 // (6.7.2.1) struct-declarator:
 // declarator
 // declarator opt : constant-expression
-StructDeclarator struct_declarator = declarator? COLON constant_expression {: return new StructDeclarator(declarator, new Opt(constant_expression)); :}
+StructDeclarator struct_declarator = declarator? COLON expression {: return new StructDeclarator(declarator, new Opt(expression)); :}
 		 		   | declarator {: return new StructDeclarator(new Opt(declarator), new Opt()); :}
 				   ;
 
@@ -161,7 +161,7 @@ List enumerator_list = enumerator {: return new List().add(enumerator); :}
 // (6.7.2.2) enumerator:
 // enumeration-constant
 // enumeration-constant = constant-expression
-Enumerator enumerator = enumeration_constant ASSIGN constant_expression {: return new Enumerator(enumeration_constant, new Opt(constant_expression)); :}
+Enumerator enumerator = enumeration_constant ASSIGN expression {: return new Enumerator(enumeration_constant, new Opt(expression)); :}
 	   	      | enumeration_constant {: return new Enumerator(enumeration_constant, new Opt()); :}
 		      ;
 
@@ -192,7 +192,7 @@ FunctionSpecifier function_specifier = INLINE {: return new Inline(); :}
 // _Alignas ( type-name )
 // _Alignas ( constant-expression )
 AlignmentSpecifier alignment_specifier = ALIGNAS LPAREN type_name RPAREN {: return new AlignAsType(type_name); :}
-		   		       | ALIGNAS LPAREN constant_expression RPAREN {: return new AlignAsExpr(constant_expression); :}
+		   		       | ALIGNAS LPAREN expression RPAREN {: return new AlignAsExpr(expression); :}
 				       ;
 
 // (6.7.6) declarator:
@@ -331,7 +331,7 @@ List designator_list = designator {: return new List().add(designator); :}
 // (6.7.9) designator:
 // [ constant-expression ]
 // . identifier
-Designator designator = LBRACK constant_expression RBRACK {: return new ConstantExpressionDesignator(constant_expression); :}
+Designator designator = LBRACK expression RBRACK {: return new ConstantExpressionDesignator(expression); :}
 	    	      | DOT identifier {: return new IdentifierDesignator(identifier); :}
 		      ;
 // (6.7.10) static_assert-declaration: TODO

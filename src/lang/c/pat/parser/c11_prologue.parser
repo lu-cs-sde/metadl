@@ -7,29 +7,3 @@
 %embed {:
   static public class SyntaxError extends RuntimeException { public SyntaxError(String msg) {super(msg);}}
 :};
-
-
-TranslationUnit translation_unit = declaration_list {: return new TranslationUnit(declaration_list); :}
-				 ;
-
-List declaration_list = declaration {: return new List().add(declaration); :}
-     		      | declaration_list declaration {: return declaration_list.add(declaration); :}
-		      ;
-
-// TODO: boilerplate until we have the grammar for expressions
-AssignmentExpression assignment_expression = INTEGERConstant {: return new AssignmentExpression(); :}
-		     			   ;
-ConstantExpression constant_expression = INTEGERConstant {: return new ConstantExpression(); :}
-		   		       ;
-
-EnumerationConstant enumeration_constant = IDENTIFIER {: return new EnumerationConstant(IDENTIFIER); :}
-		    			 ;
-
-Identifier identifier = IDENTIFIER {: return new Identifier(IDENTIFIER); :}
-	   	      ;
-
-Constant constant = INTEGERConstant {: return new Constant(); :}
-	 	  ;
-
-StringLiteral string_literal = STRINGLiteral {: return new StringLiteral(); :}
-	      		     ;

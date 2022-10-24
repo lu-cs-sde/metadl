@@ -198,6 +198,11 @@ public class CParserTest {
 	}
 
 	@Test
+	public void testFunctionDeclaration() {
+		testAST("int foo(void);", lang.c.obj.ast.ObjLangParserSEP.n_declaration);
+	}
+
+	@Test
 	public void testExpression() {
 		testAST("foo(x + 1) + z[1][sizeof(int)]->m.n", lang.c.obj.ast.ObjLangParserSEP.n_expression);
 	}
@@ -222,13 +227,10 @@ public class CParserTest {
 		testAST("for (;;) ;", lang.c.obj.ast.ObjLangParserSEP.n_statement);
 	}
 
-
 	@Test
 	public void testForDeclStatement() {
 		testAST("for (int n; ; ) ;", lang.c.obj.ast.ObjLangParserSEP.n_statement);
 	}
-
-
 
 	@Test
 	public void testComplexStatement() {
@@ -238,5 +240,10 @@ public class CParserTest {
 				"  } while (1); " +
 				"}",
 				lang.c.obj.ast.ObjLangParserSEP.n_statement);
+	}
+
+	@Test
+	public void testFunctionDefinition() {
+		testAST("int f(int x, int y) { return x + y; }", lang.c.obj.ast.ObjLangParserSEP.n_function_definition);
 	}
 }

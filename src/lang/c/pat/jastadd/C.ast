@@ -1,8 +1,26 @@
-TranslationUnit ::= Declaration*;
+TranslationUnit ::= ExternalDeclarationOrDefinition*;
 
 Identifier ::= <ID>;
 Constant;
 StringLiteral;
+
+// A.2.4 External definitions
+// (6.9) translation-unit:
+// external-declaration
+// translation-unit external-declaration
+
+abstract ExternalDeclarationOrDefinition;
+FunctionDefinition : ExternalDeclarationOrDefinition ::= DeclarationSpecifier* Declarator Declaration* Statement;
+ExternalDeclaration : ExternalDeclarationOrDefinition ::= Declaration;
+
+// (6.9) external-declaration:
+// function-definition
+// declaration
+// (6.9.1) function-definition:
+// declaration-specifiers declarator declaration-listopt compound-statement
+// (6.9.1) declaration-list:
+// declaration
+// declaration-list declaration
 
 // A.2.1 Expressions
 // (6.5.1) primary-expression:

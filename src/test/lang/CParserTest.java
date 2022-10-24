@@ -152,12 +152,14 @@ public class CParserTest {
 		}
 	}
 
-	public static void testAST(String c) {
+	private static void testAST(String c) {
+		testAST(c, lang.c.obj.ast.ObjLangParserSEP.n_translation_unit);
+	}
+
+	public static void testAST(String c, Category start) {
 		System.out.println("================================================================================");
 		System.out.println("Parsing: \"" + c + "\"");
 		System.out.println("================================================================================");
-
-		Category start = lang.c.obj.ast.ObjLangParserSEP.n_translation_unit;
 
 		java.util.List<Symbol> tokens = scan(c);
 		java.util.List<ParseTree> parseTrees = parse(tokens, start);
@@ -191,5 +193,10 @@ public class CParserTest {
 	@Test
 	public void test8() {
 		testAST("typedef struct U {int x; int y; } U;");
+	}
+
+	@Test
+	public void test9() {
+		testAST("foo(x + 1) + z[1][sizeof(int)]->m.n", lang.c.obj.ast.ObjLangParserSEP.n_expression);
 	}
 }

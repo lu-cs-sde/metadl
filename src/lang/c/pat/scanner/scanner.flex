@@ -82,6 +82,7 @@ whitespace=({horizontal_white})+|({v_tab}|{c_return})+|{continuation}
 {whitespace}*({newline}|{linecomment})+{whitespace}*
 { return new Layout(yytext(), true); }
 
+"alignof" { return sym(Terminals.ALIGNOF); }
 "auto"  { return sym(Terminals.AUTO); }
 // "break"  { return sym(Terminals.BREAK); }
 // "case"  { return sym(Terminals.CASE); }
@@ -104,7 +105,7 @@ whitespace=({horizontal_white})+|({v_tab}|{c_return})+|{continuation}
 // "return"  { return sym(Terminals.RETURN); }
 "short"  { return sym(Terminals.SHORT); }
 "signed"  { return sym(Terminals.SIGNED); }
-// "sizeof"  { return sym(Terminals.SIZEOF); }
+"sizeof"  { return sym(Terminals.SIZEOF); }
 "static"  { return sym(Terminals.STATIC); }
 "struct"  { return sym(Terminals.STRUCT); }
 // "switch"  { return sym(Terminals.SWITCH); }
@@ -164,29 +165,29 @@ whitespace=({horizontal_white})+|({v_tab}|{c_return})+|{continuation}
 // {preprocessing_number} { return sym(Terminals.PPNUM); } // numeric constants supported only by the preprocessor?
 
 // "L"?\'{c_char}+\' { return sym(Terminals.CHARACTERConstant); }
-// "L"?\"{s_char}*\" { return sym(Terminals.STRINGLiteral); }
+"L"?\"{s_char}*\" { return sym(Terminals.STRINGLiteral); }
 
-// "->"  { return sym(Terminals.ARROW); }
-// "++"  { return sym(Terminals.ICR); }
-// "--"  { return sym(Terminals.DECR); }
-// "<<"  { return sym(Terminals.LS); }
-// ">>"  { return sym(Terminals.RS); }
-// "<="  { return sym(Terminals.LE); }
-// ">="  { return sym(Terminals.GE); }
-// "=="  { return sym(Terminals.EQ); }
-// "!="  { return sym(Terminals.NE); }
-// "&&"  { return sym(Terminals.ANDAND); }
-// "||"  { return sym(Terminals.OROR); }
-// "+="  { return sym(Terminals.PLUSassign); }
-// "-="  { return sym(Terminals.MINUSassign); }
-// "*="  { return sym(Terminals.MULTassign); }
-// "/="  { return sym(Terminals.DIVassign); }
-// "%="  { return sym(Terminals.MODassign); }
-// "<<="  { return sym(Terminals.LSassign); }
-// ">>="  { return sym(Terminals.RSassign); }
-// "&="  { return sym(Terminals.ANDassign); }
-// "^="  { return sym(Terminals.ERassign); }
-// "|="  { return sym(Terminals.ORassign); }
+"->"  { return sym(Terminals.ARROW); }
+"++"  { return sym(Terminals.ICR); }
+"--"  { return sym(Terminals.DECR); }
+"<<"  { return sym(Terminals.LS); }
+">>"  { return sym(Terminals.RS); }
+"<="  { return sym(Terminals.LE); }
+">="  { return sym(Terminals.GE); }
+"=="  { return sym(Terminals.EQ); }
+"!="  { return sym(Terminals.NE); }
+"&&"  { return sym(Terminals.ANDAND); }
+"||"  { return sym(Terminals.OROR); }
+"+="  { return sym(Terminals.PLUSassign); }
+"-="  { return sym(Terminals.MINUSassign); }
+"*="  { return sym(Terminals.MULTassign); }
+"/="  { return sym(Terminals.DIVassign); }
+"%="  { return sym(Terminals.MODassign); }
+"<<="  { return sym(Terminals.LSassign); }
+">>="  { return sym(Terminals.RSassign); }
+"&="  { return sym(Terminals.ANDassign); }
+"^="  { return sym(Terminals.ERassign); }
+"|="  { return sym(Terminals.ORassign); }
 
 "("   { return sym(Terminals.LPAREN); } // preprocessor
 ")"   { return sym(Terminals.RPAREN); } // preprocessor
@@ -200,19 +201,19 @@ whitespace=({horizontal_white})+|({v_tab}|{c_return})+|{continuation}
 "["  { return sym(Terminals.LBRACK); }
 "]"  { return sym(Terminals.RBRACK); }
 "."  { return sym(Terminals.DOT); }
-// "&"  { return sym(Terminals.AND); }
+"&"  { return sym(Terminals.AND); }
 "*"  { return sym(Terminals.STAR); }
-// "+"  { return sym(Terminals.PLUS); }
-// "-"  { return sym(Terminals.MINUS); }
-// "~"  { return sym(Terminals.NEGATE); }
-// "!"  { return sym(Terminals.NOT); }
-// "/"  { return sym(Terminals.DIV); }
-// "%"  { return sym(Terminals.MOD); }
-// "<"  { return sym(Terminals.LT); }
-// ">"  { return sym(Terminals.GT); }
-// "^"  { return sym(Terminals.XOR); }
-// "|"  { return sym(Terminals.PIPE); }
-// "?"  { return sym(Terminals.QUESTION); }
+"+"  { return sym(Terminals.PLUS); }
+"-"  { return sym(Terminals.MINUS); }
+"~"  { return sym(Terminals.NEGATE); }
+"!"  { return sym(Terminals.NOT); }
+"/"  { return sym(Terminals.DIV); }
+"%"  { return sym(Terminals.MOD); }
+"<"  { return sym(Terminals.LT); }
+">"  { return sym(Terminals.GT); }
+"^"  { return sym(Terminals.XOR); }
+"|"  { return sym(Terminals.PIPE); }
+"?"  { return sym(Terminals.QUESTION); }
 ":"  { return sym(Terminals.COLON); }
 ";"  { return sym(Terminals.SEMICOLON); }
 "="  { return sym(Terminals.ASSIGN); }

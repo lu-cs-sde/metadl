@@ -27,3 +27,9 @@ EnumerationConstant enumeration_constant = IDENTIFIER {: return new EnumerationC
 		    			 ;
 Identifier identifier = IDENTIFIER {: return new Identifier(IDENTIFIER); :}
 	   	      ;
+
+Constant constant = INTEGERConstant {: return new Constant(); :}
+	 	  ;
+
+StringLiteral string_literal = STRINGLiteral {: return new StringLiteral(); :}
+	      	     	     ;

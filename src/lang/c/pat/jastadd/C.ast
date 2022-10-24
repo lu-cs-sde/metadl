@@ -9,7 +9,7 @@ StringLiteral;
 // identifier
 // constant
 // string-literal
-// ( expression ) // TODO
+// ( expression )
 // generic-selection // TODO
 
 abstract Expression;
@@ -63,9 +63,10 @@ PreIncrementExpression : Expression ::= Expression;
 PreDecrementExpression : Expression ::= Expression;
 SizeofExpressionExpression : Expression ::= Expression;
 SizeofTypeExpression : Expression ::= TypeName;
+AlignofExpression : Expression ::= TypeName;
 AddressOfExpression : Expression ::= Expression;
 PointerDereferenceExpression : Expression ::= Expression;
-UnaryPlusExpression : Expression ::= Expression;
+UnaryPlusExpression : Expression ::= Expression; // does not add any semantic value
 UnaryMinusExpression : Expression ::= Expression;
 BitwiseNotExpression : Expression ::= Expression;
 NotExpression : Expression ::= Expression;
@@ -83,7 +84,7 @@ CastExpression : Expression ::= TypeName Expression;
 // multiplicative-expression * cast-expression
 // multiplicative-expression / cast-expression
 // multiplicative-expression % cast-expression
-abstract BinaryExpression : Expression ::= Left:Expression Right:Expression
+abstract BinaryExpression : Expression ::= Left:Expression Right:Expression;
 
 MulExpression : BinaryExpression;
 DivExpression : BinaryExpression;
@@ -109,9 +110,9 @@ RShiftExpression : BinaryExpression;
 // relational-expression > shift-expression
 // relational-expression <= shift-expression
 // relational-expression >= shift-expression
-LEExpression : BinaryExpression;
+LTExpression : BinaryExpression;
 LEQExpression : BinaryExpression;
-GEExpression : BinaryExpression;
+GTExpression : BinaryExpression;
 GEQExpression : BinaryExpression;
 
 // (6.5.9) equality-expression:
@@ -172,7 +173,7 @@ AssignmentOrExpression : BinaryExpression;
 // (6.5.17) expression:
 // assignment-expression
 // expression , assignment-expression
-CommaExpression ::= BinaryExpression;
+CommaExpression : BinaryExpression;
 
 // (6.6) constant-expression:
 // conditional-expression

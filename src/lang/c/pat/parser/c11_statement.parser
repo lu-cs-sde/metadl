@@ -1,0 +1,116 @@
+// A.2.3 Statements
+// (6.8) statement:
+// labeled-statement
+// compound-statement
+// expression-statement
+// selection-statement
+// iteration-statement
+// jump-statement
+Statement statement = labeled_statement
+	  	    | compound_statement
+		    | expression_statement
+		    | selection_statement
+		    | iteration_statement
+		    | jump_statement
+		    | declaration_statement
+		    | empty_statement
+		    ;
+
+// (6.8.1) labeled-statement:
+// identifier : statement
+// case constant-expression : statement
+// default : statement
+Statement labeled_statement = identifier COLON statement {: return new LabelStatement(identifier, statement); :}
+	  		    | CASE expression COLON statement {: return new CaseStatement(expression, statement); :}
+			    | DEFAULT COLON statement {: return new DefaultStatement(statement); :}
+			    ;
+
+// (6.8.2) compound-statement:
+// { block-item-list opt }
+CompoundStatement compound_statement = LBRACE statement_list_opt RBRACE {: return new CompoundStatement(statement_list_opt); :}
+		  		     ;
+
+// (6.8.2) block-item-list:
+// block-item
+// block-item-list block-item
+List statement_list_opt = /* empty */ {: return new List(); :}
+     			 | statement_list;
+
+List statement_list = statement {: return new List().add(statement); :}
+     		    | statement_list statement {: return statement_list.add(statement); :}
+		    ;
+
+
+// (6.8.2) block-item:
+// declaration
+// statement
+DeclarationStatement declaration_statement = declaration {: return new DeclarationStatement(declaration); :}
+		     			   ;
+
+// (6.8.3) expression-statement:
+// expressionopt ;
+ExpressionStatement expression_statement = expression SEMICOLON {: return new ExpressionStatement(expression); :}
+		    			 ;
+
+EmptyStatement empty_statement = SEMICOLON {: return new EmptyStatement(); :}
+	       	       ;
+
+// (6.8.4) selection-statement:
+// if ( expression ) statement
+// if ( expression ) statement else statement
+// switch ( expression ) statement
+Statement selection_statement = IF LPAREN expression RPAREN statement {: return new IfStatement(expression, statement); :}
+	  		      | IF LPAREN expression RPAREN statement.t ELSE statement.f {: return new IfElseStatement(expression, t, f); :}
+			      | SWITCH LPAREN expression RPAREN statement {: return new SwitchStatement(expression, statement); :}
+			      ;
+
+// (6.8.5) iteration-statement:
+// while ( expression ) statement
+// do statement while ( expression ) ;
+// for ( expression opt ; expression opt ; expression opt ) statement
+// for ( declaration expression opt ; expression opt ) statement
+Statement iteration_statement = WHILE LPAREN expression RPAREN statement {: return new WhileStatement(expression, statement); :}
+	  		      | DO statement WHILE LPAREN expression RPAREN SEMICOLON {: return new DoWhileStatement(expression, statement); :}
+			      | for_statement
+			      | for_decl_statement
+			      ;
+
+ForStatement for_statement = FOR LPAREN expression.i SEMICOLON expression.c SEMICOLON expression.u RPAREN statement
+	     		     {: return new ForStatement(new Opt(i), new Opt(c), new Opt(u), statement); :}
+	     		   | FOR LPAREN expression.i SEMICOLON expression.c SEMICOLON RPAREN statement
+			     {: return new ForStatement(new Opt(i), new Opt(c), new Opt(), statement); :}
+			   | FOR LPAREN expression.i SEMICOLON SEMICOLON expression.u RPAREN statement
+			     {: return new ForStatement(new Opt(i), new Opt(), new Opt(u), statement); :}
+			   | FOR LPAREN expression.i SEMICOLON SEMICOLON RPAREN statement
+			     {: return new ForStatement(new Opt(i), new Opt(), new Opt(), statement); :}
+			   | FOR LPAREN SEMICOLON expression.c SEMICOLON expression.u RPAREN statement
+	     		     {: return new ForStatement(new Opt(), new Opt(c), new Opt(u), statement); :}
+	     		   | FOR LPAREN SEMICOLON expression.c SEMICOLON RPAREN statement
+			     {: return new ForStatement(new Opt(), new Opt(c), new Opt(), statement); :}
+			   | FOR LPAREN SEMICOLON SEMICOLON expression.u RPAREN statement
+			     {: return new ForStatement(new Opt(), new Opt(), new Opt(u), statement); :}
+			   | FOR LPAREN SEMICOLON SEMICOLON RPAREN statement
+			     {: return new ForStatement(new Opt(), new Opt(), new Opt(), statement); :}
+			   ;
+
+ForDeclStatement for_decl_statement = FOR LPAREN declaration expression.c SEMICOLON expression.u RPAREN statement
+	     		   	        {: return new ForDeclStatement(declaration, new Opt(c), new Opt(u), statement); :}
+			            | FOR LPAREN declaration expression.c SEMICOLON RPAREN statement
+				        {: return new ForDeclStatement(declaration, new Opt(c), new Opt(), statement); :}
+			            | FOR LPAREN declaration SEMICOLON expression.u RPAREN statement
+			                {: return new ForDeclStatement(declaration, new Opt(), new Opt(u), statement); :}
+			            | FOR LPAREN declaration SEMICOLON RPAREN statement
+			                {: return new ForDeclStatement(declaration, new Opt(), new Opt(), statement); :}
+			            ;
+
+// (6.8.6) jump-statement:
+// goto identifier ;
+// continue ;
+// break ;
+// return expression opt ;
+Statement jump_statement = GOTO identifier SEMICOLON {: return new GotoStatement(identifier); :}
+	  		 | CONTINUE SEMICOLON {: return new ContinueStatement(); :}
+			 | BREAK SEMICOLON {: return new BreakStatement(); :}
+			 | RETURN expression SEMICOLON {: return new ReturnStatement(new Opt(expression)); :}
+			 | RETURN SEMICOLON {: return new ReturnStatement(new Opt()); :}
+			 ;

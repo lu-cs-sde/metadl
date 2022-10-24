@@ -84,37 +84,37 @@ whitespace=({horizontal_white})+|({v_tab}|{c_return})+|{continuation}
 
 "alignof" { return sym(Terminals.ALIGNOF); }
 "auto"  { return sym(Terminals.AUTO); }
-// "break"  { return sym(Terminals.BREAK); }
-// "case"  { return sym(Terminals.CASE); }
+"break"  { return sym(Terminals.BREAK); }
+"case"  { return sym(Terminals.CASE); }
 "char"  { return sym(Terminals.CHAR); }
 "const"  { return sym(Terminals.CONST); }
-// "continue"  { return sym(Terminals.CONTINUE); }
-// "default"  { return sym(Terminals.DEFAULT); }
-// "do"  { return sym(Terminals.DO); }
+"continue"  { return sym(Terminals.CONTINUE); }
+"default"  { return sym(Terminals.DEFAULT); }
+"do"  { return sym(Terminals.DO); }
 "double"  { return sym(Terminals.DOUBLE); }
-// "else"  { return sym(Terminals.ELSE); }
+"else"  { return sym(Terminals.ELSE); }
 "enum"  { return sym(Terminals.ENUM); }
 "extern"  { return sym(Terminals.EXTERN); }
 "float"  { return sym(Terminals.FLOAT); }
-// "for"  { return sym(Terminals.FOR); }
-// "goto"  { return sym(Terminals.GOTO); }
-// "if"  { return sym(Terminals.IF); }
+"for"  { return sym(Terminals.FOR); }
+"goto"  { return sym(Terminals.GOTO); }
+"if"  { return sym(Terminals.IF); }
 "int"  { return sym(Terminals.INT); }
 "long"  { return sym(Terminals.LONG); }
 "register"  { return sym(Terminals.REGISTER); }
-// "return"  { return sym(Terminals.RETURN); }
+"return"  { return sym(Terminals.RETURN); }
 "short"  { return sym(Terminals.SHORT); }
 "signed"  { return sym(Terminals.SIGNED); }
 "sizeof"  { return sym(Terminals.SIZEOF); }
 "static"  { return sym(Terminals.STATIC); }
 "struct"  { return sym(Terminals.STRUCT); }
-// "switch"  { return sym(Terminals.SWITCH); }
+"switch"  { return sym(Terminals.SWITCH); }
 "typedef"  { return sym(Terminals.TYPEDEF); }
 "union"  { return sym(Terminals.UNION); }
 "unsigned"  { return sym(Terminals.UNSIGNED); }
 "void"  { return sym(Terminals.VOID); }
 "volatile"  { return sym(Terminals.VOLATILE); }
-// "while"  { return sym(Terminals.WHILE); }
+"while"  { return sym(Terminals.WHILE); }
 
 //C99 keywords used by the default gnu89 dialect
 "_Bool"  { return sym(Terminals.U_BOOL); }

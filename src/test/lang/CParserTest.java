@@ -36,7 +36,7 @@ public class CParserTest {
 				sym = scanner.nextToken();
 			} catch (Exception e) {
 				System.out.println(e);
-				return null;
+				return result;
 			}
 			if (sym == null) {
 				break;
@@ -65,6 +65,8 @@ public class CParserTest {
 		if (root == null)
 			return null;
 
+		// Util.dumpParseResult("parse.dot", root, grammar);
+
 		java.util.List<ParseTree> parseTrees = Util.enumerateParseTrees(root, astBuilder.getGrammar(),
 																		new SPPFTrivialProductionRemover(astBuilder.getGrammar()));
 
@@ -86,7 +88,7 @@ public class CParserTest {
 	}
 
 	@Test
-	public void test1() {
+	public void testStructAndUnionDeclaration() {
 		String c = "struct f { union { int x; float f; } un; int bitfield : 10; } foo(int z);";
 		Category start = lang.c.obj.ast.ObjLangParserSEP.n_declaration;
 
@@ -97,7 +99,7 @@ public class CParserTest {
 	}
 
 	@Test
-	public void test2() {
+	public void testArrayDeclaration() {
 		String c = "int x[10];";
 		Category start = lang.c.obj.ast.ObjLangParserSEP.n_declaration;
 
@@ -108,10 +110,10 @@ public class CParserTest {
 	}
 
 	@Test
-	public void test3() {
+	public void testFunctionPtrDeclaration() {
 		String c = "int (*f(int, int))(float);";
 
-		for (int i = 0; i < 10; ++i) {
+		for (int i = 0; i < 3; ++i) {
 			c = c + c;
 		}
 
@@ -127,7 +129,7 @@ public class CParserTest {
 	}
 
 	@Test
-	public void test4() {
+	public void testPtr() {
 		String c = "*";
 		Category start = lang.c.obj.ast.ObjLangParserSEP.n_pointer;
 
@@ -138,7 +140,7 @@ public class CParserTest {
 	}
 
 	@Test
-	public void test5() {
+	public void testTranslationUnit1() {
 		String c = "struct { int a; union { float x; } u; } my_struct;";
 		Category start = lang.c.obj.ast.ObjLangParserSEP.n_translation_unit;
 
@@ -172,7 +174,7 @@ public class CParserTest {
 	}
 
 	@Test
-	public void test6() {
+	public void testMultipleDecls() {
 		String c =
 			"\ntypedef extern const volatile VFLOAT;" +
 			"\nextern const volatile float x, *y;" +
@@ -186,17 +188,55 @@ public class CParserTest {
 	}
 
 	@Test
-	public void test7() {
-		testAST("int x;");
+	public void testSingleDecl() {
+		testAST("int x = 10;");
 	}
 
 	@Test
-	public void test8() {
+	public void testTypedef() {
 		testAST("typedef struct U {int x; int y; } U;");
 	}
 
 	@Test
-	public void test9() {
+	public void testExpression() {
 		testAST("foo(x + 1) + z[1][sizeof(int)]->m.n", lang.c.obj.ast.ObjLangParserSEP.n_expression);
+	}
+
+	@Test
+	public void testEmptyBlock() {
+		testAST("{}", lang.c.obj.ast.ObjLangParserSEP.n_statement);
+	}
+
+	@Test
+	public void testCallStatement() {
+		testAST("printf(\"Hello world!\");", lang.c.obj.ast.ObjLangParserSEP.n_statement);
+	}
+
+	@Test
+	public void testDoWhileStatement() {
+		testAST("do { printf(\"Hello world!\"); } while(cond);", lang.c.obj.ast.ObjLangParserSEP.n_statement);
+	}
+
+	@Test
+	public void testForStatement() {
+		testAST("for (;;) ;", lang.c.obj.ast.ObjLangParserSEP.n_statement);
+	}
+
+
+	@Test
+	public void testForDeclStatement() {
+		testAST("for (int n; ; ) ;", lang.c.obj.ast.ObjLangParserSEP.n_statement);
+	}
+
+
+
+	@Test
+	public void testComplexStatement() {
+		testAST("for (i = 1; i < 10; ++i) {" +
+				"  do {" +
+                     "printf(\"Hello world\");" +
+				"  } while (1); " +
+				"}",
+				lang.c.obj.ast.ObjLangParserSEP.n_statement);
 	}
 }

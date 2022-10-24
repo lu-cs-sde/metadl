@@ -36,7 +36,8 @@ List init_declarator_list = init_declarator {: return new List().add(init_declar
 // (6.7) init-declarator:
 // declarator
 // declarator = initializer
-InitDeclarator init_declarator = declarator initializer? {: return new InitDeclarator(declarator, initializer); :}
+InitDeclarator init_declarator = declarator {: return new InitDeclarator(declarator, new Opt()); :}
+	       	       | declarator ASSIGN initializer {: return new InitDeclarator(declarator, new Opt(initializer)); :}
 	       	       ;
 
 // (6.7.1) storage-class-specifier:
@@ -302,7 +303,8 @@ TypedefName typedef_name = identifier {: return new TypedefName(identifier); :}
 // { initializer-list }
 // { initializer-list , }
 Initializer initializer = assignment_expression {: return new InitializerExpression(assignment_expression); :}
-	    		| initializer_list {: return new InitializerList(initializer_list); :}
+	    		| LBRACE initializer_list RBRACE {: return new InitializerList(initializer_list); :}
+			| LBRACE initializer_list COMMA RBRACE {: return new InitializerList(initializer_list); :}
 			;
 
 // (6.7.9) initializer-list:

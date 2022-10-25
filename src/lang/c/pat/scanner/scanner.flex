@@ -233,9 +233,6 @@ comment = new StringBuilder();
 comment.append(yytext());
 commentnl = false;
 }
-
-/* error fallback */
-[^]           { throw new SyntaxError("Illegal character <"+yytext()+">"); }
 }
 
 <COMMENT> {

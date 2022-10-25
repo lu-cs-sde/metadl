@@ -370,7 +370,7 @@ def java8LexOrder = [
 
 def metadlLexOrder = ['scanner.flex']
 
-def cLexOrder = ['prologue.flex', 'scanner.flex']
+def cLexOrder = ['prologue.flex', 'scanner.flex', 'epilogue.flex']
 
 // The order in which the parser files are concatenated
 def java8ParseOrder = [

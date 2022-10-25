@@ -1,0 +1,76 @@
+aspect ASTBuilder {
+    public abstract class ASTBuilder {
+		public Symbol buildAST(final ParseTree t, final java.util.List<Symbol> symbols) {
+			if (t.getCategory().isTerminal()) {
+				// this is a terminal, return the corresponding symbol
+				assert t.getStart() + 1 == t.getEnd();
+				return symbols.get(t.getStart());
+			}
+
+			java.util.List<Object> astChildren = new ArrayList<>();
+			java.util.List<ParseTree> children = t.getChildren();
+
+			se.lth.sep.Rule r = t.getRule();
+
+			if (r.getBody().size() == 0) {
+				// epsilon
+				assert children.size() == 1 && children.get(0).getCategory().equals(grammar.t_EPSILON);
+				astChildren = Collections.emptyList();
+			} else {
+				assert children.size() == r.getBody().size();
+				for (int i = 0; i < children.size(); ++i) {
+					Category actual = children.get(i).getCategory();
+					Category staticCat = r.getBody().get(i);
+
+					Symbol astChild = buildAST(children.get(i), symbols);
+
+					if (actual.getName().equals("METAVARID")) {
+						// this child is a metavariable, wrap it up in a MetaVariable node
+						// with proper type
+						Symbol mv = buildMetaVar(staticCat, astChild);
+						assert mv != null;
+						astChildren.add(mv);
+					} else if (actual.getName().equals("GAP")) {
+						// this is a gap, wrap it up in a Gap node with proper type
+						Symbol gap = buildGap(staticCat);
+						assert gap != null;
+						astChildren.add(gap);
+					} else {
+						assert staticCat == actual;
+						assert astChild != null;
+						astChildren.add(astChild);
+					}
+				}
+			}
+
+			Symbol ret = (Symbol) r.getAction().act(astChildren);
+			return ret;
+
+		}
+
+
+		private Grammar grammar;
+		private EarleyParser parser;
+
+		public ASTBuilder() {
+			grammar = new Grammar();
+			addGrammarRules(grammar);
+			parser = new EarleyParser(grammar);
+		}
+
+		public final Grammar getGrammar() {
+			return grammar;
+		}
+		public final EarleyParser getParser() {
+			return parser;
+		}
+
+		protected abstract void addGrammarRules(Grammar g);
+		protected Symbol buildMetaVar(Category staticCat, Symbol astChild) {
+			throw new RuntimeException("Metavariables not supported.");
+		}
+		protected Symbol buildGap(Category staticCat) {
+			throw new RuntimeException("Gaps not supported.");
+		}
+	}
+}

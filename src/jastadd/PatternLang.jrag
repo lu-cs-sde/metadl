@@ -316,12 +316,6 @@ aspect PatternLang {
 		}
 	}
 
-	public interface ASTBuilder {
-		Symbol buildAST(final ParseTree t, final java.util.List<Symbol> symbols);
-		Grammar getGrammar();
-		EarleyParser getParser();
-	}
-
 	syn boolean PredicateSymbol.isProgramRepresentation(ProgramRepresentation r) {
 		return program().getProgramRepresentationPredicateName(r).equals(getPRED_ID());
 	}

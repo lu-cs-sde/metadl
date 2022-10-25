@@ -158,7 +158,7 @@ public class CParserTest {
 		testAST(c, lang.c.obj.ast.ObjLangParserSEP.n_translation_unit);
 	}
 
-	public static void testAST(String c, Category start) {
+	private static void testAST(String c, Category start) {
 		System.out.println("================================================================================");
 		System.out.println("Parsing: \"" + c + "\"");
 		System.out.println("================================================================================");
@@ -245,5 +245,11 @@ public class CParserTest {
 	@Test
 	public void testFunctionDefinition() {
 		testAST("int f(int x, int y) { return x + y; }", lang.c.obj.ast.ObjLangParserSEP.n_function_definition);
+	}
+
+	@Test
+	public void testFunctionDefinitions() {
+		testAST("int f(int x, int y) { return x + y; }" +
+				"int (*g(void))(int, int) { return &f; }");
 	}
 }

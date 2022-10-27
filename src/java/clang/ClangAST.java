@@ -116,6 +116,8 @@ public class ClangAST {
 		public void patchLocations() {
 			patchLocationsInternal(new MutableObject<>());
 		}
+
+		public void accept(ASTVisitor visitor) { visitor.visit(this); }
 	}
 
 
@@ -151,6 +153,10 @@ public class ClangAST {
 		public Expr getArg(int i) {
 			return (Expr) inner[i + 1];
 		}
+
+		@Override public void accept(ASTVisitor v) {
+			v.visit(this);
+		}
 	}
 
 	public static class BinaryOperator extends Expr {
@@ -160,16 +166,23 @@ public class ClangAST {
 			return (Expr) inner[0];
 		}
 
-		public Expr gerRHS() {
+		public Expr getRHS() {
 			return (Expr) inner[1];
 		}
+
+		@Override public void accept(ASTVisitor v) {
+			v.visit(this);
+		}
+
 	}
 
 	public static class CompoundAssignOperator extends BinaryOperator {
-
+		@Override public void accept(ASTVisitor v) {
+			v.visit(this);
+		}
 	}
 
-	public class ConditionalOperator extends Expr {
+	public static class ConditionalOperator extends Expr {
 		public Expr getCond() {
 			return (Expr) inner[0];
 		}
@@ -181,6 +194,11 @@ public class ClangAST {
 		public Expr getFalseExpr() {
 			return (Expr) inner[1];
 		}
+
+		@Override public void accept(ASTVisitor v) {
+			v.visit(this);
+		}
+
 	}
 
 	public static class UnaryOperator extends Expr {
@@ -188,6 +206,10 @@ public class ClangAST {
 
 		public Expr getOperand() {
 			return (Expr) inner[0];
+		}
+
+		@Override public void accept(ASTVisitor v) {
+			v.visit(this);
 		}
 	}
 
@@ -200,6 +222,10 @@ public class ClangAST {
 
 		@Override protected String extraInfo() {
 			return "'" + referencedDecl.name + "' ";
+		}
+
+		@Override public void accept(ASTVisitor v) {
+			v.visit(this);
 		}
 	}
 
@@ -229,6 +255,10 @@ public class ClangAST {
 		public Stmt getBody() {
 			return (Stmt) inner[4];
 		}
+
+		@Override public void accept(ASTVisitor v) {
+			v.visit(this);
+		}
 	}
 
 	public static class CompoundStmt extends Stmt {
@@ -239,11 +269,19 @@ public class ClangAST {
 		public Stmt getStmt(int i) {
 			return (Stmt) inner[i];
 		}
+
+		@Override public void accept(ASTVisitor v) {
+			v.visit(this);
+		}
 	}
 
 	public static class ReturnStmt extends Stmt {
 		public Expr getRetValue() {
 			return inner != null ? (Expr) inner[0] : null;
+		}
+
+		@Override public void accept(ASTVisitor v) {
+			v.visit(this);
 		}
 	}
 
@@ -259,6 +297,9 @@ public class ClangAST {
 	}
 
 	public static class ParmVarDecl extends Decl {
+		@Override public void accept(ASTVisitor v) {
+			v.visit(this);
+		}
 	}
 
 	public static class FunctionDecl extends Node {
@@ -277,8 +318,12 @@ public class ClangAST {
 			return null;
 		}
 
-		public int getBody() {
-			return 0;
+		public Stmt getBody() {
+			return null;
+		}
+
+		public void accept(ASTVisitor v) {
+			v.visit(this);
 		}
 	}
 }

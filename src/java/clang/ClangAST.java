@@ -2,12 +2,10 @@ package clang;
 
 import java.io.PrintStream;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Collection;
-import java.util.Iterator;
+import java.util.Collections;
 import java.util.stream.Collectors;
 
-import org.apache.commons.collections4.iterators.ArrayIterator;
 import org.apache.commons.lang3.mutable.MutableObject;
 
 public class ClangAST {
@@ -56,10 +54,10 @@ public class ClangAST {
 			prettyPrintInternal(0, ps);
 		}
 
-		public Iterator<Node> children() {
+		public java.util.List<Node> children() {
 			if (inner == null)
-				return Collections.emptyIterator();
-			return new ArrayIterator<Node>(inner);
+				return Collections.emptyList();
+			return Arrays.asList(inner);
 		}
 
 		private void prettyPrintInternal(int offset, PrintStream ps) {
@@ -74,7 +72,9 @@ public class ClangAST {
 				ps.printf("<%s> %s %s[BUILTIN]\n", id, kind, extraInfo());
 			}
 
-			children().forEachRemaining(c -> c.prettyPrintInternal(offset + 1, ps));
+			for (Node c : children()) {
+				c.prettyPrintInternal(offset + 1, ps);
+			}
 		}
 
 		protected String extraInfo() {
@@ -107,9 +107,8 @@ public class ClangAST {
 				range.end = new Loc(prev.getValue());
 			}
 
-			Iterator<Node> c = children();
-			while (c.hasNext()) {
-				c.next().patchLocationsInternal(prev);
+			for (Node c : children()) {
+				c.patchLocationsInternal(prev);
 			}
 		}
 
@@ -118,6 +117,13 @@ public class ClangAST {
 		}
 
 		public void accept(ASTVisitor visitor) { visitor.visit(this); }
+
+		public void acceptPO(ASTVisitor visitor) {
+			for (Node c : children()) {
+				c.acceptPO(visitor);
+			}
+			accept(visitor);
+		}
 	}
 
 
@@ -135,13 +141,13 @@ public class ClangAST {
 	// --------------------------------------------------------------------------------
 	// Expressions
 	// --------------------------------------------------------------------------------
-	public static class Expr extends Node{
+	public static class Expr extends Stmt {
 		@Override protected String extraInfo() {
 			return "EXPR";
 		}
 	}
 
-	public static class CallExpr extends Node {
+	public static class CallExpr extends Expr {
 		public Expr getCallee() {
 			return (Expr) inner[0];
 		}
@@ -203,6 +209,7 @@ public class ClangAST {
 
 	public static class UnaryOperator extends Expr {
 		public String opcode;
+		public boolean isPostfix;
 
 		public Expr getOperand() {
 			return (Expr) inner[0];
@@ -223,6 +230,34 @@ public class ClangAST {
 		@Override protected String extraInfo() {
 			return "'" + referencedDecl.name + "' ";
 		}
+
+		@Override public void accept(ASTVisitor v) {
+			v.visit(this);
+		}
+	}
+
+	public static class ImplicitCastExpr extends Expr {
+		public Expr getOperand() {
+			return (Expr) inner[0];
+		}
+
+		@Override public void accept(ASTVisitor v) {
+			v.visit(this);
+		}
+	}
+
+	public static class ExplicitCastExpr extends Expr {
+		public Expr getOperand() {
+			return (Expr) inner[0];
+		}
+
+		@Override public void accept(ASTVisitor v) {
+			v.visit(this);
+		}
+	}
+
+	public static class IntegerLiteral extends Expr {
+		String value;
 
 		@Override public void accept(ASTVisitor v) {
 			v.visit(this);
@@ -285,6 +320,34 @@ public class ClangAST {
 		}
 	}
 
+	public static class DeclStmt extends Stmt {
+		public Decl getDecl(int i) {
+			return (Decl) inner[i];
+		}
+
+		public int getNumDecl() {
+			return inner.length;
+		}
+
+		@Override public void accept(ASTVisitor v) {
+			v.visit(this);
+		}
+	}
+
+	public static class IfStmt extends Stmt {
+		public Expr getCond() {
+			return (Expr) inner[0];
+		}
+
+		public Stmt getThen() {
+			return (Stmt) inner[1];
+		}
+
+		public Stmt getElse() {
+			return (Stmt) inner[2];
+		}
+	}
+
 	//--------------------------------------------------------------------------------
 	// Declarations
 	//--------------------------------------------------------------------------------
@@ -302,7 +365,7 @@ public class ClangAST {
 		}
 	}
 
-	public static class FunctionDecl extends Node {
+	public static class FunctionDecl extends Decl {
 		public String mangledName = "";
 		public Type type = new Type();
 
@@ -322,6 +385,42 @@ public class ClangAST {
 			return null;
 		}
 
+		public void accept(ASTVisitor v) {
+			v.visit(this);
+		}
+	}
+
+	public static class VarDecl extends Decl {
+		Type type;
+		String init; // c, call or list
+		String storageClass;
+
+		public Expr getInit() {
+			if (init != null)
+				return (Expr) inner[0];
+			return null;
+		}
+
+		public void accept(ASTVisitor v) {
+			v.visit(this);
+		}
+	}
+
+	public static class TranslationUnitDecl extends Decl {
+		public void accept(ASTVisitor v) {
+			v.visit(this);
+		}
+
+		public int getNumDecl() {
+			return inner.length;
+		}
+
+		public Decl getDecl(int i) {
+			return (Decl) inner[i];
+		}
+	}
+
+	public static class TypedefDecl extends Decl {
 		public void accept(ASTVisitor v) {
 			v.visit(this);
 		}

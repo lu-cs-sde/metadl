@@ -30,7 +30,7 @@ ExternalDeclaration : ExternalDeclarationOrDefinition ::= Declaration;
 // ( expression )
 // generic-selection // TODO
 
-abstract Expression;
+abstract Expression : Statement;
 IdentifierExpression : Expression ::= Identifier;
 ConstantExpression : Expression ::= Constant;
 StringLiteralExpression : Expression ::= StringLiteral;
@@ -474,7 +474,6 @@ DeclarationStatement : Statement ::= Declaration;
 
 // (6.8.3) expression-statement:
 // expressionopt ;
-ExpressionStatement : Statement ::= Expression;
 EmptyStatement : Statement;
 
 // (6.8.4) selection-statement:
@@ -494,7 +493,7 @@ DoWhileStatement : Statement ::= Expression Statement;
 
 // for ( expression opt ; expression opt ; expression opt ) statement
 ForStatement : Statement ::= [Init:Expression] [Cond:Expression] [Update:Expression] Statement;
-ForDeclStatement : Statement ::= Init:Declaration [Cond:Expression] [Update:Expression] Statement;
+ForDeclStatement : Statement ::= Init:DeclarationStatement [Cond:Expression] [Update:Expression] Statement;
 
 // for ( declaration expression opt ; expression opt ) statement
 // (6.8.6) jump-statement:
@@ -506,3 +505,8 @@ GotoStatement : Statement ::= Identifier;
 ContinueStatement : Statement;
 BreakStatement : Statement;
 ReturnStatement : Statement ::= [Expression];
+
+
+UnknownDeclaration : Declaration ::= ASTNode*;
+UnknownStatement : Statement ::= ASTNode*;
+UnknownExpression : Expression ::= ASTNode*;

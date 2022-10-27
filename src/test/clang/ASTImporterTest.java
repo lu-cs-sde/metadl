@@ -1,15 +1,30 @@
 package clang;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import org.junit.jupiter.api.Test;
 import java.io.IOException;
+
+import org.junit.jupiter.api.Test;
+
+import lang.c.obj.ast.ASTNode;
 
 public class ASTImporterTest {
 	@Test
 	public void test1() throws IOException {
-		new ASTImporter().importAST("tests/clang/test1.c", null);
+		ClangAST.Node root = new ASTImporter().importAST("tests/clang/test1.c");
+		root.prettyPrint(System.out);
+
+		ClangASTTranslator translator = new ClangASTTranslator();
+		ASTNode tRoot = translator.translate(root);
+		tRoot.debugPrint(System.out);
+	}
+
+	@Test
+	public void test2() throws IOException {
+		ClangAST.Node root = new ASTImporter().importAST("tests/clang/for1.c");
+		root.prettyPrint(System.out);
+
+		ClangASTTranslator translator = new ClangASTTranslator();
+		ASTNode tRoot = translator.translate(root);
+		tRoot.debugPrint(System.out);
+
 	}
 }

@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
@@ -20,9 +21,14 @@ import com.google.gson.stream.JsonWriter;
 public class ASTTypeAdapterFactory implements TypeAdapterFactory {
 	private Map<String, TypeAdapter> delegates = new HashMap<>();
 	private Set<Class<?>> astNodeTypes = new HashSet<>();
+	private Function<String, String> oracle;
 
 	public <T extends ClangAST.Node> void registerNodeType(Class<T> nodeT) {
 		astNodeTypes.add(nodeT);
+	}
+
+	public void registerNodeKindFalback(Function<String, String> oracle) {
+		this.oracle = oracle;
 	}
 
 
@@ -45,7 +51,21 @@ public class ASTTypeAdapterFactory implements TypeAdapterFactory {
 				JsonElement e = Streams.parse(reader);
 				JsonObject o = e.getAsJsonObject();
 
-				TypeAdapter ta = delegates.getOrDefault(o.get("kind").getAsString(), defaultDelegate);
+				if (!o.has("kind")) {
+					return (T) defaultDelegate.fromJsonTree(e);
+				}
+
+				// lookup the map of registered types
+				TypeAdapter ta = delegates.get(o.get("kind").getAsString());
+				if (ta == null)  {
+					String fallbackKind = oracle.apply(o.get("kind").getAsString());
+					if (fallbackKind != null) {
+						ta = delegates.get(fallbackKind);
+					}
+					if (ta == null) {
+						ta = defaultDelegate;
+					}
+				}
 				return (T) ta.fromJsonTree(e);
 			}
 

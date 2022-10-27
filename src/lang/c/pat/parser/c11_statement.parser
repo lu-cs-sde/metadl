@@ -93,14 +93,14 @@ ForStatement for_statement = FOR LPAREN expression.i SEMICOLON expression.c SEMI
 			     {: return new ForStatement(new Opt(), new Opt(), new Opt(), statement); :}
 			   ;
 
-ForDeclStatement for_decl_statement = FOR LPAREN declaration expression.c SEMICOLON expression.u RPAREN statement
-	     		   	        {: return new ForDeclStatement(declaration, new Opt(c), new Opt(u), statement); :}
-			            | FOR LPAREN declaration expression.c SEMICOLON RPAREN statement
-				        {: return new ForDeclStatement(declaration, new Opt(c), new Opt(), statement); :}
-			            | FOR LPAREN declaration SEMICOLON expression.u RPAREN statement
-			                {: return new ForDeclStatement(declaration, new Opt(), new Opt(u), statement); :}
-			            | FOR LPAREN declaration SEMICOLON RPAREN statement
-			                {: return new ForDeclStatement(declaration, new Opt(), new Opt(), statement); :}
+ForDeclStatement for_decl_statement = FOR LPAREN declaration_statement expression.c SEMICOLON expression.u RPAREN statement
+	     		   	        {: return new ForDeclStatement(declaration_statement, new Opt(c), new Opt(u), statement); :}
+			            | FOR LPAREN declaration_statement expression.c SEMICOLON RPAREN statement
+				        {: return new ForDeclStatement(declaration_statement, new Opt(c), new Opt(), statement); :}
+			            | FOR LPAREN declaration_statement SEMICOLON expression.u RPAREN statement
+			                {: return new ForDeclStatement(declaration_statement, new Opt(), new Opt(u), statement); :}
+			            | FOR LPAREN declaration_statement SEMICOLON RPAREN statement
+			                {: return new ForDeclStatement(declaration_statement, new Opt(), new Opt(), statement); :}
 			            ;
 
 // (6.8.6) jump-statement:

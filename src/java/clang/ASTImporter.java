@@ -13,7 +13,7 @@ import com.google.gson.GsonBuilder;
 public class ASTImporter {
 	private final List<String> clangCmd = List.of("clang", "-fsyntax-only", "-Xclang", "-ast-dump=json");
 
-	public ClangAST.Node importAST(String file) throws IOException {
+	public AST.Node importAST(String file) throws IOException {
 		List<String> actualCmd = new ArrayList<>(clangCmd);
 		actualCmd.add(file);
 		ProcessBuilder b = new ProcessBuilder(actualCmd);
@@ -24,7 +24,7 @@ public class ASTImporter {
 
 		ASTTypeAdapterFactory astTypeAdapter = new ASTTypeAdapterFactory();
 
-		for (Class c : ClangAST.getASTNodeTypes()) {
+		for (Class c : AST.getASTNodeTypes()) {
 			astTypeAdapter.registerNodeType(c);
 		}
 
@@ -47,15 +47,16 @@ public class ASTImporter {
 		builder.registerTypeAdapterFactory(astTypeAdapter);
 		builder.setLenient();
 		Gson gson = builder.create();
-		ClangAST.Node root = gson.fromJson(new InputStreamReader(p.getInputStream()), ClangAST.Node.class);
-
-		root.patchLocations();
+		AST.Node root = gson.fromJson(new InputStreamReader(p.getInputStream()), AST.Node.class);
 
 		try {
 			p.waitFor();
 		} catch (InterruptedException e) {
 			throw new RuntimeException(e);
 		}
+
+
+		root.patchLocations();
 
 		return root;
 	}

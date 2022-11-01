@@ -6,26 +6,26 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import clang.ClangAST.BinaryOperator;
-import clang.ClangAST.CallExpr;
-import clang.ClangAST.CompoundAssignOperator;
-import clang.ClangAST.CompoundStmt;
-import clang.ClangAST.ConditionalOperator;
-import clang.ClangAST.Decl;
-import clang.ClangAST.DeclRefExpr;
-import clang.ClangAST.DeclStmt;
-import clang.ClangAST.ExplicitCastExpr;
-import clang.ClangAST.ForStmt;
-import clang.ClangAST.FunctionDecl;
-import clang.ClangAST.ImplicitCastExpr;
-import clang.ClangAST.IntegerLiteral;
-import clang.ClangAST.Node;
-import clang.ClangAST.ParmVarDecl;
-import clang.ClangAST.ReturnStmt;
-import clang.ClangAST.Stmt;
-import clang.ClangAST.TranslationUnitDecl;
-import clang.ClangAST.UnaryOperator;
-import clang.ClangAST.VarDecl;
+import clang.AST.BinaryOperator;
+import clang.AST.CallExpr;
+import clang.AST.CompoundAssignOperator;
+import clang.AST.CompoundStmt;
+import clang.AST.ConditionalOperator;
+import clang.AST.Decl;
+import clang.AST.DeclRefExpr;
+import clang.AST.DeclStmt;
+import clang.AST.ExplicitCastExpr;
+import clang.AST.ForStmt;
+import clang.AST.FunctionDecl;
+import clang.AST.ImplicitCastExpr;
+import clang.AST.IntegerLiteral;
+import clang.AST.Node;
+import clang.AST.ParmVarDecl;
+import clang.AST.ReturnStmt;
+import clang.AST.Stmt;
+import clang.AST.TranslationUnitDecl;
+import clang.AST.UnaryOperator;
+import clang.AST.VarDecl;
 import lang.c.obj.ast.ASTNode;
 import lang.c.obj.ast.AddExpression;
 import lang.c.obj.ast.AddressOfExpression;
@@ -97,20 +97,20 @@ import lang.c.obj.ast.UnknownTypeSpecifier;
 
 
 public class ClangASTTranslator implements ASTVisitor {
-	private Map<ClangAST.Node, ASTNode> nodeMap = new HashMap<>();
+	private Map<AST.Node, ASTNode> nodeMap = new HashMap<>();
 
-	private void t(ClangAST.Node node, ASTNode internalNode) {
+	private void t(AST.Node node, ASTNode internalNode) {
 		internalNode.setStart(node.range.begin.line, node.range.begin.col);
 		internalNode.setEnd(node.range.end.line, node.range.end.col);
 
 		nodeMap.put(node, internalNode);
 	}
 
-	private <T> T t(ClangAST.Node node) {
+	private <T> T t(AST.Node node) {
 		return (T) nodeMap.get(node);
 	}
 
-	private <T extends ASTNode<ASTNode>> Opt<T> opt(ClangAST.Node node) {
+	private <T extends ASTNode<ASTNode>> Opt<T> opt(AST.Node node) {
 		if (node == null)
 			return new Opt<T>();
 		ASTNode n = (T) nodeMap.get(node);
@@ -343,7 +343,7 @@ public class ClangASTTranslator implements ASTVisitor {
 		t(tu, new TranslationUnit(declOrDef));
 	}
 
-	public ASTNode translate(ClangAST.Node root) {
+	public ASTNode translate(AST.Node root) {
 		nodeMap.clear();
 		root.acceptPO(this);
 		return nodeMap.get(root);

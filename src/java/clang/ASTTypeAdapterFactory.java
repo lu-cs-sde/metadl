@@ -23,7 +23,7 @@ public class ASTTypeAdapterFactory implements TypeAdapterFactory {
 	private Set<Class<?>> astNodeTypes = new HashSet<>();
 	private Function<String, String> oracle;
 
-	public <T extends ClangAST.Node> void registerNodeType(Class<T> nodeT) {
+	public <T extends AST.Node> void registerNodeType(Class<T> nodeT) {
 		astNodeTypes.add(nodeT);
 	}
 
@@ -33,11 +33,11 @@ public class ASTTypeAdapterFactory implements TypeAdapterFactory {
 
 
 	@Override public <T> TypeAdapter<T> create(final Gson gson, final TypeToken<T> type) {
-		if (type.getRawType() != ClangAST.Node.class) {
+		if (type.getRawType() != AST.Node.class) {
 			return null;
 		}
 
-		TypeAdapter defaultDelegate = gson.getDelegateAdapter(this, TypeToken.get(ClangAST.Node.class));
+		TypeAdapter defaultDelegate = gson.getDelegateAdapter(this, TypeToken.get(AST.Node.class));
 
 		for (Class<?> nodeT : astNodeTypes) {
 			String name = nodeT.getSimpleName();

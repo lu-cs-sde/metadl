@@ -1,6 +1,6 @@
 package clang;
 
-import static clang.ClangAST.*;
+import static clang.AST.*;
 
 public interface ASTVisitor {
 	void visit(Node n);

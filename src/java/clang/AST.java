@@ -8,7 +8,7 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.mutable.MutableObject;
 
-public class ClangAST {
+public class AST {
 	public static class Type {
 		public String qualType = "";
 	}
@@ -114,6 +114,10 @@ public class ClangAST {
 			}
 		}
 
+		/** Clang AST contains 'differential' source locations and ranges: it contains
+			only the changes relative to the previous node in post-order?.
+			This propagates the location, so that each node has full location description.
+		**/
 		public void patchLocations() {
 			patchLocationsInternal(new MutableObject<>());
 		}
@@ -132,8 +136,8 @@ public class ClangAST {
 
 	public static Collection<Class> getASTNodeTypes() {
 		// return all the (strict) subclasses of ClangAST.Node that are defined in this class
-		return Arrays.stream(ClangAST.class.getClasses())
-				.filter(c -> ClangAST.Node.class.isAssignableFrom(c) && c != ClangAST.Node.class)
+		return Arrays.stream(AST.class.getClasses())
+				.filter(c -> AST.Node.class.isAssignableFrom(c) && c != AST.Node.class)
 				.collect(Collectors.toUnmodifiableList());
 	}
 

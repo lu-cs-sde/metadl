@@ -52,7 +52,7 @@ public class ASTTypeAdapterFactory implements TypeAdapterFactory {
 				JsonObject o = e.getAsJsonObject();
 
 				if (!o.has("kind")) {
-					return (T) defaultDelegate.fromJsonTree(e);
+					return null; //defaultDelegate.fromJsonTree(e);
 				}
 
 				// lookup the map of registered types

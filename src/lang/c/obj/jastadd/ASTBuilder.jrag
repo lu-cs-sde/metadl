@@ -62,6 +62,14 @@ aspect ASTBuilder {
 		return getColumn(getEnd());
 	}
 
+	public void ASTNode.setStart(int line, int col) {
+		this.start = makePosition(line, col);
+	}
+
+	public void ASTNode.setEnd(int line, int col) {
+		this.end = makePosition(line, col);
+	}
+
 	public String ASTNode.prettyLoc() {
 		return "" + startLine() + ":" + startColumn() + "-" + endLine() + ":" + endColumn();
 	}

@@ -73,7 +73,8 @@ public class ClangAST {
 			}
 
 			for (Node c : children()) {
-				c.prettyPrintInternal(offset + 1, ps);
+				if (c != null)
+					c.prettyPrintInternal(offset + 1, ps);
 			}
 		}
 
@@ -108,7 +109,8 @@ public class ClangAST {
 			}
 
 			for (Node c : children()) {
-				c.patchLocationsInternal(prev);
+				if (c != null)
+					c.patchLocationsInternal(prev);
 			}
 		}
 
@@ -120,7 +122,8 @@ public class ClangAST {
 
 		public void acceptPO(ASTVisitor visitor) {
 			for (Node c : children()) {
-				c.acceptPO(visitor);
+				if (c != null)
+					c.acceptPO(visitor);
 			}
 			accept(visitor);
 		}
@@ -391,9 +394,9 @@ public class ClangAST {
 	}
 
 	public static class VarDecl extends Decl {
-		Type type;
-		String init; // c, call or list
-		String storageClass;
+		public Type type;
+		public String init; // c, call or list
+		public String storageClass;
 
 		public Expr getInit() {
 			if (init != null)

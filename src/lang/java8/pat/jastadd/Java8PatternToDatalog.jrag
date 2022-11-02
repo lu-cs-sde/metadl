@@ -29,12 +29,6 @@ aspect LanguageSpecific {
 								  ));
 	}
 
-	public static lang.ast.Rule PatLang.makeASTRule(AnalyzeContext ctx) {
-		return rule(
-					literal("AST", "$p1", "$p2", "$p3", "$p4", "$p5"),
-					literal(ctx.progRelName, "$p1", "$p2", "$p3", "$p4", "$p5"));
-	}
-
 	public static java.util.List<lang.ast.Clause> PatLang.generateHelperRelations(AnalyzeContext ctx, Set<String> used) {
 		java.util.List<lang.ast.Clause> ret = new java.util.ArrayList<>();
 		// Identifiers

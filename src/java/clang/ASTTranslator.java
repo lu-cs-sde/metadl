@@ -96,7 +96,7 @@ import lang.c.obj.ast.UnknownStatement;
 import lang.c.obj.ast.UnknownTypeSpecifier;
 
 
-public class ClangASTTranslator implements ASTVisitor {
+public class ASTTranslator implements ASTVisitor {
 	private Map<AST.Node, ASTNode> nodeMap = new HashMap<>();
 
 	private void t(AST.Node node, ASTNode internalNode) {

@@ -137,10 +137,13 @@ aspect Eval {
 
 		switch (opts.getLang()) {
 		case JAVA:
-			FileUtil.loadJavaSources(ctx,
-									 tupleSink,
-									 locs);
+			FileUtil.loadJavaSources(ctx, tupleSink, locs);
 			break;
+
+		case C:
+			FileUtil.loadCSources(ctx, tupleSink, locs);
+			break;
+
 		case METADL:
 			MutableInt nodeCounter = new MutableInt(1);
 			try {

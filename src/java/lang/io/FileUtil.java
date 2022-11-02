@@ -146,6 +146,15 @@ public class FileUtil {
 		proj2.generate(p, tupleSink);
 	}
 
+	public static void loadCSources(EvaluationContext ctx,
+									DatalogProjectionSink sink,
+									java.util.List<String> srcs) throws IOException {
+		clang.DatalogProjection dp = new clang.DatalogProjection(new FileIdDatabase(), sink);
+		for (String src : srcs) {
+			dp.project(src);
+		}
+	}
+
 	static class OutputConsumer implements Runnable {
 		InputStream src;
 		public OutputConsumer(InputStream src) {

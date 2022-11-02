@@ -118,7 +118,7 @@ aspect PatternToDatalog {
 	}
 
 	public static boolean ASTNode.isWildcardToken(String s) {
-		return s.equals("`_");
+		return s.equals("`_") || s.equals("$_");
 	}
 
 	syn boolean MetaVariable.isWildcard() = isWildcardToken(getID());

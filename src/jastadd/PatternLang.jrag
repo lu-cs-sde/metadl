@@ -50,6 +50,8 @@ aspect PatternLang {
 			return lang.metadl.pat.ast.PatLang.generateHelperRelations(getAnalysisContext(), usedContextPredicates());
 		case JAVA:
 			return lang.java8.pat.ast.PatLang.generateHelperRelations(getAnalysisContext(), usedContextPredicates());
+		case C:
+			return lang.c.pat.ast.PatLang.generateHelperRelations(getAnalysisContext(), usedContextPredicates());
 		}
 		return null;
 	}
@@ -60,6 +62,8 @@ aspect PatternLang {
 			return lang.metadl.pat.ast.PatLang.contextPredicateType(predName);
 		case JAVA:
 			return lang.java8.pat.ast.PatLang.contextPredicateType(predName);
+		case C:
+			return lang.c.pat.ast.PatLang.contextPredicateType(predName);
 		}
 		return null;
 	}
@@ -173,6 +177,15 @@ aspect PatternLang {
 										 lang.java8.pat.ast.PatLangParserSEP.n_field_declarator,
 										 lang.java8.pat.ast.PatLangParserSEP.n_variable_declarator);
 			break;
+		case C:
+			scanner = new lang.c.pat.ast.PatLangScanner(new StringReader(getPATTERN()));
+			tokenNames = lang.c.pat.ast.PatLangParserSEP.Terminals.NAMES;
+			astBuilder = lang.c.pat.ast.ASTBuilder.getInstance();
+			startSymbols = Arrays.asList(lang.c.pat.ast.PatLangParserSEP.n_expression,
+										 lang.c.pat.ast.PatLangParserSEP.n_statement,
+										 lang.c.pat.ast.PatLangParserSEP.n_declaration,
+										 lang.c.pat.ast.PatLangParserSEP.n_function_definition);
+			break;
 		}
 
 		Grammar grammar = astBuilder.getGrammar();
@@ -185,11 +198,13 @@ aspect PatternLang {
 				System.out.println(e);
 				break;
 			}
-			if (sym.getId() != 0 /*EOF*/) {
+			if (sym == null) {
+				break;
+			} else if (sym.getId() != 0 /*EOF*/) {
 				tokens.add(grammar.getCategory(tokenNames[sym.getId()]));
 				symbols.add(sym);
 			} else {
-				break;
+				// ignore
 			}
 		} while (true);
 

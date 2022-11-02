@@ -124,6 +124,13 @@ aspect PatternPredicates {
 			return ret;
 		}
 
+		public static lang.ast.Rule makeASTRule(AnalyzeContext ctx) {
+			return rule(
+					literal("AST", "$p1", "$p2", "$p3", "$p4", "$p5"),
+					literal(ctx.progRelName, "$p1", "$p2", "$p3", "$p4", "$p5"));
+		}
+
+
 		public static lang.ast.Rule makeProvenanceRule(AnalyzeContext ctx) {
 			return rule(literal(ctx.prefix("PROVENANCE"), "$x", "$y"),
 						literal(ctx.provenanceRelName, "$x", "$y"));

@@ -87,8 +87,8 @@ public class IncrementalTest {
 		opts.setInputFile(src);
 
 		// Run the split program
-		Program p = Compiler.run(opts);
 		EvaluationContext ctx = new EvaluationContext();
+		Program p = Compiler.run(ctx, opts);
 
 		Set<String> outputRelations = computeOutputRelations(ctx, p);
 		for (String predName : outputRelations) {
@@ -130,6 +130,6 @@ public class IncrementalTest {
 	static Stream<String> initialRunTestsInternal() {
 		// Exclude the java7 test since it contains a 0 arity predicate and the
 		// cache database does not handle 0-arity predicates
-		return EvaluationTest.metadlJavaTests().filter(t -> !t.equals("java7"));
+		return JavaDLEvaluationTest.metadlJavaTests().filter(t -> !t.equals("java7"));
 	}
 }

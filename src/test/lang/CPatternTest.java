@@ -24,31 +24,6 @@ import org.junit.jupiter.api.Test;
 
 
 public class CPatternTest {
-	public static java.util.List<Symbol> scan(String s) {
-		var result = new ArrayList<Symbol>();
-
-		Scanner scanner = new lang.c.pat.ast.PatLangScanner(new StringReader(s));
-		String[] tokenNames = lang.c.pat.ast.PatLangParserSEP.Terminals.NAMES;
-
-		do {
-			beaver.Symbol sym;
-			try {
-				sym = scanner.nextToken();
-			} catch (Exception e) {
-				System.out.println(e);
-				return result;
-			}
-			if (sym == null) {
-				break;
-			} else if (sym.getId() > 0) {
-				result.add(sym);
-			} else if (sym.getId() == 0) {
-				// Layout symbols, ignore them
-			}
-		} while (true);
-
-		return result;
-	}
 
 	public static java.util.List<ParseTree> parse(java.util.List<Symbol> tokens, Category startSymbol) {
 		String[] tokenNames = lang.c.pat.ast.PatLangParserSEP.Terminals.NAMES;
@@ -98,7 +73,8 @@ public class CPatternTest {
 		System.out.println("Parsing: \"" + c + "\"");
 		System.out.println("================================================================================");
 
-		java.util.List<Symbol> tokens = scan(c);
+		java.util.List<Symbol> tokens = CTestUtil.scan(new lang.c.pat.ast.PatLangScanner(new StringReader(c)));
+
 		java.util.List<ParseTree> parseTrees = parse(tokens, start);
 
 		assertNotNull(parseTrees);

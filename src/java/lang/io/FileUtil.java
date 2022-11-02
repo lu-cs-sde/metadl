@@ -89,7 +89,7 @@ public class FileUtil {
 		List<File> ret = new ArrayList<>();
 		for (File fileOrDir : files) {
 			if (fileOrDir.isDirectory()) {
-				IOFileFilter ff = new WildcardFileFilter("*.java");
+				IOFileFilter ff = new WildcardFileFilter(ext);
 				Iterator<File> it = FileUtils.iterateFiles(fileOrDir, ff, TrueFileFilter.INSTANCE);
 				while (it.hasNext()) {
 					File f = it.next();

@@ -44,49 +44,6 @@ import lang.relation.PseudoTuple;
 import lang.relation.RelationWrapper;
 
 public class EvaluationTest {
-	public Map<String, RelationWrapper> doSingleEvaluation(CmdLineOpts d1) throws Exception {
-		System.out.println(d1.getInputFile());
-
-		Program program1 = Compiler.run(d1);
-		FormalPredicate fpOut1 = program1.formalPredicateMap().get(GlobalNames.OUTPUT_NAME);
-
-		if (fpOut1 == null)
-			fail();
-		HashMap<String, RelationWrapper> nameToRel = new HashMap<>();
-
-		EvaluationContext ctx = new EvaluationContext();
-		RelationWrapper outputTuples = new RelationWrapper(ctx, ctx.getRelation(fpOut1), fpOut1.type());
-
-		for (RelationWrapper.TupleWrapper t : outputTuples.tuples()) {
-			String pred = t.getAsString(0);
-			FormalPredicate fp = program1.formalPredicateMap().get(pred);
-
-			File in1 = new File(d1.getOutputDir() + "/" + fp.predicateName() + ".csv");
-
-			Relation2 r1 = new Relation2(fp.realArity(), fp.getPRED_ID());
-			CSVUtil.readRelation(ctx, fp.type(), r1, d1.getOutputDir() + "/" + fp.predicateName() + ".csv");
-
-			SimpleLogger.logger().log("Read relation from: " + in1.getPath(), SimpleLogger.LogLevel.Level.DEBUG);
-			nameToRel.put(fp.predicateName(), new RelationWrapper(ctx, r1, fp.type()));
-		}
-		return nameToRel;
-	}
-
-	public void doEvaluationTest(CmdLineOpts d1, CmdLineOpts d2) throws Exception {
-		Map<String, RelationWrapper> rels1 = doSingleEvaluation(d1);
-		Map<String, RelationWrapper> rels2 = doSingleEvaluation(d2);
-
-		for (Map.Entry<String, RelationWrapper> sr : rels1.entrySet()) {
-			RelationWrapper rel1 = sr.getValue();
-			RelationWrapper rel2 = rels2.get(sr.getKey());
-			assertTrue(rel2 != null);
-			assertEquals(rel1.tuples(), rel2.tuples(), "Relation " + sr.getKey() + " differs.");
-		}
-
-		// so far we proved rels1 is include in rels2, check their sizes are equal
-		assertEquals(rels1.size(), rels2.size());
-	}
-
 	@DisplayName("Compare Internal Evaluation to Souffle")
 	@ParameterizedTest(name = "Evaluation Tests Valid")
 	@ValueSource(strings = { "evalTest_1.in", "evalTest_2.in", "evalTest_3.in", "evalTest_4.in", "evalTest_5.in",
@@ -100,7 +57,7 @@ public class EvaluationTest {
 				"-e souffle      -D ./tests/output/souffle -F ./facts " + inputFile);
 		CmdLineOpts d2 = FileUtil.parseDescription(
 				"-e metadl -D ./tests/output       -F ./facts  " + inputFile);
-		doEvaluationTest(d1, d2);
+		Util.doEvaluationTest(d1, d2);
 	}
 
 	@DisplayName("Compare Internal Evaluation to Souffle WithEDB")
@@ -114,7 +71,7 @@ public class EvaluationTest {
 		CmdLineOpts d2 = FileUtil.parseDescription(
 				"-e metadl -D ./tests/output         -F ./tests/evaluation/withedbs/ ./tests/evaluation/withedbs/"
 						+ fileName);
-		doEvaluationTest(d1, d2);
+		Util.doEvaluationTest(d1, d2);
 	}
 
 	@DisplayName("Compare Internal Evaluation to Souffle WithNEG")
@@ -128,7 +85,7 @@ public class EvaluationTest {
 		CmdLineOpts d2 = FileUtil.parseDescription(
 				"-e metadl -D ./tests/output         -F ./tests/evaluation/withneg/ ./tests/evaluation/withneg/"
 						+ fileName);
-		doEvaluationTest(d1, d2);
+		Util.doEvaluationTest(d1, d2);
 	}
 
 	@DisplayName("Compare Internal Evaluation to Souffle WithBinPred")
@@ -139,7 +96,7 @@ public class EvaluationTest {
 				"-e souffle      -D ./tests/output/souffle -F ./tests/evaluation/withbinpred/ ./tests/evaluation/withbinpred/" + fileName);
 		CmdLineOpts d2 = FileUtil.parseDescription(
 				"-e metadl -D ./tests/output        -F ./tests/evaluation/withbinpred/ ./tests/evaluation/withbinpred/" + fileName);
-		doEvaluationTest(d1, d2);
+		Util.doEvaluationTest(d1, d2);
 	}
 
     @DisplayName("Compare Internal Evaluation to Souffle WithMeta")
@@ -150,7 +107,7 @@ public class EvaluationTest {
                 "-e souffle      -D ./tests/output/souffle -F ./tests/evaluation/withmeta/facts ./tests/evaluation/withmeta/" + fileName);
         CmdLineOpts d2 = FileUtil.parseDescription(
                 "-e metadl -D ./tests/output        -F ./tests/evaluation/withmeta/facts ./tests/evaluation/withmeta/" + fileName);
-        doEvaluationTest(d1, d2);
+        Util.doEvaluationTest(d1, d2);
     }
 
 	@DisplayName("Compare Internal Evaluation to Souffle WithWildcard")
@@ -161,7 +118,7 @@ public class EvaluationTest {
 				"-e souffle      -D ./tests/output/souffle -F ./tests/evaluation/withwildcard/facts ./tests/evaluation/withwildcard/" + fileName);
 		CmdLineOpts d2 = FileUtil.parseDescription(
 				"-e metadl -D ./tests/output        -F ./tests/evaluation/withwildcard/facts ./tests/evaluation/withwildcard/" + fileName);
-		doEvaluationTest(d1, d2);
+		Util.doEvaluationTest(d1, d2);
 	}
 
 	static Stream<String> metadlPatternTests() {
@@ -191,7 +148,7 @@ public class EvaluationTest {
 		IOFileFilter ff = new WildcardFileFilter(fileName + "_input*");
 		Iterator<File> analyzedFileIt = FileUtils.iterateFiles(new File("./tests/evaluation/withimport"), ff, null);
 
-		singleEvaluationTest("./tests/output/souffle",
+		Util.singleEvaluationTest("./tests/output/souffle",
 							 "./tests/evaluation/withimport/facts",
 							 analyzedFileIt.hasNext() ? Collections.singletonList(analyzedFileIt.next()) : Collections.emptyList(),
 							 "./tests/evaluation/withimport",
@@ -212,7 +169,7 @@ public class EvaluationTest {
 		IOFileFilter ff = new WildcardFileFilter(fileName + "_input*");
 		Iterator<File> analyzedFileIt = FileUtils.iterateFiles(new File("./tests/evaluation/withimport"), ff, null);
 
-		singleEvaluationTest("./tests/output/souffle",
+		Util.singleEvaluationTest("./tests/output/souffle",
 							 "./tests/evaluation/withimport/facts",
 							 analyzedFileIt.hasNext() ? Collections.singletonList(analyzedFileIt.next()) : Collections.emptyList(),
 							 "./tests/evaluation/withimport",
@@ -222,131 +179,4 @@ public class EvaluationTest {
 							 lang,
 							 "-e metadl");
 	}
-
-	// @DisplayName("Evaluate programs containing patterns using the parallel internal evaluator")
-	// @ParameterizedTest
-	// @MethodSource("metadlPatternTests")
-	// void evaluationTestPatternsInternalParallel(String fileName) throws Exception {
-	// 	singleEvaluationTest("./tests/output/souffle",
-	// 						 "./tests/evaluation/withimport/facts",
-	// 						 "./tests/evaluation/withimport",
-	// 						 "./tests/evaluation/withimport/expected",
-	// 						 fileName,
-	// 						 ".in",
-	// 						 "-e metadl-par");
-	// }
-
-	static Stream<String> metadlJavaTests() {
-		String[] tests = {
-			"bad-covariant-equals", "switch-no-default", "clone-idioms",
-			//"number-ctor",
-			// TODO: re-enable number-ctor once conversion functors node -> int and int -> node
-			// are introduced
-			"unwritten-field", "naming-convention", "reference-to-mutable-object", "missing-override",
-			"reference-equality", "boxed-primitive-constructor", "operator-precedence",
-			"type-param-unused-in-formals", "paper-examples", "java7", "java8",
-			// "attr-provenance": provenance information is not produced in non-incremental mode
-			"class-hierarchy-utils",
-			"names"
-		};
-		return Arrays.stream(tests);
-	}
-
-	void singleEvaluationTest(String outputDir, String factDir,
-							  List<File>  analyzedFiles,
-							  String srcDir, String expectedDir,
-							  String fileName, String fileExt,
-							  String lang,
-							  String cmd) throws Exception {
-
-		String sources = analyzedFiles.stream().map(f -> f.getPath() + ",A").collect(Collectors.joining(":"));
-
-		CmdLineOpts d1 = FileUtil.parseDescription(
-		   cmd
-		   + " -L " + lang
-		   + " -D " + outputDir
-		   + " -F " + factDir
-		   + (sources.isEmpty() ? " " : " -S ") + sources
-		   + " " + srcDir + "/"
-		   + fileName + fileExt);
-
-		Map<String, RelationWrapper> outRelations = doSingleEvaluation(d1);
-		for (Map.Entry<String, RelationWrapper> rel : outRelations.entrySet()) {
-			String expectedF = expectedDir + "/" + fileName + "/" + rel.getKey() + ".csv";
-			Relation2 expectedRel = new Relation2(rel.getValue().getRelation().arity(),
-												  rel.getValue().getRelation().getName());
-
-			CSVUtil.readRelation(rel.getValue().getContext(),
-								 rel.getValue().type(),
-								 expectedRel,
-								 expectedF);
-
-			RelationWrapper expectedRelWrapper = new RelationWrapper(rel.getValue().getContext(),
-																	 expectedRel,
-																	 rel.getValue().type());
-
-			// if (!expectedRel.equals(rel.getValue().getRelation())) {
-			// 	System.out.println(rel.getKey() + " expects ");
-			// 	System.out.println(expectedRelWrapper.tuples());
-			// 	System.out.println(rel.getKey() + " actual ");
-			// 	System.out.println(rel.getValue().tuples());
-
-			// }
-			Util.printSimmetricDifference(expectedRelWrapper, rel.getValue());
-
-			String msg = "Mismatch in test " + fileName + ", relation " + rel.getKey();
-			assertEquals(expectedRel, rel.getValue().getRelation(), msg);
-		}
-	}
-
-
-	@DisplayName("Evaluate MetaDL-Java programs with Souffle")
-	@ParameterizedTest
-	@MethodSource("metadlJavaTests")
-	void evaluationTestMetaDLJavaSouffle(String fileName) throws Exception {
-		String analyzedFilesDir = "tests/evaluation/metadl-java/src";
-		List<File> analyzedFiles = FileUtil.flattenFilesAndDirs(Collections.singletonList(new File(analyzedFilesDir, fileName)), "*.java");
-
-		singleEvaluationTest("tests/output/souffle",
-							 "tests/evaluation/metadl-java/facts",
-							 analyzedFiles,
-							 "tests/evaluation/metadl-java",
-							 "tests/evaluation/metadl-java/expected",
-							 fileName,
-							 ".mdl",
-							 "java",
-							 "-e souffle");
-	}
-
-	@DisplayName("Evaluate MetaDL-Java programs with the internal evaluator")
-	@ParameterizedTest
-	@MethodSource("metadlJavaTests")
-	void evaluationTestMetaDLJavaInternal(String fileName) throws Exception {
-		String analyzedFilesDir = "tests/evaluation/metadl-java/src";
-		List<File> analyzedFiles = FileUtil.flattenFilesAndDirs(Collections.singletonList(new File(analyzedFilesDir, fileName)), "*.java");
-
-		singleEvaluationTest("tests/output/",
-							 "tests/evaluation/metadl-java/facts",
-							 analyzedFiles,
-							 "tests/evaluation/metadl-java",
-							 "tests/evaluation/metadl-java/expected",
-							 fileName,
-							 ".mdl",
-							 "java",
-							 "-e metadl");
-	}
-
-	// @DisplayName("Evaluate MetaDL-Java programs with the parallel internal evaluator")
-	// @ParameterizedTest
-	// @MethodSource("metadlJavaTests")
-	// void evaluationTestMetaDLJavaInternalParallel(String fileName) throws Exception {
-	// 	singleEvaluationTest("./tests/output/",
-	// 						 "./tests/evaluation/metadl-java/facts",
-	// 						 "./tests/evaluation/metadl-java",
-	// 						 "./tests/evaluation/metadl-java/expected",
-	// 						 fileName,
-	// 						 ".mdl",
-	// 						 "-e metadl");
-	// }
-
 }

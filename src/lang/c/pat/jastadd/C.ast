@@ -492,8 +492,7 @@ WhileStatement : Statement ::= Expression Statement;
 DoWhileStatement : Statement ::= Expression Statement;
 
 // for ( expression opt ; expression opt ; expression opt ) statement
-ForStatement : Statement ::= [Init:Expression] [Cond:Expression] [Update:Expression] Statement;
-ForDeclStatement : Statement ::= Init:DeclarationStatement [Cond:Expression] [Update:Expression] Statement;
+ForStatement : Statement ::= [Init:Statement] [Cond:Expression] [Update:Expression] Statement;
 
 // for ( declaration expression opt ; expression opt ) statement
 // (6.8.6) jump-statement:

@@ -198,13 +198,14 @@ aspect PatternLang {
 				System.out.println(e);
 				break;
 			}
-			if (sym == null) {
+
+			if (sym == null || sym.getId() == 0 /*EOF*/) {
 				break;
-			} else if (sym.getId() != 0 /*EOF*/) {
+			} else if (sym.getId() < 0) {
+				// ignore, layout symbols
+			} else {
 				tokens.add(grammar.getCategory(tokenNames[sym.getId()]));
 				symbols.add(sym);
-			} else {
-				// ignore
 			}
 		} while (true);
 

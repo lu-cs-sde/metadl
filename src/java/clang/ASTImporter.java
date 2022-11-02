@@ -50,7 +50,10 @@ public class ASTImporter {
 		AST.Node root = gson.fromJson(new InputStreamReader(p.getInputStream()), AST.Node.class);
 
 		try {
-			p.waitFor();
+			int exitcode = p.waitFor();
+			if (exitcode != 0) {
+				throw new RuntimeException("Clang command failed. " + b.command().toString());
+			}
 		} catch (InterruptedException e) {
 			throw new RuntimeException(e);
 		}

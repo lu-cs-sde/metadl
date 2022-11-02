@@ -147,22 +147,22 @@ public class Compiler {
 		return "\\t";
 	}
 
-	public static Program run(CmdLineOpts opts) {
+	public static Program run(EvaluationContext ctx, CmdLineOpts opts) {
 		try {
 			Program prog = parseProgram(opts);
 
 			switch (opts.getAction()) {
 			case EVAL_INTERNAL:
 				checkProgram(prog, opts);
-				prog.eval(new EvaluationContext(), opts);
+				prog.eval(ctx, opts);
 				break;
 			case EVAL_INTERNAL_PARALLEL:
 				checkProgram(prog, opts);
-				prog.evalParallel(new EvaluationContext(), opts);
+				prog.evalParallel(ctx, opts);
 				break;
 			case EVAL_SOUFFLE:
 				checkProgram(prog, opts);
-				prog.generateObjectProgramRelations(new EvaluationContext(), opts);
+				prog.generateObjectProgramRelations(ctx, opts);
 				evalSouffleProgram(prog, opts);
 				break;
 			case PRETTY_SOUFFLE:
@@ -190,7 +190,7 @@ public class Compiler {
 				break;
 			case EVAL_HYBRID:
 				checkProgram(prog, opts);
-				SWIGUtil.evalHybridProgram(new EvaluationContext(), prog, opts);
+				SWIGUtil.evalHybridProgram(ctx, prog, opts);
 				break;
 			case INCREMENTAL_UPDATE:
 			case INCREMENTAL_INIT:
@@ -233,7 +233,7 @@ public class Compiler {
 		}
 
 		profile().startTimer("main", "total");
-		run(opts);
+		run(new EvaluationContext(), opts);
 		profile().stopTimer("main", "total");
 
 		totalTime.stop();

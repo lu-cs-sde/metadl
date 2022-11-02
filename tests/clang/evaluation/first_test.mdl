@@ -1,0 +1,2 @@
+ForLoop(s) :- s <: for ( ; ; ) $_ :>.
+OUTPUT('ForLoop, "ForLoop.csv", "csv").

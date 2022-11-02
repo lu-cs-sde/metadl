@@ -252,15 +252,14 @@ public class ASTTranslator implements ASTVisitor {
 
 		if (init == null) {
 			t(f, new ForStatement(new Opt(), cond, incr, body));
-		} else if (init instanceof Expression) {
+		} else if (init instanceof Statement) {
 			t(f, new ForStatement(new Opt(init), cond, incr, body));
-		} else if (init instanceof DeclarationStatement) {
-			t(f, new ForDeclStatement((DeclarationStatement) init, cond, incr, body));
 		} else {
 			visit((Stmt) f);
 		}
 
 	}
+
 	@Override public void visit(CompoundStmt c) {
 		List<Statement> stmts = new List<>();
 		for (int i = 0; i < c.getNumStmts(); ++i) {

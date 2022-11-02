@@ -25,29 +25,7 @@ import org.junit.jupiter.api.Test;
 
 public class CParserTest {
 	public static java.util.List<Symbol> scan(String s) {
-		var result = new ArrayList<Symbol>();
-
-		Scanner scanner = new lang.c.obj.ast.ObjLangScanner(new StringReader(s));
-		String[] tokenNames = lang.c.obj.ast.ObjLangParserSEP.Terminals.NAMES;
-
-		do {
-			beaver.Symbol sym;
-			try {
-				sym = scanner.nextToken();
-			} catch (Exception e) {
-				System.out.println(e);
-				return result;
-			}
-			if (sym == null) {
-				break;
-			} else if (sym.getId() > 0) {
-				result.add(sym);
-			} else if (sym.getId() == 0) {
-				// Layout symbols, ignore them
-			}
-		} while (true);
-
-		return result;
+		return CTestUtil.scan(new lang.c.obj.ast.ObjLangScanner(new StringReader(s)));
 	}
 
 	public static java.util.List<ParseTree> parse(java.util.List<Symbol> tokens, Category startSymbol) {
@@ -65,11 +43,9 @@ public class CParserTest {
 		if (root == null)
 			return null;
 
-		// Util.dumpParseResult("parse.dot", root, grammar);
 
 		java.util.List<ParseTree> parseTrees = Util.enumerateParseTrees(root, astBuilder.getGrammar(),
 																		new SPPFTrivialProductionRemover(astBuilder.getGrammar()));
-
 
 		return parseTrees;
 	}

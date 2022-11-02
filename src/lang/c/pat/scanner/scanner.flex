@@ -17,6 +17,7 @@
 
   static class Layout extends beaver.Symbol {
   	 public Layout(String text, boolean newline) {
+	 	this.id = -1;
 	 }
   }
 %}

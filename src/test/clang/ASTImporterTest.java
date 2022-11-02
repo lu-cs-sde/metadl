@@ -15,7 +15,7 @@ import lang.relation.RelationWrapper.TupleWrapper;
 public class ASTImporterTest {
 	@Test
 	public void test1() throws IOException {
-		AST.Node root = new ASTImporter().importAST("tests/clang/test1.c");
+		AST.Node root = new ASTImporter().importAST("tests/clang/ast_importer/test1.c");
 		root.prettyPrint(System.out);
 
 		ASTTranslator translator = new ASTTranslator();
@@ -25,7 +25,7 @@ public class ASTImporterTest {
 
 	@Test
 	public void test2() throws IOException {
-		AST.Node root = new ASTImporter().importAST("tests/clang/for1.c");
+		AST.Node root = new ASTImporter().importAST("tests/clang/ast_importer/for1.c");
 		root.prettyPrint(System.out);
 
 		ASTTranslator translator = new ASTTranslator();
@@ -48,7 +48,7 @@ public class ASTImporterTest {
 		DatalogProjectionSink sink = makeSink();
 		DatalogProjection dp = new DatalogProjection(new FileIdDatabase(), sink);
 
-		dp.project("tests/clang/for1.c");
+		dp.project("tests/clang/ast_importer/for1.c");
 
 		// for (TupleWrapper t : ((RelationWrapper) sink.getAST()).tuples()) {
 		// 	System.out.println(t);

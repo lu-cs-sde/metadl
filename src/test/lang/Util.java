@@ -1,6 +1,7 @@
 package lang;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.ByteArrayOutputStream;
@@ -10,13 +11,24 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.nio.file.Files;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 import java.util.Scanner;
+import java.util.stream.Collectors;
 
-import lang.io.FileUtil;
-import lang.relation.RelationWrapper;
 import org.apache.commons.collections4.SetUtils;
-import org.apache.commons.lang3.tuple.Pair;
+
+import eval.EvaluationContext;
+import eval.Relation2;
+import lang.ast.FormalPredicate;
+import lang.ast.GlobalNames;
+import lang.ast.Program;
+import lang.io.CSVUtil;
+import lang.io.FileUtil;
+import lang.io.SimpleLogger;
+import lang.relation.RelationWrapper;
 
 
 /** {@link Util} methods for running tests. */
@@ -141,4 +153,99 @@ public final class Util {
 			return split;
 		}
 	}
+
+
+	public static Map<String, RelationWrapper> doSingleEvaluation(CmdLineOpts d1) throws Exception {
+		System.out.println(d1.getInputFile());
+
+		EvaluationContext ctx = new EvaluationContext();
+		Program program1 = Compiler.run(ctx, d1);
+		FormalPredicate fpOut1 = program1.formalPredicateMap().get(GlobalNames.OUTPUT_NAME);
+
+		if (fpOut1 == null)
+			fail();
+
+		// force the evaluation of the output predicate
+		fpOut1.eval(ctx);
+
+		HashMap<String, RelationWrapper> nameToRel = new HashMap<>();
+
+
+		RelationWrapper outputTuples = new RelationWrapper(ctx, ctx.getRelation(fpOut1), fpOut1.type());
+
+		for (RelationWrapper.TupleWrapper t : outputTuples.tuples()) {
+			String pred = t.getAsString(0);
+			FormalPredicate fp = program1.formalPredicateMap().get(pred);
+
+			File in1 = new File(d1.getOutputDir() + "/" + fp.predicateName() + ".csv");
+
+			Relation2 r1 = new Relation2(fp.realArity(), fp.getPRED_ID());
+			CSVUtil.readRelation(ctx, fp.type(), r1, d1.getOutputDir() + "/" + fp.predicateName() + ".csv");
+
+			SimpleLogger.logger().log("Read relation from: " + in1.getPath(), SimpleLogger.LogLevel.Level.DEBUG);
+			nameToRel.put(fp.predicateName(), new RelationWrapper(ctx, r1, fp.type()));
+		}
+		return nameToRel;
+	}
+
+	public static void doEvaluationTest(CmdLineOpts d1, CmdLineOpts d2) throws Exception {
+		Map<String, RelationWrapper> rels1 = doSingleEvaluation(d1);
+		Map<String, RelationWrapper> rels2 = doSingleEvaluation(d2);
+
+		for (Map.Entry<String, RelationWrapper> sr : rels1.entrySet()) {
+			RelationWrapper rel1 = sr.getValue();
+			RelationWrapper rel2 = rels2.get(sr.getKey());
+			assertTrue(rel2 != null);
+			assertEquals(rel1.tuples(), rel2.tuples(), "Relation " + sr.getKey() + " differs.");
+		}
+
+		// so far we proved rels1 is include in rels2, check their sizes are equal
+		if (rels1.size() != rels2.size()) {
+			System.out.println("Rels1: " + rels1.toString());
+			System.out.println("Rels2: " + rels2.toString());
+		}
+		assertEquals(rels1.size(), rels2.size());
+	}
+
+
+	public static void singleEvaluationTest(String outputDir, String factDir,
+											List<File>  analyzedFiles,
+											String srcDir, String expectedDir,
+											String fileName, String fileExt,
+											String lang,
+											String cmd) throws Exception {
+
+		String sources = analyzedFiles.stream().map(f -> f.getPath() + ",A").collect(Collectors.joining(":"));
+
+		CmdLineOpts d1 = FileUtil.parseDescription(
+												   cmd
+												   + " -L " + lang
+												   + " -D " + outputDir
+												   + " -F " + factDir
+												   + (sources.isEmpty() ? " " : " -S ") + sources
+												   + " " + srcDir + "/"
+												   + fileName + fileExt);
+
+		Map<String, RelationWrapper> outRelations = doSingleEvaluation(d1);
+		for (Map.Entry<String, RelationWrapper> rel : outRelations.entrySet()) {
+			String expectedF = expectedDir + "/" + fileName + "/" + rel.getKey() + ".csv";
+			Relation2 expectedRel = new Relation2(rel.getValue().getRelation().arity(),
+												  rel.getValue().getRelation().getName());
+
+			CSVUtil.readRelation(rel.getValue().getContext(),
+								 rel.getValue().type(),
+								 expectedRel,
+								 expectedF);
+
+			RelationWrapper expectedRelWrapper = new RelationWrapper(rel.getValue().getContext(),
+																	 expectedRel,
+																	 rel.getValue().type());
+
+			Util.printSimmetricDifference(expectedRelWrapper, rel.getValue());
+
+			String msg = "Mismatch in test " + fileName + ", relation " + rel.getKey();
+			assertEquals(expectedRel, rel.getValue().getRelation(), msg);
+		}
+	}
+
 }

@@ -305,7 +305,7 @@ public class AST {
 
 	public static class CompoundStmt extends Stmt {
 		public int getNumStmts() {
-			return inner.length;
+			return inner == null ? 0 : inner.length;
 		}
 
 		public Stmt getStmt(int i) {

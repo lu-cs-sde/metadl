@@ -12,7 +12,6 @@ EnclosedForLoops(s1, s2) :- NestedForLoops(s1, s2), NOT(NotEnclosedForLoops(s1, 
 LoopDepth(l, 0) :- ForLoop(l), NOT(EnclosedForLoops(_, l)).
 LoopDepth(l, i) :- LoopDepth(l_outer, depth_outer), EnclosedForLoops(l_outer, l), BIND(i, depth_outer + 1).
 
-# output
-OUTPUT('NestedForLoops, "NestedForLoops.csv", "csv").
-OUTPUT('EnclosedForLoops, "EnclosedForLoops.csv", "csv").
-OUTPUT('LoopDepth, "LoopDepth.csv", "csv").
+LoopDepthDetail(sl, sc, el, ec, f, d) :- LoopDepth(l, d), SRC(l, sl, sc, el, ec, f).
+
+OUTPUT('LoopDepthDetail, "LoopDepthDetail.csv", "csv").

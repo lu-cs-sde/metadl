@@ -32,9 +32,9 @@ public class DatalogProjection {
 		AST.Node root = astImporter.importAST(file);
 		ASTNode tRoot = astTranslator.translate(root);
 
-		int fileId = fidStore.getIdForFile(file);
+
 		traverse(tRoot, new MutableInt(), new MutableInt());
-		toTuples(fileId);
+		toTuples(file);
 		postNumber.clear();
 		preNumber.clear();
 	}
@@ -129,7 +129,9 @@ public class DatalogProjection {
 		postNumber.put(n, postCounter.addAndGet(numTokens + 1));
 	}
 
-	private void toTuples(int fileId) {
+	private void toTuples(String file) {
+		int fileId = fidStore.getIdForFile(file);
+
 		for (Map.Entry<ASTNode, Integer> kv : postNumber.entrySet()) {
 			ASTNode n = kv.getKey();
 			String relName = n.getClass().getSimpleName();
@@ -142,6 +144,7 @@ public class DatalogProjection {
 				int childPre = preNumber.get(n.getChild(i));
 
 				sink.getAST().insertTuple(relName, makeFullId(pre, post, fileId), i, makeFullId(childPre, childPost, fileId), "");
+				sink.getSrcLoc().insertTuple(makeFullId(pre, post, fileId), n.startLine(), n.startColumn(), n.endLine(), n.endColumn(), file);
 			}
 
 
@@ -155,6 +158,7 @@ public class DatalogProjection {
 
 			if (tokens.isEmpty() && n.getNumChild() == 0) {
 				sink.getAST().insertTuple(relName, makeFullId(pre, post, fileId), -1, -1, "");
+				sink.getSrcLoc().insertTuple(makeFullId(pre, post, fileId), n.startLine(), n.startColumn(), n.endLine(), n.endColumn(), file);
 			}
 		}
 	}

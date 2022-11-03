@@ -275,6 +275,19 @@ public class AST {
 		}
 	}
 
+	public static class ArraySubscriptExpr extends Expr {
+		public Expr getLHS() {
+			return (Expr) inner[0];
+		}
+
+		public Expr getRHS() {
+			return (Expr) inner[1];
+		}
+
+		@Override public void accept(ASTVisitor v) {
+			v.visit(this);
+		}
+	}
 
 	// --------------------------------------------------------------------------------
 	// Statements
@@ -350,16 +363,34 @@ public class AST {
 	}
 
 	public static class IfStmt extends Stmt {
+		public boolean hasInit;
+		public boolean hasVar;
+		public boolean hasElse;
+
+		public Stmt getInit() {
+			if (hasInit)
+				return (Stmt) inner[0];
+			return null;
+		}
+
+		public Stmt getVar() {
+			if (hasVar)
+				return (Stmt) inner[hasInit ? 1 : 0];
+			return null;
+		}
+
 		public Expr getCond() {
-			return (Expr) inner[0];
+			return (Expr) inner[(hasInit ? 1 : 0) + (hasVar ? 1 : 0)];
 		}
 
 		public Stmt getThen() {
-			return (Stmt) inner[1];
+			return (Stmt) inner[1 + (hasInit ? 1 : 0) + (hasVar ? 1 : 0)];
 		}
 
 		public Stmt getElse() {
-			return (Stmt) inner[2];
+			if (hasElse)
+				return (Stmt) inner[2 + (hasInit ? 1 : 0) + (hasVar ? 1 : 0)];
+			return null;
 		}
 
 		@Override public void accept(ASTVisitor v) {
@@ -406,7 +437,7 @@ public class AST {
 		}
 	}
 
-	public static class ParmVarDecl extends Decl {
+	public static class ParmVarDecl extends VarDecl {
 		@Override public void accept(ASTVisitor v) {
 			v.visit(this);
 		}

@@ -15,6 +15,7 @@ public interface ASTVisitor {
 	void visit(ExplicitCastExpr e);
 	void visit(ImplicitCastExpr e);
 	void visit(IntegerLiteral n);
+	void visit(ArraySubscriptExpr a);
 
 	void visit(Stmt s);
 	void visit(ForStmt f);
@@ -23,6 +24,7 @@ public interface ASTVisitor {
 	void visit(CompoundStmt c);
 	void visit(ReturnStmt r);
 	void visit(DeclStmt d);
+	void visit(IfStmt f);
 
 	void visit(Decl d);
 	void visit(ParmVarDecl p);

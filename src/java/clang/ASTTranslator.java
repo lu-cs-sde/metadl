@@ -6,6 +6,7 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import clang.AST.ArraySubscriptExpr;
 import clang.AST.BinaryOperator;
 import clang.AST.CallExpr;
 import clang.AST.CompoundAssignOperator;
@@ -19,6 +20,7 @@ import clang.AST.ExplicitCastExpr;
 import clang.AST.Expr;
 import clang.AST.ForStmt;
 import clang.AST.FunctionDecl;
+import clang.AST.IfStmt;
 import clang.AST.ImplicitCastExpr;
 import clang.AST.IntegerLiteral;
 import clang.AST.Node;
@@ -33,6 +35,7 @@ import lang.c.obj.ast.ASTNode;
 import lang.c.obj.ast.AddExpression;
 import lang.c.obj.ast.AddressOfExpression;
 import lang.c.obj.ast.AndExpression;
+import lang.c.obj.ast.ArrayIndexExpression;
 import lang.c.obj.ast.AssignmentAddExpression;
 import lang.c.obj.ast.AssignmentAndExpression;
 import lang.c.obj.ast.AssignmentDivExpression;
@@ -69,6 +72,8 @@ import lang.c.obj.ast.GTExpression;
 import lang.c.obj.ast.Identifier;
 import lang.c.obj.ast.IdentifierDeclarator;
 import lang.c.obj.ast.IdentifierExpression;
+import lang.c.obj.ast.IfElseStatement;
+import lang.c.obj.ast.IfStatement;
 import lang.c.obj.ast.InitDeclarator;
 import lang.c.obj.ast.InitializerExpression;
 import lang.c.obj.ast.LEQExpression;
@@ -99,6 +104,7 @@ import lang.c.obj.ast.UnknownExpression;
 import lang.c.obj.ast.UnknownStatement;
 import lang.c.obj.ast.UnknownTypeSpecifier;
 import lang.c.obj.ast.WhileStatement;
+import lang.io.SimpleLogger;
 
 
 public class ASTTranslator implements ASTVisitor {
@@ -151,6 +157,7 @@ public class ASTTranslator implements ASTVisitor {
 			}
 		}
 		t(e, new UnknownExpression(children));
+		SimpleLogger.logger().info("[clang-ast-translation] " + e.kind);
 	}
 
 	@Override public void visit(CallExpr e) {
@@ -255,6 +262,12 @@ public class ASTTranslator implements ASTVisitor {
 		t(n, new ConstantExpression(new Constant()));
 	}
 
+	@Override public void visit(ArraySubscriptExpr a) {
+		Expression lhs = t(a.getLHS());
+		Expression rhs = t(a.getRHS());
+		t(a, new ArrayIndexExpression(lhs, rhs));
+	}
+
 	@Override public void visit(Stmt s) {
 		List<ASTNode> children = new List<>();
 		for (Node c : s.children()) {
@@ -264,6 +277,7 @@ public class ASTTranslator implements ASTVisitor {
 					children.add(tc);
 			}
 		}
+		SimpleLogger.logger().info("[clang-ast-translation] " + s.kind);
 		t(s, new UnknownStatement(children));
 	}
 
@@ -314,6 +328,16 @@ public class ASTTranslator implements ASTVisitor {
 		}
 	}
 
+	@Override public void visit(IfStmt f) {
+		Expression cond = t(f.getCond());
+		Statement th = t(f.getThen());
+		if (f.hasElse) {
+			t(f, new IfElseStatement(cond, th, t(f.getElse())));
+		} else {
+			t(f, new IfStatement(cond, th));
+		}
+	}
+
 	@Override public void visit(Decl d) {
 		List<ASTNode> children = new List<>();
 		for (Node c : d.children()) {
@@ -325,10 +349,11 @@ public class ASTTranslator implements ASTVisitor {
 		}
 
 		t(d, new UnknownDeclaration(new List(), new List(), children));
+		SimpleLogger.logger().info("[clang-ast-translation] " + d.kind);
 	}
 
 	@Override public void visit(ParmVarDecl p) {
-		visit((Decl) p);
+		visit((VarDecl) p);
 	}
 
 	@Override public void visit(FunctionDecl f) {

@@ -33,7 +33,10 @@ public class DatalogProjection {
 		ASTNode tRoot = astTranslator.translate(root);
 
 		int fileId = fidStore.getIdForFile(file);
-		toTuples(tRoot, fileId, new MutableInt());
+		traverse(tRoot, new MutableInt(), new MutableInt());
+		toTuples(fileId);
+		postNumber.clear();
+		preNumber.clear();
 	}
 
 	private static Map<Class<?>, java.util.List<Pair<String, Method>>> tokenAccessors = new HashMap<>();
@@ -76,46 +79,54 @@ public class DatalogProjection {
 		return tokens;
 	}
 
-	private Map<ASTNode, Integer> nodeId = new HashMap<>();
-
-	private long makeFullId(int nodeId, int fileId) {
-		return ((long) fileId) << 32 | (long) nodeId;
+	private long makeFullId(long pre, long post, long fileId) {
+		assert fileId < (1 << 16); // max 2^16-1 files (a.t.m. gcc and the linux kernel contain less C files)
+		assert post < (1 << 24); // max 2^24-1 nodes
+		assert pre < (1 << 24);
+		return (fileId << 48) | (pre << 24) | post;
 	}
 
-	private int nodeId(ASTNode<?> n) {
-		Integer nid = nodeId.get(n);
-		if (nid == null) {
-			throw new RuntimeException("Node should have been visited before calling nodeId.");
+	private Map<ASTNode, Integer> postNumber = new HashMap<>();
+	private Map<ASTNode, Integer> preNumber = new HashMap<>();
+
+	private void traverse(ASTNode<?> n, MutableInt preCounter, MutableInt postCounter) {
+		int numTokens = getTokenAccessors(n).size();
+		preNumber.put(n, preCounter.getAndAdd(numTokens + 1));
+
+		for (int i = 0; i < n.getNumChild(); ++i) {
+			traverse(n.getChild(i), preCounter, postCounter);
 		}
-		return nid;
+
+		postNumber.put(n, postCounter.addAndGet(numTokens + 1));
 	}
 
-	private void toTuples(ASTNode<?> n, int fileId, MutableInt runningNodeId) {
-		String relName = n.getClass().getSimpleName();
+	private void toTuples(int fileId) {
+		for (Map.Entry<ASTNode, Integer> kv : postNumber.entrySet()) {
+			ASTNode n = kv.getKey();
+			String relName = n.getClass().getSimpleName();
 
-		// traverse the children first
-		for (int i = 0; i < n.getNumChild(); ++i) {
-			toTuples(n.getChild(i), fileId, runningNodeId);
-		}
+			int post = kv.getValue();
+			int pre = preNumber.get(n);
 
-		int currentNodeId = runningNodeId.getAndIncrement();
-		nodeId.put(n, currentNodeId);
+			for (int i = 0; i < n.getNumChild(); ++i) {
+				int childPost = postNumber.get(n.getChild(i));
+				int childPre = preNumber.get(n.getChild(i));
 
-		// in principle, these should be traversed before assigning a node id
-		// to the current node; but since these are just tokens, it doesn't really matter
-		int childIndex = n.getNumChild();
-		for (Pair<String, String> t : namedTokens(n)) {
-			int tokenId = runningNodeId.getAndIncrement();
-			sink.getAST().insertTuple(relName, makeFullId(currentNodeId, fileId), childIndex++, makeFullId(tokenId, fileId), "");
-			sink.getAST().insertTuple(t.getLeft(), makeFullId(tokenId, fileId), 0, 0, t.getRight());
-		}
+				sink.getAST().insertTuple(relName, makeFullId(pre, post, fileId), i, makeFullId(childPre, childPost, fileId), "");
+			}
 
-		for (int i = 0; i < n.getNumChild(); ++i) {
-			sink.getAST().insertTuple(relName, makeFullId(currentNodeId, fileId), i, makeFullId(nodeId(n.getChild(i)), fileId), "");
-		}
 
-		if (namedTokens(n).isEmpty() && n.getNumChild() == 0) {
-			sink.getAST().insertTuple(relName, makeFullId(currentNodeId, fileId), -1, -1, "");
+			java.util.List<Pair<String, String>> tokens = namedTokens(n);
+			for (int i = 0; i < tokens.size(); ++i) {
+				int tokenPost = post - (i + 1);
+				int tokenPre = pre + (i + 1);
+				sink.getAST().insertTuple(relName, makeFullId(pre, post, fileId), i + n.getNumChild(), makeFullId(tokenPre, tokenPost, fileId), "");
+				sink.getAST().insertTuple(tokens.get(i).getLeft(), makeFullId(tokenPre, tokenPost, fileId),  0, 0, tokens.get(i).getRight());
+			}
+
+			if (tokens.isEmpty() && n.getNumChild() == 0) {
+				sink.getAST().insertTuple(relName, makeFullId(pre, post, fileId), -1, -1, "");
+			}
 		}
 	}
 }

@@ -18,6 +18,8 @@ public interface ASTVisitor {
 
 	void visit(Stmt s);
 	void visit(ForStmt f);
+	void visit(WhileStmt w);
+	void visit(DoStmt d);
 	void visit(CompoundStmt c);
 	void visit(ReturnStmt r);
 	void visit(DeclStmt d);

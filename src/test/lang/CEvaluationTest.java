@@ -16,7 +16,8 @@ public class CEvaluationTest {
 	static Stream<String> metadlCTests() {
 		String[] tests = {
 			"first_test",
-			"nested_for_loops"
+			"nested_for_loops",
+			"nested_loops"
 		};
 		return Arrays.stream(tests);
 	}

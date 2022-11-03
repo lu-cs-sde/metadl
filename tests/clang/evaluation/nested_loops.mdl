@@ -1,0 +1,19 @@
+# match all the for loops
+Loop(s), ForLoop(s) :- s <: for ( ; ; ) $_ :>.
+Loop(s), WhileLoop(s) :- s <: while ($_) $_ :>.
+Loop(s), DoWhileLoop(s) :- s <: do $_ while ($_); :>.
+
+# look for nested for loops
+NestedLoops(s1, s2) :- Loop(s1), Loop(s2), NEQ(s1, s2), ANCESTOR(s1, s2).
+
+# enclosed loops are nested loops without any loop in between
+NotEnclosedLoops(s1, s2) :- NestedLoops(s1, s), NestedLoops(s, s2).
+EnclosedLoops(s1, s2) :- NestedLoops(s1, s2), NOT(NotEnclosedLoops(s1, s2)).
+
+# now compute the loop depth
+LoopDepth(l, 0) :- Loop(l), NOT(EnclosedLoops(_, l)).
+LoopDepth(l, i) :- LoopDepth(l_outer, depth_outer), EnclosedLoops(l_outer, l), BIND(i, depth_outer + 1).
+
+LoopDepthDetail(sl, sc, el, ec, f, d) :- LoopDepth(l, d), SRC(l, sl, sc, el, ec, f).
+
+OUTPUT('LoopDepthDetail, "LoopDepthDetail.csv", "csv").

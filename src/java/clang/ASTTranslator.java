@@ -14,6 +14,7 @@ import clang.AST.ConditionalOperator;
 import clang.AST.Decl;
 import clang.AST.DeclRefExpr;
 import clang.AST.DeclStmt;
+import clang.AST.DoStmt;
 import clang.AST.ExplicitCastExpr;
 import clang.AST.Expr;
 import clang.AST.ForStmt;
@@ -27,6 +28,7 @@ import clang.AST.Stmt;
 import clang.AST.TranslationUnitDecl;
 import clang.AST.UnaryOperator;
 import clang.AST.VarDecl;
+import clang.AST.WhileStmt;
 import lang.c.obj.ast.ASTNode;
 import lang.c.obj.ast.AddExpression;
 import lang.c.obj.ast.AddressOfExpression;
@@ -54,6 +56,7 @@ import lang.c.obj.ast.Declaration;
 import lang.c.obj.ast.DeclarationSpecifier;
 import lang.c.obj.ast.DeclarationStatement;
 import lang.c.obj.ast.DivExpression;
+import lang.c.obj.ast.DoWhileStatement;
 import lang.c.obj.ast.EQExpression;
 import lang.c.obj.ast.Expression;
 import lang.c.obj.ast.ExpressionStatement;
@@ -95,6 +98,7 @@ import lang.c.obj.ast.UnknownDeclaration;
 import lang.c.obj.ast.UnknownExpression;
 import lang.c.obj.ast.UnknownStatement;
 import lang.c.obj.ast.UnknownTypeSpecifier;
+import lang.c.obj.ast.WhileStatement;
 
 
 public class ASTTranslator implements ASTVisitor {
@@ -211,7 +215,11 @@ public class ASTTranslator implements ASTVisitor {
 
 		t(b, c.apply(lhs, rhs));
 	}
-	@Override public void visit(ConditionalOperator c) { }
+
+	@Override public void visit(ConditionalOperator c) {
+		visit((Expr) c);
+	}
+
 	@Override public void visit(UnaryOperator u) {
 		Expression opd = t(u.getOperand());
 		Function<Expression, Expression> c = null;
@@ -272,7 +280,18 @@ public class ASTTranslator implements ASTVisitor {
 		} else {
 			visit((Stmt) f);
 		}
+	}
 
+	@Override public void visit(DoStmt d) {
+		Expression cond = t(d.getCond());
+		Statement body = t(d.getBody());
+		t(d, new DoWhileStatement(cond, body));
+	}
+
+	@Override public void visit(WhileStmt w) {
+		Expression cond = t(w.getCond());
+		Statement body = t(w.getBody());
+		t(w, new WhileStatement(cond, body));
 	}
 
 	@Override public void visit(CompoundStmt c) {

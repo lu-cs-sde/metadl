@@ -361,6 +361,38 @@ public class AST {
 		public Stmt getElse() {
 			return (Stmt) inner[2];
 		}
+
+		@Override public void accept(ASTVisitor v) {
+			v.visit(this);
+		}
+	}
+
+	public static class WhileStmt extends Stmt {
+		public Stmt getBody() {
+			return (Stmt) inner[inner.length - 1];
+		}
+
+		public Stmt getCond() {
+			return (Stmt) inner[inner.length - 2];
+		}
+
+		@Override public void accept(ASTVisitor v) {
+			v.visit(this);
+		}
+	}
+
+	public static class DoStmt extends Stmt {
+		public Stmt getBody() {
+			return (Stmt) inner[0];
+		}
+
+		public Expr getCond() {
+			return (Expr) inner[1];
+		}
+
+		@Override public void accept(ASTVisitor v) {
+			v.visit(this);
+		}
 	}
 
 	//--------------------------------------------------------------------------------

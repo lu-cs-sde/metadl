@@ -1,0 +1,3 @@
+2,3,8,3,tests/clang/evaluation/src/nested_loops/nested.c,0
+3,5,7,5,tests/clang/evaluation/src/nested_loops/nested.c,1
+4,7,6,14,tests/clang/evaluation/src/nested_loops/nested.c,2

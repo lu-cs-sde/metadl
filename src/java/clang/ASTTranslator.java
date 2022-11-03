@@ -15,6 +15,7 @@ import clang.AST.Decl;
 import clang.AST.DeclRefExpr;
 import clang.AST.DeclStmt;
 import clang.AST.ExplicitCastExpr;
+import clang.AST.Expr;
 import clang.AST.ForStmt;
 import clang.AST.FunctionDecl;
 import clang.AST.ImplicitCastExpr;
@@ -58,7 +59,6 @@ import lang.c.obj.ast.Expression;
 import lang.c.obj.ast.ExpressionStatement;
 import lang.c.obj.ast.ExternalDeclaration;
 import lang.c.obj.ast.ExternalDeclarationOrDefinition;
-import lang.c.obj.ast.ForDeclStatement;
 import lang.c.obj.ast.ForStatement;
 import lang.c.obj.ast.FunctionDefinition;
 import lang.c.obj.ast.GEQExpression;
@@ -92,6 +92,7 @@ import lang.c.obj.ast.TranslationUnit;
 import lang.c.obj.ast.UnaryMinusExpression;
 import lang.c.obj.ast.UnaryPlusExpression;
 import lang.c.obj.ast.UnknownDeclaration;
+import lang.c.obj.ast.UnknownExpression;
 import lang.c.obj.ast.UnknownStatement;
 import lang.c.obj.ast.UnknownTypeSpecifier;
 
@@ -135,6 +136,19 @@ public class ASTTranslator implements ASTVisitor {
 	}
 
 	@Override public void visit(Node n) { }
+
+	@Override public void visit(Expr e) {
+		List<ASTNode> children = new List<>();
+		for (Node c : e.children()) {
+			if (c != null) {
+				ASTNode tc = t(c);
+				if (tc != null)
+					children.add(tc);
+			}
+		}
+		t(e, new UnknownExpression(children));
+	}
+
 	@Override public void visit(CallExpr e) {
 		Expression callee = t(e.getCallee());
 		List<Expression> args = new List<>();
@@ -221,6 +235,7 @@ public class ASTTranslator implements ASTVisitor {
 	}
 
 	@Override public void visit(ExplicitCastExpr e) {
+		visit((Expr) e);
 	}
 
 	@Override public void visit(ImplicitCastExpr e) {

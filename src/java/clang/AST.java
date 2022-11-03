@@ -152,6 +152,10 @@ public class AST {
 		@Override protected String extraInfo() {
 			return "EXPR";
 		}
+
+		@Override public void accept(ASTVisitor v) {
+			v.visit(this);
+		}
 	}
 
 	public static class CallExpr extends Expr {
@@ -278,6 +282,10 @@ public class AST {
 	public static class Stmt extends Node {
 		@Override protected String extraInfo() {
 			return "STMT";
+		}
+
+		@Override public void accept(ASTVisitor v) {
+			v.visit(this);
 		}
 	}
 

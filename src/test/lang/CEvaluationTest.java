@@ -15,7 +15,8 @@ import lang.io.FileUtil;
 public class CEvaluationTest {
 	static Stream<String> metadlCTests() {
 		String[] tests = {
-			"first_test"
+			"first_test",
+			"nested_for_loops"
 		};
 		return Arrays.stream(tests);
 	}

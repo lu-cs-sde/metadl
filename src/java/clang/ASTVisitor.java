@@ -4,6 +4,8 @@ import static clang.AST.*;
 
 public interface ASTVisitor {
 	void visit(Node n);
+
+	void visit(Expr e);
 	void visit(CallExpr e);
 	void visit(BinaryOperator b);
 	void visit(CompoundAssignOperator c);

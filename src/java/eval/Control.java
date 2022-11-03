@@ -8,6 +8,7 @@ import java.util.stream.Stream;
 
 import org.apache.commons.lang3.tuple.Pair;
 
+
 class Util {
 	static String indent(int n) {
 		String s = "";
@@ -159,6 +160,25 @@ public interface Control {
 			@Override public String prettyPrint(int indent) {
 				return Util.indent(indent) + String.format("t[%d] := %s\n", dst, r.prettyPrint())
 					+ cont.prettyPrint(indent + 1);
+			}
+		};
+	}
+
+	public static Control ancestor(Control cont, Operation l, Operation r, boolean invert) {
+		return new Test(cont, l, r) {
+			@Override public boolean test(long a, long b) {
+				boolean r = (clang.DatalogProjection.CNodeIdDesc.fileId(a) ==
+							 clang.DatalogProjection.CNodeIdDesc.fileId(b)) &&
+					(clang.DatalogProjection.CNodeIdDesc.preOrdNum(a) <=
+					 clang.DatalogProjection.CNodeIdDesc.preOrdNum(b)) &&
+					(clang.DatalogProjection.CNodeIdDesc.postOrdNum(b) <=
+					 clang.DatalogProjection.CNodeIdDesc.postOrdNum(a));
+
+				return invert ^ r;
+			}
+
+			@Override public String prettyPrint(int indent) {
+				return Util.indent(indent) + String.format("IF %sancestor(%s, %s) THEN\n", invert ? "!" : "", l.prettyPrint(), r.prettyPrint());
 			}
 		};
 	}

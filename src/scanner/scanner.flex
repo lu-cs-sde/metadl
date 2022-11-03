@@ -105,6 +105,7 @@ String  = \"[^\"]*\"
 "MATCH"    {  return  sym(Terminals.MATCH);          }
 "NOT"      {  return  sym(Terminals.NOT);            }
 "BIND"     {  return  sym(Terminals.BIND);           }
+"ANCESTOR" {  return  sym(Terminals.ANCESTOR);       }
 "_"        {  return  sym(Terminals.WILDCARD);       }
 {Numeral}  {  return  sym(Terminals.NUMERAL);        }
 {VAR_ID}   {  return  sym(Terminals.VAR_ID);         }

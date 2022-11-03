@@ -416,6 +416,13 @@ aspect CodeGen {
 		return Control.match(ctx, cont, l, r, hasNot());
 	}
 
+	protected Control ANCESTORLiteral.genCode(Tuple t, EvaluationContext ctx, Control cont, Set<String> boundVars, Set<String> usedVars, boolean isDelta) {
+		Operation l = getExpr(0).genCode(t, ctx);
+		Operation r = getExpr(1).genCode(t, ctx);
+
+		return Control.ancestor(cont, l, r, hasNot());
+	}
+
 	public abstract Operation Expr.genCode(Tuple t, EvaluationContext ctx);
 	@Override public Operation Functor.genCode(Tuple t, EvaluationContext ctx) {
 		if (getNumArg() == 1) {

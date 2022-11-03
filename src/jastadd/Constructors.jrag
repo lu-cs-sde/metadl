@@ -26,6 +26,9 @@ aspect Constructors {
 	public MATCHLiteral.MATCHLiteral(Expr regex, Expr str) {
 		this(new Opt(), new List<Expr>().add(regex).add(str));
 	}
+	public ANCESTORLiteral.ANCESTORLiteral(Expr l, Expr r) {
+		this(new Opt(), new List<Expr>().add(l).add(r));
+	}
 	public Pattern.Pattern(String s) {
 		this(new Opt(), s);
 	}

@@ -79,11 +79,40 @@ public class DatalogProjection {
 		return tokens;
 	}
 
+	public static class CNodeIdDesc {
+		public static final int FILE_ID_SIZE = 16;
+		public static final int PRE_ORD_NUM_SIZE = 24;
+		public static final int POST_ORD_NUM_SIZE = 24;
+
+		public static final int POST_ORD_NUM_OFFSET = 0;
+		public static final int PRE_ORD_NUM_OFFSET = POST_ORD_NUM_OFFSET + POST_ORD_NUM_SIZE;
+		public static final int FILE_ID_OFFSET = PRE_ORD_NUM_OFFSET + PRE_ORD_NUM_SIZE;
+
+		public static long make(long pre, long post, long fileId) {
+			assert fileId < (1 << 16); // max 2^16-1 files (a.t.m. gcc and the linux kernel contain less C files)
+			assert post < (1 << 24); // max 2^24-1 nodes
+			assert pre < (1 << 24);
+			return (fileId << CNodeIdDesc.FILE_ID_OFFSET) | (pre << CNodeIdDesc.PRE_ORD_NUM_OFFSET) | (post << CNodeIdDesc.POST_ORD_NUM_OFFSET);
+		}
+
+		public static long fileId(long id) {
+			return (id >>> FILE_ID_OFFSET) & ((1l << FILE_ID_SIZE) - 1);
+		}
+
+		public static long preOrdNum(long id) {
+			return (id >>> PRE_ORD_NUM_OFFSET) & ((1l << PRE_ORD_NUM_SIZE) - 1);
+		}
+
+		public static long postOrdNum(long id) {
+			return (id >>> POST_ORD_NUM_OFFSET) & ((1l << POST_ORD_NUM_OFFSET) - 1);
+		}
+	}
+
 	private long makeFullId(long pre, long post, long fileId) {
 		assert fileId < (1 << 16); // max 2^16-1 files (a.t.m. gcc and the linux kernel contain less C files)
 		assert post < (1 << 24); // max 2^24-1 nodes
 		assert pre < (1 << 24);
-		return (fileId << 48) | (pre << 24) | post;
+		return (fileId << CNodeIdDesc.FILE_ID_OFFSET) | (pre << CNodeIdDesc.PRE_ORD_NUM_OFFSET) | (post << CNodeIdDesc.POST_ORD_NUM_OFFSET);
 	}
 
 	private Map<ASTNode, Integer> postNumber = new HashMap<>();

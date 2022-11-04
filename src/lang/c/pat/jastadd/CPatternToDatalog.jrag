@@ -12,18 +12,9 @@ aspect LanguageSpecific {
 	public static java.util.List<lang.ast.Clause> PatLang.generateHelperRelations(AnalyzeContext ctx, Set<String> used) {
 		java.util.List<lang.ast.Clause> ret = new java.util.ArrayList<>();
 
-		// Add two new rules, to map variables and predicates to their predicates
-		// if (used.contains("ID")) {
-		// 	ret.add(makeIdentifierRule(ctx, "Variable", "VAR_ID", "ID"));
-		// 	ret.add(makeIdentifierRule(ctx, "PredicateSymbol", "PRED_ID", "ID"));
-		// 	ret.add(makeIdentifierRule(ctx, "FunctorSymbol", "FUNC_ID", "ID"));
-		//}
- 		// if (used.contains("INT"))
-		// 	ret.add(makeIdentifierRule(ctx, "IntConstant", "NUMERAL", "INT", "to_number"));
-		// if (used.contains("STR"))
-		// 	ret.add(makeIdentifierRule(ctx, "StringConstant", "STRING", "STR"));
-		// if (used.contains("REF"))
-		// 	ret.add(makeIdentifierRule(ctx, "PredicateRef", "PRED_ID", "REF"));
+		if (used.contains("ID")) {
+			ret.add(makeIdentifierDeclaratorRule(ctx, "ID"));
+		}
 
 		// Insert a relation to represent the source location of the node
 		// represented by a metavariable
@@ -48,16 +39,24 @@ aspect LanguageSpecific {
 		return ret;
 	}
 
+	private static lang.ast.Rule PatLang.makeIdentifierDeclaratorRule(AnalyzeContext ctx, String predicateName) {
+		return rule(literal(predicateName, var("n_id"), var("name")),
+					literal(ctx.progRelName, str("IdentifierDeclarator"), var("n_id"), integer(1), var("id_id"), "_"),
+					literal(ctx.progRelName, str("Identifier"), var("id_id"), integer(0), var("t_id"), "_"),
+					literal(ctx.progRelName, str("ID"), var("t_id"), "_", "_", var("name")));
+	}
+
+
 	public static lang.ast.PredicateType PatLang.contextPredicateType(String predName) {
 		switch (predName) {
 		// case "INT":
 		// 	return new lang.ast.PredicateType(lang.ast.ASTNodeType.get(),
 		// 									  lang.ast.IntegerType.get());
 		// case "STR":
-		// case "ID":
+		case "ID":
 		// case "REF":
-		// 	return new lang.ast.PredicateType(lang.ast.ASTNodeType.get(),
-		// 									  lang.ast.StringType.get());
+			return new lang.ast.PredicateType(lang.ast.ASTNodeType.get(),
+											  lang.ast.StringType.get());
 		case "SRC":
 			return new lang.ast.PredicateType(lang.ast.ASTNodeType.get(),
 											  lang.ast.IntegerType.get(),

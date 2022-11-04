@@ -359,7 +359,7 @@ ArrayDeclarator : Declarator ::= Declarator TypeQualifier* [Expression] [Static]
 ArrayDeclaratorVLA : Declarator ::= Declarator TypeQualifier*;
 // direct-declarator ( parameter-type-list )
 // direct-declarator ( identifier-listopt ) TODO
-FunctionDeclarator : Declarator ::= ParameterType*;
+FunctionDeclarator : Declarator ::= Declarator ParameterType*;
 
 // (6.7.6) pointer:
 // * type-qualifier-listopt

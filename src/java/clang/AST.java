@@ -446,20 +446,34 @@ public class AST {
 	public static class FunctionDecl extends Decl {
 		public String mangledName = "";
 		public Type type = new Type();
+		public boolean variadic;
 
 		@Override protected String extraInfo() {
 			return String.format(" mangledName:'%s' ", mangledName);
 		}
 
-		public int getNumParams() {
+		public int getNumParam() {
+			if (inner == null) {
+				return 0;
+			}
+
+			for (int i = inner.length; i >= 1; --i) {
+				if (inner[i - 1] instanceof ParmVarDecl) {
+					return i;
+				}
+			}
+
 			return 0;
 		}
 
-		public ParmVarDecl getParam() {
-			return null;
+		public ParmVarDecl getParam(int i) {
+			return (ParmVarDecl) inner[i];
 		}
 
 		public Stmt getBody() {
+			if (inner != null && inner.length > 0 && inner[inner.length - 1] instanceof Stmt) {
+				return (Stmt) inner[inner.length - 1];
+			}
 			return null;
 		}
 

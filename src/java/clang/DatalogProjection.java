@@ -32,6 +32,7 @@ public class DatalogProjection {
 		AST.Node root = astImporter.importAST(file);
 		ASTNode tRoot = astTranslator.translate(root);
 
+		// tRoot.debugPrint(System.out);
 
 		traverse(tRoot, new MutableInt(), new MutableInt());
 		toTuples(file);

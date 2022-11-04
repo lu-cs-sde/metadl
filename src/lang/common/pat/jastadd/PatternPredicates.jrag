@@ -18,7 +18,7 @@ aspect PatternPredicates {
 		   Build a rule of the shape:
 		   $name(n_id, v) :- P($nodeKind, n_id, idx, t_id, _), P("Terminal", t_id, _, _, v).
 		   or, with convertFunctor
-		   $name(n_id, v) :- P($nodeKind, n_id, idx, t_id, _), P("Terminal", t_id, _, _, w), BIND(v, $converFunctor(w)).
+		   $name(n_id, v) :- P($nodeKind, n_id, idx, t_id, _), P("Terminal", t_id, _, _, w), BIND(v, $convertFunctor(w)).
 		*/
 		public static lang.ast.Rule makeIdentifierRule(AnalyzeContext ctx,
 													   String parentNodeKind,

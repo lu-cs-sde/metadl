@@ -1,2 +1,2 @@
-ForLoop(s) :- s <: for ( ; ; ) $_ :>.
+ForLoop(sl, sc) :- s <: for ( ; ; ) $_ :>, SRC(s, sl, sc, _, _, _).
 OUTPUT('ForLoop, "ForLoop.csv", "csv").

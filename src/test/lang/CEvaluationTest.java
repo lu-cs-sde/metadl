@@ -17,7 +17,8 @@ public class CEvaluationTest {
 		String[] tests = {
 			"first_test",
 			"nested_for_loops",
-			"nested_loops"
+			"nested_loops",
+			"function"
 		};
 		return Arrays.stream(tests);
 	}

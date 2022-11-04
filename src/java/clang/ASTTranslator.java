@@ -66,6 +66,7 @@ import lang.c.obj.ast.ExpressionStatement;
 import lang.c.obj.ast.ExternalDeclaration;
 import lang.c.obj.ast.ExternalDeclarationOrDefinition;
 import lang.c.obj.ast.ForStatement;
+import lang.c.obj.ast.FunctionDeclarator;
 import lang.c.obj.ast.FunctionDefinition;
 import lang.c.obj.ast.GEQExpression;
 import lang.c.obj.ast.GTExpression;
@@ -86,6 +87,8 @@ import lang.c.obj.ast.NEQExpression;
 import lang.c.obj.ast.NotExpression;
 import lang.c.obj.ast.Opt;
 import lang.c.obj.ast.OrExpression;
+import lang.c.obj.ast.ParameterDeclaration;
+import lang.c.obj.ast.ParameterVarArgType;
 import lang.c.obj.ast.PointerDereferenceExpression;
 import lang.c.obj.ast.PostDecrementExpression;
 import lang.c.obj.ast.PostIncrementExpression;
@@ -194,7 +197,9 @@ public class ASTTranslator implements ASTVisitor {
 		case "&&" : c = AndExpression::new; break;
 		case "||" : c = OrExpression::new; break;
 		case "=" : c = AssignmentExpression::new; break;
-		default: throw new RuntimeException("Opcode not yet supported: " + b.opcode);
+		default:
+			SimpleLogger.logger().info("[clang-ast-translation] " + b.kind + " opcode=" + b.opcode);
+			break;
 		}
 
 		t(b, c.apply(lhs, rhs));
@@ -240,7 +245,9 @@ public class ASTTranslator implements ASTVisitor {
 		case "-": c = UnaryMinusExpression::new; break;
 		case "!": c = NotExpression::new; break;
 		case "~": c = BitwiseNotExpression::new; break;
-		default: throw new RuntimeException("Opcode not yet supported: " + u.opcode);
+		default:
+			SimpleLogger.logger().info("[clang-ast-translation] " + u.kind + " opcode=" + u.opcode);
+			break;
 		}
 
 		t(u, c.apply(opd));
@@ -353,11 +360,34 @@ public class ASTTranslator implements ASTVisitor {
 	}
 
 	@Override public void visit(ParmVarDecl p) {
-		visit((VarDecl) p);
+		IdentifierDeclarator id = new IdentifierDeclarator(new Opt(), new Identifier(p.name));
+		UnknownTypeSpecifier typeSpec = new UnknownTypeSpecifier(p.type.qualType);
+
+		ParameterDeclaration decl = new ParameterDeclaration(new List().add(typeSpec), id);
+		t(p, decl);
 	}
 
 	@Override public void visit(FunctionDecl f) {
-		visit((Decl) f);
+		List paramDecls = new List();
+		for (int i = 0; i < f.getNumParam(); ++i) {
+			paramDecls.add(t(f.getParam(i)));
+		}
+
+		if (f.variadic) {
+			paramDecls.add(new ParameterVarArgType());
+		}
+
+		IdentifierDeclarator id = new IdentifierDeclarator(new Opt(), new Identifier(f.name));
+		FunctionDeclarator fd = new FunctionDeclarator(new Opt(), id, paramDecls);
+		UnknownTypeSpecifier typeSpec = new UnknownTypeSpecifier(f.type.qualType);
+
+		ExternalDeclarationOrDefinition ext;
+		if (f.getBody() != null) {
+			ext = new FunctionDefinition(new List().add(typeSpec), fd, new List(), t(f.getBody()));
+		} else {
+			ext = new ExternalDeclaration(new Declaration(new List().add(typeSpec), new List().add(new InitDeclarator(fd, new Opt()))));
+		}
+		t(f, ext);
 	}
 
 	@Override public void visit(VarDecl v) {
@@ -394,8 +424,10 @@ public class ASTTranslator implements ASTVisitor {
 			ASTNode tn = t(tu.getDecl(i));
 			if (tn instanceof Declaration) {
 				declOrDef.add(new ExternalDeclaration((Declaration) tn));
+			} else if (tn instanceof ExternalDeclarationOrDefinition) {
+				declOrDef.add((ExternalDeclarationOrDefinition) tn);
 			} else {
-				declOrDef.add((FunctionDefinition) tn);
+				throw new RuntimeException("Unexpected top-level member of TranslationUnit.");
 			}
 		}
 		t(tu, new TranslationUnit(declOrDef));

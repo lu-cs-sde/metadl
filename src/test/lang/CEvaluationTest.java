@@ -18,7 +18,8 @@ public class CEvaluationTest {
 			"first_test",
 			"nested_for_loops",
 			"nested_loops",
-			"function"
+			"function",
+			"naive_call_graph"
 		};
 		return Arrays.stream(tests);
 	}

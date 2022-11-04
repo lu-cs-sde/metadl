@@ -105,7 +105,7 @@ public class DatalogProjection {
 		}
 
 		public static long postOrdNum(long id) {
-			return (id >>> POST_ORD_NUM_OFFSET) & ((1l << POST_ORD_NUM_OFFSET) - 1);
+			return (id >>> POST_ORD_NUM_OFFSET) & ((1l << POST_ORD_NUM_SIZE) - 1);
 		}
 	}
 

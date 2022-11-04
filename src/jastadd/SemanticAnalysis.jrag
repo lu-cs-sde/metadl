@@ -81,8 +81,32 @@ aspect ErrorCollection {
 		return vars;
 	}
 
+	syn TreeSet<String> Constraint.freeVars() {
+		TreeSet<String> vars = new TreeSet<>();
+		for (Expr e : getExprs()) {
+			for (String v : e.variables()) {
+				if (!clause().bindsVariable(v)) {
+					vars.add(v);
+				}
+			}
+		}
+		return vars;
+	}
+
 	BINDLiteral contributes new SemanticError(this, "Free variable(s): " + this.freeVarsInRHS() + " in the RHS of " + this + ".")
 		when !freeVarsInRHS().isEmpty()
+		to Program.semanticErrors();
+
+	BinaryIntegerConstraint contributes new SemanticError(this, "Free variable(s): " + this.freeVars() + " in constraint " + this + ".")
+		when !freeVars().isEmpty()
+		to Program.semanticErrors();
+
+	MATCHLiteral contributes new SemanticError(this, "Free variable(s): " + this.freeVars() + " in MATCH constraint " + this + ".")
+		when !freeVars().isEmpty()
+		to Program.semanticErrors();
+
+	ANCESTORLiteral contributes new SemanticError(this, "Free variable(s): " + this.freeVars() + " in ANCESTOR constraint " + this + ".")
+		when !freeVars().isEmpty()
 		to Program.semanticErrors();
 
 	CommonLiteral contributes new SemanticError(this, "Free variable(s) " + freeVarsInNegativeLiteral() + " in " + this + " in rule " + clause())
@@ -113,4 +137,6 @@ aspect ErrorCollection {
 
 	Functor contributes new SemanticError(this, "Unnkown functor " + getFunc().getFUNC_ID() + ".") when
 		!(this instanceof InternalFunctor) && expectedArity() < 0 to Program.semanticErrors();
+
+
 }

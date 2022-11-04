@@ -13,7 +13,8 @@ aspect LanguageSpecific {
 		java.util.List<lang.ast.Clause> ret = new java.util.ArrayList<>();
 
 		if (used.contains("ID")) {
-			ret.add(makeIdentifierDeclaratorRule(ctx, "ID"));
+			ret.add(makeIndirectIdentifierRule(ctx, "IdentifierDeclarator", 1, "ID"));
+			ret.add(makeIndirectIdentifierRule(ctx, "IdentifierExpression", 0, "ID"));
 		}
 
 		// Insert a relation to represent the source location of the node
@@ -39,9 +40,9 @@ aspect LanguageSpecific {
 		return ret;
 	}
 
-	private static lang.ast.Rule PatLang.makeIdentifierDeclaratorRule(AnalyzeContext ctx, String predicateName) {
+	private static lang.ast.Rule PatLang.makeIndirectIdentifierRule(AnalyzeContext ctx, String indirectName, int indirectIdx, String predicateName) {
 		return rule(literal(predicateName, var("n_id"), var("name")),
-					literal(ctx.progRelName, str("IdentifierDeclarator"), var("n_id"), integer(1), var("id_id"), "_"),
+					literal(ctx.progRelName, str(indirectName), var("n_id"), integer(indirectIdx), var("id_id"), "_"),
 					literal(ctx.progRelName, str("Identifier"), var("id_id"), integer(0), var("t_id"), "_"),
 					literal(ctx.progRelName, str("ID"), var("t_id"), "_", "_", var("name")));
 	}

@@ -68,6 +68,24 @@ public class Profile {
 		}
     }
 
+	public synchronized void incCounter(String group, String counter) {
+		if (output == null)
+			return;
+
+		Map<String, Long> cg = data.get(group);
+		if (cg == null) {
+			cg = new TreeMap<>();
+			data.put(group, cg);
+		}
+
+		Long prev = cg.get(counter);
+		if (prev != null) {
+			cg.put(counter, prev + 1);
+		} else {
+			cg.put(counter, (long) 1);
+		}
+	}
+
 	public synchronized void writeOut() {
 		if (output == null)
 			return;

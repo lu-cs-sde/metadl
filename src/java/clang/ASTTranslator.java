@@ -1,5 +1,7 @@
 package clang;
 
+import static prof.Profile.profile;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.BiFunction;
@@ -160,7 +162,9 @@ public class ASTTranslator implements ASTVisitor {
 			}
 		}
 		t(e, new UnknownExpression(children));
-		SimpleLogger.logger().info("[clang-ast-translation] " + e.kind);
+
+		// SimpleLogger.logger().info("[clang-ast-translation] " + e.kind);
+		profile().incCounter("clang_ast_nodes", e.kind);
 	}
 
 	@Override public void visit(CallExpr e) {
@@ -284,7 +288,10 @@ public class ASTTranslator implements ASTVisitor {
 					children.add(tc);
 			}
 		}
-		SimpleLogger.logger().info("[clang-ast-translation] " + s.kind);
+
+		// SimpleLogger.logger().info("[clang-ast-translation] " + s.kind);
+		profile().incCounter("clang_ast_nodes", s.kind);
+
 		t(s, new UnknownStatement(children));
 	}
 
@@ -355,8 +362,12 @@ public class ASTTranslator implements ASTVisitor {
 			}
 		}
 
+
+		profile().incCounter("clang_ast_nodes", d.kind);
+
 		t(d, new UnknownDeclaration(new List(), new List(), children));
-		SimpleLogger.logger().info("[clang-ast-translation] " + d.kind);
+
+		// SimpleLogger.logger().info("[clang-ast-translation] " + d.kind);
 	}
 
 	@Override public void visit(ParmVarDecl p) {

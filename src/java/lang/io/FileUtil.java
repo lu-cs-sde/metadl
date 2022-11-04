@@ -147,15 +147,16 @@ public class FileUtil {
 	}
 
 	public static void loadCSources(EvaluationContext ctx,
+									CmdLineOpts opts,
 									DatalogProjectionSink sink,
 									java.util.List<String> srcs) throws IOException {
 		clang.DatalogProjection dp = new clang.DatalogProjection(new FileIdDatabase(), sink);
 		for (String src : srcs) {
-			dp.project(src);
+			dp.project(src, opts.getClangArgs());
 		}
 	}
 
-	static class OutputConsumer implements Runnable {
+	public static class OutputConsumer implements Runnable {
 		InputStream src;
 		public OutputConsumer(InputStream src) {
 			this.src = src;

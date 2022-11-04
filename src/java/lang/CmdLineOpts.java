@@ -41,6 +41,7 @@ public class CmdLineOpts {
 	private boolean warningsEnabled = false;
 	private Lang lang;
 	private Map<String, String> srcs;
+	private List<String> clangArgs = Collections.emptyList();;
 
 	public enum Action {
 		EVAL_SOUFFLE,
@@ -155,6 +156,14 @@ public class CmdLineOpts {
 		this.cacheDir = cacheDir;
 	}
 
+	public void setClangArgs(String args) {
+		this.clangArgs = List.of(args.split("\\s+"));
+	}
+
+	public List<String> getClangArgs() {
+		return this.clangArgs;
+	}
+
 	@Override public String toString() {
 		String s = "";
 		s += "output dir : " + outputDir + "\n";
@@ -201,12 +210,15 @@ public class CmdLineOpts {
 			.desc("Print warnings.").build();
 		Option profile = Option.builder("P").longOpt("profile").numberOfArgs(1)
 			.desc("Enable profiling and dump the results in JSON format").argName("FILE").build();
+		Option clangArgs = Option.builder().longOpt("Xclang").numberOfArgs(1)
+			.desc("Arguments forwarded to clang").build();
 
 		Options options = new Options().addOptionGroup(actions)
 			.addOption(factDir).addOption(outDir)
 			.addOption(srcs).addOption(lang)
 			.addOption(genDir).addOption(outFile)
-			.addOption(libFile).addOption(enableWarnings).addOption(profile);
+			.addOption(libFile).addOption(enableWarnings)
+			.addOption(profile).addOption(clangArgs);
 
 		try {
 			CommandLine cmd = parser.parse(options, args);
@@ -304,6 +316,10 @@ public class CmdLineOpts {
 				System.err.println("Unsupported language for the --lang option.");
 				printHelp(options);
 				throw new RuntimeException();
+			}
+
+			if (cmd.hasOption("Xclang")) {
+				ret.setClangArgs(cmd.getOptionValue("Xclang"));
 			}
 
 			ret.setFactsDir(cmd.getOptionValue("F", "."));

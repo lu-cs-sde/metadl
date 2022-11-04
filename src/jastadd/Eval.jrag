@@ -141,7 +141,7 @@ aspect Eval {
 			break;
 
 		case C:
-			FileUtil.loadCSources(ctx, tupleSink, locs);
+			FileUtil.loadCSources(ctx, opts, tupleSink, locs);
 			break;
 
 		case METADL:

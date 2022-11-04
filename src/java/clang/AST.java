@@ -435,6 +435,10 @@ public class AST {
 		@Override protected String extraInfo() {
 			return "'" + name + "'";
 		}
+
+		@Override public void accept(ASTVisitor v) {
+			v.visit(this);
+		}
 	}
 
 	public static class ParmVarDecl extends VarDecl {

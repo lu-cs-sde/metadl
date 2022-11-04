@@ -13,7 +13,6 @@ import org.apache.commons.lang3.tuple.Pair;
 
 import lang.c.obj.ast.ASTNode;
 import lang.c.obj.ast.ASTNodeAnnotation;
-
 import lang.java.obj.DatalogProjectionSink;
 import lang.java.obj.FileIdDatabase;
 
@@ -28,8 +27,12 @@ public class DatalogProjection {
 	}
 
 	public void project(String file) throws IOException {
+		project(file, Collections.emptyList());
+	}
+
+	public void project(String file, java.util.List<String> clangArgs) throws IOException {
 		final ASTTranslator astTranslator = new ASTTranslator();
-		AST.Node root = astImporter.importAST(file);
+		AST.Node root = astImporter.importAST(file, clangArgs);
 		ASTNode tRoot = astTranslator.translate(root);
 
 		// tRoot.debugPrint(System.out);

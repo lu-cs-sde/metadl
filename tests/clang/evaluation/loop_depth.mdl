@@ -1,0 +1,53 @@
+Call(caller, call_expr, caller_name, callee_name) :- caller <: .. $fun1( .. ) { .. }:>, ID($fun1, caller_name),    # function definition
+	     		      	       call_expr <: $fun2( .. ) :>, ANCESTOR(caller, call_expr), ID($fun2, callee_name). # call expression
+
+FunCall(fun2, c) :- c <: $fun2( .. ) :>, ID($fun2, fun2).
+
+FunDef(fun1, d) :- d <: .. $fun1( .. ) { .. } :>, ID($fun1, fun1).
+
+Loop(s), ForLoop(s) :- s <: for ( ; ; ) $_ :>.
+Loop(s), WhileLoop(s) :- s <: while ($_) $_ :>.
+Loop(s), DoWhileLoop(s) :- s <: do $_ while ($_); :>.
+
+LoopInFunction(s, f_name) :- f <: ..$f( .. ) { .. } :>, ID($f, f_name), ANCESTOR(f, s), Loop(s).
+
+# look for nested for loops
+NestedLoops(s1, s2) :- Loop(s1), Loop(s2), NEQ(s1, s2), ANCESTOR(s1, s2).
+
+# enclosed loops are nested loops without any loop in between
+NotEnclosedLoops(s1, s2) :- NestedLoops(s1, s), NestedLoops(s, s2).
+EnclosedLoops(s1, s2) :- NestedLoops(s1, s2), NOT(NotEnclosedLoops(s1, s2)).
+
+# the call and its parent loop
+# ParentLoopOfCall(c, s) :- CallInLoop(c, s), NOT(NotParentLoopOfCall(c, s)).
+AncestorOfCall(c, a) :- FunCall(_, c), PARENT(a, c), NOT(Loop(a)).
+AncestorOfCall(c, a) :- AncestorOfCall(c, t), PARENT(a, t), NOT(Loop(a)).
+
+OUTPUT('AncestorOfCall, "AncestorOfCall.csv", "csv").
+LoopForCall(l, c) :- PARENT(l, t), AncestorOfCall(c, t), Loop(l).
+LoopForCallDetail(src, ls, le, fun) :- LoopForCall(l, c), FunCall(fun, c), SRC(l, ls, _, le, _, src).
+
+LoopDepth(l, 0) :- Loop(l), NOT(EnclosedLoops(_, l)).
+LoopDepth(l, i) :- LoopDepth(l_outer, depth_outer), EnclosedLoops(l_outer, l), BIND(i, depth_outer + 1).
+
+LoopDepthDetail(sl, sc, el, ec, f, d) :- LoopDepth(l, d), SRC(l, sl, sc, el, ec, f).
+
+LocalLoopDepthForCall(c, 0) :- FunCall(_, c), NOT(LoopForCall(_, c)).
+LocalLoopDepthForCall(c, i) :- LoopForCall(l, c), LoopDepth(l, j), BIND(i, j + 1).
+
+
+
+# Functions that are not called have loop depth of 0
+GlobalLoopDepthForFunction(fun_name, 0) :- FunDef(fun_name, _), NOT(FunCall(fun_name, _)).
+
+GlobalLoopDepthForFunction(callee_name, k) :- Call(caller, call_expr, caller_name, callee_name),
+			      GlobalLoopDepthForFunction(caller_name, i), LocalLoopDepthForCall(call_expr, j), BIND(k, i + j).
+
+GlobalLoopDepth(l, k) :- LoopInFunction(l, f_name), LoopDepth(l, i), GlobalLoopDepthForFunction(f_name, j), BIND(k, i+j).
+
+GlobalLoopDepthDetail(src, ls, le, depth) :- GlobalLoopDepth(l, depth), SRC(l, ls, _, le, _, src).
+
+OUTPUT('GlobalLoopDepthDetail, "GlobalLoopDepthDetail.csv", "csv").
+OUTPUT('LoopForCallDetail, "LoopForCallDetail.csv", "csv").
+OUTPUT('LocalLoopDepthForCall, "LocalLoopDepthForCall.csv", "csv").
+OUTPUT('LoopDepthDetail, "LoopDepthDetail.csv", "csv").

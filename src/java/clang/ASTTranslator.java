@@ -65,7 +65,6 @@ import lang.c.obj.ast.DivExpression;
 import lang.c.obj.ast.DoWhileStatement;
 import lang.c.obj.ast.EQExpression;
 import lang.c.obj.ast.Expression;
-import lang.c.obj.ast.ExpressionStatement;
 import lang.c.obj.ast.ExternalDeclaration;
 import lang.c.obj.ast.ExternalDeclarationOrDefinition;
 import lang.c.obj.ast.ForStatement;
@@ -140,14 +139,6 @@ public class ASTTranslator implements ASTVisitor {
 			return new Opt<T>();
 		} else {
 			return new Opt<T>(cons.apply(opt.getChild(0)));
-		}
-	}
-
-	private Statement stmt(ASTNode n) {
-		if (n instanceof Expression) {
-			return new ExpressionStatement((Expression) n);
-		} else {
-			return (Statement) n;
 		}
 	}
 
@@ -332,7 +323,7 @@ public class ASTTranslator implements ASTVisitor {
 	@Override public void visit(CompoundStmt c) {
 		List<Statement> stmts = new List<>();
 		for (int i = 0; i < c.getNumStmts(); ++i) {
-			stmts.add(stmt(t(c.getStmt(i))));
+			stmts.add(t(c.getStmt(i)));
 		}
 		t(c, new CompoundStatement(stmts));
 	}

@@ -49,8 +49,8 @@ DeclarationStatement declaration_statement = declaration {: return new Declarati
 
 // (6.8.3) expression-statement:
 // expressionopt ;
-ExpressionStatement expression_statement = expression SEMICOLON {: return new ExpressionStatement(expression); :}
-		    			 ;
+Expression expression_statement = expression SEMICOLON {: return expression; :}
+				;
 
 EmptyStatement empty_statement = SEMICOLON {: return new EmptyStatement(); :}
 	       	       ;
@@ -93,14 +93,14 @@ ForStatement for_statement = FOR LPAREN expression.i SEMICOLON expression.c SEMI
 			     {: return new ForStatement(new Opt(), new Opt(), new Opt(), statement); :}
 			   ;
 
-ForDeclStatement for_decl_statement = FOR LPAREN declaration_statement expression.c SEMICOLON expression.u RPAREN statement
-	     		   	        {: return new ForDeclStatement(declaration_statement, new Opt(c), new Opt(u), statement); :}
+ForStatement for_decl_statement = FOR LPAREN declaration_statement expression.c SEMICOLON expression.u RPAREN statement
+       		   	        {: return new ForStatement(new Opt(declaration_statement), new Opt(c), new Opt(u), statement); :}
 			            | FOR LPAREN declaration_statement expression.c SEMICOLON RPAREN statement
-				        {: return new ForDeclStatement(declaration_statement, new Opt(c), new Opt(), statement); :}
+				        {: return new ForStatement(new Opt(declaration_statement), new Opt(c), new Opt(), statement); :}
 			            | FOR LPAREN declaration_statement SEMICOLON expression.u RPAREN statement
-			                {: return new ForDeclStatement(declaration_statement, new Opt(), new Opt(u), statement); :}
+			                {: return new ForStatement(new Opt(declaration_statement), new Opt(), new Opt(u), statement); :}
 			            | FOR LPAREN declaration_statement SEMICOLON RPAREN statement
-			                {: return new ForDeclStatement(declaration_statement, new Opt(), new Opt(), statement); :}
+			                {: return new ForStatement(new Opt(declaration_statement), new Opt(), new Opt(), statement); :}
 			            ;
 
 // (6.8.6) jump-statement:

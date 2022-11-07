@@ -54,6 +54,7 @@ import lang.c.obj.ast.BitwiseNotExpression;
 import lang.c.obj.ast.BitwiseOrExpression;
 import lang.c.obj.ast.BitwiseXorExpression;
 import lang.c.obj.ast.CallExpression;
+import lang.c.obj.ast.CommaExpression;
 import lang.c.obj.ast.CompoundStatement;
 import lang.c.obj.ast.Constant;
 import lang.c.obj.ast.ConstantExpression;
@@ -201,9 +202,11 @@ public class ASTTranslator implements ASTVisitor {
 		case "&&" : c = AndExpression::new; break;
 		case "||" : c = OrExpression::new; break;
 		case "=" : c = AssignmentExpression::new; break;
+		case "," : c = CommaExpression::new; break;
 		default:
-			SimpleLogger.logger().info("[clang-ast-translation] " + b.kind + " opcode=" + b.opcode);
-			break;
+			profile().incCounter("clang_ast_nodes", b.kind + b.opcode);
+			visit((Expr) b);
+			return;
 		}
 
 		t(b, c.apply(lhs, rhs));
@@ -226,7 +229,10 @@ public class ASTTranslator implements ASTVisitor {
 		case "^=": c = AssignmentXorExpression::new; break;
 		case "&=" : c = AssignmentAndExpression::new; break;
 		case "|=" : c = AssignmentOrExpression::new; break;
-		default: throw new RuntimeException("Opcode not yet supported: " + b.opcode);
+		default:
+			profile().incCounter("clang_ast_nodes", b.kind + b.opcode);
+			visit((Expr) b);
+			return;
 		}
 
 		t(b, c.apply(lhs, rhs));
@@ -250,8 +256,9 @@ public class ASTTranslator implements ASTVisitor {
 		case "!": c = NotExpression::new; break;
 		case "~": c = BitwiseNotExpression::new; break;
 		default:
-			SimpleLogger.logger().info("[clang-ast-translation] " + u.kind + " opcode=" + u.opcode);
-			break;
+			profile().incCounter("clang_ast_nodes", u.kind + u.opcode);
+			visit((Expr) u);
+			return;
 		}
 
 		t(u, c.apply(opd));

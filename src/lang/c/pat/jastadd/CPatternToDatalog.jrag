@@ -37,6 +37,10 @@ aspect LanguageSpecific {
 		if (used.contains("AST"))
 			ret.add(makeASTRule(ctx));
 
+		// Insert a relation to map nodes to their children
+		if (used.contains("PARENT"))
+			ret.add(makeParentRule(ctx));
+
 		return ret;
 	}
 

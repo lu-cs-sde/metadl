@@ -69,14 +69,14 @@ public class ASTImporter {
 		try {
 			int exitcode = p.waitFor();
 			if (exitcode != 0) {
-				throw new RuntimeException("Clang command failed. " + b.command().toString());
+				SimpleLogger.logger().error("Clang command failed. " + b.command().toString());
 			}
 		} catch (InterruptedException e) {
 			throw new RuntimeException(e);
 		}
 
-
-		root.patchLocations();
+		if (root != null)
+			root.patchLocations();
 
 		return root;
 	}

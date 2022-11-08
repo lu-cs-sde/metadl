@@ -17,21 +17,35 @@ public class EvaluationContext {
 		if (s == null)
 			throw new RuntimeException("Cannot interanlize null.");
 
-		Long id = stringMap.get(s);
-		if (id == null) {
-			id = stringID++;
-			stringMap.put(s, id);
-			longMap.add(s);
-		}
 
-		return id;
+		Long id = stringMap.get(s);
+		if (id != null) {
+			return id;
+		} else {
+			synchronized (longMap) {
+				id = stringMap.get(s);
+				if (id == null) {
+					id = stringID++;
+					stringMap.put(s, id);
+					longMap.add(s);
+				}
+			}
+			return id;
+		}
 	}
 
 	public String externalizeString(long l) {
-		if (l >= longMap.size())
-			throw new RuntimeException("String not internalized: " + l);
-		String s = longMap.get((int)l);
-		return s;
+		if (l < longMap.size()) {
+			String s = longMap.get((int)l);
+			return s;
+		} else {
+			synchronized (longMap) {
+				if (l >= longMap.size()) {
+					throw new RuntimeException("String not internalized: " + l);
+				}
+				return longMap.get((int)l);
+			}
+		}
 	}
 
 	// relations
@@ -41,11 +55,18 @@ public class EvaluationContext {
 
 	private static Relation2 getRelationInternal(String name, int arity, Map<String, Relation2> m) {
 		Relation2 rel = m.get(name);
-		if (rel == null) {
-			rel = new Relation2(arity);
-			m.put(name, rel);
+		if (rel != null) {
+			return rel;
+		} else {
+			synchronized (m) {
+				rel = m.get(name);
+				if (rel == null) {
+					rel = new Relation2(arity);
+					m.put(name, rel);
+				}
+				return rel;
+			}
 		}
-		return rel;
 	}
 
 	public Relation2 getRelation(String fpName, int arity) {

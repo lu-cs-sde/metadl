@@ -1,44 +1,38 @@
 package lang.io;
 
+import static prof.Profile.profile;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.OutputStream;
 import java.io.StringReader;
-
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import org.apache.commons.io.filefilter.IOFileFilter;
-import org.apache.commons.io.filefilter.FileFilterUtils;
-import org.apache.commons.io.filefilter.WildcardFileFilter;
-
-import eval.EvaluationContext;
-import eval.Relation2;
-
-import org.apache.commons.io.filefilter.TrueFileFilter;
-import org.apache.commons.io.FileUtils;
-
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.stream.Collectors;
 
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.filefilter.IOFileFilter;
+import org.apache.commons.io.filefilter.TrueFileFilter;
+import org.apache.commons.io.filefilter.WildcardFileFilter;
+
+import eval.EvaluationContext;
 import lang.CmdLineOpts;
+import lang.CmdLineOpts.Action;
 import lang.ast.LangParser;
 import lang.ast.LangScanner;
 import lang.ast.Program;
-import lang.relation.RelationWrapper;
-import lang.relation.TupleInserter;
 import lang.java.obj.DatalogProjectionSink;
 import lang.java.obj.FileIdDatabase;
-import static prof.Profile.profile;
 
 public class FileUtil {
 	public static String changeExtension(String filename, String newExtension) {
@@ -150,9 +144,52 @@ public class FileUtil {
 									CmdLineOpts opts,
 									DatalogProjectionSink sink,
 									java.util.List<String> srcs) throws IOException {
-		clang.DatalogProjection dp = new clang.DatalogProjection(new FileIdDatabase(), sink);
-		for (String src : srcs) {
-			dp.project(src, opts.getClangArgs());
+
+		if (opts.getAction() == Action.EVAL_INTERNAL_PARALLEL) {
+			int hwThreads = Runtime.getRuntime().availableProcessors();
+			ExecutorService exec = Executors.newFixedThreadPool(Math.max(1, hwThreads / 2));
+			// ExecutorService exec = Executors.newSingleThreadExecutor();
+
+			List<Future<IOException>> exceptions = new ArrayList<>();
+
+			for (String src : srcs) {
+				exceptions.add(exec.submit(new Callable<IOException>() {
+						@Override public IOException call() {
+							try {
+								clang.DatalogProjection dp = new clang.DatalogProjection(new FileIdDatabase(), sink);
+								dp.project(src, opts.getClangArgs());
+							} catch (IOException e) {
+								return e;
+							}
+							return null;
+						};
+					}));
+			}
+
+			exec.shutdown();
+			try {
+				exec.awaitTermination(Integer.MAX_VALUE, java.util.concurrent.TimeUnit.DAYS);
+			} catch (InterruptedException e) {
+				throw new RuntimeException(e);
+			}
+
+			// look through the results and re-throw any IOExceptions
+			for (Future<IOException> e : exceptions) {
+				try {
+					IOException iox = e.get();
+					if (iox != null) {
+						throw iox;
+					}
+				} catch (InterruptedException | ExecutionException e1) {
+					throw new RuntimeException(e1);
+				}
+			}
+		} else {
+			clang.DatalogProjection dp = new clang.DatalogProjection(new FileIdDatabase(), sink);
+
+			for (String src : srcs) {
+				dp.project(src, opts.getClangArgs());
+			}
 		}
 	}
 
@@ -164,7 +201,6 @@ public class FileUtil {
 
 		@Override
 		public void run() {
-			// TODO Auto-generated method stub
 			String line;
 
 			BufferedReader reader = new BufferedReader(new InputStreamReader(src));

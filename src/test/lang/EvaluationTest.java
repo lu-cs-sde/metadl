@@ -179,4 +179,25 @@ public class EvaluationTest {
 							 lang,
 							 "-e metadl");
 	}
+
+	@DisplayName("Evaluate programs containing patterns using internal parallel evaluator")
+	@ParameterizedTest
+	@MethodSource("metadlPatternTests")
+	void evaluationTestPatternsInternalParallel(String testDesc) throws Exception {
+		String fileName = Util.parseTestDescription(testDesc)[0];
+		String lang = Util.parseTestDescription(testDesc)[1];
+
+		IOFileFilter ff = new WildcardFileFilter(fileName + "_input*");
+		Iterator<File> analyzedFileIt = FileUtils.iterateFiles(new File("./tests/evaluation/withimport"), ff, null);
+
+		Util.singleEvaluationTest("./tests/output/souffle",
+							 "./tests/evaluation/withimport/facts",
+							 analyzedFileIt.hasNext() ? Collections.singletonList(analyzedFileIt.next()) : Collections.emptyList(),
+							 "./tests/evaluation/withimport",
+							 "./tests/evaluation/withimport/expected",
+							 fileName,
+							 ".in",
+							 lang,
+							 "-e metadl-par");
+	}
 }

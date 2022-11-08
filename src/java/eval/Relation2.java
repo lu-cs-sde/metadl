@@ -6,13 +6,14 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.NavigableSet;
 import java.util.SortedSet;
-import java.util.TreeSet;
+import java.util.concurrent.ConcurrentSkipListSet;
 
 public class Relation2 {
 	public static class ReadOnlyView {
-		private TreeSet<Tuple> currentSet;
-		protected ReadOnlyView(TreeSet<Tuple> tupleSet) {
+		private NavigableSet<Tuple> currentSet;
+		protected ReadOnlyView(NavigableSet<Tuple> tupleSet) {
 			this.currentSet = tupleSet;
 		}
 		public SortedSet<Tuple> lookup(Tuple loInclusive, Tuple hiInclusive) {
@@ -34,8 +35,8 @@ public class Relation2 {
 	private int arity = 0;
 	private String name = "AnonymousRelation";
 
-	private Map<Index, TreeSet<Tuple>> indexedMaps = new HashMap<>();
-	private TreeSet<Tuple> defaultSet;
+	private Map<Index, NavigableSet<Tuple>> indexedMaps = new HashMap<>();
+	private NavigableSet<Tuple> defaultSet;
 
 	public Relation2(int arity, String name) {
 		this(arity);
@@ -59,15 +60,15 @@ public class Relation2 {
 			defaultIndices.add(i);
 
 		Index defaultIndex = new Index(defaultIndices, arity);
-		defaultSet = new TreeSet<>(defaultIndex);
+		defaultSet = new ConcurrentSkipListSet<>(defaultIndex);
 		indexedMaps.put(defaultIndex, defaultSet);
 	}
 
-	private TreeSet<Tuple> setIndex(Index index) {
-		TreeSet<Tuple> nextSet = indexedMaps.get(index);
+	private NavigableSet<Tuple> setIndex(Index index) {
+		NavigableSet<Tuple> nextSet = indexedMaps.get(index);
 		if (nextSet == null) {
 			// no set for the requested index, add new one
-			nextSet = new TreeSet<>(index);
+			nextSet = new ConcurrentSkipListSet<>(index);
 			indexedMaps.put(index, nextSet);
 
 			// initialize the set with all the values in the current

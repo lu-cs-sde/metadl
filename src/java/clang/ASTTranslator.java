@@ -65,8 +65,6 @@ import lang.c.obj.ast.DivExpression;
 import lang.c.obj.ast.DoWhileStatement;
 import lang.c.obj.ast.EQExpression;
 import lang.c.obj.ast.Expression;
-import lang.c.obj.ast.ExternalDeclaration;
-import lang.c.obj.ast.ExternalDeclarationOrDefinition;
 import lang.c.obj.ast.ForStatement;
 import lang.c.obj.ast.FunctionDeclarator;
 import lang.c.obj.ast.FunctionDefinition;
@@ -109,6 +107,7 @@ import lang.c.obj.ast.UnknownExpression;
 import lang.c.obj.ast.UnknownStatement;
 import lang.c.obj.ast.UnknownTypeSpecifier;
 import lang.c.obj.ast.WhileStatement;
+import lang.c.obj.ast.DeclarationOrDefinition;
 import lang.io.SimpleLogger;
 
 
@@ -390,11 +389,11 @@ public class ASTTranslator implements ASTVisitor {
 		FunctionDeclarator fd = new FunctionDeclarator(new Opt(), id, paramDecls);
 		UnknownTypeSpecifier typeSpec = new UnknownTypeSpecifier(f.type.qualType);
 
-		ExternalDeclarationOrDefinition ext;
+		DeclarationOrDefinition ext;
 		if (f.getBody() != null) {
 			ext = new FunctionDefinition(new List().add(typeSpec), fd, new List(), t(f.getBody()));
 		} else {
-			ext = new ExternalDeclaration(new Declaration(new List().add(typeSpec), new List().add(new InitDeclarator(fd, new Opt()))));
+			ext = new Declaration(new List().add(typeSpec), new List().add(new InitDeclarator(fd, new Opt())));
 		}
 		t(f, ext);
 	}
@@ -428,13 +427,11 @@ public class ASTTranslator implements ASTVisitor {
 	}
 
 	@Override public void visit(TranslationUnitDecl tu) {
-		List<ExternalDeclarationOrDefinition> declOrDef = new List<>();
+		List<DeclarationOrDefinition> declOrDef = new List<>();
 		for (int i = 0; i < tu.getNumDecl(); ++i) {
 			ASTNode tn = t(tu.getDecl(i));
-			if (tn instanceof Declaration) {
-				declOrDef.add(new ExternalDeclaration((Declaration) tn));
-			} else if (tn instanceof ExternalDeclarationOrDefinition) {
-				declOrDef.add((ExternalDeclarationOrDefinition) tn);
+			if (tn instanceof DeclarationOrDefinition) {
+				declOrDef.add((DeclarationOrDefinition) tn);
 			} else {
 				throw new RuntimeException("Unexpected top-level member of TranslationUnit.");
 			}

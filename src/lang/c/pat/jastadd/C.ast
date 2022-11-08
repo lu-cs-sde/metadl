@@ -1,4 +1,4 @@
-TranslationUnit ::= ExternalDeclarationOrDefinition*;
+TranslationUnit ::= DeclarationOrDefinition*;
 
 Identifier ::= <ID>;
 Constant;
@@ -9,9 +9,8 @@ StringLiteral;
 // external-declaration
 // translation-unit external-declaration
 
-abstract ExternalDeclarationOrDefinition;
-FunctionDefinition : ExternalDeclarationOrDefinition ::= DeclarationSpecifier* Declarator Declaration* Statement;
-ExternalDeclaration : ExternalDeclarationOrDefinition ::= Declaration;
+abstract DeclarationOrDefinition;
+FunctionDefinition : DeclarationOrDefinition ::= DeclarationSpecifier* Declarator Declaration* Statement;
 
 // (6.9) external-declaration:
 // function-definition
@@ -200,7 +199,7 @@ CommaExpression : BinaryExpression;
 // (6.7) declaration:
 // declaration-specifiers init-declarator-list opt ;
 // static_assert-declaration : TODO
-Declaration ::= DeclarationSpecifier* InitDeclarator* ;
+Declaration : DeclarationOrDefinition ::= DeclarationSpecifier* InitDeclarator* ;
 
 // (6.7) declaration-specifiers:
 // storage-class-specifier declaration-specifiersopt
@@ -470,7 +469,7 @@ CompoundStatement : Statement ::= Statement*;
 // (6.8.2) block-item:
 // declaration
 // statement
-DeclarationStatement : Statement ::= Declaration;
+DeclarationStatement : Statement ::= DeclarationOrDefinition;
 
 // (6.8.3) expression-statement:
 // expressionopt ;

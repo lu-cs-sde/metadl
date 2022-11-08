@@ -36,11 +36,15 @@ LocalLoopDepthForCall(c, 0) :- FunCall(_, c), NOT(LoopForCall(_, c)).
 LocalLoopDepthForCall(c, i) :- LoopForCall(l, c), LoopDepth(l, j), BIND(i, j + 1).
 
 
+TransitiveCall(caller_name, callee_name) :- Call(_, _, caller_name, callee_name).
+TransitiveCall(caller_name, callee_name) :- TransitiveCall(caller_name, t), Call(_, _, t, callee_name).
+RecursiveFunction(fun) :- TransitiveCall(fun, fun).
+
 
 # Functions that are not called have loop depth of 0
-GlobalLoopDepthForFunction(fun_name, 0) :- FunDef(fun_name, _), NOT(FunCall(fun_name, _)).
+GlobalLoopDepthForFunction(fun_name, 0) :- FunDef(fun_name, _), NOT(FunCall(fun_name, _)), NOT(RecursiveFunction(fun_name)).
 
-GlobalLoopDepthForFunction(callee_name, k) :- Call(caller, call_expr, caller_name, callee_name),
+GlobalLoopDepthForFunction(callee_name, k) :- Call(caller, call_expr, caller_name, callee_name), NOT(RecursiveFunction(callee_name)),
 			      GlobalLoopDepthForFunction(caller_name, i), LocalLoopDepthForCall(call_expr, j), BIND(k, i + j).
 
 GlobalLoopDepth(l, k) :- LoopInFunction(l, f_name), LoopDepth(l, i), GlobalLoopDepthForFunction(f_name, j), BIND(k, i+j).
@@ -51,3 +55,4 @@ OUTPUT('GlobalLoopDepthDetail, "GlobalLoopDepthDetail.csv", "csv").
 OUTPUT('LoopForCallDetail, "LoopForCallDetail.csv", "csv").
 OUTPUT('LocalLoopDepthForCall, "LocalLoopDepthForCall.csv", "csv").
 OUTPUT('LoopDepthDetail, "LoopDepthDetail.csv", "csv").
+OUTPUT('RecursiveFunction, "RecursiveFunction.csv", "csv").

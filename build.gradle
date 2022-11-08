@@ -296,7 +296,8 @@ void makeGeneratePatLangTask(String taskName, String outDir, String srcLang, Arr
     tasks.getByName('generateJavaPatlang' + taskName).dependsOn tasks.getByName('MkDirs' + taskName)
 }
 
-void makeGenerateObjLangTask(String taskName, String outDir, String srcLang, ArrayList<String> lexOrder, boolean sppfEarleyParser = false) {
+void makeGenerateObjLangTask(String taskName, String outDir, String srcLang, ArrayList<String> lexOrder,
+			     ArrayList<String> parseOrder = [], boolean sppfEarleyParser = false) {
     tasks.create('MkDirsObjLang' + taskName) {
 	doFirst {
 	    file(outDir + '/lang/' + srcLang + '/obj/ast').mkdirs()
@@ -307,10 +308,15 @@ void makeGenerateObjLangTask(String taskName, String outDir, String srcLang, Arr
 			outDir + '/lang/' + srcLang + '/obj/scanner/scanner.flex',
 			files(lexOrder.collect({'src/lang/' + srcLang + '/obj/scanner/' + it})))
 
+    def parserFiles = fileTree(dir : 'src/lang/' + srcLang + '/obj/parser', includes : ['**/*.parser'])
+    if (parseOrder) {
+	// Explicit parse order
+	parserFiles = files(parseOrder.collect({'src/lang/' + srcLang + '/obj/parser/' + it}))
+    }
 
     makeConcatenateTask('catObjlangParser' + taskName,
 			outDir + '/lang/' + srcLang + '/obj/parser/lang.parser',
-			fileTree(dir : 'src/lang/' + srcLang + '/obj/parser', includes : ['**/*.parser']))
+			parserFiles)
 
     if (sppfEarleyParser) {
 	makeGenerateSEPTask('generateParserObjlang' + taskName, outDir + '/lang/' + srcLang + '/obj/ast/ObjLangParserSEP.java', outDir + '/lang/' + srcLang + '/obj/parser/lang.parser', false)
@@ -416,7 +422,7 @@ makeGeneratePatLangTask('genMetadlPatLang', 'src/gen/', 'metadl', metadlLexOrder
 makeGeneratePatLangTask('genJava8Lang', 'src/gen/', 'java8', java8LexOrder, java8ParseOrder)
 // C11
 makeGeneratePatLangTask('genCLang_Pat', 'src/gen', 'c', cLexOrder, cParseOrder)
-makeGenerateObjLangTask('genCLang_Obj', 'src/gen', 'c', cLexOrder, true)
+makeGenerateObjLangTask('genCLang_Obj', 'src/gen', 'c', cLexOrder, cParseOrder, true)
 
 
 // MetaDL itself

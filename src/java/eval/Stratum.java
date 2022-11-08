@@ -24,6 +24,10 @@ public interface Stratum {
 								   String desc) {
 		return new Stratum() {
 			@Override public void eval() {
+
+				SimpleLogger.logger().time("=== Run stratum: ");
+				SimpleLogger.logger().time(desc);
+
 				StopWatch timer = StopWatch.createStarted();
 				boolean change;
 
@@ -61,8 +65,8 @@ public interface Stratum {
 				} while (change);
 
 				timer.stop();
-				SimpleLogger.logger().time("=== Run stratum: " + timer.getTime() + " ms");
-				SimpleLogger.logger().time(desc);
+
+				SimpleLogger.logger().time("=== " + timer.getTime() + " ms");
 				SimpleLogger.logger().time("===========================================");
 			}
 
@@ -85,12 +89,15 @@ public interface Stratum {
 	public static Stratum single(List<Control> stmts, String desc) {
 		return new Stratum() {
 			@Override public void eval() {
+				SimpleLogger.logger().time("=== Run stratum:");
+				SimpleLogger.logger().time(desc);
+
 				StopWatch timer = StopWatch.createStarted();
 				for (Control c : stmts)
 					c.eval();
 				timer.stop();
-				SimpleLogger.logger().time("=== Run stratum: " + timer.getTime() + " ms");
-				SimpleLogger.logger().time(desc);
+
+				SimpleLogger.logger().time("=== " + timer.getTime() + " ms");
 				SimpleLogger.logger().time("===========================================");
 
 			}

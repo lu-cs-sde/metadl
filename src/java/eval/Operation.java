@@ -1,13 +1,13 @@
 package eval;
 
 public interface Operation {
-	long eval();
+	long eval(Tuple t);
 	String prettyPrint();
 
 	public static Operation add(Operation l, Operation r) {
 		return new Operation() {
-			@Override public long eval() {
-				return l.eval() + r.eval();
+			@Override public long eval(Tuple t) {
+				return l.eval(t) + r.eval(t);
 			}
 
 			@Override public String prettyPrint() {
@@ -18,8 +18,8 @@ public interface Operation {
 
 	public static Operation sub(Operation l, Operation r) {
 		return new Operation() {
-			@Override public long eval() {
-				return l.eval() - r.eval();
+			@Override public long eval(Tuple t) {
+				return l.eval(t) - r.eval(t);
 			}
 
 			@Override public String prettyPrint() {
@@ -31,8 +31,8 @@ public interface Operation {
 
 	public static Operation mul(Operation l, Operation r) {
 		return new Operation() {
-			@Override public long eval() {
-				return l.eval() * r.eval();
+			@Override public long eval(Tuple t) {
+				return l.eval(t) * r.eval(t);
 			}
 
 			@Override public String prettyPrint() {
@@ -43,8 +43,8 @@ public interface Operation {
 
 	public static Operation div(Operation l, Operation r) {
 		return new Operation() {
-			@Override public long eval() {
-				return l.eval() / r.eval();
+			@Override public long eval(Tuple t) {
+				return l.eval(t) / r.eval(t);
 			}
 
 			@Override public String prettyPrint() {
@@ -55,8 +55,8 @@ public interface Operation {
 
 	public static Operation mod(Operation l, Operation r) {
 		return new Operation() {
-			@Override public long eval() {
-				return l.eval() % r.eval();
+			@Override public long eval(Tuple t) {
+				return l.eval(t) % r.eval(t);
 			}
 
 			@Override public String prettyPrint() {
@@ -67,8 +67,8 @@ public interface Operation {
 
 	public static Operation bor(Operation l, Operation r) {
 		return new Operation() {
-			@Override public long eval() {
-				return l.eval() | r.eval();
+			@Override public long eval(Tuple t) {
+				return l.eval(t) | r.eval(t);
 			}
 
 			@Override public String prettyPrint() {
@@ -79,8 +79,8 @@ public interface Operation {
 
 	public static Operation band(Operation l, Operation r) {
 		return new Operation() {
-			@Override public long eval() {
-				return l.eval() & r.eval();
+			@Override public long eval(Tuple t) {
+				return l.eval(t) & r.eval(t);
 			}
 
 			@Override public String prettyPrint() {
@@ -91,8 +91,8 @@ public interface Operation {
 
 	public static Operation bxor(Operation l, Operation r) {
 		return new Operation() {
-			@Override public long eval() {
-				return l.eval() % r.eval();
+			@Override public long eval(Tuple t) {
+				return l.eval(t) % r.eval(t);
 			}
 
 			@Override public String prettyPrint() {
@@ -103,8 +103,8 @@ public interface Operation {
 
 	public static Operation bshl(Operation l, Operation r) {
 		return new Operation() {
-			@Override public long eval() {
-				return l.eval() << r.eval();
+			@Override public long eval(Tuple t) {
+				return l.eval(t) << r.eval(t);
 			}
 
 			@Override public String prettyPrint() {
@@ -115,8 +115,8 @@ public interface Operation {
 
 	public static Operation bshr(Operation l, Operation r) {
 		return new Operation() {
-			@Override public long eval() {
-				return l.eval() >> r.eval();
+			@Override public long eval(Tuple t) {
+				return l.eval(t) >> r.eval(t);
 			}
 
 			@Override public String prettyPrint() {
@@ -127,8 +127,8 @@ public interface Operation {
 
 	public static Operation bshru(Operation l, Operation r) {
 		return new Operation() {
-			@Override public long eval() {
-				return l.eval() >>> r.eval();
+			@Override public long eval(Tuple t) {
+				return l.eval(t) >>> r.eval(t);
 			}
 
 			@Override public String prettyPrint() {
@@ -141,7 +141,7 @@ public interface Operation {
 
 	public static Operation constant(long c) {
 		return new Operation() {
-			@Override public long eval() {
+			@Override public long eval(Tuple t) {
 				return c;
 			}
 
@@ -152,9 +152,9 @@ public interface Operation {
 		};
 	}
 
-	public static Operation component(Tuple t, int i) {
+	public static Operation component(int i) {
 		return new Operation() {
-			@Override public long eval() {
+			@Override public long eval(Tuple t) {
 				return t.get(i);
 			}
 
@@ -166,8 +166,8 @@ public interface Operation {
 
 	public static Operation to_number(EvaluationContext ctx, Operation arg) {
 		return new Operation() {
-			@Override public long eval() {
-				String s = ctx.externalizeString(arg.eval());
+			@Override public long eval(Tuple t) {
+				String s = ctx.externalizeString(arg.eval(t));
 				return Long.parseLong(s);
 			}
 
@@ -179,9 +179,9 @@ public interface Operation {
 
 	public static Operation cat(EvaluationContext ctx, Operation arg0, Operation arg1) {
 		return new Operation() {
-			@Override public long eval() {
-				String s0 = ctx.externalizeString(arg0.eval());
-				String s1 = ctx.externalizeString(arg1.eval());
+			@Override public long eval(Tuple t) {
+				String s0 = ctx.externalizeString(arg0.eval(t));
+				String s1 = ctx.externalizeString(arg1.eval(t));
 				return ctx.internalizeString(s0 + s1);
 			}
 
@@ -193,9 +193,9 @@ public interface Operation {
 
 	public static Operation node_to_id(EvaluationContext ctx, Operation arg0)  {
 		return new Operation() {
-			@Override public long eval() {
+			@Override public long eval(Tuple t) {
 				// identity
-				return arg0.eval();
+				return arg0.eval(t);
 			}
 
 			@Override public String prettyPrint() {
@@ -206,9 +206,9 @@ public interface Operation {
 
 	public static Operation id_to_node(EvaluationContext ctx, Operation arg0)  {
 		return new Operation() {
-			@Override public long eval() {
+			@Override public long eval(Tuple t) {
 				// identity
-				return arg0.eval();
+				return arg0.eval(t);
 			}
 
 			@Override public String prettyPrint() {

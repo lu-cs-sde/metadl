@@ -8,7 +8,6 @@ import java.util.stream.Stream;
 
 import org.apache.commons.lang3.tuple.Pair;
 
-
 class Util {
 	static String indent(int n) {
 		String s = "";
@@ -19,39 +18,39 @@ class Util {
 }
 
 public interface Control {
-	void eval();
+	void eval(Tuple t);
 
 	String prettyPrint(int indent);
 
-	public static Control forAll(Tuple t, Relation2 rel, List<Pair<Integer, Integer>> test,
+	public static Control forAll(Relation2 rel, List<Pair<Integer, Integer>> test,
 								 List<Pair<Integer, Long>> consts,
 								 List<Pair<Integer, Integer>> assign,
 								 Control cont) {
-		return new ForAll(t, rel, test, consts, assign, cont);
+		return new ForAll(rel, test, consts, assign, cont);
 	}
 
-	public static Control ifNotExists(Tuple t, Relation2 rel, List<Pair<Integer, Integer>> test,
+	public static Control ifNotExists(Relation2 rel, List<Pair<Integer, Integer>> test,
 									  List<Pair<Integer, Long>> consts,
 									  Control cont) {
-		return new IfExists(t, rel, test, consts, cont, false);
+		return new IfExists(rel, test, consts, cont, false);
 	}
 
-	public static Control ifExists(Tuple t, Relation2 rel, List<Pair<Integer, Integer>> test,
+	public static Control ifExists(Relation2 rel, List<Pair<Integer, Integer>> test,
 								   List<Pair<Integer, Long>> consts,
 								   Control cont) {
-		return new IfExists(t, rel, test, consts, cont, true);
+		return new IfExists(rel, test, consts, cont, true);
 	}
 
 
 
-	public static Control insert(Tuple t, Relation2 rel, List<Pair<Integer, Integer>> assign,
+	public static Control insert(Relation2 rel, List<Pair<Integer, Integer>> assign,
 								 List<Pair<Integer, Long>> consts, Control cont) {
-		return new Insert(t, rel, assign, consts, cont);
+		return new Insert(rel, assign, consts, cont);
 	}
 
 	public static Control nop() {
 		return new Control() {
-			@Override public void eval() {
+			@Override public void eval(Tuple t) {
 				// do nothing
 			}
 
@@ -150,11 +149,11 @@ public interface Control {
 		};
 	}
 
-	public static Control bind(Tuple t, Control cont, int dst, Operation r) {
+	public static Control bind(Control cont, int dst, Operation r) {
 		return new Control() {
-			@Override public void eval() {
-				t.set(dst, r.eval());
-				cont.eval();
+			@Override public void eval(Tuple t) {
+				t.set(dst, r.eval(t));
+				cont.eval(t);
 			}
 
 			@Override public String prettyPrint(int indent) {
@@ -185,7 +184,6 @@ public interface Control {
 }
 
 class ForAll implements Control {
-	private Tuple t;
 	private Relation2 rel;
 	private List<Pair<Integer, Integer>> test;
 	private List<Pair<Integer, Integer>> assign;
@@ -198,9 +196,9 @@ class ForAll implements Control {
 	   test - pairs of (columns, tuple position) to test for equality
 	   assign - pairs of (columns, tuple position) to assign
 	 */
-	ForAll(Tuple t, Relation2 rel, List<Pair<Integer, Integer>> test, List<Pair<Integer, Long>> consts,
+	ForAll(Relation2 rel, List<Pair<Integer, Integer>> test, List<Pair<Integer, Long>> consts,
 		   List<Pair<Integer, Integer>> assign, Control cont) {
-		this.t = t;
+
 		this.rel = rel;
 		this.cont = cont;
 		this.test = test;
@@ -220,7 +218,7 @@ class ForAll implements Control {
 		}
 	}
 
-	public void eval() {
+	public void eval(Tuple t) {
 		// set an index for the relation
 		// rel.setIndex(index);
 
@@ -235,7 +233,7 @@ class ForAll implements Control {
 			for (Pair<Integer, Integer> p : assign) {
 				t.set(p.getRight(), r.get(p.getLeft()));
 			}
-			cont.eval();
+			cont.eval(t);
 		}
 	}
 
@@ -263,7 +261,6 @@ class ForAll implements Control {
 }
 
 class IfExists implements Control {
-	private Tuple t;
 	private Relation2 rel;
 	private List<Pair<Integer, Integer>> test;
 	private List<Pair<Integer, Long>> consts;
@@ -272,9 +269,8 @@ class IfExists implements Control {
 	private Relation2.ReadOnlyView view;
 	private final boolean positive;
 
-	IfExists(Tuple t, Relation2 rel, List<Pair<Integer, Integer>> test,
+	IfExists(Relation2 rel, List<Pair<Integer, Integer>> test,
 			 List<Pair<Integer, Long>> consts, Control cont, boolean positive) {
-		this.t = t;
 		this.rel = rel;
 		this.cont = cont;
 		this.consts = consts;
@@ -292,7 +288,7 @@ class IfExists implements Control {
 		}
 	}
 
-	public void eval() {
+	public void eval(Tuple t) {
 		// rel.setIndex(index);
 		// populate the variable part of the prefix
 		for (Pair<Integer, Integer> c : test) {
@@ -301,7 +297,7 @@ class IfExists implements Control {
 		}
 
 		if (positive ^ !view.hasEntryInRange(minKey, maxKey))
-			cont.eval();
+			cont.eval(t);
 	}
 
 	@Override public String prettyPrint(int indent) {
@@ -324,7 +320,6 @@ class IfExists implements Control {
 }
 
 class Insert implements Control {
-	private Tuple t;
 	private List<Pair<Integer, Integer>> assign;
 	private List<Pair<Integer, Long>> consts;
 	private Control cont;
@@ -337,8 +332,7 @@ class Insert implements Control {
 	   consts - list of (column, const) to insert const into column
 	   cont - continuation
 	 */
-	Insert(Tuple t, Relation2 rel, List<Pair<Integer, Integer>> assign, List<Pair<Integer, Long>> consts, Control cont) {
-		this.t = t;
+	Insert(Relation2 rel, List<Pair<Integer, Integer>> assign, List<Pair<Integer, Long>> consts, Control cont) {
 		this.rel = rel;
 		this.assign = assign;
 		this.consts = consts;
@@ -347,7 +341,7 @@ class Insert implements Control {
 
 	}
 
-	@Override public void eval() {
+	@Override public void eval(Tuple t) {
 		Tuple u = new Tuple(rel.arity());
 
 		for (Pair<Integer, Integer> a : assign) {
@@ -360,7 +354,7 @@ class Insert implements Control {
 
 		rel.insert(u);
 
-		cont.eval();
+		cont.eval(t);
 	}
 
 	@Override public String prettyPrint(int indent) {
@@ -394,9 +388,9 @@ abstract class Test implements Control {
 		this.right = right;
 	}
 
-	public void eval() {
-		if (test(left.eval(), right.eval()))
-			cont.eval();
+	public void eval(Tuple t) {
+		if (test(left.eval(t), right.eval(t)))
+			cont.eval(t);
 	}
 
 	@Override public String toString() {

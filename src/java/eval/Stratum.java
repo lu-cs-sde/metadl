@@ -19,8 +19,9 @@ public interface Stratum {
 	/**
 	   Build a stratum that evaluates stmts until no more new facts can be derived
 	   definedRelations = a list of relations defined in this stratum, as a (Rel, nextRel, deltaRel) pair.
+	   stmts = the list of control statements to execute paired with the number of variables in the statement
 	 */
-	public static Stratum fixpoint(List<Triple<Relation2, Relation2, Relation2>> definedRelations, List<Control> stmts,
+	public static Stratum fixpoint(List<Triple<Relation2, Relation2, Relation2>> definedRelations, List<Pair<Control, Integer>> stmts,
 								   String desc) {
 		return new Stratum() {
 			@Override public void eval() {
@@ -42,8 +43,10 @@ public interface Stratum {
 					change = false;
 
 					// evaluate all statements
-					for (Control c : stmts)
-						c.eval();
+					for (Pair<Control, Integer> c : stmts) {
+						Tuple t = new Tuple(c.getRight());
+						c.getLeft().eval(t);
+					}
 
 					// insert the deltas into the main relations; if there's any
 					// change, then loop again
@@ -74,8 +77,8 @@ public interface Stratum {
 				s.print("BEGIN FIXPOINT\n");
 				s.println(desc);
 
-				for (Control c : stmts) {
-					s.println(c.prettyPrint(0));
+				for (Pair<Control, Integer> c : stmts) {
+					s.println(c.getLeft().prettyPrint(0));
 				}
 
 				s.print("END FIXPOINT");
@@ -86,15 +89,17 @@ public interface Stratum {
 	/**
 	   Build a stratum that evaluates stmts once
 	 */
-	public static Stratum single(List<Control> stmts, String desc) {
+	public static Stratum single(List<Control> stmts, int nEvalVariables, String desc) {
 		return new Stratum() {
 			@Override public void eval() {
 				SimpleLogger.logger().time("=== Run stratum:");
 				SimpleLogger.logger().time(desc);
 
 				StopWatch timer = StopWatch.createStarted();
-				for (Control c : stmts)
-					c.eval();
+				for (Control c : stmts) {
+					Tuple t = new Tuple(nEvalVariables);
+					c.eval(t);
+				}
 				timer.stop();
 
 				SimpleLogger.logger().time("=== " + timer.getTime() + " ms");

@@ -119,6 +119,11 @@ aspect PretyPrinting {
 		pr.out.print(")");
 	}
 
+	public void ANCESTORLiteral.prettyPrint(PrettyPrinter pr) {
+		printCollection(getExprs(), "ANCESTOR(", ")", ",", pr);
+
+	}
+
 	public void Pattern.printRoot(PrettyPrinter pr) { }
 	public void BoundedPattern.printRoot(PrettyPrinter pr) {
 		getCommonVariable().prettyPrint(pr);
@@ -282,6 +287,46 @@ aspect SoufflePrinting {
 		pr.out.print(", ");
 		pr.prettyPrint(getRight());
 		pr.out.print(")");
+		if (hasNot())
+			pr.negationSuffix();
+	}
+
+	private void ANCESTORLiteral.printExtractField(Expr e, int offset, int size, PrettyPrinter pr) {
+		String mask = String.format("0x%x", (((long) 1) << size) - 1);
+		pr.out.print("(");
+		pr.out.print("("); // band
+		pr.out.print("("); // bshru
+		e.soufflePrint(pr);
+		pr.out.print(" bshru " + offset);
+		pr.out.print(")"); // bshru
+		pr.out.print(" band " + mask);
+		pr.out.print(")"); // band
+		pr.out.print(")");
+	}
+
+	public void ANCESTORLiteral.soufflePrint(PrettyPrinter pr) {
+		Expr left = getExpr(0);
+		Expr right = getExpr(1);
+
+		if (hasNot())
+			pr.negationPrefix();
+
+		printExtractField(left, clang.DatalogProjection.CNodeIdDesc.FILE_ID_OFFSET, clang.DatalogProjection.CNodeIdDesc.FILE_ID_SIZE, pr);
+		pr.out.print("=");
+		printExtractField(right, clang.DatalogProjection.CNodeIdDesc.FILE_ID_OFFSET, clang.DatalogProjection.CNodeIdDesc.FILE_ID_SIZE, pr);
+
+		pr.out.print(",");
+
+		printExtractField(left, clang.DatalogProjection.CNodeIdDesc.PRE_ORD_NUM_OFFSET, clang.DatalogProjection.CNodeIdDesc.PRE_ORD_NUM_SIZE, pr);
+		pr.out.print("<=");
+		printExtractField(right, clang.DatalogProjection.CNodeIdDesc.PRE_ORD_NUM_OFFSET, clang.DatalogProjection.CNodeIdDesc.PRE_ORD_NUM_SIZE, pr);
+
+		pr.out.print(",");
+
+		printExtractField(right, clang.DatalogProjection.CNodeIdDesc.POST_ORD_NUM_OFFSET, clang.DatalogProjection.CNodeIdDesc.POST_ORD_NUM_SIZE, pr);
+		pr.out.print("<=");
+		printExtractField(left, clang.DatalogProjection.CNodeIdDesc.POST_ORD_NUM_OFFSET, clang.DatalogProjection.CNodeIdDesc.POST_ORD_NUM_SIZE, pr);
+
 		if (hasNot())
 			pr.negationSuffix();
 	}

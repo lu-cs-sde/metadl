@@ -165,5 +165,8 @@ public class DatalogProjection {
 				sink.getSrcLoc().insertTuple(makeFullId(pre, post, fileId), n.startLine(), n.startColumn(), n.endLine(), n.endColumn(), file);
 			}
 		}
+
+		sink.getAST().done();
+		sink.getSrcLoc().done();
 	}
 }

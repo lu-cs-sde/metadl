@@ -156,8 +156,10 @@ public class FileUtil {
 				exceptions.add(exec.submit(new Callable<IOException>() {
 						@Override public IOException call() {
 							try {
+								profile().startTimer("clang_and_datalog_projection", src);
 								clang.DatalogProjection dp = new clang.DatalogProjection(new FileIdDatabase(), sink);
 								dp.project(src, opts.getClangArgs());
+								profile().stopTimer("clang_and_datalog_projection", src);
 							} catch (IOException e) {
 								return e;
 							}

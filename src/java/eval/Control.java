@@ -1,7 +1,12 @@
 package eval;
 
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.SortedSet;
+import java.util.Spliterator;
+import java.util.concurrent.Callable;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -18,15 +23,18 @@ class Util {
 }
 
 public interface Control {
+	default void parallelEval(int nVariables) { eval(new Tuple(nVariables)); }
+
 	void eval(Tuple t);
 
 	String prettyPrint(int indent);
 
-	public static Control forAll(Relation2 rel, List<Pair<Integer, Integer>> test,
+	public static Control forAll(EvaluationContext ctx,
+								 Relation2 rel, List<Pair<Integer, Integer>> test,
 								 List<Pair<Integer, Long>> consts,
 								 List<Pair<Integer, Integer>> assign,
 								 Control cont) {
-		return new ForAll(rel, test, consts, assign, cont);
+		return new ForAll(ctx, rel, test, consts, assign, cont);
 	}
 
 	public static Control ifNotExists(Relation2 rel, List<Pair<Integer, Integer>> test,
@@ -188,6 +196,7 @@ class ForAll implements Control {
 	private List<Pair<Integer, Integer>> test;
 	private List<Pair<Integer, Integer>> assign;
 	private List<Pair<Integer, Long>> consts;
+	private EvaluationContext ctx;
 
 	private Control cont;
 	private Tuple minKey, maxKey;
@@ -196,7 +205,8 @@ class ForAll implements Control {
 	   test - pairs of (columns, tuple position) to test for equality
 	   assign - pairs of (columns, tuple position) to assign
 	 */
-	ForAll(Relation2 rel, List<Pair<Integer, Integer>> test, List<Pair<Integer, Long>> consts,
+	ForAll(EvaluationContext ctx, Relation2 rel,
+		   List<Pair<Integer, Integer>> test, List<Pair<Integer, Long>> consts,
 		   List<Pair<Integer, Integer>> assign, Control cont) {
 
 		this.rel = rel;
@@ -204,6 +214,7 @@ class ForAll implements Control {
 		this.test = test;
 		this.consts = consts;
 		this.assign = assign;
+		this.ctx = ctx;
 		Index index = new Index(Stream.concat(test.stream(), consts.stream())
 								.map(p -> p.getLeft()).collect(Collectors.toList()), rel.arity());
 		this.view = rel.getReadOnlyView(index);
@@ -219,9 +230,6 @@ class ForAll implements Control {
 	}
 
 	public void eval(Tuple t) {
-		// set an index for the relation
-		// rel.setIndex(index);
-
 		// populate the variable part of the prefix
 		for (Pair<Integer, Integer> c : test) {
 			minKey.set(c.getLeft(), t.get(c.getRight()));
@@ -234,6 +242,79 @@ class ForAll implements Control {
 				t.set(p.getRight(), r.get(p.getLeft()));
 			}
 			cont.eval(t);
+		}
+	}
+
+	// private static class SkipIterator<T> implements Iterator<T> {
+	// 	private Iterator<T> it;
+	// 	private int skip;
+	// 	private boolean hasNext;
+
+	// 	public boolean hasNext() {
+	// 		return hasNext;
+	// 	}
+
+	// 	public T next() {
+	// 		T nxt = it.next();
+	// 		for (int i = 0; i < skip; ++i) {
+	// 			if (it.hasNext()) {
+	// 				it.next();
+	// 			}
+	// 		}
+	// 		return nxt;
+	// 	}
+
+	// 	public SkipIterator(Iterator<T> it, int skip) {
+	// 		hasNext = it.hasNext();
+	// 		this.it = it;
+	// 		this.skip = skip;
+	// 	}
+	// }
+
+
+	@Override public void parallelEval(int nVariables) {
+		if (!test.isEmpty()) {
+			throw new RuntimeException("Parallel eval can be called only when no variables are bound (e.g. for the first literal in a clause).");
+		}
+
+
+		SortedSet<Tuple> tuples = view.lookup(minKey, maxKey);
+
+		List<Spliterator<Tuple>> spliterators = new ArrayList<>();
+		spliterators.add(tuples.spliterator());
+
+		int numsplits = 2;
+		for (int i = 0; i < numsplits; ++i) {
+			ListIterator<Spliterator<Tuple>> it = spliterators.listIterator();
+
+			while (it.hasNext()) {
+				Spliterator<Tuple> s = it.next().trySplit();
+				if (s != null) {
+					it.add(s);
+				}
+			}
+		}
+
+		System.out.println("Num splits " + spliterators.size());
+
+		List<Callable<Void>> callables = new ArrayList<>();
+		for (Spliterator<Tuple> sit : spliterators) {
+			callables.add(() -> {
+					Tuple t = new Tuple(nVariables);
+					sit.forEachRemaining((Tuple r) -> {
+							for (Pair<Integer, Integer> p : assign) {
+								t.set(p.getRight(), r.get(p.getLeft()));
+							}
+							cont.eval(t);
+						});
+					return null;
+				});
+		}
+
+		try {
+			ctx.getExecutorService().invokeAll(callables);
+		} catch (InterruptedException e) {
+			throw new RuntimeException(e);
 		}
 	}
 

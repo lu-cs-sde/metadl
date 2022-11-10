@@ -159,6 +159,7 @@ public class Compiler {
 			case EVAL_INTERNAL_PARALLEL:
 				checkProgram(prog, opts);
 				prog.evalParallel(ctx, opts);
+				ctx.getExecutorService().shutdown();
 				break;
 			case EVAL_SOUFFLE:
 				checkProgram(prog, opts);

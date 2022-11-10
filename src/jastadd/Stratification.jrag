@@ -150,67 +150,79 @@ aspect Stratification {
 		return strata;
 	}
 
-	public class ParallelStratum implements Callable<java.util.List<ParallelStratum>> {
+	public class ParallelStratum implements Runnable {
 		Stratum s;
-		int nPreds;
-		java.util.List<ParallelStratum> deps = new ArrayList<>();
 
-		public ParallelStratum(Stratum s, int nPreds) {
+		java.util.List<Future<?>> deps = new ArrayList<>();
+
+		public ParallelStratum(Stratum s) {
 			this.s = s;
-			this.nPreds = nPreds;
 		}
 
-		public void decPreds() {
-			assert nPreds > 0;
-			nPreds--;
-		}
-
-		public boolean isReady() {
-			return nPreds == 0;
-		}
-
-		@Override public java.util.List<ParallelStratum> call() {
-			// evaluate the current stratum
+		@Override public void run() {
+			// wait for all predecessors to finnish before
+			// starting this stratum
+			for (Future<?> dep : deps) {
+				try {
+					dep.get();
+				} catch (Exception e) {
+					throw new RuntimeException(e);
+				}
+			}
 			s.eval();
-			return deps;
 		}
 
-		public void addSuccessor(ParallelStratum dep) {
-			deps.add(dep);
+		public void addPredecessor(Future<?> f) {
+			deps.add(f);
 		}
 	}
 
-	syn java.util.List<ParallelStratum> Program.parallelStrata(EvaluationContext ctx, ExecutorService exec) {
+	public void Program.evalParallelStrata(EvaluationContext ctx) {
 		Map<Graph<Clause, DefaultEdge>, ParallelStratum> sccToStratum = new HashMap<>();
-		java.util.List<ParallelStratum> initialStrata = new ArrayList<>();
 
 		ClauseDependencyGraph pdg = clauseDependencyGraph();
 		Graph<Graph<Clause, DefaultEdge>, DefaultEdge> pdSCC = clauseDependencySCC();
 
-		TopologicalOrderIterator<Graph<Clause, DefaultEdge>, DefaultEdge> it = new
-			TopologicalOrderIterator<>(pdSCC);
 
+		Map<ParallelStratum, Future<?>> futures = new HashMap<>();
+		java.util.List<Future<?>> finalStrata = new ArrayList<>();
 
 		for (Graph<Clause, DefaultEdge> scc : pdSCC.vertexSet()) {
-			ParallelStratum s = new ParallelStratum(genStratum(ctx, pdg, scc), pdSCC.incomingEdgesOf(scc).size());
+			ParallelStratum s = new ParallelStratum(genStratum(ctx, pdg, scc));
 			sccToStratum.put(scc, s);
 		}
 
-		for (Graph<Clause, DefaultEdge> scc : pdSCC.vertexSet()) {
-			ParallelStratum s = sccToStratum.get(scc);
-			assert s != null;
-			sccToStratum.put(scc, s);
-			if (pdSCC.incomingEdgesOf(scc).isEmpty()) {
-				initialStrata.add(s);
+		TopologicalOrderIterator<Graph<Clause, DefaultEdge>, DefaultEdge> it =
+			new TopologicalOrderIterator<>(pdSCC);
+
+		ExecutorService exec = ctx.getExecutorService();
+
+		while (it.hasNext()) {
+			Graph<Clause, DefaultEdge> scc = it.next();
+			ParallelStratum ps = sccToStratum.get(scc);
+
+			for(DefaultEdge e : pdSCC.incomingEdgesOf(scc)) {
+				Graph<Clause, DefaultEdge> predSCC = pdSCC.getEdgeSource(e);
+				Future<?> f = futures.get(sccToStratum.get(predSCC));
+				assert f != null;
+				ps.addPredecessor(f);
 			}
 
-			for (DefaultEdge e : pdSCC.outgoingEdgesOf(scc)) {
-				ParallelStratum d = sccToStratum.get(pdSCC.getEdgeTarget(e));
-				assert d != null;
-				s.addSuccessor(d);
+			Future<?> f = exec.submit(ps);
+			futures.put(ps, f);
+
+			if (pdSCC.outgoingEdgesOf(scc).isEmpty()) {
+				finalStrata.add(f);
 			}
 		}
-		return initialStrata;
+
+		try {
+			for (Future<?> f : finalStrata) {
+				f.get();
+			}
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
 	}
 
 	inh Graph<Graph<Clause, DefaultEdge>, DefaultEdge> FormalPredicate.clauseDependencySCC();

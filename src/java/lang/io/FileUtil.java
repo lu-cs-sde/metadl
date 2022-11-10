@@ -17,8 +17,8 @@ import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.stream.Collectors;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.IOFileFilter;
@@ -145,36 +145,22 @@ public class FileUtil {
 									DatalogProjectionSink sink,
 									java.util.List<String> srcs) throws IOException {
 
-		if (opts.getAction() == Action.EVAL_INTERNAL_PARALLEL) {
-			int hwThreads = Runtime.getRuntime().availableProcessors();
-			ExecutorService exec = Executors.newFixedThreadPool(Math.max(1, hwThreads / 2));
-			// ExecutorService exec = Executors.newSingleThreadExecutor();
+		ExecutorService exec = ctx.getExecutorService();
 
-			List<Future<IOException>> exceptions = new ArrayList<>();
-
-			for (String src : srcs) {
-				exceptions.add(exec.submit(new Callable<IOException>() {
-						@Override public IOException call() {
-							try {
-								profile().startTimer("clang_and_datalog_projection", src);
-								clang.DatalogProjection dp = new clang.DatalogProjection(new FileIdDatabase(), sink);
-								dp.project(src, opts.getClangArgs());
-								profile().stopTimer("clang_and_datalog_projection", src);
-							} catch (IOException e) {
-								return e;
-							}
-							return null;
-						};
-					}));
-			}
-
-			exec.shutdown();
-			try {
-				exec.awaitTermination(Integer.MAX_VALUE, java.util.concurrent.TimeUnit.DAYS);
-			} catch (InterruptedException e) {
-				throw new RuntimeException(e);
-			}
-
+		try {
+			List<Future<IOException>> exceptions = exec.invokeAll(srcs.stream().map(src -> new Callable<IOException>() {
+					@Override public IOException call() {
+						try {
+							profile().startTimer("clang_and_datalog_projection", src);
+							clang.DatalogProjection dp = new clang.DatalogProjection(new FileIdDatabase(), sink);
+							dp.project(src, opts.getClangArgs());
+							profile().stopTimer("clang_and_datalog_projection", src);
+						} catch (IOException e) {
+							return e;
+						}
+						return null;
+					}
+				}).collect(Collectors.toList()));
 			// look through the results and re-throw any IOExceptions
 			for (Future<IOException> e : exceptions) {
 				try {
@@ -186,12 +172,8 @@ public class FileUtil {
 					throw new RuntimeException(e1);
 				}
 			}
-		} else {
-			clang.DatalogProjection dp = new clang.DatalogProjection(new FileIdDatabase(), sink);
-
-			for (String src : srcs) {
-				dp.project(src, opts.getClangArgs());
-			}
+		} catch (InterruptedException e) {
+			throw new RuntimeException(e);
 		}
 	}
 

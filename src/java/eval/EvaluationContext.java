@@ -4,6 +4,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 import lang.ast.FormalPredicate;
 
 public class EvaluationContext {
@@ -101,5 +104,14 @@ public class EvaluationContext {
 		for (Relation2 r : nextMap.values()) {
 			r.clear();
 		}
+	}
+
+	private ExecutorService execService = null;
+	public ExecutorService getExecutorService() {
+		if (execService != null)
+			return execService;
+		int hwThreads = Runtime.getRuntime().availableProcessors();
+		execService = Executors.newFixedThreadPool(Math.max(1, hwThreads / 2));
+		return execService;
 	}
 }

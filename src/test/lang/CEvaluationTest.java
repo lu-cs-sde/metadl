@@ -41,4 +41,23 @@ public class CEvaluationTest {
 							 "c",
 							 "-e metadl");
 	}
+
+	@DisplayName("Evaluate MetaDL-C programs with the parallel internal evaluator")
+	@ParameterizedTest
+	@MethodSource("metadlCTests")
+	void evaluationTestMetaDLCParallelInternal(String fileName) throws Exception {
+		String analyzedFilesDir = "tests/clang/evaluation/src";
+		List<File> analyzedFiles = FileUtil.flattenFilesAndDirs(Collections.singletonList(new File(analyzedFilesDir, fileName)), "*.c");
+
+		Util.singleEvaluationTest("tests/output/",
+							 "tests/clang/evaluation/facts",
+							 analyzedFiles,
+							 "tests/clang/evaluation",
+							 "tests/clang/evaluation/expected",
+							 fileName,
+							 ".mdl",
+							 "c",
+							 "-e metadl-par");
+	}
+
 }

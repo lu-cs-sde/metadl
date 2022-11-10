@@ -313,7 +313,7 @@ aspect CodeGen {
 			if (assign.isEmpty())
 				return Control.ifExists(rel, test, consts, cont);
 			else
-				return Control.forAll(rel, test, consts, assign, cont);
+				return Control.forAll(ctx, rel, test, consts, assign, cont);
 		}
 	}
 

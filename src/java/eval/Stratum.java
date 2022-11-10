@@ -44,8 +44,10 @@ public interface Stratum {
 
 					// evaluate all statements
 					for (Pair<Control, Integer> c : stmts) {
-						Tuple t = new Tuple(c.getRight());
-						c.getLeft().eval(t);
+						int nVars = c.getRight();
+						Control stmt = c.getLeft();
+						// Tuple t = new Tuple(nVars);
+						stmt.parallelEval(nVars);
 					}
 
 					// insert the deltas into the main relations; if there's any

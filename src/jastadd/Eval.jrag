@@ -222,47 +222,7 @@ aspect Eval {
 		dumpStrata();
 		clauseDependencyGraph().dump();
 
-		int hwThreads = Runtime.getRuntime().availableProcessors();
-		ExecutorService exec = Executors.newFixedThreadPool(Math.max(1, hwThreads / 2));
-
-		java.util.List<ParallelStratum> readyStrata = new LinkedList<>(parallelStrata(ctx, exec));
-		LinkedList<Future<java.util.List<ParallelStratum>>> futures = new LinkedList<>();
-
-		while (!(readyStrata.isEmpty() && futures.isEmpty())) {
-			// schedule any stratum that is ready
-			for (ParallelStratum s : readyStrata) {
-				futures.add(exec.submit(s));
-			}
-			readyStrata.clear();
-
-			// iterate over all futures, check if they are done;
-			// if they are, then decrement the counters of successor strata
-			ListIterator<Future<java.util.List<ParallelStratum>>> it =  futures.listIterator(0);
-			while (it.hasNext()) {
-				Future<java.util.List<ParallelStratum>> f = it.next();
-				if (f.isDone()) {
-					it.remove();
-					try {
-						java.util.List<ParallelStratum> succs = f.get();
-						for (ParallelStratum s : succs) {
-							s.decPreds();
-							if (s.isReady())
-								readyStrata.add(s);
-						}
-					} catch (InterruptedException e) {
-						throw new RuntimeException(e);
-					} catch (ExecutionException e) {
-						throw new RuntimeException(e);
-					}
-				}
-			}
-		}
-
-		exec.shutdown();
-		try {
-			exec.awaitTermination(Integer.MAX_VALUE, java.util.concurrent.TimeUnit.DAYS);
-		} catch (InterruptedException e) {
-		}
+		evalParallelStrata(ctx);
 
 		evalOUTPUT(ctx, opts);
 		if (false) dumpAllRelations(ctx);

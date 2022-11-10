@@ -1,47 +1,21 @@
 package lang;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
-
 import java.io.File;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.Iterator;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.apache.commons.lang3.tuple.Pair;
-import org.apache.commons.io.filefilter.FileFileFilter;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.IOFileFilter;
 import org.apache.commons.io.filefilter.WildcardFileFilter;
-import org.apache.commons.io.filefilter.TrueFileFilter;
-
-import org.apache.commons.io.FileUtils;
-import org.junit.Ignore;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
-import eval.EvaluationContext;
-import eval.Relation2;
-import lang.ast.FormalPredicate;
-import lang.ast.GlobalNames;
-import lang.ast.PredicateRef;
-import lang.ast.Program;
-import lang.ast.PredicateSymbol;
-import lang.ast.PredicateType;
-import lang.ast.Literal;
-import lang.io.CSVUtil;
 import lang.io.FileUtil;
 import lang.io.SimpleLogger;
-import lang.relation.PseudoTuple;
-import lang.relation.RelationWrapper;
 
 public class EvaluationTest {
 	@DisplayName("Compare Internal Evaluation to Souffle")

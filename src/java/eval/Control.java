@@ -199,7 +199,6 @@ class ForAll implements Control {
 	private EvaluationContext ctx;
 
 	private Control cont;
-	private Tuple minKey, maxKey;
 	private Relation2.ReadOnlyView view;
 	/**
 	   test - pairs of (columns, tuple position) to test for equality
@@ -218,18 +217,17 @@ class ForAll implements Control {
 		Index index = new Index(Stream.concat(test.stream(), consts.stream())
 								.map(p -> p.getLeft()).collect(Collectors.toList()), rel.arity());
 		this.view = rel.getReadOnlyView(index);
-		// allocate memory for the prefix
-		minKey = rel.infTuple();
-		maxKey = rel.supTuple();
+	}
 
-		// populate the constant part
+	public void eval(Tuple t) {
+		Tuple minKey = rel.infTuple();
+		Tuple maxKey = rel.supTuple();
+
 		for (Pair<Integer, Long> c : consts) {
 			minKey.set(c.getLeft(), c.getRight());
 			maxKey.set(c.getLeft(), c.getRight());
 		}
-	}
 
-	public void eval(Tuple t) {
 		// populate the variable part of the prefix
 		for (Pair<Integer, Integer> c : test) {
 			minKey.set(c.getLeft(), t.get(c.getRight()));
@@ -245,71 +243,35 @@ class ForAll implements Control {
 		}
 	}
 
-	// private static class SkipIterator<T> implements Iterator<T> {
-	// 	private Iterator<T> it;
-	// 	private int skip;
-	// 	private boolean hasNext;
-
-	// 	public boolean hasNext() {
-	// 		return hasNext;
-	// 	}
-
-	// 	public T next() {
-	// 		T nxt = it.next();
-	// 		for (int i = 0; i < skip; ++i) {
-	// 			if (it.hasNext()) {
-	// 				it.next();
-	// 			}
-	// 		}
-	// 		return nxt;
-	// 	}
-
-	// 	public SkipIterator(Iterator<T> it, int skip) {
-	// 		hasNext = it.hasNext();
-	// 		this.it = it;
-	// 		this.skip = skip;
-	// 	}
-	// }
-
-
 	@Override public void parallelEval(int nVariables) {
 		if (!test.isEmpty()) {
 			throw new RuntimeException("Parallel eval can be called only when no variables are bound (e.g. for the first literal in a clause).");
 		}
 
+		Tuple minKey = rel.infTuple();
+		Tuple maxKey = rel.supTuple();
+
+		for (Pair<Integer, Long> c : consts) {
+			minKey.set(c.getLeft(), c.getRight());
+			maxKey.set(c.getLeft(), c.getRight());
+		}
 
 		SortedSet<Tuple> tuples = view.lookup(minKey, maxKey);
 
-		List<Spliterator<Tuple>> spliterators = new ArrayList<>();
-		spliterators.add(tuples.spliterator());
-
-		int numsplits = 2;
-		for (int i = 0; i < numsplits; ++i) {
-			ListIterator<Spliterator<Tuple>> it = spliterators.listIterator();
-
-			while (it.hasNext()) {
-				Spliterator<Tuple> s = it.next().trySplit();
-				if (s != null) {
-					it.add(s);
-				}
-			}
-		}
-
-		System.out.println("Num splits " + spliterators.size());
-
 		List<Callable<Void>> callables = new ArrayList<>();
-		for (Spliterator<Tuple> sit : spliterators) {
-			callables.add(() -> {
-					Tuple t = new Tuple(nVariables);
-					sit.forEachRemaining((Tuple r) -> {
-							for (Pair<Integer, Integer> p : assign) {
-								t.set(p.getRight(), r.get(p.getLeft()));
-							}
-							cont.eval(t);
-						});
-					return null;
+		for (Tuple r : tuples) {
+			callables.add(new Callable<Void>() {
+					@Override public Void call() {
+						Tuple t = new Tuple(nVariables);
+						for (Pair<Integer, Integer> p : assign) {
+							t.set(p.getRight(), r.get(p.getLeft()));
+						}
+						cont.eval(t);
+						return null;
+					}
 				});
 		}
+
 
 		try {
 			ctx.getExecutorService().invokeAll(callables);
@@ -346,7 +308,6 @@ class IfExists implements Control {
 	private List<Pair<Integer, Integer>> test;
 	private List<Pair<Integer, Long>> consts;
 	private Control cont;
-	private Tuple minKey, maxKey;
 	private Relation2.ReadOnlyView view;
 	private final boolean positive;
 
@@ -360,17 +321,18 @@ class IfExists implements Control {
 		Index index = new Index(Stream.concat(test.stream(), consts.stream())
 						  .map(p -> p.getLeft()).collect(Collectors.toList()), rel.arity());
 		this.view = rel.getReadOnlyView(index);
-		this.minKey = rel.infTuple();
-		this.maxKey = rel.supTuple();
+	}
+
+	public void eval(Tuple t) {
+		Tuple minKey = rel.infTuple();
+		Tuple maxKey = rel.supTuple();
+
 		// populate the constant part
 		for (Pair<Integer, Long> c : consts) {
 			minKey.set(c.getLeft(), c.getRight());
 			maxKey.set(c.getLeft(), c.getRight());
 		}
-	}
 
-	public void eval(Tuple t) {
-		// rel.setIndex(index);
 		// populate the variable part of the prefix
 		for (Pair<Integer, Integer> c : test) {
 			minKey.set(c.getLeft(), t.get(c.getRight()));
@@ -418,8 +380,6 @@ class Insert implements Control {
 		this.assign = assign;
 		this.consts = consts;
 		this.cont = cont;
-
-
 	}
 
 	@Override public void eval(Tuple t) {

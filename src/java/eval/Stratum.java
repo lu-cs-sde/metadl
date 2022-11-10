@@ -21,7 +21,8 @@ public interface Stratum {
 	   definedRelations = a list of relations defined in this stratum, as a (Rel, nextRel, deltaRel) pair.
 	   stmts = the list of control statements to execute paired with the number of variables in the statement
 	 */
-	public static Stratum fixpoint(List<Triple<Relation2, Relation2, Relation2>> definedRelations, List<Pair<Control, Integer>> stmts,
+	public static Stratum fixpoint(List<Triple<Relation2, Relation2, Relation2>> definedRelations,
+								   List<Pair<Control, Integer>> stmts,
 								   String desc) {
 		return new Stratum() {
 			@Override public void eval() {
@@ -46,7 +47,6 @@ public interface Stratum {
 					for (Pair<Control, Integer> c : stmts) {
 						int nVars = c.getRight();
 						Control stmt = c.getLeft();
-						// Tuple t = new Tuple(nVars);
 						stmt.parallelEval(nVars);
 					}
 

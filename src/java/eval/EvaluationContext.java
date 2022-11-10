@@ -111,7 +111,18 @@ public class EvaluationContext {
 		if (execService != null)
 			return execService;
 		int hwThreads = Runtime.getRuntime().availableProcessors();
-		execService = Executors.newFixedThreadPool(Math.max(1, hwThreads / 2));
+		// execService = Executors.newFixedThreadPool(Math.max(1, hwThreads / 2));
+
+		// The fixed thread pool executes work in order of submission. This
+		// does not work when running a parallel for-all loop inside parallel strata.
+		execService = Executors.newWorkStealingPool(Math.max(1, hwThreads / 2));
+
+		// execService = Executors.newSingleThreadExecutor();
 		return execService;
+	}
+
+	public void cleanup() {
+		if (execService != null)
+			execService.shutdown();
 	}
 }

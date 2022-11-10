@@ -159,7 +159,6 @@ public class Compiler {
 			case EVAL_INTERNAL_PARALLEL:
 				checkProgram(prog, opts);
 				prog.evalParallel(ctx, opts);
-				ctx.getExecutorService().shutdown();
 				break;
 			case EVAL_SOUFFLE:
 				checkProgram(prog, opts);
@@ -234,7 +233,10 @@ public class Compiler {
 		}
 
 		profile().startTimer("main", "total");
-		run(new EvaluationContext(), opts);
+		EvaluationContext ctx = new EvaluationContext();
+		run(ctx, opts);
+		ctx.cleanup();
+
 		profile().stopTimer("main", "total");
 
 		totalTime.stop();

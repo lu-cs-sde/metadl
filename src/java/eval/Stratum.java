@@ -2,14 +2,13 @@ package eval;
 
 import java.io.PrintStream;
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 
 import lang.io.SimpleLogger;
+import static prof.Profile.profile;
 
 
 public interface Stratum {
@@ -27,10 +26,11 @@ public interface Stratum {
 		return new Stratum() {
 			@Override public void eval() {
 
-				SimpleLogger.logger().time("=== Run stratum: ");
+				SimpleLogger.logger().time("=== Run stratum:\n");
 				SimpleLogger.logger().time(desc);
 
 				StopWatch timer = StopWatch.createStarted();
+				profile().startTimer("strata", String.format("%x", desc.hashCode()));
 				boolean change;
 
 				// copy from rel to delta; rel may contain EDB tuples
@@ -68,7 +68,7 @@ public interface Stratum {
 						next.clear();
 					}
 				} while (change);
-
+				profile().stopTimer("strata", String.format("%x", desc.hashCode()));
 				timer.stop();
 
 				SimpleLogger.logger().time("=== " + timer.getTime() + " ms");
@@ -76,7 +76,7 @@ public interface Stratum {
 			}
 
 			@Override public void prettyPrint(PrintStream s) {
-				s.print("BEGIN FIXPOINT\n");
+				s.print(String.format("BEGIN FIXPOINT [%x]\n", desc.hashCode()));
 				s.println(desc);
 
 				for (Pair<Control, Integer> c : stmts) {
@@ -94,14 +94,16 @@ public interface Stratum {
 	public static Stratum single(List<Control> stmts, int nEvalVariables, String desc) {
 		return new Stratum() {
 			@Override public void eval() {
-				SimpleLogger.logger().time("=== Run stratum:");
+				SimpleLogger.logger().time("=== Run stratum:\n");
 				SimpleLogger.logger().time(desc);
 
 				StopWatch timer = StopWatch.createStarted();
+				profile().startTimer("strata", String.format("%x", desc.hashCode()));
 				for (Control c : stmts) {
 					Tuple t = new Tuple(nEvalVariables);
 					c.eval(t);
 				}
+				profile().stopTimer("strata", String.format("%x", desc.hashCode()));
 				timer.stop();
 
 				SimpleLogger.logger().time("=== " + timer.getTime() + " ms");
@@ -110,7 +112,7 @@ public interface Stratum {
 			}
 
 			@Override public void prettyPrint(PrintStream s) {
-				s.print("BEGIN SINGLE\n");
+				s.print(String.format("BEGIN SINGLE [%x]\n", desc.hashCode()));
 				s.println(desc);
 
 				for (Control c : stmts) {

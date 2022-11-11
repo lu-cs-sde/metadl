@@ -12,7 +12,6 @@ import lang.io.SimpleLogger;
 import org.apache.commons.lang3.time.StopWatch;
 
 import org.json.JSONObject;
-import org.json.JSONWriter;
 
 public class Profile {
     private static Profile PROFILE = new Profile();
@@ -50,7 +49,7 @@ public class Profile {
 		StopWatch t = timers.get(group).get(timer);
 		t.stop();
 		timers.get(group).remove(timer);
-		setCounter(group, timer, t.getTime());
+		addCounter(group, timer, t.getTime());
     }
 
     public synchronized void setCounter(String group, String counter, long value) {
@@ -68,7 +67,11 @@ public class Profile {
 		}
     }
 
-	public synchronized void incCounter(String group, String counter) {
+	public void incCounter(String group, String counter) {
+		addCounter(group, counter, 1);
+	}
+
+	public synchronized void addCounter(String group, String counter, long v) {
 		if (output == null)
 			return;
 
@@ -80,11 +83,12 @@ public class Profile {
 
 		Long prev = cg.get(counter);
 		if (prev != null) {
-			cg.put(counter, prev + 1);
+			cg.put(counter, prev + v);
 		} else {
-			cg.put(counter, (long) 1);
+			cg.put(counter, (long) v);
 		}
 	}
+
 
 	public synchronized void writeOut() {
 		if (output == null)

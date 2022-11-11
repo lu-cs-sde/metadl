@@ -64,7 +64,7 @@ public class EvaluationContext {
 			synchronized (m) {
 				rel = m.get(name);
 				if (rel == null) {
-					rel = new Relation2(arity);
+					rel = new Relation2(arity, name);
 					m.put(name, rel);
 				}
 				return rel;
@@ -81,11 +81,11 @@ public class EvaluationContext {
 	}
 
 	public Relation2 getDeltaRelation(FormalPredicate fp) {
-		return getRelationInternal(fp.getPRED_ID(), fp.realArity(), deltaMap);
+		return getRelationInternal(fp.getPRED_ID() + "_delta", fp.realArity(), deltaMap);
 	}
 
 	public Relation2 getNextRelation(FormalPredicate fp) {
-		return getRelationInternal(fp.getPRED_ID(), fp.realArity(), nextMap);
+		return getRelationInternal(fp.getPRED_ID() + "_next", fp.realArity(), nextMap);
 	}
 
 	/**

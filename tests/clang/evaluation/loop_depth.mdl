@@ -30,10 +30,12 @@ LoopForCallDetail(src, ls, le, fun) :- LoopForCall(l, c), FunCall(fun, c), SRC(l
 LoopDepth(l, 0) :- Loop(l), NOT(EnclosedLoops(_, l)).
 LoopDepth(l, i) :- LoopDepth(l_outer, depth_outer), EnclosedLoops(l_outer, l), BIND(i, depth_outer + 1).
 
-LoopDepthDetail(sl, sc, el, ec, f, d) :- LoopDepth(l, d), SRC(l, sl, sc, el, ec, f).
+NotMaxLoopDepth(l, i) :- LoopDepth(l, i), LoopDepth(l, j), GT(j, i).
+
+LoopDepthDetail(sl, sc, el, ec, f, d) :- LoopDepth(l, d), NOT(NotMaxLoopDepth(l, d)), SRC(l, sl, sc, el, ec, f).
 
 LocalLoopDepthForCall(c, 0) :- FunCall(_, c), NOT(LoopForCall(_, c)).
-LocalLoopDepthForCall(c, i) :- LoopForCall(l, c), LoopDepth(l, j), BIND(i, j + 1).
+LocalLoopDepthForCall(c, i) :- LoopForCall(l, c), LoopDepth(l, j), NOT(NotMaxLoopDepth(l, j)), BIND(i, j + 1).
 
 
 TransitiveCall(caller_name, callee_name) :- Call(_, _, caller_name, callee_name).
@@ -48,8 +50,11 @@ GlobalLoopDepthForFunction(callee_name, k) :- Call(caller, call_expr, caller_nam
 			      GlobalLoopDepthForFunction(caller_name, i), LocalLoopDepthForCall(call_expr, j), BIND(k, i + j).
 
 GlobalLoopDepth(l, k) :- LoopInFunction(l, f_name), LoopDepth(l, i), GlobalLoopDepthForFunction(f_name, j), BIND(k, i+j).
+NotMaxGlobalLoopDepth(l, n) :- GlobalLoopDepth(l, k), GlobalLoopDepth(l, n), GT(k, n).
 
-GlobalLoopDepthDetail(src, ls, le, depth) :- GlobalLoopDepth(l, depth), SRC(l, ls, _, le, _, src).
+GlobalLoopDepthDetail(src, ls, le, depth) :- GlobalLoopDepth(l, depth), NOT(NotMaxGlobalLoopDepth(l, depth)), SRC(l, ls, _, le, _, src).
+
+
 
 OUTPUT('GlobalLoopDepthDetail, "GlobalLoopDepthDetail.csv", "csv").
 OUTPUT('LoopForCallDetail, "LoopForCallDetail.csv", "csv").

@@ -154,7 +154,7 @@ aspect PatternToDatalog {
 	}
 
 	static boolean ASTNode.isMetaVarToken(String token) {
-		return java.util.regex.Pattern.matches("`[\\p{Alpha}_][\\p{Alnum}_]*", token);
+		return java.util.regex.Pattern.matches("[$`][\\p{Alpha}_][\\p{Alnum}_]*", token);
 	}
 
 	ASTNode implements ObjLangASTNode;
@@ -279,6 +279,7 @@ aspect PatternToDatalog {
 		// all children, if any, are gaps
 		return true;
 	}
+	//	syn lazy boolean ASTNode.isTrivial() = false;
 
 	public void ASTNode.metaVarLiterals2(AnalyzeContext ctx, lang.ast.CommonVariable root,
 										 java.util.List<lang.ast.CommonLiteral> lits) {
@@ -340,6 +341,7 @@ aspect PatternToDatalog {
 		}
 
 		int childIndex = getNumChild();
+		boolean literalForThisNode = false;
 		for (Pair<String, String> t : namedTokens()) {
 			String varName = isMetaVarToken(t.getRight()) ? t.getRight() : ("t_" + UID + "_" + childIndex);
 			if (!isWildcardToken(t.getRight())) {
@@ -347,6 +349,7 @@ aspect PatternToDatalog {
 				lits.add(literal(ctx.progRelName, str(name()), root != null ? root : var(varName()), childIndex, var(varName), "_"));
 				// Add a tuple to Terminal relation
 				lits.add(literal(ctx.progRelName, t.getLeft(), var(varName), "_", "_", isMetaVarToken(t.getRight()) ? "_" : str(t.getRight())));
+				literalForThisNode = true;
 			}
 			childIndex++;
 		}
@@ -356,10 +359,11 @@ aspect PatternToDatalog {
 			if (!child.isTrivial()) {
 				lits.add(literal(ctx.progRelName, str(name()), root != null ? root : var(varName()), i , var(child.varName()), "_"));
 				child.literals2(ctx, null, lits);
+				literalForThisNode = true;
 			}
 		}
 
-		if (childIndex == 0) {
+		if (!literalForThisNode) {
 			// This node has no children, but it exists in the tree. Emit that.
 			lits.add(literal(ctx.progRelName, str(name()), root != null ? root : var(varName()), "_", "_", "_"));
 		}

@@ -431,6 +431,15 @@ public class AST {
 	//--------------------------------------------------------------------------------
 	public static class Decl extends Node {
 		String name = "";
+		Type type;
+
+		public boolean isNamed() {
+			return !name.isEmpty();
+		}
+
+		public String getName() {
+			return name;
+		}
 
 		@Override protected String extraInfo() {
 			return "'" + name + "'";
@@ -449,7 +458,6 @@ public class AST {
 
 	public static class FunctionDecl extends Decl {
 		public String mangledName = "";
-		public Type type = new Type();
 		public boolean variadic;
 
 		@Override protected String extraInfo() {
@@ -487,7 +495,6 @@ public class AST {
 	}
 
 	public static class VarDecl extends Decl {
-		public Type type;
 		public String init; // c, call or list
 		public String storageClass;
 
@@ -499,6 +506,20 @@ public class AST {
 
 		public void accept(ASTVisitor v) {
 			v.visit(this);
+		}
+	}
+
+	public static class FieldDecl extends Decl {
+		boolean isBitfield;
+
+		public void accept(ASTVisitor v) {
+			v.visit(this);
+		}
+
+		public Expr getBitFieldSize() {
+			if (isBitfield)
+				return (Expr) inner[0];
+			return null;
 		}
 	}
 
@@ -514,6 +535,24 @@ public class AST {
 		public Decl getDecl(int i) {
 			return (Decl) inner[i];
 		}
+	}
+
+	public static class RecordDecl extends Decl {
+		public String tagUsed;
+		public boolean completeDefinition;
+
+		public int getNumDecl() {
+			return inner.length;
+		}
+
+		public Decl getDecl(int i) {
+			return (Decl) inner[i];
+		}
+
+		public void accept(ASTVisitor v) {
+			v.visit(this);
+		}
+
 	}
 
 	public static class TypedefDecl extends Decl {

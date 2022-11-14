@@ -30,5 +30,7 @@ public interface ASTVisitor {
 	void visit(ParmVarDecl p);
 	void visit(FunctionDecl f);
 	void visit(VarDecl d);
+	void visit(RecordDecl d);
+	void visit(FieldDecl f);
 	void visit(TranslationUnitDecl tu);
 }

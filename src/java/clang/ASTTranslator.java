@@ -20,6 +20,7 @@ import clang.AST.DeclStmt;
 import clang.AST.DoStmt;
 import clang.AST.ExplicitCastExpr;
 import clang.AST.Expr;
+import clang.AST.FieldDecl;
 import clang.AST.ForStmt;
 import clang.AST.FunctionDecl;
 import clang.AST.IfStmt;
@@ -27,6 +28,7 @@ import clang.AST.ImplicitCastExpr;
 import clang.AST.IntegerLiteral;
 import clang.AST.Node;
 import clang.AST.ParmVarDecl;
+import clang.AST.RecordDecl;
 import clang.AST.ReturnStmt;
 import clang.AST.Stmt;
 import clang.AST.TranslationUnitDecl;
@@ -59,6 +61,7 @@ import lang.c.obj.ast.CompoundStatement;
 import lang.c.obj.ast.Constant;
 import lang.c.obj.ast.ConstantExpression;
 import lang.c.obj.ast.Declaration;
+import lang.c.obj.ast.DeclarationOrDefinition;
 import lang.c.obj.ast.DeclarationSpecifier;
 import lang.c.obj.ast.DeclarationStatement;
 import lang.c.obj.ast.DivExpression;
@@ -98,17 +101,19 @@ import lang.c.obj.ast.RShiftExpression;
 import lang.c.obj.ast.Register;
 import lang.c.obj.ast.Statement;
 import lang.c.obj.ast.Static;
+import lang.c.obj.ast.StructDeclaration;
+import lang.c.obj.ast.StructDeclarator;
+import lang.c.obj.ast.StructSpecifier;
 import lang.c.obj.ast.SubExpression;
 import lang.c.obj.ast.TranslationUnit;
 import lang.c.obj.ast.UnaryMinusExpression;
 import lang.c.obj.ast.UnaryPlusExpression;
+import lang.c.obj.ast.UnionSpecifier;
 import lang.c.obj.ast.UnknownDeclaration;
 import lang.c.obj.ast.UnknownExpression;
 import lang.c.obj.ast.UnknownStatement;
 import lang.c.obj.ast.UnknownTypeSpecifier;
 import lang.c.obj.ast.WhileStatement;
-import lang.c.obj.ast.DeclarationOrDefinition;
-import lang.io.SimpleLogger;
 
 
 public class ASTTranslator implements ASTVisitor {
@@ -131,6 +136,14 @@ public class ASTTranslator implements ASTVisitor {
 		ASTNode n = (T) nodeMap.get(node);
 		assert n != null;
 		return new Opt(n);
+	}
+
+	private <T extends ASTNode<ASTNode>> List<T> singletonList(T n) {
+		return new List<T>().add(n);
+	}
+
+	private List emptyList() {
+		return new List();
 	}
 
 	private <T extends ASTNode<ASTNode>, U extends ASTNode<ASTNode>> Opt<T> opt(Opt<U> opt, Function<U, T> cons) {
@@ -424,6 +437,52 @@ public class ASTTranslator implements ASTVisitor {
 		scSpecs.add(typeSpec);
 		Declaration d = new Declaration(scSpecs, new List().add(initDecl));
 		t(v, d);
+	}
+
+	@Override public void visit(FieldDecl v) {
+		Opt id;
+		if (v.name != null && v.name.length() > 0) {
+			id = new Opt(new IdentifierDeclarator(new Opt(), new Identifier(v.name)));
+		} else {
+			// bitfield padding, e.g.  "int : 5;"
+			id = new Opt();
+		}
+
+		Opt bitfieldSize;
+		if (v.isBitfield) {
+			bitfieldSize = new Opt(t(v.getBitFieldSize()));
+		} else {
+			bitfieldSize = new Opt();
+		}
+
+		List typeSpec = new List().add(new UnknownTypeSpecifier(v.type.qualType));
+
+		t(v, new StructDeclaration(typeSpec, new List(), new List().add(new StructDeclarator(id, bitfieldSize))));
+	}
+
+	@Override public void visit(RecordDecl d) {
+		List structDecls = new List();
+		for (int i = 0; i < d.getNumDecl(); ++i) {
+			if (d.getDecl(i) instanceof FieldDecl) {
+				structDecls.add(t(d.getDecl(i)));
+			} else if (d.getDecl(i) instanceof RecordDecl) {
+				structDecls.add(new StructDeclaration(new List().add(t(d.getDecl(i))), new List(), new List()));
+			} else {
+				// bail out
+				visit((Decl) d);
+			}
+		}
+
+		Opt name = d.isNamed() ? new Opt(new Identifier(d.getName())) : new Opt();
+
+		if (d.tagUsed.equals("struct")) {
+			t(d, new Declaration(singletonList(new StructSpecifier(name, structDecls)), emptyList()));
+		} else if (d.tagUsed.equals("union")) {
+			t(d, new Declaration(singletonList(new UnionSpecifier(name, structDecls)), emptyList()));
+		} else {
+			// bail out
+			visit((Decl) d);
+		}
 	}
 
 	@Override public void visit(TranslationUnitDecl tu) {

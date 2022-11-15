@@ -1,6 +1,7 @@
 package clang;
 
 import static prof.Profile.profile;
+import static clang.ASTTrans.*;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -79,6 +80,7 @@ import lang.c.obj.ast.IdentifierExpression;
 import lang.c.obj.ast.IfElseStatement;
 import lang.c.obj.ast.IfStatement;
 import lang.c.obj.ast.InitDeclarator;
+import lang.c.obj.ast.Initializer;
 import lang.c.obj.ast.InitializerExpression;
 import lang.c.obj.ast.LEQExpression;
 import lang.c.obj.ast.LShiftExpression;
@@ -91,7 +93,9 @@ import lang.c.obj.ast.NotExpression;
 import lang.c.obj.ast.Opt;
 import lang.c.obj.ast.OrExpression;
 import lang.c.obj.ast.ParameterDeclaration;
+import lang.c.obj.ast.ParameterType;
 import lang.c.obj.ast.ParameterVarArgType;
+import lang.c.obj.ast.Pointer;
 import lang.c.obj.ast.PointerDereferenceExpression;
 import lang.c.obj.ast.PostDecrementExpression;
 import lang.c.obj.ast.PostIncrementExpression;
@@ -389,7 +393,7 @@ public class ASTTranslator implements ASTVisitor {
 	}
 
 	@Override public void visit(FunctionDecl f) {
-		List paramDecls = new List();
+		List<ParameterType> paramDecls = new List<>();
 		for (int i = 0; i < f.getNumParam(); ++i) {
 			paramDecls.add(t(f.getParam(i)));
 		}
@@ -398,15 +402,15 @@ public class ASTTranslator implements ASTVisitor {
 			paramDecls.add(new ParameterVarArgType());
 		}
 
-		IdentifierDeclarator id = new IdentifierDeclarator(new Opt(), new Identifier(f.name));
-		FunctionDeclarator fd = new FunctionDeclarator(new Opt(), id, paramDecls);
+		IdentifierDeclarator id = new IdentifierDeclarator(new Opt<Pointer>(), new Identifier(f.name));
+		FunctionDeclarator fd = new FunctionDeclarator(new Opt<Pointer>(), id, paramDecls);
 		UnknownTypeSpecifier typeSpec = new UnknownTypeSpecifier(f.type.qualType);
 
 		DeclarationOrDefinition ext;
 		if (f.getBody() != null) {
-			ext = new FunctionDefinition(new List().add(typeSpec), fd, new List(), t(f.getBody()));
+			ext = new FunctionDefinition(new List<DeclarationSpecifier>().add(typeSpec), fd, new List<Declaration>(), t(f.getBody()));
 		} else {
-			ext = new Declaration(new List().add(typeSpec), new List().add(new InitDeclarator(fd, new Opt())));
+			ext = new Declaration(new List<DeclarationSpecifier>().add(typeSpec), new List<InitDeclarator>().add(new InitDeclarator(fd, new Opt<Initializer>())));
 		}
 		t(f, ext);
 	}
@@ -504,68 +508,19 @@ public class ASTTranslator implements ASTVisitor {
 		return nodeMap.get(root);
 	}
 
+	// An embedded DSL for writing AST to AST translators.
+	// Java is a rather verbose language to write a DSL in.
+	public ASTTrans<Expr, Expression> Expr_Expression = (Expr e) -> (Expression) null;
+	public ASTTrans<VarDecl, Declaration> VarDecl_Declaration = new ASTTrans<>() {
+			@Override public Declaration trans(VarDecl v) {
+				ASTTrans<VarDecl, List<DeclarationSpecifier>> scSpecs =
+				ASTTrans.<VarDecl, String, List<DeclarationSpecifier>>match((VarDecl vd) -> vd.storageClass)
+				.of(s -> s.equals("static"), list(Static::new))
+				.of(s -> s.equals("register"), list(Register::new))
+				.otherwise(list());
 
-	interface Function4<T0, T1, T2, T3, R> {
-		R apply(T0 t0, T1 t1, T2 t2, T3 t3);
-	}
-
-	interface Function3<T0, T1, T2, R> {
-		R apply(T0 t0, T1 t1, T2 t2);
-	}
-
-
-	class Builder {
-		public <T0, T1, T2, R> Expect3<T0, T1, T2, R> build(Function3<T0, T1, T2, R> f) {
-			Expect3<T0, T1, T2, R> ret = new Expect3<>();
-			ret.f = f;
-			return ret;
-		}
-
-
-		public <T0, T1, R> Expect2<T0, T1, R> build(BiFunction<T0, T1, R> f) {
-			Expect2<T0, T1, R> ret = new Expect2<>();
-			ret.f = f;
-			return ret;
-		}
-
-		public <T0, R> Expect1<T0, R> build(Function<T0, R> f) {
-			Expect1<T0, R> ret = new Expect1<>();
-			ret.f = f;
-			return ret;
-		}
-	}
-
-	class Expect3<T0, T1, T2, R> {
-		Function3<T0, T1, T2, R> f;
-		Expect2<T1, T2, R> bind(T0 t0) {
-			Expect2<T1, T2, R> ret = new Expect2<>();
-			ret.f = (t1, t2) -> f.apply(t0, t1, t2);
-			return ret;
-		}
-	}
-
-	class Expect2<T1, T2, R> {
-		BiFunction<T1, T2, R> f;
-		Expect1<T2, R> bind(T1 t1) {
-			Expect1<T2, R> ret = new Expect1<>();
-			ret.f = t2 -> f.apply(t1, t2);
-			return ret;
-		}
-	}
-
-	class Expect1<T2, R> {
-		Function<T2, R> f;
-		Expect0<R> bind(T2 t2) {
-			Expect0<R> ret = new Expect0<>();
-			ret.f = () -> f.apply(t2);
-			return ret;
-		}
-	}
-
-	class Expect0<R> {
-		Supplier<R> f;
-		R done() {
-			return f.get();
-		}
-	}
+				ASTTrans<VarDecl, Opt<Expression>> init = ASTTrans.opt(Expr_Expression.after((VarDecl vd) -> vd.getInit()));
+				return null;
+			}
+		};
 }

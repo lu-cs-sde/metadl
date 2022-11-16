@@ -48,7 +48,7 @@ public class AST {
 		public String kind;
 		public Loc loc;
 		public Range range;
-		public Node[] inner;
+		public Node[] inner = {};
 
 		public void prettyPrint(PrintStream ps) {
 			prettyPrintInternal(0, ps);

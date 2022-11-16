@@ -157,6 +157,9 @@ public class FileUtil {
 							profile().stopTimer("clang_and_datalog_projection", src);
 						} catch (IOException e) {
 							return e;
+						} catch (Exception e) {
+							SimpleLogger.logger().error("Unhandled exception when loading source file " + src + ".");
+							throw e;
 						}
 						return null;
 					}

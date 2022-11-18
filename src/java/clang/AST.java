@@ -560,4 +560,11 @@ public class AST {
 			v.visit(this);
 		}
 	}
+
+	public static class Comment extends Decl {
+		public String text = "";
+		public void accept(ASTVisitor v) {
+			v.visit(this);
+		}
+	}
 }

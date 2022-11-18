@@ -48,6 +48,7 @@ public class ASTImporter {
 		Pattern stmtName = Pattern.compile(".*Stmt");
 		Pattern declName = Pattern.compile(".*Decl");
 		Pattern exprName = Pattern.compile(".*(Expr|Operator|Literal).*");
+		Pattern commentName = Pattern.compile(".*Comment.*");
 
 		astTypeAdapter.registerNodeKindFalback(name -> {
 				if (stmtName.matcher(name).matches()) {
@@ -56,6 +57,8 @@ public class ASTImporter {
 					return "Decl";
 				} else if (exprName.matcher(name).matches()) {
 					return "Expr";
+				} else if (commentName.matcher(name).matches()) {
+					return "Comment";
 				} else {
 					return null;
 				}

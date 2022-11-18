@@ -33,4 +33,5 @@ public interface ASTVisitor {
 	void visit(RecordDecl d);
 	void visit(FieldDecl f);
 	void visit(TranslationUnitDecl tu);
+	void visit(Comment c);
 }

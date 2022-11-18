@@ -1,17 +1,17 @@
 package clang;
 
+import static clang.ASTTrans.list;
 import static prof.Profile.profile;
-import static clang.ASTTrans.*;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.function.Function;
-import java.util.function.Supplier;
 
 import clang.AST.ArraySubscriptExpr;
 import clang.AST.BinaryOperator;
 import clang.AST.CallExpr;
+import clang.AST.Comment;
 import clang.AST.CompoundAssignOperator;
 import clang.AST.CompoundStmt;
 import clang.AST.ConditionalOperator;
@@ -487,6 +487,10 @@ public class ASTTranslator implements ASTVisitor {
 			// bail out
 			visit((Decl) d);
 		}
+	}
+
+	@Override public void visit(Comment c) {
+		t(c, new lang.c.obj.ast.Comment(new List(), new List(), c.text, new List()));
 	}
 
 	@Override public void visit(TranslationUnitDecl tu) {

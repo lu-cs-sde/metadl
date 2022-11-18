@@ -509,3 +509,4 @@ UnknownDeclaration : Declaration ::= ASTNode*;
 UnknownStatement : Statement ::= ASTNode*;
 UnknownExpression : Expression ::= ASTNode*;
 UnknownTypeSpecifier : TypeSpecifier ::= <TYPE>;
+Comment : Declaration ::= <COMMENT> Comment*;

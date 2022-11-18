@@ -1,5 +1,6 @@
 package clang;
 
+import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -13,6 +14,7 @@ import org.apache.commons.lang3.tuple.Pair;
 
 import lang.c.obj.ast.ASTNode;
 import lang.c.obj.ast.ASTNodeAnnotation;
+import lang.io.SimpleLogger;
 import lang.java.obj.DatalogProjectionSink;
 import lang.java.obj.FileIdDatabase;
 
@@ -30,17 +32,44 @@ public class DatalogProjection {
 		project(file, Collections.emptyList());
 	}
 
+	/**
+	   Remove any nodes that are not from 'file'. This removes all AST nodes
+	   from included files.
+	 */
+	private void cullExternalNodes(AST.Node root, String file) {
+		File f = new File(file);
+		ArrayList<AST.Node> culledInner = new ArrayList<>();
+		for (int i = 0; i < root.inner.length; ++i) {
+			if (root.inner[i] != null) {
+				if (root.inner[i].loc.file == null ||
+						new File(root.inner[i].loc.file).equals(f)) {
+					culledInner.add(root.inner[i]);
+				}
+			}
+		}
+
+		// update the inner array
+		root.inner = culledInner.toArray(new AST.Node[0]);
+	}
+
 	public void project(String file, java.util.List<String> clangArgs) throws IOException {
-		final ASTTranslator astTranslator = new ASTTranslator();
-		AST.Node root = astImporter.importAST(file, clangArgs);
-		ASTNode tRoot = astTranslator.translate(root);
+		try {
+			final ASTTranslator astTranslator = new ASTTranslator();
+			AST.Node root = astImporter.importAST(file, clangArgs);
 
-		// tRoot.debugPrint(System.out);
+			cullExternalNodes(root, file);
+			ASTNode tRoot = astTranslator.translate(root);
 
-		traverse(tRoot, new MutableInt(), new MutableInt());
-		toTuples(file);
-		postNumber.clear();
-		preNumber.clear();
+			// tRoot.debugPrint(System.out);
+
+			traverse(tRoot, new MutableInt(), new MutableInt());
+			toTuples(file);
+		} catch (com.google.gson.JsonSyntaxException e) {
+			SimpleLogger.logger().error("JSON exception while importing file '" + file + "'.");
+		} finally {
+			postNumber.clear();
+			preNumber.clear();
+		}
 	}
 
 	private static Map<Class<?>, java.util.List<Pair<String, Method>>> tokenAccessors = new HashMap<>();
@@ -69,7 +98,7 @@ public class DatalogProjection {
 		return tokenAccessor;
 	}
 
-	public static java.util.List<Pair<String, String>> namedTokens(ASTNode<?> n) {
+	private static java.util.List<Pair<String, String>> namedTokens(ASTNode<?> n) {
 		java.util.List<Pair<String, String>> tokens = new ArrayList<>();
 		for (Pair<String, Method> accessor : getTokenAccessors(n)) {
 			try {

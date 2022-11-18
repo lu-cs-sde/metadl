@@ -24,8 +24,8 @@ public class ASTImporter {
 
 	public AST.Node importAST(String file, List<String> clangArgs) throws IOException {
 		List<String> actualCmd = new ArrayList<>(clangCmdPrefix);
-		actualCmd.add(file);
 		actualCmd.addAll(clangArgs);
+		actualCmd.add(file);
 		actualCmd.addAll(clangCmdSuffix);
 
 		SimpleLogger.logger().log("Running clang: " + actualCmd);
@@ -72,7 +72,7 @@ public class ASTImporter {
 		try {
 			int exitcode = p.waitFor();
 			if (exitcode != 0) {
-				SimpleLogger.logger().error("Clang command failed. " + b.command().toString());
+				SimpleLogger.logger().error("Clang command failed. " + String.join(" ", b.command()));
 			}
 		} catch (InterruptedException e) {
 			throw new RuntimeException(e);

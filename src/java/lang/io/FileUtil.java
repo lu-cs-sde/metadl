@@ -159,6 +159,7 @@ public class FileUtil {
 							return e;
 						} catch (Exception e) {
 							SimpleLogger.logger().error("Unhandled exception when loading source file " + src + ".");
+							e.printStackTrace();
 							throw e;
 						}
 						return null;

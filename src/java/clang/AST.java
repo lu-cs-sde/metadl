@@ -232,9 +232,9 @@ public class AST {
 	}
 
 	public static class DeclRefExpr extends Expr {
-		Decl referencedDecl;
+		public Decl referencedDecl;
 
-		Decl getDecl() {
+		public Decl getDecl() {
 			return (Decl) referencedDecl;
 		}
 
@@ -268,7 +268,7 @@ public class AST {
 	}
 
 	public static class IntegerLiteral extends Expr {
-		String value;
+		public String value;
 
 		@Override public void accept(ASTVisitor v) {
 			v.visit(this);
@@ -430,8 +430,8 @@ public class AST {
 	// Declarations
 	//--------------------------------------------------------------------------------
 	public static class Decl extends Node {
-		String name = "";
-		Type type;
+		public String name = "";
+		public Type type;
 
 		public boolean isNamed() {
 			return !name.isEmpty();

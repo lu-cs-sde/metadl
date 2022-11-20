@@ -1,5 +1,6 @@
 package clang;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
@@ -28,7 +29,7 @@ public class ASTImporter {
 		actualCmd.add(file);
 		actualCmd.addAll(clangCmdSuffix);
 
-		SimpleLogger.logger().log("Running clang: " + actualCmd);
+		SimpleLogger.logger().info("Running clang: " + String.join(" ", actualCmd));
 
 		ProcessBuilder b = new ProcessBuilder(actualCmd);
 
@@ -64,6 +65,9 @@ public class ASTImporter {
 				}
 			});
 
+		File currentFile = new File(file);
+		astTypeAdapter.registerFileFilter((String f) -> new File(f).equals(currentFile));
+
 		builder.registerTypeAdapterFactory(astTypeAdapter);
 		builder.setLenient();
 		Gson gson = builder.create();
@@ -77,9 +81,6 @@ public class ASTImporter {
 		} catch (InterruptedException e) {
 			throw new RuntimeException(e);
 		}
-
-		if (root != null)
-			root.patchLocations();
 
 		return root;
 	}

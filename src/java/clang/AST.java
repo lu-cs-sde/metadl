@@ -82,46 +82,6 @@ public class AST {
 			return "";
 		}
 
-		private void patchLocationsInternal(MutableObject<Loc> prev) {
-			if (loc != null)
-				prev.setValue(loc.patch(prev.getValue()));
-			else
-				loc = new Loc(prev.getValue());
-
-			if (range != null) {
-				if (range.begin != null)
-					range.begin.patch(prev.getValue());
-				else
-					range.begin = new Loc(prev.getValue());
-
-				prev.setValue(range.begin);
-
-				if (range.end != null)
-					range.end.patch(prev.getValue());
-				else
-					range.end = new Loc(range.begin);
-
-				prev.setValue(range.end);
-			} else {
-				range = new Range();
-				range.begin = new Loc(prev.getValue());
-				range.end = new Loc(prev.getValue());
-			}
-
-			for (Node c : children()) {
-				if (c != null)
-					c.patchLocationsInternal(prev);
-			}
-		}
-
-		/** Clang AST contains 'differential' source locations and ranges: it contains
-			only the changes relative to the previous node in post-order?.
-			This propagates the location, so that each node has full location description.
-		**/
-		public void patchLocations() {
-			patchLocationsInternal(new MutableObject<>());
-		}
-
 		public void accept(ASTVisitor visitor) { visitor.visit(this); }
 
 		public void acceptPO(ASTVisitor visitor) {

@@ -22,7 +22,7 @@ public class ASTTypeAdapterFactory implements TypeAdapterFactory {
 	private Map<String, Class<?>> astNodeTypes = new HashMap<>();
 	private Function<String, String> oracle;
 	private Predicate<String> fileFilter = (String s) -> true;
-	AST.Loc prevLoc;
+	AST.Loc prevLoc = AST.Loc.UNKNOWN;
 
 	public <T extends AST.Node> void registerNodeType(Class<T> nodeT) {
 		astNodeTypes.put(nodeT.getSimpleName(), nodeT);
@@ -113,41 +113,24 @@ public class ASTTypeAdapterFactory implements TypeAdapterFactory {
 
 						if (fieldName.equals("loc")) {
 							// patch the location
-							if (node.loc == null) {
-								node.loc = prevLoc;
-							} else {
-								prevLoc = node.loc.patch(prevLoc);
-							}
+							prevLoc = node.loc.patch(prevLoc);
 
-							if (node.loc != null && node.loc.file != null && !fileFilter.test(node.loc.file)) {
+							if (!node.loc.isUnknown() && !fileFilter.test(node.loc.file)) {
 								skipCurrentObject(reader);
 								return null;
 							}
 						}
 
 						if (fieldName.equals("range")) {
-							if (node.range == null) {
-								node.range = new AST.Range();
-							}
-							if (node.range.begin == null) {
-								node.range.begin = prevLoc;
-							} else {
-								prevLoc = node.range.begin.patch(prevLoc);
-							}
+							prevLoc = node.range.begin.patch(prevLoc);
 
-							if (node.range.begin != null && node.range.begin.file != null && !fileFilter.test(node.range.begin.file)) {
+							if (!node.range.begin.isUnknown() && !fileFilter.test(node.range.begin.file)) {
 								skipCurrentObject(reader);
 								return null;
 							}
 
-
-							if (node.range.end == null) {
-								node.range.end = prevLoc;
-							} else {
-								prevLoc = node.range.end.patch(prevLoc);
-							}
-
-							if (node.range.end != null && node.range.end.file != null && !fileFilter.test(node.range.end.file)) {
+							prevLoc = node.range.end.patch(prevLoc);
+							if (!node.range.end.isUnknown() && !fileFilter.test(node.range.end.file)) {
 								skipCurrentObject(reader);
 								return null;
 							}

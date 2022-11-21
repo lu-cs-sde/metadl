@@ -394,8 +394,8 @@ public class ASTTranslator implements ASTVisitor {
 
 	@Override public void visit(FunctionDecl f) {
 		List<ParameterType> paramDecls = new List<>();
-		for (int i = 0; i < f.getNumParam(); ++i) {
-			paramDecls.add(t(f.getParam(i)));
+		for (ParmVarDecl p : f.getParams()) {
+			paramDecls.add(t(p));
 		}
 
 		if (f.variadic) {
@@ -496,6 +496,10 @@ public class ASTTranslator implements ASTVisitor {
 	@Override public void visit(TranslationUnitDecl tu) {
 		List<DeclarationOrDefinition> declOrDef = new List<>();
 		for (int i = 0; i < tu.getNumDecl(); ++i) {
+			if (tu.getDecl(i) == null) {
+				// this occurs when skipping nodes from included files
+				continue;
+			}
 			ASTNode tn = t(tu.getDecl(i));
 			if (tn instanceof DeclarationOrDefinition) {
 				declOrDef.add((DeclarationOrDefinition) tn);

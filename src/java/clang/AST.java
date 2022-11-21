@@ -4,9 +4,8 @@ import java.io.PrintStream;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.stream.Collectors;
-
-import org.apache.commons.lang3.mutable.MutableObject;
 
 public class AST {
 	public static class Type {
@@ -26,28 +25,30 @@ public class AST {
 				line = l.line;
 			if (col == 0)
 				col = l.col;
-			if (file == null || file.equals("<UNKNOWN>"))
+			if (file.equals(UNKNOWN.file))
 				file = l.file;
 			return this;
 		}
 
-		public Loc(Loc l) {
-			this.line = l.line;
-			this.col = l.col;
-			this.file = l.file;
+		public static Loc UNKNOWN = new Loc();
+
+		public boolean isUnknown() {
+			return this.file.equals(UNKNOWN.file);
 		}
 	}
 
 	public static class Range {
-		public Loc begin;
-		public Loc end;
+		public Loc begin = Loc.UNKNOWN;
+		public Loc end = Loc.UNKNOWN;
+
+		public static Range UNKNOWN = new Range();
 	}
 
 	public static class Node {
 		public String id;
 		public String kind;
-		public Loc loc;
-		public Range range;
+		public Loc loc = Loc.UNKNOWN;
+		public Range range = Range.UNKNOWN;
 		public Node[] inner = {};
 
 		public void prettyPrint(PrintStream ps) {
@@ -424,22 +425,34 @@ public class AST {
 			return String.format(" mangledName:'%s' ", mangledName);
 		}
 
-		public int getNumParam() {
-			if (inner == null) {
-				return 0;
-			}
+		private List<ParmVarDecl> params;
+		public List<ParmVarDecl> getParams() {
+			if (params == null) {
+				// compute the indices of the first and last ParmVarDecl:s in the list
+				int firstParamIdx;
+				for (firstParamIdx = 0; firstParamIdx < inner.length; firstParamIdx++) {
+					if (inner[firstParamIdx] instanceof ParmVarDecl)
+						break;
+				}
 
-			for (int i = inner.length; i >= 1; --i) {
-				if (inner[i - 1] instanceof ParmVarDecl) {
-					return i;
+				int lastParamIdx;
+				for (lastParamIdx = inner.length - 1; lastParamIdx >= 0; lastParamIdx--) {
+					if (inner[lastParamIdx] instanceof ParmVarDecl) {
+						break;
+					}
+				}
+
+
+				if (firstParamIdx <= lastParamIdx) {
+					params = Arrays.asList(inner).subList(firstParamIdx, lastParamIdx + 1).stream()
+						.map((AST.Node n) -> (AST.ParmVarDecl) n)
+						.collect(Collectors.toUnmodifiableList());
+				} else {
+					params = Collections.emptyList();
 				}
 			}
 
-			return 0;
-		}
-
-		public ParmVarDecl getParam(int i) {
-			return (ParmVarDecl) inner[i];
+			return params;
 		}
 
 		public Stmt getBody() {

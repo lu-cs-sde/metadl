@@ -39,7 +39,7 @@ EnclosedLoops(s1, s2) :- NestedLoops(s1, s2), NOT(NotEnclosedLoops(s1, s2)).
 AncestorOfCall(c, a) :- FunCall(_, c), PARENT(a, c), NOT(Loop(a)).
 AncestorOfCall(c, a) :- AncestorOfCall(c, t), PARENT(a, t), NOT(Loop(a)).
 
-OUTPUT('AncestorOfCall, "AncestorOfCall.csv", "csv").
+# OUTPUT('AncestorOfCall, "AncestorOfCall.csv", "csv").
 LoopForCall(l, c) :- PARENT(l, t), AncestorOfCall(c, t), Loop(l).
 LoopForCallDetail(src, ls, le, fun) :- LoopForCall(l, c), FunCall(fun, c), SRC(l, ls, _, le, _, src).
 

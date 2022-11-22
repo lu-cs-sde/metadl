@@ -25,13 +25,17 @@ List declaration_specifiers = declaration_specifier {: return new List().add(dec
 // (6.7) init-declarator-list:
 // init-declarator
 // init-declarator-list , init-declarator
-List init_declarator_list_opt = init_declarator_list
+
+// RESTRICTION: init_declarator_list_opt can contain 0 or 1 elements.
+// This disables declaration like 'int x, y;' in the patterns. They are not needed
+// because clang introduces a VarDecl node for each declaration.
+List init_declarator_list_opt = init_declarator {: return new List().add(init_declarator); :}
      			      | /* empty */  {: return new List(); :}
 			      ;
 
-List init_declarator_list = init_declarator {: return new List().add(init_declarator); :}
-     			  | init_declarator_list COMMA init_declarator {: return init_declarator_list.add(init_declarator); :}
-			  ;
+// List init_declarator_list = init_declarator {: return new List().add(init_declarator); :}
+//      			  | init_declarator_list COMMA init_declarator {: return init_declarator_list.add(init_declarator); :}
+// 			  ;
 
 // (6.7) init-declarator:
 // declarator

@@ -65,6 +65,7 @@ import lang.c.obj.ast.Declaration;
 import lang.c.obj.ast.DeclarationOrDefinition;
 import lang.c.obj.ast.DeclarationSpecifier;
 import lang.c.obj.ast.DeclarationStatement;
+import lang.c.obj.ast.Declarator;
 import lang.c.obj.ast.DivExpression;
 import lang.c.obj.ast.DoWhileStatement;
 import lang.c.obj.ast.EQExpression;
@@ -110,6 +111,7 @@ import lang.c.obj.ast.StructDeclarator;
 import lang.c.obj.ast.StructSpecifier;
 import lang.c.obj.ast.SubExpression;
 import lang.c.obj.ast.TranslationUnit;
+import lang.c.obj.ast.TypeSpecifier;
 import lang.c.obj.ast.UnaryMinusExpression;
 import lang.c.obj.ast.UnaryPlusExpression;
 import lang.c.obj.ast.UnionSpecifier;
@@ -444,24 +446,24 @@ public class ASTTranslator implements ASTVisitor {
 	}
 
 	@Override public void visit(FieldDecl v) {
-		Opt id;
+		Opt<Declarator> id;
 		if (v.name != null && v.name.length() > 0) {
-			id = new Opt(new IdentifierDeclarator(new Opt(), new Identifier(v.name)));
+			id = new Opt<>(new IdentifierDeclarator(new Opt<Pointer>(), new Identifier(v.name)));
 		} else {
 			// bitfield padding, e.g.  "int : 5;"
-			id = new Opt();
+			id = new Opt<>();
 		}
 
-		Opt bitfieldSize;
+		Opt<Expression> bitfieldSize;
 		if (v.isBitfield) {
-			bitfieldSize = new Opt(t(v.getBitFieldSize()));
+			bitfieldSize = new Opt<>(t(v.getBitFieldSize()));
 		} else {
-			bitfieldSize = new Opt();
+			bitfieldSize = new Opt<>();
 		}
 
-		List typeSpec = new List().add(new UnknownTypeSpecifier(v.type.qualType));
+		List<TypeSpecifier> typeSpec = new List<TypeSpecifier>().add(new UnknownTypeSpecifier(v.type.qualType));
 
-		t(v, new StructDeclaration(typeSpec, new List(), new List().add(new StructDeclarator(id, bitfieldSize))));
+		t(v, new StructDeclaration(typeSpec, new List<>(), new List<StructDeclarator>().add(new StructDeclarator(id, bitfieldSize))));
 	}
 
 	@Override public void visit(RecordDecl d) {

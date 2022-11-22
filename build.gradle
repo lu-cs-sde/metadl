@@ -421,7 +421,7 @@ makeGeneratePatLangTask('genMetadlPatLang', 'src/gen/', 'metadl', metadlLexOrder
 // Java, pattern language only
 makeGeneratePatLangTask('genJava8Lang', 'src/gen/', 'java8', java8LexOrder, java8ParseOrder)
 // C11
-makeGeneratePatLangTask('genCLang_Pat', 'src/gen', 'c', cLexOrder, cParseOrder)
+makeGeneratePatLangTask('genCLang_Pat', 'src/gen', 'c', cLexOrder, cParseOrder + ["c11_restrictions.parser"])
 makeGenerateObjLangTask('genCLang_Obj', 'src/gen', 'c', cLexOrder, cParseOrder, true)
 
 

@@ -19,23 +19,19 @@ DeclarationSpecifier declaration_specifier = storage_class_specifier
                                            ;
 
 List declaration_specifiers = declaration_specifier {: return new List().add(declaration_specifier); :}
-     			    | declaration_specifiers declaration_specifier {: return declaration_specifiers.add(declaration_specifier); :}
-			    ;
+                            | declaration_specifiers declaration_specifier {: return declaration_specifiers.add(declaration_specifier); :}
+                            ;
 
 // (6.7) init-declarator-list:
 // init-declarator
 // init-declarator-list , init-declarator
+List init_declarator_list_opt = init_declarator_list
+                              | /* empty */  {: return new List(); :}
+                              ;
 
-// RESTRICTION: init_declarator_list_opt can contain 0 or 1 elements.
-// This disables declaration like 'int x, y;' in the patterns. They are not needed
-// because clang introduces a VarDecl node for each declaration.
-List init_declarator_list_opt = init_declarator {: return new List().add(init_declarator); :}
-     			      | /* empty */  {: return new List(); :}
-			      ;
-
-// List init_declarator_list = init_declarator {: return new List().add(init_declarator); :}
-//      			  | init_declarator_list COMMA init_declarator {: return init_declarator_list.add(init_declarator); :}
-// 			  ;
+List init_declarator_list = init_declarator {: return new List().add(init_declarator); :}
+                          | init_declarator_list COMMA init_declarator {: return init_declarator_list.add(init_declarator); :}
+                          ;
 
 // (6.7) init-declarator:
 // declarator
@@ -214,7 +210,7 @@ Declarator declarator = pointer? direct_declarator {: return direct_declarator.s
 // direct-declarator ( parameter-type-list )
 // direct-declarator ( identifier-listopt ) TODO
 Declarator direct_declarator = identifier {: return new IdentifierDeclarator(new Opt(), identifier); :}
-			     | LPAREN declarator RPAREN {: return declarator; :}
+			     | LPAREN declarator RPAREN {: return new ParenDeclarator(new Opt(), declarator); :}
 			     | direct_declarator LBRACK type_qualifier_list_opt assignment_expression? RBRACK {: return new ArrayDeclarator(new Opt(), direct_declarator, type_qualifier_list_opt, assignment_expression, new Opt()); :}
 			     | direct_declarator LBRACK STATIC type_qualifier_list_opt assignment_expression? RBRACK {: return new ArrayDeclarator(new Opt(), direct_declarator, type_qualifier_list_opt, assignment_expression, new Opt(new Static())); :}
 			     | direct_declarator LBRACK type_qualifier_list STATIC assignment_expression? RBRACK {: return new ArrayDeclarator(new Opt(), direct_declarator, type_qualifier_list, assignment_expression, new Opt(new Static())); :}
@@ -288,7 +284,7 @@ AbstractDeclarator abstract_declarator = pointer {: return new AbstractDeclarato
 // direct-abstract-declaratoropt [ * ]
 // direct-abstract-declaratoropt ( parameter-type-list opt )
 
-AbstractDeclarator direct_abstract_declarator = LPAREN abstract_declarator RPAREN {: return abstract_declarator; :}
+AbstractDeclarator direct_abstract_declarator = LPAREN abstract_declarator RPAREN {: return new ParenAbstractDeclarator(new Opt(), abstract_declarator); :}
 		   			      | direct_abstract_declarator LBRACK type_qualifier_list_opt assignment_expression? RBRACK {: return new AbstractArrayDeclarator(new Opt(), direct_abstract_declarator, type_qualifier_list_opt, assignment_expression, new Opt()); :}
 			     		      | direct_abstract_declarator LBRACK STATIC type_qualifier_list_opt assignment_expression? RBRACK {: return new AbstractArrayDeclarator(new Opt(), direct_abstract_declarator, type_qualifier_list_opt, assignment_expression, new Opt(new Static())); :}
 					      | direct_abstract_declarator LBRACK type_qualifier_list STATIC assignment_expression? RBRACK {: return new AbstractArrayDeclarator(new Opt(), direct_abstract_declarator, type_qualifier_list, assignment_expression, new Opt(new Static())); :}

@@ -10,6 +10,7 @@ import java.util.function.Function;
 
 import clang.AST.ArraySubscriptExpr;
 import clang.AST.BinaryOperator;
+import clang.AST.BuiltinType;
 import clang.AST.CallExpr;
 import clang.AST.Comment;
 import clang.AST.CompoundAssignOperator;
@@ -24,15 +25,19 @@ import clang.AST.Expr;
 import clang.AST.FieldDecl;
 import clang.AST.ForStmt;
 import clang.AST.FunctionDecl;
+import clang.AST.FunctionProtoType;
 import clang.AST.IfStmt;
 import clang.AST.ImplicitCastExpr;
 import clang.AST.IntegerLiteral;
 import clang.AST.Node;
+import clang.AST.ParenType;
 import clang.AST.ParmVarDecl;
+import clang.AST.PointerType;
 import clang.AST.RecordDecl;
 import clang.AST.ReturnStmt;
 import clang.AST.Stmt;
 import clang.AST.TranslationUnitDecl;
+import clang.AST.Type;
 import clang.AST.UnaryOperator;
 import clang.AST.VarDecl;
 import clang.AST.WhileStmt;
@@ -489,6 +494,26 @@ public class ASTTranslator implements ASTVisitor {
 			// bail out
 			visit((Decl) d);
 		}
+	}
+
+	@Override public void visit(PointerType t) {
+
+	}
+
+	@Override public void visit(ParenType t) {
+
+	}
+
+	@Override public void visit(FunctionProtoType t) {
+
+	}
+
+	@Override public void visit(BuiltinType t) {
+
+	}
+
+	@Override public void visit(Type t) {
+
 	}
 
 	@Override public void visit(Comment c) {

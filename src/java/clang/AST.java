@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class AST {
-	public static class Type {
+	public static class TextualType {
 		public String qualType = "";
 	}
 
@@ -392,7 +392,7 @@ public class AST {
 	//--------------------------------------------------------------------------------
 	public static class Decl extends Node {
 		public String name = "";
-		public Type type;
+		public TextualType type;
 
 		public boolean isNamed() {
 			return !name.isEmpty();
@@ -533,6 +533,74 @@ public class AST {
 			v.visit(this);
 		}
 	}
+
+	//--------------------------------------------------------------------------------
+	// Types
+	//--------------------------------------------------------------------------------
+	public static class Type extends Node {
+		TextualType type;
+		public void accept(ASTVisitor v) {
+			v.visit(this);
+		}
+	}
+
+	public static class PointerType extends Type {
+		public void accept(ASTVisitor v) {
+			v.visit(this);
+		}
+
+		public Type getPointeeType() {
+			if (inner != null && inner.length > 0) {
+				return (Type) inner[0];
+			}
+			return null;
+		}
+	}
+
+	public static class ParenType extends Type {
+		public void accept(ASTVisitor v) {
+			v.visit(this);
+		}
+
+		public Type getInnerType() {
+			if (inner != null && inner.length > 0) {
+				return (Type) inner[0];
+			}
+			return null;
+		}
+	}
+
+	public static class FunctionProtoType extends Type {
+		public void accept(ASTVisitor v) {
+			v.visit(this);
+		}
+
+		public Type getReturnType(ASTVisitor v) {
+			if (inner != null && inner.length > 0) {
+				return (Type) inner[0];
+			}
+			return null;
+		}
+
+		public int getNumParamType() {
+			return Integer.max(inner.length - 1, 0);
+		}
+
+		public Type getParamType(int i) {
+			return (Type) inner[i - 1];
+		}
+	}
+
+	public static class BuiltinType extends Type {
+		public void accept(ASTVisitor v) {
+			v.visit(this);
+		}
+	}
+
+
+	//--------------------------------------------------------------------------------
+	// Comments (Documentation comments)
+	//--------------------------------------------------------------------------------
 
 	public static class Comment extends Decl {
 		public String text = "";

@@ -33,5 +33,12 @@ public interface ASTVisitor {
 	void visit(RecordDecl d);
 	void visit(FieldDecl f);
 	void visit(TranslationUnitDecl tu);
+
+	void visit(Type t);
+	void visit(PointerType t);
+	void visit(ParenType t);
+	void visit(FunctionProtoType t);
+	void visit(BuiltinType t);
+
 	void visit(Comment c);
 }

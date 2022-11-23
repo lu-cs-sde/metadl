@@ -147,12 +147,14 @@ public class FileUtil {
 
 		ExecutorService exec = ctx.getExecutorService();
 
+		FileIdDatabase fileIdDb = new FileIdDatabase();
+
 		try {
 			List<Future<IOException>> exceptions = exec.invokeAll(srcs.stream().map(src -> new Callable<IOException>() {
 					@Override public IOException call() {
 						try {
 							profile().startTimer("clang_and_datalog_projection", src);
-							clang.DatalogProjection dp = new clang.DatalogProjection(new FileIdDatabase(), sink);
+							clang.DatalogProjection dp = new clang.DatalogProjection(fileIdDb, sink);
 							dp.project(src, opts.getClangArgs());
 							profile().stopTimer("clang_and_datalog_projection", src);
 						} catch (IOException e) {

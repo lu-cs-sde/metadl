@@ -155,6 +155,14 @@ public class FileUtil {
 						try {
 							profile().startTimer("clang_and_datalog_projection", src);
 							clang.DatalogProjection dp = new clang.DatalogProjection(fileIdDb, sink);
+
+							List<String> args = opts.getClangArgs();
+							if (src.endsWith(".cpp") || src.endsWith(".cxx")) {
+								args = new ArrayList<>(args);
+								args.add("-x");
+								args.add("c++");
+							}
+
 							dp.project(src, opts.getClangArgs());
 							profile().stopTimer("clang_and_datalog_projection", src);
 						} catch (IOException e) {

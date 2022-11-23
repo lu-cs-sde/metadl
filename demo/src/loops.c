@@ -31,6 +31,25 @@ void matrix_free(short **mat, int m) {
   free(mat);
 }
 
+
+void f3(short **mat, int m, int n) {
+  for (int i = 0; i < 100; ++i) {
+      for (int i = 0; i < 100; ++i) {
+	  for (int i = 0; i < 100; ++i) {
+	    matrix_init(mat, m, n, 0);
+	  }
+      }
+  }
+}
+
+void f2(short **mat, int m, int n) {
+  f3(mat, m, n);
+}
+
+void f1(short **mat, int m, int n) {
+  f2(mat, m, n);
+}
+
 int main() {
   short **m1 = matrix_alloc(4, 3);
   short **m2 = matrix_alloc(4, 3);

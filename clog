@@ -1,3 +1,5 @@
 #!/usr/bin/env bash
 
-java -jar compiler.jar --lang c $@
+CLOG_DIR=`dirname -- ${BASH_SOURCE[0]}`
+
+java -jar $CLOG_DIR/compiler.jar --lang c $@

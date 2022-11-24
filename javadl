@@ -1,3 +1,6 @@
 #!/usr/bin/env bash
 
-java -jar compiler.jar --lang java $@
+JAVADL_DIR=`dirname -- ${BASH_SOURCE[0]}`
+
+
+java -jar $JAVADL_DIR/compiler.jar --lang java $@

@@ -102,3 +102,8 @@ GlobalLoopDepthDetail(src, ls, le, depth) :- GlobalLoopDepth(l, depth), NOT(NotM
 OUTPUT('GlobalLoopDepthDetail, "GlobalLoopDepthDetail.csv", "csv").
 OUTPUT('LoopDepthDetail, "LoopDepthDetail.csv", "csv").
 OUTPUT('RecursiveFunction, "RecursiveFunction.csv", "csv").
+
+CG_Edge(caller, callee, "color", "red"), CG_Node(caller, "shape", "circle", "label", caller), CG_Node(callee, "shape", "circle", "label", callee) :- Call(_, _, caller, callee).
+
+OUTPUT('CG_Edge, "CG_Edge.csv", "csv").
+OUTPUT('CG_Node, "CG_Node.csv", "csv").

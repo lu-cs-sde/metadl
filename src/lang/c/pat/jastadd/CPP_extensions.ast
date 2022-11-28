@@ -1,0 +1,3 @@
+// for ( init-statement opt for-range-declaration : for-range-initializer ) statement
+// NOTE: the for-range-initializer is the InitDeclarator in Declaration
+ForRangeStatement : Statement ::= [Init:Statement] Range:Declaration Body:Statement;

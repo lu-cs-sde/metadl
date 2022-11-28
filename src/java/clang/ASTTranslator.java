@@ -11,6 +11,7 @@ import java.util.function.Function;
 import clang.AST.ArraySubscriptExpr;
 import clang.AST.BinaryOperator;
 import clang.AST.BuiltinType;
+import clang.AST.CXXForRangeStmt;
 import clang.AST.CallExpr;
 import clang.AST.Comment;
 import clang.AST.CompoundAssignOperator;
@@ -75,6 +76,7 @@ import lang.c.obj.ast.DivExpression;
 import lang.c.obj.ast.DoWhileStatement;
 import lang.c.obj.ast.EQExpression;
 import lang.c.obj.ast.Expression;
+import lang.c.obj.ast.ForRangeStatement;
 import lang.c.obj.ast.ForStatement;
 import lang.c.obj.ast.FunctionDeclarator;
 import lang.c.obj.ast.FunctionDefinition;
@@ -349,6 +351,14 @@ public class ASTTranslator implements ASTVisitor {
 			stmts.add(t(c.getStmt(i)));
 		}
 		t(c, new CompoundStatement(stmts));
+	}
+
+	@Override public void visit(CXXForRangeStmt f) {
+		// ForRangeStatement : Statement ::= [Init:Statement] Range:Declaration Body:Statement;x
+		DeclarationStatement rangeStmt = t(f.getRangeStmt());
+		Declaration rangeDecl = (Declaration) rangeStmt.getDeclarationOrDefinition();
+		Statement body = t(f.getBody());
+		t(f, new ForRangeStatement(new Opt<Statement>(), rangeDecl, body));
 	}
 
 	@Override public void visit(ReturnStmt r) {

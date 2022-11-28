@@ -30,7 +30,7 @@ public class CEvaluationTest {
 	@MethodSource("metadlCTests")
 	void evaluationTestMetaDLCInternal(String fileName) throws Exception {
 		String analyzedFilesDir = "tests/clang/evaluation/src";
-		List<File> analyzedFiles = FileUtil.flattenFilesAndDirs(Collections.singletonList(new File(analyzedFilesDir, fileName)), "*.c");
+		List<File> analyzedFiles = FileUtil.flattenFilesAndDirs(Collections.singletonList(new File(analyzedFilesDir, fileName)), "*.c", "*.cpp");
 
 		Util.singleEvaluationTest("tests/output/",
 							 "tests/clang/evaluation/facts",
@@ -48,7 +48,7 @@ public class CEvaluationTest {
 	@MethodSource("metadlCTests")
 	void evaluationTestMetaDLCParallelInternal(String fileName) throws Exception {
 		String analyzedFilesDir = "tests/clang/evaluation/src";
-		List<File> analyzedFiles = FileUtil.flattenFilesAndDirs(Collections.singletonList(new File(analyzedFilesDir, fileName)), "*.c");
+		List<File> analyzedFiles = FileUtil.flattenFilesAndDirs(Collections.singletonList(new File(analyzedFilesDir, fileName)), "*.c", "*.cpp");
 
 		Util.singleEvaluationTest("tests/output/",
 							 "tests/clang/evaluation/facts",

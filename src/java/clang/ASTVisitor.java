@@ -25,6 +25,7 @@ public interface ASTVisitor {
 	void visit(ReturnStmt r);
 	void visit(DeclStmt d);
 	void visit(IfStmt f);
+	void visit(CXXForRangeStmt f);
 
 	void visit(Decl d);
 	void visit(ParmVarDecl p);

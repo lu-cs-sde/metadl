@@ -387,6 +387,28 @@ public class AST {
 		}
 	}
 
+	public static class CXXForRangeStmt extends Stmt {
+		public Stmt getBody() {
+			return (Stmt) inner[7];
+		}
+
+		public VarDecl getLoopVariable() {
+			return (VarDecl) inner[6];
+		}
+
+		public DeclStmt getRangeStmt() {
+			return (DeclStmt) inner[1];
+		}
+
+		public Stmt getInit() {
+			return (Stmt) inner[0];
+		}
+
+		@Override public void accept(ASTVisitor v) {
+			v.visit(this);
+		}
+	}
+
 	//--------------------------------------------------------------------------------
 	// Declarations
 	//--------------------------------------------------------------------------------
@@ -529,6 +551,12 @@ public class AST {
 	}
 
 	public static class TypedefDecl extends Decl {
+		public void accept(ASTVisitor v) {
+			v.visit(this);
+		}
+	}
+
+	public static class CXXMethodDecl extends FunctionDecl {
 		public void accept(ASTVisitor v) {
 			v.visit(this);
 		}

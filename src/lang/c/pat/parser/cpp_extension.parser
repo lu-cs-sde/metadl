@@ -1,0 +1,12 @@
+// for ( init-statement opt for-range-declaration : for-range-initializer ) statement
+
+Statement for_range_init_statement = expression_statement
+                                   | declaration_statement
+                                   ;
+
+ForRangeStatement for_range_statement = FOR LPAREN for_range_init_statement declaration_specifiers declarator COLON initializer RPAREN statement {: return new ForRangeStatement(new Opt(for_range_init_statement), new Declaration(declaration_specifiers, new List().add(new InitDeclarator(declarator, new Opt(initializer)))), statement); :}
+                                      | FOR LPAREN declaration_specifiers declarator COLON initializer RPAREN statement  {: return new ForRangeStatement(new Opt(), new Declaration(declaration_specifiers, new List().add(new InitDeclarator(declarator, new Opt(initializer)))), statement); :}
+                                      ;
+
+Statement iteration_statement = for_range_statement
+                              ;

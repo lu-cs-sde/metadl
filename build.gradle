@@ -412,7 +412,8 @@ def cParseOrder = [
     "c11_external_definition.parser",
     "c11_declaration.parser",
     "c11_expression.parser",
-    "c11_statement.parser"
+    "c11_statement.parser",
+    "cpp_extension.parser"
 ]
 
 // MetaDL as object language

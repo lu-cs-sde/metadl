@@ -79,7 +79,7 @@ public class FileUtil {
 		return lang.CmdLineOpts.parseCmdLineArgs(s.split("\\s+"));
 	}
 
-	public static List<File> flattenFilesAndDirs(List<File> files, String ext) {
+	public static List<File> flattenFilesAndDirs(List<File> files, String ... ext) {
 		List<File> ret = new ArrayList<>();
 		for (File fileOrDir : files) {
 			if (fileOrDir.isDirectory()) {

@@ -29,6 +29,7 @@ FunDef(fun1, d) :- d <: .. $fun1( .. ) { .. } :>, ID($fun1, fun1).
 Loop(s), ForLoop(s) :- s <: for ( ; ; ) $_ :>.
 Loop(s), WhileLoop(s) :- s <: while ($_) $_ :>.
 Loop(s), DoWhileLoop(s) :- s <: do $_ while ($_); :>.
+Loop(s), ForRangeLoop(s) :- s <: for ($_ $_ : $_) $_ :>.
 
 LoopInFunction(s, f_name) :- f <: .. $f( .. ) { .. } :>, ID($f, f_name), ANCESTOR(f, s), Loop(s).
 
@@ -107,3 +108,6 @@ CG_Edge(caller, callee, "color", "red"), CG_Node(caller, "shape", "circle", "lab
 
 OUTPUT('CG_Edge, "CG_Edge.csv", "csv").
 OUTPUT('CG_Node, "CG_Node.csv", "csv").
+
+OUTPUT('AST, "AST.csv", "csv").
+OUTPUT('SRC, "SRC.csv", "csv").

@@ -13,7 +13,7 @@ aspect LanguageSpecific {
 		java.util.List<lang.ast.Clause> ret = new java.util.ArrayList<>();
 
 		if (used.contains("ID")) {
-			ret.add(makeIndirectIdentifierRule(ctx, "IdentifierDeclarator", 1, "ID"));
+			ret.add(makeIndirectIdentifierRule(ctx, "IdentifierDeclarator", 0, "ID"));
 			ret.add(makeIndirectIdentifierRule(ctx, "IdentifierExpression", 0, "ID"));
 		}
 

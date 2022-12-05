@@ -144,6 +144,8 @@ public class CParserTest {
 
 		assertNotNull(parseTrees);
 
+		Util.dumpParseTrees("test3_", parseTrees);
+
 		for (lang.c.obj.ast.ASTNode ast : buildAST(tokens, parseTrees)) {
 			ast.debugPrint(System.out);
 		}
@@ -227,5 +229,67 @@ public class CParserTest {
 	public void testFunctionDefinitions() {
 		testAST("int f(int x, int y) { return x + y; }" +
 				"int (*g(void))(int, int) { return &f; }");
+	}
+
+	@Test
+	public void testFunctionPtrType1() {
+		testAST("int (****p)(int);", lang.c.obj.ast.ObjLangParserSEP.n_declaration);
+	}
+
+	@Test
+	public void testFunctionPtrType2() {
+		testAST("int ((****p)(int));", lang.c.obj.ast.ObjLangParserSEP.n_declaration);
+	}
+
+	@Test
+	public void testFunctionPtrType3() {
+		testAST("int ((****p)(int (**)(int)));", lang.c.obj.ast.ObjLangParserSEP.n_declaration);
+	}
+
+	@Test
+	public void testAbstractDeclarator1() {
+		testAST("(*)(int (*)(int))", lang.c.obj.ast.ObjLangParserSEP.n_abstract_declarator);
+	}
+
+	@Test
+	public void testAbstractDeclarator2() {
+		testAST("(*)(int)", lang.c.obj.ast.ObjLangParserSEP.n_abstract_declarator);
+	}
+
+	@Test
+	public void testAbstractDeclarator3() {
+		testAST("*", lang.c.obj.ast.ObjLangParserSEP.n_abstract_declarator);
+	}
+
+	@Test
+	public void testAbstractDeclarator4() {
+		testAST("(*)", lang.c.obj.ast.ObjLangParserSEP.n_direct_abstract_declarator);
+	}
+
+	@Test
+	public void testAbstractDeclarator5() {
+		testAST("(*)", lang.c.obj.ast.ObjLangParserSEP.n_abstract_declarator);
+	}
+
+
+	@Test
+	public void testFunctionReturningPtr() {
+		testAST("int *p(int);", lang.c.obj.ast.ObjLangParserSEP.n_declaration);
+	}
+
+
+	@Test
+	public void testPtrToFunction() {
+		testAST("int (*f)(int);", lang.c.obj.ast.ObjLangParserSEP.n_declaration);
+	}
+
+	@Test
+	public void testTwoPtrToFunction1() {
+		testAST("int (**f)(int);", lang.c.obj.ast.ObjLangParserSEP.n_declaration);
+	}
+
+	@Test
+	public void testTwoPtrToFunction2() {
+		testAST("int (*(*f))(int);", lang.c.obj.ast.ObjLangParserSEP.n_declaration);
 	}
 }

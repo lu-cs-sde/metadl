@@ -402,7 +402,7 @@ public class ASTTranslator implements ASTVisitor {
 	}
 
 	@Override public void visit(ParmVarDecl p) {
-		IdentifierDeclarator id = new IdentifierDeclarator(new Opt(), new Identifier(p.name));
+		IdentifierDeclarator id = new IdentifierDeclarator(new Identifier(p.name));
 		UnknownTypeSpecifier typeSpec = new UnknownTypeSpecifier(p.type.qualType);
 
 		ParameterDeclaration decl = new ParameterDeclaration(new List().add(typeSpec), id);
@@ -419,8 +419,8 @@ public class ASTTranslator implements ASTVisitor {
 			paramDecls.add(new ParameterVarArgType());
 		}
 
-		IdentifierDeclarator id = new IdentifierDeclarator(new Opt<Pointer>(), new Identifier(f.name));
-		FunctionDeclarator fd = new FunctionDeclarator(new Opt<Pointer>(), id, paramDecls);
+		IdentifierDeclarator id = new IdentifierDeclarator(new Identifier(f.name));
+		FunctionDeclarator fd = new FunctionDeclarator(id, paramDecls);
 		UnknownTypeSpecifier typeSpec = new UnknownTypeSpecifier(f.type.qualType);
 
 		DeclarationOrDefinition ext;
@@ -451,7 +451,7 @@ public class ASTTranslator implements ASTVisitor {
 
 		Opt<Expression> init = opt(v.getInit());
 		Opt initExpr = opt(init, InitializerExpression::new);
-		IdentifierDeclarator id = new IdentifierDeclarator(new Opt(), new Identifier(v.name));
+		IdentifierDeclarator id = new IdentifierDeclarator(new Identifier(v.name));
 		InitDeclarator initDecl = new InitDeclarator(id, initExpr);
 		UnknownTypeSpecifier typeSpec = new UnknownTypeSpecifier(v.type.qualType);
 
@@ -463,7 +463,7 @@ public class ASTTranslator implements ASTVisitor {
 	@Override public void visit(FieldDecl v) {
 		Opt<Declarator> id;
 		if (v.name != null && v.name.length() > 0) {
-			id = new Opt<>(new IdentifierDeclarator(new Opt<Pointer>(), new Identifier(v.name)));
+			id = new Opt<>(new IdentifierDeclarator(new Identifier(v.name)));
 		} else {
 			// bitfield padding, e.g.  "int : 5;"
 			id = new Opt<>();

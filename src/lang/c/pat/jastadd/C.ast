@@ -343,12 +343,12 @@ AlignAsExpr : AlignmentSpecifier ::= Expression;
 
 // (6.7.6) declarator:
 // pointer opt direct-declarator
-abstract Declarator ::= [Pointer];
+abstract Declarator;
 // (6.7.6) direct-declarator:
 // identifier
 // ( declarator )
 IdentifierDeclarator : Declarator ::= Identifier;
-ParenDeclarator : Declarator ::= Declarator;
+PointerDeclarator : Declarator ::= TypeQualifier* Declarator;
 
 // direct-declarator [ type-qualifier-list opt assignment-expressionopt ]
 // direct-declarator [ static type-qualifier-listopt assignment-expression ]
@@ -397,17 +397,16 @@ TypeName ::= TypeSpecifier* TypeQualifier* [AbstractDeclarator];
 // (6.7.7) abstract-declarator:
 // pointer
 // pointer opt direct-abstract-declarator
-AbstractDeclarator ::= [Pointer];
-
+AbstractDeclarator ::= [AbstractDeclarator];
 // (6.7.7) direct-abstract-declarator:
 // ( abstract-declarator )
 // direct-abstract-declarator opt [ type-qualifier-list opt  assignment-expressionopt ]
 // direct-abstract-declaratoropt [ static type-qualifier-listopt  assignment-expression ]
 // direct-abstract-declaratoropt [ type-qualifier-list static assignment-expression ]
 // direct-abstract-declaratoropt [ * ]
-ParenAbstractDeclarator : AbstractDeclarator ::= AbstractDeclarator;
-AbstractArrayDeclarator : AbstractDeclarator ::= AbstractDeclarator TypeQualifier* [Expression] [Static];
-AbstractArrayDeclaratorVLA : AbstractDeclarator ::= AbstractDeclarator TypeQualifier*;
+AbstractPointerDeclarator : AbstractDeclarator ::= TypeQualifier*;
+AbstractArrayDeclarator : AbstractDeclarator ::= TypeQualifier* [Expression] [Static];
+AbstractArrayDeclaratorVLA : AbstractDeclarator ::= TypeQualifier*;
 // direct-abstract-declaratoropt ( parameter-type-list opt )
 AbstractFunctionDeclarator : AbstractDeclarator ::= ParameterType*;
 

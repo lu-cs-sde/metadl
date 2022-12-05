@@ -197,7 +197,8 @@ AlignmentSpecifier alignment_specifier = ALIGNAS LPAREN type_name RPAREN {: retu
 
 // (6.7.6) declarator:
 // pointer opt direct-declarator
-Declarator declarator = pointer? direct_declarator {: return direct_declarator.setPointerOpt(pointer); :}
+Declarator declarator = STAR type_qualifier_list? declarator {: return new PointerDeclarator(type_qualifier_list, declarator); :}
+	   	      | direct_declarator
 	   	      ;
 
 // (6.7.6) direct-declarator:
@@ -209,13 +210,13 @@ Declarator declarator = pointer? direct_declarator {: return direct_declarator.s
 // direct-declarator [ type-qualifier-list opt * ]
 // direct-declarator ( parameter-type-list )
 // direct-declarator ( identifier-listopt ) TODO
-Declarator direct_declarator = identifier {: return new IdentifierDeclarator(new Opt(), identifier); :}
-			     | LPAREN declarator RPAREN {: return new ParenDeclarator(new Opt(), declarator); :}
-			     | direct_declarator LBRACK type_qualifier_list_opt assignment_expression? RBRACK {: return new ArrayDeclarator(new Opt(), direct_declarator, type_qualifier_list_opt, assignment_expression, new Opt()); :}
-			     | direct_declarator LBRACK STATIC type_qualifier_list_opt assignment_expression? RBRACK {: return new ArrayDeclarator(new Opt(), direct_declarator, type_qualifier_list_opt, assignment_expression, new Opt(new Static())); :}
-			     | direct_declarator LBRACK type_qualifier_list STATIC assignment_expression? RBRACK {: return new ArrayDeclarator(new Opt(), direct_declarator, type_qualifier_list, assignment_expression, new Opt(new Static())); :}
-			     | direct_declarator LRBRACK type_qualifier_list_opt STAR RBRACK {: return new ArrayDeclaratorVLA(new Opt(), direct_declarator, type_qualifier_list_opt); :}
-			     | direct_declarator LPAREN parameter_type_list RPAREN {: return new FunctionDeclarator(new Opt(), direct_declarator, parameter_type_list); :}
+Declarator direct_declarator = identifier {: return new IdentifierDeclarator(identifier); :}
+			     | LPAREN declarator RPAREN {: return declarator; :}
+			     | direct_declarator LBRACK type_qualifier_list_opt assignment_expression? RBRACK {: return new ArrayDeclarator(direct_declarator, type_qualifier_list_opt, assignment_expression, new Opt()); :}
+			     | direct_declarator LBRACK STATIC type_qualifier_list_opt assignment_expression? RBRACK {: return new ArrayDeclarator(direct_declarator, type_qualifier_list_opt, assignment_expression, new Opt(new Static())); :}
+			     | direct_declarator LBRACK type_qualifier_list STATIC assignment_expression? RBRACK {: return new ArrayDeclarator(direct_declarator, type_qualifier_list, assignment_expression, new Opt(new Static())); :}
+			     | direct_declarator LRBRACK type_qualifier_list_opt STAR RBRACK {: return new ArrayDeclaratorVLA(direct_declarator, type_qualifier_list_opt); :}
+			     | direct_declarator LPAREN parameter_type_list RPAREN {: return new FunctionDeclarator(direct_declarator, parameter_type_list); :}
 			     ;
 
 
@@ -269,8 +270,8 @@ TypeName type_name = specifier_qualifier_list abstract_declarator? {: return new
 // (6.7.7) abstract-declarator:
 // pointer
 // pointer opt direct-abstract-declarator
-AbstractDeclarator abstract_declarator = pointer {: return new AbstractDeclarator().setPointer(pointer); :}
-		   		       | pointer? direct_abstract_declarator {: return direct_abstract_declarator.setPointerOpt(pointer); :}
+AbstractDeclarator abstract_declarator = STAR type_qualifier_list_opt abstract_declarator? {: return new AbstractPointerDeclarator(abstract_declarator, type_qualifier_list_opt); :}
+		   		       | direct_abstract_declarator
 				       ;
 
 // (6.7.7) direct-abstract-declarator:
@@ -284,12 +285,12 @@ AbstractDeclarator abstract_declarator = pointer {: return new AbstractDeclarato
 // direct-abstract-declaratoropt [ * ]
 // direct-abstract-declaratoropt ( parameter-type-list opt )
 
-AbstractDeclarator direct_abstract_declarator = LPAREN abstract_declarator RPAREN {: return new ParenAbstractDeclarator(new Opt(), abstract_declarator); :}
-		   			      | direct_abstract_declarator LBRACK type_qualifier_list_opt assignment_expression? RBRACK {: return new AbstractArrayDeclarator(new Opt(), direct_abstract_declarator, type_qualifier_list_opt, assignment_expression, new Opt()); :}
-			     		      | direct_abstract_declarator LBRACK STATIC type_qualifier_list_opt assignment_expression? RBRACK {: return new AbstractArrayDeclarator(new Opt(), direct_abstract_declarator, type_qualifier_list_opt, assignment_expression, new Opt(new Static())); :}
-					      | direct_abstract_declarator LBRACK type_qualifier_list STATIC assignment_expression? RBRACK {: return new AbstractArrayDeclarator(new Opt(), direct_abstract_declarator, type_qualifier_list, assignment_expression, new Opt(new Static())); :}
-			     		      | direct_abstract_declarator LRBRACK type_qualifier_list_opt STAR RBRACK {: return new AbstractArrayDeclaratorVLA(new Opt(), direct_abstract_declarator, type_qualifier_list_opt); :}
-					      | direct_abstract_declarator LPAREN parameter_type_list RPAREN {: return new AbstractFunctionDeclarator(new Opt(), parameter_type_list); :}
+AbstractDeclarator direct_abstract_declarator = LPAREN abstract_declarator RPAREN {: return abstract_declarator; :}
+		   			      | direct_abstract_declarator? LBRACK type_qualifier_list_opt assignment_expression? RBRACK {: return new AbstractArrayDeclarator(direct_abstract_declarator, type_qualifier_list_opt, assignment_expression, new Opt()); :}
+			     		      | direct_abstract_declarator? LBRACK STATIC type_qualifier_list_opt assignment_expression? RBRACK {: return new AbstractArrayDeclarator(direct_abstract_declarator, type_qualifier_list_opt, assignment_expression, new Opt(new Static())); :}
+					      | direct_abstract_declarator? LBRACK type_qualifier_list STATIC assignment_expression? RBRACK {: return new AbstractArrayDeclarator(direct_abstract_declarator, type_qualifier_list, assignment_expression, new Opt(new Static())); :}
+			     		      | direct_abstract_declarator? LRBRACK type_qualifier_list_opt STAR RBRACK {: return new AbstractArrayDeclaratorVLA(direct_abstract_declarator, type_qualifier_list_opt); :}
+					      | direct_abstract_declarator? LPAREN parameter_type_list RPAREN {: return new AbstractFunctionDeclarator(direct_abstract_declarator, parameter_type_list); :}
 			     		      ;
 
 

@@ -397,7 +397,7 @@ TypeName ::= TypeSpecifier* TypeQualifier* [AbstractDeclarator];
 // (6.7.7) abstract-declarator:
 // pointer
 // pointer opt direct-abstract-declarator
-AbstractDeclarator ::= [AbstractDeclarator];
+abstract AbstractDeclarator ::= [AbstractDeclarator];
 // (6.7.7) direct-abstract-declarator:
 // ( abstract-declarator )
 // direct-abstract-declarator opt [ type-qualifier-list opt  assignment-expressionopt ]

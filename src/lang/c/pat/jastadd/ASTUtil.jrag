@@ -10,4 +10,6 @@ aspect ASTUtil {
 		}
 		return r;
 	}
+
+	public String ASTNode.srcFile = "<UNKNOWN>";
 }

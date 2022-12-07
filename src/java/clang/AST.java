@@ -12,43 +12,104 @@ public class AST {
 		public String qualType = "";
 	}
 
-
-	public static class Loc {
+	public static class BareLoc {
 		public int line;
 		public int col;
-		public String file = "<UNKNOWN>";
+		public String file;
 
-		public Loc patch(Loc l) {
+		/**
+		   Clang AST contains 'differential' source locations and ranges: it contains
+		   only the changes relative to the previous node.
+		   This propagates the location, so that each node has full location description.
+		*/
+		public BareLoc patch(BareLoc l) {
 			if (l == null)
 				return this;
 			if (line == 0)
 				line = l.line;
 			if (col == 0)
 				col = l.col;
-			if (file.equals(UNKNOWN.file))
+			if (file == null)
 				file = l.file;
 			return this;
 		}
 
-		public static Loc UNKNOWN = new Loc();
+		public String pretty() {
+			return String.format("%s, %d:%d", file != null ? file : "UNKNOWN", line, col);
+		}
 
-		public boolean isUnknown() {
-			return this.file.equals(UNKNOWN.file);
+		public String getFile() {
+			if (file == null)
+				return "UNKNOWN";
+			return file;
+		}
+	}
+
+	public static class Loc {
+		public BareLoc spellingLoc;
+		public BareLoc expansionLoc;
+		public BareLoc loc;
+
+		public boolean isMacroExpansion() {
+			return spellingLoc != null || expansionLoc != null;
+		}
+
+		private BareLoc locOrder() {
+			if (loc != null)
+				return loc;
+			if (spellingLoc != null)
+				return spellingLoc;
+			if (expansionLoc != null)
+				return expansionLoc;
+			return null;
+		}
+
+		public String pretty() {
+			BareLoc loc = locOrder();
+			if (loc != null)
+				return loc.pretty();
+			return "UNKNOWN";
+		}
+
+		public String getFile() {
+			BareLoc loc = locOrder();
+			if (loc != null)
+				return loc.getFile();
+			return "UNKNOWN";
+		}
+
+		public int getLine() {
+			BareLoc loc = locOrder();
+			if (loc != null)
+				return loc.line;
+			return 0;
+		}
+
+		public int getCol() {
+			BareLoc loc = locOrder();
+			if (loc != null)
+				return loc.col;
+			return 0;
 		}
 	}
 
 	public static class Range {
-		public Loc begin = Loc.UNKNOWN;
-		public Loc end = Loc.UNKNOWN;
+		public Loc begin;
+		public Loc end;
 
-		public static Range UNKNOWN = new Range();
+		public String pretty() {
+			if (begin == null || end == null) {
+				return "UNKNOWN";
+			}
+			return String.format("%s, %d:%d-%d:%d", begin.getFile(), begin.getLine(), begin.getCol(), end.getLine(), end.getCol());
+		}
 	}
 
 	public static class Node {
 		public String id;
 		public String kind;
-		public Loc loc = Loc.UNKNOWN;
-		public Range range = Range.UNKNOWN;
+		public Loc loc;
+		public Range range;
 		public Node[] inner = {};
 
 		public void prettyPrint(PrintStream ps) {
@@ -67,8 +128,7 @@ public class AST {
 			}
 
 			if (loc != null) {
-				ps.printf("<%s> %s %s[%s, %d:%d-%d:%d]\n", id, kind, extraInfo(), loc.file,
-						  range.begin.line, range.begin.col, range.end.line, range.end.col);
+				ps.printf("<%s> %s %s[%s]\n", id, kind, extraInfo(), loc.pretty());
 			} else {
 				ps.printf("<%s> %s %s[BUILTIN]\n", id, kind, extraInfo());
 			}

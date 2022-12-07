@@ -2,6 +2,8 @@ package clang;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
@@ -16,13 +18,16 @@ import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonToken;
 import com.google.gson.stream.JsonWriter;
 
-import org.apache.commons.collections.functors.IfClosure;
+import clang.AST.TranslationUnitDecl;
 
 public class ASTTypeAdapterFactory implements TypeAdapterFactory {
 	private Map<String, Class<?>> astNodeTypes = new HashMap<>();
 	private Function<String, String> oracle;
 	private Predicate<String> fileFilter = (String s) -> true;
-	AST.Loc prevLoc = AST.Loc.UNKNOWN;
+	private AST.BareLoc prevLoc = new AST.BareLoc();
+	private Deque<AST.Node> parentStack = new ArrayDeque<>();
+	private TypeAdapter bareLocAdapter;
+
 
 	public <T extends AST.Node> void registerNodeType(Class<T> nodeT) {
 		astNodeTypes.put(nodeT.getSimpleName(), nodeT);
@@ -37,21 +42,88 @@ public class ASTTypeAdapterFactory implements TypeAdapterFactory {
 	}
 
 	@Override public <T> TypeAdapter<T> create(final Gson gson, final TypeToken<T> type) {
-		if (type.getRawType() != AST.Node.class) {
+		if (type.getRawType() == AST.Node.class) {
+			TypeAdapter defaultDelegate = gson.getDelegateAdapter(this, TypeToken.get(AST.Node.class));
+			return new TypeAdapter<T>() {
+				@Override public T read(JsonReader reader) throws IOException {
+					return (T) parseNode(gson, reader);
+				}
+
+				@Override public void write(JsonWriter writer, T t) throws IOException {
+					defaultDelegate.write(writer, t);
+				}
+			};
+		} else if (type.getRawType() == AST.Loc.class) {
+			TypeAdapter defaultDelegate = gson.getDelegateAdapter(this, TypeToken.get(AST.Loc.class));
+			bareLocAdapter = gson.getAdapter(AST.BareLoc.class);
+			return new TypeAdapter<T>() {
+				@Override public T read(JsonReader reader) throws IOException {
+					return (T) parseLoc(gson, reader);
+				}
+
+				@Override public void write(JsonWriter writer, T t) throws IOException {
+					defaultDelegate.write(writer, t);
+				}
+			};
+		} else {
+			// use the defaults
+			return null;
+		}
+	}
+
+	private AST.Loc parseLoc(Gson gson, JsonReader reader) throws IOException {
+		if (reader.peek() == JsonToken.NULL) {
+			reader.nextNull();
 			return null;
 		}
 
-		TypeAdapter defaultDelegate = gson.getDelegateAdapter(this, TypeToken.get(AST.Node.class));
+		reader.beginObject();
+		if (!reader.hasNext()) {
+			reader.endObject();
+			return new AST.Loc();
+		}
 
-		return new TypeAdapter<T>() {
-			@Override public T read(JsonReader reader) throws IOException {
-				return (T) parseNode(gson, reader);
-			}
+		AST.Loc ret = new AST.Loc();
 
-			@Override public void write(JsonWriter writer, T t) throws IOException {
-				defaultDelegate.write(writer, t);
+		while (reader.hasNext()) {
+			String fieldName = reader.nextName();
+			switch (fieldName) {
+			case "spellingLoc":
+				ret.spellingLoc = (AST.BareLoc) bareLocAdapter.read(reader);
+				prevLoc = ret.spellingLoc.patch(prevLoc);
+				break;
+			case "expansionLoc":
+				ret.expansionLoc = (AST.BareLoc) bareLocAdapter.read(reader);
+				prevLoc = ret.expansionLoc.patch(prevLoc);
+				break;
+			case "line":
+				if (ret.loc == null)
+					ret.loc = new AST.BareLoc();
+				ret.loc.line = reader.nextInt();
+				break;
+			case "col":
+				if (ret.loc == null)
+					ret.loc = new AST.BareLoc();
+				ret.loc.col = reader.nextInt();
+				break;
+			case "file":
+				if (ret.loc == null)
+					ret.loc = new AST.BareLoc();
+				ret.loc.file = reader.nextString();
+				break;
+			default:
+				// ignore
+				reader.skipValue();
+				break;
 			}
-		};
+		}
+
+		if (ret.loc != null) {
+			prevLoc = ret.loc.patch(prevLoc);
+		}
+
+		reader.endObject();
+		return ret;
 	}
 
 	private AST.Node parseNode(Gson gson, JsonReader reader) throws IOException {
@@ -98,6 +170,10 @@ public class ASTTypeAdapterFactory implements TypeAdapterFactory {
 				AST.Node node = (AST.Node) astNodeType.getConstructor().newInstance();
 				node.id = id;
 				node.kind = kind;
+
+				AST.Node parent = parentStack.peekFirst();
+
+				parentStack.addFirst(node);
 				while (reader.hasNext()) {
 					String fieldName = reader.nextName();
 					try {
@@ -106,32 +182,30 @@ public class ASTTypeAdapterFactory implements TypeAdapterFactory {
 						Object o = t.read(reader);
 						field.set(node, o);
 
-						/* Clang AST contains 'differential' source locations and ranges: it contains
-						   only the changes relative to the previous node in post-order?.
-						   This propagates the location, so that each node has full location description.
-						*/
 
 						if (fieldName.equals("loc")) {
-							// patch the location
-							prevLoc = node.loc.patch(prevLoc);
-
-							if (!node.loc.isUnknown() && !fileFilter.test(node.loc.file)) {
+							if (parent instanceof TranslationUnitDecl && node.loc != null
+								&& !fileFilter.test(node.loc.getFile())) {
 								skipCurrentObject(reader);
+								parentStack.removeFirst();
 								return null;
 							}
 						}
 
 						if (fieldName.equals("range")) {
-							prevLoc = node.range.begin.patch(prevLoc);
-
-							if (!node.range.begin.isUnknown() && !fileFilter.test(node.range.begin.file)) {
+							if (parent instanceof TranslationUnitDecl && node.range != null
+								&& node.range.begin != null
+								&& !fileFilter.test(node.range.begin.getFile())) {
 								skipCurrentObject(reader);
+								parentStack.removeFirst();
 								return null;
 							}
 
-							prevLoc = node.range.end.patch(prevLoc);
-							if (!node.range.end.isUnknown() && !fileFilter.test(node.range.end.file)) {
+							if (parent instanceof TranslationUnitDecl && node.range != null
+								&& node.range.end != null
+								&& !fileFilter.test(node.range.end.getFile())) {
 								skipCurrentObject(reader);
+								parentStack.removeFirst();
 								return null;
 							}
 						}
@@ -141,6 +215,7 @@ public class ASTTypeAdapterFactory implements TypeAdapterFactory {
 				}
 
 				reader.endObject();
+				parentStack.removeFirst();
 				return node;
 			} catch (ReflectiveOperationException e ) {
 				throw new JsonParseException(e);

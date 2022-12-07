@@ -103,7 +103,6 @@ import lang.c.obj.ast.OrExpression;
 import lang.c.obj.ast.ParameterDeclaration;
 import lang.c.obj.ast.ParameterType;
 import lang.c.obj.ast.ParameterVarArgType;
-import lang.c.obj.ast.Pointer;
 import lang.c.obj.ast.PointerDereferenceExpression;
 import lang.c.obj.ast.PostDecrementExpression;
 import lang.c.obj.ast.PostIncrementExpression;
@@ -133,9 +132,9 @@ public class ASTTranslator implements ASTVisitor {
 	private Map<AST.Node, ASTNode> nodeMap = new HashMap<>();
 
 	private void t(AST.Node node, ASTNode internalNode) {
-		internalNode.setStart(node.range.begin.line, node.range.begin.col);
-		internalNode.setEnd(node.range.end.line, node.range.end.col);
-
+		internalNode.setStart(node.range.begin.getLine(), node.range.begin.getCol());
+		internalNode.setEnd(node.range.end.getLine(), node.range.end.getCol());
+		internalNode.srcFile = node.range.begin.getFile();
 		nodeMap.put(node, internalNode);
 	}
 

@@ -156,7 +156,7 @@ public class DatalogProjection {
 				int childPre = preNumber.get(n.getChild(i));
 
 				sink.getAST().insertTuple(relName, makeFullId(pre, post, fileId), i, makeFullId(childPre, childPost, fileId), "");
-				sink.getSrcLoc().insertTuple(makeFullId(pre, post, fileId), n.startLine(), n.startColumn(), n.endLine(), n.endColumn(), file);
+				sink.getSrcLoc().insertTuple(makeFullId(pre, post, fileId), n.startLine(), n.startColumn(), n.endLine(), n.endColumn(), n.srcFile);
 			}
 
 
@@ -170,7 +170,7 @@ public class DatalogProjection {
 
 			if (tokens.isEmpty() && n.getNumChild() == 0) {
 				sink.getAST().insertTuple(relName, makeFullId(pre, post, fileId), -1, -1, "");
-				sink.getSrcLoc().insertTuple(makeFullId(pre, post, fileId), n.startLine(), n.startColumn(), n.endLine(), n.endColumn(), file);
+				sink.getSrcLoc().insertTuple(makeFullId(pre, post, fileId), n.startLine(), n.startColumn(), n.endLine(), n.endColumn(), n.srcFile);
 			}
 		}
 

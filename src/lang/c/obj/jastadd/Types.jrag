@@ -1,0 +1,47 @@
+import java.util.ArrayList;
+
+aspect Types {
+	syn java.util.List<ConcreteDeclaration> Declaration.decls() {
+		java.util.List<ConcreteDeclaration> ret = new ArrayList<>();
+
+		for (InitDeclarator id : this.getInitDeclarators()) {
+			Declarator d = id.getDeclarator();
+
+			ret.add(new ConcreteDeclaration(this.getDeclarationSpecifiers().treeCopy(), d.treeCopy()));
+		}
+
+		return ret;
+	}
+
+	syn Identifier ConcreteDeclaration.declaredIdentifier() = getDeclarator().declaredIdentifier();
+	syn Identifier Declarator.declaredIdentifier();
+
+	eq IdentifierDeclarator.declaredIdentifier() = getIdentifier();
+	eq PointerDeclarator.declaredIdentifier() = getDeclarator().declaredIdentifier();
+	eq ArrayDeclarator.declaredIdentifier() = getDeclarator().declaredIdentifier();
+	eq ArrayDeclaratorVLA.declaredIdentifier() = getDeclarator().declaredIdentifier();
+	eq FunctionDeclarator.declaredIdentifier() = getDeclarator().declaredIdentifier();
+
+	syn AbstractDeclaration ConcreteDeclaration.asAbstract() = new AbstractDeclaration(getDeclarationSpecifiers().treeCopy(),
+																					   getDeclarator().asAbstract());
+	syn Opt<AbstractDeclarator> Declarator.asAbstract();
+
+	eq IdentifierDeclarator.asAbstract() = new Opt<>();
+	eq PointerDeclarator.asAbstract() = new Opt<>(new AbstractPointerDeclarator(getDeclarator().asAbstract(), getTypeQualifiers().treeCopy()));
+	eq ArrayDeclarator.asAbstract() = new Opt<>(new AbstractArrayDeclarator(getDeclarator().asAbstract(), getTypeQualifiers().treeCopy(),
+																			getExpressionOpt().treeCopy(), getStaticOpt().treeCopy()));
+	eq ArrayDeclaratorVLA.asAbstract() = new Opt<>(new AbstractArrayDeclaratorVLA(getDeclarator().asAbstract(), getTypeQualifiers().treeCopy()));
+	eq FunctionDeclarator.asAbstract() {
+		List<ParameterType> abstractParams = new List<>();
+		for (ParameterType pDecl : getParameterTypes()) {
+			abstractParams.add(pDecl.asAbstract());
+		}
+		return new Opt<>(new AbstractFunctionDeclarator(getDeclarator().asAbstract(), abstractParams));
+	}
+
+	syn ParameterType ParameterType.asAbstract();
+	eq ParameterDeclaration.asAbstract() = new AbstractParameterDeclaration(getDeclarationSpecifiers().treeCopy(),
+																			getDeclarator().asAbstract());
+	eq AbstractParameterDeclaration.asAbstract() = this.treeCopy();
+	eq ParameterVarArgType.asAbstract() = this.treeCopy();
+}

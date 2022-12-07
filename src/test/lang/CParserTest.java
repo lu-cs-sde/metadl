@@ -292,4 +292,9 @@ public class CParserTest {
 	public void testTwoPtrToFunction2() {
 		testAST("int (*(*f))(int);", lang.c.obj.ast.ObjLangParserSEP.n_declaration);
 	}
+
+	@Test
+	public void testHigherOrderFunc() {
+		testAST("int f(int (int, int));", lang.c.obj.ast.ObjLangParserSEP.n_declaration);
+	}
 }

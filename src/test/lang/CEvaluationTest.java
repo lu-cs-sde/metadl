@@ -20,7 +20,8 @@ public class CEvaluationTest {
 			"nested_loops",
 			"function",
 			"naive_call_graph",
-			"loop_depth"
+			"loop_depth",
+			"macro_expansion"
 		};
 		return Arrays.stream(tests);
 	}

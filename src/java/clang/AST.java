@@ -592,6 +592,14 @@ public class AST {
 		}
 	}
 
+	public static Decl toDecl(Node n) {
+		if (n instanceof Decl) {
+			return (Decl) n;
+		}
+		return null;
+	}
+
+
 	public static class RecordDecl extends Decl {
 		public String tagUsed;
 		public boolean completeDefinition;
@@ -601,7 +609,7 @@ public class AST {
 		}
 
 		public Decl getDecl(int i) {
-			return (Decl) inner[i];
+			return toDecl(inner[i]);
 		}
 
 		public void accept(ASTVisitor v) {

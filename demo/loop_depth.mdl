@@ -88,7 +88,7 @@ RecursiveFunction(fun) :- TransitiveCall(fun, fun).
 # The loop depth from which a function is called. Only for non-recursive functions
 # There may be multiple loop depths for a function, depending on the call stack
 # Functions that are not called have loop depth of 0
-GlobalLoopDepthForFunction(fun_name, 0) :- FunDef(fun_name, _), NOT(FunCall(fun_name, _)), NOT(RecursiveFunction(fun_name)).
+GlobalLoopDepthForFunction(fun_name, 0) :- FunDef(fun_name, _), NOT(FunCall(fun_name, _)), NOT(RecursiveFunction(fun_name)), EQ(fun_name, "main").
 
 GlobalLoopDepthForFunction(callee_name, k) :- Call(caller, call_expr, caller_name, callee_name), NOT(RecursiveFunction(callee_name)),
 			      GlobalLoopDepthForFunction(caller_name, i), LocalLoopDepthForCall(call_expr, j), BIND(k, i + j).
@@ -100,9 +100,18 @@ GlobalLoopDepth(l, k) :- LoopInFunction(l, f_name), LoopDepth(l, i), GlobalLoopD
 NotMaxGlobalLoopDepth(l, n) :- GlobalLoopDepth(l, k), GlobalLoopDepth(l, n), GT(k, n).
 GlobalLoopDepthDetail(src, ls, le, depth) :- GlobalLoopDepth(l, depth), NOT(NotMaxGlobalLoopDepth(l, depth)), SRC(l, ls, _, le, _, src).
 
+EDB('MaxLoopDepth, "MaxLoopDepth.csv", "csv").
+
 OUTPUT('GlobalLoopDepthDetail, "GlobalLoopDepthDetail.csv", "csv").
 OUTPUT('LoopDepthDetail, "LoopDepthDetail.csv", "csv").
 OUTPUT('RecursiveFunction, "RecursiveFunction.csv", "csv").
+
+# In a loop with greater depth than max depth
+ExcludedLoc(file, ls, le) :- GlobalLoopDepthDetail(file, ls, le, depth), GT(depth, max_depth), MaxLoopDepth(max_depth).
+# In a function called from a loop that is too deep
+ExcludedLoc(file, ls, le) :- GlobalLoopDepthForFunction(fun_name, depth), GT(depth, max_depth), MaxLoopDepth(max_depth), FunDef(fun_name, fun_def), SRC(fun_def, ls, _, le, _, file).
+OUTPUT('ExcludedLoc, "ExcludedLoc.csv", "csv").
+
 
 CG_Edge(caller, callee, "color", "red"), CG_Node(caller, "shape", "circle", "label", caller), CG_Node(callee, "shape", "circle", "label", callee) :- Call(_, _, caller, callee).
 

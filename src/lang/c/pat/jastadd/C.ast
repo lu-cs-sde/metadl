@@ -364,7 +364,6 @@ FunctionDeclarator : Declarator ::= Declarator ParameterType*;
 // (6.7.6) pointer:
 // * type-qualifier-listopt
 // * type-qualifier-list opt pointer
-Pointer ::= TypeQualifier* [Pointer];
 
 // (6.7.6) type-qualifier-list:
 // type-qualifier

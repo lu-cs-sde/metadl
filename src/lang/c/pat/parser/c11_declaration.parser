@@ -223,8 +223,6 @@ Declarator direct_declarator = identifier {: return new IdentifierDeclarator(ide
 // (6.7.6) pointer:
 // * type-qualifier-listopt
 // * type-qualifier-list opt pointer
-Pointer pointer = STAR type_qualifier_list_opt pointer? {: return new Pointer(type_qualifier_list_opt, pointer); :}
-		;
 
 // (6.7.6) type-qualifier-list:
 // type-qualifier

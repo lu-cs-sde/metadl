@@ -297,4 +297,15 @@ public class CParserTest {
 	public void testHigherOrderFunc() {
 		testAST("int f(int (int, int));", lang.c.obj.ast.ObjLangParserSEP.n_declaration);
 	}
+
+	@Test
+	public void testIf1() {
+		testAST("if (x > y) if (x == z) x++; else x--;", lang.c.obj.ast.ObjLangParserSEP.n_selection_statement);
+	}
+
+	@Test
+	public void testIf2() {
+		testAST("if (x > y) { if (x == z) x++; else x--; }", lang.c.obj.ast.ObjLangParserSEP.n_selection_statement);
+	}
+
 }

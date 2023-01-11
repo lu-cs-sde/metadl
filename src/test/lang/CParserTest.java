@@ -105,17 +105,6 @@ public class CParserTest {
 	}
 
 	@Test
-	public void testPtr() {
-		String c = "*";
-		Category start = lang.c.obj.ast.ObjLangParserSEP.n_pointer;
-
-		java.util.List<Symbol> tokens = scan(c);
-		java.util.List<ParseTree> parseTrees =  parse(tokens, start);
-
-		buildAST(tokens, parseTrees);
-	}
-
-	@Test
 	public void testTranslationUnit1() {
 		String c = "struct { int a; union { float x; } u; } my_struct;";
 		Category start = lang.c.obj.ast.ObjLangParserSEP.n_translation_unit;

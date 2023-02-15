@@ -61,7 +61,8 @@ public class CmdLineOpts {
 	public enum Lang {
 		JAVA,
 		METADL,
-		C
+		C,
+		C4
 	}
 
 	public void setOutputDir(String str) {
@@ -312,6 +313,8 @@ public class CmdLineOpts {
 				ret.lang = Lang.METADL;
 			} else if (cmd.getOptionValue("L").equals("c")) {
 				ret.lang = Lang.C;
+			} else if (cmd.getOptionValue("L").equals("c4")) {
+				ret.lang = Lang.C4;
 			} else {
 				System.err.println("Unsupported language for the --lang option.");
 				printHelp(options);

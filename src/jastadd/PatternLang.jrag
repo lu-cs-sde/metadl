@@ -52,6 +52,8 @@ aspect PatternLang {
 			return lang.java8.pat.ast.PatLang.generateHelperRelations(getAnalysisContext(), usedContextPredicates());
 		case C:
 			return lang.c.pat.ast.PatLang.generateHelperRelations(getAnalysisContext(), usedContextPredicates());
+		case C4:
+			return Collections.emptyList();
 		}
 		return null;
 	}
@@ -63,6 +65,7 @@ aspect PatternLang {
 		case JAVA:
 			return lang.java8.pat.ast.PatLang.contextPredicateType(predName);
 		case C:
+		case C4:
 			return lang.c.pat.ast.PatLang.contextPredicateType(predName);
 		}
 		return null;
@@ -80,6 +83,10 @@ aspect PatternLang {
 	eq BoundedPattern.getClauses() = getClausesHelper(getCommonVariable());
 
 	public java.util.List<Clause> Pattern.getClausesHelper(CommonVariable bindVar) {
+		if (program().getLang() == CmdLineOpts.Lang.C4) {
+			return Collections.emptyList();
+		}
+
 		AnalyzeContext ctx = program().getAnalysisContext();
 		ArrayList<Clause> ret = new ArrayList<>();
 		for (ObjLangASTNode n : altParse()) {
@@ -110,21 +117,37 @@ aspect PatternLang {
 	eq BoundedPattern.predName() = hash(getPATTERN() + "bounded");
 
 	protected Literal Pattern.getLiteralHelper(CommonVariable bindVar) {
-		String predName = program().getAnalysisContext().prefix(predName());
+		if (program().getLang() == CmdLineOpts.Lang.C4) {
+			String predName = "__EXTERNAL_PATTERN";
+			List<Term> headVars = new List<>();
+			// add the pattern as the first term
+			// TODO: this needs to be translated to clang patterns
+			headVars.add(new StringConstant(getPATTERN()));
+			// The assumption is that any parse tree of a pattern contains
+			// the same metavariables
+			ObjLangASTNode n = altParse().iterator().next();
+			if (bindVar != null)
+				headVars.add(bindVar.treeCopy());
+			for (String v : n.metavariables())
+				headVars.add(new Variable(v));
+			Literal head = new Literal(new PredicateSymbol(predName), headVars);
+			return head;
+		} else {
+			String predName = program().getAnalysisContext().prefix(predName());
 
-		List<Term> headVars = new List<>();
-		// The assumption is that any parse tree of a pattern contains
-		// the same metavariables
-		ObjLangASTNode n = altParse().iterator().next();
-		if (bindVar != null)
-			headVars.add(bindVar.treeCopy());
-		for (String v : n.metavariables())
-			headVars.add(new Variable(v));
-		// we're using a String hash  here; fingers crossed for no collisions in
-		// the same analyze block
-		Literal head = new Literal(new PredicateSymbol(predName),
-							 headVars);
-		return head;
+			List<Term> headVars = new List<>();
+			// The assumption is that any parse tree of a pattern contains
+			// the same metavariables
+			ObjLangASTNode n = altParse().iterator().next();
+			if (bindVar != null)
+				headVars.add(bindVar.treeCopy());
+			for (String v : n.metavariables())
+				headVars.add(new Variable(v));
+			// we're using a String hash  here; fingers crossed for no collisions
+			Literal head = new Literal(new PredicateSymbol(predName),
+									   headVars);
+			return head;
+		}
 	}
 
 	syn nta Literal Pattern.getLiteral() {
@@ -178,6 +201,7 @@ aspect PatternLang {
 										 lang.java8.pat.ast.PatLangParserSEP.n_variable_declarator);
 			break;
 		case C:
+		case C4:
 			scanner = new lang.c.pat.ast.PatLangScanner(new StringReader(getPATTERN()));
 			tokenNames = lang.c.pat.ast.PatLangParserSEP.Terminals.NAMES;
 			astBuilder = lang.c.pat.ast.ASTBuilder.getInstance();

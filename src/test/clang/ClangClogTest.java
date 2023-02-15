@@ -15,8 +15,6 @@ import clang.swig.VectorLong;
 import clang.swig.VectorString;
 import clang.swig.VectorVectorLong;
 
-
-
 public class ClangClogTest {
 	@BeforeAll
 	public static void prepare() {

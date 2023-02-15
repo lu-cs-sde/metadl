@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.List;
 
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -19,7 +20,11 @@ import clang.swig.VectorVectorLong;
 public class ClangClogTest {
 	@BeforeAll
 	public static void prepare() {
-		System.loadLibrary("clangClogSWIG");
+		try {
+			System.loadLibrary("clangClogSWIG");
+		} catch (SecurityException | UnsatisfiedLinkError e) {
+			Assumptions.assumeTrue(false);
+		}
 	}
 
 	@Test public void test1() {

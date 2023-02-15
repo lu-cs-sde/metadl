@@ -1,11 +1,8 @@
 package eval;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.SortedSet;
-import java.util.Spliterator;
 import java.util.concurrent.Callable;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -48,8 +45,6 @@ public interface Control {
 								   Control cont) {
 		return new IfExists(rel, test, consts, cont, true);
 	}
-
-
 
 	public static Control insert(Relation2 rel, List<Pair<Integer, Integer>> assign,
 								 List<Pair<Integer, Long>> consts, Control cont) {
@@ -303,6 +298,7 @@ class ForAll implements Control {
 	}
 }
 
+
 class IfExists implements Control {
 	private Relation2 rel;
 	private List<Pair<Integer, Integer>> test;
@@ -323,7 +319,7 @@ class IfExists implements Control {
 		this.view = rel.getReadOnlyView(index);
 	}
 
-	public void eval(Tuple t) {
+	@Override public void eval(Tuple t) {
 		Tuple minKey = rel.infTuple();
 		Tuple maxKey = rel.supTuple();
 

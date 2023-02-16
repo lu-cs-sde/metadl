@@ -24,7 +24,7 @@ public abstract class ExternalForAll implements Control {
 	   consts - pairs of (column, value) of constants to assign
 	   arity - the arity of the external relation
 	 */
-	ExternalForAll(EvaluationContext ctx,
+	public ExternalForAll(EvaluationContext ctx,
 				   int arity,
 				   String name,
 				   List<Pair<Integer, Integer>> test,

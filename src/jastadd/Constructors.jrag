@@ -2,6 +2,9 @@ aspect Constructors {
 	public Literal.Literal(PredicateSymbol p, List<Term> ts) {
 		this(new Opt(), p, ts);
 	}
+	public ExternalLiteral.ExternalLiteral(PredicateSymbol p, List<Term> ts, Object o) {
+		this(new Opt(), p, ts, o);
+	}
 	public EQLiteral.EQLiteral(Expr l, Expr r) {
 		this(new Opt(), new List<Expr>().add(l).add(r));
 	}

@@ -16,7 +16,7 @@ public abstract class ExternalIfExists implements Control {
 	private final boolean positive;
 	private List<Integer> argIdx;
 
-	ExternalIfExists(EvaluationContext ctx,
+	public ExternalIfExists(EvaluationContext ctx,
 					 int arity,
 					 String name,
 					 List<Pair<Integer, Integer>> test,

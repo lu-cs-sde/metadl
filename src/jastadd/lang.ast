@@ -22,6 +22,8 @@ Not;
 abstract CommonLiteral ::= [Not];
 
 Literal:CommonLiteral ::= Predicate:PredicateSymbol Terms:Term*;
+ExternalLiteral:Literal ::= <ExternalPayload:Object>;
+
 abstract Constraint:CommonLiteral ::= Expr*;
 
 abstract BinaryIntegerConstraint : Constraint;

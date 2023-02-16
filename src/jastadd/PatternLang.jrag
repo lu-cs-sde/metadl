@@ -117,37 +117,28 @@ aspect PatternLang {
 	eq BoundedPattern.predName() = hash(getPATTERN() + "bounded");
 
 	protected Literal Pattern.getLiteralHelper(CommonVariable bindVar) {
+		String predName = program().getAnalysisContext().prefix(predName());
+
+		List<Term> headVars = new List<>();
+		// The assumption is that any parse tree of a pattern contains
+		// the same metavariables
+		java.util.List<ObjLangASTNode> ASTs = altParse();
+		ObjLangASTNode n = ASTs.iterator().next();
+		if (bindVar != null)
+			headVars.add(bindVar.treeCopy());
+		for (String v : n.metavariables())
+			headVars.add(new Variable(v));
 		if (program().getLang() == CmdLineOpts.Lang.C4) {
-			String predName = "__EXTERNAL_PATTERN";
-			List<Term> headVars = new List<>();
-			// add the pattern as the first term
-			// TODO: this needs to be translated to clang patterns
-			headVars.add(new StringConstant(getPATTERN()));
-			// The assumption is that any parse tree of a pattern contains
-			// the same metavariables
-			ObjLangASTNode n = altParse().iterator().next();
-			if (bindVar != null)
-				headVars.add(bindVar.treeCopy());
-			for (String v : n.metavariables())
-				headVars.add(new Variable(v));
-			Literal head = new Literal(new PredicateSymbol(predName), headVars);
+			ExternalLiteral head = new ExternalLiteral(new PredicateSymbol(predName),
+													   headVars, ASTs);
 			return head;
 		} else {
-			String predName = program().getAnalysisContext().prefix(predName());
-
-			List<Term> headVars = new List<>();
-			// The assumption is that any parse tree of a pattern contains
-			// the same metavariables
-			ObjLangASTNode n = altParse().iterator().next();
-			if (bindVar != null)
-				headVars.add(bindVar.treeCopy());
-			for (String v : n.metavariables())
-				headVars.add(new Variable(v));
 			// we're using a String hash  here; fingers crossed for no collisions
 			Literal head = new Literal(new PredicateSymbol(predName),
 									   headVars);
 			return head;
 		}
+
 	}
 
 	syn nta Literal Pattern.getLiteral() {

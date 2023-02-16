@@ -7,6 +7,9 @@ import eval.Control;
 import eval.Relation2;
 import eval.EvaluationContext;
 import eval.Operation;
+import eval.Tuple;
+import eval.ExternalIfExists;
+import eval.ExternalForAll;
 import java.util.SortedSet;
 
 aspect CodeGen {
@@ -274,6 +277,9 @@ aspect CodeGen {
 	eq PredicateRef.constVal(EvaluationContext ctx) = ctx.internalizeString(getPRED_ID());
 	eq StringConstant.constVal(EvaluationContext ctx) = ctx.internalizeString(getSTRING());
 
+	syn boolean Literal.isExternal() = false;
+	eq ExternalLiteral.isExternal() = true;
+
 	private Control Literal.genCodePositiveLiteral(Relation2 rel, EvaluationContext ctx, Control cont,
 												   Set<String> boundVars, Set<String> usedVars) {
 		java.util.List<Pair<Integer, Integer>> assign = new ArrayList<>();
@@ -310,10 +316,30 @@ aspect CodeGen {
 					// do nothing for wildcards
 				}
 			}
-			if (assign.isEmpty())
-				return Control.ifExists(rel, test, consts, cont);
-			else
-				return Control.forAll(ctx, rel, test, consts, assign, cont);
+			if (assign.isEmpty()) {
+				if (isExternal()) {
+					return new ExternalIfExists(ctx, rel.arity(), rel.getName(), test, consts, cont, true) {
+						@Override protected boolean exists(Tuple t) {
+							System.out.println("args: " + argIdx());
+							return false;
+						}
+					};
+				} else {
+					return Control.ifExists(rel, test, consts, cont);
+				}
+			} else {
+				if (isExternal()) {
+					return new ExternalForAll(ctx, rel.arity(), rel.getName(), test, consts, assign, cont) {
+						@Override protected SortedSet<Tuple> externalLookup(Tuple t) {
+							System.out.println("args: " + argIdx());
+							System.out.println("results: " + resIdx());
+							return Collections.emptySortedSet();
+						}
+					};
+				} else {
+					return Control.forAll(ctx, rel, test, consts, assign, cont);
+				}
+			}
 		}
 	}
 
@@ -330,7 +356,16 @@ aspect CodeGen {
 			}
 		}
 
-		return Control.ifNotExists(rel, test, consts, cont);
+		if (isExternal()) {
+			return new ExternalIfExists(ctx, rel.arity(), rel.getName(), test, consts, cont, false) {
+				@Override protected boolean exists(Tuple t) {
+					System.out.println("args: " + argIdx());
+					return false;
+				}
+			};
+		} else {
+			return Control.ifNotExists(rel, test, consts, cont);
+		}
 	}
 
 	protected Control Literal.genCode(EvaluationContext ctx, Control cont, Set<String> boundVars, Set<String> usedVars, boolean isDelta) {

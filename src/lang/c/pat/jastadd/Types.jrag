@@ -1,5 +1,6 @@
 import java.util.ArrayList;
 import clang.ASTMatcher;
+import clang.AST.*;
 
 aspect Types {
 	syn java.util.List<ConcreteDeclaration> Declaration.decls() {
@@ -102,5 +103,13 @@ aspect ASTMatcher {
 
 	eq EmptyStatement.astMatcher() {
 		return ASTMatcher.nullStmt();
+	}
+
+	eq DeclarationStatement.astMatcher() {
+		return ASTMatcher.declStmt(ASTMatcher.has(getDeclarationOrDefinition().astMatcher()));
+	}
+
+	eq Declaration.astMatcher() {
+		return ASTMatcher.decl();
 	}
 }

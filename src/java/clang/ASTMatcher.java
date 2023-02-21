@@ -106,12 +106,20 @@ public class ASTMatcher {
 		return new ASTMatcher("stmt", m);
 	}
 
+	public static ASTMatcher declStmt(ASTMatcher m) {
+		return new ASTMatcher("declStmt", m);
+	}
+
 	// Decls
 	public static ASTMatcher isDefinition() {
 		return new ASTMatcher("isDefinition");
 	}
 
+	public static ASTMatcher decl() {
+		return new ASTMatcher("decl");
+	}
 
-
-
+	public static ASTMatcher has(ASTMatcher m) {
+		return new ASTMatcher("has", m);
+	}
 }

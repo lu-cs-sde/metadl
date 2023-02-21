@@ -199,7 +199,7 @@ aspect Eval {
 
 	public void Program.eval(EvaluationContext ctx, CmdLineOpts opts) throws IOException, SQLException {
 		java.util.List<Stratum> strata = strata(ctx);
-		dumpStrata();
+		dumpStrata(ctx);
 		clauseDependencyGraph().dump();
 
 		evalEDB(ctx, opts);
@@ -219,7 +219,7 @@ aspect Eval {
 		evalEDB(ctx, opts);
 		populateProgramRepresentation(ctx, opts, null);
 
-		dumpStrata();
+		dumpStrata(ctx);
 		clauseDependencyGraph().dump();
 
 		evalParallelStrata(ctx);

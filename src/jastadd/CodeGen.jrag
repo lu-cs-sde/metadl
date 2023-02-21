@@ -11,6 +11,8 @@ import eval.Tuple;
 import eval.ExternalIfExists;
 import eval.ExternalForAll;
 import java.util.SortedSet;
+import java.util.stream.Stream;
+import clang.ClangEvaluationContext;
 
 aspect CodeGen {
 
@@ -329,11 +331,25 @@ aspect CodeGen {
 				}
 			} else {
 				if (isExternal()) {
+					java.util.List<Integer> matcherIds =
+						((ClangEvaluationContext) ctx).registerExternalLiteral((ExternalLiteral)this);
+
 					return new ExternalForAll(ctx, rel.arity(), rel.getName(), test, consts, assign, cont) {
-						@Override protected SortedSet<Tuple> externalLookup(Tuple t) {
-							System.out.println("args: " + argIdx());
-							System.out.println("results: " + resIdx());
-							return Collections.emptySortedSet();
+						@Override protected Stream<Tuple> externalLookup(Tuple t) {
+							if (!argIdx().isEmpty())
+								throw new RuntimeException("Expecting none of the pattern variables to be bound.");
+
+
+							Tuple r = t.clone();
+
+							Stream<Tuple> resStream = ((ClangEvaluationContext) ctx).lookup(matcherIds).map(v -> {
+									for (int i = 0; i < resIdx().size(); ++i) {
+										r.set(resIdx().get(i), v.get(i));
+									}
+									return r;
+								});
+
+							return resStream;
 						}
 					};
 				} else {

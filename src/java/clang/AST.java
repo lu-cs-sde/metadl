@@ -152,6 +152,11 @@ public class AST {
 			}
 			accept(visitor);
 		}
+
+		protected <T extends Node> T setChildren(Node ... children) {
+			this.inner = children;
+			return (T) this;
+		}
 	}
 
 
@@ -226,11 +231,11 @@ public class AST {
 		}
 
 		public Expr getTrueExpr() {
-			return (Expr) inner[0];
+			return (Expr) inner[1];
 		}
 
 		public Expr getFalseExpr() {
-			return (Expr) inner[1];
+			return (Expr) inner[2];
 		}
 
 		@Override public void accept(ASTVisitor v) {
@@ -310,6 +315,26 @@ public class AST {
 		}
 	}
 
+	public static class MetaExpr extends Expr {
+		private String name;
+
+		public MetaExpr(String name) {
+			this.name = name;
+		}
+
+		public MetaExpr() {
+		}
+
+		public boolean isNamed() {
+			return name != null;
+		}
+
+		public String getName() {
+			assert isNamed();
+			return name;
+		}
+	}
+
 	// --------------------------------------------------------------------------------
 	// Statements
 	// --------------------------------------------------------------------------------
@@ -343,6 +368,10 @@ public class AST {
 		@Override public void accept(ASTVisitor v) {
 			v.visit(this);
 		}
+
+		public static ForStmt build(Stmt init, Expr cond, Expr incr, Stmt body) {
+			return new ForStmt().setChildren(init, null, cond, incr, body);
+		}
 	}
 
 	public static class CompoundStmt extends Stmt {
@@ -357,6 +386,10 @@ public class AST {
 		@Override public void accept(ASTVisitor v) {
 			v.visit(this);
 		}
+
+		public static CompoundStmt build(Stmt ... stmts) {
+			return new CompoundStmt().setChildren(stmts);
+		}
 	}
 
 	public static class ReturnStmt extends Stmt {
@@ -366,6 +399,14 @@ public class AST {
 
 		@Override public void accept(ASTVisitor v) {
 			v.visit(this);
+		}
+
+		public static ReturnStmt build() {
+			return new ReturnStmt().setChildren();
+		}
+
+		public static ReturnStmt build(Expr ret) {
+			return new ReturnStmt().setChildren(ret);
 		}
 	}
 
@@ -431,6 +472,10 @@ public class AST {
 		@Override public void accept(ASTVisitor v) {
 			v.visit(this);
 		}
+
+		public static WhileStmt build(Stmt cond, Stmt body) {
+			return new WhileStmt().setChildren(cond, body);
+		}
 	}
 
 	public static class DoStmt extends Stmt {
@@ -444,6 +489,10 @@ public class AST {
 
 		@Override public void accept(ASTVisitor v) {
 			v.visit(this);
+		}
+
+		public static DoStmt build(Stmt cond, Stmt body) {
+			return new DoStmt().setChildren(cond, body);
 		}
 	}
 
@@ -466,6 +515,26 @@ public class AST {
 
 		@Override public void accept(ASTVisitor v) {
 			v.visit(this);
+		}
+	}
+
+	public static class MetaStmt extends Stmt {
+		private String name;
+
+		public MetaStmt(String name) {
+			this.name = name;
+		}
+
+		public MetaStmt() {
+		}
+
+		public boolean isNamed() {
+			return name != null;
+		}
+
+		public String getName() {
+			assert isNamed();
+			return name;
 		}
 	}
 
@@ -629,6 +698,27 @@ public class AST {
 			v.visit(this);
 		}
 	}
+
+	public static class MetaDecl extends Decl {
+		private String name;
+
+		public MetaDecl(String name) {
+			this.name = name;
+		}
+
+		public MetaDecl() {
+		}
+
+		public boolean isNamed() {
+			return name != null;
+		}
+
+		public String getName() {
+			assert isNamed();
+			return name;
+		}
+	}
+
 
 	//--------------------------------------------------------------------------------
 	// Types

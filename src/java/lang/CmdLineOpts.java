@@ -1,30 +1,25 @@
 package lang;
 
+import java.io.File;
+import java.io.IOException;
+import java.sql.Connection;
+import java.util.Collections;
+import java.util.List;
+import java.util.SortedMap;
+import java.util.TreeMap;
+import java.util.function.Function;
+
+import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
-import org.apache.commons.cli.Options;
 import org.apache.commons.cli.OptionGroup;
+import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.io.filefilter.WildcardFileFilter;
 
 import lang.io.CSVUtil;
 import lang.io.FileUtil;
-
-import org.apache.commons.cli.HelpFormatter;
-
-import java.io.File;
-import java.io.IOException;
-import java.sql.Connection;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-
-import org.apache.commons.cli.CommandLine;
 
 
 public class CmdLineOpts {
@@ -40,7 +35,7 @@ public class CmdLineOpts {
 	private Action action = Action.EVAL_INTERNAL;
 	private boolean warningsEnabled = false;
 	private Lang lang;
-	private Map<String, String> srcs;
+	private SortedMap<String, String> srcs;
 	private List<String> clangArgs = Collections.emptyList();;
 
 	public enum Action {
@@ -69,7 +64,7 @@ public class CmdLineOpts {
 		this.outputDir = str;
 	}
 
-	public Map<String, String> getSrcs() {
+	public SortedMap<String, String> getSrcs() {
 		return srcs;
 	}
 
@@ -304,7 +299,7 @@ public class CmdLineOpts {
 					}
 				}
 			} else {
-				ret.srcs = Collections.emptyMap();
+				ret.srcs = Collections.emptySortedMap();
 			}
 
 			if (!cmd.hasOption("L") || cmd.getOptionValue("L").equals("java")) {

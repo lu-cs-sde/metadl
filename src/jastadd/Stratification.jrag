@@ -265,9 +265,8 @@ aspect Stratification {
 		return strata;
 	}
 
-	public void Program.dumpStrata() throws IOException {
+	public void Program.dumpStrata(EvaluationContext ctx) throws IOException {
 		PrintStream f = new PrintStream("strata.dump");
-		EvaluationContext ctx = new EvaluationContext();
 
 		for (Stratum s : strata(ctx)) {
 			s.prettyPrint(f);

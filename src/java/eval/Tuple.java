@@ -46,4 +46,8 @@ public class Tuple {
 		}
 		return s + ")";
 	}
+
+	@Override public Tuple clone() {
+		return new Tuple(this.data.clone());
+	}
 }

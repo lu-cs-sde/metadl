@@ -55,15 +55,16 @@ public abstract class ExternalForAll implements Control {
 			in.set(c.getLeft(), t.get(c.getRight()));
 		}
 
-		SortedSet<Tuple> tuples = externalLookup(in);
+		Stream<Tuple> tuples = externalLookup(in);
 
-		for (Tuple r : tuples) {
-			for (Pair<Integer, Integer> p : assign) {
-				t.set(p.getRight(), r.get(p.getLeft()));
-			}
-			cont.eval(t);
-		}
+		tuples.forEachOrdered(r -> {
+				for (Pair<Integer, Integer> p : assign) {
+					t.set(p.getRight(), r.get(p.getLeft()));
+				}
+				cont.eval(t);
+			});
 	}
+
 
 	protected List<Integer> argIdx() {
 		return this.argIdx;
@@ -77,7 +78,7 @@ public abstract class ExternalForAll implements Control {
 		return this.ctx;
 	}
 
-	protected abstract SortedSet<Tuple> externalLookup(Tuple t);
+	protected abstract Stream<Tuple> externalLookup(Tuple t);
 
 	@Override public String prettyPrint(int indent) {
 		String s = Util.indent(indent) + String.format("EXTERNAL FOR t IN %s WHERE ", name);

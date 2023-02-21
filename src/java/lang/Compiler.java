@@ -1,38 +1,29 @@
 package lang;
 
-import java.io.BufferedReader;
+import static prof.Profile.profile;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.sql.SQLException;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
 
 import org.apache.commons.lang3.time.StopWatch;
 
+import clang.ClangEvaluationContext;
+import eval.EvaluationContext;
 import incremental.IncrementalDriver;
 import incremental.ProgramSplit;
-import lang.CmdLineOpts.Action;
-import lang.ast.FormalPredicate;
 import lang.ast.Program;
+import lang.ast.SemanticError;
 import lang.ast.SoufflePrettyPrinter;
 import lang.ast.StandardPrettyPrinter;
 import lang.ast.TypeError;
-import lang.ast.SemanticError;
 import lang.io.FileUtil;
 import lang.io.SimpleLogger;
-import lang.relation.RelationWrapper;
-import static prof.Profile.profile;
 import swig.SWIGUtil;
-import eval.EvaluationContext;
 
 /**
  * Dumps the parsed Abstract Syntax Tree of a Calc program.
@@ -181,7 +172,7 @@ public class Compiler {
 				break;
 			case CHECK:
 				checkProgram(prog, opts);
-				prog.dumpStrata();
+				prog.dumpStrata(ctx);
 				prog.clauseDependencyGraph().dump();
 				break;
 			case GEN_HYBRID:
@@ -233,7 +224,12 @@ public class Compiler {
 		}
 
 		profile().startTimer("main", "total");
-		EvaluationContext ctx = new EvaluationContext();
+		EvaluationContext ctx;
+		if (opts.getLang() == CmdLineOpts.Lang.C4)
+			ctx = new ClangEvaluationContext(opts.getSrcs().keySet());
+		else
+			ctx = new EvaluationContext();
+
 		run(ctx, opts);
 		ctx.cleanup();
 

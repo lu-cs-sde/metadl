@@ -21,11 +21,13 @@ public class CPatternTest {
 
 		java.util.List<Symbol> tokens = CTestUtil.scan(new lang.c.pat.ast.PatLangScanner(new StringReader(c)));
 
-		java.util.List<ParseTree> parseTrees = CTestUtil.parse(tokens, start);
+		var astBuilder = lang.c.pat.ast.ASTBuilder.getInstance();
+		java.util.List<ParseTree> parseTrees = CTestUtil.parse(tokens, start, astBuilder,
+															   lang.c.pat.ast.PatLangParserSEP.Terminals.NAMES);
 
 		assertNotNull(parseTrees);
 
-		for (lang.c.pat.ast.ASTNode ast : CTestUtil.buildAST(tokens, parseTrees)) {
+		for (lang.c.pat.ast.ASTNode ast : CTestUtil.<lang.c.pat.ast.ASTNode>buildAST(tokens, parseTrees, astBuilder)) {
 			ast.debugPrint(System.out);
 		}
 	}

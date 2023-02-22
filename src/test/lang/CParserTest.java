@@ -4,8 +4,6 @@ import java.util.ArrayList;
 import java.util.stream.Collectors;
 import java.io.StringReader;
 import org.apache.commons.lang3.tuple.Pair;
-import lang.c.obj.ast.ObjLangParserSEP;
-import lang.c.obj.ast.ASTBuilder;
 import beaver.Symbol;
 import beaver.Scanner;
 import se.lth.sep.Category;
@@ -29,38 +27,11 @@ public class CParserTest {
 	}
 
 	public static java.util.List<ParseTree> parse(java.util.List<Symbol> tokens, Category startSymbol) {
+
 		String[] tokenNames = lang.c.obj.ast.ObjLangParserSEP.Terminals.NAMES;
-		ASTBuilder astBuilder = ASTBuilder.getInstance();
-		Grammar grammar = astBuilder.getGrammar();
-
-		Category[] tokenCats = tokens.stream().map(sym -> grammar.getCategory(tokenNames[sym.getId()]))
-			.collect(Collectors.toList()).toArray(new Category[0]);
-
-
-		EarleyParser parser = astBuilder.getParser();
-
-		SPPFNode root = parser.parse(tokenCats, startSymbol);
-		if (root == null)
-			return null;
-
-
-		java.util.List<ParseTree> parseTrees = Util.enumerateParseTrees(root, astBuilder.getGrammar(),
-																		new SPPFTrivialProductionRemover(astBuilder.getGrammar()));
-
+		var astBuilder = lang.c.obj.ast.ASTBuilder.getInstance();
+		java.util.List<ParseTree> parseTrees = CTestUtil.parse(tokens, startSymbol, astBuilder, tokenNames);
 		return parseTrees;
-	}
-
-	public static java.util.List<lang.c.obj.ast.ASTNode> buildAST(java.util.List<Symbol> tokens,
-															  java.util.List<ParseTree> parseTrees) {
-		var list = new ArrayList<lang.c.obj.ast.ASTNode>();
-
-		var astBuilder = ASTBuilder.getInstance();
-
-		for (ParseTree pt : parseTrees) {
-			lang.c.obj.ast.ASTNode root = (lang.c.obj.ast.ASTNode) astBuilder.buildAST(pt, tokens);
-			list.add(root);
-		}
-		return list;
 	}
 
 	@Test
@@ -101,7 +72,8 @@ public class CParserTest {
 
 		// Util.dumpParseTrees("test3_", parseTrees);
 
-		buildAST(tokens, parseTrees);
+		CTestUtil.<lang.c.obj.ast.ASTNode>buildAST(tokens, parseTrees,
+												   lang.c.obj.ast.ASTBuilder.getInstance());
 	}
 
 	@Test
@@ -114,7 +86,8 @@ public class CParserTest {
 
 		assertNotNull(parseTrees);
 
-		for (lang.c.obj.ast.ASTNode ast : buildAST(tokens, parseTrees)) {
+		for (lang.c.obj.ast.ASTNode ast : CTestUtil.<lang.c.obj.ast.ASTNode>buildAST(tokens, parseTrees,
+																					 lang.c.obj.ast.ASTBuilder.getInstance())) {
 			ast.debugPrint(System.out);
 		}
 	}
@@ -135,7 +108,8 @@ public class CParserTest {
 
 		Util.dumpParseTrees("test3_", parseTrees);
 
-		for (lang.c.obj.ast.ASTNode ast : buildAST(tokens, parseTrees)) {
+		for (lang.c.obj.ast.ASTNode ast : CTestUtil.<lang.c.obj.ast.ASTNode>buildAST(tokens, parseTrees,
+																					 lang.c.obj.ast.ASTBuilder.getInstance())) {
 			ast.debugPrint(System.out);
 		}
 	}

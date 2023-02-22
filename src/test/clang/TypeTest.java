@@ -18,13 +18,17 @@ public class TypeTest {
 	static <T extends ASTNode> T parse(String s, Category startSymbol) {
 		java.util.List<Symbol> tokens = CTestUtil.scan(new lang.c.pat.ast.PatLangScanner(new StringReader(s)));
 
-		java.util.List<ParseTree> parseTrees = CTestUtil.parse(tokens, startSymbol);
+
+		var astBuilder = lang.c.pat.ast.ASTBuilder.getInstance();
+		java.util.List<ParseTree> parseTrees = CTestUtil.parse(tokens, startSymbol, astBuilder,
+															   lang.c.pat.ast.PatLangParserSEP.Terminals.NAMES);
+
 
 		assertNotNull(parseTrees);
 
 		assertEquals(1, parseTrees.size(), "Expecting an unambigous parse");
 
-		for (ASTNode ast : CTestUtil.buildAST(tokens, parseTrees)) {
+		for (ASTNode ast : CTestUtil.<lang.c.pat.ast.ASTNode>buildAST(tokens, parseTrees, astBuilder)) {
 			return (T) ast;
 		}
 

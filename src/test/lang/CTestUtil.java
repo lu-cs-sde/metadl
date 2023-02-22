@@ -4,7 +4,6 @@ import java.util.stream.Collectors;
 
 import beaver.Symbol;
 import beaver.Scanner;
-import lang.c.pat.ast.ASTBuilder;
 import se.lth.sep.Category;
 import se.lth.sep.EarleyParser;
 import se.lth.sep.Grammar;
@@ -39,9 +38,10 @@ public class CTestUtil {
 	}
 
 
-	public static java.util.List<ParseTree> parse(java.util.List<Symbol> tokens, Category startSymbol) {
-		String[] tokenNames = lang.c.pat.ast.PatLangParserSEP.Terminals.NAMES;
-		ASTBuilder astBuilder = ASTBuilder.getInstance();
+	public static java.util.List<ParseTree> parse(java.util.List<Symbol> tokens,
+												  Category startSymbol,
+												  lang.ast.ASTBuilder astBuilder,
+												  String[] tokenNames) {
 		Grammar grammar = astBuilder.getGrammar();
 
 		Category[] tokenCats = tokens.stream().map(sym -> grammar.getCategory(tokenNames[sym.getId()]))
@@ -69,14 +69,16 @@ public class CTestUtil {
 		return parseTrees;
 	}
 
-	public static java.util.List<lang.c.pat.ast.ASTNode> buildAST(java.util.List<Symbol> tokens,
-															  java.util.List<ParseTree> parseTrees) {
-		var list = new ArrayList<lang.c.pat.ast.ASTNode>();
 
-		var astBuilder = ASTBuilder.getInstance();
+	public static <T> java.util.List<T> buildAST(java.util.List<Symbol> tokens,
+												 java.util.List<ParseTree> parseTrees,
+												 lang.ast.ASTBuilder builder) {
+		var list = new ArrayList<T>();
+
+		var astBuilder = builder;
 
 		for (ParseTree pt : parseTrees) {
-			lang.c.pat.ast.ASTNode root = (lang.c.pat.ast.ASTNode) astBuilder.buildAST(pt, tokens);
+			T root = (T) astBuilder.buildAST(pt, tokens);
 			list.add(root);
 		}
 		return list;

@@ -12,8 +12,6 @@ import se.lth.sep.ParseTree;
 
 
 public class CPatternTest {
-
-
 	private static void testAST(String c, Category start) {
 		System.out.println("================================================================================");
 		System.out.println("Parsing: \"" + c + "\"");

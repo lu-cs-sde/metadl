@@ -160,7 +160,7 @@ whitespace=({horizontal_white})+|({v_tab}|{c_return})+|{continuation}
 
 {identifier} { return sym(Terminals.IDENTIFIER); }
 {integer_constant} { return sym(Terminals.INTEGERConstant); }
-// {octal_constant} { return sym(Terminals.OCTALConstant); }
+{octal_constant} { return sym(Terminals.OCTALConstant); }
 // {hex_constant} { return sym(Terminals.HEXConstant); }
 // {floating_constant} { return sym(Terminals.FLOATINGConstant); }
 // {preprocessing_number} { return sym(Terminals.PPNUM); } // numeric constants supported only by the preprocessor?

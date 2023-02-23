@@ -40,6 +40,7 @@ Identifier identifier = IDENTIFIER {: return new Identifier(IDENTIFIER); :}
 	   	      ;
 
 Constant constant = INTEGERConstant {: return new Constant(); :}
+	 	  | OCTALConstant {: return new Constant(); :}
 	 	  ;
 
 StringLiteral string_literal = STRINGLiteral {: return new StringLiteral(); :}

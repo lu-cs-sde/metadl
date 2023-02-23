@@ -554,7 +554,7 @@ public class AST {
 		}
 
 		@Override protected String extraInfo() {
-			return "'" + name + "'";
+			return "'" + name + "' : " + (type == null ? "?" : type.qualType);
 		}
 
 		@Override public void accept(ASTVisitor v) {

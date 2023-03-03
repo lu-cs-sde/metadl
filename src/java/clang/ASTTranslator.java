@@ -9,6 +9,7 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 
 import clang.AST.ArraySubscriptExpr;
+import clang.AST.ArrayType;
 import clang.AST.BinaryOperator;
 import clang.AST.BuiltinType;
 import clang.AST.CXXForRangeStmt;
@@ -523,6 +524,9 @@ public class ASTTranslator implements ASTVisitor {
 
 	@Override public void visit(Type t) {
 
+	}
+
+	@Override public void visit(ArrayType t) {
 	}
 
 	@Override public void visit(Comment c) {

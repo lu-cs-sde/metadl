@@ -40,6 +40,8 @@ public interface ASTVisitor {
 	void visit(ParenType t);
 	void visit(FunctionProtoType t);
 	void visit(BuiltinType t);
+	void visit(ArrayType t);
+	//void visit(TypeMetaVariable t);
 
 	void visit(Comment c);
 }

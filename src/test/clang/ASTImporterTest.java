@@ -53,11 +53,6 @@ public class ASTImporterTest {
 		DatalogProjection dp = new DatalogProjection(new FileIdDatabase(), sink);
 
 		dp.project("tests/clang/ast_importer/for1.c");
-
-
-		// for (TupleWrapper t : ((RelationWrapper) sink.getAST()).tuples()) {
-		// 	System.out.println(t);
-		// }
 	}
 
 	public static void internalParse(String file, PrintStream out) throws IOException {

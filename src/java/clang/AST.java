@@ -1,5 +1,6 @@
 package clang;
 
+import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.util.Arrays;
 import java.util.Collection;
@@ -155,6 +156,8 @@ public class AST {
 
 		protected <T extends Node> T setChildren(Node ... children) {
 			this.inner = children;
+			this.kind = this.getClass().getSimpleName();
+			this.id = "" + System.identityHashCode(this);
 			return (T) this;
 		}
 	}
@@ -216,7 +219,6 @@ public class AST {
 		@Override public void accept(ASTVisitor v) {
 			v.visit(this);
 		}
-
 	}
 
 	public static class CompoundAssignOperator extends BinaryOperator {
@@ -241,7 +243,6 @@ public class AST {
 		@Override public void accept(ASTVisitor v) {
 			v.visit(this);
 		}
-
 	}
 
 	public static class UnaryOperator extends Expr {
@@ -544,6 +545,7 @@ public class AST {
 	public static class Decl extends Node {
 		public String name = "";
 		public TextualType type;
+		public Type explicitType;
 
 		public boolean isNamed() {
 			return !name.isEmpty();
@@ -554,7 +556,17 @@ public class AST {
 		}
 
 		@Override protected String extraInfo() {
-			return "'" + name + "' : " + (type == null ? "?" : type.qualType);
+			String ret = "'" + name + "' : ";
+			if (explicitType != null) {
+				ByteArrayOutputStream os = new ByteArrayOutputStream();
+				explicitType.prettyPrint(new PrintStream(os));
+				ret += "{" + os.toString() + "}";
+			} else if (type != null) {
+				ret += type.qualType;
+			} else {
+				ret += "?";
+			}
+			return ret;
 		}
 
 		@Override public void accept(ASTVisitor v) {
@@ -630,6 +642,17 @@ public class AST {
 
 		public void accept(ASTVisitor v) {
 			v.visit(this);
+		}
+
+		public static VarDecl build(String name, Type t) {
+			VarDecl ret = new VarDecl();
+			ret.name = name;
+			ret.explicitType = t;
+			return ret.setChildren();
+		}
+
+		public static VarDecl build(String name, Type t, Expr init) {
+			return build(name, t).setChildren(init);
 		}
 	}
 
@@ -725,8 +748,34 @@ public class AST {
 	//--------------------------------------------------------------------------------
 	public static class Type extends Node {
 		TextualType type;
+		StorageClass storage = StorageClass.AUTO;
+		List<TypeQualifier> typeQuals = Collections.emptyList();
+
+		@Override public String extraInfo() {
+			String ret = "";
+			if (storage != StorageClass.AUTO) {
+				ret += storage;
+			}
+
+			for (TypeQualifier tq : typeQuals) {
+				ret += " " + tq;
+			}
+
+			return ret;
+		}
+
 		public void accept(ASTVisitor v) {
 			v.visit(this);
+		}
+
+		public void setTypeQuals(List<TypeQualifier> quals) {
+			if (quals != null && !quals.isEmpty())
+				typeQuals = quals;
+		}
+
+		public void setStorage(StorageClass sc) {
+			if (sc != null)
+				storage = sc;
 		}
 	}
 
@@ -735,11 +784,26 @@ public class AST {
 			v.visit(this);
 		}
 
+		public static PointerType build(Type pointeeType) {
+			return new PointerType().setChildren(pointeeType);
+		}
+
 		public Type getPointeeType() {
-			if (inner != null && inner.length > 0) {
-				return (Type) inner[0];
-			}
-			return null;
+			return (Type) inner[0];
+		}
+	}
+
+	public static class ArrayType extends Type {
+		public void accept(ASTVisitor v) {
+			v.visit(this);
+		}
+
+		public static ArrayType build(Type elementType) {
+			return new ArrayType().setChildren(elementType);
+		}
+
+		public Type getElementType() {
+			return (Type) inner[0];
 		}
 	}
 
@@ -753,6 +817,10 @@ public class AST {
 				return (Type) inner[0];
 			}
 			return null;
+		}
+
+		public static ParenType build(Type innerType) {
+			return new ParenType().setChildren(innerType);
 		}
 	}
 
@@ -775,23 +843,115 @@ public class AST {
 		public Type getParamType(int i) {
 			return (Type) inner[i - 1];
 		}
+
+		public static FunctionProtoType build(Type retType, List<Type> args) {
+			FunctionProtoType ret = new FunctionProtoType();
+			ret.inner = new Node[args.size() + 1];
+			ret.inner[0] = retType;
+			for (int i = 0; i < args.size(); ++i) {
+				ret.inner[i + 1] = args.get(i);
+			}
+			return ret;
+		}
+	}
+
+	public enum BuiltinTypeKind {
+		VOID,
+		CHAR,
+		SHORT,
+		INT,
+		LONG,
+		FLOAT,
+		DOUBLE,
+		SIGNED,
+		UNSIGNED,
+		BOOL,
+		COMPLEX
+	}
+
+	public enum StorageClass {
+		EXTERN,
+		STATIC,
+		THREAD_LOCAL,
+		AUTO,
+		REGISTER,
+		NONE
+	}
+
+	public enum TypeQualifier {
+		CONST,
+		RESTRICT,
+		VOLATILE,
+		ATOMIC,
+		NONE
 	}
 
 	public static class BuiltinType extends Type {
+		public List<BuiltinTypeKind> kinds = Collections.emptyList();
+
+		public void accept(ASTVisitor v) {
+			v.visit(this);
+		}
+
+		@Override public String extraInfo() {
+			String ret = super.extraInfo();
+			for (BuiltinTypeKind kind : kinds) {
+				ret += " " + kind ;
+			}
+			return ret;
+		}
+
+		public static BuiltinType build(List<BuiltinTypeKind> kinds) {
+			BuiltinType ret = new BuiltinType();
+			ret.kinds = kinds;
+			return ret.setChildren();
+		}
+	}
+
+	//--------------------------------------------------------------------------------
+	// Comments (Documentation comments)
+	//--------------------------------------------------------------------------------
+	public static class Comment extends Decl {
+		public String text = "";
 		public void accept(ASTVisitor v) {
 			v.visit(this);
 		}
 	}
 
-
 	//--------------------------------------------------------------------------------
-	// Comments (Documentation comments)
+	// Placeholder nodes / Metavariables
 	//--------------------------------------------------------------------------------
+	interface MetaVariable {
+		String getName();
+		boolean isWildcard();
+	}
 
-	public static class Comment extends Decl {
-		public String text = "";
+	public static class TypeMetaVariable extends Type implements MetaVariable {
+		String name;
+
+		public static TypeMetaVariable build() {
+			return new TypeMetaVariable();
+		}
+
+		public static TypeMetaVariable build(String name) {
+			TypeMetaVariable ret = new TypeMetaVariable();
+			ret.name = name;
+			return ret;
+		}
+
 		public void accept(ASTVisitor v) {
 			v.visit(this);
+		}
+
+		public String getName() {
+			if (isWildcard()) {
+				throw new RuntimeException("Wildcards do not have names.");
+			}
+			return name;
+		}
+
+		public boolean isWildcard() {
+			return name == null;
 		}
 	}
 }

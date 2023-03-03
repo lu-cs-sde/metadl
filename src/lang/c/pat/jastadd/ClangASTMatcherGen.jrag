@@ -1,0 +1,65 @@
+aspect ClangASTMatcherGen {
+	syn ASTMatcher ASTNode.matcher() {
+		if (isMetaVar()) {
+			return this.astMatcherMetaVariable().bind(varName());
+		}
+		return this.astMatcher();
+	}
+
+	syn ASTMatcher ASTNode.astMatcher() {
+		throw new RuntimeException("genMatcher() not defined for " + this.getClass());
+	}
+
+	syn ASTMatcher ASTNode.astMatcherMetaVariable() {
+		throw new RuntimeException("genMatcher() not defined for " + this.getClass());
+	}
+
+	eq ForStatement.astMatcherMetaVariable() {
+		return ASTMatcher.forStmt(Collections.emptyList());
+	}
+
+	eq Expression.astMatcherMetaVariable() {
+		return ASTMatcher.expr(Collections.emptyList());
+	}
+
+	eq Statement.astMatcherMetaVariable() {
+		return ASTMatcher.stmt(Collections.emptyList());
+	}
+
+	eq ForStatement.astMatcher() {
+		java.util.List<ASTMatcher> matchers = new ArrayList<>();
+		Statement init = this.getInit();
+		matchers.add(ASTMatcher.hasLoopInit(init != null ? init.matcher() : ASTMatcher.nullStmt()));
+
+		Statement cond = this.getCond();
+		matchers.add(ASTMatcher.hasCondition(cond != null ? cond.matcher() : ASTMatcher.nullStmt()));
+
+		Statement update = this.getUpdate();
+		matchers.add(ASTMatcher.hasIncrement(update != null ? update.matcher() : ASTMatcher.nullStmt()));
+
+		Statement body = this.getStatement();
+		matchers.add(ASTMatcher.hasBody(body.matcher()));
+
+		return ASTMatcher.forStmt(matchers);
+	}
+
+	eq WhileStatement.astMatcher() {
+		return ASTMatcher.whileStmt(java.util.List.of(this.getExpression().matcher(), this.getStatement().matcher()));
+	}
+
+	eq DoWhileStatement.astMatcher() {
+		return ASTMatcher.doStmt(java.util.List.of(this.getExpression().matcher(), this.getStatement().matcher()));
+	}
+
+	eq EmptyStatement.astMatcher() {
+		return ASTMatcher.nullStmt();
+	}
+
+	eq DeclarationStatement.astMatcher() {
+		return ASTMatcher.declStmt(ASTMatcher.has(getDeclarationOrDefinition().astMatcher()));
+	}
+
+	eq Declaration.astMatcher() {
+		return ASTMatcher.decl();
+	}
+}

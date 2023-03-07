@@ -59,9 +59,7 @@ public class TypeTest {
 		d.debugPrint(System.out);
 	}
 
-	@Test
-	public void test4() {
-		String s = "const int * const p = 10, q = 11;";
+	private static void testDecl(String s) {
 		Declaration d = parse(s, lang.c.pat.ast.PatLangParserSEP.n_declaration);
 		d.debugPrint(System.out);
 
@@ -69,75 +67,54 @@ public class TypeTest {
 		for (AST.Decl clangDecl : d.clangDecls()) {
 			clangDecl.prettyPrint(System.out);
 		}
+	}
+
+	@Test
+	public void test4() {
+		String s = "const int * const p = 10, q = 11;";
+		testDecl(s);
 	}
 
 	@Test
 	public void test5() {
 		String s = "int p, q;";
-		Declaration d = parse(s, lang.c.pat.ast.PatLangParserSEP.n_declaration);
-		d.debugPrint(System.out);
-
-		System.out.println("========================================");
-		for (AST.Decl clangDecl : d.clangDecls()) {
-			clangDecl.prettyPrint(System.out);
-		}
-
+		testDecl(s);
 	}
 
 	@Test
 	public void test6() {
 		String s = "const int p[const 10];";
-
-		Declaration d = parse(s, lang.c.pat.ast.PatLangParserSEP.n_declaration);
-		d.debugPrint(System.out);
-
-		System.out.println("========================================");
-		for (AST.Decl clangDecl : d.clangDecls()) {
-			clangDecl.prettyPrint(System.out);
-		}
+		testDecl(s);
 	}
 
 	@Test
 	public void test7() {
 		String s = "int foo(int);";
-
-		Declaration d = parse(s, lang.c.pat.ast.PatLangParserSEP.n_declaration);
-		d.debugPrint(System.out);
-
-		System.out.println("========================================");
-		for (AST.Decl clangDecl : d.clangDecls()) {
-			clangDecl.prettyPrint(System.out);
-		}
+		testDecl(s);
 	}
 
 	@Test
 	public void test8() {
 		String s = "int foo(int n);";
-
-		Declaration d = parse(s, lang.c.pat.ast.PatLangParserSEP.n_declaration);
-		d.debugPrint(System.out);
-
-		System.out.println("========================================");
-		for (AST.Decl clangDecl : d.clangDecls()) {
-			clangDecl.prettyPrint(System.out);
-		}
+		testDecl(s);
 	}
 
 
 	@Test
-	@Disabled
 	public void test9() {
 		String s = "int (*foo)(int);";
-
-		Declaration d = parse(s, lang.c.pat.ast.PatLangParserSEP.n_declaration);
-		d.debugPrint(System.out);
-
-		System.out.println("========================================");
-		for (AST.Decl clangDecl : d.clangDecls()) {
-			clangDecl.prettyPrint(System.out);
-		}
+		testDecl(s);
 	}
 
+	@Test
+	public void test10() {
+		String s = "int *p[10];";
+		testDecl(s);
+	}
 
-
+	@Test
+	public void test11() {
+		String s = "int (* const p)[10];";
+		testDecl(s);
+	}
 }

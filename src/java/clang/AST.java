@@ -882,7 +882,8 @@ public class AST {
 		}
 
 		public static FunctionProtoType build(Type retType, List<Type> args) {
-			FunctionProtoType ret = new FunctionProtoType();
+			FunctionProtoType ret = new FunctionProtoType().setChildren();
+
 			ret.inner = new Node[args.size() + 1];
 			ret.inner[0] = retType;
 			for (int i = 0; i < args.size(); ++i) {

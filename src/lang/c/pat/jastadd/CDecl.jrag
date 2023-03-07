@@ -125,27 +125,27 @@ aspect CDecl {
 	syn AST.Type Declarator.asType(AST.Type innerType);
 	eq IdentifierDeclarator.asType(AST.Type innerType) = innerType;
 	eq PointerDeclarator.asType(AST.Type innerType) {
-		AST.Type t = AST.PointerType.build(getDeclarator().asType(innerType));
+		AST.Type t = AST.PointerType.build(innerType);
 		for (TypeQualifier q : getTypeQualifiers()) {
 			t.addQual(q.asTypeQualifier());
 		}
-		return t;
+		return getDeclarator().asType(t);
 	}
 
 	eq ArrayDeclarator.asType(AST.Type innerType) {
-		AST.Type t = AST.ArrayType.build(getDeclarator().asType(innerType));
+		AST.Type t = AST.ArrayType.build(innerType);
 		for (TypeQualifier q : getTypeQualifiers()) {
 			t.addQual(q.asTypeQualifier());
 		}
-		return t;
+		return getDeclarator().asType(t);
 	}
 
 	eq ArrayDeclaratorVLA.asType(AST.Type innerType) {
-		AST.Type t = AST.ArrayType.build(getDeclarator().asType(innerType));
+		AST.Type t = AST.ArrayType.build(innerType);
 		for (TypeQualifier q : getTypeQualifiers()) {
 			t.addQual(q.asTypeQualifier());
 		}
-		return t;
+		return getDeclarator().asType(t);
 	}
 
 	eq FunctionDeclarator.asType(AST.Type innerType) {
@@ -153,7 +153,7 @@ aspect CDecl {
 		for (ParameterType pDecl : getParameterTypes()) {
 			paramTypes.add(pDecl.asType());
 		}
-		return AST.FunctionProtoType.build(getDeclarator().asType(innerType) , paramTypes);
+		return getDeclarator().asType(AST.FunctionProtoType.build(innerType , paramTypes));
 	}
 
 
@@ -162,62 +162,52 @@ aspect CDecl {
 	}
 
 	eq AbstractPointerDeclarator.asType(AST.Type innerType) {
-		AST.Type t;
-		if (hasAbstractDeclarator()) {
-			t = AST.PointerType.build(getAbstractDeclarator().asType(innerType));
-		} else {
-			t = AST.PointerType.build(innerType);
-		}
-
+		AST.Type t = AST.PointerType.build(innerType);
 		for (TypeQualifier q : getTypeQualifiers()) {
 			t.addQual(q.asTypeQualifier());
 		}
-		return t;
+		if (hasAbstractDeclarator()) {
+			return getAbstractDeclarator().asType(t);
+		} else {
+			return t;
+		}
 	}
 
 	eq AbstractArrayDeclarator.asType(AST.Type innerType) {
-		AST.Type t;
-		if (hasAbstractDeclarator()) {
-			t = AST.ArrayType.build(getAbstractDeclarator().asType(innerType));
-		} else {
-			t = AST.ArrayType.build(innerType);
-		}
-
+		AST.Type t = AST.ArrayType.build(innerType);
 		for (TypeQualifier q : getTypeQualifiers()) {
 			t.addQual(q.asTypeQualifier());
 		}
-		return t;
+		if (hasAbstractDeclarator()) {
+			return getAbstractDeclarator().asType(t);
+		} else {
+			return t;
+		}
 	}
 
 	eq AbstractArrayDeclaratorVLA.asType(AST.Type innerType) {
-		AST.Type t;
-		if (hasAbstractDeclarator()) {
-			t = AST.ArrayType.build(getAbstractDeclarator().asType(innerType));
-		} else {
-			t = AST.ArrayType.build(innerType);
-		}
-
+		AST.Type t = AST.ArrayType.build(innerType);
 		for (TypeQualifier q : getTypeQualifiers()) {
 			t.addQual(q.asTypeQualifier());
 		}
-		return t;
+		if (hasAbstractDeclarator()) {
+			return getAbstractDeclarator().asType(t);
+		} else {
+			return t;
+		}
 	}
 
 	eq AbstractFunctionDeclarator.asType(AST.Type innerType) {
-		AST.Type t;
-		if (hasAbstractDeclarator()) {
-			t = AST.ArrayType.build(getAbstractDeclarator().asType(innerType));
-		} else {
-			t = innerType;
-		}
-
-
 		java.util.List<AST.Type> paramTypes = new ArrayList<>();
 		for (ParameterType pDecl : getParameterTypes()) {
 			paramTypes.add(pDecl.asType());
 		}
-
-		return AST.FunctionProtoType.build(t, paramTypes);
+		AST.Type t = AST.FunctionProtoType.build(innerType, paramTypes);
+		if (hasAbstractDeclarator()) {
+			return getAbstractDeclarator().asType(t);
+		} else {
+			return t;
+		}
 	}
 
 	eq MetaVarDeclarator.asType(AST.Type innerType) { throw new RuntimeException("MetaVarDeclarator.asType() should never be called."); }

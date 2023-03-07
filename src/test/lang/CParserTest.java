@@ -271,4 +271,9 @@ public class CParserTest {
 		testAST("if (x > y) { if (x == z) x++; else x--; }", lang.c.obj.ast.ObjLangParserSEP.n_selection_statement);
 	}
 
+	@Test
+	public void testMultipleVarsInOneDecl() {
+		testAST("const int p, q;", lang.c.obj.ast.ObjLangParserSEP.n_declaration);
+	}
+
 }

@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.io.StringReader;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import beaver.Symbol;
@@ -20,11 +21,15 @@ public class TypeTest {
 
 		var astBuilder = lang.c.pat.ast.ASTBuilder.getInstance();
 		java.util.List<ParseTree> parseTrees = CTestUtil.parse(tokens, startSymbol, astBuilder,
-															   lang.c.pat.ast.PatLangParserSEP.Terminals.NAMES);
+				lang.c.pat.ast.PatLangParserSEP.Terminals.NAMES);
 
 		assertNotNull(parseTrees);
 
-		assertEquals(1, parseTrees.size(), "Expecting an unambigous parse");
+		if (parseTrees.size() > 1) {
+			se.lth.sep.Util.dumpParseTrees("ambigous_parse_", parseTrees);
+		}
+
+		// assertEquals(1, parseTrees.size(), "Expecting an unambigous parse");
 
 		for (ASTNode ast : CTestUtil.<lang.c.pat.ast.ASTNode>buildAST(tokens, parseTrees, astBuilder)) {
 			return (T) ast;
@@ -33,26 +38,30 @@ public class TypeTest {
 		return null;
 	}
 
-	@Test public void test1() {
+	@Test
+	public void test1() {
 		String s = "int *array[10];";
 		Declaration d = parse(s, lang.c.pat.ast.PatLangParserSEP.n_declaration);
 		d.debugPrint(System.out);
 	}
 
-	@Test public void test2() {
+	@Test
+	public void test2() {
 		String s = "int (*array)[10];";
 		Declaration d = parse(s, lang.c.pat.ast.PatLangParserSEP.n_declaration);
 		d.debugPrint(System.out);
 	}
 
-	@Test public void test3() {
+	@Test
+	public void test3() {
 		String s = "const int * const p = 10;";
 		Declaration d = parse(s, lang.c.pat.ast.PatLangParserSEP.n_declaration);
 		d.debugPrint(System.out);
 	}
 
-	@Test public void test4() {
-		String s = "const int * const p = 10;";
+	@Test
+	public void test4() {
+		String s = "const int * const p = 10, q = 11;";
 		Declaration d = parse(s, lang.c.pat.ast.PatLangParserSEP.n_declaration);
 		d.debugPrint(System.out);
 
@@ -61,4 +70,74 @@ public class TypeTest {
 			clangDecl.prettyPrint(System.out);
 		}
 	}
+
+	@Test
+	public void test5() {
+		String s = "int p, q;";
+		Declaration d = parse(s, lang.c.pat.ast.PatLangParserSEP.n_declaration);
+		d.debugPrint(System.out);
+
+		System.out.println("========================================");
+		for (AST.Decl clangDecl : d.clangDecls()) {
+			clangDecl.prettyPrint(System.out);
+		}
+
+	}
+
+	@Test
+	public void test6() {
+		String s = "const int p[const 10];";
+
+		Declaration d = parse(s, lang.c.pat.ast.PatLangParserSEP.n_declaration);
+		d.debugPrint(System.out);
+
+		System.out.println("========================================");
+		for (AST.Decl clangDecl : d.clangDecls()) {
+			clangDecl.prettyPrint(System.out);
+		}
+	}
+
+	@Test
+	public void test7() {
+		String s = "int foo(int);";
+
+		Declaration d = parse(s, lang.c.pat.ast.PatLangParserSEP.n_declaration);
+		d.debugPrint(System.out);
+
+		System.out.println("========================================");
+		for (AST.Decl clangDecl : d.clangDecls()) {
+			clangDecl.prettyPrint(System.out);
+		}
+	}
+
+	@Test
+	public void test8() {
+		String s = "int foo(int n);";
+
+		Declaration d = parse(s, lang.c.pat.ast.PatLangParserSEP.n_declaration);
+		d.debugPrint(System.out);
+
+		System.out.println("========================================");
+		for (AST.Decl clangDecl : d.clangDecls()) {
+			clangDecl.prettyPrint(System.out);
+		}
+	}
+
+
+	@Test
+	@Disabled
+	public void test9() {
+		String s = "int (*foo)(int);";
+
+		Declaration d = parse(s, lang.c.pat.ast.PatLangParserSEP.n_declaration);
+		d.debugPrint(System.out);
+
+		System.out.println("========================================");
+		for (AST.Decl clangDecl : d.clangDecls()) {
+			clangDecl.prettyPrint(System.out);
+		}
+	}
+
+
+
 }

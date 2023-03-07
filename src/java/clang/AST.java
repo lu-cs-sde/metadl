@@ -6,7 +6,9 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class AST {
 	public static class TextualType {
@@ -157,7 +159,7 @@ public class AST {
 		protected <T extends Node> T setChildren(Node ... children) {
 			this.inner = children;
 			this.kind = this.getClass().getSimpleName();
-			this.id = "" + System.identityHashCode(this);
+			this.id = "0x" + Integer.toHexString(System.identityHashCode(this));
 			return (T) this;
 		}
 	}
@@ -578,6 +580,20 @@ public class AST {
 		@Override public void accept(ASTVisitor v) {
 			v.visit(this);
 		}
+
+
+		public static ParmVarDecl build(String name, Type t) {
+			ParmVarDecl ret = new ParmVarDecl();
+			ret.name = name;
+			ret.explicitType = t;
+			return ret.setChildren();
+		}
+
+		public static ParmVarDecl build(Type t) {
+			ParmVarDecl ret = new ParmVarDecl();
+			ret.explicitType = t;
+			return ret.setChildren();
+		}
 	}
 
 	public static class FunctionDecl extends Decl {
@@ -585,7 +601,7 @@ public class AST {
 		public boolean variadic;
 
 		@Override protected String extraInfo() {
-			return String.format(" mangledName:'%s' ", mangledName);
+			return String.format(" mangledName:'%s' ", mangledName) + super.extraInfo();
 		}
 
 		private List<ParmVarDecl> params;
@@ -627,6 +643,20 @@ public class AST {
 
 		public void accept(ASTVisitor v) {
 			v.visit(this);
+		}
+
+		public static FunctionDecl build(String name, Type t, List<ParmVarDecl> params) {
+			FunctionDecl ret = new FunctionDecl();
+			ret.mangledName = name;
+			ret.explicitType = t;
+			return ret.setChildren(params.toArray(new Node[0]));
+		}
+
+		public static FunctionDecl build(String name, Type t, List<ParmVarDecl> params, Stmt body) {
+			FunctionDecl ret = new FunctionDecl();
+			ret.mangledName = name;
+			ret.explicitType = t;
+			return ret.setChildren(Stream.concat(params.stream(), List.of(body).stream()).toArray(Node[]::new));
 		}
 	}
 
@@ -769,13 +799,20 @@ public class AST {
 		}
 
 		public void setTypeQuals(List<TypeQualifier> quals) {
-			if (quals != null && !quals.isEmpty())
-				typeQuals = quals;
+			for (TypeQualifier q : quals) {
+				addQual(q);
+			}
 		}
 
 		public void setStorage(StorageClass sc) {
-			if (sc != null)
-				storage = sc;
+			storage = sc;
+		}
+
+		public void addQual(TypeQualifier q) {
+			if (typeQuals.isEmpty()) {
+				typeQuals = new ArrayList<>();
+			}
+			typeQuals.add(q);
 		}
 	}
 

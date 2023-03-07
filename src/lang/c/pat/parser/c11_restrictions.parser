@@ -5,6 +5,6 @@
 // RESTRICTION: init_declarator_list_opt can contain 0 or 1 elements.
 // This disables declaration like 'int x, y;' in the patterns. They are not needed
 // because clang introduces a VarDecl node for each declaration.
-List init_declarator_list_opt := init_declarator {: return new List().add(init_declarator); :}
-     			       | /* empty */  {: return new List(); :}
-			       ;
+// List init_declarator_list_opt := init_declarator {: return new List().add(init_declarator); :}
+//      			       | /* empty */  {: return new List(); :}
+// 			       ;

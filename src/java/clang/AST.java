@@ -560,9 +560,7 @@ public class AST {
 		@Override protected String extraInfo() {
 			String ret = "'" + name + "' : ";
 			if (explicitType != null) {
-				ByteArrayOutputStream os = new ByteArrayOutputStream();
-				explicitType.prettyPrint(new PrintStream(os));
-				ret += "{" + os.toString() + "}";
+				ret += explicitType.printAsType();
 			} else if (type != null) {
 				ret += type.qualType;
 			} else {
@@ -782,13 +780,19 @@ public class AST {
 		List<TypeQualifier> typeQuals = Collections.emptyList();
 
 		@Override public String extraInfo() {
+			return printQuals();
+		}
+
+		protected String printQuals() {
 			String ret = "";
 			if (storage != StorageClass.AUTO) {
-				ret += storage;
+				ret += storage + " ";
 			}
 
 			for (TypeQualifier tq : typeQuals) {
-				ret += " " + tq;
+				if (!ret.isEmpty())
+					ret += " ";
+				ret += tq;
 			}
 
 			return ret;
@@ -814,6 +818,10 @@ public class AST {
 			}
 			typeQuals.add(q);
 		}
+
+		public String printAsType() {
+			return "?";
+		}
 	}
 
 	public static class PointerType extends Type {
@@ -828,6 +836,13 @@ public class AST {
 		public Type getPointeeType() {
 			return (Type) inner[0];
 		}
+
+		public String printAsType() {
+			String quals = printQuals();
+			if (!quals.isEmpty())
+				quals += " ";
+			return "(* " + quals + getPointeeType().printAsType() + ")";
+		}
 	}
 
 	public static class ArrayType extends Type {
@@ -841,6 +856,13 @@ public class AST {
 
 		public Type getElementType() {
 			return (Type) inner[0];
+		}
+
+		public String printAsType() {
+			String quals = printQuals();
+			if (!quals.isEmpty())
+				quals += " ";
+			return "([] "  + quals + getElementType().printAsType() + ")";
 		}
 	}
 
@@ -866,7 +888,7 @@ public class AST {
 			v.visit(this);
 		}
 
-		public Type getReturnType(ASTVisitor v) {
+		public Type getReturnType() {
 			if (inner != null && inner.length > 0) {
 				return (Type) inner[0];
 			}
@@ -878,7 +900,7 @@ public class AST {
 		}
 
 		public Type getParamType(int i) {
-			return (Type) inner[i - 1];
+			return (Type) inner[i + 1];
 		}
 
 		public static FunctionProtoType build(Type retType, List<Type> args) {
@@ -889,6 +911,16 @@ public class AST {
 			for (int i = 0; i < args.size(); ++i) {
 				ret.inner[i + 1] = args.get(i);
 			}
+			return ret;
+		}
+
+		public String printAsType() {
+			String ret = "(() " + getReturnType().printAsType();
+			for (int i = 0; i < getNumParamType(); ++i) {
+				ret += " " + getParamType(i).printAsType();
+			}
+			ret += ")";
+
 			return ret;
 		}
 	}
@@ -927,7 +959,7 @@ public class AST {
 	public static class BuiltinType extends Type {
 		public List<BuiltinTypeKind> kinds = Collections.emptyList();
 
-		public void accept(ASTVisitor v) {
+		@Override public void accept(ASTVisitor v) {
 			v.visit(this);
 		}
 
@@ -937,6 +969,23 @@ public class AST {
 				ret += " " + kind ;
 			}
 			return ret;
+		}
+
+		@Override public String printAsType() {
+			String ret = "";
+			for (BuiltinTypeKind kind : kinds) {
+				if (!ret.isEmpty())
+					ret += " ";
+				else
+					ret += "(";
+				ret += kind.toString();
+			}
+			String quals = printQuals();
+			if (!quals.isEmpty())
+				ret += " " + quals ;
+			ret += ")";
+			return ret;
+
 		}
 
 		public static BuiltinType build(List<BuiltinTypeKind> kinds) {

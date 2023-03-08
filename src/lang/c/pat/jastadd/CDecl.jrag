@@ -86,12 +86,16 @@ aspect CDecl {
 		Identifier ident = this.declaredIdentifier();
 		AST.Type type = this.asType(innerType);
 
-		java.util.List<AST.ParmVarDecl> params = new ArrayList<>();
-		for (ParameterType pt : getParameterTypes()) {
-			params.add(pt.asClangDecl());
-		}
+		if (type instanceof AST.PointerType) {
+			return super.asClangDecl(innerType);
+		} else {
+			java.util.List<AST.ParmVarDecl> params = new ArrayList<>();
+			for (ParameterType pt : getParameterTypes()) {
+				params.add(pt.asClangDecl());
+			}
 
-		return AST.FunctionDecl.build(ident.getID(), type, params);
+			return AST.FunctionDecl.build(ident.getID(), type, params);
+		}
 	}
 
 	syn AST.ParmVarDecl ParameterType.asClangDecl() { throw new RuntimeException("ParameterType.asClangDecl() not implemented."); }

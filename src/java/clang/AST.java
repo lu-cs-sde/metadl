@@ -162,6 +162,15 @@ public class AST {
 			this.id = "0x" + Integer.toHexString(System.identityHashCode(this));
 			return (T) this;
 		}
+
+		protected <T extends Node> T setChildren(Collection<? extends Node> children) {
+			this.inner = children.toArray(new Node[0]);
+			this.kind = this.getClass().getSimpleName();
+			this.id = "0x" + Integer.toHexString(System.identityHashCode(this));
+
+			return (T) this;
+		}
+
 	}
 
 
@@ -696,6 +705,20 @@ public class AST {
 				return (Expr) inner[0];
 			return null;
 		}
+
+		public static FieldDecl build(String name, Type t) {
+			FieldDecl ret = new FieldDecl().setChildren();
+			ret.name = name;
+			ret.explicitType = t;
+			return ret;
+		}
+
+		public static FieldDecl build(String name, Type t, Expr bitfieldSize) {
+			FieldDecl ret = new FieldDecl().setChildren(bitfieldSize);
+			ret.name = name;
+			ret.explicitType = t;
+			return ret;
+		}
 	}
 
 	public static class TranslationUnitDecl extends Decl {
@@ -734,6 +757,22 @@ public class AST {
 
 		public void accept(ASTVisitor v) {
 			v.visit(this);
+		}
+
+
+		public static RecordDecl build(String name, RecordKind kind, List<Decl> fields) {
+			// NOTE: 'fields' can contain other type decls, comments, not only actual fields
+			RecordDecl ret = new RecordDecl().setChildren(fields);
+			ret.tagUsed = kind.getTag();
+			ret.name = name;
+			return ret;
+		}
+
+		public static RecordDecl build(RecordKind kind, List<Decl> fields) {
+			// NOTE: 'fields' can contain other type decls, comments, not only actual fields
+			RecordDecl ret = new RecordDecl().setChildren(fields);
+			ret.tagUsed = kind.getTag();
+			return ret;
 		}
 
 	}
@@ -821,6 +860,45 @@ public class AST {
 
 		public String printAsType() {
 			return "?";
+		}
+	}
+
+	public static class AnonymousRecordType extends Type {
+		// anonymous struct, union and enums
+		RecordDecl decl;
+
+		public static AnonymousRecordType build(RecordDecl decl) {
+			AnonymousRecordType ret = new AnonymousRecordType().setChildren();
+			ret.decl = decl;
+			return ret;
+		}
+
+		@Override public String printAsType() {
+			String quals = printQuals();
+			if (!quals.isEmpty())
+				quals = " " + quals;
+			return "(" + RecordKind.fromTag(decl.tagUsed) + "?" + quals + ")";
+		}
+	}
+
+	public static class TypedefType extends Type {
+		String refName;
+
+		public void accept(ASTVisitor v) {
+			v.visit(this);
+		}
+
+		@Override public String printAsType() {
+			String quals = printQuals();
+			if (!quals.isEmpty())
+				quals = " " + quals;
+			return "(" + refName + quals + ")";
+		}
+
+		public static TypedefType build(String name) {
+			TypedefType t = new TypedefType().setChildren();
+			t.refName = name;
+			return t;
 		}
 	}
 
@@ -922,6 +1000,55 @@ public class AST {
 			ret += ")";
 
 			return ret;
+		}
+	}
+
+	public enum RecordKind {
+		STRUCT("struct"),
+		UNION("union"),
+		CLASS("class");
+
+		private String tag;
+		private RecordKind(String tag) {
+			this.tag = tag;
+		}
+		public String getTag() {
+			return tag;
+		}
+		public static RecordKind fromTag(String tag) {
+			switch (tag) {
+			case "struct":
+				return STRUCT;
+			case "union":
+				return UNION;
+			case "class":
+				return CLASS;
+			default:
+				throw new IllegalArgumentException();
+			}
+		}
+	}
+
+	public static class RecordRefType extends Type {
+		RecordKind kind;
+		String name;
+
+		public void accept(ASTVisitor v) {
+			v.visit(this);
+		}
+
+		public String printAsType() {
+			String quals = printQuals();
+			if (!quals.isEmpty())
+				quals = " " + quals;
+			return "(" + kind.toString() + " " + name + quals + ")";
+		}
+
+		public static RecordRefType build(RecordKind kind, String name) {
+			RecordRefType ref = new RecordRefType().setChildren();
+			ref.kind = kind;
+			ref.name = name;
+			return ref;
 		}
 	}
 

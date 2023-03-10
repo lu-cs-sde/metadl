@@ -85,6 +85,8 @@ TypeSpecifier type_specifier = VOID {: return new Void(); :}
                              | atomic_type_specifier
                              | struct_specifier
                              | union_specifier
+                             | struct_specifier_ref
+                             | union_specifier_ref
                              | enum_specifier
                              | typedef_name
                              ;
@@ -96,12 +98,14 @@ TypeSpecifier type_specifier = VOID {: return new Void(); :}
 // struct
 // union
 StructSpecifier struct_specifier = STRUCT identifier? LBRACE struct_declaration_list RBRACE {: return new StructSpecifier(identifier, struct_declaration_list); :}
-                                 | STRUCT identifier {: return new StructSpecifier(new Opt(identifier), new List()); :}
                                  ;
+StructSpecifierRef struct_specifier_ref = STRUCT identifier {: return new StructSpecifierRef(identifier); :}
+                                        ;
 
 UnionSpecifier union_specifier = UNION identifier? LBRACE struct_declaration_list RBRACE {: return new UnionSpecifier(identifier, struct_declaration_list); :}
-                               | UNION identifier {: return new UnionSpecifier(new Opt(identifier), new List()); :}
                                ;
+UnionSpecifierRef union_specifier_ref = UNION identifier {: return new UnionSpecifierRef(identifier); :}
+                                      ;
 
 List struct_declaration_list = struct_declaration {: return new List().add(struct_declaration); :}
 			     | struct_declaration_list struct_declaration {: return struct_declaration_list.add(struct_declaration); :}

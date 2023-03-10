@@ -272,6 +272,10 @@ abstract StructOrUnionSpecifier : TypeSpecifier ::= [Identifier] StructDeclarati
 StructSpecifier : StructOrUnionSpecifier;
 UnionSpecifier : StructOrUnionSpecifier;
 
+abstract StructOrUnionSpecifierRef : TypeSpecifier ::= Identifier;
+StructSpecifierRef : StructOrUnionSpecifierRef;
+UnionSpecifierRef : StructOrUnionSpecifierRef;
+
 // (6.7.2.1) struct-or-union:
 // struct
 // union

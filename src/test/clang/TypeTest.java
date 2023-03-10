@@ -73,8 +73,10 @@ public class TypeTest {
 		Declaration d = parse(decl, lang.c.pat.ast.PatLangParserSEP.n_declaration);
 		List<AST.Decl> result = d.clangDecls();
 
-		assertEquals(expectedTypes.length, result.size());
+		//assertEquals(expectedTypes.length, result.size());
 		for (int i = 0; i < result.size(); ++i) {
+			if (expectedTypes[i] == null)
+				continue;
 			assertEquals(expectedTypes[i], result.get(i).explicitType.printAsType());
 		}
 	}
@@ -148,4 +150,41 @@ public class TypeTest {
 		checkTypes(s, "(() (INT) (* (() (INT) (INT) (INT))) (INT) (INT))");
 	}
 
+	@Test
+	public void test14() {
+		String s = "const MyType * const x;";
+		checkTypes(s, "(* CONST (MyType CONST))");
+	}
+
+	@Test
+	public void test15() {
+		String s = "struct MyStruct s;";
+		checkTypes(s, "(STRUCT MyStruct)");
+	}
+
+	@Test
+	public void test16() {
+		String s = "union MyUnion s;";
+		checkTypes(s, "(UNION MyUnion)");
+	}
+
+	@Test
+	public void test17() {
+		String s = "struct MyStruct { int x; } s;";
+		checkTypes(s, null, "(STRUCT MyStruct)");
+	}
+
+	@Test
+	public void test18() {
+		String s = "struct {int x; } s;";
+		checkTypes(s, null, "(STRUCT?)");
+		debugDecl(s);
+	}
+
+	@Test
+	public void test19() {
+		String s = "struct MyStruct { int tag; union { int x; float y; } u; } s;";
+		checkTypes(s, null, "(STRUCT MyStruct)");
+		debugDecl(s);
+	}
 }

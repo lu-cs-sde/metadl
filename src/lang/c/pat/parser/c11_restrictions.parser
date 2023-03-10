@@ -8,3 +8,9 @@
 // List init_declarator_list_opt := init_declarator {: return new List().add(init_declarator); :}
 //      			       | /* empty */  {: return new List(); :}
 // 			       ;
+
+
+// RESTRICTION: add some sanity to the language and don't allow
+// the user to declare 'anonymous' variables, i.e. "const int;".
+List init_declarator_list_opt := init_declarator_list
+                              ;

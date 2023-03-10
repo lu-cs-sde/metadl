@@ -1,6 +1,9 @@
 import java.util.ArrayList;
+import java.util.stream.StreamSupport;
+import java.util.stream.Stream;
 import clang.ASTMatcher;
 import clang.AST;
+
 
 aspect CDecl {
 	///
@@ -27,15 +30,16 @@ aspect CDecl {
 	eq FunctionDeclarator.declaredIdentifier() = getDeclarator().declaredIdentifier();
 
 	// Extract a type from a declaration.
-	static AST.Type DeclarationSpecifier.typeFromDeclarationSpecifiers(Iterable<DeclarationSpecifier> specs) {
+	public static AST.Type DeclarationSpecifier.typeFromDeclarationSpecifiers(Iterable<? extends DeclarationSpecifier> specs) {
 		java.util.List<AST.BuiltinTypeKind> typeKinds = new ArrayList<>();
 		java.util.List<AST.TypeQualifier> typeQuals = new ArrayList<>();
 		AST.StorageClass storage = null;
+		AST.Type type = null;
 
 		for (DeclarationSpecifier ds : specs) {
-			AST.BuiltinTypeKind type = ds.asBuiltinTypeKind();
-			if (type != null)
-				typeKinds.add(type);
+			AST.BuiltinTypeKind typeKind = ds.asBuiltinTypeKind();
+			if (typeKind != null)
+				typeKinds.add(typeKind);
 
 			AST.TypeQualifier typeQual = ds.asTypeQualifier();
 			if (typeQual != null)
@@ -48,12 +52,24 @@ aspect CDecl {
 				}
 				storage = sc;
 			}
+
+			if (ds.asType() != null) {
+				if (type != null) {
+					throw new RuntimeException("At most one type name for a declaration!");
+				}
+				type = ds.asType();
+			}
 		}
 
 		if (typeKinds.isEmpty()) {
 			// TODO: this may be a reference to a typedefed type,
 			// or a record/enum definition
-			return null;
+			if (type != null) {
+				if (storage != null)
+					type.setStorage(storage);
+				type.setTypeQuals(typeQuals);
+				return type;
+			}
 		} else {
 			AST.BuiltinType t = AST.BuiltinType.build(typeKinds);
 			t.setTypeQuals(typeQuals);
@@ -63,11 +79,28 @@ aspect CDecl {
 			}
 			return t;
 		}
+
+		return null;
+	}
+
+	public static AST.Decl DeclarationSpecifier.declFromDeclarationSpecifiers(Iterable<? extends DeclarationSpecifier> specs) {
+		for (DeclarationSpecifier ds : specs) {
+			AST.Decl d = ds.asClangDecl();
+			if (d != null)
+				return d;
+		}
+		return null;
 	}
 
 	syn java.util.List<clang.AST.Decl> Declaration.clangDecls() {
 		java.util.List<clang.AST.Decl> ret = new ArrayList<>();
 		AST.Type innerType = DeclarationSpecifier.typeFromDeclarationSpecifiers(getDeclarationSpecifiers());
+
+		AST.Decl typeDecl = DeclarationSpecifier.declFromDeclarationSpecifiers(getDeclarationSpecifiers());
+
+		if (typeDecl != null) {
+			ret.add(typeDecl);
+		}
 
 		for (InitDeclarator initDecl : getInitDeclarators()) {
 			ret.add(initDecl.getDeclarator().asClangDecl(innerType));
@@ -230,6 +263,88 @@ aspect CDecl {
 	eq Unsigned.asBuiltinTypeKind() = AST.BuiltinTypeKind.UNSIGNED;
 	eq Bool.asBuiltinTypeKind() = AST.BuiltinTypeKind.BOOL;
 	eq Complex.asBuiltinTypeKind() = AST.BuiltinTypeKind.COMPLEX;
+
+	syn AST.Type DeclarationSpecifier.asType() = null;
+	eq TypedefName.asType() {
+		return AST.TypedefType.build(getIdentifier().getID());
+	}
+
+	eq StructSpecifierRef.asType() {
+		return AST.RecordRefType.build(AST.RecordKind.STRUCT, getIdentifier().getID());
+	}
+
+	eq UnionSpecifierRef.asType() {
+		return AST.RecordRefType.build(AST.RecordKind.UNION, getIdentifier().getID());
+	}
+
+	eq StructOrUnionSpecifier.asType() {
+		if (hasIdentifier()) {
+			return AST.RecordRefType.build(recordKind(), getIdentifier().getID());
+		} else {
+			// this is an anonymous record
+			return AST.AnonymousRecordType.build((AST.RecordDecl) this.asClangDecl());
+
+		}
+	}
+
+	syn AST.Decl DeclarationSpecifier.asClangDecl() = null;
+	eq StructOrUnionSpecifier.asClangDecl() {
+		String name = hasIdentifier() ? getIdentifier().getID() : "";
+		java.util.List<AST.Decl> decls = new ArrayList<>();
+		for (StructDeclaration sd : getStructDeclarations()) {
+			decls.addAll(sd.asClangDecl());
+		}
+
+		if (hasIdentifier())
+			return AST.RecordDecl.build(getIdentifier().getID(), recordKind(), decls);
+		else
+			return AST.RecordDecl.build(recordKind(), decls);
+	}
+
+	syn java.util.List<AST.Decl> StructDeclaration.asClangDecl() {
+		java.util.List<AST.Decl> decls = new ArrayList<>();
+		Stream<DeclarationSpecifier> stream = Stream.concat(StreamSupport.stream(getTypeSpecifiers().spliterator(), false),
+															StreamSupport.stream(getTypeQualifiers().spliterator(), false));
+
+		AST.Type type =
+			DeclarationSpecifier.typeFromDeclarationSpecifiers(stream.collect(Collectors.toUnmodifiableList()));
+
+		AST.Decl typeDecl =
+			DeclarationSpecifier.declFromDeclarationSpecifiers(getTypeSpecifiers());
+
+		if (typeDecl != null)
+			decls.add(typeDecl);
+
+		for (StructDeclarator sd : getStructDeclarators()) {
+			AST.Type fieldType;
+			String name;
+			if (sd.hasDeclarator()) {
+				fieldType = sd.getDeclarator().asType(type);
+				name = sd.getDeclarator().declaredIdentifier().getID();
+			} else {
+				fieldType = type;
+				name = "";
+			}
+
+			if (sd.hasExpression()) {
+				decls.add(AST.FieldDecl.build(name, fieldType, sd.getExpression().asClangExpr()));
+			} else {
+				decls.add(AST.FieldDecl.build(name, fieldType));
+			}
+		}
+
+		return decls;
+	}
+
+	syn AST.Expr Expression.asClangExpr() {
+		// TODO: equations for translating expressions
+		return new AST.Expr();
+	}
+
+
+	syn AST.RecordKind StructOrUnionSpecifier.recordKind() = null;
+	eq StructSpecifier.recordKind() = AST.RecordKind.STRUCT;
+	eq UnionSpecifier.recordKind() = AST.RecordKind.UNION;
 
 	syn AST.StorageClass DeclarationSpecifier.asStorageClass() = null;
 	eq Extern.asStorageClass() = AST.StorageClass.EXTERN;

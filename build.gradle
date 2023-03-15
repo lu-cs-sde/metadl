@@ -223,7 +223,20 @@ void makeGenerateBeaverTask(String name, String outFile, String srcFile) {
     }
 }
 
-void makeGenerateSEPTask(String name, String outFile, String srcFile, boolean patternGrammar = false) {
+void makeGenerateSEPTask(String name, String outFile, String srcFile, boolean patternGrammar, List<String> metaVarNonTerminals = []) {
+    String sep_arg;
+    if (patternGrammar) {
+	if  (metaVarNonTerminals) {
+	    sep_arg = "--pattern_grammar=" + String.join(":", metaVarNonTerminals)
+	} else {
+	    sep_arg = "--pattern_grammar"
+	}
+
+    } else {
+	sep_arg = "--sep"
+    }
+
+
     tasks.create(name, JavaExec) {
 	doFirst {
             file('src/gen').mkdirs()
@@ -236,15 +249,12 @@ void makeGenerateSEPTask(String name, String outFile, String srcFile, boolean pa
 	inputs.file(srcFile)
 	outputs.file(outFile)
 
-	if (patternGrammar)
-	    args '--pattern_grammar', file(srcFile).path, file(outFile).path
-	else
-	    args '--sep', file(srcFile).path, file(outFile).path
+	args sep_arg, file(srcFile).path, file(outFile).path
     }
 }
 
 void makeGeneratePatLangTask(String taskName, String outDir, String srcLang, ArrayList<String> lexOrder,
-			     List<String> parseOrder = []) {
+			     List<String> parseOrder = [], List<String> metaVarNonTerminals = []) {
 
     tasks.create('MkDirs' + taskName) {
 	doFirst {
@@ -268,7 +278,7 @@ void makeGeneratePatLangTask(String taskName, String outDir, String srcLang, Arr
 
     // .parser -> .java file describing a SEP grammar
     makeGenerateSEPTask('generatePatLangSEP' + taskName, outDir + '/lang/' + srcLang + '/pat/ast/PatLangParserSEP.java',
-			outDir + '/lang/' + srcLang + '/pat/parser/lang.parser', true)
+			outDir + '/lang/' + srcLang + '/pat/parser/lang.parser', true, metaVarNonTerminals)
 
     // .flex -> .java
     makeGenerateScannerTask('generateScannerPatlang' + taskName, outDir + '/lang/' + srcLang + '/pat/ast',
@@ -416,13 +426,19 @@ def cParseOrder = [
     "cpp_extension.parser"
 ]
 
+def cMetaVarNonTerminals = [
+    "identifier_declarator",
+    "init_declarator",
+    "expression",
+]
+
 // MetaDL as object language
 makeGenerateObjLangTask('genMetadlObjLang', 'src/gen/', 'metadl', metadlLexOrder)
 makeGeneratePatLangTask('genMetadlPatLang', 'src/gen/', 'metadl', metadlLexOrder)
 // Java, pattern language only
 makeGeneratePatLangTask('genJava8Lang', 'src/gen/', 'java8', java8LexOrder, java8ParseOrder)
 // C11
-makeGeneratePatLangTask('genCLang_Pat', 'src/gen', 'c', cLexOrder, cParseOrder + ["c11_restrictions.parser"])
+makeGeneratePatLangTask('genCLang_Pat', 'src/gen', 'c', cLexOrder, cParseOrder + ["c11_restrictions.parser"], cMetaVarNonTerminals)
 makeGenerateObjLangTask('genCLang_Obj', 'src/gen', 'c', cLexOrder, cParseOrder, true)
 
 

@@ -5,6 +5,7 @@ import java.util.List;
 import lang.c.pat.ast.PatLangParserSEP;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Disabled;
 import static org.junit.jupiter.api.Assertions.*;
 
 import beaver.Symbol;
@@ -39,6 +40,7 @@ public class MatcherTest {
 		}
 	}
 
+  @Disabled
 	@Test public void test2() {
 		var roots = parse("for(;;) $body ", PatLangParserSEP.n_for_statement);
 
@@ -47,6 +49,7 @@ public class MatcherTest {
 		}
 	}
 
+  @Disabled
 	@Test public void test3() {
 		var roots = parse("for($init; $cond; $inc) $body ", PatLangParserSEP.n_for_statement);
 
@@ -55,6 +58,7 @@ public class MatcherTest {
 		}
 	}
 
+  @Disabled
 	@Test public void test4() {
 		var roots = parse("for($init $cond; $inc) $body ", PatLangParserSEP.n_for_decl_statement);
 

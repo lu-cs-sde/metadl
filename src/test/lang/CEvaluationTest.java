@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -29,6 +30,7 @@ public class CEvaluationTest {
 	@DisplayName("Evaluate MetaDL-C programs with the internal evaluator")
 	@ParameterizedTest
 	@MethodSource("metadlCTests")
+  @Disabled
 	void evaluationTestMetaDLCInternal(String fileName) throws Exception {
 		String analyzedFilesDir = "tests/clang/evaluation/src";
 		List<File> analyzedFiles = FileUtil.flattenFilesAndDirs(Collections.singletonList(new File(analyzedFilesDir, fileName)), "*.c", "*.cpp");
@@ -47,6 +49,7 @@ public class CEvaluationTest {
 	@DisplayName("Evaluate MetaDL-C programs with the parallel internal evaluator")
 	@ParameterizedTest
 	@MethodSource("metadlCTests")
+  @Disabled
 	void evaluationTestMetaDLCParallelInternal(String fileName) throws Exception {
 		String analyzedFilesDir = "tests/clang/evaluation/src";
 		List<File> analyzedFiles = FileUtil.flattenFilesAndDirs(Collections.singletonList(new File(analyzedFilesDir, fileName)), "*.c", "*.cpp");

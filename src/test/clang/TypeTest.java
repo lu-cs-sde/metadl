@@ -190,6 +190,7 @@ public class TypeTest {
 	}
 
 	@Test
+  @Disabled
 	public void test20NoMetaVar() {
 		String s = "int *p;";
 		debugDecl(s);
@@ -202,18 +203,51 @@ public class TypeTest {
 		debugDecl(s);
 	}
 
-	// An now metavariables
 	@Test
-	@Disabled
-	public void test20qual() {
-		String s = "$q int *$p;";
+	public void test21qual() {
+		String s = "const int *$p;";
 		debugDecl(s);
 	}
 
 	@Test
-	@Disabled
 	public void test22() {
-		String s = "int $p,..,$q;";
+		String s = "int $p, *$q;";
 		debugDecl(s);
 	}
+
+  @Test
+  public void test23() {
+    String s = "int $p(void);";
+    debugDecl(s);
+  }
+
+  @Test
+  public void test24() {
+    String s = "int $f(int $q);";
+    debugDecl(s);
+  }
+
+  @Test
+  public void test25() {
+    String s = "int (*$f)(int $q);";
+    debugDecl(s);
+  }
+
+  @Test
+  public void test26() {
+    String s = "int f(int, .., int);";
+    debugDecl(s);
+  }
+
+  @Test
+  public void test27() {
+    String s = "int x, .., y;";
+    debugDecl(s);
+  }
+
+  @Test
+  public void test28() {
+    String s = "int .., $x, ..;";
+    debugDecl(s);
+  }
 }

@@ -105,7 +105,7 @@ aspect CDecl {
 		String name;
 		AST.VarDecl ret = AST.VarDecl.build(type);
 		if (innermost.isMetaVar()) {
-			ret.setBinding(varName());
+			ret.setBinding(innermost.varName());
 		} else {
 			Identifier ident = innermost.declaredIdentifier();
 			ret.setName(ident.getID());
@@ -114,9 +114,7 @@ aspect CDecl {
 	}
 
 	eq FunctionDeclarator.asClangDecl(AST.Type innerType) {
-		Identifier ident = this.declaredIdentifier();
 		AST.Type type = this.asType(innerType);
-
 		if (type instanceof AST.PointerType) {
 			return super.asClangDecl(innerType);
 		} else {
@@ -125,22 +123,33 @@ aspect CDecl {
 				params.add(pt.asClangDecl());
 			}
 
-			return AST.FunctionDecl.build(type, params).setName(ident.getID());
+			Declarator innermost = this.innermostDeclarator();
+			if (innermost.isMetaVar()) {
+				return AST.FunctionDecl.build(type, params).setBinding(innermost.varName());
+			} else {
+				Identifier ident = innermost.declaredIdentifier();
+				return AST.FunctionDecl.build(type, params).setName(ident.getID());
+			}
 		}
 	}
 
 	syn AST.ParmVarDecl ParameterType.asClangDecl() { throw new RuntimeException("ParameterType.asClangDecl() not implemented."); }
 	eq ParameterDeclaration.asClangDecl() {
-		Identifier ident = this.getDeclarator().declaredIdentifier();
+		Declarator innermost = this.getDeclarator().innermostDeclarator();
 		AST.Type type = this.asType();
-		return AST.ParmVarDecl.build(type).setName(ident.getID());
+
+		if (innermost.isMetaVar()) {
+			return AST.ParmVarDecl.build(type).setBinding(innermost.varName());
+		} else {
+			Identifier ident = this.getDeclarator().declaredIdentifier();
+			return AST.ParmVarDecl.build(type).setName(ident.getID());
+		}
 	}
 
 	eq AbstractParameterDeclaration.asClangDecl() {
 		AST.Type type = this.asType();
 		return AST.ParmVarDecl.build(type);
 	}
-
 
 	syn AST.Type ParameterType.asType() { throw new RuntimeException("ParameterType.asType() not implemented."); }
 	eq ParameterDeclaration.asType() {

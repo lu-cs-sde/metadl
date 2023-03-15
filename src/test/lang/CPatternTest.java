@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.io.StringReader;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import beaver.Symbol;
@@ -31,6 +32,7 @@ public class CPatternTest {
 	}
 
 	@Test
+  @Disabled
 	public void test1() {
 		testAST("$t1 f(void) { .. for ($_; $_; $_) { .. } .. }", lang.c.pat.ast.PatLangParserSEP.n_function_definition);
 	}

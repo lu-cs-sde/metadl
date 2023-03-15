@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import java.io.StringReader;
 import java.util.List;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import beaver.Symbol;
@@ -185,6 +186,34 @@ public class TypeTest {
 	public void test19() {
 		String s = "struct MyStruct { int tag; union { int x; float y; } u; } s;";
 		checkTypes(s, null, "(STRUCT MyStruct)");
+		debugDecl(s);
+	}
+
+	@Test
+	public void test20NoMetaVar() {
+		String s = "int *p;";
+		debugDecl(s);
+	}
+
+	// An now metavariables
+	@Test
+	public void test20() {
+		String s = "int *$p;";
+		debugDecl(s);
+	}
+
+	// An now metavariables
+	@Test
+	@Disabled
+	public void test20qual() {
+		String s = "$q int *$p;";
+		debugDecl(s);
+	}
+
+	@Test
+	@Disabled
+	public void test22() {
+		String s = "int $p,..,$q;";
 		debugDecl(s);
 	}
 }

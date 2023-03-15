@@ -6,28 +6,18 @@ import clang.AST;
 
 
 aspect CDecl {
-	///
-	syn java.util.List<ConcreteDeclaration> Declaration.decls() {
-		java.util.List<ConcreteDeclaration> ret = new ArrayList<>();
-
-		for (InitDeclarator id : this.getInitDeclarators()) {
-			Declarator d = id.getDeclarator();
-
-			ret.add(new ConcreteDeclaration(this.getDeclarationSpecifiers().treeCopy(), d.treeCopy()));
-		}
-
-		return ret;
+	syn Declarator Declarator.innermostDeclarator() {
+		throw new RuntimeException(Thread.currentThread().getStackTrace()[1] + " not implemented.");
 	}
+	eq IdentifierDeclarator.innermostDeclarator() = this;
+	eq MetaVarDeclarator.innermostDeclarator() = this;
+	eq PointerDeclarator.innermostDeclarator() = getDeclarator().innermostDeclarator();
+	eq ArrayDeclarator.innermostDeclarator() = getDeclarator().innermostDeclarator();
+	eq ArrayDeclaratorVLA.innermostDeclarator() = getDeclarator().innermostDeclarator();
+	eq FunctionDeclarator.innermostDeclarator() = getDeclarator().innermostDeclarator();
 
-	///
-	syn Identifier ConcreteDeclaration.declaredIdentifier() = getDeclarator().declaredIdentifier();
-	syn Identifier Declarator.declaredIdentifier() { throw new RuntimeException("Declarator.declaredIdentifier() not implemented."); }
+	syn Identifier Declarator.declaredIdentifier() = ((IdentifierDeclarator) innermostDeclarator()).getIdentifier();
 
-	eq IdentifierDeclarator.declaredIdentifier() = getIdentifier();
-	eq PointerDeclarator.declaredIdentifier() = getDeclarator().declaredIdentifier();
-	eq ArrayDeclarator.declaredIdentifier() = getDeclarator().declaredIdentifier();
-	eq ArrayDeclaratorVLA.declaredIdentifier() = getDeclarator().declaredIdentifier();
-	eq FunctionDeclarator.declaredIdentifier() = getDeclarator().declaredIdentifier();
 
 	// Extract a type from a declaration.
 	public static AST.Type DeclarationSpecifier.typeFromDeclarationSpecifiers(Iterable<? extends DeclarationSpecifier> specs) {
@@ -110,9 +100,17 @@ aspect CDecl {
 	}
 
 	syn AST.Decl Declarator.asClangDecl(AST.Type innerType) {
-		Identifier ident = this.declaredIdentifier();
+		Declarator innermost = this.innermostDeclarator();
 		AST.Type type = this.asType(innerType);
-		return AST.VarDecl.build(ident.getID(), type);
+		String name;
+		AST.VarDecl ret = AST.VarDecl.build(type);
+		if (innermost.isMetaVar()) {
+			ret.setBinding(varName());
+		} else {
+			Identifier ident = innermost.declaredIdentifier();
+			ret.setName(ident.getID());
+		}
+		return ret;
 	}
 
 	eq FunctionDeclarator.asClangDecl(AST.Type innerType) {
@@ -127,7 +125,7 @@ aspect CDecl {
 				params.add(pt.asClangDecl());
 			}
 
-			return AST.FunctionDecl.build(ident.getID(), type, params);
+			return AST.FunctionDecl.build(type, params).setName(ident.getID());
 		}
 	}
 
@@ -135,7 +133,7 @@ aspect CDecl {
 	eq ParameterDeclaration.asClangDecl() {
 		Identifier ident = this.getDeclarator().declaredIdentifier();
 		AST.Type type = this.asType();
-		return AST.ParmVarDecl.build(ident.getID(), type);
+		return AST.ParmVarDecl.build(type).setName(ident.getID());
 	}
 
 	eq AbstractParameterDeclaration.asClangDecl() {
@@ -161,6 +159,7 @@ aspect CDecl {
 
 	syn AST.Type Declarator.asType(AST.Type innerType);
 	eq IdentifierDeclarator.asType(AST.Type innerType) = innerType;
+	eq MetaVarDeclarator.asType(AST.Type innerType) = innerType;
 	eq PointerDeclarator.asType(AST.Type innerType) {
 		AST.Type t = AST.PointerType.build(innerType);
 		for (TypeQualifier q : getTypeQualifiers()) {
@@ -247,7 +246,6 @@ aspect CDecl {
 		}
 	}
 
-	eq MetaVarDeclarator.asType(AST.Type innerType) { throw new RuntimeException("MetaVarDeclarator.asType() should never be called."); }
 	eq GapDeclarator.asType(AST.Type innerType) { throw new RuntimeException("GapDeclarator.asType() should never be called."); }
 	eq IndexMetaVarDeclarator.asType(AST.Type innerType) { throw new RuntimeException("IndexMetaVarDeclarator.asType() should never be called."); }
 
@@ -327,9 +325,9 @@ aspect CDecl {
 			}
 
 			if (sd.hasExpression()) {
-				decls.add(AST.FieldDecl.build(name, fieldType, sd.getExpression().asClangExpr()));
+				decls.add(AST.FieldDecl.build(fieldType, sd.getExpression().asClangExpr()).setName(name));
 			} else {
-				decls.add(AST.FieldDecl.build(name, fieldType));
+				decls.add(AST.FieldDecl.build(fieldType).setName(name));
 			}
 		}
 

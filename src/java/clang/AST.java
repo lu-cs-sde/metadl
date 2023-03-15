@@ -15,6 +15,16 @@ public class AST {
 		public String qualType = "";
 	}
 
+	public static class MetaVar {
+		private String name;
+		public MetaVar(String name) {
+			this.name = name;
+		}
+		public String getName() {
+			return name;
+		}
+	}
+
 	public static class BareLoc {
 		public int line;
 		public int col;
@@ -114,6 +124,26 @@ public class AST {
 		public Loc loc;
 		public Range range;
 		public Node[] inner = {};
+		private MetaVar mv = null;
+
+		public boolean bindsMetaVar() {
+			return mv != null;
+		}
+
+		public MetaVar boundMetaVar() {
+			return mv;
+		}
+
+		public <T extends Node> T setBinding(MetaVar mv) {
+			if (this.mv != null)
+				throw new IllegalStateException("This node already binds a metavariable.");
+			this.mv = mv;
+			return (T) this;
+		}
+
+		public <T extends Node> T setBinding(String name) {
+			return setBinding(new MetaVar(name));
+		}
 
 		public void prettyPrint(PrintStream ps) {
 			prettyPrintInternal(0, ps);
@@ -128,6 +158,10 @@ public class AST {
 		private void prettyPrintInternal(int offset, PrintStream ps) {
 			for (int i = 0; i < offset; ++i) {
 				ps.print("  ");
+			}
+
+			if (bindsMetaVar()) {
+				ps.print(boundMetaVar().getName() + " := ");
 			}
 
 			if (loc != null) {
@@ -554,20 +588,28 @@ public class AST {
 	// Declarations
 	//--------------------------------------------------------------------------------
 	public static class Decl extends Node {
-		public String name = "";
+		public String name;
 		public TextualType type;
 		public Type explicitType;
 
 		public boolean isNamed() {
-			return !name.isEmpty();
+			return name != null;
 		}
 
 		public String getName() {
 			return name;
 		}
 
+		public <T extends Decl> T setName(String n) {
+			if (name != null)
+				throw new IllegalStateException("Decl already has a name.");
+			this.name = n;
+			return (T) this;
+		}
+
+
 		@Override protected String extraInfo() {
-			String ret = "'" + name + "' : ";
+			String ret = "'" + (isNamed() ? getName() : "") + "' : ";
 			if (explicitType != null) {
 				ret += explicitType.printAsType();
 			} else if (type != null) {
@@ -588,7 +630,6 @@ public class AST {
 			v.visit(this);
 		}
 
-
 		public static ParmVarDecl build(String name, Type t) {
 			ParmVarDecl ret = new ParmVarDecl();
 			ret.name = name;
@@ -604,11 +645,24 @@ public class AST {
 	}
 
 	public static class FunctionDecl extends Decl {
-		public String mangledName = "";
+		public String mangledName;
 		public boolean variadic;
 
 		@Override protected String extraInfo() {
-			return String.format(" mangledName:'%s' ", mangledName) + super.extraInfo();
+			return String.format(" mangledName:'%s' ", isNamed() ? getName() : "") + super.extraInfo();
+		}
+
+		@Override public boolean isNamed() {
+			return mangledName != null;
+		}
+
+		@Override public FunctionDecl setName(String n) {
+			mangledName = n;
+			return this;
+		}
+
+		@Override public String getName() {
+			return mangledName;
 		}
 
 		private List<ParmVarDecl> params;
@@ -652,16 +706,14 @@ public class AST {
 			v.visit(this);
 		}
 
-		public static FunctionDecl build(String name, Type t, List<ParmVarDecl> params) {
+		public static FunctionDecl build(Type t, List<ParmVarDecl> params) {
 			FunctionDecl ret = new FunctionDecl();
-			ret.mangledName = name;
 			ret.explicitType = t;
 			return ret.setChildren(params.toArray(new Node[0]));
 		}
 
 		public static FunctionDecl build(String name, Type t, List<ParmVarDecl> params, Stmt body) {
 			FunctionDecl ret = new FunctionDecl();
-			ret.mangledName = name;
 			ret.explicitType = t;
 			return ret.setChildren(Stream.concat(params.stream(), List.of(body).stream()).toArray(Node[]::new));
 		}
@@ -681,15 +733,14 @@ public class AST {
 			v.visit(this);
 		}
 
-		public static VarDecl build(String name, Type t) {
+		public static VarDecl build(Type t) {
 			VarDecl ret = new VarDecl();
-			ret.name = name;
 			ret.explicitType = t;
 			return ret.setChildren();
 		}
 
-		public static VarDecl build(String name, Type t, Expr init) {
-			return build(name, t).setChildren(init);
+		public static VarDecl build(Type t, Expr init) {
+			return build(t).setChildren(init);
 		}
 	}
 
@@ -706,16 +757,14 @@ public class AST {
 			return null;
 		}
 
-		public static FieldDecl build(String name, Type t) {
+		public static FieldDecl build(Type t) {
 			FieldDecl ret = new FieldDecl().setChildren();
-			ret.name = name;
 			ret.explicitType = t;
 			return ret;
 		}
 
-		public static FieldDecl build(String name, Type t, Expr bitfieldSize) {
+		public static FieldDecl build(Type t, Expr bitfieldSize) {
 			FieldDecl ret = new FieldDecl().setChildren(bitfieldSize);
-			ret.name = name;
 			ret.explicitType = t;
 			return ret;
 		}
@@ -1129,43 +1178,6 @@ public class AST {
 		public String text = "";
 		public void accept(ASTVisitor v) {
 			v.visit(this);
-		}
-	}
-
-	//--------------------------------------------------------------------------------
-	// Placeholder nodes / Metavariables
-	//--------------------------------------------------------------------------------
-	interface MetaVariable {
-		String getName();
-		boolean isWildcard();
-	}
-
-	public static class TypeMetaVariable extends Type implements MetaVariable {
-		String name;
-
-		public static TypeMetaVariable build() {
-			return new TypeMetaVariable();
-		}
-
-		public static TypeMetaVariable build(String name) {
-			TypeMetaVariable ret = new TypeMetaVariable();
-			ret.name = name;
-			return ret;
-		}
-
-		public void accept(ASTVisitor v) {
-			v.visit(this);
-		}
-
-		public String getName() {
-			if (isWildcard()) {
-				throw new RuntimeException("Wildcards do not have names.");
-			}
-			return name;
-		}
-
-		public boolean isWildcard() {
-			return name == null;
 		}
 	}
 }

@@ -60,9 +60,9 @@ public class CTestUtil {
 																		new SPPFTrivialProductionRemover(astBuilder.getGrammar()) {
 																			@Override public boolean isBubleUpChild(Category p, Category c) {
 																				if (c.getName().equals("METAVARID"))
-																					return true;
+																				 	return true;
 																				if (c.getName().equals("GAP"))
-																					return true;
+																				 	return true;
 																				return false;
 																			}
 																		});

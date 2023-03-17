@@ -1,15 +1,18 @@
 package clang;
 
-import java.io.StringReader;
-import java.util.List;
-import lang.c.pat.ast.PatLangParserSEP;
-
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Disabled;
 import static org.junit.jupiter.api.Assertions.*;
+
+import java.io.StringReader;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import beaver.Symbol;
 import lang.CTestUtil;
+import lang.c.pat.ast.Declaration;
+import lang.c.pat.ast.PatLangParserSEP;
 import se.lth.sep.Category;
 import se.lth.sep.ParseTree;
 
@@ -66,4 +69,38 @@ public class MatcherTest {
 			System.out.println(root.matcher().genMatcher());
 		}
 	}
+
+  static List<String> genMatchers(String s, Category c) {
+    List<String> matchers = new ArrayList<>();
+    List<Declaration> res = TypeTest.parse(s, c);
+    for (Declaration internalNode : res) {
+      for (AST.Node clangDecl : internalNode.clangDecls()) {
+        ASTMatcherGen gen = new ASTMatcherGen();
+        clangDecl.acceptPO(gen);
+        String pat = gen.lookup(clangDecl).generate();
+        matchers.add(pat);
+        System.err.println(pat);
+      }
+    }
+    return matchers;
+  }
+
+  @Test public void test5() {
+    List<String> res = genMatchers("int x;", PatLangParserSEP.n_declaration);
+    assertEquals(1, res.size());
+    assertEquals("varDecl(hasName(\"x\"), hasType(qualType(isInteger())))",  res.get(0));
+  }
+
+  @Test public void test6() {
+    List<String> res = genMatchers("int *x;", PatLangParserSEP.n_declaration);
+    assertEquals(1, res.size());
+    assertEquals("varDecl(hasName(\"x\"), hasType(qualType(pointsTo(qualType(isInteger())))))", res.get(0));
+  }
+
+  @Test public void test7() {
+    List<String> res = genMatchers("int x[];", PatLangParserSEP.n_declaration);
+    assertEquals(1, res.size());
+    assertEquals("varDecl(hasName(\"x\"), hasType(arrayType(hasElementType(qualType(isInteger())))))", res.get(0));
+  }
+
 }

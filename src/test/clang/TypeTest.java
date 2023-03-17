@@ -19,7 +19,7 @@ import se.lth.sep.Category;
 import se.lth.sep.ParseTree;
 
 public class TypeTest {
-  static <T extends ASTNode> List<T> parse(String s, Category startSymbol) {
+  public static <T extends ASTNode> List<T> parse(String s, Category startSymbol) {
     java.util.List<Symbol> tokens = CTestUtil.scan(new lang.c.pat.ast.PatLangScanner(new StringReader(s)));
 
     var astBuilder = lang.c.pat.ast.ASTBuilder.getInstance();

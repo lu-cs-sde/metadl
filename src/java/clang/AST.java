@@ -124,8 +124,10 @@ public class AST {
 		public Loc loc;
 		public Range range;
 		public Node[] inner = {};
-		private MetaVar mv = null;
 
+
+		// bound metavars
+		private MetaVar mv = null;
 		public boolean bindsMetaVar() {
 			return mv != null;
 		}
@@ -137,12 +139,26 @@ public class AST {
 		public <T extends Node> T setBinding(MetaVar mv) {
 			if (this.mv != null)
 				throw new IllegalStateException("This node already binds a metavariable.");
+			if (this.isGap)
+				throw new IllegalStateException("This node is a gap and can't bind a metavariable.");
 			this.mv = mv;
 			return (T) this;
 		}
 
 		public <T extends Node> T setBinding(String name) {
 			return setBinding(new MetaVar(name));
+		}
+
+		// Gaps
+		private boolean isGap = false;
+		public boolean isGap() {
+			return isGap;
+		}
+		public <T extends Node> T gap() {
+			if (this.mv != null)
+				throw new IllegalStateException("This node already binds a metavariable.");
+			this.isGap = true;
+			return (T) this;
 		}
 
 		public void prettyPrint(PrintStream ps) {
@@ -162,6 +178,10 @@ public class AST {
 
 			if (bindsMetaVar()) {
 				ps.print(boundMetaVar().getName() + " := ");
+			}
+
+			if (isGap()) {
+				ps.print("... ");
 			}
 
 			if (loc != null) {
@@ -204,9 +224,7 @@ public class AST {
 
 			return (T) this;
 		}
-
 	}
-
 
 	public static Collection<Class> getASTNodeTypes() {
 		// return all the (strict) subclasses of ClangAST.Node that are defined in this class
@@ -607,6 +625,9 @@ public class AST {
 			return (T) this;
 		}
 
+		public static Decl build() {
+			return new Decl().setChildren();
+		}
 
 		@Override protected String extraInfo() {
 			String ret = "'" + (isNamed() ? getName() : "") + "' : ";
@@ -642,6 +663,11 @@ public class AST {
 			ret.explicitType = t;
 			return ret.setChildren();
 		}
+
+		public static ParmVarDecl build() {
+			return new ParmVarDecl().setChildren();
+		}
+
 	}
 
 	public static class FunctionDecl extends Decl {
@@ -1049,6 +1075,16 @@ public class AST {
 			ret += ")";
 
 			return ret;
+		}
+	}
+
+	public static class GapType extends Type {
+		public String printAsType() {
+			return "..";
+		}
+
+		public static GapType build() {
+			return new GapType().setChildren().gap();
 		}
 	}
 

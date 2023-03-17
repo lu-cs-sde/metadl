@@ -85,7 +85,6 @@ aspect CDecl {
 	syn java.util.List<clang.AST.Decl> Declaration.clangDecls() {
 		java.util.List<clang.AST.Decl> ret = new ArrayList<>();
 		AST.Type innerType = DeclarationSpecifier.typeFromDeclarationSpecifiers(getDeclarationSpecifiers());
-
 		AST.Decl typeDecl = DeclarationSpecifier.declFromDeclarationSpecifiers(getDeclarationSpecifiers());
 
 		if (typeDecl != null) {
@@ -93,11 +92,14 @@ aspect CDecl {
 		}
 
 		for (InitDeclarator initDecl : getInitDeclarators()) {
-			ret.add(initDecl.getDeclarator().asClangDecl(innerType));
+			ret.add(initDecl.asClangDecl(innerType));
 		}
 
 		return ret;
 	}
+
+	syn AST.Decl InitDeclarator.asClangDecl(AST.Type innerType) = getDeclarator().asClangDecl(innerType);
+	eq GapInitDeclarator.asClangDecl(AST.Type innerType) = AST.Decl.build().gap();
 
 	syn AST.Decl Declarator.asClangDecl(AST.Type innerType) {
 		Declarator innermost = this.innermostDeclarator();
@@ -145,6 +147,10 @@ aspect CDecl {
 			return AST.ParmVarDecl.build(type).setName(ident.getID());
 		}
 	}
+	eq GapParameterType.asClangDecl() {
+		return AST.ParmVarDecl.build().gap();
+	}
+
 
 	eq AbstractParameterDeclaration.asClangDecl() {
 		AST.Type type = this.asType();
@@ -152,6 +158,9 @@ aspect CDecl {
 	}
 
 	syn AST.Type ParameterType.asType() { throw new RuntimeException("ParameterType.asType() not implemented."); }
+	eq GapParameterType.asType() {
+		return AST.GapType.build();
+	}
 	eq ParameterDeclaration.asType() {
 		AST.Type innerType = DeclarationSpecifier.typeFromDeclarationSpecifiers(getDeclarationSpecifiers());
 		return getDeclarator().asType(innerType);
@@ -165,6 +174,8 @@ aspect CDecl {
 			return innerType;
 		}
 	}
+
+
 
 	syn AST.Type Declarator.asType(AST.Type innerType);
 	eq IdentifierDeclarator.asType(AST.Type innerType) = innerType;

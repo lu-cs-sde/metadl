@@ -2,6 +2,8 @@ package clang;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 interface AbstractMatcherBuilder {
     String generate();
@@ -52,9 +54,29 @@ public class MatcherBuilder implements AbstractMatcherBuilder {
       s += i.generate();
     }
     s += ")";
+
+    if (metavar != null) {
+      s += ".bind(\"" + metavar  + "\")";
+    }
+
     return s;
   }
 
+  private static void collectBindings(AbstractMatcherBuilder b, SortedSet<String> bindings) {
+    if (!(b instanceof MatcherBuilder))
+      return;
+    if (((MatcherBuilder) b).metavar != null)
+      bindings.add(((MatcherBuilder) b).metavar);
+    for (AbstractMatcherBuilder ib : ((MatcherBuilder) b).inner) {
+      collectBindings(ib, bindings);
+    }
+  }
+
+  public SortedSet<String> bindings() {
+    SortedSet<String> ret = new TreeSet<String>();
+    collectBindings(this, ret);
+    return ret;
+  }
 
   public static MatcherBuilder match(String name, AbstractMatcherBuilder ... inner) {
     return new MatcherBuilder(name, inner);
@@ -63,5 +85,4 @@ public class MatcherBuilder implements AbstractMatcherBuilder {
   public static ConstMatcherBuilder cst(String name) {
     return new ConstMatcherBuilder(name);
   }
-
 }

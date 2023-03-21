@@ -70,7 +70,7 @@ public class MatcherTest {
     }
   }
 
-  static List<String> genMatchers(String s, Category c) {
+  public static List<String> genMatchers(String s, Category c) {
     List<String> matchers = new ArrayList<>();
     List<Declaration> res = TypeTest.parse(s, c);
     for (Declaration internalNode : res) {
@@ -103,4 +103,9 @@ public class MatcherTest {
     assertEquals("varDecl(hasName(\"x\"), hasType(arrayType(hasElementType(qualType(isInteger())))))", res.get(0));
   }
 
+  @Test public void test8() {
+    List<String> res = genMatchers("int *$v[10][20];", PatLangParserSEP.n_declaration);
+    assertEquals(1, res.size());
+    assertEquals("varDecl(hasType(arrayType(hasElementType(arrayType(hasElementType(qualType(pointsTo(qualType(isInteger()))))))))).bind(\"$v\")", res.get(0));
+  }
 }

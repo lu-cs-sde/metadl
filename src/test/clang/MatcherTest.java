@@ -85,6 +85,19 @@ public class MatcherTest {
     return matchers;
   }
 
+  public static List<MatcherBuilder> genMatcherBuilders(String s, Category c) {
+    List<MatcherBuilder> matchers = new ArrayList<>();
+    List<Declaration> res = TypeTest.parse(s, c);
+    for (Declaration internalNode : res) {
+      for (AST.Node clangDecl : internalNode.clangDecls()) {
+        ASTMatcherGen gen = new ASTMatcherGen();
+        clangDecl.acceptPO(gen);
+        matchers.add(gen.lookup(clangDecl));
+      }
+    }
+    return matchers;
+  }
+
   @Test public void test5() {
     List<String> res = genMatchers("int x;", PatLangParserSEP.n_declaration);
     assertEquals(1, res.size());

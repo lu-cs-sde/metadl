@@ -156,10 +156,7 @@ public class ClangClogTest {
     }
   }
 
-  @Test
-  public void test2() {
-    List<Map<String, ClangClog.Loc>> results = matchPatternOnFile("int (*$f)(int);", PatLangParserSEP.n_declaration, "tests/clang/clog/src/funcptr.c");
-
+  public static void dumpResults(Collection<Map<String, ClangClog.Loc>> results) {
     for (Map<String, ClangClog.Loc> r : results) {
       for (var entry : r.entrySet()) {
         String mv = entry.getKey();
@@ -168,10 +165,25 @@ public class ClangClogTest {
                            " - " + loc.getEndLine() + ":" + loc.getEndCol());
       }
     }
+  }
 
+  @Test
+  public void test2() {
+    List<Map<String, ClangClog.Loc>> results = matchPatternOnFile("int (*$f)(int);", PatLangParserSEP.n_declaration, "tests/clang/clog/src/funcptr.c");
+    dumpResults(results);
     Checker c = Checker.begin(results);
     c.check("$f", 1, 1).next();
     c.check("$f", 5, 10, 5, 22).next();
     c.check("$f", 12, 12).end();
   }
+
+  @Test
+  public void test3() {
+    List<Map<String, ClangClog.Loc>> results = matchPatternOnFile("int (*(*$f)(int))(int);", PatLangParserSEP.n_declaration, "tests/clang/clog/src/funcptr.c");
+    dumpResults(results);
+    Checker c = Checker.begin(results);
+    c.check("$f", 7, 7).next();
+    c.check("$f", 13, 13).end();
+  }
+
 }

@@ -331,7 +331,7 @@ aspect CodeGen {
 				}
 			} else {
 				if (isExternal()) {
-					java.util.List<Integer> matcherIds =
+					java.util.List<Long> matcherIds =
 						((ClangEvaluationContext) ctx).registerExternalLiteral((ExternalLiteral)this);
 
 					return new ExternalForAll(ctx, rel.arity(), rel.getName(), test, consts, assign, cont) {

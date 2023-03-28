@@ -28,8 +28,8 @@ public class ClangEvaluationContext extends EvaluationContext {
 		clog = builder.build();
 	}
 
-	public List<Integer> registerExternalLiteral(ExternalLiteral l) {
-		List<Integer> res = new ArrayList<>();
+	public List<Long> registerExternalLiteral(ExternalLiteral l) {
+		List<Long> res = new ArrayList<>();
 
 		List<ObjLangASTNode> ASTs = (List<ObjLangASTNode>) l.getExternalPayload();
 
@@ -38,7 +38,7 @@ public class ClangEvaluationContext extends EvaluationContext {
 			Node.debugPrint(System.out);
 			String matcher = CNode.matcher().genMatcher();
 
-			int matcherId = clog.registerMatcher(matcher, true/* Global */);
+			long matcherId = clog.registerMatcher(matcher, true/* Global */);
 
 			if (matcherId < 0) {
 				System.err.println("Failed to register matcher " + matcher);
@@ -54,7 +54,7 @@ public class ClangEvaluationContext extends EvaluationContext {
 
 	private boolean globalMatchersDone = false;
 
-	public Stream<VectorLong> lookup(List<Integer> matcherIds) {
+	public Stream<VectorLong> lookup(List<Long> matcherIds) {
 		if (!globalMatchersDone) {
 			synchronized (this) {
 				if (!globalMatchersDone) {
@@ -65,7 +65,7 @@ public class ClangEvaluationContext extends EvaluationContext {
 		}
 
 		Stream<VectorLong> result = Stream.ofNullable(null);
-		for (int matcherId : matcherIds) {
+		for (long matcherId : matcherIds) {
 			VectorVectorLong matches = clog.matchFromRoot(matcherId);
 			result = Stream.concat(result, matches.stream());
 		}

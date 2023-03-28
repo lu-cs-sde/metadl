@@ -50,6 +50,22 @@ public class ASTMatcherGen implements ASTVisitor {
     matcherMap.put(n, b);
   }
 
+  @Override public void visit(AST.ParmVarDecl p) {
+    MatcherBuilder b = match("parmVarDecl");
+    if (p.isNamed())
+      b.add(match("hasName", cst(p.getName())));
+
+    if (p.explicitType != null) {
+      b.add(match("hasType", lookup(p.explicitType)));
+    }
+
+    if (p.bindsMetaVar()) {
+      b.bind(p.boundMetaVar().getName());
+    }
+
+    matcherMap.put(p, b);
+  }
+
   public static void processTypeQualifiers(AST.Type t, MatcherBuilder b) {
     for (AST.TypeQualifier q : t.typeQuals) {
       switch (q) {
@@ -109,4 +125,17 @@ public class ASTMatcherGen implements ASTVisitor {
     processTypeQualifiers(a, b);
     matcherMap.put(a, b);
   }
+
+  @Override public void visit(AST.FunctionProtoType p) {
+    MatcherBuilder b = match("functionProtoType");
+    b.add(match("parameterCountIs", integer(p.getNumParamType())));
+    for (int i = 0; i < p.getNumParamType(); ++i) {
+      AST.Type pt = p.getParamType(i);
+      b.add(match("hasParameterType", integer(i), lookup(pt)));
+    }
+    b.add(match("hasReturnType", lookup(p.getReturnType())));
+
+    matcherMap.put(p, match("ignoringParens", b));
+  }
+
 }

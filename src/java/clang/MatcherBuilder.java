@@ -19,6 +19,17 @@ class ConstMatcherBuilder implements AbstractMatcherBuilder {
   }
 }
 
+class ConstIntMatcherBuilder implements AbstractMatcherBuilder {
+  private int value;
+  public ConstIntMatcherBuilder(int value) {
+    this.value = value;
+  }
+  @Override public String generate() {
+    return "" + value;
+  }
+}
+
+
 public class MatcherBuilder implements AbstractMatcherBuilder {
   private String name;
   private String metavar;
@@ -84,5 +95,9 @@ public class MatcherBuilder implements AbstractMatcherBuilder {
 
   public static ConstMatcherBuilder cst(String name) {
     return new ConstMatcherBuilder(name);
+  }
+
+  public static ConstIntMatcherBuilder integer(int v){
+    return new ConstIntMatcherBuilder(v);
   }
 }

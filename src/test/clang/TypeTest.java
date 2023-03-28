@@ -61,6 +61,7 @@ public class TypeTest {
 
     for (Declaration d : ds) {
       System.out.println("========================================");
+      d.debugPrint(System.out);
       for (AST.Decl clangDecl : d.clangDecls()) {
         clangDecl.prettyPrint(System.out);
       }
@@ -239,9 +240,16 @@ public class TypeTest {
 
   @Test
   public void test23() {
-    String s = "int $p(void);";
+    String s = "int $p(void), x = 1;";
     debugDecl(s);
   }
+
+  @Test
+  public void test123() {
+    String s = "int[] p(void);";
+    debugDecl(s);
+  }
+
 
   @Test
   public void test24() {

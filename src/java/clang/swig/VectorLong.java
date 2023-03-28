@@ -8,7 +8,7 @@
 
 package clang.swig;
 
-public class VectorLong extends java.util.AbstractList<Integer> implements java.util.RandomAccess {
+public class VectorLong extends java.util.AbstractList<Long> implements java.util.RandomAccess {
   private transient long swigCPtr;
   protected transient boolean swigCMemOwn;
 
@@ -36,42 +36,42 @@ public class VectorLong extends java.util.AbstractList<Integer> implements java.
     }
   }
 
-  public VectorLong(int[] initialElements) {
+  public VectorLong(long[] initialElements) {
     this();
     reserve(initialElements.length);
 
-    for (int element : initialElements) {
+    for (long element : initialElements) {
       add(element);
     }
   }
 
-  public VectorLong(Iterable<Integer> initialElements) {
+  public VectorLong(Iterable<Long> initialElements) {
     this();
-    for (int element : initialElements) {
+    for (long element : initialElements) {
       add(element);
     }
   }
 
-  public Integer get(int index) {
+  public Long get(int index) {
     return doGet(index);
   }
 
-  public Integer set(int index, Integer e) {
+  public Long set(int index, Long e) {
     return doSet(index, e);
   }
 
-  public boolean add(Integer e) {
+  public boolean add(Long e) {
     modCount++;
     doAdd(e);
     return true;
   }
 
-  public void add(int index, Integer e) {
+  public void add(int index, Long e) {
     modCount++;
     doAdd(index, e);
   }
 
-  public Integer remove(int index) {
+  public Long remove(int index) {
     modCount++;
     return doRemove(index);
   }
@@ -109,7 +109,7 @@ public class VectorLong extends java.util.AbstractList<Integer> implements java.
     clogJNI.VectorLong_clear(swigCPtr, this);
   }
 
-  public VectorLong(int count, int value) {
+  public VectorLong(int count, long value) {
     this(clogJNI.new_VectorLong__SWIG_2(count, value), true);
   }
 
@@ -117,23 +117,23 @@ public class VectorLong extends java.util.AbstractList<Integer> implements java.
     return clogJNI.VectorLong_doSize(swigCPtr, this);
   }
 
-  private void doAdd(int x) {
+  private void doAdd(long x) {
     clogJNI.VectorLong_doAdd__SWIG_0(swigCPtr, this, x);
   }
 
-  private void doAdd(int index, int x) {
+  private void doAdd(int index, long x) {
     clogJNI.VectorLong_doAdd__SWIG_1(swigCPtr, this, index, x);
   }
 
-  private int doRemove(int index) {
+  private long doRemove(int index) {
     return clogJNI.VectorLong_doRemove(swigCPtr, this, index);
   }
 
-  private int doGet(int index) {
+  private long doGet(int index) {
     return clogJNI.VectorLong_doGet(swigCPtr, this, index);
   }
 
-  private int doSet(int index, int val) {
+  private long doSet(int index, long val) {
     return clogJNI.VectorLong_doSet(swigCPtr, this, index, val);
   }
 

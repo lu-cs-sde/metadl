@@ -72,35 +72,35 @@ public class ClangClog {
       return clogJNI.ClangClog_Loc_Filename_get(swigCPtr, this);
     }
   
-    public void setStartLine(int value) {
+    public void setStartLine(long value) {
       clogJNI.ClangClog_Loc_StartLine_set(swigCPtr, this, value);
     }
   
-    public int getStartLine() {
+    public long getStartLine() {
       return clogJNI.ClangClog_Loc_StartLine_get(swigCPtr, this);
     }
   
-    public void setStartCol(int value) {
+    public void setStartCol(long value) {
       clogJNI.ClangClog_Loc_StartCol_set(swigCPtr, this, value);
     }
   
-    public int getStartCol() {
+    public long getStartCol() {
       return clogJNI.ClangClog_Loc_StartCol_get(swigCPtr, this);
     }
   
-    public void setEndLine(int value) {
+    public void setEndLine(long value) {
       clogJNI.ClangClog_Loc_EndLine_set(swigCPtr, this, value);
     }
   
-    public int getEndLine() {
+    public long getEndLine() {
       return clogJNI.ClangClog_Loc_EndLine_get(swigCPtr, this);
     }
   
-    public void setEndCol(int value) {
+    public void setEndCol(long value) {
       clogJNI.ClangClog_Loc_EndCol_set(swigCPtr, this, value);
     }
   
-    public int getEndCol() {
+    public long getEndCol() {
       return clogJNI.ClangClog_Loc_EndCol_get(swigCPtr, this);
     }
   
@@ -108,7 +108,7 @@ public class ClangClog {
       this(clogJNI.new_ClangClog_Loc__SWIG_0(), true);
     }
   
-    public Loc(String Filename, int StartLine, int StartCol, int EndLine, int EndCol) {
+    public Loc(String Filename, long StartLine, long StartCol, long EndLine, long EndCol) {
       this(clogJNI.new_ClangClog_Loc__SWIG_1(Filename, StartLine, StartCol, EndLine, EndCol), true);
     }
   
@@ -122,7 +122,7 @@ public class ClangClog {
     return clogJNI.ClangClog_init(swigCPtr, this);
   }
 
-  public int registerMatcher(String Matcher, boolean IsGlobal) {
+  public long registerMatcher(String Matcher, boolean IsGlobal) {
     return clogJNI.ClangClog_registerMatcher(swigCPtr, this, Matcher, IsGlobal);
   }
 
@@ -130,19 +130,19 @@ public class ClangClog {
     clogJNI.ClangClog_runGlobalMatchers(swigCPtr, this);
   }
 
-  public VectorVectorLong matchFromRoot(int MatcherId) {
+  public VectorVectorLong matchFromRoot(long MatcherId) {
     return new VectorVectorLong(clogJNI.ClangClog_matchFromRoot(swigCPtr, this, MatcherId), true);
   }
 
-  public VectorVectorLong matchFromNode(int MatcherId, int NodeId) {
+  public VectorVectorLong matchFromNode(long MatcherId, long NodeId) {
     return new VectorVectorLong(clogJNI.ClangClog_matchFromNode(swigCPtr, this, MatcherId, NodeId), true);
   }
 
-  public ClangClog.Loc srcLocation(int NodeId) {
+  public ClangClog.Loc srcLocation(long NodeId) {
     return new ClangClog.Loc(clogJNI.ClangClog_srcLocation(swigCPtr, this, NodeId), true);
   }
 
-  public VectorLong parent(int NodeId) {
+  public VectorLong parent(long NodeId) {
     return new VectorLong(clogJNI.ClangClog_parent(swigCPtr, this, NodeId), true);
   }
 

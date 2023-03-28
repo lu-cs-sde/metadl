@@ -21,11 +21,16 @@ public class ClangClogBuilder {
     return (obj == null) ? 0 : obj.swigCPtr;
   }
 
+  @SuppressWarnings("deprecation")
+  protected void finalize() {
+    delete();
+  }
+
   public synchronized void delete() {
     if (swigCPtr != 0) {
       if (swigCMemOwn) {
         swigCMemOwn = false;
-        throw new UnsupportedOperationException("C++ destructor does not have public access");
+        clogJNI.delete_ClangClogBuilder(swigCPtr);
       }
       swigCPtr = 0;
     }

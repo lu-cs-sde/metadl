@@ -428,9 +428,10 @@ def cParseOrder = [
 
 def cMetaVarNonTerminals = [
     "identifier_declarator",
-    "init_declarator.",
-    "parameter_type.",
+    "init_declarator.", // gap only
+    "parameter_type.", // gap only
     "expression",
+    "statement"
 ]
 
 // MetaDL as object language

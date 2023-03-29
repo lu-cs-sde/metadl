@@ -1,0 +1,39 @@
+import java.util.ArrayList;
+import clang.AST;
+
+
+aspect CStmt {
+  syn AST.Stmt Statement.asClangStmt()  {
+    throw new RuntimeException(Thread.currentThread().getStackTrace()[1] + " not implemented.");
+  }
+
+  eq MetaVarStatement.asClangStmt() {
+    return AST.Stmt.build().setBinding(varName());
+  }
+
+  eq CompoundStatement.asClangStmt() {
+    ArrayList<AST.Stmt> stmts = new ArrayList<>();
+    for (Statement s : getStatements()) {
+      stmts.add(s.asClangStmt());
+    }
+    return AST.CompoundStmt.build(stmts.toArray(new AST.CompoundStmt[0]));
+  }
+
+  eq WhileStatement.asClangStmt() {
+    return AST.WhileStmt.build(getExpression().asClangExpr(), getStatement().asClangStmt());
+  }
+
+  eq DoWhileStatement.asClangStmt() {
+    return AST.DoStmt.build(getExpression().asClangExpr(), getStatement().asClangStmt());
+
+  }
+
+  eq ForStatement.asClangStmt() {
+    return AST.ForStmt.build(hasInit() ? getInit().asClangStmt() : null,
+                             hasCond() ? getCond().asClangExpr() : null,
+                             hasUpdate() ? getUpdate().asClangExpr() : null,
+                             getStatement().asClangStmt());
+  }
+
+  eq Expression.asClangStmt() = asClangExpr();
+}

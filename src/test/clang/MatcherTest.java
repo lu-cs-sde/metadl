@@ -1,6 +1,9 @@
 package clang;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 
 import java.io.StringReader;
 import java.util.ArrayList;
@@ -11,8 +14,11 @@ import org.junit.jupiter.api.Test;
 
 import beaver.Symbol;
 import lang.CTestUtil;
+import lang.c.pat.ast.ASTNode;
 import lang.c.pat.ast.Declaration;
+import lang.c.pat.ast.Expression;
 import lang.c.pat.ast.PatLangParserSEP;
+import lang.c.pat.ast.Statement;
 import se.lth.sep.Category;
 import se.lth.sep.ParseTree;
 
@@ -70,11 +76,21 @@ public class MatcherTest {
     }
   }
 
-  public static List<String> genMatchers(String s, Category c) {
+  public static <T extends ASTNode> List<String> genMatchers(String s, Category c) {
     List<String> matchers = new ArrayList<>();
-    List<Declaration> res = TypeTest.parse(s, c);
-    for (Declaration internalNode : res) {
-      for (AST.Node clangDecl : internalNode.clangDecls()) {
+    List<T> res = TypeTest.parse(s, c);
+    for (T internalNode : res) {
+      Iterable<? extends AST.Node> clangNodes;
+      if (internalNode instanceof Declaration) {
+        clangNodes = ((Declaration) internalNode).clangDecls();
+      } else if (internalNode instanceof Statement) {
+        clangNodes = List.of(((Statement) internalNode).asClangStmt());
+      } else {
+        assertTrue(internalNode instanceof Expression);
+        clangNodes = List.of(((Expression) internalNode).asClangExpr());
+      }
+
+      for (AST.Node clangDecl : clangNodes) {
         ASTMatcherGen gen = new ASTMatcherGen();
         clangDecl.acceptPO(gen);
         String pat = gen.lookup(clangDecl).generate();
@@ -82,14 +98,25 @@ public class MatcherTest {
         System.err.println(pat);
       }
     }
+
     return matchers;
   }
 
-  public static List<MatcherBuilder> genMatcherBuilders(String s, Category c) {
+  public static <T extends ASTNode> List<MatcherBuilder> genMatcherBuilders(String s, Category c) {
     List<MatcherBuilder> matchers = new ArrayList<>();
-    List<Declaration> res = TypeTest.parse(s, c);
-    for (Declaration internalNode : res) {
-      for (AST.Node clangDecl : internalNode.clangDecls()) {
+    List<T> res = TypeTest.parse(s, c);
+    for (T internalNode : res) {
+      Iterable<? extends AST.Node> clangNodes;
+      if (internalNode instanceof Declaration) {
+        clangNodes = ((Declaration) internalNode).clangDecls();
+      } else if (internalNode instanceof Statement) {
+        clangNodes = List.of(((Statement) internalNode).asClangStmt());
+      } else {
+        assertTrue(internalNode instanceof Expression);
+        clangNodes = List.of(((Expression) internalNode).asClangExpr());
+      }
+
+      for (AST.Node clangDecl : clangNodes) {
         ASTMatcherGen gen = new ASTMatcherGen();
         clangDecl.acceptPO(gen);
         matchers.add(gen.lookup(clangDecl));
@@ -126,5 +153,12 @@ public class MatcherTest {
     List<String> res = genMatchers("int (*$a[10])(int);", PatLangParserSEP.n_declaration);
     assertEquals(1, res.size());
     assertEquals("varDecl(hasType(arrayType(hasElementType(qualType(pointsTo(ignoringParens(functionProtoType(parameterCountIs(1), hasParameterType(0, qualType(isInteger())), hasReturnType(qualType(isInteger())))))))))).bind(\"$a\")", res.get(0));
+  }
+
+  @Test public void test10() {
+    List<String> res = genMatchers("while ($cond) $body", PatLangParserSEP.n_statement);
+    assertEquals(1, res.size());
+    assertEquals("whileStmt(hasCondition(expr()), hasBody(stmt().bind(\"$body\")))",
+                 res.get(0));
   }
 }

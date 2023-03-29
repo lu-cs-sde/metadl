@@ -33,6 +33,11 @@ public class ASTMatcherGen implements ASTVisitor {
     return b;
   }
 
+  public static void buildBindings(AST.Node n, MatcherBuilder b) {
+    if (n.bindsMetaVar())
+      b.bind(n.boundMetaVar().getName());
+  }
+
   @Override public void visit(AST.VarDecl n) {
     MatcherBuilder b = match("varDecl");
     if (n.isNamed()) {
@@ -43,9 +48,7 @@ public class ASTMatcherGen implements ASTVisitor {
       b.add(match("hasType", lookup(n.explicitType)));
     }
 
-    if (n.bindsMetaVar()) {
-      b.bind(n.boundMetaVar().getName());
-    }
+    buildBindings(n, b);
 
     matcherMap.put(n, b);
   }
@@ -105,9 +108,7 @@ public class ASTMatcherGen implements ASTVisitor {
 
     processTypeQualifiers(n, b);
 
-    if (n.bindsMetaVar()) {
-      b.bind(n.boundMetaVar().getName());
-    }
+    buildBindings(n, b);
 
     matcherMap.put(n, b);
   }
@@ -116,6 +117,9 @@ public class ASTMatcherGen implements ASTVisitor {
     MatcherBuilder b = match("qualType");
     b.add(match("pointsTo", lookup(p.getPointeeType())));
     processTypeQualifiers(p, b);
+
+    buildBindings(p, b);
+
     matcherMap.put(p, b);
   }
 
@@ -123,6 +127,9 @@ public class ASTMatcherGen implements ASTVisitor {
     MatcherBuilder b = match("arrayType");
     b.add(match("hasElementType", lookup(a.getElementType())));
     processTypeQualifiers(a, b);
+
+    buildBindings(a, b);
+
     matcherMap.put(a, b);
   }
 
@@ -135,7 +142,57 @@ public class ASTMatcherGen implements ASTVisitor {
     }
     b.add(match("hasReturnType", lookup(p.getReturnType())));
 
+    buildBindings(p, b);
+
     matcherMap.put(p, match("ignoringParens", b));
   }
 
+  @Override public void visit(AST.Expr e) {
+    MatcherBuilder b = match("expr");
+
+    buildBindings(e, b);
+
+    matcherMap.put(e, b);
+  }
+
+  @Override public void visit(AST.Stmt s) {
+    MatcherBuilder b = match("stmt");
+
+    buildBindings(s, b);
+
+    matcherMap.put(s, b);
+  }
+
+  @Override public void visit(AST.WhileStmt s) {
+    MatcherBuilder b = match("whileStmt");
+    b.add(match("hasCondition", lookup(s.getCond())));
+    b.add(match("hasBody", lookup(s.getBody())));
+
+    buildBindings(s, b);
+
+    matcherMap.put(s, b);
+  }
+
+  @Override public void visit(AST.DoStmt s) {
+    MatcherBuilder b = match("doStmt");
+    b.add(match("hasCondition", lookup(s.getCond())));
+    b.add(match("hasBody", lookup(s.getBody())));
+
+    buildBindings(s, b);
+
+    matcherMap.put(s, b);
+  }
+
+  @Override public void visit(AST.ForStmt s) {
+    MatcherBuilder b = match("forStmt");
+
+    s.getInit().ifPresent(i -> b.add(match("hasLoopInit", lookup(i))));
+    s.getCond().ifPresent(c -> b.add(match("hasCondition", lookup(c))));
+    s.getIncr().ifPresent(i -> b.add(match("hasIncrement", lookup(i))));
+    b.add(match("hasBody", lookup(s.getBody())));
+
+    buildBindings(s, b);
+
+    matcherMap.put(s, b);
+  }
 }

@@ -356,9 +356,12 @@ aspect CDecl {
 
   syn AST.Expr Expression.asClangExpr() {
     // TODO: equations for translating expressions
-    return new AST.Expr();
+    return AST.Expr.build();
   }
 
+  eq MetaVarExpression.asClangExpr() {
+    return AST.Expr.build().setBinding(varName());
+  }
 
   syn AST.RecordKind StructOrUnionSpecifier.recordKind() = null;
   eq StructSpecifier.recordKind() = AST.RecordKind.STRUCT;

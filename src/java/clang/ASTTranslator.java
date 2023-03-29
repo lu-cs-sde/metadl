@@ -319,9 +319,9 @@ public class ASTTranslator implements ASTVisitor {
 	}
 
 	@Override public void visit(ForStmt f) {
-		ASTNode init = t(f.getInit());
-		Opt<Expression> cond = opt(f.getCond());
-		Opt<Expression> incr = opt(f.getIncr());
+		ASTNode init = t(f.getInit().orElse(null));
+		Opt<Expression> cond = opt(f.getCond().orElse(null));
+		Opt<Expression> incr = opt(f.getIncr().orElse(null));
 		Statement body = t(f.getBody());
 
 		if (init == null) {

@@ -190,5 +190,42 @@ public class ClangClogTest {
   public void test4() {
     List<Map<String, ClangClog.Loc>> results = matchPatternOnFile("int (*$a[10])(int);", PatLangParserSEP.n_declaration, "tests/clang/clog/src/funcptr.c");
     dumpResults(results);
+    Checker.begin(results)
+      .check("$a", 16, 16)
+      .next()
+      .check("$a", 17, 17)
+      .end();
+  }
+
+  @Test
+  public void test5() {
+    List<Map<String, ClangClog.Loc>> results = matchPatternOnFile("while($cond) $body", PatLangParserSEP.n_statement, "tests/clang/clog/src/loops.c");
+    dumpResults(results);
+    Checker.begin(results)
+      .check("$body", 2, 6)
+      .check("$cond", 2, 10, 2, 10)
+      .next()
+      .check("$body", 4, 4)
+      .check("$cond", 3, 12, 3, 12)
+      .end();
+  }
+
+  @Test
+  public void test6() {
+    List<Map<String, ClangClog.Loc>> results = matchPatternOnFile("do $body while($cond);", PatLangParserSEP.n_statement, "tests/clang/clog/src/loops.c");
+    dumpResults(results);
+    Checker.begin(results)
+      .check("$body", 8, 10)
+      .check("$cond", 10, 12, 10, 12)
+      .next()
+      .check("$body", 12, 6, 12, 6)
+      .check("$cond", 12, 15, 12, 15)
+      .end();
+  }
+
+  @Test
+  public void test7() {
+    List<Map<String, ClangClog.Loc>> results = matchPatternOnFile("for ($init; $cond; $inc) $body", PatLangParserSEP.n_statement, "tests/clang/clog/src/loops.c");
+    dumpResults(results);
   }
 }

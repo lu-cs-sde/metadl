@@ -6,374 +6,374 @@ import clang.AST;
 
 
 aspect CDecl {
-	syn Declarator Declarator.innermostDeclarator() {
-		throw new RuntimeException(Thread.currentThread().getStackTrace()[1] + " not implemented.");
-	}
-	eq IdentifierDeclarator.innermostDeclarator() = this;
-	eq MetaVarDeclarator.innermostDeclarator() = this;
-	eq PointerDeclarator.innermostDeclarator() = getDeclarator().innermostDeclarator();
-	eq ArrayDeclarator.innermostDeclarator() = getDeclarator().innermostDeclarator();
-	eq ArrayDeclaratorVLA.innermostDeclarator() = getDeclarator().innermostDeclarator();
-	eq FunctionDeclarator.innermostDeclarator() = getDeclarator().innermostDeclarator();
+  syn Declarator Declarator.innermostDeclarator() {
+    throw new RuntimeException(Thread.currentThread().getStackTrace()[1] + " not implemented.");
+  }
+  eq IdentifierDeclarator.innermostDeclarator() = this;
+  eq MetaVarDeclarator.innermostDeclarator() = this;
+  eq PointerDeclarator.innermostDeclarator() = getDeclarator().innermostDeclarator();
+  eq ArrayDeclarator.innermostDeclarator() = getDeclarator().innermostDeclarator();
+  eq ArrayDeclaratorVLA.innermostDeclarator() = getDeclarator().innermostDeclarator();
+  eq FunctionDeclarator.innermostDeclarator() = getDeclarator().innermostDeclarator();
 
-	syn Identifier Declarator.declaredIdentifier() = ((IdentifierDeclarator) innermostDeclarator()).getIdentifier();
-
-
-	// Extract a type from a declaration.
-	public static AST.Type DeclarationSpecifier.typeFromDeclarationSpecifiers(Iterable<? extends DeclarationSpecifier> specs) {
-		java.util.List<AST.BuiltinTypeKind> typeKinds = new ArrayList<>();
-		java.util.List<AST.TypeQualifier> typeQuals = new ArrayList<>();
-		AST.StorageClass storage = null;
-		AST.Type type = null;
-
-		for (DeclarationSpecifier ds : specs) {
-			AST.BuiltinTypeKind typeKind = ds.asBuiltinTypeKind();
-			if (typeKind != null)
-				typeKinds.add(typeKind);
-
-			AST.TypeQualifier typeQual = ds.asTypeQualifier();
-			if (typeQual != null)
-				typeQuals.add(typeQual);
-
-			AST.StorageClass sc = ds.asStorageClass();
-			if (sc != null) {
-				if (storage != null) {
-					throw new RuntimeException("At most one storage class for a declaration!");
-				}
-				storage = sc;
-			}
-
-			if (ds.asType() != null) {
-				if (type != null) {
-					throw new RuntimeException("At most one type name for a declaration!");
-				}
-				type = ds.asType();
-			}
-		}
-
-		if (typeKinds.isEmpty()) {
-			// TODO: this may be a reference to a typedefed type,
-			// or a record/enum definition
-			if (type != null) {
-				if (storage != null)
-					type.setStorage(storage);
-				type.setTypeQuals(typeQuals);
-				return type;
-			}
-		} else {
-			AST.BuiltinType t = AST.BuiltinType.build(typeKinds);
-			t.setTypeQuals(typeQuals);
-			if (storage != null) {
-				// Explicit storage class found. Set it.
-				t.setStorage(storage);
-			}
-			return t;
-		}
-
-		return null;
-	}
-
-	public static AST.Decl DeclarationSpecifier.declFromDeclarationSpecifiers(Iterable<? extends DeclarationSpecifier> specs) {
-		for (DeclarationSpecifier ds : specs) {
-			AST.Decl d = ds.asClangDecl();
-			if (d != null)
-				return d;
-		}
-		return null;
-	}
-
-	syn java.util.List<clang.AST.Decl> Declaration.clangDecls() {
-		java.util.List<clang.AST.Decl> ret = new ArrayList<>();
-		AST.Type innerType = DeclarationSpecifier.typeFromDeclarationSpecifiers(getDeclarationSpecifiers());
-		AST.Decl typeDecl = DeclarationSpecifier.declFromDeclarationSpecifiers(getDeclarationSpecifiers());
-
-		if (typeDecl != null) {
-			ret.add(typeDecl);
-		}
-
-		for (InitDeclarator initDecl : getInitDeclarators()) {
-			ret.add(initDecl.asClangDecl(innerType));
-		}
-
-		return ret;
-	}
-
-	syn AST.Decl InitDeclarator.asClangDecl(AST.Type innerType) = getDeclarator().asClangDecl(innerType);
-	eq GapInitDeclarator.asClangDecl(AST.Type innerType) = AST.Decl.build().gap();
-
-	syn AST.Decl Declarator.asClangDecl(AST.Type innerType) {
-		Declarator innermost = this.innermostDeclarator();
-		AST.Type type = this.asType(innerType);
-		String name;
-		AST.VarDecl ret = AST.VarDecl.build(type);
-		if (innermost.isMetaVar()) {
-			ret.setBinding(innermost.varName());
-		} else {
-			Identifier ident = innermost.declaredIdentifier();
-			ret.setName(ident.getID());
-		}
-		return ret;
-	}
-
-	eq FunctionDeclarator.asClangDecl(AST.Type innerType) {
-		AST.Type type = this.asType(innerType);
-		if (type instanceof AST.PointerType) {
-			return super.asClangDecl(innerType);
-		} else {
-			java.util.List<AST.ParmVarDecl> params = new ArrayList<>();
-			for (ParameterType pt : getParameterTypes()) {
-				params.add(pt.asClangDecl());
-			}
-
-			Declarator innermost = this.innermostDeclarator();
-			if (innermost.isMetaVar()) {
-				return AST.FunctionDecl.build(type, params).setBinding(innermost.varName());
-			} else {
-				Identifier ident = innermost.declaredIdentifier();
-				return AST.FunctionDecl.build(type, params).setName(ident.getID());
-			}
-		}
-	}
-
-	syn AST.ParmVarDecl ParameterType.asClangDecl() { throw new RuntimeException("ParameterType.asClangDecl() not implemented."); }
-	eq ParameterDeclaration.asClangDecl() {
-		Declarator innermost = this.getDeclarator().innermostDeclarator();
-		AST.Type type = this.asType();
-
-		if (innermost.isMetaVar()) {
-			return AST.ParmVarDecl.build(type).setBinding(innermost.varName());
-		} else {
-			Identifier ident = this.getDeclarator().declaredIdentifier();
-			return AST.ParmVarDecl.build(type).setName(ident.getID());
-		}
-	}
-	eq GapParameterType.asClangDecl() {
-		return AST.ParmVarDecl.build().gap();
-	}
+  syn Identifier Declarator.declaredIdentifier() = ((IdentifierDeclarator) innermostDeclarator()).getIdentifier();
 
 
-	eq AbstractParameterDeclaration.asClangDecl() {
-		AST.Type type = this.asType();
-		return AST.ParmVarDecl.build(type);
-	}
+  // Extract a type from a declaration.
+  public static AST.Type DeclarationSpecifier.typeFromDeclarationSpecifiers(Iterable<? extends DeclarationSpecifier> specs) {
+    java.util.List<AST.BuiltinTypeKind> typeKinds = new ArrayList<>();
+    java.util.List<AST.TypeQualifier> typeQuals = new ArrayList<>();
+    AST.StorageClass storage = null;
+    AST.Type type = null;
 
-	syn AST.Type ParameterType.asType() { throw new RuntimeException("ParameterType.asType() not implemented."); }
-	eq GapParameterType.asType() {
-		return AST.GapType.build();
-	}
-	eq ParameterDeclaration.asType() {
-		AST.Type innerType = DeclarationSpecifier.typeFromDeclarationSpecifiers(getDeclarationSpecifiers());
-		return getDeclarator().asType(innerType);
-	}
+    for (DeclarationSpecifier ds : specs) {
+      AST.BuiltinTypeKind typeKind = ds.asBuiltinTypeKind();
+      if (typeKind != null)
+        typeKinds.add(typeKind);
 
-	eq AbstractParameterDeclaration.asType() {
-		AST.Type innerType = DeclarationSpecifier.typeFromDeclarationSpecifiers(getDeclarationSpecifiers());
-		if (hasAbstractDeclarator()) {
-			return getAbstractDeclarator().asType(innerType);
-		} else {
-			return innerType;
-		}
-	}
+      AST.TypeQualifier typeQual = ds.asTypeQualifier();
+      if (typeQual != null)
+        typeQuals.add(typeQual);
 
+      AST.StorageClass sc = ds.asStorageClass();
+      if (sc != null) {
+        if (storage != null) {
+          throw new RuntimeException("At most one storage class for a declaration!");
+        }
+        storage = sc;
+      }
 
+      if (ds.asType() != null) {
+        if (type != null) {
+          throw new RuntimeException("At most one type name for a declaration!");
+        }
+        type = ds.asType();
+      }
+    }
 
-	syn AST.Type Declarator.asType(AST.Type innerType);
-	eq IdentifierDeclarator.asType(AST.Type innerType) = innerType;
-	eq MetaVarDeclarator.asType(AST.Type innerType) = innerType;
-	eq PointerDeclarator.asType(AST.Type innerType) {
-		AST.Type t = AST.PointerType.build(innerType);
-		for (TypeQualifier q : getTypeQualifiers()) {
-			t.addQual(q.asTypeQualifier());
-		}
-		return getDeclarator().asType(t);
-	}
+    if (typeKinds.isEmpty()) {
+      // TODO: this may be a reference to a typedefed type,
+      // or a record/enum definition
+      if (type != null) {
+        if (storage != null)
+          type.setStorage(storage);
+        type.setTypeQuals(typeQuals);
+        return type;
+      }
+    } else {
+      AST.BuiltinType t = AST.BuiltinType.build(typeKinds);
+      t.setTypeQuals(typeQuals);
+      if (storage != null) {
+        // Explicit storage class found. Set it.
+        t.setStorage(storage);
+      }
+      return t;
+    }
 
-	eq ArrayDeclarator.asType(AST.Type innerType) {
-		AST.Type t = AST.ArrayType.build(innerType);
-		for (TypeQualifier q : getTypeQualifiers()) {
-			t.addQual(q.asTypeQualifier());
-		}
-		return getDeclarator().asType(t);
-	}
+    return null;
+  }
 
-	eq ArrayDeclaratorVLA.asType(AST.Type innerType) {
-		AST.Type t = AST.ArrayType.build(innerType);
-		for (TypeQualifier q : getTypeQualifiers()) {
-			t.addQual(q.asTypeQualifier());
-		}
-		return getDeclarator().asType(t);
-	}
+  public static AST.Decl DeclarationSpecifier.declFromDeclarationSpecifiers(Iterable<? extends DeclarationSpecifier> specs) {
+    for (DeclarationSpecifier ds : specs) {
+      AST.Decl d = ds.asClangDecl();
+      if (d != null)
+        return d;
+    }
+    return null;
+  }
 
-	eq FunctionDeclarator.asType(AST.Type innerType) {
-		java.util.List<AST.Type> paramTypes = new ArrayList<>();
-		for (ParameterType pDecl : getParameterTypes()) {
-			paramTypes.add(pDecl.asType());
-		}
-		return getDeclarator().asType(AST.FunctionProtoType.build(innerType , paramTypes));
-	}
+  syn java.util.List<clang.AST.Decl> Declaration.clangDecls() {
+    java.util.List<clang.AST.Decl> ret = new ArrayList<>();
+    AST.Type innerType = DeclarationSpecifier.typeFromDeclarationSpecifiers(getDeclarationSpecifiers());
+    AST.Decl typeDecl = DeclarationSpecifier.declFromDeclarationSpecifiers(getDeclarationSpecifiers());
 
+    if (typeDecl != null) {
+      ret.add(typeDecl);
+    }
 
-	syn AST.Type AbstractDeclarator.asType(AST.Type innerType) { throw new
-			RuntimeException(Thread.currentThread().getStackTrace()[0].getMethodName() + " not implemented.");
-	}
+    for (InitDeclarator initDecl : getInitDeclarators()) {
+      ret.add(initDecl.asClangDecl(innerType));
+    }
 
-	eq AbstractPointerDeclarator.asType(AST.Type innerType) {
-		AST.Type t = AST.PointerType.build(innerType);
-		for (TypeQualifier q : getTypeQualifiers()) {
-			t.addQual(q.asTypeQualifier());
-		}
-		if (hasAbstractDeclarator()) {
-			return getAbstractDeclarator().asType(t);
-		} else {
-			return t;
-		}
-	}
+    return ret;
+  }
 
-	eq AbstractArrayDeclarator.asType(AST.Type innerType) {
-		AST.Type t = AST.ArrayType.build(innerType);
-		for (TypeQualifier q : getTypeQualifiers()) {
-			t.addQual(q.asTypeQualifier());
-		}
-		if (hasAbstractDeclarator()) {
-			return getAbstractDeclarator().asType(t);
-		} else {
-			return t;
-		}
-	}
+  syn AST.Decl InitDeclarator.asClangDecl(AST.Type innerType) = getDeclarator().asClangDecl(innerType);
+  eq GapInitDeclarator.asClangDecl(AST.Type innerType) = AST.Decl.build().gap();
 
-	eq AbstractArrayDeclaratorVLA.asType(AST.Type innerType) {
-		AST.Type t = AST.ArrayType.build(innerType);
-		for (TypeQualifier q : getTypeQualifiers()) {
-			t.addQual(q.asTypeQualifier());
-		}
-		if (hasAbstractDeclarator()) {
-			return getAbstractDeclarator().asType(t);
-		} else {
-			return t;
-		}
-	}
+  syn AST.Decl Declarator.asClangDecl(AST.Type innerType) {
+    Declarator innermost = this.innermostDeclarator();
+    AST.Type type = this.asType(innerType);
+    String name;
+    AST.VarDecl ret = AST.VarDecl.build(type);
+    if (innermost.isMetaVar()) {
+      ret.setBinding(innermost.varName());
+    } else {
+      Identifier ident = innermost.declaredIdentifier();
+      ret.setName(ident.getID());
+    }
+    return ret;
+  }
 
-	eq AbstractFunctionDeclarator.asType(AST.Type innerType) {
-		java.util.List<AST.Type> paramTypes = new ArrayList<>();
-		for (ParameterType pDecl : getParameterTypes()) {
-			paramTypes.add(pDecl.asType());
-		}
-		AST.Type t = AST.FunctionProtoType.build(innerType, paramTypes);
-		if (hasAbstractDeclarator()) {
-			return getAbstractDeclarator().asType(t);
-		} else {
-			return t;
-		}
-	}
+  eq FunctionDeclarator.asClangDecl(AST.Type innerType) {
+    AST.Type type = this.asType(innerType);
+    if (type instanceof AST.FunctionProtoType) {
+      java.util.List<AST.ParmVarDecl> params = new ArrayList<>();
+      for (ParameterType pt : getParameterTypes()) {
+        params.add(pt.asClangDecl());
+      }
 
-	eq GapDeclarator.asType(AST.Type innerType) { throw new RuntimeException("GapDeclarator.asType() should never be called."); }
-	eq IndexMetaVarDeclarator.asType(AST.Type innerType) { throw new RuntimeException("IndexMetaVarDeclarator.asType() should never be called."); }
+      Declarator innermost = this.innermostDeclarator();
+      if (innermost.isMetaVar()) {
+        return AST.FunctionDecl.build(type, params).setBinding(innermost.varName());
+      } else {
+        Identifier ident = innermost.declaredIdentifier();
+        return AST.FunctionDecl.build(type, params).setName(ident.getID());
+      }
+    } else {
+      return super.asClangDecl(innerType);
+    }
+  }
 
-	syn AST.BuiltinTypeKind DeclarationSpecifier.asBuiltinTypeKind() = null;
-	eq Void.asBuiltinTypeKind() = AST.BuiltinTypeKind.VOID;
-	eq Char.asBuiltinTypeKind() = AST.BuiltinTypeKind.CHAR;
-	eq Short.asBuiltinTypeKind() = AST.BuiltinTypeKind.SHORT;
-	eq Int.asBuiltinTypeKind() = AST.BuiltinTypeKind.INT;
-	eq Long.asBuiltinTypeKind() = AST.BuiltinTypeKind.LONG;
-	eq Float.asBuiltinTypeKind() = AST.BuiltinTypeKind.FLOAT;
-	eq Double.asBuiltinTypeKind() = AST.BuiltinTypeKind.DOUBLE;
-	eq Signed.asBuiltinTypeKind() = AST.BuiltinTypeKind.SIGNED;
-	eq Unsigned.asBuiltinTypeKind() = AST.BuiltinTypeKind.UNSIGNED;
-	eq Bool.asBuiltinTypeKind() = AST.BuiltinTypeKind.BOOL;
-	eq Complex.asBuiltinTypeKind() = AST.BuiltinTypeKind.COMPLEX;
+  syn AST.ParmVarDecl ParameterType.asClangDecl() { throw new RuntimeException("ParameterType.asClangDecl() not implemented."); }
+  eq ParameterDeclaration.asClangDecl() {
+    Declarator innermost = this.getDeclarator().innermostDeclarator();
+    AST.Type type = this.asType();
 
-	syn AST.Type DeclarationSpecifier.asType() = null;
-	eq TypedefName.asType() {
-		return AST.TypedefType.build(getIdentifier().getID());
-	}
-
-	eq StructSpecifierRef.asType() {
-		return AST.RecordRefType.build(AST.RecordKind.STRUCT, getIdentifier().getID());
-	}
-
-	eq UnionSpecifierRef.asType() {
-		return AST.RecordRefType.build(AST.RecordKind.UNION, getIdentifier().getID());
-	}
-
-	eq StructOrUnionSpecifier.asType() {
-		if (hasIdentifier()) {
-			return AST.RecordRefType.build(recordKind(), getIdentifier().getID());
-		} else {
-			// this is an anonymous record
-			return AST.AnonymousRecordType.build((AST.RecordDecl) this.asClangDecl());
-
-		}
-	}
-
-	syn AST.Decl DeclarationSpecifier.asClangDecl() = null;
-	eq StructOrUnionSpecifier.asClangDecl() {
-		String name = hasIdentifier() ? getIdentifier().getID() : "";
-		java.util.List<AST.Decl> decls = new ArrayList<>();
-		for (StructDeclaration sd : getStructDeclarations()) {
-			decls.addAll(sd.asClangDecl());
-		}
-
-		if (hasIdentifier())
-			return AST.RecordDecl.build(getIdentifier().getID(), recordKind(), decls);
-		else
-			return AST.RecordDecl.build(recordKind(), decls);
-	}
-
-	syn java.util.List<AST.Decl> StructDeclaration.asClangDecl() {
-		java.util.List<AST.Decl> decls = new ArrayList<>();
-		Stream<DeclarationSpecifier> stream = Stream.concat(StreamSupport.stream(getTypeSpecifiers().spliterator(), false),
-															StreamSupport.stream(getTypeQualifiers().spliterator(), false));
-
-		AST.Type type =
-			DeclarationSpecifier.typeFromDeclarationSpecifiers(stream.collect(Collectors.toUnmodifiableList()));
-
-		AST.Decl typeDecl =
-			DeclarationSpecifier.declFromDeclarationSpecifiers(getTypeSpecifiers());
-
-		if (typeDecl != null)
-			decls.add(typeDecl);
-
-		for (StructDeclarator sd : getStructDeclarators()) {
-			AST.Type fieldType;
-			String name;
-			if (sd.hasDeclarator()) {
-				fieldType = sd.getDeclarator().asType(type);
-				name = sd.getDeclarator().declaredIdentifier().getID();
-			} else {
-				fieldType = type;
-				name = "";
-			}
-
-			if (sd.hasExpression()) {
-				decls.add(AST.FieldDecl.build(fieldType, sd.getExpression().asClangExpr()).setName(name));
-			} else {
-				decls.add(AST.FieldDecl.build(fieldType).setName(name));
-			}
-		}
-
-		return decls;
-	}
-
-	syn AST.Expr Expression.asClangExpr() {
-		// TODO: equations for translating expressions
-		return new AST.Expr();
-	}
+    if (innermost.isMetaVar()) {
+      return AST.ParmVarDecl.build(type).setBinding(innermost.varName());
+    } else {
+      Identifier ident = this.getDeclarator().declaredIdentifier();
+      return AST.ParmVarDecl.build(type).setName(ident.getID());
+    }
+  }
+  eq GapParameterType.asClangDecl() {
+    return AST.ParmVarDecl.build().gap();
+  }
 
 
-	syn AST.RecordKind StructOrUnionSpecifier.recordKind() = null;
-	eq StructSpecifier.recordKind() = AST.RecordKind.STRUCT;
-	eq UnionSpecifier.recordKind() = AST.RecordKind.UNION;
+  eq AbstractParameterDeclaration.asClangDecl() {
+    AST.Type type = this.asType();
+    return AST.ParmVarDecl.build(type);
+  }
 
-	syn AST.StorageClass DeclarationSpecifier.asStorageClass() = null;
-	eq Extern.asStorageClass() = AST.StorageClass.EXTERN;
-	eq Static.asStorageClass() = AST.StorageClass.STATIC;
-	eq ThreadLocal.asStorageClass() = AST.StorageClass.THREAD_LOCAL;
-	eq Auto.asStorageClass() = AST.StorageClass.AUTO;
-	eq Register.asStorageClass() = AST.StorageClass.REGISTER;
+  syn AST.Type ParameterType.asType() { throw new RuntimeException("ParameterType.asType() not implemented."); }
+  eq GapParameterType.asType() {
+    return AST.GapType.build();
+  }
+  eq ParameterDeclaration.asType() {
+    AST.Type innerType = DeclarationSpecifier.typeFromDeclarationSpecifiers(getDeclarationSpecifiers());
+    return getDeclarator().asType(innerType);
+  }
 
-	syn AST.TypeQualifier DeclarationSpecifier.asTypeQualifier() = null;
-	eq Const.asTypeQualifier() = AST.TypeQualifier.CONST;
-	eq Restrict.asTypeQualifier() = AST.TypeQualifier.RESTRICT;
-	eq Volatile.asTypeQualifier() = AST.TypeQualifier.VOLATILE;
-	eq Atomic.asTypeQualifier() = AST.TypeQualifier.ATOMIC;
+  eq AbstractParameterDeclaration.asType() {
+    AST.Type innerType = DeclarationSpecifier.typeFromDeclarationSpecifiers(getDeclarationSpecifiers());
+    if (hasAbstractDeclarator()) {
+      return getAbstractDeclarator().asType(innerType);
+    } else {
+      return innerType;
+    }
+  }
+
+
+
+  syn AST.Type Declarator.asType(AST.Type innerType);
+  eq IdentifierDeclarator.asType(AST.Type innerType) = innerType;
+  eq MetaVarDeclarator.asType(AST.Type innerType) = innerType;
+  eq PointerDeclarator.asType(AST.Type innerType) {
+    AST.Type t = AST.PointerType.build(innerType);
+    for (TypeQualifier q : getTypeQualifiers()) {
+      t.addQual(q.asTypeQualifier());
+    }
+    return getDeclarator().asType(t);
+  }
+
+  eq ArrayDeclarator.asType(AST.Type innerType) {
+    AST.Type t = AST.ArrayType.build(innerType);
+    for (TypeQualifier q : getTypeQualifiers()) {
+      t.addQual(q.asTypeQualifier());
+    }
+    return getDeclarator().asType(t);
+  }
+
+  eq ArrayDeclaratorVLA.asType(AST.Type innerType) {
+    AST.Type t = AST.ArrayType.build(innerType);
+    for (TypeQualifier q : getTypeQualifiers()) {
+      t.addQual(q.asTypeQualifier());
+    }
+    return getDeclarator().asType(t);
+  }
+
+  eq FunctionDeclarator.asType(AST.Type innerType) {
+    java.util.List<AST.Type> paramTypes = new ArrayList<>();
+    for (ParameterType pDecl : getParameterTypes()) {
+      paramTypes.add(pDecl.asType());
+    }
+    return getDeclarator().asType(AST.FunctionProtoType.build(innerType , paramTypes));
+  }
+
+
+  syn AST.Type AbstractDeclarator.asType(AST.Type innerType) { throw new
+      RuntimeException(Thread.currentThread().getStackTrace()[0].getMethodName() + " not implemented.");
+  }
+
+  eq AbstractPointerDeclarator.asType(AST.Type innerType) {
+    AST.Type t = AST.PointerType.build(innerType);
+    for (TypeQualifier q : getTypeQualifiers()) {
+      t.addQual(q.asTypeQualifier());
+    }
+    if (hasAbstractDeclarator()) {
+      return getAbstractDeclarator().asType(t);
+    } else {
+      return t;
+    }
+  }
+
+  eq AbstractArrayDeclarator.asType(AST.Type innerType) {
+    AST.Type t = AST.ArrayType.build(innerType);
+    for (TypeQualifier q : getTypeQualifiers()) {
+      t.addQual(q.asTypeQualifier());
+    }
+    if (hasAbstractDeclarator()) {
+      return getAbstractDeclarator().asType(t);
+    } else {
+      return t;
+    }
+  }
+
+  eq AbstractArrayDeclaratorVLA.asType(AST.Type innerType) {
+    AST.Type t = AST.ArrayType.build(innerType);
+    for (TypeQualifier q : getTypeQualifiers()) {
+      t.addQual(q.asTypeQualifier());
+    }
+    if (hasAbstractDeclarator()) {
+      return getAbstractDeclarator().asType(t);
+    } else {
+      return t;
+    }
+  }
+
+  eq AbstractFunctionDeclarator.asType(AST.Type innerType) {
+    java.util.List<AST.Type> paramTypes = new ArrayList<>();
+    for (ParameterType pDecl : getParameterTypes()) {
+      paramTypes.add(pDecl.asType());
+    }
+    AST.Type t = AST.FunctionProtoType.build(innerType, paramTypes);
+    if (hasAbstractDeclarator()) {
+      return getAbstractDeclarator().asType(t);
+    } else {
+      return t;
+    }
+  }
+
+  eq GapDeclarator.asType(AST.Type innerType) { throw new RuntimeException("GapDeclarator.asType() should never be called."); }
+  eq IndexMetaVarDeclarator.asType(AST.Type innerType) { throw new RuntimeException("IndexMetaVarDeclarator.asType() should never be called."); }
+
+  syn AST.BuiltinTypeKind DeclarationSpecifier.asBuiltinTypeKind() = null;
+  eq Void.asBuiltinTypeKind() = AST.BuiltinTypeKind.VOID;
+  eq Char.asBuiltinTypeKind() = AST.BuiltinTypeKind.CHAR;
+  eq Short.asBuiltinTypeKind() = AST.BuiltinTypeKind.SHORT;
+  eq Int.asBuiltinTypeKind() = AST.BuiltinTypeKind.INT;
+  eq Long.asBuiltinTypeKind() = AST.BuiltinTypeKind.LONG;
+  eq Float.asBuiltinTypeKind() = AST.BuiltinTypeKind.FLOAT;
+  eq Double.asBuiltinTypeKind() = AST.BuiltinTypeKind.DOUBLE;
+  eq Signed.asBuiltinTypeKind() = AST.BuiltinTypeKind.SIGNED;
+  eq Unsigned.asBuiltinTypeKind() = AST.BuiltinTypeKind.UNSIGNED;
+  eq Bool.asBuiltinTypeKind() = AST.BuiltinTypeKind.BOOL;
+  eq Complex.asBuiltinTypeKind() = AST.BuiltinTypeKind.COMPLEX;
+
+  syn AST.Type DeclarationSpecifier.asType() = null;
+  eq TypedefName.asType() {
+    return AST.TypedefType.build(getIdentifier().getID());
+  }
+
+  eq StructSpecifierRef.asType() {
+    return AST.RecordRefType.build(AST.RecordKind.STRUCT, getIdentifier().getID());
+  }
+
+  eq UnionSpecifierRef.asType() {
+    return AST.RecordRefType.build(AST.RecordKind.UNION, getIdentifier().getID());
+  }
+
+  eq StructOrUnionSpecifier.asType() {
+    if (hasIdentifier()) {
+      return AST.RecordRefType.build(recordKind(), getIdentifier().getID());
+    } else {
+      // this is an anonymous record
+      return AST.AnonymousRecordType.build((AST.RecordDecl) this.asClangDecl());
+
+    }
+  }
+
+  syn AST.Decl DeclarationSpecifier.asClangDecl() = null;
+  eq StructOrUnionSpecifier.asClangDecl() {
+    String name = hasIdentifier() ? getIdentifier().getID() : "";
+    java.util.List<AST.Decl> decls = new ArrayList<>();
+    for (StructDeclaration sd : getStructDeclarations()) {
+      decls.addAll(sd.asClangDecl());
+    }
+
+    if (hasIdentifier())
+      return AST.RecordDecl.build(getIdentifier().getID(), recordKind(), decls);
+    else
+      return AST.RecordDecl.build(recordKind(), decls);
+  }
+
+  syn java.util.List<AST.Decl> StructDeclaration.asClangDecl() {
+    java.util.List<AST.Decl> decls = new ArrayList<>();
+    Stream<DeclarationSpecifier> stream = Stream.concat(StreamSupport.stream(getTypeSpecifiers().spliterator(), false),
+                              StreamSupport.stream(getTypeQualifiers().spliterator(), false));
+
+    AST.Type type =
+      DeclarationSpecifier.typeFromDeclarationSpecifiers(stream.collect(Collectors.toUnmodifiableList()));
+
+    AST.Decl typeDecl =
+      DeclarationSpecifier.declFromDeclarationSpecifiers(getTypeSpecifiers());
+
+    if (typeDecl != null)
+      decls.add(typeDecl);
+
+    for (StructDeclarator sd : getStructDeclarators()) {
+      AST.Type fieldType;
+      String name;
+      if (sd.hasDeclarator()) {
+        fieldType = sd.getDeclarator().asType(type);
+        name = sd.getDeclarator().declaredIdentifier().getID();
+      } else {
+        fieldType = type;
+        name = "";
+      }
+
+      if (sd.hasExpression()) {
+        decls.add(AST.FieldDecl.build(fieldType, sd.getExpression().asClangExpr()).setName(name));
+      } else {
+        decls.add(AST.FieldDecl.build(fieldType).setName(name));
+      }
+    }
+
+    return decls;
+  }
+
+  syn AST.Expr Expression.asClangExpr() {
+    // TODO: equations for translating expressions
+    return new AST.Expr();
+  }
+
+
+  syn AST.RecordKind StructOrUnionSpecifier.recordKind() = null;
+  eq StructSpecifier.recordKind() = AST.RecordKind.STRUCT;
+  eq UnionSpecifier.recordKind() = AST.RecordKind.UNION;
+
+  syn AST.StorageClass DeclarationSpecifier.asStorageClass() = null;
+  eq Extern.asStorageClass() = AST.StorageClass.EXTERN;
+  eq Static.asStorageClass() = AST.StorageClass.STATIC;
+  eq ThreadLocal.asStorageClass() = AST.StorageClass.THREAD_LOCAL;
+  eq Auto.asStorageClass() = AST.StorageClass.AUTO;
+  eq Register.asStorageClass() = AST.StorageClass.REGISTER;
+
+  syn AST.TypeQualifier DeclarationSpecifier.asTypeQualifier() = null;
+  eq Const.asTypeQualifier() = AST.TypeQualifier.CONST;
+  eq Restrict.asTypeQualifier() = AST.TypeQualifier.RESTRICT;
+  eq Volatile.asTypeQualifier() = AST.TypeQualifier.VOLATILE;
+  eq Atomic.asTypeQualifier() = AST.TypeQualifier.ATOMIC;
 }

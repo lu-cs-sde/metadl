@@ -186,4 +186,9 @@ public class ClangClogTest {
     c.check("$f", 13, 13).end();
   }
 
+  @Test
+  public void test4() {
+    List<Map<String, ClangClog.Loc>> results = matchPatternOnFile("int (*$a[10])(int);", PatLangParserSEP.n_declaration, "tests/clang/clog/src/funcptr.c");
+    dumpResults(results);
+  }
 }

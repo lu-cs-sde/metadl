@@ -276,4 +276,10 @@ public class CParserTest {
 		testAST("const int p, q;", lang.c.obj.ast.ObjLangParserSEP.n_declaration);
 	}
 
+  @Test
+	public void arrayOfFunctionPtrs() {
+		testAST("int (*a[10])(int);", lang.c.obj.ast.ObjLangParserSEP.n_declaration);
+	}
+
+
 }

@@ -121,4 +121,10 @@ public class MatcherTest {
     assertEquals(1, res.size());
     assertEquals("varDecl(hasType(arrayType(hasElementType(arrayType(hasElementType(qualType(pointsTo(qualType(isInteger()))))))))).bind(\"$v\")", res.get(0));
   }
+
+  @Test public void test9() {
+    List<String> res = genMatchers("int (*$a[10])(int);", PatLangParserSEP.n_declaration);
+    assertEquals(1, res.size());
+    assertEquals("varDecl(hasType(arrayType(hasElementType(qualType(pointsTo(ignoringParens(functionProtoType(parameterCountIs(1), hasParameterType(0, qualType(isInteger())), hasReturnType(qualType(isInteger())))))))))).bind(\"$a\")", res.get(0));
+  }
 }

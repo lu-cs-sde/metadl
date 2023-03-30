@@ -11,6 +11,11 @@ aspect CStmt {
     return AST.Stmt.build().setBinding(varName());
   }
 
+  eq MetaVarDeclarationStatement.asClangStmt() {
+    return AST.Stmt.build().setBinding(varName());
+  }
+
+
   eq CompoundStatement.asClangStmt() {
     ArrayList<AST.Stmt> stmts = new ArrayList<>();
     for (Statement s : getStatements()) {

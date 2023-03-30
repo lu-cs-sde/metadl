@@ -431,7 +431,8 @@ def cMetaVarNonTerminals = [
     "init_declarator.", // gap only
     "parameter_type.", // gap only
     "expression",
-    "statement"
+    "statement",
+    "declaration_statement\$"
 ]
 
 // MetaDL as object language

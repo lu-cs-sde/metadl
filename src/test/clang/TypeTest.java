@@ -245,13 +245,6 @@ public class TypeTest {
   }
 
   @Test
-  public void test123() {
-    String s = "int[] p(void);";
-    debugDecl(s);
-  }
-
-
-  @Test
   public void test24() {
     String s = "int $f(int $q);";
     debugDecl(s);

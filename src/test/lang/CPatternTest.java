@@ -36,4 +36,10 @@ public class CPatternTest {
 	public void test1() {
 		testAST("$t1 f(void) { .. for ($_; $_; $_) { .. } .. }", lang.c.pat.ast.PatLangParserSEP.n_function_definition);
 	}
+
+  @Test
+  @Disabled
+  public void test2() {
+    testAST("for($init ; ) $body", lang.c.pat.ast.PatLangParserSEP.n_statement);
+  }
 }

@@ -17,7 +17,25 @@ int f1(int m, int n) {
     for (i = 0; i < 3; i++) ;
   }
 
+  for (;;) {
+    // empty for loop
+  }
 
+  for (int i = 0; ; ) {
+    // empty
+  }
+
+  for (m = 0; ; ) {
+    // empty
+  }
+
+  for (; m < n; ) {
+    // empty
+  }
+
+  for (; ; n--) {
+    // empty
+  }
 
   return m;
 }

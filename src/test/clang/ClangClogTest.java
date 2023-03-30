@@ -228,4 +228,31 @@ public class ClangClogTest {
     List<Map<String, ClangClog.Loc>> results = matchPatternOnFile("for ($init; $cond; $inc) $body", PatLangParserSEP.n_statement, "tests/clang/clog/src/loops.c");
     dumpResults(results);
   }
+
+  @Test
+  public void test8() {
+    List<Map<String, ClangClog.Loc>> results = matchPatternOnFile("for (; ; ) $body", PatLangParserSEP.n_statement, "tests/clang/clog/src/loops.c");
+    dumpResults(results);
+  }
+
+  @Test
+  public void test9() {
+    List<Map<String, ClangClog.Loc>> results = matchPatternOnFile("for ($init; ; ) $body", PatLangParserSEP.n_statement, "tests/clang/clog/src/loops.c");
+    dumpResults(results);
+  }
+
+  @Test
+  public void test10() {
+    List<Map<String, ClangClog.Loc>> results = matchPatternOnFile("for (; $cond; ) $body", PatLangParserSEP.n_statement, "tests/clang/clog/src/loops.c");
+    dumpResults(results);
+  }
+
+
+  @Test
+  public void test11() {
+    List<Map<String, ClangClog.Loc>> results = matchPatternOnFile("for (; ; $inc) $body", PatLangParserSEP.n_statement, "tests/clang/clog/src/loops.c");
+    dumpResults(results);
+  }
+
+
 }

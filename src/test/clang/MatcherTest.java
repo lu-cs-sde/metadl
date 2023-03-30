@@ -158,7 +158,19 @@ public class MatcherTest {
   @Test public void test10() {
     List<String> res = genMatchers("while ($cond) $body", PatLangParserSEP.n_statement);
     assertEquals(1, res.size());
-    assertEquals("whileStmt(hasCondition(expr()), hasBody(stmt().bind(\"$body\")))",
+    assertEquals("whileStmt(hasCondition(expr().bind(\"$cond\")), hasBody(stmt().bind(\"$body\")))",
                  res.get(0));
+  }
+
+  @Test public void test11() {
+    List<String> res = genMatchers("for ($init; ;) $body", PatLangParserSEP.n_statement);
+    assertEquals(1, res.size());
+    assertEquals("forStmt(hasLoopInit(expr().bind(\"$init\")), unless(hasCondition(anything())), unless(hasIncrement(anything())), hasBody(stmt().bind(\"$body\")))", res.get(0));
+  }
+
+  @Test public void test12() {
+    List<String> res = genMatchers("for ($init ;) $body", PatLangParserSEP.n_statement);
+    assertEquals(1, res.size());
+    assertEquals("forStmt(hasLoopInit(stmt().bind(\"$init\")), unless(hasCondition(anything())), unless(hasIncrement(anything())), hasBody(stmt().bind(\"$body\")))", res.get(0));
   }
 }

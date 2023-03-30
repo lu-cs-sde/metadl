@@ -100,4 +100,13 @@ public class MatcherBuilder implements AbstractMatcherBuilder {
   public static ConstIntMatcherBuilder integer(int v){
     return new ConstIntMatcherBuilder(v);
   }
+
+  public static MatcherBuilder unless(MatcherBuilder b) {
+    return new MatcherBuilder("unless", b);
+  }
+
+  public static MatcherBuilder anything() {
+    return new MatcherBuilder("anything");
+  }
+
 }

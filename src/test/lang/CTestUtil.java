@@ -59,6 +59,12 @@ public class CTestUtil {
     java.util.List<ParseTree> parseTrees = Util.enumerateParseTrees(root, astBuilder.getGrammar(),
                                                                     new SPPFTrivialProductionRemover(astBuilder.getGrammar()) {
                                                                       @Override public boolean isBubleUpChild(Category p, Category c) {
+                                                                        if (p.getName().equals("declarator"))
+                                                                          return false;
+                                                                        if (c.getName().equals("METAVARID"))
+                                                                          return true;
+                                                                        if (c.getName().equals("GAP"))
+                                                                          return true;
                                                                         return false;
                                                                       }
                                                                     });

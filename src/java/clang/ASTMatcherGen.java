@@ -186,9 +186,12 @@ public class ASTMatcherGen implements ASTVisitor {
   @Override public void visit(AST.ForStmt s) {
     MatcherBuilder b = match("forStmt");
 
-    s.getInit().ifPresent(i -> b.add(match("hasLoopInit", lookup(i))));
-    s.getCond().ifPresent(c -> b.add(match("hasCondition", lookup(c))));
-    s.getIncr().ifPresent(i -> b.add(match("hasIncrement", lookup(i))));
+    s.getInit().ifPresentOrElse(i -> b.add(match("hasLoopInit", lookup(i))),
+                                () -> b.add(unless(match("hasLoopInit", anything()))));
+    s.getCond().ifPresentOrElse(c -> b.add(match("hasCondition", lookup(c))),
+                                () -> b.add(unless(match("hasCondition", anything()))));
+    s.getIncr().ifPresentOrElse(i -> b.add(match("hasIncrement", lookup(i))),
+                                () -> b.add(unless(match("hasIncrement", anything()))));
     b.add(match("hasBody", lookup(s.getBody())));
 
     buildBindings(s, b);

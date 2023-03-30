@@ -104,12 +104,12 @@ public class ClangClogTest {
 
     VectorVectorLong declResult = clog.matchFromRoot((int)declMatcherHandle);
 
-    for (VectorLong row : declResult) {
-      for (long e : row) {
-        System.out.print(e + " ");
-      }
-      System.out.println();
-    }
+    // for (VectorLong row : declResult) {
+    //   for (long e : row) {
+    //      System.out.print(e + " ");
+    //   }
+    //   System.out.println();
+    // }
   }
 
   static class Checker {
@@ -227,24 +227,41 @@ public class ClangClogTest {
   public void test7() {
     List<Map<String, ClangClog.Loc>> results = matchPatternOnFile("for ($init; $cond; $inc) $body", PatLangParserSEP.n_statement, "tests/clang/clog/src/loops.c");
     dumpResults(results);
+    Checker.begin(results)
+      .check("$body", 17, 17)
+      .check("$init", 17, 17)
+      .check("$cond", 17, 17)
+      .check("$inc", 17, 17)
+      .end();
   }
 
   @Test
   public void test8() {
     List<Map<String, ClangClog.Loc>> results = matchPatternOnFile("for (; ; ) $body", PatLangParserSEP.n_statement, "tests/clang/clog/src/loops.c");
     dumpResults(results);
+    Checker.begin(results)
+      .check("$body", 20, 22)
+      .end();
   }
 
   @Test
   public void test9() {
     List<Map<String, ClangClog.Loc>> results = matchPatternOnFile("for ($init; ; ) $body", PatLangParserSEP.n_statement, "tests/clang/clog/src/loops.c");
     dumpResults(results);
+    Checker.begin(results)
+      .check("$init", 28, 28)
+      .check("$body", 28, 30)
+      .end();
   }
 
   @Test
   public void test10() {
     List<Map<String, ClangClog.Loc>> results = matchPatternOnFile("for (; $cond; ) $body", PatLangParserSEP.n_statement, "tests/clang/clog/src/loops.c");
     dumpResults(results);
+    Checker.begin(results)
+      .check("$body", 32, 34)
+      .check("$cond", 32, 32)
+      .end();
   }
 
 
@@ -252,7 +269,9 @@ public class ClangClogTest {
   public void test11() {
     List<Map<String, ClangClog.Loc>> results = matchPatternOnFile("for (; ; $inc) $body", PatLangParserSEP.n_statement, "tests/clang/clog/src/loops.c");
     dumpResults(results);
+    Checker.begin(results)
+      .check("$body", 36, 38)
+      .check("$inc", 36, 36)
+      .end();
   }
-
-
 }

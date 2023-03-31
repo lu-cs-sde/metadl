@@ -198,4 +198,20 @@ public class ASTMatcherGen implements ASTVisitor {
 
     matcherMap.put(s, b);
   }
+
+  @Override public void visit(AST.IfStmt s) {
+    MatcherBuilder b = match("ifStmt");
+    b.add(match("hasCondition", lookup(s.getCond())));
+    b.add(match("hasThen", lookup(s.getThen())));
+    if (s.hasElse) {
+      b.add(match("hasElse", lookup(s.getElse())));
+    } else {
+      b.add(unless(match("hasElse", anything())));
+    }
+
+
+    buildBindings(s, b);
+
+    matcherMap.put(s, b);
+  }
 }

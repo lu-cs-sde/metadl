@@ -274,4 +274,26 @@ public class ClangClogTest {
       .check("$inc", 36, 36)
       .end();
   }
+
+  @Test
+  public void test12() {
+    List<Map<String, ClangClog.Loc>> results = matchPatternOnFile("if ($cond) $then", PatLangParserSEP.n_statement, "tests/clang/clog/src/if.c");
+    dumpResults(results);
+    Checker.begin(results)
+      .check("$then", 2, 9)
+      .check("$cond", 2, 2)
+      .end();
+  }
+
+  @Test
+  public void test13() {
+    List<Map<String, ClangClog.Loc>> results = matchPatternOnFile("if ($cond) $then else $else", PatLangParserSEP.n_statement, "tests/clang/clog/src/if.c");
+    dumpResults(results);
+
+    Checker.begin(results)
+      .check("$then", 3, 5)
+      .check("$else", 5, 7)
+      .check("$cond", 3, 3)
+      .end();
+  }
 }

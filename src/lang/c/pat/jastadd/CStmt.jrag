@@ -40,5 +40,16 @@ aspect CStmt {
                              getStatement().asClangStmt());
   }
 
+  eq IfStatement.asClangStmt() {
+    return AST.IfStmt.build(getCond().asClangExpr(),
+                            getTrueBranch().asClangStmt());
+  }
+
+  eq IfElseStatement.asClangStmt() {
+    return AST.IfStmt.build(getCond().asClangExpr(),
+                            getTrueBranch().asClangStmt(),
+                            getFalseBranch().asClangStmt());
+  }
+
   eq Expression.asClangStmt() = asClangExpr();
 }

@@ -534,6 +534,18 @@ public class AST {
     @Override public void accept(ASTVisitor v) {
       v.visit(this);
     }
+
+    public static IfStmt build(Expr cond, Stmt thenBr) {
+      IfStmt ret = new IfStmt().setChildren(cond, thenBr);
+      ret.hasElse = false;
+      return ret;
+    }
+
+    public static IfStmt build(Expr cond, Stmt thenBr, Stmt elseBr) {
+      IfStmt ret = new IfStmt().setChildren(cond, thenBr, elseBr);
+      ret.hasElse = true;
+      return ret;
+    }
   }
 
   public static class WhileStmt extends Stmt {

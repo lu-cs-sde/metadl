@@ -249,4 +249,39 @@ public class ASTMatcherGen implements ASTVisitor {
     buildBindings(s, b);
     matcherMap.put(s, b);
   }
+
+  @Override public void visit(AST.SwitchStmt s) {
+    MatcherBuilder b = match("switchStmt");
+
+    b.add(match("hasCondition", lookup(s.getExpr())));
+    b.add(match("hasSwitchBody", lookup(s.getStmt())));
+
+    buildBindings(s, b);
+    matcherMap.put(s, b);
+  }
+
+  @Override public void visit(AST.CaseStmt s) {
+    MatcherBuilder b = match("caseStmt");
+    b.add(match("hasCaseConstant", lookup(s.getCaseConst())));
+    b.add(match("hasSubStmt", lookup(s.getStmt())));
+
+    buildBindings(s, b);
+    matcherMap.put(s, b);
+  }
+
+  @Override public void visit(AST.DefaultStmt s) {
+    MatcherBuilder b = match("defaultStmt");
+    b.add(match("hasSubStmt", lookup(s.getStmt())));
+
+    buildBindings(s, b);
+    matcherMap.put(s, b);
+  }
+
+  @Override public void visit(AST.BreakStmt s) {
+    MatcherBuilder b = match("breakStmt");
+
+    buildBindings(s, b);
+    matcherMap.put(s, b);
+  }
+
 }

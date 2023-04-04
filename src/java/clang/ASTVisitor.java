@@ -26,6 +26,10 @@ public interface ASTVisitor {
 	default void visit(DeclStmt d){ visit((Node) d); }
 	default void visit(IfStmt f){ visit((Node) f); }
 	default void visit(CXXForRangeStmt f){ visit((Node) f); }
+  default void visit(SwitchStmt s) { visit((Node) s); }
+  default void visit(CaseStmt s) { visit((Node) s); }
+  default void visit(DefaultStmt s) { visit((Node) s); }
+  default void visit(BreakStmt s) { visit((Node) s); }
 
 	default void visit(Decl d){ visit((Node) d); }
 	default void visit(ParmVarDecl p){ visit((Node) p); }

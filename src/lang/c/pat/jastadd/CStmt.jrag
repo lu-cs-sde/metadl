@@ -55,5 +55,23 @@ aspect CStmt {
                             getFalseBranch().asClangStmt());
   }
 
+  eq SwitchStatement.asClangStmt() {
+    return AST.SwitchStmt.build(getExpression().asClangExpr(),
+                                getStatement().asClangStmt());
+  }
+
+  eq CaseStatement.asClangStmt() {
+    return AST.CaseStmt.build(getExpression().asClangExpr(),
+                              getStatement().asClangStmt());
+  }
+
+  eq DefaultStatement.asClangStmt() {
+    return AST.DefaultStmt.build(getStatement().asClangStmt());
+  }
+
+  eq BreakStatement.asClangStmt() {
+    return AST.BreakStmt.build();
+  }
+
   eq Expression.asClangStmt() = asClangExpr();
 }

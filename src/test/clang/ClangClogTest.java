@@ -385,4 +385,18 @@ public class ClangClogTest {
       .check("$stmt4", 15, 19)
       .end();
   }
+
+  @Test
+  public void testSwitchStmt() {
+    List<Map<String, ClangClog.Loc>> results = matchPatternOnFile("switch ($sw) { case $e1 : $stmt1 ..  default : $stmt2 .. case $e3 : break; }", PatLangParserSEP.n_statement, "tests/clang/clog/src/switch.c");
+    dumpResults(results);
+
+    Checker.begin(results)
+      .check("$sw", 2, 2)
+      .check("$e1", 3, 3)
+      .check("$e3", 8, 8)
+      .check("$stmt1", 3,3)
+      .check("$stmt2", 7, 7)
+      .end();
+  }
 }

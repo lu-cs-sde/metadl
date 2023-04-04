@@ -470,7 +470,7 @@ public class AST {
 
   public static class ReturnStmt extends Stmt {
     public Optional<Expr> getRetValue() {
-      return (inner != null && inner.length != 0) ? Optional.of((Expr)inner[0]) : Optional.empty();
+      return (inner != null && inner.length != 0) ? Optional.of(getChild(0)) : Optional.empty();
     }
 
     @Override public void accept(ASTVisitor v) {
@@ -579,10 +579,71 @@ public class AST {
       v.visit(this);
     }
 
-    public static DoStmt build(Stmt cond, Stmt body) {
+    public static DoStmt build(Expr cond, Stmt body) {
       return new DoStmt().setChildren(body, cond);
     }
   }
+
+  public static class SwitchStmt extends Stmt {
+    public Stmt getStmt() {
+      return (Stmt) inner[1];
+    }
+
+    public Expr getExpr() {
+      return (Expr) inner[0];
+    }
+
+    @Override public void accept(ASTVisitor v) {
+      v.visit(this);
+    }
+
+    public static SwitchStmt build(Expr expr, Stmt body) {
+      return new SwitchStmt().setChildren(expr, body);
+    }
+  }
+
+  public static class CaseStmt extends Stmt {
+    public Stmt getStmt() {
+      return (Stmt) inner[1];
+    }
+
+    public Expr getCaseConst() {
+      return (Expr) inner[0];
+    }
+
+    @Override public void accept(ASTVisitor v) {
+      v.visit(this);
+    }
+
+    public static CaseStmt build(Expr expr, Stmt body) {
+      return new CaseStmt().setChildren(expr, body);
+    }
+  }
+
+  public static class DefaultStmt extends Stmt {
+    public Stmt getStmt() {
+      return getChild(0);
+    }
+
+    @Override public void accept(ASTVisitor v) {
+      v.visit(this);
+    }
+
+    public static DefaultStmt build(Stmt s) {
+      return new DefaultStmt().setChildren(s);
+    }
+  }
+
+  public static class BreakStmt extends Stmt {
+    @Override public void accept(ASTVisitor v) {
+      v.visit(this);
+    }
+
+    public static BreakStmt build() {
+      return new BreakStmt().setChildren();
+    }
+  }
+
 
   public static class CXXForRangeStmt extends Stmt {
     public Stmt getBody() {

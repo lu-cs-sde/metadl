@@ -469,8 +469,8 @@ public class AST {
   }
 
   public static class ReturnStmt extends Stmt {
-    public Expr getRetValue() {
-      return inner != null ? (Expr) inner[0] : null;
+    public Optional<Expr> getRetValue() {
+      return (inner != null && inner.length != 0) ? Optional.of((Expr)inner[0]) : Optional.empty();
     }
 
     @Override public void accept(ASTVisitor v) {

@@ -214,4 +214,39 @@ public class ASTMatcherGen implements ASTVisitor {
 
     matcherMap.put(s, b);
   }
+
+  @Override public void visit(AST.CompoundStmt s) {
+    MatcherBuilder sub = match("subStatementDistinct");
+    boolean hasGaps = false;
+    for (int i = 0; i < s.getNumStmts(); ++i) {
+      AST.Stmt subStmt = s.getStmt(i);
+      if (subStmt.isGap()) {
+        hasGaps = true;
+      } else {
+        sub.add(lookup(subStmt));
+      }
+    }
+
+    MatcherBuilder b = match("compoundStmt");
+    if (!hasGaps) {
+      // exact match
+      b.add(match("statementCountIs", integer(s.getNumStmts())));
+    }
+
+    b.add(sub);
+
+    buildBindings(s, b);
+    matcherMap.put(s, b);
+  }
+
+
+  @Override public void visit(AST.ReturnStmt s) {
+    MatcherBuilder b = match("returnStmt");
+
+    s.getRetValue().ifPresentOrElse(r -> b.add(match("has", lookup(r))),
+                                    () -> b.add(unless(match("has", match("expr")))));
+
+    buildBindings(s, b);
+    matcherMap.put(s, b);
+  }
 }

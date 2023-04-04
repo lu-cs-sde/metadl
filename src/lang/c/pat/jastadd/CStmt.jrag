@@ -11,6 +11,10 @@ aspect CStmt {
     return AST.Stmt.build().setBinding(varName());
   }
 
+  eq GapStatement.asClangStmt() {
+    return AST.Stmt.build().gap();
+  }
+
   eq MetaVarDeclarationStatement.asClangStmt() {
     return AST.Stmt.build().setBinding(varName());
   }
@@ -21,7 +25,7 @@ aspect CStmt {
     for (Statement s : getStatements()) {
       stmts.add(s.asClangStmt());
     }
-    return AST.CompoundStmt.build(stmts.toArray(new AST.CompoundStmt[0]));
+    return AST.CompoundStmt.build(stmts.toArray(new AST.Stmt[0]));
   }
 
   eq WhileStatement.asClangStmt() {

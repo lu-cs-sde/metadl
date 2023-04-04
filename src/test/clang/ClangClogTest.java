@@ -56,6 +56,10 @@ public class ClangClogTest {
     SortedSet<String> metavars = first.bindings();
     Map<MatcherBuilder, Long> matchHandles = new HashMap<>();
     for (MatcherBuilder b : matchers) {
+      if (b.bindings().isEmpty()) {
+        b.bind("$__root");
+        metavars.add("$__root");
+      }
       System.out.println("Registering '" + b.generate() + "'");
       long h = clog.registerMatcher(b.generate(), true);
       matchHandles.put(b, h);
@@ -294,6 +298,91 @@ public class ClangClogTest {
       .check("$then", 3, 5)
       .check("$else", 5, 7)
       .check("$cond", 3, 3)
+      .end();
+  }
+
+  @Test
+  public void testCompoundStmt() {
+    // match compound statements with single substatement
+    List<Map<String, ClangClog.Loc>> results = matchPatternOnFile("{ $stmt }", PatLangParserSEP.n_statement, "tests/clang/clog/src/block.c");
+    dumpResults(results);
+    Checker.begin(results)
+      .check("$stmt", 7, 7)
+      .end();
+
+  }
+
+  @Test
+  public void testCompoundStmt2() {
+    // match compound statements with precisely 2 substatements
+    List<Map<String, ClangClog.Loc>> results = matchPatternOnFile("{ $stmt1 $stmt2 }", PatLangParserSEP.n_statement, "tests/clang/clog/src/block.c");
+    dumpResults(results);
+    Checker.begin(results)
+      .check("$stmt1", 11, 11)
+      .check("$stmt2", 12, 12)
+      .end();
+
+  }
+
+  @Test
+  public void testCompoundStmtGap() {
+    List<Map<String, ClangClog.Loc>> results = matchPatternOnFile("{ .. }", PatLangParserSEP.n_statement, "tests/clang/clog/src/block.c");
+    dumpResults(results);
+    Checker.begin(results)
+      .check("$__root", 1, 20)
+      .next()
+      .check("$__root", 3, 3)
+      .next()
+      .check("$__root", 4, 4)
+      .next()
+      .check("$__root", 6, 8)
+      .next()
+      .check("$__root", 10, 13)
+      .next()
+      .check("$__root", 15, 19)
+      .end();
+  }
+
+  @Test
+  public void testCompoundStmtEmpty() {
+    List<Map<String, ClangClog.Loc>> results = matchPatternOnFile("{ }", PatLangParserSEP.n_statement, "tests/clang/clog/src/block.c");
+    dumpResults(results);
+    Checker.begin(results)
+      .check("$__root", 3, 3)
+      .next()
+      .check("$__root", 4, 4)
+      .end();
+  }
+
+  @Test
+  public void testCompoundStmtGap2() {
+    List<Map<String, ClangClog.Loc>> results = matchPatternOnFile("{ $stmt1 ..  $stmt2 .. $stmt3 .. $stmt4 }", PatLangParserSEP.n_statement, "tests/clang/clog/src/block.c");
+    dumpResults(results);
+    Checker.begin(results)
+      .check("$stmt1", 3, 3)
+      .check("$stmt2", 4, 4)
+      .check("$stmt3", 6, 8)
+      .check("$stmt4", 10, 13)
+      .next()
+      .check("$stmt1", 3, 3)
+      .check("$stmt2", 4, 4)
+      .check("$stmt3", 6, 8)
+      .check("$stmt4", 15, 19)
+      .next()
+      .check("$stmt1", 3, 3)
+      .check("$stmt2", 4, 4)
+      .check("$stmt3", 10, 13)
+      .check("$stmt4", 15, 19)
+      .next()
+      .check("$stmt1", 3, 3)
+      .check("$stmt2", 6, 8)
+      .check("$stmt3", 10, 13)
+      .check("$stmt4", 15, 19)
+      .next()
+      .check("$stmt1", 4, 4)
+      .check("$stmt2", 6, 8)
+      .check("$stmt3", 10, 13)
+      .check("$stmt4", 15, 19)
       .end();
   }
 }

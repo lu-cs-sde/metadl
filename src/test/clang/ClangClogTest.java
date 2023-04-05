@@ -399,4 +399,23 @@ public class ClangClogTest {
       .check("$stmt2", 7, 7)
       .end();
   }
+
+  @Test
+  public void testReturnStmt1() {
+    List<Map<String, ClangClog.Loc>> results = matchPatternOnFile("return;", PatLangParserSEP.n_statement, "tests/clang/clog/src/return.c");
+    dumpResults(results);
+    Checker.begin(results)
+      .check("$__root", 3, 3)
+      .end();
+  }
+
+  @Test
+  public void testReturnStmt2() {
+    List<Map<String, ClangClog.Loc>> results = matchPatternOnFile("return $e;", PatLangParserSEP.n_statement, "tests/clang/clog/src/return.c");
+    dumpResults(results);
+    Checker.begin(results)
+      .check("$e", 9, 9)
+      .end();
+  }
+
 }

@@ -73,5 +73,13 @@ aspect CStmt {
     return AST.BreakStmt.build();
   }
 
+  eq ReturnStatement.asClangStmt() {
+    if (hasExpression()) {
+      return AST.ReturnStmt.build(getExpression().asClangExpr());
+    } else {
+      return AST.ReturnStmt.build();
+    }
+  }
+
   eq Expression.asClangStmt() = asClangExpr();
 }

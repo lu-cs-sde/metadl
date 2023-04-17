@@ -147,6 +147,16 @@ public class ASTMatcherGen implements ASTVisitor {
     matcherMap.put(p, match("ignoringParens", b));
   }
 
+  @Override public void visit(AST.RecordRefType r) {
+    MatcherBuilder b = match("recordDecl");
+    b.add(match("hasName", cst(r.name)));
+    b.add(matchForRecordKind(r.kind));
+
+    buildBindings(r, b);
+
+    matcherMap.put(r, b);
+  }
+
   @Override public void visit(AST.Expr e) {
     MatcherBuilder b = match("expr");
 
@@ -282,6 +292,92 @@ public class ASTMatcherGen implements ASTVisitor {
 
     buildBindings(s, b);
     matcherMap.put(s, b);
+  }
+
+  @Override public void visit(AST.DeclStmt s) {
+    MatcherBuilder b = match("declStmt");
+
+    MatcherBuilder decls = match("declDistinct");
+    boolean hasGaps = false;
+    for (int i = 0; i < s.getNumDecl(); i++) {
+      if (s.getDecl(i).isGap()) {
+        hasGaps = true;
+      } else {
+        decls.add(lookup(s.getDecl(i)));
+      }
+    }
+
+    if (!hasGaps)
+      b.add(match("declCountIs", integer(s.getNumDecl())));
+
+    b.add(decls);
+
+    buildBindings(s, b);
+    matcherMap.put(s, b);
+  }
+
+  @Override public void visit(AST.FieldDecl s) {
+    MatcherBuilder b = match("fieldDecl");
+    if (s.isNamed()) {
+      b.add(match("hasName", cst(s.getName())));
+    }
+
+    if (s.explicitType != null) {
+      b.add(match("hasType", lookup(s.explicitType)));
+    }
+
+    if (s.isBitfield) {
+      b.add(match("isBitField"));
+      b.add(match("hasBitWidthExpr", lookup(s.getBitFieldSize())));
+    }
+
+    buildBindings(s, b);
+    matcherMap.put(s, b);
+  }
+
+  static MatcherBuilder matchForRecordKind(AST.RecordKind k) {
+    switch (k) {
+    case STRUCT:
+      return match("isStruct");
+
+    case UNION:
+      return match("isUnion");
+
+    case CLASS:
+      return match("isClass");
+
+    default:
+      throw new RuntimeException("Can't create matcher for enum yet.");
+    }
+  }
+
+  @Override public void visit(AST.RecordDecl s) {
+    MatcherBuilder b = match("recordDecl");
+    if (s.isNamed()) {
+      b.add(match("hasName", cst(s.getName())));
+    }
+
+    MatcherBuilder fields = match("fieldDistinct");
+    boolean hasGaps = false;
+    for (int i = 0; i < s.getNumDecl(); i++) {
+      if (s.getDecl(i).isGap()) {
+        hasGaps = true;
+      } else {
+        fields.add(lookup(s.getDecl(i)));
+      }
+    }
+
+    b.add(matchForRecordKind(AST.RecordKind.fromTag(s.tagUsed)));
+
+    if (s.completeDefinition) {
+      b.add(match("isDefinition"));
+    }
+
+    b.add(fields);
+
+    buildBindings(s, b);
+    matcherMap.put(s, b);
+
   }
 
 }

@@ -82,4 +82,9 @@ aspect CStmt {
   }
 
   eq Expression.asClangStmt() = asClangExpr();
+
+  eq DeclarationStatement.asClangStmt() {
+    Declaration d = (Declaration) getDeclarationOrDefinition();
+    return AST.DeclStmt.build(d.clangDecls().toArray(new AST.Decl[0]));
+  }
 }

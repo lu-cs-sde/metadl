@@ -105,7 +105,8 @@ aspect CDecl {
     Declarator innermost = this.innermostDeclarator();
     AST.Type type = this.asType(innerType);
     String name;
-    AST.VarDecl ret = AST.VarDecl.build(type);
+    AST.Decl ret = AST.VarDecl.build(type);
+
     if (innermost.isMetaVar()) {
       ret.setBinding(innermost.varName());
     } else {
@@ -308,15 +309,21 @@ aspect CDecl {
   syn AST.Decl DeclarationSpecifier.asClangDecl() = null;
   eq StructOrUnionSpecifier.asClangDecl() {
     String name = hasIdentifier() ? getIdentifier().getID() : "";
+
     java.util.List<AST.Decl> decls = new ArrayList<>();
     for (StructDeclaration sd : getStructDeclarations()) {
       decls.addAll(sd.asClangDecl());
     }
 
-    if (hasIdentifier())
-      return AST.RecordDecl.build(getIdentifier().getID(), recordKind(), decls);
-    else
+    if (hasIdentifier()) {
+      if (getIdentifier().isMetaVar())
+        return AST.RecordDecl.build(recordKind(), decls).setBinding(getIdentifier().varName());
+      else
+        return AST.RecordDecl.build(getIdentifier().getID(), recordKind(), decls);
+    } else {
+      // anonymous struct
       return AST.RecordDecl.build(recordKind(), decls);
+    }
   }
 
   syn java.util.List<AST.Decl> StructDeclaration.asClangDecl() {
@@ -334,21 +341,31 @@ aspect CDecl {
       decls.add(typeDecl);
 
     for (StructDeclarator sd : getStructDeclarators()) {
-      AST.Type fieldType;
-      String name;
+      AST.FieldDecl field;
       if (sd.hasDeclarator()) {
-        fieldType = sd.getDeclarator().asType(type);
-        name = sd.getDeclarator().declaredIdentifier().getID();
-      } else {
-        fieldType = type;
-        name = "";
-      }
+        AST.Type fieldType = sd.getDeclarator().asType(type);
+        Declarator inner = sd.getDeclarator().innermostDeclarator();  //declaredIdentifier().getID();
 
-      if (sd.hasExpression()) {
-        decls.add(AST.FieldDecl.build(fieldType, sd.getExpression().asClangExpr()).setName(name));
+        if (sd.hasExpression()) {
+          field = AST.FieldDecl.build(fieldType, sd.getExpression().asClangExpr());
+        } else {
+          field = AST.FieldDecl.build(fieldType);
+        }
+
+        if (inner.isMetaVar()) {
+          field.setBinding(inner.varName());
+        } else {
+          field.setName(inner.declaredIdentifier().getID());
+        }
+
+
       } else {
-        decls.add(AST.FieldDecl.build(fieldType).setName(name));
+        if (sd.hasExpression())
+          field = AST.FieldDecl.build(type, sd.getExpression().asClangExpr());
+        else
+          field = AST.FieldDecl.build(type);
       }
+      decls.add(field);
     }
 
     return decls;

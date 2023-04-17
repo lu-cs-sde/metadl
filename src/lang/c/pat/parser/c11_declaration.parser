@@ -11,16 +11,42 @@ Declaration declaration = declaration_specifiers init_declarator_list_opt SEMICO
 // type-qualifier declaration-specifiersopt
 // function-specifier declaration-specifiersopt
 // alignment-specifier declaration-specifiersopt
-DeclarationSpecifier declaration_specifier = storage_class_specifier
-                                           | type_specifier
-                                           | type_qualifier
-                                           | function_specifier
-                                           | alignment_specifier
-                                           ;
+// DeclarationSpecifier declaration_specifier = storage_class_specifier
+//                                            | type_specifier
+//                                            | type_qualifier
+//                                            | function_specifier
+//                                            | alignment_specifier
+//                                            ;
 
-List declaration_specifiers = declaration_specifier {: return new List().add(declaration_specifier); :}
-                            | declaration_specifiers declaration_specifier {: return declaration_specifiers.add(declaration_specifier); :}
+List declaration_specifiers = fundamental_declaration_specifier_list
+                            | derived_declaration_specifier_list_opt.sl derived_type_specifier derived_declaration_specifier_list_opt.rl {: return sl.add(derived_type_specifier).addAll(rl); :}
                             ;
+
+List derived_declaration_specifier_list_opt = derived_declaration_specifier_list
+                                                | /* empty */ {: return new List(); :}
+						;
+
+List fundamental_declaration_specifier_list = fundamental_declaration_specifier {: return new List().add(fundamental_declaration_specifier); :}
+                                            | fundamental_declaration_specifier_list fundamental_declaration_specifier {: return fundamental_declaration_specifier_list.add(fundamental_declaration_specifier); :}
+                                            ;
+
+List derived_declaration_specifier_list = derived_declaration_specifier_list derived_declaration_specifier {: return derived_declaration_specifier_list.add(derived_declaration_specifier); :}
+                                        | derived_declaration_specifier {: return new List().add(derived_declaration_specifier); :}
+                                        ;
+
+DeclarationSpecifier derived_declaration_specifier = storage_class_specifier
+                                                   | type_qualifier
+                                                   | function_specifier
+                                                   | alignment_specifier
+                                                   ;
+
+DeclarationSpecifier fundamental_declaration_specifier = storage_class_specifier
+                                                       | fundamental_type_specifier
+                                                       | type_qualifier
+                                                       | function_specifier
+                                                       | alignment_specifier
+                                                       ;
+
 
 // (6.7) init-declarator-list:
 // init-declarator
@@ -71,25 +97,32 @@ StorageClassSpecifier storage_class_specifier = TYPEDEF {: return new Typedef();
 // struct-or-union-specifier
 // enum-specifier
 // typedef-name
-TypeSpecifier type_specifier = VOID {: return new Void(); :}
-                             | CHAR {: return new Char(); :}
-                             | SHORT {: return new Short(); :}
-                             | INT {: return new Int(); :}
-                             | LONG {: return new Long(); :}
-                             | FLOAT {: return new Float(); :}
-                             | DOUBLE {: return new Double(); :}
-                             | SIGNED {: return new Signed(); :}
-                             | UNSIGNED {: return new Unsigned(); :}
-                             | U_BOOL {: return new Bool(); :}
-                             | U_COMPLEX {: return new Complex(); :}
-                             | atomic_type_specifier
-                             | struct_specifier
-                             | union_specifier
-                             | struct_specifier_ref
-                             | union_specifier_ref
-                             | enum_specifier
-                             | typedef_name
-                             ;
+// TypeSpecifier type_specifier = fundamental_type_specifier
+//                              | derived_type_specifier
+// 			     ;
+
+TypeSpecifier fundamental_type_specifier = VOID {: return new Void(); :}
+                                         | CHAR {: return new Char(); :}
+                                         | SHORT {: return new Short(); :}
+                                         | INT {: return new Int(); :}
+                                         | LONG {: return new Long(); :}
+                                         | FLOAT {: return new Float(); :}
+                                         | DOUBLE {: return new Double(); :}
+                                         | SIGNED {: return new Signed(); :}
+                                         | UNSIGNED {: return new Unsigned(); :}
+                                         | U_BOOL {: return new Bool(); :}
+                                         | U_COMPLEX {: return new Complex(); :}
+                                         ;
+
+TypeSpecifier derived_type_specifier = atomic_type_specifier
+                                     | struct_specifier
+                                     | union_specifier
+                                     | struct_specifier_ref
+                                     | union_specifier_ref
+                                     | enum_specifier
+                                     | typedef_name
+                                     ;
+
 
 // (6.7.2.1) struct-or-union-specifier:
 // struct-or-union identifieropt { struct-declaration-list }
@@ -126,11 +159,18 @@ StructDeclaration struct_declaration = specifier_qualifier_list struct_declarato
 // (6.7.2.1) specifier-qualifier-list:
 // type-specifier specifier-qualifier-listopt
 // type-qualifier specifier-qualifier-listopt
-List specifier_qualifier_list = specifier_qualifier_list type_specifier {: return specifier_qualifier_list.add(type_specifier); :}
-			      | specifier_qualifier_list type_qualifier {: return specifier_qualifier_list.add(type_qualifier); :}
-			      | type_specifier {: return new List().add(type_specifier); :}
-			      | type_qualifier {: return new List().add(type_qualifier); :}
-			      ;
+List specifier_qualifier_list = fundamental_specifier_qualifier_list
+                              | derived_specifier_qualifier_list
+                              ;
+
+List fundamental_specifier_qualifier_list = fundamental_specifier_qualifier_list fundamental_type_specifier {: return fundamental_specifier_qualifier_list.add(fundamental_type_specifier); :}
+                                          | fundamental_specifier_qualifier_list type_qualifier {: return fundamental_specifier_qualifier_list.add(type_qualifier); :}
+                                          | fundamental_type_specifier {: return new List().add(fundamental_type_specifier); :}
+                                          | type_qualifier {: return new List().add(type_qualifier); :}
+                                          ;
+
+List derived_specifier_qualifier_list = type_qualifier_list_opt.ql derived_type_specifier type_qualifier_list_opt.qr {: return ql.add(derived_type_specifier).addAll(qr); :}
+                                      ;
 
 // (6.7.2.1) struct-declarator-list:
 // struct-declarator

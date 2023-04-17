@@ -184,6 +184,7 @@ public class TypeTest {
   @Test
   public void test15() {
     String s = "struct MyStruct s;";
+    debugDecl(s);
     checkTypes(s, "(STRUCT MyStruct)");
   }
 

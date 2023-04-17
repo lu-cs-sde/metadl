@@ -173,4 +173,12 @@ public class MatcherTest {
     assertEquals(1, res.size());
     assertEquals("forStmt(hasLoopInit(stmt().bind(\"$init\")), unless(hasCondition(anything())), unless(hasIncrement(anything())), hasBody(stmt().bind(\"$body\")))", res.get(0));
   }
+
+  @Test public void test13() {
+    List<String> res = genMatchers("struct S { int x; } s;", PatLangParserSEP.n_declaration);
+    // System.out.println(res.get(0));
+    assertEquals(2, res.size());
+    assertEquals("recordDecl(hasName(\"S\"), isStruct(), fieldDistinct(fieldDecl(hasName(\"x\"), hasType(qualType(isInteger())))))", res.get(0));
+    assertEquals("varDecl(hasName(\"s\"), hasType(recordDecl(hasName(\"S\"), isStruct())))", res.get(1));
+  }
 }

@@ -498,6 +498,10 @@ public class AST {
     @Override public void accept(ASTVisitor v) {
       v.visit(this);
     }
+
+    public static DeclStmt build(Decl ... decls) {
+      return new DeclStmt().setChildren(decls);
+    }
   }
 
   public static class IfStmt extends Stmt {
@@ -1176,7 +1180,8 @@ public class AST {
   public enum RecordKind {
     STRUCT("struct"),
     UNION("union"),
-    CLASS("class");
+    CLASS("class"),
+    ENUM("enum");
 
     private String tag;
     private RecordKind(String tag) {

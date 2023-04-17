@@ -418,4 +418,14 @@ public class ClangClogTest {
       .end();
   }
 
+  @Test
+  public void testStructDecl() {
+    List<Map<String, ClangClog.Loc>> results = matchPatternOnFile("struct $s { int $f1; int $f2; };", PatLangParserSEP.n_declaration, "tests/clang/clog/src/struct.c");
+    dumpResults(results);
+    Checker.begin(results)
+      .check("$s", 1, 4)
+      .check("$f1", 2, 2)
+      .check("$f2", 3, 3)
+      .end();
+  }
 }

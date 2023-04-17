@@ -42,4 +42,9 @@ public class CPatternTest {
   public void test2() {
     testAST("for($init ; ) $body", lang.c.pat.ast.PatLangParserSEP.n_statement);
   }
+
+  @Test
+  public void test3() {
+    testAST("struct S { int x; } s;", lang.c.pat.ast.PatLangParserSEP.n_declaration);
+  }
 }

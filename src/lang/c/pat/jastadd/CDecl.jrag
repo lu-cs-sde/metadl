@@ -285,24 +285,43 @@ aspect CDecl {
 
   syn AST.Type DeclarationSpecifier.asType() = null;
   eq TypedefName.asType() {
-    return AST.TypedefType.build(getIdentifier().getID());
+    AST.TypedefType t = AST.TypedefType.build();
+    if (getIdentifier().isMetaVar())
+      t.setBinding(getIdentifier().varName());
+    else
+      t.setName(getIdentifier().getID());
+    return t;
   }
 
   eq StructSpecifierRef.asType() {
-    return AST.RecordRefType.build(AST.RecordKind.STRUCT, getIdentifier().getID());
+    AST.RecordRefType ret = AST.RecordRefType.build(AST.RecordKind.STRUCT);
+    if (getIdentifier().isMetaVar())
+      ret.setBinding(getIdentifier().varName());
+    else
+      ret.setName(getIdentifier().getID());
+    return ret;
   }
 
   eq UnionSpecifierRef.asType() {
-    return AST.RecordRefType.build(AST.RecordKind.UNION, getIdentifier().getID());
+    AST.RecordRefType ret = AST.RecordRefType.build(AST.RecordKind.UNION);
+    if (getIdentifier().isMetaVar())
+      ret.setBinding(getIdentifier().varName());
+    else
+      ret.setName(getIdentifier().getID());
+    return ret;
   }
 
   eq StructOrUnionSpecifier.asType() {
     if (hasIdentifier()) {
-      return AST.RecordRefType.build(recordKind(), getIdentifier().getID());
+      AST.RecordRefType ret = AST.RecordRefType.build(recordKind());
+      if (getIdentifier().isMetaVar())
+        ret.setBinding(getIdentifier().varName());
+      else
+        ret.setName(getIdentifier().getID());
+      return ret;
     } else {
       // this is an anonymous record
       return AST.AnonymousRecordType.build((AST.RecordDecl) this.asClangDecl());
-
     }
   }
 

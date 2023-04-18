@@ -61,6 +61,8 @@ public class CTestUtil {
                                                                       @Override public boolean isBubleUpChild(Category p, Category c) {
                                                                         if (p.getName().equals("declarator"))
                                                                           return false;
+                                                                        if (p.getName().equals("typedef_name"))
+                                                                          return false;
                                                                         if (c.getName().equals("METAVARID"))
                                                                           return true;
                                                                         if (c.getName().equals("GAP"))
@@ -68,6 +70,9 @@ public class CTestUtil {
                                                                         return false;
                                                                       }
                                                                     });
+    for (int i = 0; i < parseTrees.size(); ++i) {
+      Util.dumpParseTree("dump_" + i + ".dot", parseTrees.get(i));
+    }
     return parseTrees;
   }
 

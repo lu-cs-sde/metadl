@@ -149,7 +149,8 @@ public class ASTMatcherGen implements ASTVisitor {
 
   @Override public void visit(AST.RecordRefType r) {
     MatcherBuilder b = match("recordDecl");
-    b.add(match("hasName", cst(r.name)));
+    if (r.isNamed())
+      b.add(match("hasName", cst(r.name)));
     b.add(matchForRecordKind(r.kind));
 
     buildBindings(r, b);
@@ -297,20 +298,22 @@ public class ASTMatcherGen implements ASTVisitor {
   @Override public void visit(AST.DeclStmt s) {
     MatcherBuilder b = match("declStmt");
 
-    MatcherBuilder decls = match("declDistinct");
-    boolean hasGaps = false;
-    for (int i = 0; i < s.getNumDecl(); i++) {
-      if (s.getDecl(i).isGap()) {
-        hasGaps = true;
-      } else {
-        decls.add(lookup(s.getDecl(i)));
+    if (!s.bindsMetaVar()) {
+      MatcherBuilder decls = match("declDistinct");
+      boolean hasGaps = false;
+      for (int i = 0; i < s.getNumDecl(); i++) {
+        if (s.getDecl(i).isGap()) {
+          hasGaps = true;
+        } else {
+          decls.add(lookup(s.getDecl(i)));
+        }
       }
+
+      if (!hasGaps)
+        b.add(match("declCountIs", integer(s.getNumDecl())));
+
+      b.add(decls);
     }
-
-    if (!hasGaps)
-      b.add(match("declCountIs", integer(s.getNumDecl())));
-
-    b.add(decls);
 
     buildBindings(s, b);
     matcherMap.put(s, b);

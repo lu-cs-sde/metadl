@@ -1061,9 +1061,26 @@ public class AST {
 
     public static TypedefType build(String name) {
       TypedefType t = new TypedefType().setChildren();
-      t.refName = name;
-      return t;
+      return t.setName(name);
     }
+
+    public static TypedefType build() {
+      return new TypedefType().setChildren();
+    }
+
+    public boolean isNamed() {
+      return refName != null;
+    }
+
+    public String getName() {
+      return refName;
+    }
+
+    public TypedefType setName(String name) {
+      this.refName = name;
+      return this;
+    }
+
   }
 
   public static class PointerType extends Type {
@@ -1223,6 +1240,25 @@ public class AST {
       RecordRefType ref = new RecordRefType().setChildren();
       ref.kind = kind;
       ref.name = name;
+      return ref;
+    }
+
+    public boolean isNamed() {
+      return name != null;
+    }
+
+    public String getName() {
+      return name;
+    }
+
+    public RecordRefType setName(String name) {
+      this.name = name;
+      return this;
+    }
+
+    public static RecordRefType build(RecordKind kind) {
+      RecordRefType ref = new RecordRefType().setChildren();
+      ref.kind = kind;
       return ref;
     }
   }

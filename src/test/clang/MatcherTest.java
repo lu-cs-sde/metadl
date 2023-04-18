@@ -164,7 +164,10 @@ public class MatcherTest {
 
   @Test public void test11() {
     List<String> res = genMatchers("for ($init; ;) $body", PatLangParserSEP.n_statement);
-    assertEquals(1, res.size());
+    assertEquals(2, res.size());
+    // This matches for loops such as for(float; ; ) { .. } where the declaration does not declare anything. This is allowed by C, but it
+    // has no representation in clang AST. Such declarations are just discarded.
+    assertEquals("forStmt(hasLoopInit(declStmt(declCountIs(0), declDistinct())), unless(hasCondition(anything())), unless(hasIncrement(anything())), hasBody(stmt().bind(\"$body\")))", res.get(1));
     assertEquals("forStmt(hasLoopInit(expr().bind(\"$init\")), unless(hasCondition(anything())), unless(hasIncrement(anything())), hasBody(stmt().bind(\"$body\")))", res.get(0));
   }
 
@@ -176,9 +179,17 @@ public class MatcherTest {
 
   @Test public void test13() {
     List<String> res = genMatchers("struct S { int x; } s;", PatLangParserSEP.n_declaration);
-    // System.out.println(res.get(0));
     assertEquals(2, res.size());
     assertEquals("recordDecl(hasName(\"S\"), isStruct(), fieldDistinct(fieldDecl(hasName(\"x\"), hasType(qualType(isInteger())))))", res.get(0));
     assertEquals("varDecl(hasName(\"s\"), hasType(recordDecl(hasName(\"S\"), isStruct())))", res.get(1));
+  }
+
+  @Test public void test14() {
+    List<String> res = genMatchers("struct $s { int x; } s;", PatLangParserSEP.n_declaration);
+    assertEquals(2, res.size());
+    assertEquals("recordDecl(isStruct(), fieldDistinct(fieldDecl(hasName(\"x\"), hasType(qualType(isInteger()))))).bind(\"$s\")",
+                 res.get(0));
+    assertEquals("varDecl(hasName(\"s\"), hasType(recordDecl(isStruct()).bind(\"$s\")))",
+                 res.get(1));
   }
 }

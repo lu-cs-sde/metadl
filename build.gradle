@@ -428,6 +428,7 @@ def cParseOrder = [
 
 def cMetaVarNonTerminals = [
     "identifier_declarator",
+    "identifier\$", // metavar only
     "init_declarator.", // gap only
     "parameter_type.", // gap only
     "expression",

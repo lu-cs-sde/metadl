@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
@@ -17,6 +16,7 @@ import lang.CTestUtil;
 import lang.c.pat.ast.ASTNode;
 import lang.c.pat.ast.Declaration;
 import lang.c.pat.ast.Expression;
+import lang.c.pat.ast.FunctionDefinition;
 import lang.c.pat.ast.PatLangParserSEP;
 import lang.c.pat.ast.Statement;
 import se.lth.sep.Category;
@@ -111,6 +111,8 @@ public class MatcherTest {
         clangNodes = ((Declaration) internalNode).clangDecls();
       } else if (internalNode instanceof Statement) {
         clangNodes = List.of(((Statement) internalNode).asClangStmt());
+      } else if (internalNode instanceof FunctionDefinition) {
+        clangNodes = List.of(((FunctionDefinition) internalNode).asClangDecl());
       } else {
         assertTrue(internalNode instanceof Expression);
         clangNodes = List.of(((Expression) internalNode).asClangExpr());

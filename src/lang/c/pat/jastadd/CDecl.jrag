@@ -415,4 +415,18 @@ aspect CDecl {
   eq Restrict.asTypeQualifier() = AST.TypeQualifier.RESTRICT;
   eq Volatile.asTypeQualifier() = AST.TypeQualifier.VOLATILE;
   eq Atomic.asTypeQualifier() = AST.TypeQualifier.ATOMIC;
+
+  syn AST.FunctionDecl FunctionDefinition.asClangDecl() {
+    AST.Type retType = DeclarationSpecifier.typeFromDeclarationSpecifiers(getDeclarationSpecifiers());
+    FunctionDeclarator f = getFunctionDeclarator();
+    Declarator inner = f.innermostDeclarator();
+    AST.FunctionDecl fd = (AST.FunctionDecl) f.asClangDecl(retType);
+
+    fd.setBody(getStatement().asClangStmt());
+    if (inner.isMetaVar()) {
+      fd.setBinding(inner.varName());
+    }
+
+    return fd;
+  }
 }

@@ -18,19 +18,21 @@ DeclarationOrDefinition external_declaration = function_definition
 
 // (6.9.1) function-definition:
 // declaration-specifiers declarator declaration-listopt compound-statement
-FunctionDefinition function_definition = declaration_specifiers declarator declaration_list_opt compound_statement {: return new FunctionDefinition(declaration_specifiers, declarator, declaration_list_opt, compound_statement); :}
+// NOTE: this is NOT according to the C11 spec, which allows K&R style parameter definitions.
+// We dissallow K&R style parameter definitions.
+FunctionDefinition function_definition = declaration_specifiers function_declarator compound_statement {: return new FunctionDefinition(declaration_specifiers, function_declarator, compound_statement); :}
 		   		       ;
 
 // (6.9.1) declaration-list:
 // declaration
 // declaration-list declaration
-List declaration_list_opt = /* empty */ {: return new List(); :}
-     			  | declaration_list
-			  ;
+// List declaration_list_opt = /* empty */ {: return new List(); :}
+//      			  | declaration_list
+// 			  ;
 
-List declaration_list = declaration {: return new List().add(declaration); :}
-     		      | declaration_list declaration {: return declaration_list.add(declaration); :}
-		      ;
+// List declaration_list = declaration {: return new List().add(declaration); :}
+//      		      | declaration_list declaration {: return declaration_list.add(declaration); :}
+// 		      ;
 
 
 EnumerationConstant enumeration_constant = IDENTIFIER {: return new EnumerationConstant(IDENTIFIER); :}

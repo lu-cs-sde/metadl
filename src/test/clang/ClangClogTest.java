@@ -451,4 +451,26 @@ public class ClangClogTest {
       .check("$v", 8, 8)
       .end();
   }
+
+  @Test
+  public void testFuncDecl() {
+    List<Map<String, ClangClog.Loc>> results = matchPatternOnFile("int $f(int x);", PatLangParserSEP.n_declaration, "tests/clang/clog/src/fun.c");
+    dumpResults(results);
+    Checker.begin(results)
+      .check("$f", 1, 1)
+      .end();
+  }
+
+  @Test
+  public void testFuncDef() {
+    List<Map<String, ClangClog.Loc>> results = matchPatternOnFile("int f(int x) {..}", PatLangParserSEP.n_function_definition, "tests/clang/clog/src/fun.c");
+    dumpResults(results);
+    Checker.begin(results)
+      .check("$__root", 3, 3)
+      .next()
+      .check("$__root", 5, 7)
+      .end();
+  }
+
+
 }

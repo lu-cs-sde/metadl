@@ -383,4 +383,27 @@ public class ASTMatcherGen implements ASTVisitor {
 
   }
 
+  @Override public void visit(AST.FunctionDecl d) {
+    MatcherBuilder b = match("functionDecl");
+
+    List<AST.ParmVarDecl> params = d.getParams();
+    b.add(match("parameterCountIs", integer(params.size())));
+
+    for (int i = 0; i < params.size(); ++i) {
+      b.add(match("hasParameter", integer(i), lookup(params.get(i))));
+    }
+
+    b.add(match("hasType", lookup(d.explicitType)));
+
+    if (d.getBody() != null) {
+      b.add(match("hasBody", lookup(d.getBody())));
+    } else {
+      b.add(unless(match("hasBody", anything())));
+    }
+
+    buildBindings(d, b);
+    matcherMap.put(d, b);
+  }
+
+
 }

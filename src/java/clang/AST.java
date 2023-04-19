@@ -832,6 +832,15 @@ public class AST {
       ret.explicitType = t;
       return ret.setChildren(Stream.concat(params.stream(), List.of(body).stream()).toArray(Node[]::new));
     }
+
+    public FunctionDecl setBody(Stmt body) {
+      if (getBody() != null)
+        throw new IllegalStateException("FunctionDecl already has a body");
+
+      AST.Node[] newChildren = Arrays.copyOf(this.inner, this.inner.length + 1);
+      newChildren[newChildren.length - 1] = body;
+      return this.setChildren(newChildren);
+    }
   }
 
   public static class VarDecl extends Decl {

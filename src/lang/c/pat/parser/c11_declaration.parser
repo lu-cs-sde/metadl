@@ -260,9 +260,11 @@ Declarator direct_declarator = identifier_declarator
 			     | direct_declarator LBRACK STATIC type_qualifier_list_opt assignment_expression? RBRACK {: return new ArrayDeclarator(direct_declarator, type_qualifier_list_opt, assignment_expression, new Opt(new Static())); :}
 			     | direct_declarator LBRACK type_qualifier_list STATIC assignment_expression? RBRACK {: return new ArrayDeclarator(direct_declarator, type_qualifier_list, assignment_expression, new Opt(new Static())); :}
 			     | direct_declarator LRBRACK type_qualifier_list_opt STAR RBRACK {: return new ArrayDeclaratorVLA(direct_declarator, type_qualifier_list_opt); :}
-			     | direct_declarator LPAREN parameter_type_list RPAREN {: return new FunctionDeclarator(direct_declarator, parameter_type_list); :}
+			     | function_declarator
 			     ;
 
+FunctionDeclarator function_declarator = direct_declarator LPAREN parameter_type_list RPAREN {: return new FunctionDeclarator(direct_declarator, parameter_type_list); :}
+                                       ;
 
 IdentifierDeclarator identifier_declarator = identifier {: return new IdentifierDeclarator(identifier); :}
 

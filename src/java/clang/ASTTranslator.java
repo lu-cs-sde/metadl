@@ -425,7 +425,7 @@ public class ASTTranslator implements ASTVisitor {
 
 		DeclarationOrDefinition ext;
 		if (f.getBody() != null) {
-			ext = new FunctionDefinition(new List<DeclarationSpecifier>().add(typeSpec), fd, new List<Declaration>(), t(f.getBody()));
+			ext = new FunctionDefinition(new List<DeclarationSpecifier>().add(typeSpec), fd, t(f.getBody()));
 		} else {
 			ext = new Declaration(new List<DeclarationSpecifier>().add(typeSpec), new List<InitDeclarator>().add(new InitDeclarator(fd, new Opt<Initializer>())));
 		}

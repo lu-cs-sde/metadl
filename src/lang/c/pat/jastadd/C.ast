@@ -10,7 +10,7 @@ StringLiteral;
 // translation-unit external-declaration
 
 abstract DeclarationOrDefinition;
-FunctionDefinition : DeclarationOrDefinition ::= DeclarationSpecifier* Declarator Declaration* Statement;
+FunctionDefinition : DeclarationOrDefinition ::= DeclarationSpecifier* FunctionDeclarator Statement;
 
 // (6.9) external-declaration:
 // function-definition

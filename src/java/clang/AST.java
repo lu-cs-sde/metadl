@@ -274,6 +274,16 @@ public class AST {
     @Override public void accept(ASTVisitor v) {
       v.visit(this);
     }
+
+    public static CallExpr build(Expr callee, List<Expr> args) {
+      CallExpr ret = new CallExpr().setChildren();
+      ret.inner = new Node[args.size() + 1];
+      ret.inner[0] = callee;
+      for (int i = 0; i < args.size(); ++i) {
+        ret.inner[i + 1] = args.get(i);
+      }
+      return ret;
+    }
   }
 
   public static class BinaryOperator extends Expr {
@@ -334,6 +344,27 @@ public class AST {
 
     public Decl getDecl() {
       return (Decl) referencedDecl;
+    }
+
+    String name;
+
+    public boolean isNamed() {
+      return name != null;
+    }
+
+    public String getName() {
+      return name;
+    }
+
+    public <T extends Expr> T setName(String n) {
+      if (name != null)
+        throw new IllegalStateException("Decl already has a name.");
+      this.name = n;
+      return (T) this;
+    }
+
+    public static DeclRefExpr build() {
+      return new DeclRefExpr().setChildren();
     }
 
     @Override protected String extraInfo() {

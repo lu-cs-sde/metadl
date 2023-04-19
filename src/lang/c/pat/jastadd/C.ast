@@ -57,7 +57,7 @@ StringLiteralExpression : Expression ::= StringLiteral;
 // ( type-name ) { initializer-list , }
 
 ArrayIndexExpression : Expression ::= Base:Expression Index:Expression;
-CallExpression : Expression ::= Callee:Expression Args:Expression*;
+CallExpression : Expression ::= Callee:Expression Arg:Expression*;
 MemberExpression : Expression ::= Expression Identifier;
 PointerMemberExpression : Expression ::= Expression Identifier;
 PostIncrementExpression : Expression ::= Expression;

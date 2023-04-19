@@ -405,5 +405,24 @@ public class ASTMatcherGen implements ASTVisitor {
     matcherMap.put(d, b);
   }
 
+  @Override public void visit(AST.DeclRefExpr e) {
+    MatcherBuilder b = match("declRefExpr");
 
+    b.add(match("to", match("namedDecl", match("hasName", cst(e.getName())))));
+
+    buildBindings(e, b);
+    matcherMap.put(e, b);
+  }
+
+  @Override public void visit(AST.CallExpr c) {
+    MatcherBuilder b = match("callExpr");
+    b.add(match("callee", lookup(c.getCallee())));
+    b.add(match("argumentCountIs", integer(c.getNumArgs())));
+    for (int i = 0; i < c.getNumArgs(); ++i) {
+      b.add(match("hasArgument", integer(i), lookup(c.getArg(i))));
+    }
+
+    buildBindings(c, b);
+    matcherMap.put(c, b);
+  }
 }

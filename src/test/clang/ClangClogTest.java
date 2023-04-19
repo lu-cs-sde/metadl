@@ -472,5 +472,35 @@ public class ClangClogTest {
       .end();
   }
 
+  @Test
+  public void testDeclRefVar() {
+    List<Map<String, ClangClog.Loc>> results = matchPatternOnFile("y", PatLangParserSEP.n_expression, "tests/clang/clog/src/expr.c");
+    dumpResults(results);
+    Checker.begin(results)
+      .check("$__root", 3, 3)
+      .end();
+  }
 
+  @Test
+  public void testDeclRefFunc() {
+    List<Map<String, ClangClog.Loc>> results = matchPatternOnFile("foo", PatLangParserSEP.n_expression, "tests/clang/clog/src/expr.c");
+    dumpResults(results);
+    Checker.begin(results)
+      .check("$__root", 7, 7)
+      .end();
+  }
+
+  @Test
+  public void testCall() {
+    List<Map<String, ClangClog.Loc>> results = matchPatternOnFile("$f($a1)", PatLangParserSEP.n_expression, "tests/clang/clog/src/call.c");
+    dumpResults(results);
+    Checker.begin(results)
+      .check("$f", 6, 6)
+      .check("$a1", 6, 6)
+      .next()
+      .check("$f", 7, 7)
+      .check("$a1", 7, 7)
+      .next()
+      .end();
+  }
 }

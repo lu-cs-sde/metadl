@@ -1,0 +1,21 @@
+aspect CExpr {
+  syn AST.Expr Expression.asClangExpr() {
+    throw new RuntimeException(Thread.currentThread().getStackTrace()[1] + " not implemented.");
+  }
+
+  eq IdentifierExpression.asClangExpr() {
+    return AST.DeclRefExpr.build().setName(getIdentifier().getID());
+  }
+
+  eq MetaVarExpression.asClangExpr() {
+    return AST.Expr.build().setBinding(varName());
+  }
+
+  eq CallExpression.asClangExpr() {
+    ArrayList<AST.Expr> args = new ArrayList<>();
+    for (Expression e : getArgs()) {
+      args.add(e.asClangExpr());
+    }
+    return AST.CallExpr.build(getCallee().asClangExpr(), args);
+  }
+}

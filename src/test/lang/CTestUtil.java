@@ -1,15 +1,15 @@
 package lang;
 import java.util.ArrayList;
+import java.util.Scanner;
 import java.util.stream.Collectors;
 
 import beaver.Symbol;
-import beaver.Scanner;
+import clang.SPPFClogTrivialProductionRemover;
 import se.lth.sep.Category;
 import se.lth.sep.EarleyParser;
 import se.lth.sep.Grammar;
 import se.lth.sep.ParseTree;
 import se.lth.sep.SPPFNode;
-import se.lth.sep.SPPFTrivialProductionRemover;
 import se.lth.sep.Util;
 
 
@@ -57,19 +57,7 @@ public class CTestUtil {
     // Util.dumpParseResult("parse.dot", root, grammar);
 
     java.util.List<ParseTree> parseTrees = Util.enumerateParseTrees(root, astBuilder.getGrammar(),
-                                                                    new SPPFTrivialProductionRemover(astBuilder.getGrammar()) {
-                                                                      @Override public boolean isBubleUpChild(Category p, Category c) {
-                                                                        if (p.getName().equals("declarator"))
-                                                                          return false;
-                                                                        if (p.getName().equals("typedef_name"))
-                                                                          return false;
-                                                                        if (c.getName().equals("METAVARID"))
-                                                                          return true;
-                                                                        if (c.getName().equals("GAP"))
-                                                                          return true;
-                                                                        return false;
-                                                                      }
-                                                                    });
+                                                                    new SPPFClogTrivialProductionRemover(astBuilder.getGrammar()));
     for (int i = 0; i < parseTrees.size(); ++i) {
       Util.dumpParseTree("dump_" + i + ".dot", parseTrees.get(i));
     }

@@ -16,60 +16,60 @@ import lang.cons.ObjLangASTNode;
 
 
 public class ClangEvaluationContext extends EvaluationContext {
-	private ClangClogBuilder builder;
-	private ClangClog clog;
+  private ClangClogBuilder builder;
+  private ClangClog clog;
 
-	public ClangEvaluationContext(Set<String> srcs) {
-		System.loadLibrary("clangClogSWIG");
+  public ClangEvaluationContext(Set<String> srcs) {
+    System.loadLibrary("clangClogSWIG");
 
-		VectorString files = new VectorString(srcs);
+    VectorString files = new VectorString(srcs);
 
-		builder = new ClangClogBuilder(files);
-		clog = builder.build();
-	}
+    builder = new ClangClogBuilder(files);
+    clog = builder.build();
+  }
 
-	public List<Long> registerExternalLiteral(ExternalLiteral l) {
-		List<Long> res = new ArrayList<>();
+  public List<Long> registerExternalLiteral(ExternalLiteral l) {
+    List<Long> res = new ArrayList<>();
 
-		List<ObjLangASTNode> ASTs = (List<ObjLangASTNode>) l.getExternalPayload();
+    List<ObjLangASTNode> ASTs = (List<ObjLangASTNode>) l.getExternalPayload();
 
-		for (ObjLangASTNode Node : ASTs) {
-			lang.c.pat.ast.ASTNode CNode = (lang.c.pat.ast.ASTNode) Node;
-			Node.debugPrint(System.out);
-			String matcher = CNode.matcher().genMatcher();
+    for (ObjLangASTNode Node : ASTs) {
+      lang.c.pat.ast.ASTNode CNode = (lang.c.pat.ast.ASTNode) Node;
+      Node.debugPrint(System.out);
+      String matcher = CNode.matcher().genMatcher();
 
-			long matcherId = clog.registerMatcher(matcher, true/* Global */);
+      long matcherId = clog.registerMatcher(matcher, true/* Global */);
 
-			if (matcherId < 0) {
-				System.err.println("Failed to register matcher " + matcher);
-				throw new RuntimeException();
-			}
+      if (matcherId < 0) {
+        System.err.println("Failed to register matcher " + matcher);
+        throw new RuntimeException();
+      }
 
-			res.add(matcherId);
-			System.out.println(matcher);
-		}
+      res.add(matcherId);
+      System.out.println(matcher);
+    }
 
-		return res;
-	}
+    return res;
+  }
 
-	private boolean globalMatchersDone = false;
+  private boolean globalMatchersDone = false;
 
-	public Stream<VectorLong> lookup(List<Long> matcherIds) {
-		if (!globalMatchersDone) {
-			synchronized (this) {
-				if (!globalMatchersDone) {
-					clog.runGlobalMatchers();
-					globalMatchersDone = true;
-				}
-			}
-		}
+  public Stream<VectorLong> lookup(List<Long> matcherIds) {
+    if (!globalMatchersDone) {
+      synchronized (this) {
+        if (!globalMatchersDone) {
+          clog.runGlobalMatchers();
+          globalMatchersDone = true;
+        }
+      }
+    }
 
-		Stream<VectorLong> result = Stream.ofNullable(null);
-		for (long matcherId : matcherIds) {
-			VectorVectorLong matches = clog.matchFromRoot(matcherId);
-			result = Stream.concat(result, matches.stream());
-		}
+    Stream<VectorLong> result = Stream.ofNullable(null);
+    for (long matcherId : matcherIds) {
+      VectorVectorLong matches = clog.matchFromRoot(matcherId);
+      result = Stream.concat(result, matches.stream());
+    }
 
-		return result;
-	}
+    return result;
+  }
 }

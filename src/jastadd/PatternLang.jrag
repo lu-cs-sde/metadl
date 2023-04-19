@@ -11,431 +11,438 @@ import java.util.IdentityHashMap;
 import org.apache.commons.lang3.time.StopWatch;
 import lang.ast.Constructors;
 import lang.java.obj.DatalogProjectionSink;
+import clang.SPPFClogTrivialProductionRemover;
+
 
 import se.lth.sep.*;
 import static se.lth.sep.Util.*;
 
 aspect PatternLang {
-	syn String Program.getScopePrefix() = "A_";
-	syn AnalyzeContext Program.getAnalysisContext() {
-		return new AnalyzeContext(getScopePrefix(),
-								  getProgramRepresentationPredicateName(ProgramRepresentation.AST),
-								  getProgramRepresentationPredicateName(ProgramRepresentation.ATTR_PROVENANCE),
-								  getProgramRepresentationPredicateName(ProgramRepresentation.SRC),
-								  getProgramRepresentationPredicateName(ProgramRepresentation.ATTR));
-	}
+  syn String Program.getScopePrefix() = "A_";
+  syn AnalyzeContext Program.getAnalysisContext() {
+    return new AnalyzeContext(getScopePrefix(),
+                  getProgramRepresentationPredicateName(ProgramRepresentation.AST),
+                  getProgramRepresentationPredicateName(ProgramRepresentation.ATTR_PROVENANCE),
+                  getProgramRepresentationPredicateName(ProgramRepresentation.SRC),
+                  getProgramRepresentationPredicateName(ProgramRepresentation.ATTR));
+  }
 
-	syn String Program.getProgramRepresentationPredicateName(ProgramRepresentation r) {
-		return getScopePrefix() + r.getPredicateName();
-	}
+  syn String Program.getProgramRepresentationPredicateName(ProgramRepresentation r) {
+    return getScopePrefix() + r.getPredicateName();
+  }
 
-	coll ArrayList<Pattern> Program.patterns() [new ArrayList<Pattern>()];
-	Pattern contributes this to Program.patterns();
+  coll ArrayList<Pattern> Program.patterns() [new ArrayList<Pattern>()];
+  Pattern contributes this to Program.patterns();
 
-	syn nta List<Clause> Program.getExpandedClauseList() {
-		List<Clause> cls = new List<>();
-		cls.addAll(generateHelperRelations());
-		for (Pattern p : patterns()) {
-			cls.addAll(p.getClauses());
-		}
-		return cls;
-	}
+  syn nta List<Clause> Program.getExpandedClauseList() {
+    List<Clause> cls = new List<>();
+    cls.addAll(generateHelperRelations());
+    for (Pattern p : patterns()) {
+      cls.addAll(p.getClauses());
+    }
+    return cls;
+  }
 
-	Program contributes nta getExpandedClauses() to Program.predicateSymbols();
-	Pattern contributes nta getLiteral() to Program.predicateSymbols();
+  Program contributes nta getExpandedClauses() to Program.predicateSymbols();
+  Pattern contributes nta getLiteral() to Program.predicateSymbols();
 
-	public java.util.List<lang.ast.Clause> Program.generateHelperRelations() {
-		switch (getLang()) {
-		case METADL:
-			return lang.metadl.pat.ast.PatLang.generateHelperRelations(getAnalysisContext(), usedContextPredicates());
-		case JAVA:
-			return lang.java8.pat.ast.PatLang.generateHelperRelations(getAnalysisContext(), usedContextPredicates());
-		case C:
-			return lang.c.pat.ast.PatLang.generateHelperRelations(getAnalysisContext(), usedContextPredicates());
-		case C4:
-			return Collections.emptyList();
-		}
-		return null;
-	}
+  public java.util.List<lang.ast.Clause> Program.generateHelperRelations() {
+    switch (getLang()) {
+    case METADL:
+      return lang.metadl.pat.ast.PatLang.generateHelperRelations(getAnalysisContext(), usedContextPredicates());
+    case JAVA:
+      return lang.java8.pat.ast.PatLang.generateHelperRelations(getAnalysisContext(), usedContextPredicates());
+    case C:
+      return lang.c.pat.ast.PatLang.generateHelperRelations(getAnalysisContext(), usedContextPredicates());
+    case C4:
+      return Collections.emptyList();
+    }
+    return null;
+  }
 
-	public PredicateType Program.contextPredicateType(String predName) {
-		switch (getLang()) {
-		case METADL:
-			return lang.metadl.pat.ast.PatLang.contextPredicateType(predName);
-		case JAVA:
-			return lang.java8.pat.ast.PatLang.contextPredicateType(predName);
-		case C:
-		case C4:
-			return lang.c.pat.ast.PatLang.contextPredicateType(predName);
-		}
-		return null;
-	}
+  public PredicateType Program.contextPredicateType(String predName) {
+    switch (getLang()) {
+    case METADL:
+      return lang.metadl.pat.ast.PatLang.contextPredicateType(predName);
+    case JAVA:
+      return lang.java8.pat.ast.PatLang.contextPredicateType(predName);
+    case C:
+    case C4:
+      return lang.c.pat.ast.PatLang.contextPredicateType(predName);
+    }
+    return null;
+  }
 
-	syn boolean PredicateSymbol.isContextPredicate() {
-		return program().contextPredicateType(getPRED_ID()) != null;
-	}
+  syn boolean PredicateSymbol.isContextPredicate() {
+    return program().contextPredicateType(getPRED_ID()) != null;
+  }
 
-	syn boolean PredicateRef.isContextPredicate() {
-		return program().contextPredicateType(getPRED_ID()) != null;
-	}
+  syn boolean PredicateRef.isContextPredicate() {
+    return program().contextPredicateType(getPRED_ID()) != null;
+  }
 
-	syn lazy java.util.List<Clause> Pattern.getClauses() = getClausesHelper(null);
-	eq BoundedPattern.getClauses() = getClausesHelper(getCommonVariable());
+  syn lazy java.util.List<Clause> Pattern.getClauses() = getClausesHelper(null);
+  eq BoundedPattern.getClauses() = getClausesHelper(getCommonVariable());
 
-	public java.util.List<Clause> Pattern.getClausesHelper(CommonVariable bindVar) {
-		if (program().getLang() == CmdLineOpts.Lang.C4) {
-			return Collections.emptyList();
-		}
+  public java.util.List<Clause> Pattern.getClausesHelper(CommonVariable bindVar) {
+    if (program().getLang() == CmdLineOpts.Lang.C4) {
+      return Collections.emptyList();
+    }
 
-		AnalyzeContext ctx = program().getAnalysisContext();
-		ArrayList<Clause> ret = new ArrayList<>();
-		for (ObjLangASTNode n : altParse()) {
-			Literal head = getLiteralHelper(bindVar);
-			Rule r = new Rule(new List<CommonLiteral>().add(head),
-							  new List<CommonLiteral>().addAll(n.literals(ctx, bindVar)));
-			ret.add(r);
-		}
-		return ret;
-	}
+    AnalyzeContext ctx = program().getAnalysisContext();
+    ArrayList<Clause> ret = new ArrayList<>();
+    for (ObjLangASTNode n : altParse()) {
+      Literal head = getLiteralHelper(bindVar);
+      Rule r = new Rule(new List<CommonLiteral>().add(head),
+                new List<CommonLiteral>().addAll(n.literals(ctx, bindVar)));
+      ret.add(r);
+    }
+    return ret;
+  }
 
-	protected static String Pattern.hash(String s) {
-		try {
-			MessageDigest md = MessageDigest.getInstance("SHA-1");
-			byte[] md5 = md.digest(s.getBytes("UTF-8"));
-			StringBuffer sb = new StringBuffer();
-			// Take the first 6 bytes only, to avoid long predicate names
-			for (int i = 0; i < md5.length; i++) {
-				sb.append(String.format("%02x", md5[i]));
-			}
-			return sb.toString();
-		}
-		catch (Exception e) {}
-		return null;
-	}
+  protected static String Pattern.hash(String s) {
+    try {
+      MessageDigest md = MessageDigest.getInstance("SHA-1");
+      byte[] md5 = md.digest(s.getBytes("UTF-8"));
+      StringBuffer sb = new StringBuffer();
+      // Take the first 6 bytes only, to avoid long predicate names
+      for (int i = 0; i < md5.length; i++) {
+        sb.append(String.format("%02x", md5[i]));
+      }
+      return sb.toString();
+    }
+    catch (Exception e) {}
+    return null;
+  }
 
-	syn String Pattern.predName() = hash(getPATTERN());
-	eq BoundedPattern.predName() = hash(getPATTERN() + "bounded");
+  syn String Pattern.predName() = hash(getPATTERN());
+  eq BoundedPattern.predName() = hash(getPATTERN() + "bounded");
 
-	protected Literal Pattern.getLiteralHelper(CommonVariable bindVar) {
-		String predName = program().getAnalysisContext().prefix(predName());
+  protected Literal Pattern.getLiteralHelper(CommonVariable bindVar) {
+    String predName = program().getAnalysisContext().prefix(predName());
 
-		List<Term> headVars = new List<>();
-		// The assumption is that any parse tree of a pattern contains
-		// the same metavariables
-		java.util.List<ObjLangASTNode> ASTs = altParse();
-		ObjLangASTNode n = ASTs.iterator().next();
-		if (bindVar != null)
-			headVars.add(bindVar.treeCopy());
-		for (String v : n.metavariables())
-			headVars.add(new Variable(v));
-		if (program().getLang() == CmdLineOpts.Lang.C4) {
-			ExternalLiteral head = new ExternalLiteral(new PredicateSymbol(predName),
-													   headVars, ASTs);
-			return head;
-		} else {
-			// we're using a String hash  here; fingers crossed for no collisions
-			Literal head = new Literal(new PredicateSymbol(predName),
-									   headVars);
-			return head;
-		}
+    List<Term> headVars = new List<>();
+    // The assumption is that any parse tree of a pattern contains
+    // the same metavariables
+    java.util.List<ObjLangASTNode> ASTs = altParse();
+    ObjLangASTNode n = ASTs.iterator().next();
+    if (bindVar != null)
+      headVars.add(bindVar.treeCopy());
+    for (String v : n.metavariables())
+      headVars.add(new Variable(v));
+    if (program().getLang() == CmdLineOpts.Lang.C4) {
+      ExternalLiteral head = new ExternalLiteral(new PredicateSymbol(predName),
+                             headVars, ASTs);
+      return head;
+    } else {
+      // we're using a String hash  here; fingers crossed for no collisions
+      Literal head = new Literal(new PredicateSymbol(predName),
+                     headVars);
+      return head;
+    }
 
-	}
+  }
 
-	syn nta Literal Pattern.getLiteral() {
-		Literal l = getLiteralHelper(null);
-		if (hasNot())
-			l.setNot(new Not());
-		return l;
-	}
-	eq BoundedPattern.getLiteral() {
-		Literal l = getLiteralHelper(getCommonVariable());
-		if (hasNot())
-			l.setNot(new Not());
-		return l;
-	}
+  syn nta Literal Pattern.getLiteral() {
+    Literal l = getLiteralHelper(null);
+    if (hasNot())
+      l.setNot(new Not());
+    return l;
+  }
+  eq BoundedPattern.getLiteral() {
+    Literal l = getLiteralHelper(getCommonVariable());
+    if (hasNot())
+      l.setNot(new Not());
+    return l;
+  }
 
-	syn lazy java.util.List<ObjLangASTNode> Pattern.altParse() {
-		java.util.List<Category> tokens = new ArrayList<Category>();
-		java.util.List<Symbol> symbols = new ArrayList<Symbol>();
+  syn lazy java.util.List<ObjLangASTNode> Pattern.altParse() {
+    java.util.List<Category> tokens = new ArrayList<Category>();
+    java.util.List<Symbol> symbols = new ArrayList<Symbol>();
 
-		String[] tokenNames = null;
-		beaver.Scanner scanner = null;
-		ASTBuilder astBuilder = null;
-		java.util.List<Category> startSymbols = null;
-
-
-		switch (program().getLang()) {
-		case METADL:
-			scanner = new lang.metadl.pat.ast.LangScanner(new StringReader(getPATTERN()));
-			tokenNames = lang.metadl.pat.ast.PatLangParserSEP.Terminals.NAMES;
-			astBuilder = lang.metadl.pat.ast.ASTBuilder.getInstance();
-			startSymbols = Arrays.asList(lang.metadl.pat.ast.PatLangParserSEP.n_clause,
-										 lang.metadl.pat.ast.PatLangParserSEP.n_common_literal,
-										 lang.metadl.pat.ast.PatLangParserSEP.n_expr);
-			break;
-		case JAVA:
-			scanner = new lang.java8.pat.ast.PatLangScanner(new StringReader(getPATTERN()));
-			tokenNames = lang.java8.pat.ast.PatLangParserSEP.Terminals.NAMES;
-			astBuilder = lang.java8.pat.ast.ASTBuilder.getInstance();
-			startSymbols = Arrays.asList(lang.java8.pat.ast.PatLangParserSEP.n_class_declaration,
-										 lang.java8.pat.ast.PatLangParserSEP.n_type_declaration,
-										 lang.java8.pat.ast.PatLangParserSEP.n_class_body_declaration,
-										 lang.java8.pat.ast.PatLangParserSEP.n_interface_member_declaration,
-										 lang.java8.pat.ast.PatLangParserSEP.n_block_statement,
-										 lang.java8.pat.ast.PatLangParserSEP.n_expression,
-										 lang.java8.pat.ast.PatLangParserSEP.n_type,
-										 lang.java8.pat.ast.PatLangParserSEP.n_type_parameter,
-										 lang.java8.pat.ast.PatLangParserSEP.n_type_argument,
-										 lang.java8.pat.ast.PatLangParserSEP.n_annotation,
-										 lang.java8.pat.ast.PatLangParserSEP.n_enum_constant,
-										 lang.java8.pat.ast.PatLangParserSEP.n_field_declarator,
-										 lang.java8.pat.ast.PatLangParserSEP.n_variable_declarator);
-			break;
-		case C:
-		case C4:
-			scanner = new lang.c.pat.ast.PatLangScanner(new StringReader(getPATTERN()));
-			tokenNames = lang.c.pat.ast.PatLangParserSEP.Terminals.NAMES;
-			astBuilder = lang.c.pat.ast.ASTBuilder.getInstance();
-			startSymbols = Arrays.asList(lang.c.pat.ast.PatLangParserSEP.n_expression,
-										 lang.c.pat.ast.PatLangParserSEP.n_statement,
-										 lang.c.pat.ast.PatLangParserSEP.n_declaration,
-										 lang.c.pat.ast.PatLangParserSEP.n_function_definition);
-			break;
-		}
-
-		Grammar grammar = astBuilder.getGrammar();
-
-		do {
-			beaver.Symbol sym;
-			try {
-				sym = scanner.nextToken();
-			} catch (Exception e) {
-				System.out.println(e);
-				break;
-			}
-
-			if (sym == null || sym.getId() == 0 /*EOF*/) {
-				break;
-			} else if (sym.getId() < 0) {
-				// ignore, layout symbols
-			} else {
-				tokens.add(grammar.getCategory(tokenNames[sym.getId()]));
-				symbols.add(sym);
-			}
-		} while (true);
-
-		Category[] tokenArray = tokens.toArray(new Category[1]);
-		EarleyParser parser = astBuilder.getParser();
-
-		SPPFTrivialProductionRemover tpr = new SPPFTrivialProductionRemover(grammar) {
-				@Override public boolean isBubleUpChild(Category p, Category c) {
-					if (c.getName().equals("METAVARID"))
-						return true;
-					if (c.getName().equals("GAP"))
-						return true;
-					return false;
-				}
-			};
-
-		LinkedHashSet<ObjLangASTNode> ret = new LinkedHashSet<>();
-
-		SimpleLogger.logger().debug("Parsing pattern " + toString());
-
-		StopWatch parsePatternTimer = StopWatch.createStarted();
-
-		for (Category startSymbol : startSymbols) {
-			SPPFNode root = parser.parse(tokenArray, startSymbol);
-			if (root == null) {
-				continue;
-			}
-
-			{
-				// exclude this debug print from timing
-				parsePatternTimer.suspend();
-				if (SimpleLogger.isDebugMode())
-					Util.dumpParseResult("parse-tree-orig.dot", root, grammar);
-				// continue measuring the time
-				parsePatternTimer.resume();
-			}
-
-			java.util.List<ParseTree> pts = Util.enumerateParseTrees(root, grammar, tpr);
-			for (ParseTree pt : pts) {
-				try {
-					ObjLangASTNode astRoot = (ObjLangASTNode) astBuilder.buildAST(pt, symbols);
-					astRoot.assignIds();
-					ret.add(astRoot);
-					parsePatternTimer.suspend();
-					if (SimpleLogger.isDebugMode()) {
-						Util.dumpParseTree("parse-tree" + pt.hashCode() + ".dot", pt);
-						Util.dumpParseResult("parse-graph" + root.hashCode() + ".dot", root, grammar);
-						OutputStream ps = new ByteArrayOutputStream();
-						astRoot.debugPrint(new PrintStream(ps));
-						SimpleLogger.logger().debug(ps.toString());
-					}
-					parsePatternTimer.resume();
-				} catch (Exception e) {
-					Util.dumpParseTree("parse-tree.dot", pt);
-					Util.dumpParseResult("parse-graph.dot", root, grammar);
-					throw e;
-				}
-			}
-		}
-
-		parsePatternTimer.stop();
-		SimpleLogger.logger().time("Parsing pattern " + toString() + ": " + parsePatternTimer.getTime() + "ms");
-
-		if (ret.isEmpty()) {
-			logger().error("Error while parsing pattern: " + getPATTERN());
-			throw new RuntimeException("Error while parsing pattern");
-		}
-
-		return new ArrayList(ret);
-	}
-
-	eq Pattern.variables() {
-		TreeSet<String> vars = new TreeSet<>();
-		for (ObjLangASTNode ast : altParse()) {
-			vars.addAll(ast.metavariables());
-		}
-		return vars;
-	}
-
-	eq BoundedPattern.variables() {
-		TreeSet<String> vars = super.variables();
-		vars.addAll(getCommonVariable().variables());
-		return vars;
-	}
-
-	eq Pattern.boundVariables() = getLiteral().boundVariables();
-
-	public class AnalyzeContext {
-		private String scopePrefix;
-		public String progRelName;
-		public String provenanceRelName;
-		public String srcRelName;
-		public String attrRelName;
-
-		public AnalyzeContext(String scopePrefix, String progRelName,
-							  String provenanceRelName, String srcRelName,
-							  String attrRelName) {
-			this.scopePrefix = scopePrefix;
-			this.progRelName = progRelName;
-			this.provenanceRelName = provenanceRelName;
-			this.srcRelName = srcRelName;
-			this.attrRelName = attrRelName;
-		}
-
-		// TODO: make scopePrefix private and fix all uses
-		public String prefix(String name) {
-			return scopePrefix + name;
-		}
-	}
-
-	public enum ProgramRepresentation {
-		AST("PR"),
-		ATTR("ATTR"),
-		ATTR_PROVENANCE("PROV"),
-		SRC("SLOC");
-
-		private String predName;
-		ProgramRepresentation(String predName) {
-			this.predName = predName;
-		}
-
-		public String getPredicateName() {
-			return predName;
-		}
-	}
-
-	syn boolean PredicateSymbol.isProgramRepresentation(ProgramRepresentation r) {
-		return program().getProgramRepresentationPredicateName(r).equals(getPRED_ID());
-	}
-
-	syn lazy boolean FormalPredicate.isProgramRepresentation(ProgramRepresentation r) {
-		for (PredicateSymbol psym : predicates()) {
-			if (psym.isProgramRepresentation(r))
-				return true;
-		}
-		return false;
-	}
-
-	syn lazy Optional<ProgramRepresentation> FormalPredicate.getProgramRepresentationKind() {
-		for (ProgramRepresentation r : ProgramRepresentation.class.getEnumConstants()) {
-			if (isProgramRepresentation(r))
-				return Optional.of(r);
-		}
-		return Optional.empty();
-	}
-
-	public static PredicateType FormalPredicate.programRepresentationType(ProgramRepresentation r) {
-		switch (r) {
-		case AST:
-			return new PredicateType(StringType.get(), // node kind
-									 ASTNodeType.get(), // node id
-									 IntegerType.get(), // child index
-									 ASTNodeType.get(), // child node id
-									 StringType.get()); // misc (to be removed)
-		case ATTR:
-			return new PredicateType(StringType.get(),   // attribute
-									 ASTNodeType.get(),  // node id
-									 ASTNodeType.get()); // attribute value node id
-		case SRC:
-			return new PredicateType(ASTNodeType.get(), // node
-									 IntegerType.get(), // start line
-									 IntegerType.get(), // start col
-									 IntegerType.get(), // end line
-									 IntegerType.get(), // end col,
-									 StringType.get()); // file name
-		case ATTR_PROVENANCE:
-			return new PredicateType(IntegerType.get(), // file id
-									 IntegerType.get()); // file id
-		}
-		return null;
-	}
-
-	private static DomainSignature FormalPredicate.programRepresentationDomainSignature(ProgramRepresentation r) {
-		DomainSignature<Integer> dom = new DomainSignature<Integer>(Collections.emptySet());
-		switch (r) {
-		case AST:
-			// {{1, 3}, {0}, {2}, {4}}
-			dom.addElement(1);
-			dom.addElement(3);
-			dom.union(1, 3);
-			return dom;
-		case ATTR:
-			dom.addElement(1);
-			dom.addElement(2);
-			return dom;
-		case SRC:
-			dom.addElement(0);
-			return dom;
-		case ATTR_PROVENANCE:
-			dom.addElement(0);
-			dom.addElement(1);
-			return dom;
-		}
-		return null;
-	}
-
-	syn lazy PredicateType FormalPredicate.getContextPredicateType() {
-		return program().contextPredicateType(this.getPRED_ID());
-	}
-
-	coll Set<String> Program.usedContextPredicates() [new HashSet<String>()] root Program;
-	PredicateSymbol contributes getPRED_ID() when
-		isContextPredicate() to Program.usedContextPredicates();
-	PredicateRef contributes getPRED_ID() when
-		isContextPredicate() to Program.usedContextPredicates();
-	// Generate the SUPERTYPE relation only when patterns are present in the program
-	Pattern contributes "SUPERTYPE" to Program.usedContextPredicates();
+    String[] tokenNames = null;
+    beaver.Scanner scanner = null;
+    ASTBuilder astBuilder = null;
+    java.util.List<Category> startSymbols = null;
 
 
-	syn DatalogProjectionSink Program.getDatalogProjectionSink(EvaluationContext ctx) {
-		FormalPredicate ast = formalPredicateMap().get(getProgramRepresentationPredicateName(ProgramRepresentation.AST));
-		FormalPredicate provenance = formalPredicateMap().get(getProgramRepresentationPredicateName(ProgramRepresentation.ATTR_PROVENANCE));
-		FormalPredicate srcLoc = formalPredicateMap().get(getProgramRepresentationPredicateName(ProgramRepresentation.SRC));
-		FormalPredicate attr = formalPredicateMap().get(getProgramRepresentationPredicateName(ProgramRepresentation.ATTR));
+    switch (program().getLang()) {
+    case METADL:
+      scanner = new lang.metadl.pat.ast.LangScanner(new StringReader(getPATTERN()));
+      tokenNames = lang.metadl.pat.ast.PatLangParserSEP.Terminals.NAMES;
+      astBuilder = lang.metadl.pat.ast.ASTBuilder.getInstance();
+      startSymbols = Arrays.asList(lang.metadl.pat.ast.PatLangParserSEP.n_clause,
+                     lang.metadl.pat.ast.PatLangParserSEP.n_common_literal,
+                     lang.metadl.pat.ast.PatLangParserSEP.n_expr);
+      break;
+    case JAVA:
+      scanner = new lang.java8.pat.ast.PatLangScanner(new StringReader(getPATTERN()));
+      tokenNames = lang.java8.pat.ast.PatLangParserSEP.Terminals.NAMES;
+      astBuilder = lang.java8.pat.ast.ASTBuilder.getInstance();
+      startSymbols = Arrays.asList(lang.java8.pat.ast.PatLangParserSEP.n_class_declaration,
+                     lang.java8.pat.ast.PatLangParserSEP.n_type_declaration,
+                     lang.java8.pat.ast.PatLangParserSEP.n_class_body_declaration,
+                     lang.java8.pat.ast.PatLangParserSEP.n_interface_member_declaration,
+                     lang.java8.pat.ast.PatLangParserSEP.n_block_statement,
+                     lang.java8.pat.ast.PatLangParserSEP.n_expression,
+                     lang.java8.pat.ast.PatLangParserSEP.n_type,
+                     lang.java8.pat.ast.PatLangParserSEP.n_type_parameter,
+                     lang.java8.pat.ast.PatLangParserSEP.n_type_argument,
+                     lang.java8.pat.ast.PatLangParserSEP.n_annotation,
+                     lang.java8.pat.ast.PatLangParserSEP.n_enum_constant,
+                     lang.java8.pat.ast.PatLangParserSEP.n_field_declarator,
+                     lang.java8.pat.ast.PatLangParserSEP.n_variable_declarator);
+      break;
+    case C:
+    case C4:
+      scanner = new lang.c.pat.ast.PatLangScanner(new StringReader(getPATTERN()));
+      tokenNames = lang.c.pat.ast.PatLangParserSEP.Terminals.NAMES;
+      astBuilder = lang.c.pat.ast.ASTBuilder.getInstance();
+      startSymbols = Arrays.asList(lang.c.pat.ast.PatLangParserSEP.n_expression,
+                     lang.c.pat.ast.PatLangParserSEP.n_statement,
+                     lang.c.pat.ast.PatLangParserSEP.n_declaration,
+                     lang.c.pat.ast.PatLangParserSEP.n_function_definition);
+      break;
+    }
 
-		return new DatalogProjectionSink(ctx, ast, provenance, attr, srcLoc);
-	}
+    Grammar grammar = astBuilder.getGrammar();
+
+    do {
+      beaver.Symbol sym;
+      try {
+        sym = scanner.nextToken();
+      } catch (Exception e) {
+        System.out.println(e);
+        break;
+      }
+
+      if (sym == null || sym.getId() == 0 /*EOF*/) {
+        break;
+      } else if (sym.getId() < 0) {
+        // ignore, layout symbols
+      } else {
+        tokens.add(grammar.getCategory(tokenNames[sym.getId()]));
+        symbols.add(sym);
+      }
+    } while (true);
+
+    Category[] tokenArray = tokens.toArray(new Category[1]);
+    EarleyParser parser = astBuilder.getParser();
+
+    SPPFTrivialProductionRemover tpr;
+    if (program().getLang() == CmdLineOpts.Lang.C4) {
+      tpr = new SPPFClogTrivialProductionRemover(grammar);
+    } else {
+      tpr = new SPPFTrivialProductionRemover(grammar) {
+        @Override public boolean isBubleUpChild(Category p, Category c) {
+          if (c.getName().equals("METAVARID"))
+            return true;
+          if (c.getName().equals("GAP"))
+            return true;
+          return false;
+        }
+      };
+    }
+
+    LinkedHashSet<ObjLangASTNode> ret = new LinkedHashSet<>();
+
+    SimpleLogger.logger().debug("Parsing pattern " + toString());
+
+    StopWatch parsePatternTimer = StopWatch.createStarted();
+
+    for (Category startSymbol : startSymbols) {
+      SPPFNode root = parser.parse(tokenArray, startSymbol);
+      if (root == null) {
+        continue;
+      }
+
+      {
+        // exclude this debug print from timing
+        parsePatternTimer.suspend();
+        if (SimpleLogger.isDebugMode())
+          Util.dumpParseResult("parse-tree-orig.dot", root, grammar);
+        // continue measuring the time
+        parsePatternTimer.resume();
+      }
+
+      java.util.List<ParseTree> pts = Util.enumerateParseTrees(root, grammar, tpr);
+      for (ParseTree pt : pts) {
+        try {
+          ObjLangASTNode astRoot = (ObjLangASTNode) astBuilder.buildAST(pt, symbols);
+          astRoot.assignIds();
+          ret.add(astRoot);
+          parsePatternTimer.suspend();
+          if (SimpleLogger.isDebugMode()) {
+            Util.dumpParseTree("parse-tree" + pt.hashCode() + ".dot", pt);
+            Util.dumpParseResult("parse-graph" + root.hashCode() + ".dot", root, grammar);
+            OutputStream ps = new ByteArrayOutputStream();
+            astRoot.debugPrint(new PrintStream(ps));
+            SimpleLogger.logger().debug(ps.toString());
+          }
+          parsePatternTimer.resume();
+        } catch (Exception e) {
+          Util.dumpParseTree("parse-tree.dot", pt);
+          Util.dumpParseResult("parse-graph.dot", root, grammar);
+          throw e;
+        }
+      }
+    }
+
+    parsePatternTimer.stop();
+    SimpleLogger.logger().time("Parsing pattern " + toString() + ": " + parsePatternTimer.getTime() + "ms");
+
+    if (ret.isEmpty()) {
+      logger().error("Error while parsing pattern: " + getPATTERN());
+      throw new RuntimeException("Error while parsing pattern");
+    }
+
+    return new ArrayList(ret);
+  }
+
+  eq Pattern.variables() {
+    TreeSet<String> vars = new TreeSet<>();
+    for (ObjLangASTNode ast : altParse()) {
+      vars.addAll(ast.metavariables());
+    }
+    return vars;
+  }
+
+  eq BoundedPattern.variables() {
+    TreeSet<String> vars = super.variables();
+    vars.addAll(getCommonVariable().variables());
+    return vars;
+  }
+
+  eq Pattern.boundVariables() = getLiteral().boundVariables();
+
+  public class AnalyzeContext {
+    private String scopePrefix;
+    public String progRelName;
+    public String provenanceRelName;
+    public String srcRelName;
+    public String attrRelName;
+
+    public AnalyzeContext(String scopePrefix, String progRelName,
+                String provenanceRelName, String srcRelName,
+                String attrRelName) {
+      this.scopePrefix = scopePrefix;
+      this.progRelName = progRelName;
+      this.provenanceRelName = provenanceRelName;
+      this.srcRelName = srcRelName;
+      this.attrRelName = attrRelName;
+    }
+
+    // TODO: make scopePrefix private and fix all uses
+    public String prefix(String name) {
+      return scopePrefix + name;
+    }
+  }
+
+  public enum ProgramRepresentation {
+    AST("PR"),
+    ATTR("ATTR"),
+    ATTR_PROVENANCE("PROV"),
+    SRC("SLOC");
+
+    private String predName;
+    ProgramRepresentation(String predName) {
+      this.predName = predName;
+    }
+
+    public String getPredicateName() {
+      return predName;
+    }
+  }
+
+  syn boolean PredicateSymbol.isProgramRepresentation(ProgramRepresentation r) {
+    return program().getProgramRepresentationPredicateName(r).equals(getPRED_ID());
+  }
+
+  syn lazy boolean FormalPredicate.isProgramRepresentation(ProgramRepresentation r) {
+    for (PredicateSymbol psym : predicates()) {
+      if (psym.isProgramRepresentation(r))
+        return true;
+    }
+    return false;
+  }
+
+  syn lazy Optional<ProgramRepresentation> FormalPredicate.getProgramRepresentationKind() {
+    for (ProgramRepresentation r : ProgramRepresentation.class.getEnumConstants()) {
+      if (isProgramRepresentation(r))
+        return Optional.of(r);
+    }
+    return Optional.empty();
+  }
+
+  public static PredicateType FormalPredicate.programRepresentationType(ProgramRepresentation r) {
+    switch (r) {
+    case AST:
+      return new PredicateType(StringType.get(), // node kind
+                   ASTNodeType.get(), // node id
+                   IntegerType.get(), // child index
+                   ASTNodeType.get(), // child node id
+                   StringType.get()); // misc (to be removed)
+    case ATTR:
+      return new PredicateType(StringType.get(),   // attribute
+                   ASTNodeType.get(),  // node id
+                   ASTNodeType.get()); // attribute value node id
+    case SRC:
+      return new PredicateType(ASTNodeType.get(), // node
+                   IntegerType.get(), // start line
+                   IntegerType.get(), // start col
+                   IntegerType.get(), // end line
+                   IntegerType.get(), // end col,
+                   StringType.get()); // file name
+    case ATTR_PROVENANCE:
+      return new PredicateType(IntegerType.get(), // file id
+                   IntegerType.get()); // file id
+    }
+    return null;
+  }
+
+  private static DomainSignature FormalPredicate.programRepresentationDomainSignature(ProgramRepresentation r) {
+    DomainSignature<Integer> dom = new DomainSignature<Integer>(Collections.emptySet());
+    switch (r) {
+    case AST:
+      // {{1, 3}, {0}, {2}, {4}}
+      dom.addElement(1);
+      dom.addElement(3);
+      dom.union(1, 3);
+      return dom;
+    case ATTR:
+      dom.addElement(1);
+      dom.addElement(2);
+      return dom;
+    case SRC:
+      dom.addElement(0);
+      return dom;
+    case ATTR_PROVENANCE:
+      dom.addElement(0);
+      dom.addElement(1);
+      return dom;
+    }
+    return null;
+  }
+
+  syn lazy PredicateType FormalPredicate.getContextPredicateType() {
+    return program().contextPredicateType(this.getPRED_ID());
+  }
+
+  coll Set<String> Program.usedContextPredicates() [new HashSet<String>()] root Program;
+  PredicateSymbol contributes getPRED_ID() when
+    isContextPredicate() to Program.usedContextPredicates();
+  PredicateRef contributes getPRED_ID() when
+    isContextPredicate() to Program.usedContextPredicates();
+  // Generate the SUPERTYPE relation only when patterns are present in the program
+  Pattern contributes "SUPERTYPE" to Program.usedContextPredicates();
+
+
+  syn DatalogProjectionSink Program.getDatalogProjectionSink(EvaluationContext ctx) {
+    FormalPredicate ast = formalPredicateMap().get(getProgramRepresentationPredicateName(ProgramRepresentation.AST));
+    FormalPredicate provenance = formalPredicateMap().get(getProgramRepresentationPredicateName(ProgramRepresentation.ATTR_PROVENANCE));
+    FormalPredicate srcLoc = formalPredicateMap().get(getProgramRepresentationPredicateName(ProgramRepresentation.SRC));
+    FormalPredicate attr = formalPredicateMap().get(getProgramRepresentationPredicateName(ProgramRepresentation.ATTR));
+
+    return new DatalogProjectionSink(ctx, ast, provenance, attr, srcLoc);
+  }
 }

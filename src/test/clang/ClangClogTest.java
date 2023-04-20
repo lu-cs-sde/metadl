@@ -500,7 +500,6 @@ public class ClangClogTest {
       .next()
       .check("$f", 7, 7)
       .check("$a1", 7, 7)
-      .next()
       .end();
   }
 }

@@ -1,9 +1,9 @@
 package lang;
 import java.util.ArrayList;
-import java.util.Scanner;
 import java.util.stream.Collectors;
 
 import beaver.Symbol;
+import beaver.Scanner;
 import clang.SPPFClogTrivialProductionRemover;
 import se.lth.sep.Category;
 import se.lth.sep.EarleyParser;

@@ -135,7 +135,7 @@ aspect ErrorCollection {
 	Functor contributes new SemanticError(this, "Arity mismatch for functor. The expected arity is " + expectedArity()) when
 		getNumArg() != expectedArity() && expectedArity() >= 0 to Program.semanticErrors();
 
-	Functor contributes new SemanticError(this, "Unnkown functor " + getFunc().getFUNC_ID() + ".") when
+	Functor contributes new SemanticError(this, "Unkown functor " + getFunc().getFUNC_ID() + ".") when
 		!(this instanceof InternalFunctor) && expectedArity() < 0 to Program.semanticErrors();
 
 

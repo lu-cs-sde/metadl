@@ -375,6 +375,11 @@ aspect TypeCheck {
 			expectedType[1] = StringType.get();
 			break;
 		case "node_to_id":
+    case "c_src_file":
+    case "c_src_line_start":
+    case "c_src_line_end":
+    case "c_src_col_start":
+    case "c_src_col_end":
 			expectedType[0] = ASTNodeType.get();
 			break;
 		case "id_to_node":
@@ -540,6 +545,11 @@ aspect TypeInference {
 			else
 				return StringType.get();
 		case "node_to_id":
+    case "c_src_file":
+    case "c_src_line_start":
+    case "c_src_line_end":
+    case "c_src_col_start":
+    case "c_src_col_end":
 			return ASTNodeType.get();
 		default:
 			return UnknownType.get();
@@ -611,9 +621,14 @@ aspect TypeInference {
 		case "to_number":
 		case "attr":
 		case "node_to_id":
+    case "c_src_line_start":
+    case "c_src_line_end":
+    case "c_src_col_start":
+    case "c_src_col_end":
 			t = t.join(IntegerType.get()); break;
 		case "id_to_node":
 			t = t.join(ASTNodeType.get()); break;
+    case "c_src_file":
 		case "cat":
 			t = t.join(StringType.get()); break;
 		default:

@@ -17,6 +17,8 @@ import clang.swig.VectorString;
 import clang.swig.VectorVectorLong;
 import eval.Control;
 import eval.EvaluationContext;
+import eval.Operation;
+import eval.Tuple;
 import lang.ast.ExternalLiteral;
 import lang.cons.ObjLangASTNode;
 
@@ -156,6 +158,72 @@ public class ClangEvaluationContext extends EvaluationContext {
     }
 
     return res;
+  }
+
+  private static abstract class SrcLocOperation implements Operation {
+    private Operation nodeArg;
+    private ClangEvaluationContext ctx;
+    private String name;
+
+    public SrcLocOperation(ClangEvaluationContext ctx, String name, Operation nodeArg) {
+      this.nodeArg = nodeArg;
+      this.ctx = ctx;
+      this.name = name;
+    }
+
+    @Override public long eval(Tuple t) {
+      long nid = nodeArg.eval(t);
+      ClangClog.Loc loc = ctx.clog.srcLocation(nid);
+      return processLoc(loc);
+    }
+
+    @Override public String prettyPrint() {
+      return name + "(" + nodeArg.prettyPrint() + ")";
+    }
+
+    public abstract long processLoc(ClangClog.Loc loc);
+  }
+
+  public Operation genExternalOperation(String name, List<Operation> args) {
+    switch (name) {
+    case "c_src_file":
+      return new SrcLocOperation(this, name, args.get(0)) {
+        @Override public long processLoc(ClangClog.Loc loc) {
+          return internalizeString(loc.getFilename());
+        }
+      };
+
+    case "c_src_line_start":
+      return new SrcLocOperation(this, name, args.get(0)) {
+        @Override public long processLoc(ClangClog.Loc loc) {
+          return loc.getStartLine();
+        }
+      };
+
+    case "c_src_line_end":
+      return new SrcLocOperation(this, name, args.get(0)) {
+        @Override public long processLoc(ClangClog.Loc loc) {
+          return loc.getEndLine();
+        }
+      };
+
+    case "c_src_col_start":
+      return new SrcLocOperation(this, name, args.get(0)) {
+        @Override public long processLoc(ClangClog.Loc loc) {
+          return loc.getStartCol();
+        }
+      };
+
+    case "c_src_col_end":
+      return new SrcLocOperation(this, name, args.get(0)) {
+        @Override public long processLoc(ClangClog.Loc loc) {
+          return loc.getEndCol();
+        }
+      };
+
+    default:
+      throw new RuntimeException("Unknown external operation '" + name + "'.");
+    }
   }
 
   private boolean globalMatchersDone = false;

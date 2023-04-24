@@ -501,6 +501,12 @@ aspect CodeGen {
       }
     }
 
+    if (ctx instanceof ClangEvaluationContext) {
+      // maybe this is a clang external operation
+      Operation arg0 = getArg(0).genCode(ctx);
+      return ((ClangEvaluationContext) ctx).genExternalOperation(getFunc().getFUNC_ID(), java.util.List.of(arg0));
+    }
+
     throw new RuntimeException("Functor not implemented: " + getFunc().getFUNC_ID());
   }
   @Override public Operation Variable.genCode(EvaluationContext ctx) {

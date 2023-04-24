@@ -6,6 +6,11 @@ aspect Functor {
 		case "to_number":
 		case "node_to_id":
 		case "id_to_node":
+    case "c_src_file":
+    case "c_src_line_start":
+    case "c_src_line_end":
+    case "c_src_col_start":
+    case "c_src_col_end":
 			return 1;
 		case "add":
 		case "mul":

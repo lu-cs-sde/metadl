@@ -1,9 +1,10 @@
-package eval;
+package clang;
 
-import clang.ClangEvaluationContext;
 import clang.ClangEvaluationContext.MatcherInfo;
 import clang.swig.VectorLong;
 import clang.swig.VectorVectorLong;
+import eval.Control;
+import eval.Tuple;
 
 
 public class ExternalForAll implements Control {
@@ -38,7 +39,7 @@ public class ExternalForAll implements Control {
   }
 
   @Override public String prettyPrint(int indent) {
-    String s = Util.indent(indent) + String.format("EXTERNAL FOR t IN %s WHERE ", matcher.matcher);
+    String s = Control.Util.indent(indent) + String.format("EXTERNAL FOR t IN %s WHERE ", matcher.matcher);
 
     return s + "\n" + cont.prettyPrint(indent + 1);
   }

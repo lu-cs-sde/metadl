@@ -1,10 +1,15 @@
-package eval;
+package clang;
 
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.apache.commons.lang3.tuple.Pair;
+
+import eval.Control;
+import eval.Control.Util;
+import eval.EvaluationContext;
+import eval.Tuple;
 
 public abstract class ExternalIfExists implements Control {
 	private EvaluationContext ctx;

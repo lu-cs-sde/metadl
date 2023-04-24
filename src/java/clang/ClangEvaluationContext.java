@@ -6,18 +6,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.SortedMap;
 import java.util.SortedSet;
 import java.util.TreeSet;
-import java.util.stream.Stream;
 
 import org.apache.commons.collections4.SetUtils;
 
 import clang.swig.ClangClog;
 import clang.swig.ClangClogBuilder;
-import clang.swig.VectorLong;
 import clang.swig.VectorString;
 import clang.swig.VectorVectorLong;
+import eval.Control;
 import eval.EvaluationContext;
 import lang.ast.ExternalLiteral;
 import lang.cons.ObjLangASTNode;
@@ -82,7 +80,23 @@ public class ClangEvaluationContext extends EvaluationContext {
     }
   }
 
-  public List<List<MatcherInfo>> registerExternalLiteral(ExternalLiteral l, Map<String, Integer> varToIdMap) {
+  public static Control genCodeExternalLiteral(ExternalLiteral l, Map<String, Integer> varToIdMap,
+                                               ClangEvaluationContext clangCtx, Control cont) {
+
+    List<List<MatcherInfo>> matcherIds = clangCtx.registerExternalLiteral(l, varToIdMap);
+    java.util.List<Control> seq = new ArrayList<>();
+    for (java.util.List<MatcherInfo> andMatchers : matcherIds) {
+      Control next = cont;
+      for (MatcherInfo m : andMatchers) {
+        next = new ExternalForAll(clangCtx, m, next);
+      }
+      seq.add(next);
+    }
+
+    return Control.sequence(seq);
+  }
+
+  private List<List<MatcherInfo>> registerExternalLiteral(ExternalLiteral l, Map<String, Integer> varToIdMap) {
     // Each pattern can be parsed multiple ways (outer List)
     // Each parse of the pattern can yield multiple matches (inner List)
     // For a pattern to match as least one of its parses must match (OR outer list)
@@ -160,13 +174,18 @@ public class ClangEvaluationContext extends EvaluationContext {
     return matches;
   }
 
+  public enum ExternalLiteralKind {
+    PATTERN
+  }
 
   public static class ExternalLiteralPayload {
     List<ObjLangASTNode> patterns;
     Optional<String> rootVariable;
+    ExternalLiteralKind kind;
 
-    public static ExternalLiteralPayload of(List<ObjLangASTNode> patterns, Optional<String> rootVariable) {
+    public static ExternalLiteralPayload pattern(List<ObjLangASTNode> patterns, Optional<String> rootVariable) {
       var ret =  new ExternalLiteralPayload();
+      ret.kind = ExternalLiteralKind.PATTERN;
       ret.patterns = patterns;
       ret.rootVariable = rootVariable;
       return ret;

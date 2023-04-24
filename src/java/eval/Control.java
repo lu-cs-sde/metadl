@@ -10,16 +10,17 @@ import java.util.stream.Stream;
 
 import org.apache.commons.lang3.tuple.Pair;
 
-class Util {
-  static String indent(int n) {
-    String s = "";
-    for (int i = 0; i < n; ++i)
-      s += "\t";
-    return s;
-  }
-}
 
 public interface Control {
+  public static class Util {
+    public static String indent(int n) {
+      String s = "";
+      for (int i = 0; i < n; ++i)
+        s += "\t";
+      return s;
+    }
+  }
+
   default void parallelEval(int nVariables) { eval(new Tuple(nVariables)); }
 
   void eval(Tuple t);

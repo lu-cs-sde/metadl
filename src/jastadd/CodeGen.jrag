@@ -8,8 +8,8 @@ import eval.Relation2;
 import eval.EvaluationContext;
 import eval.Operation;
 import eval.Tuple;
-import eval.ExternalIfExists;
-import eval.ExternalForAll;
+import clang.ExternalIfExists;
+import clang.ExternalForAll;
 import java.util.SortedSet;
 import java.util.SortedMap;
 import java.util.stream.Stream;
@@ -336,20 +336,8 @@ aspect CodeGen {
         }
       } else {
         if (isExternal()) {
-          ClangEvaluationContext clangCtx = (ClangEvaluationContext) ctx;
-          java.util.List<java.util.List<MatcherInfo>> matcherIds =
-            clangCtx.registerExternalLiteral((ExternalLiteral)this, varToId);
-
-          java.util.List<Control> seq = new ArrayList<>();
-          for (java.util.List<MatcherInfo> andMatchers : matcherIds) {
-            Control next = cont;
-            for (MatcherInfo m : andMatchers) {
-              next = new ExternalForAll(clangCtx, m, next);
-            }
-            seq.add(next);
-          }
-
-          return Control.sequence(seq);
+          return ClangEvaluationContext.genCodeExternalLiteral((ExternalLiteral) this, varToId,
+                                                               (ClangEvaluationContext) ctx, cont);
         } else {
           return Control.forAll(ctx, rel, test, consts, assign, cont);
         }

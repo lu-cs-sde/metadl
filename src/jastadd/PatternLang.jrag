@@ -133,8 +133,8 @@ aspect PatternLang {
     if (program().getLang() == CmdLineOpts.Lang.C4) {
       ExternalLiteral head = new ExternalLiteral(new PredicateSymbol(predName),
                                                  headVars,
-                                                 ClangEvaluationContext.ExternalLiteralPayload.of(ASTs,
-                                                                                                  getCommonVariableOpt()));
+                                                 ClangEvaluationContext.ExternalLiteralPayload.pattern(ASTs,
+                                                                                                       getCommonVariableOpt()));
       return head;
     } else {
       // we're using a String hash  here; fingers crossed for no collisions

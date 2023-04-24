@@ -11,519 +11,517 @@ import eval.Tuple;
 import eval.ExternalIfExists;
 import eval.ExternalForAll;
 import java.util.SortedSet;
+import java.util.SortedMap;
 import java.util.stream.Stream;
 import clang.ClangEvaluationContext;
+import clang.ClangEvaluationContext.MatcherInfo;
 
 aspect CodeGen {
 
 
-	/**
-		Removal of self-join variables
-
-		Transform A(x, x, y, y) to A(x, x', y, y'), EQ(x, x'). EQ(y, y').
-	*/
-
-	/**
-	   The presence of this variables introduces a self-join.
-	   E.g.  In A(x, x), the second occurence of x is a self-join variable.
-	 */
-	inh boolean Variable.isSelfJoinVariable();
-	eq CommonLiteral.getChild().isSelfJoinVariable() = false;
-	eq Literal.getTerms(int i).isSelfJoinVariable() {
-		if (!isUse())
-			return false;
-
-		if (!getTerms(i).isVariable())
-			return false;
-
-		for (int j = 0; j < i; j++) {
-			if (getTerms(j).isVariable()) {
-				Variable v = (Variable) getTerms(j);
-				if (v.getVAR_ID().equals(((Variable) getTerms(i)).getVAR_ID()))
-					return true;
-			}
-		}
-
-		return false;
-	}
-
-	syn boolean Literal.isSelfJoin() {
-		if (hasNot())
-			return false;
-
-		for (Term t : getTermss()) {
-			if (t.isVariable() && ((Variable) t).isSelfJoinVariable())
-				return true;
-		}
-		return false;
-	}
-
-	inh int CommonLiteral.positionInRule();
-	eq Rule.getBody(int i).positionInRule() = i;
-
-	/**
-	   nameForDuplicateVar = fresh name to be used for duplicate variable
-	 */
-	inh String Variable.nameForDuplicateVar();
-	eq Literal.getTerms(int i).nameForDuplicateVar() {
-		Variable v = (Variable) getTerms(i);
-		return "j_" + v.getVAR_ID() + i + "_" + positionInRule();
-	}
-
-	/**
-	   Literals for evaluation
-	 */
-	syn nta List<CommonLiteral> CommonLiteral.evalLiteralList();
-	eq Literal.evalLiteralList() {
-		if (!isSelfJoin())
-			return new List<CommonLiteral>().add(this.treeCopy());
-
-		List<CommonLiteral> ret = new List<>();
-		Literal l = new Literal(getPredicate().treeCopy(), new List<>());
-
-		ret.add(l);
-
-		for (Term t : getTermss()) {
-			if (t.isVariable()) {
-				Variable v = (Variable) t;
-				if (v.isSelfJoinVariable()) {
-					// Create a fresh variable
-					Variable v1 = new Variable(v.nameForDuplicateVar());
-					l.addTerms(v1);
-					// Introduce a constraint
-					ret.add(Constructors.EQ(new Variable(v.getVAR_ID()),
-											new Variable(v.nameForDuplicateVar())));
-				} else {
-					l.addTerms(t.treeCopy());
-				}
-			} else {
-				l.addTerms(t.treeCopy());
-			}
-		}
-
-		return ret;
-	}
-
-	eq Pattern.evalLiteralList() = new List<CommonLiteral>().add(getLiteral().treeCopy());
-	eq Constraint.evalLiteralList() = new List<CommonLiteral>().add(this.treeCopy());
-
-
-	private boolean Rule.trySchedule(CommonLiteral l,
-									 LinkedList<CommonLiteral> schedule,
-									 Set<String> boundSoFar) {
-		if (SetUtils.difference(l.variables(),
-								SetUtils.union(l.boundVariables(), boundSoFar)).isEmpty()) {
-			schedule.add(l);
-			boundSoFar.addAll(l.variables());
-			return true;
-		}
-		return false;
-	}
-
-	/**
-	   evalSchedule = order in which to evaluate each literal in the clause;
-	   literals are evaluated in the declared order, while the constraints
-	   are postponed until all their operands are bound
-	 */
-	syn lazy java.util.List<CommonLiteral> Rule.evalSchedule() {
-		LinkedList<CommonLiteral> candidates = new LinkedList<>();
-		LinkedList<CommonLiteral> schedule = new LinkedList<>();
-		LinkedList<CommonLiteral> postponed = new LinkedList<>();
-		Set<String> boundSoFar = new HashSet<>();
-
-		for (CommonLiteral bs : getBodys()) {
-			for (CommonLiteral l : bs.evalLiteralList())
-				candidates.add(l);
-		}
-
-		while (!candidates.isEmpty() || !postponed.isEmpty()) {
-			// try to schedule any postponed literals first
-			ListIterator<CommonLiteral> it = postponed.listIterator();
-			while (it.hasNext()) {
-				CommonLiteral cand = it.next();
-				if (trySchedule(cand, schedule, boundSoFar))
-					it.remove();
-			}
-
-			// this means that positive Literals are added to the schedule in the order
-			// in which they appear in the clause, while Constraints may be postponed,
-			// such that they are evaluated when all the variables are bound
-			if (!candidates.isEmpty()) {
-				CommonLiteral cand = candidates.pollFirst();
-				if (!trySchedule(cand, schedule, boundSoFar))
-					postponed.add(cand);
-			}
-		}
-		assert postponed.isEmpty();
-		assert candidates.isEmpty();
-
-		return schedule;
-	}
-
-	/**
-	   Assign variable names in the order in which they appear
-	   in the schedule. This allows us to keep track of the bound
-	   variables by using a single integer instead of a set.
-	 */
-	syn lazy Map<String, Integer> Clause.evalVariables();
-	eq Rule.evalVariables() {
-		int i = 0;
-		Map<String, Integer> varMap = new HashMap<>();
-		for (CommonLiteral l : evalSchedule()) {
-			for (String v : l.variables()) {
-				if (!varMap.containsKey(v)) {
-					varMap.put(v, i);
-					i++;
-				}
-			}
-		}
-		return varMap;
-	}
-	eq Fact.evalVariables() = Collections.emptyMap();
-
-	/**
-	   Generate a statement sequence for the clause
-	 */
-	syn java.util.List<Control> Clause.genCode(EvaluationContext ctx, boolean isDelta, Set<FormalPredicate> currentStratum);
-
-	eq Fact.genCode(EvaluationContext ctx, boolean isDelta, Set<FormalPredicate> currentStratum) {
-		Control currentCont = Control.nop();
-
-		for (CommonLiteral h : getHeadss()) {
-			currentCont = h.genCode(ctx, currentCont, Collections.emptySet(), Collections.emptySet(), isDelta);
-		}
-
-		return Collections.singletonList(currentCont);
-	}
-
-	/**
-	   hasDeltaRelation = only positive literals have a delta relation
-	 */
-	syn boolean CommonLiteral.hasDeltaRelation(Set<FormalPredicate> currentStratum) = false;
-	eq Literal.hasDeltaRelation(Set<FormalPredicate> currentStratum) = !hasNot() &&
-		currentStratum.contains(getPredicate().formalpredicate());
-
-	private Control Rule.genCodeHelper(EvaluationContext ctx, boolean isDelta, int deltaRelIndex) {
-		Control currentCont = Control.nop();
-		Set<String> usedInHeadVars = new HashSet<>();
-		for (CommonLiteral h : getHeadss()) {
-			currentCont = h.genCode(ctx, currentCont, Collections.emptySet(), Collections.emptySet(), isDelta);
-			usedInHeadVars.addAll(h.variables());
-		}
-
-		java.util.List<CommonLiteral> schedule = evalSchedule();
-		// the running union of the variables bound by each literal in the
-		// schedule
-		java.util.List<Set<String>> boundVars = new ArrayList<>();
-		boundVars.add(Collections.emptySet());
-		for (int i = 1; i < schedule.size(); ++i) {
-			boundVars.add(SetUtils.union(boundVars.get(i - 1), schedule.get(i - 1).boundVariables()));
-		}
-
-		// the running union of the variables used after each literal in the schedule
-		java.util.List<Set<String>> referedVars = new ArrayList<>();
-		referedVars.add(usedInHeadVars);
-		for (int i = schedule.size() - 2; i >= 0; i--) {
-			referedVars.add(SetUtils.union(referedVars.get(referedVars.size() - 1), schedule.get(i + 1).variables()));
-		}
-		Collections.reverse(referedVars);
-		//System.out.println(referedVars);
-		// now generate the code for each literal, in reverse order
-		for (int i = schedule.size() - 1; i >= 0; i--) {
-			CommonLiteral b = schedule.get(i);
-			currentCont = b.genCode(ctx, currentCont, boundVars.get(i), referedVars.get(i), i == deltaRelIndex);
-		}
-
-		return currentCont;
-	}
-
-	eq Rule.genCode(EvaluationContext ctx, boolean isDelta, Set<FormalPredicate> currentStratum) {
-		if (!isDelta) {
-			return Collections.singletonList(genCodeHelper(ctx, false, -1));
-		} else {
-			java.util.List<CommonLiteral> schedule = evalSchedule();
-
-			java.util.List<Integer> deltaRelationIndices = new ArrayList<>();
-			for (int i = 0; i < schedule.size(); ++i)
-				if (schedule.get(i).hasDeltaRelation(currentStratum))
-					deltaRelationIndices.add(i);
-
-			if (deltaRelationIndices.isEmpty()) {
-				return Collections.singletonList(genCodeHelper(ctx, true, -1));
-			} else {
-				java.util.List<Control> deltaStmts = new ArrayList<>();
-				for (int i : deltaRelationIndices) {
-					deltaStmts.add(genCodeHelper(ctx, true, i));
-				}
-
-				return deltaStmts;
-			}
-		}
-	}
-
-	protected Control CommonLiteral.genCode(EvaluationContext ctx, Control cont,
-											Set<String> boundVars, Set<String> usedVars, boolean isDelta) {
-		throw new RuntimeException("Can't generate code for literal " + toString());
-	}
-
-	syn int Variable.varId() {
-		return literal().clause().evalVariables().get(getVAR_ID());
-	}
-
-	/**
-	   constVal = value of constant, internalized in the case of predicate symbols
-	   and strings
-	 */
-	syn long Constant.constVal(EvaluationContext ctx);
-	eq IntConstant.constVal(EvaluationContext ctx) = Long.parseLong(getNUMERAL());
-	eq PredicateRef.constVal(EvaluationContext ctx) = ctx.internalizeString(getPRED_ID());
-	eq StringConstant.constVal(EvaluationContext ctx) = ctx.internalizeString(getSTRING());
-
-	syn boolean Literal.isExternal() = false;
-	eq ExternalLiteral.isExternal() = true;
-
-	private Control Literal.genCodePositiveLiteral(Relation2 rel, EvaluationContext ctx, Control cont,
-												   Set<String> boundVars, Set<String> usedVars) {
-		java.util.List<Pair<Integer, Integer>> assign = new ArrayList<>();
-		java.util.List<Pair<Integer, Long>> consts = new ArrayList<>();
-		java.util.List<Pair<Integer, Integer>> test = new ArrayList<>();
-
-		if (isDef()) {
-			// literal in the head
-			for (int i = 0; i < getNumTerms(); ++i) {
-				if (getTerms(i).isVariable()) {
-					assign.add(Pair.of(i, ((Variable) getTerms(i)).varId()));
-				} else {
-					assert getTerms(i).isConstant();
-					consts.add(Pair.of(i, ((Constant) getTerms(i)).constVal(ctx)));
-				}
-			}
-			return Control.insert(rel, assign, consts, cont);
-		} else {
-			// literal in the body
-			for (int i = 0; i < getNumTerms(); ++i) {
-				if (getTerms(i).isVariable()) {
-					Variable v = (Variable) getTerms(i);
-					if (boundVars.contains(v.getVAR_ID())) {
-						// the variable is bound by previous literals, so use its value for lookup
-						test.add(Pair.of(i, v.varId()));
-					} else if (usedVars.contains(v.getVAR_ID())) {
-						// the variable is free, and subsequently refered to, assign it a value
-						assign.add(Pair.of(i, v.varId()));
-					}
-				} else if (getTerms(i).isConstant()) {
-					// ground terms
-					consts.add(Pair.of(i, ((Constant) getTerms(i)).constVal(ctx)));
-				} else {
-					// do nothing for wildcards
-				}
-			}
-			if (assign.isEmpty()) {
-				if (isExternal()) {
-					return new ExternalIfExists(ctx, rel.arity(), rel.getName(), test, consts, cont, true) {
-						@Override protected boolean exists(Tuple t) {
-							System.out.println("args: " + argIdx());
-							return false;
-						}
-					};
-				} else {
-					return Control.ifExists(rel, test, consts, cont);
-				}
-			} else {
-				if (isExternal()) {
-					java.util.List<Long> matcherIds =
-						((ClangEvaluationContext) ctx).registerExternalLiteral((ExternalLiteral)this);
-
-					return new ExternalForAll(ctx, rel.arity(), rel.getName(), test, consts, assign, cont) {
-						@Override protected Stream<Tuple> externalLookup(Tuple t) {
-							if (!argIdx().isEmpty())
-								throw new RuntimeException("Expecting none of the pattern variables to be bound.");
-
-
-							Tuple r = t.clone();
-
-							Stream<Tuple> resStream = ((ClangEvaluationContext) ctx).lookup(matcherIds).map(v -> {
-									for (int i = 0; i < resIdx().size(); ++i) {
-										r.set(resIdx().get(i), v.get(i));
-									}
-									return r;
-								});
-
-							return resStream;
-						}
-					};
-				} else {
-					return Control.forAll(ctx, rel, test, consts, assign, cont);
-				}
-			}
-		}
-	}
-
-	private Control Literal.genCodeNegativeLiteral(Relation2 rel, EvaluationContext ctx, Control cont) {
-		java.util.List<Pair<Integer, Integer>> assign = new ArrayList<>();
-		java.util.List<Pair<Integer, Long>> consts = new ArrayList<>();
-		java.util.List<Pair<Integer, Integer>> test = new ArrayList<>();
-
-		for (int i = 0; i < getNumTerms(); ++i) {
-			if (getTerms(i).isVariable()) {
-				test.add(Pair.of(i, ((Variable) getTerms(i)).varId()));
-			} else if (getTerms(i).isConstant()) {
-				consts.add(Pair.of(i, ((Constant) getTerms(i)).constVal(ctx)));
-			}
-		}
-
-		if (isExternal()) {
-			return new ExternalIfExists(ctx, rel.arity(), rel.getName(), test, consts, cont, false) {
-				@Override protected boolean exists(Tuple t) {
-					System.out.println("args: " + argIdx());
-					return false;
-				}
-			};
-		} else {
-			return Control.ifNotExists(rel, test, consts, cont);
-		}
-	}
-
-	protected Control Literal.genCode(EvaluationContext ctx, Control cont, Set<String> boundVars, Set<String> usedVars, boolean isDelta) {
-		FormalPredicate formalPred = getPredicate().formalpredicate();
-
-		if (hasNot()) {
-			Relation2 rel = ctx.getRelation(formalPred);
-			return genCodeNegativeLiteral(rel, ctx, cont);
-		} else {
-			Relation2 rel;
-			if (isDelta) {
-				if (isDef())
-					rel = ctx.getNextRelation(formalPred);
-				else
-					rel = ctx.getDeltaRelation(formalPred);
-			} else {
-				rel = ctx.getRelation(formalPred);
-			}
-			return genCodePositiveLiteral(rel, ctx, cont, boundVars, usedVars);
-		}
-	}
-
-	protected Control EQLiteral.genCode(EvaluationContext ctx, Control cont, Set<String> boundVars, Set<String> usedVars, boolean isDelta) {
-		Operation l = getLeft().genCode(ctx);
-		Operation r = getRight().genCode(ctx);
-		if (hasNot())
-			return Control.neq(cont, l, r);
-		return Control.eq(cont, l, r);
-	}
-
-	protected Control NEQLiteral.genCode(EvaluationContext ctx, Control cont, Set<String> boundVars, Set<String> usedVars, boolean isDelta) {
-		Operation l = getLeft().genCode(ctx);
-		Operation r = getRight().genCode(ctx);
-		if (hasNot())
-			return Control.eq(cont, l, r);
-		return Control.neq(cont, l, r);
-	}
-
-	protected Control LTLiteral.genCode(EvaluationContext ctx, Control cont, Set<String> boundVars, Set<String> usedVars, boolean isDelta) {
-		Operation l = getLeft().genCode(ctx);
-		Operation r = getRight().genCode(ctx);
-		if (hasNot())
-			return Control.gte(cont, l, r);
-		return Control.lt(cont, l, r);
-	}
-
-	protected Control GTLiteral.genCode(EvaluationContext ctx, Control cont, Set<String> boundVars, Set<String> usedVars, boolean isDelta) {
-		Operation l = getLeft().genCode(ctx);
-		Operation r = getRight().genCode(ctx);
-		if (hasNot())
-			return Control.lte(cont, l, r);
-		return Control.gt(cont, l, r);
-	}
-
-	protected Control LTELiteral.genCode(EvaluationContext ctx, Control cont, Set<String> boundVars, Set<String> usedVars, boolean isDelta) {
-		Operation l = getLeft().genCode(ctx);
-		Operation r = getRight().genCode(ctx);
-		if (hasNot())
-			return Control.gt(cont, l, r);
-		return Control.lte(cont, l, r);
-	}
-
-	protected Control GTELiteral.genCode(EvaluationContext ctx, Control cont, Set<String> boundVars, Set<String> usedVars, boolean isDelta) {
-		Operation l = getLeft().genCode(ctx);
-		Operation r = getRight().genCode(ctx);
-		if (hasNot())
-			return Control.lt(cont, l, r);
-		return Control.gte(cont, l, r);
-	}
-
-	protected Control BINDLiteral.genCode(EvaluationContext ctx, Control cont, Set<String> boundVars, Set<String> usedVars, boolean isDelta) {
-		Variable dst = (Variable) getExpr(0);
-		return Control.bind(cont, dst.varId(), getExpr(1).genCode(ctx));
-	}
-
-	protected Control MATCHLiteral.genCode(EvaluationContext ctx, Control cont, Set<String> boundVars, Set<String> usedVars, boolean isDelta) {
-		Operation l = getLeft().genCode(ctx);
-		Operation r = getRight().genCode(ctx);
-
-		return Control.match(ctx, cont, l, r, hasNot());
-	}
-
-	protected Control ANCESTORLiteral.genCode(EvaluationContext ctx, Control cont, Set<String> boundVars, Set<String> usedVars, boolean isDelta) {
-		Operation l = getExpr(0).genCode(ctx);
-		Operation r = getExpr(1).genCode(ctx);
-
-		return Control.ancestor(cont, l, r, hasNot());
-	}
-
-	public abstract Operation Expr.genCode(EvaluationContext ctx);
-	@Override public Operation Functor.genCode(EvaluationContext ctx) {
-		if (getNumArg() == 1) {
-			Operation arg0 = getArg(0).genCode(ctx);
-			switch (getFunc().getFUNC_ID()) {
-			case "to_number":
-				return Operation.to_number(ctx, arg0);
-			case "node_to_id":
-				return Operation.node_to_id(ctx, arg0);
-			case "id_to_node":
-				return Operation.id_to_node(ctx, arg0);
-			}
-		} else if (getNumArg() == 2) {
-			Operation arg0 = getArg(0).genCode(ctx);
-			Operation arg1 = getArg(1).genCode(ctx);
-
-			switch (getFunc().getFUNC_ID()) {
-			case "add":
-				return Operation.add(arg0, arg1);
-			case "mul":
-				return Operation.mul(arg0, arg1);
-			case "sub":
-				return Operation.sub(arg0, arg1);
-			case "div":
-				return Operation.div(arg0, arg1);
-			case "mod":
-				return Operation.mod(arg0, arg1);
-			case "bxor":
-				return Operation.bxor(arg0, arg1);
-			case "band":
-				return Operation.band(arg0, arg1);
-			case "bor":
-				return Operation.bor(arg0, arg1);
-			case "bshr":
-				return Operation.bshr(arg0, arg1);
-			case "bshru":
-				return Operation.bshru(arg0, arg1);
-			case "bshl":
-				return Operation.bshl(arg0, arg1);
-			case "cat":
-				return Operation.cat(ctx, arg0, arg1);
-			}
-		}
-
-		throw new RuntimeException("Functor not implemented: " + getFunc().getFUNC_ID());
-	}
-	@Override public Operation Variable.genCode(EvaluationContext ctx) {
-		return Operation.component(varId());
-	}
-	@Override public Operation Constant.genCode(EvaluationContext ctx) {
-		return Operation.constant(constVal(ctx));
-	}
-	@Override public Operation Wildcard.genCode(EvaluationContext ctx) {
-		return null;
-	}
+  /**
+    Removal of self-join variables
+
+    Transform A(x, x, y, y) to A(x, x', y, y'), EQ(x, x'). EQ(y, y').
+  */
+
+  /**
+     The presence of this variables introduces a self-join.
+     E.g.  In A(x, x), the second occurence of x is a self-join variable.
+   */
+  inh boolean Variable.isSelfJoinVariable();
+  eq CommonLiteral.getChild().isSelfJoinVariable() = false;
+  eq Literal.getTerms(int i).isSelfJoinVariable() {
+    if (!isUse())
+      return false;
+
+    if (!getTerms(i).isVariable())
+      return false;
+
+    for (int j = 0; j < i; j++) {
+      if (getTerms(j).isVariable()) {
+        Variable v = (Variable) getTerms(j);
+        if (v.getVAR_ID().equals(((Variable) getTerms(i)).getVAR_ID()))
+          return true;
+      }
+    }
+
+    return false;
+  }
+
+  syn boolean Literal.isSelfJoin() {
+    if (hasNot())
+      return false;
+
+    for (Term t : getTermss()) {
+      if (t.isVariable() && ((Variable) t).isSelfJoinVariable())
+        return true;
+    }
+    return false;
+  }
+
+  inh int CommonLiteral.positionInRule();
+  eq Rule.getBody(int i).positionInRule() = i;
+
+  /**
+     nameForDuplicateVar = fresh name to be used for duplicate variable
+   */
+  inh String Variable.nameForDuplicateVar();
+  eq Literal.getTerms(int i).nameForDuplicateVar() {
+    Variable v = (Variable) getTerms(i);
+    return "j_" + v.getVAR_ID() + i + "_" + positionInRule();
+  }
+
+  /**
+     Literals for evaluation
+   */
+  syn nta List<CommonLiteral> CommonLiteral.evalLiteralList();
+  eq Literal.evalLiteralList() {
+    if (!isSelfJoin())
+      return new List<CommonLiteral>().add(this.treeCopy());
+
+    List<CommonLiteral> ret = new List<>();
+    Literal l = new Literal(getPredicate().treeCopy(), new List<>());
+
+    ret.add(l);
+
+    for (Term t : getTermss()) {
+      if (t.isVariable()) {
+        Variable v = (Variable) t;
+        if (v.isSelfJoinVariable()) {
+          // Create a fresh variable
+          Variable v1 = new Variable(v.nameForDuplicateVar());
+          l.addTerms(v1);
+          // Introduce a constraint
+          ret.add(Constructors.EQ(new Variable(v.getVAR_ID()),
+                      new Variable(v.nameForDuplicateVar())));
+        } else {
+          l.addTerms(t.treeCopy());
+        }
+      } else {
+        l.addTerms(t.treeCopy());
+      }
+    }
+
+    return ret;
+  }
+
+  eq Pattern.evalLiteralList() = new List<CommonLiteral>().add(getLiteral().treeCopy());
+  eq Constraint.evalLiteralList() = new List<CommonLiteral>().add(this.treeCopy());
+
+
+  private boolean Rule.trySchedule(CommonLiteral l,
+                   LinkedList<CommonLiteral> schedule,
+                   Set<String> boundSoFar) {
+    if (SetUtils.difference(l.variables(),
+                SetUtils.union(l.boundVariables(), boundSoFar)).isEmpty()) {
+      schedule.add(l);
+      boundSoFar.addAll(l.variables());
+      return true;
+    }
+    return false;
+  }
+
+  /**
+     evalSchedule = order in which to evaluate each literal in the clause;
+     literals are evaluated in the declared order, while the constraints
+     are postponed until all their operands are bound
+   */
+  syn lazy java.util.List<CommonLiteral> Rule.evalSchedule() {
+    LinkedList<CommonLiteral> candidates = new LinkedList<>();
+    LinkedList<CommonLiteral> schedule = new LinkedList<>();
+    LinkedList<CommonLiteral> postponed = new LinkedList<>();
+    Set<String> boundSoFar = new HashSet<>();
+
+    for (CommonLiteral bs : getBodys()) {
+      for (CommonLiteral l : bs.evalLiteralList())
+        candidates.add(l);
+    }
+
+    while (!candidates.isEmpty() || !postponed.isEmpty()) {
+      // try to schedule any postponed literals first
+      ListIterator<CommonLiteral> it = postponed.listIterator();
+      while (it.hasNext()) {
+        CommonLiteral cand = it.next();
+        if (trySchedule(cand, schedule, boundSoFar))
+          it.remove();
+      }
+
+      // this means that positive Literals are added to the schedule in the order
+      // in which they appear in the clause, while Constraints may be postponed,
+      // such that they are evaluated when all the variables are bound
+      if (!candidates.isEmpty()) {
+        CommonLiteral cand = candidates.pollFirst();
+        if (!trySchedule(cand, schedule, boundSoFar))
+          postponed.add(cand);
+      }
+    }
+    assert postponed.isEmpty();
+    assert candidates.isEmpty();
+
+    return schedule;
+  }
+
+  /**
+     Assign variable names in the order in which they appear
+     in the schedule. This allows us to keep track of the bound
+     variables by using a single integer instead of a set.
+   */
+  syn lazy Map<String, Integer> Clause.evalVariables();
+  eq Rule.evalVariables() {
+    int i = 0;
+    Map<String, Integer> varMap = new HashMap<>();
+    for (CommonLiteral l : evalSchedule()) {
+      for (String v : l.variables()) {
+        if (!varMap.containsKey(v)) {
+          varMap.put(v, i);
+          i++;
+        }
+      }
+    }
+    return varMap;
+  }
+  eq Fact.evalVariables() = Collections.emptyMap();
+
+  /**
+     Generate a statement sequence for the clause
+   */
+  syn java.util.List<Control> Clause.genCode(EvaluationContext ctx, boolean isDelta, Set<FormalPredicate> currentStratum);
+
+  eq Fact.genCode(EvaluationContext ctx, boolean isDelta, Set<FormalPredicate> currentStratum) {
+    Control currentCont = Control.nop();
+
+    for (CommonLiteral h : getHeadss()) {
+      currentCont = h.genCode(ctx, currentCont, Collections.emptySet(), Collections.emptySet(), isDelta);
+    }
+
+    return Collections.singletonList(currentCont);
+  }
+
+  /**
+     hasDeltaRelation = only positive literals have a delta relation
+   */
+  syn boolean CommonLiteral.hasDeltaRelation(Set<FormalPredicate> currentStratum) = false;
+  eq Literal.hasDeltaRelation(Set<FormalPredicate> currentStratum) = !hasNot() &&
+    currentStratum.contains(getPredicate().formalpredicate());
+
+  private Control Rule.genCodeHelper(EvaluationContext ctx, boolean isDelta, int deltaRelIndex) {
+    Control currentCont = Control.nop();
+    Set<String> usedInHeadVars = new HashSet<>();
+    for (CommonLiteral h : getHeadss()) {
+      currentCont = h.genCode(ctx, currentCont, Collections.emptySet(), Collections.emptySet(), isDelta);
+      usedInHeadVars.addAll(h.variables());
+    }
+
+    java.util.List<CommonLiteral> schedule = evalSchedule();
+    // the running union of the variables bound by each literal in the
+    // schedule
+    java.util.List<Set<String>> boundVars = new ArrayList<>();
+    boundVars.add(Collections.emptySet());
+    for (int i = 1; i < schedule.size(); ++i) {
+      boundVars.add(SetUtils.union(boundVars.get(i - 1), schedule.get(i - 1).boundVariables()));
+    }
+
+    // the running union of the variables used after each literal in the schedule
+    java.util.List<Set<String>> referedVars = new ArrayList<>();
+    referedVars.add(usedInHeadVars);
+    for (int i = schedule.size() - 2; i >= 0; i--) {
+      referedVars.add(SetUtils.union(referedVars.get(referedVars.size() - 1), schedule.get(i + 1).variables()));
+    }
+    Collections.reverse(referedVars);
+    //System.out.println(referedVars);
+    // now generate the code for each literal, in reverse order
+    for (int i = schedule.size() - 1; i >= 0; i--) {
+      CommonLiteral b = schedule.get(i);
+      currentCont = b.genCode(ctx, currentCont, boundVars.get(i), referedVars.get(i), i == deltaRelIndex);
+    }
+
+    return currentCont;
+  }
+
+  eq Rule.genCode(EvaluationContext ctx, boolean isDelta, Set<FormalPredicate> currentStratum) {
+    if (!isDelta) {
+      return Collections.singletonList(genCodeHelper(ctx, false, -1));
+    } else {
+      java.util.List<CommonLiteral> schedule = evalSchedule();
+
+      java.util.List<Integer> deltaRelationIndices = new ArrayList<>();
+      for (int i = 0; i < schedule.size(); ++i)
+        if (schedule.get(i).hasDeltaRelation(currentStratum))
+          deltaRelationIndices.add(i);
+
+      if (deltaRelationIndices.isEmpty()) {
+        return Collections.singletonList(genCodeHelper(ctx, true, -1));
+      } else {
+        java.util.List<Control> deltaStmts = new ArrayList<>();
+        for (int i : deltaRelationIndices) {
+          deltaStmts.add(genCodeHelper(ctx, true, i));
+        }
+
+        return deltaStmts;
+      }
+    }
+  }
+
+  protected Control CommonLiteral.genCode(EvaluationContext ctx, Control cont,
+                      Set<String> boundVars, Set<String> usedVars, boolean isDelta) {
+    throw new RuntimeException("Can't generate code for literal " + toString());
+  }
+
+  syn int Variable.varId() {
+    return literal().clause().evalVariables().get(getVAR_ID());
+  }
+
+  /**
+     constVal = value of constant, internalized in the case of predicate symbols
+     and strings
+   */
+  syn long Constant.constVal(EvaluationContext ctx);
+  eq IntConstant.constVal(EvaluationContext ctx) = Long.parseLong(getNUMERAL());
+  eq PredicateRef.constVal(EvaluationContext ctx) = ctx.internalizeString(getPRED_ID());
+  eq StringConstant.constVal(EvaluationContext ctx) = ctx.internalizeString(getSTRING());
+
+  syn boolean Literal.isExternal() = false;
+  eq ExternalLiteral.isExternal() = true;
+
+  private Control Literal.genCodePositiveLiteral(Relation2 rel, EvaluationContext ctx, Control cont,
+                           Set<String> boundVars, Set<String> usedVars) {
+    java.util.List<Pair<Integer, Integer>> assign = new ArrayList<>();
+    java.util.List<Pair<Integer, Long>> consts = new ArrayList<>();
+    java.util.List<Pair<Integer, Integer>> test = new ArrayList<>();
+
+    if (isDef()) {
+      // literal in the head
+      for (int i = 0; i < getNumTerms(); ++i) {
+        if (getTerms(i).isVariable()) {
+          assign.add(Pair.of(i, ((Variable) getTerms(i)).varId()));
+        } else {
+          assert getTerms(i).isConstant();
+          consts.add(Pair.of(i, ((Constant) getTerms(i)).constVal(ctx)));
+        }
+      }
+      return Control.insert(rel, assign, consts, cont);
+    } else {
+      // literal in the body
+      SortedMap<String, Integer> varToId = new TreeMap<>();
+      for (int i = 0; i < getNumTerms(); ++i) {
+        if (getTerms(i).isVariable()) {
+          Variable v = (Variable) getTerms(i);
+          varToId.put(v.getVAR_ID(), v.varId());
+
+          if (boundVars.contains(v.getVAR_ID())) {
+            // the variable  is bound by previous literals, so use its value for lookup
+            test.add(Pair.of(i, v.varId()));
+          } else if (usedVars.contains(v.getVAR_ID())) {
+            // the variable is free, and subsequently refered to, assign it a value
+            assign.add(Pair.of(i, v.varId()));
+          }
+        } else if (getTerms(i).isConstant()) {
+          // ground terms
+          consts.add(Pair.of(i, ((Constant) getTerms(i)).constVal(ctx)));
+        } else {
+          // do nothing for wildcards
+        }
+      }
+      if (assign.isEmpty()) {
+        if (isExternal()) {
+          return new ExternalIfExists(ctx, rel.arity(), rel.getName(), test, consts, cont, true) {
+            @Override protected boolean exists(Tuple t) {
+              System.out.println("args: " + argIdx());
+              return false;
+            }
+          };
+        } else {
+          return Control.ifExists(rel, test, consts, cont);
+        }
+      } else {
+        if (isExternal()) {
+          ClangEvaluationContext clangCtx = (ClangEvaluationContext) ctx;
+          java.util.List<java.util.List<MatcherInfo>> matcherIds =
+            clangCtx.registerExternalLiteral((ExternalLiteral)this, varToId);
+
+          java.util.List<Control> seq = new ArrayList<>();
+          for (java.util.List<MatcherInfo> andMatchers : matcherIds) {
+            Control next = cont;
+            for (MatcherInfo m : andMatchers) {
+              next = new ExternalForAll(clangCtx, m, next);
+            }
+            seq.add(next);
+          }
+
+          return Control.sequence(seq);
+        } else {
+          return Control.forAll(ctx, rel, test, consts, assign, cont);
+        }
+      }
+    }
+  }
+
+  private Control Literal.genCodeNegativeLiteral(Relation2 rel, EvaluationContext ctx, Control cont) {
+    java.util.List<Pair<Integer, Integer>> assign = new ArrayList<>();
+    java.util.List<Pair<Integer, Long>> consts = new ArrayList<>();
+    java.util.List<Pair<Integer, Integer>> test = new ArrayList<>();
+
+    for (int i = 0; i < getNumTerms(); ++i) {
+      if (getTerms(i).isVariable()) {
+        test.add(Pair.of(i, ((Variable) getTerms(i)).varId()));
+      } else if (getTerms(i).isConstant()) {
+        consts.add(Pair.of(i, ((Constant) getTerms(i)).constVal(ctx)));
+      }
+    }
+
+    if (isExternal()) {
+      return new ExternalIfExists(ctx, rel.arity(), rel.getName(), test, consts, cont, false) {
+        @Override protected boolean exists(Tuple t) {
+          System.out.println("args: " + argIdx());
+          return false;
+        }
+      };
+    } else {
+      return Control.ifNotExists(rel, test, consts, cont);
+    }
+  }
+
+  protected Control Literal.genCode(EvaluationContext ctx, Control cont, Set<String> boundVars, Set<String> usedVars, boolean isDelta) {
+    FormalPredicate formalPred = getPredicate().formalpredicate();
+
+    if (hasNot()) {
+      Relation2 rel = ctx.getRelation(formalPred);
+      return genCodeNegativeLiteral(rel, ctx, cont);
+    } else {
+      Relation2 rel;
+      if (isDelta) {
+        if (isDef())
+          rel = ctx.getNextRelation(formalPred);
+        else
+          rel = ctx.getDeltaRelation(formalPred);
+      } else {
+        rel = ctx.getRelation(formalPred);
+      }
+      return genCodePositiveLiteral(rel, ctx, cont, boundVars, usedVars);
+    }
+  }
+
+  protected Control EQLiteral.genCode(EvaluationContext ctx, Control cont, Set<String> boundVars, Set<String> usedVars, boolean isDelta) {
+    Operation l = getLeft().genCode(ctx);
+    Operation r = getRight().genCode(ctx);
+    if (hasNot())
+      return Control.neq(cont, l, r);
+    return Control.eq(cont, l, r);
+  }
+
+  protected Control NEQLiteral.genCode(EvaluationContext ctx, Control cont, Set<String> boundVars, Set<String> usedVars, boolean isDelta) {
+    Operation l = getLeft().genCode(ctx);
+    Operation r = getRight().genCode(ctx);
+    if (hasNot())
+      return Control.eq(cont, l, r);
+    return Control.neq(cont, l, r);
+  }
+
+  protected Control LTLiteral.genCode(EvaluationContext ctx, Control cont, Set<String> boundVars, Set<String> usedVars, boolean isDelta) {
+    Operation l = getLeft().genCode(ctx);
+    Operation r = getRight().genCode(ctx);
+    if (hasNot())
+      return Control.gte(cont, l, r);
+    return Control.lt(cont, l, r);
+  }
+
+  protected Control GTLiteral.genCode(EvaluationContext ctx, Control cont, Set<String> boundVars, Set<String> usedVars, boolean isDelta) {
+    Operation l = getLeft().genCode(ctx);
+    Operation r = getRight().genCode(ctx);
+    if (hasNot())
+      return Control.lte(cont, l, r);
+    return Control.gt(cont, l, r);
+  }
+
+  protected Control LTELiteral.genCode(EvaluationContext ctx, Control cont, Set<String> boundVars, Set<String> usedVars, boolean isDelta) {
+    Operation l = getLeft().genCode(ctx);
+    Operation r = getRight().genCode(ctx);
+    if (hasNot())
+      return Control.gt(cont, l, r);
+    return Control.lte(cont, l, r);
+  }
+
+  protected Control GTELiteral.genCode(EvaluationContext ctx, Control cont, Set<String> boundVars, Set<String> usedVars, boolean isDelta) {
+    Operation l = getLeft().genCode(ctx);
+    Operation r = getRight().genCode(ctx);
+    if (hasNot())
+      return Control.lt(cont, l, r);
+    return Control.gte(cont, l, r);
+  }
+
+  protected Control BINDLiteral.genCode(EvaluationContext ctx, Control cont, Set<String> boundVars, Set<String> usedVars, boolean isDelta) {
+    Variable dst = (Variable) getExpr(0);
+    return Control.bind(cont, dst.varId(), getExpr(1).genCode(ctx));
+  }
+
+  protected Control MATCHLiteral.genCode(EvaluationContext ctx, Control cont, Set<String> boundVars, Set<String> usedVars, boolean isDelta) {
+    Operation l = getLeft().genCode(ctx);
+    Operation r = getRight().genCode(ctx);
+
+    return Control.match(ctx, cont, l, r, hasNot());
+  }
+
+  protected Control ANCESTORLiteral.genCode(EvaluationContext ctx, Control cont, Set<String> boundVars, Set<String> usedVars, boolean isDelta) {
+    Operation l = getExpr(0).genCode(ctx);
+    Operation r = getExpr(1).genCode(ctx);
+
+    return Control.ancestor(cont, l, r, hasNot());
+  }
+
+  public abstract Operation Expr.genCode(EvaluationContext ctx);
+  @Override public Operation Functor.genCode(EvaluationContext ctx) {
+    if (getNumArg() == 1) {
+      Operation arg0 = getArg(0).genCode(ctx);
+      switch (getFunc().getFUNC_ID()) {
+      case "to_number":
+        return Operation.to_number(ctx, arg0);
+      case "node_to_id":
+        return Operation.node_to_id(ctx, arg0);
+      case "id_to_node":
+        return Operation.id_to_node(ctx, arg0);
+      }
+    } else if (getNumArg() == 2) {
+      Operation arg0 = getArg(0).genCode(ctx);
+      Operation arg1 = getArg(1).genCode(ctx);
+
+      switch (getFunc().getFUNC_ID()) {
+      case "add":
+        return Operation.add(arg0, arg1);
+      case "mul":
+        return Operation.mul(arg0, arg1);
+      case "sub":
+        return Operation.sub(arg0, arg1);
+      case "div":
+        return Operation.div(arg0, arg1);
+      case "mod":
+        return Operation.mod(arg0, arg1);
+      case "bxor":
+        return Operation.bxor(arg0, arg1);
+      case "band":
+        return Operation.band(arg0, arg1);
+      case "bor":
+        return Operation.bor(arg0, arg1);
+      case "bshr":
+        return Operation.bshr(arg0, arg1);
+      case "bshru":
+        return Operation.bshru(arg0, arg1);
+      case "bshl":
+        return Operation.bshl(arg0, arg1);
+      case "cat":
+        return Operation.cat(ctx, arg0, arg1);
+      }
+    }
+
+    throw new RuntimeException("Functor not implemented: " + getFunc().getFUNC_ID());
+  }
+  @Override public Operation Variable.genCode(EvaluationContext ctx) {
+    return Operation.component(varId());
+  }
+  @Override public Operation Constant.genCode(EvaluationContext ctx) {
+    return Operation.constant(constVal(ctx));
+  }
+  @Override public Operation Wildcard.genCode(EvaluationContext ctx) {
+    return null;
+  }
 }

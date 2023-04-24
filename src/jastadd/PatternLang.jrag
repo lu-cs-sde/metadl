@@ -132,7 +132,9 @@ aspect PatternLang {
       headVars.add(new Variable(v));
     if (program().getLang() == CmdLineOpts.Lang.C4) {
       ExternalLiteral head = new ExternalLiteral(new PredicateSymbol(predName),
-                             headVars, ASTs);
+                                                 headVars,
+                                                 ClangEvaluationContext.ExternalLiteralPayload.of(ASTs,
+                                                                                                  getCommonVariableOpt()));
       return head;
     } else {
       // we're using a String hash  here; fingers crossed for no collisions
@@ -312,6 +314,9 @@ aspect PatternLang {
     vars.addAll(getCommonVariable().variables());
     return vars;
   }
+
+  syn Optional<String> Pattern.getCommonVariableOpt() = Optional.empty();
+  eq BoundedPattern.getCommonVariableOpt() = Optional.of(getCommonVariable().variables().iterator().next());
 
   eq Pattern.boundVariables() = getLiteral().boundVariables();
 

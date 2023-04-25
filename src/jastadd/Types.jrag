@@ -353,46 +353,14 @@ aspect TypeCheck {
 	}
 
 	syn TypeError Functor.typeError() {
-		Type[] expectedType = new Type[2];
-		switch (getFunc().getFUNC_ID()) {
-		case "add":
-		case "mul":
-		case "sub":
-		case "div":
-		case "band":
-		case "bor":
-		case "bxor":
-		case "bshl":
-		case "bshr":
-		case "bshru":
-			expectedType[0] = expectedType[1] = IntegerType.get(); break;
-		case "to_number":
-			expectedType[0] = StringType.get(); break;
-		case "cat":
-			expectedType[0] = expectedType[1] = StringType.get(); break;
-		case "attr":
-			expectedType[0] = IntegerType.get();
-			expectedType[1] = StringType.get();
-			break;
-		case "node_to_id":
-    case "c_src_file":
-    case "c_src_line_start":
-    case "c_src_line_end":
-    case "c_src_col_start":
-    case "c_src_col_end":
-			expectedType[0] = ASTNodeType.get();
-			break;
-		case "id_to_node":
-			expectedType[0] = IntegerType.get();
-			break;
-		default:
-			expectedType[0] = expectedType[1] = BadType.get(); break;
-		}
+    Optional<FunctorInfo> fi = FunctorInfo.fromName(getFunc().getFUNC_ID());
+    if (!fi.isPresent())
+      return null;
 
-		for (int i = 0; i < getNumArg(); ++i) {
+		for (int i = 0; i < Integer.min(getNumArg(), fi.get().arity()); ++i) {
 			Expr e = getArg(i);
-			if (e.type() != expectedType[i]) {
-				return new ExpressionTypeError(this, i, e.type(), expectedType[i]);
+			if (e.type() != fi.get().argType(i)) {
+				return new ExpressionTypeError(this, i, e.type(), fi.get().argType(i));
 			}
 		}
 		return null;
@@ -522,38 +490,16 @@ aspect TypeInference {
 		}
 		return UnknownType.get();
 	}
+
 	eq Functor.getArg(int i).itype() {
-		switch (getFunc().getFUNC_ID()) {
-		case "add":
-		case "mul":
-		case "sub":
-		case "div":
-		case "band":
-		case "bor":
-		case "bxor":
-		case "bshl":
-		case "bshr":
-		case "bshru":
-		case "id_to_node":
-			return IntegerType.get();
-		case "cat":
-		case "to_number":
-			return StringType.get();
-		case "attr":
-			if (i == 0)
-				return IntegerType.get();
-			else
-				return StringType.get();
-		case "node_to_id":
-    case "c_src_file":
-    case "c_src_line_start":
-    case "c_src_line_end":
-    case "c_src_col_start":
-    case "c_src_col_end":
-			return ASTNodeType.get();
-		default:
-			return UnknownType.get();
-		}
+    Optional<FunctorInfo> fi = FunctorInfo.fromName(getFunc().getFUNC_ID());
+    if (!fi.isPresent())
+      return UnknownType.get();
+
+    if (i < 0 || i >= fi.get().arity())
+      return UnknownType.get();
+
+    return fi.get().argType(i);
 	}
 
 	eq MATCHLiteral.getExpr().itype() = StringType.get();
@@ -607,34 +553,12 @@ aspect TypeInference {
 
 	eq Functor.type() {
 		Type t = super.type();
-		switch (getFunc().getFUNC_ID()) {
-		case "add":
-		case "mul":
-		case "sub":
-		case "div":
-		case "band":
-		case "bor":
-		case "bxor":
-		case "bshl":
-		case "bshr":
-		case "bshru":
-		case "to_number":
-		case "attr":
-		case "node_to_id":
-    case "c_src_line_start":
-    case "c_src_line_end":
-    case "c_src_col_start":
-    case "c_src_col_end":
-			t = t.join(IntegerType.get()); break;
-		case "id_to_node":
-			t = t.join(ASTNodeType.get()); break;
-    case "c_src_file":
-		case "cat":
-			t = t.join(StringType.get()); break;
-		default:
-			t = t.join(BadType.get()); break;
-		}
-		return t;
+    Optional<FunctorInfo> fi = FunctorInfo.fromName(getFunc().getFUNC_ID());
+    if (!fi.isPresent()) {
+      return t.join(BadType.get());
+    }
+
+    return t.join(fi.get().retType());
 	}
 
 	eq IntConstant.type() {

@@ -41,41 +41,6 @@ public class MatcherTest {
     return CTestUtil.buildAST(tokens, parseTrees, astBuilder);
   }
 
-  @Test public void test1() {
-    var roots = parse("for(;;)  ;", PatLangParserSEP.n_for_statement);
-
-    for (var root : roots) {
-      System.out.println(root.matcher().genMatcher());
-    }
-  }
-
-  @Disabled
-  @Test public void test2() {
-    var roots = parse("for(;;) $body ", PatLangParserSEP.n_for_statement);
-
-    for (var root : roots) {
-      System.out.println(root.matcher().genMatcher());
-    }
-  }
-
-  @Disabled
-  @Test public void test3() {
-    var roots = parse("for($init; $cond; $inc) $body ", PatLangParserSEP.n_for_statement);
-
-    for (var root : roots) {
-      System.out.println(root.matcher().genMatcher());
-    }
-  }
-
-  @Disabled
-  @Test public void test4() {
-    var roots = parse("for($init $cond; $inc) $body ", PatLangParserSEP.n_for_decl_statement);
-
-    for (var root : roots) {
-      System.out.println(root.matcher().genMatcher());
-    }
-  }
-
   public static <T extends ASTNode> List<String> genMatchers(String s, Category c) {
     List<String> matchers = new ArrayList<>();
     List<T> res = TypeTest.parse(s, c);

@@ -8,7 +8,7 @@ aspect CStmt {
   }
 
   eq MetaVarStatement.asClangStmt() {
-    return AST.Stmt.build().setBinding(varName());
+    return AST.Stmt.build().trySetBinding(this);
   }
 
   eq GapStatement.asClangStmt() {
@@ -16,7 +16,7 @@ aspect CStmt {
   }
 
   eq MetaVarDeclarationStatement.asClangStmt() {
-    return AST.Stmt.build().setBinding(varName());
+    return AST.Stmt.build().trySetBinding(this);
   }
 
 

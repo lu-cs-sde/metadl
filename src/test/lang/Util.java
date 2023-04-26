@@ -20,6 +20,7 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.SetUtils;
 
+import clang.ClangEvaluationContext;
 import eval.EvaluationContext;
 import eval.Relation2;
 import lang.ast.FormalPredicate;
@@ -158,7 +159,9 @@ public final class Util {
 	public static Map<String, RelationWrapper> doSingleEvaluation(CmdLineOpts d1) throws Exception {
 		System.out.println(d1.getInputFile());
 
-		EvaluationContext ctx = new EvaluationContext();
+		EvaluationContext ctx = d1.getLang() == CmdLineOpts.Lang.C4 ?
+      new ClangEvaluationContext(d1.getSrcs().keySet()) :
+      new EvaluationContext();
 		Program program1 = Compiler.run(ctx, d1);
 		FormalPredicate fpOut1 = program1.formalPredicateMap().get(GlobalNames.OUTPUT_NAME);
 

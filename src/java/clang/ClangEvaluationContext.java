@@ -126,8 +126,7 @@ public class ClangEvaluationContext extends EvaluationContext {
 
       while (mit.hasNext()) {
         MatcherBuilder mb = mit.next();
-        boolean isLast = mit.hasNext();
-        if (isLast) {
+        if (!mit.hasNext()) {
           // ASSUME: if the pattern has a root variable, attach it to last
           // matcher in the list (convention)
           // TODO: decide if root variables are needed at all in Clog

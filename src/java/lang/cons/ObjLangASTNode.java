@@ -25,6 +25,11 @@ public interface ObjLangASTNode {
 	 */
 	String varName();
 
+  /**
+     True if this is a wildcard node.
+   */
+  boolean isWildcardNode();
+
 	/**
 	   Unique ID for this node
 	 */

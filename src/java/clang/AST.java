@@ -1,14 +1,16 @@
 package clang;
 
 import java.io.PrintStream;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.ArrayList;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import lang.cons.ObjLangASTNode;
 
 public class AST {
   public static class TextualType {
@@ -22,6 +24,9 @@ public class AST {
     }
     public String getName() {
       return name;
+    }
+    public boolean isWildcard() {
+      return name.equals("$_");
     }
   }
 
@@ -136,7 +141,7 @@ public class AST {
       return mv;
     }
 
-    public <T extends Node> T setBinding(MetaVar mv) {
+    private <T extends Node> T setBinding(MetaVar mv) {
       if (this.mv != null)
         throw new IllegalStateException("This node already binds a metavariable.");
       if (this.isGap)
@@ -145,8 +150,14 @@ public class AST {
       return (T) this;
     }
 
-    public <T extends Node> T setBinding(String name) {
+    private <T extends Node> T setBinding(String name) {
       return setBinding(new MetaVar(name));
+    }
+
+    public <T extends Node> T trySetBinding(ObjLangASTNode n) {
+      if (!n.isWildcardNode())
+        return setBinding(n.varName());
+      return (T) this;
     }
 
     // Gaps

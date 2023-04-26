@@ -8,7 +8,7 @@ aspect CExpr {
   }
 
   eq MetaVarExpression.asClangExpr() {
-    return AST.Expr.build().setBinding(varName());
+    return AST.Expr.build().trySetBinding(this);
   }
 
   eq CallExpression.asClangExpr() {

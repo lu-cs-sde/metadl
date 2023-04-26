@@ -1,2 +1,11 @@
-ForLoop(sl, sc) :- s <: for ( ; ; ) $_ :>, SRC(s, sl, sc, _, _, _).
+# Initializer expression
+ForLoop(sl, sc) :- s <: for ($_ ;$_ ;$_) $_ :>,
+	    sl = c_src_line_start(s),
+	    sc = c_src_col_start(s).
+
+# Initializer statement
+ForLoop(sl, sc) :- s <: for ($_  $_ ;$_) $_ :>,
+	    sl = c_src_line_start(s),
+	    sc = c_src_col_start(s).
+
 OUTPUT('ForLoop, "ForLoop.csv", "csv").

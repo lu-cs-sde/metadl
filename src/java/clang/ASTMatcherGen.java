@@ -34,8 +34,12 @@ public class ASTMatcherGen implements ASTVisitor {
   }
 
   public static void buildBindings(AST.Node n, MatcherBuilder b) {
-    if (n.bindsMetaVar())
-      b.bind(n.boundMetaVar().getName());
+    if (n.bindsMetaVar()) {
+      AST.MetaVar mv = n.boundMetaVar();
+      // ignore wildcard metavariables
+      if (!mv.isWildcard())
+        b.bind(n.boundMetaVar().getName());
+    }
   }
 
   @Override public void visit(AST.VarDecl n) {

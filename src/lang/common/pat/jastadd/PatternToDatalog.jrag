@@ -121,6 +121,13 @@ aspect PatternToDatalog {
 		return s.equals("`_") || s.equals("$_");
 	}
 
+  syn boolean ASTNode.isWildcardNode() {
+    MetaVariable mv = getMetaVariable();
+    if (mv != null)
+      return mv.isWildcard();
+    return false;
+  }
+
 	syn boolean MetaVariable.isWildcard() = isWildcardToken(getID());
 
 	syn String ASTNode.varName() = varName("");

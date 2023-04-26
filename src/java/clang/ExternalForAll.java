@@ -31,7 +31,9 @@ public class ExternalForAll implements Control {
     VectorVectorLong rows = ctx.lookup(matcher.matcherId);
     for (VectorLong row : rows) {
       for (int i = 0; i < matcher.resultMap.length; ++i) {
-        t.set(matcher.resultMap[i], row.get(i));
+        if (matcher.resultMap[i] >= 0) {
+          t.set(matcher.resultMap[i], row.get(i));
+        }
       }
 
       cont.eval(t);

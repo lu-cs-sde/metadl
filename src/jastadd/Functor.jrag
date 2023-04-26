@@ -15,11 +15,6 @@ aspect Functor {
     node_to_id(IntegerType.get(), ASTNodeType.get()),
     id_to_node(ASTNodeType.get(), IntegerType.get()),
 
-    c_src_file(StringType.get(), ASTNodeType.get()),
-    c_src_line_start(IntegerType.get(), ASTNodeType.get()),
-    c_src_line_end(IntegerType.get(), ASTNodeType.get()),
-    c_src_col_start(IntegerType.get(), ASTNodeType.get()),
-    c_src_col_end(IntegerType.get(), ASTNodeType.get()),
 
     add(IntegerType.get(), IntegerType.get(), IntegerType.get()),
     mul(IntegerType.get(), IntegerType.get(), IntegerType.get()),
@@ -35,7 +30,16 @@ aspect Functor {
     bxor(IntegerType.get(), IntegerType.get(), IntegerType.get()),
     bshl(IntegerType.get(), IntegerType.get(), IntegerType.get()),
     bshr(IntegerType.get(), IntegerType.get(), IntegerType.get()),
-    bshru(IntegerType.get(), IntegerType.get(), IntegerType.get());
+    bshru(IntegerType.get(), IntegerType.get(), IntegerType.get()),
+
+    c_src_file(StringType.get(), ASTNodeType.get()),
+    c_src_line_start(IntegerType.get(), ASTNodeType.get()),
+    c_src_line_end(IntegerType.get(), ASTNodeType.get()),
+    c_src_col_start(IntegerType.get(), ASTNodeType.get()),
+    c_src_col_end(IntegerType.get(), ASTNodeType.get()),
+
+    c_type(ASTNodeType.get(), ASTNodeType.get()),
+    c_decl(ASTNodeType.get(), ASTNodeType.get());
 
     private final Type ret;
     private final Type[] args;

@@ -8,6 +8,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.function.LongUnaryOperator;
 
 import org.apache.commons.collections4.SetUtils;
 
@@ -184,6 +185,19 @@ public class ClangEvaluationContext extends EvaluationContext {
     public abstract long processLoc(ClangClog.Loc loc);
   }
 
+  private Operation makeUnaryOperation(String name, Operation arg0, LongUnaryOperator f) {
+    return new Operation() {
+      @Override public long eval(Tuple t) {
+        long nid = arg0.eval(t);
+        return f.applyAsLong(nid);
+      }
+
+      @Override public String prettyPrint() {
+        return name + "(" + arg0.prettyPrint() + ")";
+      }
+    };
+  }
+
   public Operation genExternalOperation(String name, List<Operation> args) {
     switch (name) {
     case "c_src_file":
@@ -220,6 +234,13 @@ public class ClangEvaluationContext extends EvaluationContext {
           return loc.getEndCol();
         }
       };
+
+    case "c_type":
+      return makeUnaryOperation(name, args.get(0),
+                                nid -> clog.type(nid));
+    case "c_decl":
+      return makeUnaryOperation(name, args.get(0),
+                                nid -> clog.decl(nid));
 
     default:
       throw new RuntimeException("Unknown external operation '" + name + "'.");

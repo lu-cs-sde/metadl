@@ -142,6 +142,14 @@ public class ClangClog {
     return new ClangClog.Loc(clogJNI.ClangClog_srcLocation(swigCPtr, this, NodeId), true);
   }
 
+  public long type(long NodeId) {
+    return clogJNI.ClangClog_type(swigCPtr, this, NodeId);
+  }
+
+  public long decl(long NodeId) {
+    return clogJNI.ClangClog_decl(swigCPtr, this, NodeId);
+  }
+
   public VectorLong parent(long NodeId) {
     return new VectorLong(clogJNI.ClangClog_parent(swigCPtr, this, NodeId), true);
   }

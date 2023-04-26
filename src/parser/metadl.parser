@@ -48,11 +48,15 @@ BoundedPattern bounded_pattern = variable.var PATTERN {: return new BoundedPatte
 
 Literal neg_literal = NOT LPARA common_literal.lit RPARA {: lit.setNot(new Not()); return lit; :};
 
-BINDLiteral bind_literal =
-       BIND LPARA variable.var COMMA expr.right RPARA {: return new BINDLiteral(var, right); :};
-
-EQLiteral eq_literal = EQ  LPARA expr.left COMMA expr.right RPARA {: return new EQLiteral(left, right); :};
-NEQLiteral neq_literal = NEQ LPARA expr.left COMMA expr.right RPARA {: return new NEQLiteral(left, right); :};
+BINDLiteral bind_literal = BIND LPARA variable.var COMMA expr.right RPARA {: return new BINDLiteral(var, right); :}
+                         | variable.var IEQ expr.right {: return new BINDLiteral(var, right); :}
+                         ;
+EQLiteral eq_literal = EQ  LPARA expr.left COMMA expr.right RPARA {: return new EQLiteral(left, right); :}
+                     | expr.left IEQEQ expr.right {: return new EQLiteral(left, right); :}
+		     ;
+NEQLiteral neq_literal = NEQ LPARA expr.left COMMA expr.right RPARA {: return new NEQLiteral(left, right); :}
+                       | expr.left INEQ expr.right {: return new NEQLiteral(left, right); :}
+		       ;
 LTLiteral lt_literal = LT  LPARA expr.left COMMA expr.right RPARA {: return new LTLiteral(left, right); :};
 LTELiteral lte_literal = LTE LPARA expr.left COMMA expr.right RPARA {: return new LTELiteral(left, right); :};
 GTLiteral gt_literal = GT  LPARA expr.left COMMA expr.right RPARA {: return new GTLiteral(left, right); :};

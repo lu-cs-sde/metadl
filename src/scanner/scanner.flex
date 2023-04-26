@@ -87,6 +87,9 @@ String  = \"[^\"]*\"
 
 // token definitions
 "<:"       {  patternStart();                        }
+"=="       {  return  sym(Terminals.IEQEQ);          }
+"="        {  return  sym(Terminals.IEQ);            }
+"!="       {  return  sym(Terminals.INEQ);           }
 "("        {  return  sym(Terminals.LPARA);          }
 ")"        {  return  sym(Terminals.RPARA);          }
 ":-"       {  return  sym(Terminals.IMPLIED_BY);     }

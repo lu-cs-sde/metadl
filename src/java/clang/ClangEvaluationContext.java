@@ -8,6 +8,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.function.LongBinaryOperator;
 import java.util.function.LongUnaryOperator;
 
 import org.apache.commons.collections4.SetUtils;
@@ -197,6 +198,20 @@ public class ClangEvaluationContext extends EvaluationContext {
     };
   }
 
+  private Operation makeBinaryOperation(String name, Operation arg0, Operation arg1, LongBinaryOperator f) {
+    return new Operation() {
+      @Override public long eval(Tuple t) {
+        long n0 = arg0.eval(t);
+        long n1 = arg1.eval(t);
+        return f.applyAsLong(n0, n1);
+      }
+
+      @Override public String prettyPrint() {
+        return name + "(" + arg0.prettyPrint() + ")";
+      }
+    };
+  }
+
   public Operation genExternalOperation(String name, List<Operation> args) {
     switch (name) {
     case "c_src_file":
@@ -240,6 +255,13 @@ public class ClangEvaluationContext extends EvaluationContext {
     case "c_decl":
       return makeUnaryOperation(name, args.get(0),
                                 nid -> clog.decl(nid));
+    case "c_is_parent":
+      return makeBinaryOperation(name, args.get(0), args.get(1),
+                                 (n0, n1) -> clog.isParent(n0, n1) ? 1 : 0);
+
+    case "c_is_ancestor":
+      return makeBinaryOperation(name, args.get(0), args.get(1),
+                                 (n0, n1) -> clog.isAncestor(n0, n1) ? 1 : 0);
 
     default:
       throw new RuntimeException("Unknown external operation '" + name + "'.");

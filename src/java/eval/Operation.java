@@ -1,5 +1,7 @@
 package eval;
 
+import java.nio.file.Path;
+
 public interface Operation {
 	long eval(Tuple t);
 	String prettyPrint();
@@ -216,5 +218,41 @@ public interface Operation {
 			}
 		};
 	}
+
+  /**
+     Extract the filename from a file path.
+     E.g. io_filename("/home/foo/bar.c") returns "bar.c"
+   */
+  public static Operation io_filename(EvaluationContext ctx, Operation arg0) {
+    return new Operation() {
+      @Override public long eval(Tuple t) {
+        String path = ctx.externalizeString(arg0.eval(t));
+        return ctx.internalizeString(Path.of(path).getFileName().toString());
+      }
+
+      @Override public String prettyPrint() {
+        return "io_filename(" + arg0.prettyPrint() + ")";
+      }
+    };
+  }
+
+  /**
+     Relative a path to the current working directory.
+     E.g. Assuming /home/foo is the CWD, then io_relative_path("home/foo/src/bar.c") returns "src/bar.c"
+   */
+  public static Operation io_relative_path(EvaluationContext ctx, Operation arg0) {
+    return new Operation() {
+      final Path cwdPath = Path.of(System.getProperty("user.dir"));
+      @Override public long eval(Tuple t) {
+        String path = ctx.externalizeString(arg0.eval(t));
+        Path relPath = cwdPath.relativize(Path.of(path));
+        return ctx.internalizeString(relPath.toString());
+      }
+
+      @Override public String prettyPrint() {
+        return "io_relative(" + arg0.prettyPrint() + ")";
+      }
+    };
+  }
 
 }

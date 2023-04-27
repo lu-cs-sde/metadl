@@ -3,7 +3,7 @@ ForLoop(s) :- s <: for ($_ ; $_ ; $_ ) $_ :>.
 ForLoop(s) :- s <: for ($_ $_ ; $_) $_ :>.
 
 # look for nested for loops
-NestedForLoops(s1, s2) :- ForLoop(s1), ForLoop(s2), NEQ(s1, s2), ANCESTOR(s1, s2).
+NestedForLoops(s1, s2) :- ForLoop(s1), ForLoop(s2), NEQ(s1, s2), c_is_ancestor(s1, s2) != 0.
 
 # enclosed loops are nested loops without any loop in between
 NotEnclosedForLoops(s1, s2) :- NestedForLoops(s1, s), NestedForLoops(s, s2).
@@ -18,6 +18,6 @@ LoopDepthDetail(sl, sc, el, ec, f, d) :- LoopDepth(l, d),
 		    sc = c_src_col_start(l),
 		    el = c_src_line_end(l),
 		    ec = c_src_col_end(l),
-		    f = c_src_file(l).
+		    f = io_relative_path(c_src_file(l)).
 
 OUTPUT('LoopDepthDetail, "LoopDepthDetail.csv", "csv").

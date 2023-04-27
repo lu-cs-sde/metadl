@@ -62,6 +62,11 @@ public class CEvaluationTest {
     runTest("nested_for_loops");
   }
 
+  @Test void nested_loops() {
+    runTest("nested_loops");
+  }
+
+
 
   @DisplayName("Evaluate MetaDL-C programs with the parallel internal evaluator")
   @ParameterizedTest

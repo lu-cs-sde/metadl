@@ -154,4 +154,12 @@ public class ClangClog {
     return new VectorLong(clogJNI.ClangClog_parent(swigCPtr, this, NodeId), true);
   }
 
+  public boolean isParent(long ParentId, long NodeId) {
+    return clogJNI.ClangClog_isParent(swigCPtr, this, ParentId, NodeId);
+  }
+
+  public boolean isAncestor(long AncestorId, long NodeId) {
+    return clogJNI.ClangClog_isAncestor(swigCPtr, this, AncestorId, NodeId);
+  }
+
 }

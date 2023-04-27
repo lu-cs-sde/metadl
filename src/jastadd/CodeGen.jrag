@@ -468,6 +468,10 @@ aspect CodeGen {
         return Operation.node_to_id(ctx, arg0);
       case "id_to_node":
         return Operation.id_to_node(ctx, arg0);
+      case "io_filename":
+        return Operation.io_filename(ctx, arg0);
+      case "io_relative_path":
+        return Operation.io_relative_path(ctx, arg0);
       }
     } else if (getNumArg() == 2) {
       Operation arg0 = getArg(0).genCode(ctx);
@@ -504,7 +508,13 @@ aspect CodeGen {
     if (ctx instanceof ClangEvaluationContext) {
       // maybe this is a clang external operation
       Operation arg0 = getArg(0).genCode(ctx);
-      return ((ClangEvaluationContext) ctx).genExternalOperation(getFunc().getFUNC_ID(), java.util.List.of(arg0));
+
+      if (getNumArg() == 1) {
+        return ((ClangEvaluationContext) ctx).genExternalOperation(getFunc().getFUNC_ID(), java.util.List.of(arg0));
+      } else if (getNumArg() == 2) {
+        Operation arg1 = getArg(1).genCode(ctx);
+        return ((ClangEvaluationContext) ctx).genExternalOperation(getFunc().getFUNC_ID(), java.util.List.of(arg0, arg1));
+      }
     }
 
     throw new RuntimeException("Functor not implemented: " + getFunc().getFUNC_ID());

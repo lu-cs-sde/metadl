@@ -32,6 +32,9 @@ aspect Functor {
     bshr(IntegerType.get(), IntegerType.get(), IntegerType.get()),
     bshru(IntegerType.get(), IntegerType.get(), IntegerType.get()),
 
+    io_filename(StringType.get(), StringType.get()),
+    io_relative_path(StringType.get(), StringType.get()),
+
     c_src_file(StringType.get(), ASTNodeType.get()),
     c_src_line_start(IntegerType.get(), ASTNodeType.get()),
     c_src_line_end(IntegerType.get(), ASTNodeType.get()),
@@ -39,7 +42,11 @@ aspect Functor {
     c_src_col_end(IntegerType.get(), ASTNodeType.get()),
 
     c_type(ASTNodeType.get(), ASTNodeType.get()),
-    c_decl(ASTNodeType.get(), ASTNodeType.get());
+    c_decl(ASTNodeType.get(), ASTNodeType.get()),
+
+    c_is_ancestor(IntegerType.get(), ASTNodeType.get(), ASTNodeType.get()),
+    c_is_parent(IntegerType.get(), ASTNodeType.get(), ASTNodeType.get());
+
 
     private final Type ret;
     private final Type[] args;

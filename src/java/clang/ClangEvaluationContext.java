@@ -140,6 +140,8 @@ public class ClangEvaluationContext extends EvaluationContext {
         if (matcherId < 0) {
           System.err.println("Failed to register matcher " + matcher);
           throw new RuntimeException();
+        } else {
+          System.err.println("Registered matcher " + matcher);
         }
 
         matchers.add(MatcherInfo.of(matcher, matcherId ,mb.bindings(), varToIdMap));
@@ -255,6 +257,9 @@ public class ClangEvaluationContext extends EvaluationContext {
     case "c_decl":
       return makeUnaryOperation(name, args.get(0),
                                 nid -> clog.decl(nid));
+    case "c_name":
+      return makeUnaryOperation(name, args.get(0),
+                                nid -> this.internalizeString(clog.name(nid)));
     case "c_is_parent":
       return makeBinaryOperation(name, args.get(0), args.get(1),
                                  (n0, n1) -> clog.isParent(n0, n1) ? 1 : 0);

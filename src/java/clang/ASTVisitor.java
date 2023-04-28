@@ -46,5 +46,6 @@ public interface ASTVisitor {
 	default void visit(BuiltinType t){ visit((Node) t); }
 	default void visit(ArrayType t){ visit((Node) t); }
   default void visit(RecordRefType t){ visit((Node) t); }
+  default void visit(TypedefType t){ visit((Node) t); }
 	default void visit(Comment c){ visit((Node) c); }
 }

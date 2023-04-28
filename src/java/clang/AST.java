@@ -863,15 +863,17 @@ public class AST {
       v.visit(this);
     }
 
-    public static FunctionDecl build(Type t, List<ParmVarDecl> params) {
+    public static FunctionDecl build(Type t, List<ParmVarDecl> params, boolean variadic) {
       FunctionDecl ret = new FunctionDecl();
       ret.explicitType = t;
+      ret.variadic = variadic;
       return ret.setChildren(params.toArray(new Node[0]));
     }
 
-    public static FunctionDecl build(String name, Type t, List<ParmVarDecl> params, Stmt body) {
+    public static FunctionDecl build(String name, Type t, List<ParmVarDecl> params, Stmt body, boolean variadic) {
       FunctionDecl ret = new FunctionDecl();
       ret.explicitType = t;
+      ret.variadic = variadic;
       return ret.setChildren(Stream.concat(params.stream(), List.of(body).stream()).toArray(Node[]::new));
     }
 
@@ -1194,6 +1196,8 @@ public class AST {
   }
 
   public static class FunctionProtoType extends Type {
+    public boolean variadic;
+
     public void accept(ASTVisitor v) {
       v.visit(this);
     }
@@ -1213,11 +1217,13 @@ public class AST {
       return (Type) inner[i + 1];
     }
 
-    public static FunctionProtoType build(Type retType, List<Type> args) {
+    public static FunctionProtoType build(Type retType, List<Type> args, boolean variadic) {
       FunctionProtoType ret = new FunctionProtoType().setChildren();
 
       ret.inner = new Node[args.size() + 1];
       ret.inner[0] = retType;
+      ret.variadic = variadic;
+
       for (int i = 0; i < args.size(); ++i) {
         ret.inner[i + 1] = args.get(i);
       }

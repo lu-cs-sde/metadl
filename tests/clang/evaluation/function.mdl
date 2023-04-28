@@ -1,5 +1,5 @@
-VariadicFunctionDecl(name) :- f <: .. $name(.., ...) ; :>, ID($name, name).
-VariadicFunctionDef(name) :- f <: .. $name(.., ...) { .. } :>, ID($name, name).
+VariadicFunctionDecl(name) :- <: $t $f(.., ...) ; :>, name = c_name($f).#, name != "".
+VariadicFunctionDef(name) :- <: $t $f(.., ...) { .. } :>, name = c_name($f).#, name != "".
 
 OUTPUT('VariadicFunctionDef, "VariadicFunctionDef.csv", "csv").
 OUTPUT('VariadicFunctionDecl, "VariadicFunctionDecl.csv", "csv").

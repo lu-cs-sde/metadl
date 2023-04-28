@@ -139,11 +139,37 @@ public class ASTMatcherGen implements ASTVisitor {
 
   @Override public void visit(AST.FunctionProtoType p) {
     MatcherBuilder b = match("functionProtoType");
-    b.add(match("parameterCountIs", integer(p.getNumParamType())));
+
+    boolean seenGap = false;
     for (int i = 0; i < p.getNumParamType(); ++i) {
       AST.Type pt = p.getParamType(i);
-      b.add(match("hasParameterType", integer(i), lookup(pt)));
+      if (pt.isGap()) {
+        seenGap = true;
+        break;
+      }
     }
+
+    if (!seenGap) {
+      b.add(match("parameterCountIs", integer(p.getNumParamType())));
+      for (int i = 0; i < p.getNumParamType(); ++i) {
+        AST.Type pt = p.getParamType(i);
+        b.add(match("hasParameterType", integer(i), lookup(pt)));
+      }
+    } else {
+      MatcherBuilder distinct = match("paramTypeDistinct");
+      for (int i = 0; i < p.getNumParamType(); ++i) {
+        AST.Type pt = p.getParamType(i);
+        if (!pt.isGap()) {
+          distinct.add(lookup(pt));
+        }
+      }
+      b.add(distinct);
+    }
+
+    if (p.variadic) {
+      b.add(match("isVariadic"));
+    }
+
     b.add(match("hasReturnType", lookup(p.getReturnType())));
 
     buildBindings(p, b);
@@ -160,6 +186,16 @@ public class ASTMatcherGen implements ASTVisitor {
     buildBindings(r, b);
 
     matcherMap.put(r, b);
+  }
+
+  @Override public void visit(AST.TypedefType t) {
+    if (t.bindsMetaVar()) {
+      MatcherBuilder b = match("type");
+      buildBindings(t, b);
+      matcherMap.put(t, b);
+    } else {
+      throw new RuntimeException("TypedefType is not yet handled.");
+    }
   }
 
   @Override public void visit(AST.Expr e) {
@@ -391,10 +427,30 @@ public class ASTMatcherGen implements ASTVisitor {
     MatcherBuilder b = match("functionDecl");
 
     List<AST.ParmVarDecl> params = d.getParams();
-    b.add(match("parameterCountIs", integer(params.size())));
 
-    for (int i = 0; i < params.size(); ++i) {
-      b.add(match("hasParameter", integer(i), lookup(params.get(i))));
+    boolean seenGap = false;
+    for (AST.ParmVarDecl pv : params) {
+      if (pv.isGap())
+        seenGap = true;
+    }
+
+    if (!seenGap) {
+      b.add(match("parameterCountIs", integer(params.size())));
+      for (int i = 0; i < params.size(); ++i) {
+        b.add(match("hasParameter", integer(i), lookup(params.get(i))));
+      }
+    } else {
+      MatcherBuilder distinct = match("paramDeclDistinct");
+      for (AST.ParmVarDecl pv : params) {
+        if (!pv.isGap()) {
+          distinct.add(lookup(pv));
+        }
+      }
+      b.add(distinct);
+    }
+
+    if (d.variadic) {
+      b.add(match("isVariadic"));
     }
 
     b.add(match("hasType", lookup(d.explicitType)));

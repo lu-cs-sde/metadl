@@ -119,16 +119,20 @@ aspect CDecl {
     AST.Type type = this.asType(innerType);
     if (type instanceof AST.FunctionProtoType) {
       java.util.List<AST.ParmVarDecl> params = new ArrayList<>();
+      boolean isVarArg = false;
       for (ParameterType pt : getParameterTypes()) {
-        params.add(pt.asClangDecl());
+        if (pt instanceof ParameterVarArgType)
+          isVarArg = true;
+        else
+          params.add(pt.asClangDecl());
       }
 
       Declarator innermost = this.innermostDeclarator();
       if (innermost.isMetaVar()) {
-        return AST.FunctionDecl.build(type, params).trySetBinding(innermost);
+        return AST.FunctionDecl.build(type, params, isVarArg).trySetBinding(innermost);
       } else {
         Identifier ident = innermost.declaredIdentifier();
-        return AST.FunctionDecl.build(type, params).setName(ident.getID());
+        return AST.FunctionDecl.build(type, params, isVarArg).setName(ident.getID());
       }
     } else {
       return super.asClangDecl(innerType);
@@ -206,10 +210,14 @@ aspect CDecl {
 
   eq FunctionDeclarator.asType(AST.Type innerType) {
     java.util.List<AST.Type> paramTypes = new ArrayList<>();
+    boolean isVarArg = false;
     for (ParameterType pDecl : getParameterTypes()) {
-      paramTypes.add(pDecl.asType());
+      if (pDecl instanceof ParameterVarArgType)
+        isVarArg = true;
+      else
+        paramTypes.add(pDecl.asType());
     }
-    return getDeclarator().asType(AST.FunctionProtoType.build(innerType , paramTypes));
+    return getDeclarator().asType(AST.FunctionProtoType.build(innerType , paramTypes, isVarArg));
   }
 
 
@@ -255,10 +263,14 @@ aspect CDecl {
 
   eq AbstractFunctionDeclarator.asType(AST.Type innerType) {
     java.util.List<AST.Type> paramTypes = new ArrayList<>();
+    boolean isVarArg = false;
     for (ParameterType pDecl : getParameterTypes()) {
-      paramTypes.add(pDecl.asType());
+      if (pDecl instanceof ParameterVarArgType)
+        isVarArg = true;
+      else
+        paramTypes.add(pDecl.asType());
     }
-    AST.Type t = AST.FunctionProtoType.build(innerType, paramTypes);
+    AST.Type t = AST.FunctionProtoType.build(innerType, paramTypes, isVarArg);
     if (hasAbstractDeclarator()) {
       return getAbstractDeclarator().asType(t);
     } else {
@@ -413,9 +425,9 @@ aspect CDecl {
     AST.FunctionDecl fd = (AST.FunctionDecl) f.asClangDecl(retType);
 
     fd.setBody(getStatement().asClangStmt());
-    if (inner.isMetaVar()) {
-      fd.trySetBinding(inner);
-    }
+    // if (inner.isMetaVar()) {
+    //   fd.trySetBinding(inner);
+    // }
 
     return fd;
   }

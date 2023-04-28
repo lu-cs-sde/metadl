@@ -162,4 +162,8 @@ public class ClangClog {
     return clogJNI.ClangClog_isAncestor(swigCPtr, this, AncestorId, NodeId);
   }
 
+  public String name(long NodeId) {
+    return clogJNI.ClangClog_name(swigCPtr, this, NodeId);
+  }
+
 }

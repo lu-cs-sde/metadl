@@ -453,7 +453,7 @@ public class ClangClogTest {
   }
 
   @Test
-  public void testFuncDecl() {
+  public void testFuncDecl1() {
     List<Map<String, ClangClog.Loc>> results = matchPatternOnFile("int $f(int x);", PatLangParserSEP.n_declaration, "tests/clang/clog/src/fun.c");
     dumpResults(results);
     Checker.begin(results)
@@ -462,13 +462,35 @@ public class ClangClogTest {
   }
 
   @Test
-  public void testFuncDef() {
+  public void testFuncDecl2() {
+    List<Map<String, ClangClog.Loc>> results = matchPatternOnFile("int $f(int x, ..);", PatLangParserSEP.n_declaration, "tests/clang/clog/src/fun.c");
+    dumpResults(results);
+    Checker.begin(results)
+      .check("$f", 1, 1)
+      .end();
+  }
+
+  @Test
+  public void testFuncDef1() {
     List<Map<String, ClangClog.Loc>> results = matchPatternOnFile("int f(int x) {..}", PatLangParserSEP.n_function_definition, "tests/clang/clog/src/fun.c");
     dumpResults(results);
     Checker.begin(results)
       .check("$__root", 3, 3)
       .next()
       .check("$__root", 5, 7)
+      .end();
+  }
+
+  @Test
+  public void testFuncDef2() {
+    List<Map<String, ClangClog.Loc>> results = matchPatternOnFile("int f(int x, ..) {..}", PatLangParserSEP.n_function_definition, "tests/clang/clog/src/fun.c");
+    dumpResults(results);
+    Checker.begin(results)
+      .check("$__root", 3, 3)
+      .next()
+      .check("$__root", 5, 7)
+      .next()
+      .check("$__root", 9, 10)
       .end();
   }
 
@@ -502,4 +524,5 @@ public class ClangClogTest {
       .check("$a1", 7, 7)
       .end();
   }
+
 }

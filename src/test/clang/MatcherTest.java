@@ -159,4 +159,8 @@ public class MatcherTest {
     assertEquals("varDecl(hasName(\"s\"), hasType(recordDecl(isStruct()).bind(\"$s\")))",
                  res.get(1));
   }
+
+  @Test public void test15() {
+    List<String> res = genMatchers("$f($a, ..)", PatLangParserSEP.n_expression);
+  }
 }

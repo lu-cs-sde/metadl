@@ -48,9 +48,12 @@ List argument_expression_list_opt = /* empty */ {: return new List(); :}
      				  | argument_expression_list
 				  ;
 
-List argument_expression_list = assignment_expression {: return new List().add(assignment_expression); :}
-     			      | argument_expression_list COMMA assignment_expression {: return argument_expression_list.add(assignment_expression); :}
+List argument_expression_list = argument_expression {: return new List().add(argument_expression); :}
+     			      | argument_expression_list COMMA argument_expression {: return argument_expression_list.add(argument_expression); :}
 			      ;
+
+Expression argument_expression = assignment_expression
+                               ;
 
 // (6.5.3) unary-expression:
 // postfix-expression

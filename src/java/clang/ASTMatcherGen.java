@@ -477,11 +477,29 @@ public class ASTMatcherGen implements ASTVisitor {
   @Override public void visit(AST.CallExpr c) {
     MatcherBuilder b = match("callExpr");
     b.add(match("callee", lookup(c.getCallee())));
-    b.add(match("argumentCountIs", integer(c.getNumArgs())));
+
+    boolean seenGap = false;
     for (int i = 0; i < c.getNumArgs(); ++i) {
-      b.add(match("hasArgument", integer(i), lookup(c.getArg(i))));
+      if (c.getArg(i).isGap()) {
+        seenGap = true;
+        break;
+      }
     }
 
+    if (seenGap) {
+      MatcherBuilder distinct = match("argumentDistinct");
+      for (int i = 0; i < c.getNumArgs(); ++i) {
+        AST.Expr arg = c.getArg(i);
+        if (!arg.isGap())
+          distinct.add(lookup(arg));
+      }
+      b.add(distinct);
+    } else {
+      b.add(match("argumentCountIs", integer(c.getNumArgs())));
+      for (int i = 0; i < c.getNumArgs(); ++i) {
+        b.add(match("hasArgument", integer(i), lookup(c.getArg(i))));
+      }
+    }
     buildBindings(c, b);
     matcherMap.put(c, b);
   }

@@ -11,6 +11,10 @@ aspect CExpr {
     return AST.Expr.build().trySetBinding(this);
   }
 
+  eq GapExpression.asClangExpr() {
+    return AST.Expr.build().gap();
+  }
+
   eq CallExpression.asClangExpr() {
     ArrayList<AST.Expr> args = new ArrayList<>();
     for (Expression e : getArgs()) {

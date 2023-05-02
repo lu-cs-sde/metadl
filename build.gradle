@@ -431,6 +431,7 @@ def cMetaVarNonTerminals = [
     "identifier\$", // metavar only
     "init_declarator.", // gap only
     "parameter_type.", // gap only
+    "argument_expression.", // gap only
     "expression",
     "statement",
     "declaration_statement\$"

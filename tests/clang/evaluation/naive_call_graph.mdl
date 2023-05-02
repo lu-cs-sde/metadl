@@ -1,12 +1,7 @@
-Call(fun1, fun2) :- d <: .. $fun1( .. ) { .. }:>, ID($fun1, fun1),    # function definition
-		 c <: $fun2( .. ) :>, ANCESTOR(d, c), ID($fun2, fun2). # call expression
+Call(fun1, fun2) :- <: $t1 $fun1( .. ) { .. }:>, fun1 = c_name($fun1),    # function definition
+		 c <: $fun2( .. ) :>, c_is_ancestor($fun1, c) != 0, fun2 = c_name($fun2). # call expression
 
-FunCall(fun2, c) :- c <: $fun2( .. ) :>, ID($fun2, fun2).
-FunDef(fun1, d) :- d <: .. $fun1( .. ) { .. } :>, ID($fun1, fun1).
+FunCall(c, $fun2) :-  c <: $fun2( .. ) :>.
+FunDef(fun1, $fun1) :- <: $t1 $fun1( .. ) { .. } :>, fun1 = c_name($fun1).
 
 OUTPUT('Call, "Call.csv", "csv").
-# OUTPUT('FunCall, "FunCall.csv", "csv").
-# OUTPUT('FunDef, "FunDef.csv", "csv").
-
-# OUTPUT('AST, "AST.csv", "csv").
-# OUTPUT('ID, "ID.csv", "csv").

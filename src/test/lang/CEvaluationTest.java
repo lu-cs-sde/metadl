@@ -70,6 +70,14 @@ public class CEvaluationTest {
     runTest("function");
   }
 
+  @Test void naive_call_graph() {
+    runTest("naive_call_graph");
+  }
+
+  @Test void loop_depth() {
+    runTest("loop_depth");
+  }
+
   @DisplayName("Evaluate MetaDL-C programs with the parallel internal evaluator")
   @ParameterizedTest
   @MethodSource("metadlCTests")

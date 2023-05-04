@@ -36,7 +36,8 @@ public class CmdLineOpts {
 	private boolean warningsEnabled = false;
 	private Lang lang;
 	private SortedMap<String, String> srcs;
-	private List<String> clangArgs = Collections.emptyList();;
+	private List<String> clangArgs = Collections.emptyList();
+  private boolean debug = false;
 
 	public enum Action {
 		EVAL_SOUFFLE,
@@ -59,6 +60,14 @@ public class CmdLineOpts {
 		C,
 		C4
 	}
+
+  public void setDebugFlag(boolean enabled) {
+    debug = enabled;
+  }
+
+  public boolean getDebugFlag() {
+    return debug;
+  }
 
 	public void setOutputDir(String str) {
 		this.outputDir = str;
@@ -208,13 +217,17 @@ public class CmdLineOpts {
 			.desc("Enable profiling and dump the results in JSON format").argName("FILE").build();
 		Option clangArgs = Option.builder().longOpt("Xclang").numberOfArgs(1)
 			.desc("Arguments forwarded to clang").build();
-
+    Option debug = Option.builder("debug")
+      .desc("Output all relations.").build();
 		Options options = new Options().addOptionGroup(actions)
 			.addOption(factDir).addOption(outDir)
 			.addOption(srcs).addOption(lang)
 			.addOption(genDir).addOption(outFile)
 			.addOption(libFile).addOption(enableWarnings)
-			.addOption(profile).addOption(clangArgs);
+			.addOption(profile).addOption(clangArgs)
+      .addOption(debug);
+
+
 
 		try {
 			CommandLine cmd = parser.parse(options, args);
@@ -275,6 +288,10 @@ public class CmdLineOpts {
 			if (cmd.hasOption("P")) {
 				ret.setProfileFile(cmd.getOptionValue("P"));
 			}
+
+      if (cmd.hasOption("debug")) {
+        ret.setDebugFlag(true);
+      }
 
 			if (cmd.hasOption("S")) {
 				WildcardFileFilter csvFilter = new WildcardFileFilter("*.csv");

@@ -64,7 +64,7 @@ void f1(short **mat, int m, int n) {
   f2(mat, m, n);
 }
 
-int main() {
+int main(int argc, char **argv) {
   short **m1 = matrix_alloc(4, 3);
   short **m2 = matrix_alloc(4, 3);
 

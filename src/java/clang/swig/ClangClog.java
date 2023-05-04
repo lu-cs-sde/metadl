@@ -150,8 +150,8 @@ public class ClangClog {
     return clogJNI.ClangClog_decl(swigCPtr, this, NodeId);
   }
 
-  public VectorLong parent(long NodeId) {
-    return new VectorLong(clogJNI.ClangClog_parent(swigCPtr, this, NodeId), true);
+  public long parent(long NodeId) {
+    return clogJNI.ClangClog_parent(swigCPtr, this, NodeId);
   }
 
   public boolean isParent(long ParentId, long NodeId) {

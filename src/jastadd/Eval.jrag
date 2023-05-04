@@ -210,7 +210,8 @@ aspect Eval {
 			s.eval();
 		}
 		evalOUTPUT(ctx, opts);
-		if (false) dumpAllRelations(ctx);
+		if (opts.getDebugFlag())
+      dumpAllRelations(ctx);
 	}
 
 	public void Program.evalParallel(EvaluationContext ctx, CmdLineOpts opts) throws IOException, SQLException {

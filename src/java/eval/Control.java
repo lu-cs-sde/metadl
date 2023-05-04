@@ -243,42 +243,42 @@ class ForAll implements Control {
     }
   }
 
-  @Override public void parallelEval(int nVariables) {
-    if (!test.isEmpty()) {
-      throw new RuntimeException("Parallel eval can be called only when no variables are bound (e.g. for the first literal in a clause).");
-    }
+  // @Override public void parallelEval(int nVariables) {
+  //   if (!test.isEmpty()) {
+  //     throw new RuntimeException("Parallel eval can be called only when no variables are bound (e.g. for the first literal in a clause).");
+  //   }
 
-    Tuple minKey = rel.infTuple();
-    Tuple maxKey = rel.supTuple();
+  //   Tuple minKey = rel.infTuple();
+  //   Tuple maxKey = rel.supTuple();
 
-    for (Pair<Integer, Long> c : consts) {
-      minKey.set(c.getLeft(), c.getRight());
-      maxKey.set(c.getLeft(), c.getRight());
-    }
+  //   for (Pair<Integer, Long> c : consts) {
+  //     minKey.set(c.getLeft(), c.getRight());
+  //     maxKey.set(c.getLeft(), c.getRight());
+  //   }
 
-    SortedSet<Tuple> tuples = view.lookup(minKey, maxKey);
+  //   SortedSet<Tuple> tuples = view.lookup(minKey, maxKey);
 
-    List<Callable<Void>> callables = new ArrayList<>();
-    for (Tuple r : tuples) {
-      callables.add(new Callable<Void>() {
-          @Override public Void call() {
-            Tuple t = new Tuple(nVariables);
-            for (Pair<Integer, Integer> p : assign) {
-              t.set(p.getRight(), r.get(p.getLeft()));
-            }
-            cont.eval(t);
-            return null;
-          }
-        });
-    }
+  //   List<Callable<Void>> callables = new ArrayList<>();
+  //   for (Tuple r : tuples) {
+  //     callables.add(new Callable<Void>() {
+  //         @Override public Void call() {
+  //           Tuple t = new Tuple(nVariables);
+  //           for (Pair<Integer, Integer> p : assign) {
+  //             t.set(p.getRight(), r.get(p.getLeft()));
+  //           }
+  //           cont.eval(t);
+  //           return null;
+  //         }
+  //       });
+  //   }
 
 
-    try {
-      ctx.getExecutorService().invokeAll(callables);
-    } catch (InterruptedException e) {
-      throw new RuntimeException(e);
-    }
-  }
+  //   try {
+  //     ctx.getExecutorService().invokeAll(callables);
+  //   } catch (InterruptedException e) {
+  //     throw new RuntimeException(e);
+  //   }
+  // }
 
   @Override public String prettyPrint(int indent) {
     String s = Util.indent(indent) + String.format("FOR t IN %s WHERE ", rel.getName());

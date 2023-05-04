@@ -9,7 +9,6 @@ import eval.EvaluationContext;
 import eval.Operation;
 import eval.Tuple;
 import clang.ExternalIfExists;
-import clang.ExternalForAll;
 import java.util.SortedSet;
 import java.util.SortedMap;
 import java.util.stream.Stream;

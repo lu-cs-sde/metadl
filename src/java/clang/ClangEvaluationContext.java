@@ -87,17 +87,26 @@ public class ClangEvaluationContext extends EvaluationContext {
   public static Control genCodeExternalLiteral(ExternalLiteral l, Map<String, Integer> varToIdMap,
                                                ClangEvaluationContext clangCtx, Control cont) {
 
-    List<List<MatcherInfo>> matcherIds = clangCtx.registerExternalLiteral(l, varToIdMap);
-    java.util.List<Control> seq = new ArrayList<>();
-    for (java.util.List<MatcherInfo> andMatchers : matcherIds) {
-      Control next = cont;
-      for (MatcherInfo m : andMatchers) {
-        next = new ExternalForAll(clangCtx, m, next);
-      }
-      seq.add(next);
-    }
+    ExternalLiteralPayload payload = (ExternalLiteralPayload) l.getExternalPayload();
 
-    return Control.sequence(seq);
+    switch (payload.kind) {
+    case PATTERN: {
+      List<List<MatcherInfo>> matcherIds = clangCtx.registerExternalLiteral(l, varToIdMap);
+      java.util.List<Control> seq = new ArrayList<>();
+      for (java.util.List<MatcherInfo> andMatchers : matcherIds) {
+        Control next = cont;
+        for (MatcherInfo m : andMatchers) {
+          next = new ExternalMatcher(clangCtx, m, next);
+        }
+        seq.add(next);
+      }
+
+      return Control.sequence(seq);
+    }
+    default:
+    case PARENT:
+      return Control.nop();
+    }
   }
 
   private List<List<MatcherInfo>> registerExternalLiteral(ExternalLiteral l, Map<String, Integer> varToIdMap) {
@@ -268,6 +277,10 @@ public class ClangEvaluationContext extends EvaluationContext {
       return makeBinaryOperation(name, args.get(0), args.get(1),
                                  (n0, n1) -> clog.isAncestor(n0, n1) ? 1 : 0);
 
+    case "c_parent":
+      return makeUnaryOperation(name, args.get(0),
+                                nid -> clog.parent(nid));
+
     default:
       throw new RuntimeException("Unknown external operation '" + name + "'.");
     }
@@ -289,20 +302,27 @@ public class ClangEvaluationContext extends EvaluationContext {
     return matches;
   }
 
-  public enum ExternalLiteralKind {
-    PATTERN
-  }
 
   public static class ExternalLiteralPayload {
+    public static enum Kind {
+      PATTERN,
+      PARENT
+    }
     List<ObjLangASTNode> patterns;
     Optional<String> rootVariable;
-    ExternalLiteralKind kind;
+    Kind kind;
 
     public static ExternalLiteralPayload pattern(List<ObjLangASTNode> patterns, Optional<String> rootVariable) {
       var ret =  new ExternalLiteralPayload();
-      ret.kind = ExternalLiteralKind.PATTERN;
+      ret.kind = Kind.PATTERN;
       ret.patterns = patterns;
       ret.rootVariable = rootVariable;
+      return ret;
+    }
+
+    public static ExternalLiteralPayload parent() {
+      var ret = new ExternalLiteralPayload();
+      ret.kind = Kind.PARENT;
       return ret;
     }
   }

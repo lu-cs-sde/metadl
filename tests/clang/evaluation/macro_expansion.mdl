@@ -1,7 +1,17 @@
 
-AddLoc(l, c, file) :- add <: $x + $y :>, SRC(add, l, c, _, _, file).
-DivLoc(l, c, file) :- div <: $x / $y :>, SRC(div, l, c, _, _, file).
-PrintfLoc(l, c, file) :- call <: printf(..) :>, SRC(call, l, c, _, _, file).
+AddLoc(l, c, file) :- add <: $x + $y :>,
+	  l = c_src_line_start(add),
+	  c = c_src_col_start(add),
+	  file = io_relative_path(c_src_file(add)).
+DivLoc(l, c, file) :- div <: $x / $y :>,
+	  l = c_src_line_start(div),
+	  c = c_src_col_start(div),
+	  file = io_relative_path(c_src_file(div)).
+
+PrintfLoc(l, c, file) :- call <: printf(..) :>,
+	  l = c_src_line_start(call),
+	  c = c_src_col_start(call),
+	  file = io_relative_path(c_src_file(call)).
 
 OUTPUT('PrintfLoc, "PrintfLoc.csv", "csv").
 OUTPUT('AddLoc, "AddLoc.csv", "csv").

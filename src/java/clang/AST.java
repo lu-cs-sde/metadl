@@ -311,6 +311,12 @@ public class AST {
     @Override public void accept(ASTVisitor v) {
       v.visit(this);
     }
+
+    public static BinaryOperator build(String op, Expr left, Expr right) {
+      BinaryOperator b = new BinaryOperator().setChildren(left, right);
+      b.opcode = op;
+      return b;
+    }
   }
 
   public static class CompoundAssignOperator extends BinaryOperator {

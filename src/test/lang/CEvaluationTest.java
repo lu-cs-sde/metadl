@@ -78,6 +78,10 @@ public class CEvaluationTest {
     runTest("loop_depth");
   }
 
+  @Test void macro_expansion() {
+    runTest("macro_expansion");
+  }
+
   @DisplayName("Evaluate MetaDL-C programs with the parallel internal evaluator")
   @ParameterizedTest
   @MethodSource("metadlCTests")

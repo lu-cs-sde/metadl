@@ -22,4 +22,20 @@ aspect CExpr {
     }
     return AST.CallExpr.build(getCallee().asClangExpr(), args);
   }
+
+
+  syn String BinaryExpression.clangOperator() {
+    // TODO: add more operators
+    throw new RuntimeException(Thread.currentThread().getStackTrace()[1] + " not implemented.");
+  }
+  eq AddExpression.clangOperator() = "+";
+  eq MulExpression.clangOperator() = "*";
+  eq DivExpression.clangOperator() = "/";
+  eq ModExpression.clangOperator() = "%";
+  eq SubExpression.clangOperator() = "-";
+
+
+  eq BinaryExpression.asClangExpr() {
+    return AST.BinaryOperator.build(clangOperator(), getLeft().asClangExpr(), getRight().asClangExpr());
+  }
 }

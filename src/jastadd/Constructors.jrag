@@ -39,6 +39,15 @@ aspect Constructors {
 		this(new Opt(), s, v);
 	}
 
+  public static Literal Literal.build(PredicateSymbol p, List<Term> ts) {
+    switch (p.getPRED_ID()) {
+    case "CFG_SUCC":
+      return new ExternalLiteral(p, ts, ClangEvaluationContext.ExternalLiteralPayload.cfgSucc());
+    default:
+      return new Literal(p, ts);
+    }
+  }
+
 	public class Constructors {
 		public static lang.ast.Literal literal(String pred, Object ...args) {
 			lang.ast.List<lang.ast.Term> terms = new lang.ast.List<>();

@@ -166,4 +166,16 @@ public class ClangClog {
     return clogJNI.ClangClog_name(swigCPtr, this, NodeId);
   }
 
+  public long cfg(long NodeId) {
+    return clogJNI.ClangClog_cfg(swigCPtr, this, NodeId);
+  }
+
+  public VectorLong cfgSucc(long NodeId) {
+    return new VectorLong(clogJNI.ClangClog_cfgSucc(swigCPtr, this, NodeId), true);
+  }
+
+  public VectorLong cfgPred(long Cfg, long NodeId) {
+    return new VectorLong(clogJNI.ClangClog_cfgPred(swigCPtr, this, Cfg, NodeId), true);
+  }
+
 }

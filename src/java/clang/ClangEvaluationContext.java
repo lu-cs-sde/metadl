@@ -22,6 +22,7 @@ import eval.EvaluationContext;
 import eval.Operation;
 import eval.Tuple;
 import lang.ast.ExternalLiteral;
+import lang.ast.Variable;
 import lang.cons.ObjLangASTNode;
 
 
@@ -102,6 +103,31 @@ public class ClangEvaluationContext extends EvaluationContext {
       }
 
       return Control.sequence(seq);
+    }
+    case CFG_SUCC: {
+      Variable nVar = (Variable) l.getTerms(0);
+      Variable sVar = (Variable) l.getTerms(1);
+
+      int nVarIdx = varToIdMap.get(nVar.getVAR_ID());
+      int sVarIdx = varToIdMap.get(sVar.getVAR_ID());
+
+      return new Control() {
+        @Override public void eval(Tuple t) {
+          long nid = t.get(nVarIdx);
+
+          for (long res : clangCtx.clog.cfgSucc(nid)) {
+            t.set(sVarIdx, res);
+            cont.eval(t);
+          }
+        }
+
+        @Override public String prettyPrint(int indent) {
+          String s = Control.Util.indent(indent)
+            + String.format("EXTERNAL FOR t IN %s WHERE ", payload.kind.name())
+            + "\n" + cont.prettyPrint(indent + 1);
+          return s;
+        }
+      };
     }
     default:
     case PARENT:
@@ -281,6 +307,9 @@ public class ClangEvaluationContext extends EvaluationContext {
       return makeUnaryOperation(name, args.get(0),
                                 nid -> clog.parent(nid));
 
+    case "c_cfg":
+      return makeUnaryOperation(name, args.get(0), nid -> clog.cfg(nid));
+
     default:
       throw new RuntimeException("Unknown external operation '" + name + "'.");
     }
@@ -306,7 +335,9 @@ public class ClangEvaluationContext extends EvaluationContext {
   public static class ExternalLiteralPayload {
     public static enum Kind {
       PATTERN,
-      PARENT
+      PARENT,
+      CFG_SUCC,
+      CFG_PRED
     }
     List<ObjLangASTNode> patterns;
     Optional<String> rootVariable;
@@ -325,5 +356,12 @@ public class ClangEvaluationContext extends EvaluationContext {
       ret.kind = Kind.PARENT;
       return ret;
     }
+
+    public static ExternalLiteralPayload cfgSucc() {
+      var ret = new ExternalLiteralPayload();
+      ret.kind = Kind.CFG_SUCC;
+      return ret;
+    }
+
   }
 }

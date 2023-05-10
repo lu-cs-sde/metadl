@@ -64,7 +64,7 @@ GTELiteral gte_literal = GTE LPARA expr.left COMMA expr.right RPARA {: return ne
 MATCHLiteral match_literal = MATCH LPARA expr.left COMMA expr.right RPARA {: return new MATCHLiteral(left, right); :};
 ANCESTORLiteral ancestor_literal = ANCESTOR LPARA expr.left COMMA expr.right RPARA {: return new ANCESTORLiteral(left, right); :}
 
-Literal literal = pred_sym.pred LPARA term_list.terms RPARA                      {: return new Literal(pred, terms); :};
+Literal literal = pred_sym.pred LPARA term_list.terms RPARA {: return Literal.build(pred, terms); :};
 
 List lit_list = common_literal.lit {: return new List().add(lit); :}
               | lit_list.list COMMA common_literal.c {: return list.add(c); :}

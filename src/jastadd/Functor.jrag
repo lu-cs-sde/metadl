@@ -47,7 +47,9 @@ aspect Functor {
 
     c_is_ancestor(IntegerType.get(), ASTNodeType.get(), ASTNodeType.get()),
     c_is_parent(IntegerType.get(), ASTNodeType.get(), ASTNodeType.get()),
-    c_parent(ASTNodeType.get(), ASTNodeType.get());
+    c_parent(ASTNodeType.get(), ASTNodeType.get()),
+
+    c_cfg(ASTNodeType.get(), ASTNodeType.get());
 
     private final Type ret;
     private final Type[] args;

@@ -52,6 +52,12 @@ public class ASTMatcherGen implements ASTVisitor {
       b.add(match("hasType", lookup(n.explicitType)));
     }
 
+    if (n.getInit() == null) {
+      b.add(unless(match("hasInitializer", anything())));
+    } else {
+      b.add(match("hasInitializer", lookup(n.getInit())));
+    }
+
     buildBindings(n, b);
 
     matcherMap.put(n, b);

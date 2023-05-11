@@ -1,0 +1,4 @@
+tests/clang/evaluation/src/uninitialized_variable/uninit.c,3,3
+tests/clang/evaluation/src/uninitialized_variable/uninit.c,8,8
+tests/clang/evaluation/src/uninitialized_variable/uninit.c,24,24
+tests/clang/evaluation/src/uninitialized_variable/uninit.c,29,29

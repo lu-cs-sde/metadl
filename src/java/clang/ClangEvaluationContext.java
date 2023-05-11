@@ -145,7 +145,7 @@ public class ClangEvaluationContext extends EvaluationContext {
     ExternalLiteralPayload payload = (ExternalLiteralPayload) l.getExternalPayload();
     List<ObjLangASTNode> ASTs = payload.patterns;
 
-    for (ObjLangASTNode Node : ASTs) {
+    L: for (ObjLangASTNode Node : ASTs) {
       lang.c.pat.ast.ASTNode cNode = (lang.c.pat.ast.ASTNode) Node;
       Node.debugPrint(System.out);
 
@@ -166,6 +166,12 @@ public class ClangEvaluationContext extends EvaluationContext {
           // ASSUME: if the pattern has a root variable, attach it to last
           // matcher in the list (convention)
           // TODO: decide if root variables are needed at all in Clog
+          if (payload.rootVariable.isPresent() &&
+              mb.hasBinding()) {
+            System.err.println("Skipping interpretation of pattern " +
+                               mb.generate() + " due to double binding of root variable.");
+            continue L;
+          }
           payload.rootVariable.ifPresent(s -> mb.bind(s));
         }
 
@@ -309,6 +315,9 @@ public class ClangEvaluationContext extends EvaluationContext {
 
     case "c_cfg":
       return makeUnaryOperation(name, args.get(0), nid -> clog.cfg(nid));
+
+    case "c_dump":
+      return makeUnaryOperation(name, args.get(0), nid -> internalizeString(clog.dump(nid)));
 
     default:
       throw new RuntimeException("Unknown external operation '" + name + "'.");

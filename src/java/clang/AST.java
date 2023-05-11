@@ -903,6 +903,12 @@ public class AST {
       return null;
     }
 
+    public VarDecl setInit(Expr init) {
+      this.init = "c";
+      setChildren(init);
+      return this;
+    }
+
     public void accept(ASTVisitor v) {
       v.visit(this);
     }

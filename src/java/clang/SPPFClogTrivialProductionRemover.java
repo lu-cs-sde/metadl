@@ -13,6 +13,8 @@ public class SPPFClogTrivialProductionRemover extends SPPFTrivialProductionRemov
   @Override public boolean isBubleUpChild(Category p, Category c) {
     if (p.getName().equals("declarator"))
       return false;
+    if (p.getName().equals("initializer"))
+      return false;
     if (p.getName().equals("typedef_name"))
       return false;
     if (c.getName().equals("METAVARID"))

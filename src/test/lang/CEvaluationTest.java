@@ -82,6 +82,10 @@ public class CEvaluationTest {
     runTest("macro_expansion");
   }
 
+  @Test void uninitialized_variable() {
+    runTest("uninitialized_variable");
+  }
+
   @DisplayName("Evaluate MetaDL-C programs with the parallel internal evaluator")
   @ParameterizedTest
   @MethodSource("metadlCTests")

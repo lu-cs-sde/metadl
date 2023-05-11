@@ -1,0 +1,21 @@
+# All declared variables without an initializer
+VarDeclNoInit(d, $x) :- d <: $t .. , $x, ..; :>, debug = c_cfg(d).
+VarDeclInit(d, $x) :- d <: $t .. , $x = $e, ..; :>, debug = c_cfg(d).
+
+# All uses of a variable where the variable is not assigned
+VarUse($u, d) :- <: $u :>, d = c_decl($u), node_to_id(d) != 0, VarDeclNoInit(_, d), NOT(VarAssign(_, _, $u)).
+
+# All assignments of a variable
+VarAssign(s, d, $u) :- s <: $u = $_ :> , d = c_decl($u), node_to_id(d) != 0.
+
+# CFG successor of a variable that does not assign the variable. The chain ends
+# at the first assignment
+VarDeclSucc(v, s) :- VarDeclNoInit(s, v).
+VarDeclSucc(v, succ), W(s, succ) :- VarDeclSucc(v, s), CFG_SUCC(s, succ), NOT(VarAssign(succ, v, _)).
+
+#
+VarUseNoAssign(u) :- VarUse(u, v), VarDeclSucc(v, u).
+
+UninitializedUse(f, l, c) :- VarUseNoAssign(v), f = io_relative_path(c_src_file(v)), l = c_src_line_start(v), c = c_src_line_end(v).
+
+OUTPUT('UninitializedUse, "UninitializedUse.csv", "csv").

@@ -53,6 +53,10 @@ public class MatcherBuilder implements AbstractMatcherBuilder {
     return this;
   }
 
+  public boolean hasBinding() {
+    return this.metavar != null;
+  }
+
   @Override public String generate() {
     String s = name + "(";
     boolean firstElem = true;

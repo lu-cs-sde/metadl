@@ -95,31 +95,31 @@ public class MatcherTest {
   @Test public void test5() {
     List<String> res = genMatchers("int x;", PatLangParserSEP.n_declaration);
     assertEquals(1, res.size());
-    assertEquals("varDecl(hasName(\"x\"), hasType(qualType(isInteger())))",  res.get(0));
+    assertEquals("varDecl(hasName(\"x\"), hasType(qualType(isInteger())), unless(hasInitializer(anything())))",  res.get(0));
   }
 
   @Test public void test6() {
     List<String> res = genMatchers("int *x;", PatLangParserSEP.n_declaration);
     assertEquals(1, res.size());
-    assertEquals("varDecl(hasName(\"x\"), hasType(qualType(pointsTo(qualType(isInteger())))))", res.get(0));
+    assertEquals("varDecl(hasName(\"x\"), hasType(qualType(pointsTo(qualType(isInteger())))), unless(hasInitializer(anything())))", res.get(0));
   }
 
   @Test public void test7() {
     List<String> res = genMatchers("int x[];", PatLangParserSEP.n_declaration);
     assertEquals(1, res.size());
-    assertEquals("varDecl(hasName(\"x\"), hasType(arrayType(hasElementType(qualType(isInteger())))))", res.get(0));
+    assertEquals("varDecl(hasName(\"x\"), hasType(arrayType(hasElementType(qualType(isInteger())))), unless(hasInitializer(anything())))", res.get(0));
   }
 
   @Test public void test8() {
     List<String> res = genMatchers("int *$v[10][20];", PatLangParserSEP.n_declaration);
     assertEquals(1, res.size());
-    assertEquals("varDecl(hasType(arrayType(hasElementType(arrayType(hasElementType(qualType(pointsTo(qualType(isInteger()))))))))).bind(\"$v\")", res.get(0));
+    assertEquals("varDecl(hasType(arrayType(hasElementType(arrayType(hasElementType(qualType(pointsTo(qualType(isInteger())))))))), unless(hasInitializer(anything()))).bind(\"$v\")", res.get(0));
   }
 
   @Test public void test9() {
     List<String> res = genMatchers("int (*$a[10])(int);", PatLangParserSEP.n_declaration);
     assertEquals(1, res.size());
-    assertEquals("varDecl(hasType(arrayType(hasElementType(qualType(pointsTo(ignoringParens(functionProtoType(parameterCountIs(1), hasParameterType(0, qualType(isInteger())), hasReturnType(qualType(isInteger())))))))))).bind(\"$a\")", res.get(0));
+    assertEquals("varDecl(hasType(arrayType(hasElementType(qualType(pointsTo(ignoringParens(functionProtoType(parameterCountIs(1), hasParameterType(0, qualType(isInteger())), hasReturnType(qualType(isInteger()))))))))), unless(hasInitializer(anything()))).bind(\"$a\")", res.get(0));
   }
 
   @Test public void test10() {
@@ -148,7 +148,7 @@ public class MatcherTest {
     List<String> res = genMatchers("struct S { int x; } s;", PatLangParserSEP.n_declaration);
     assertEquals(2, res.size());
     assertEquals("recordDecl(hasName(\"S\"), isStruct(), fieldDistinct(fieldDecl(hasName(\"x\"), hasType(qualType(isInteger())))))", res.get(0));
-    assertEquals("varDecl(hasName(\"s\"), hasType(recordDecl(hasName(\"S\"), isStruct())))", res.get(1));
+    assertEquals("varDecl(hasName(\"s\"), hasType(recordDecl(hasName(\"S\"), isStruct())), unless(hasInitializer(anything())))", res.get(1));
   }
 
   @Test public void test14() {
@@ -156,7 +156,7 @@ public class MatcherTest {
     assertEquals(2, res.size());
     assertEquals("recordDecl(isStruct(), fieldDistinct(fieldDecl(hasName(\"x\"), hasType(qualType(isInteger()))))).bind(\"$s\")",
                  res.get(0));
-    assertEquals("varDecl(hasName(\"s\"), hasType(recordDecl(isStruct()).bind(\"$s\")))",
+    assertEquals("varDecl(hasName(\"s\"), hasType(recordDecl(isStruct()).bind(\"$s\")), unless(hasInitializer(anything())))",
                  res.get(1));
   }
 

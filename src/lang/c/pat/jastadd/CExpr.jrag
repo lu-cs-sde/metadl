@@ -23,6 +23,11 @@ aspect CExpr {
     return AST.CallExpr.build(getCallee().asClangExpr(), args);
   }
 
+  eq ConstantExpression.asClangExpr() {
+    // TODO: proper matching for constants
+    return AST.Expr.build();
+  }
+
 
   syn String BinaryExpression.clangOperator() {
     // TODO: add more operators
@@ -33,9 +38,15 @@ aspect CExpr {
   eq DivExpression.clangOperator() = "/";
   eq ModExpression.clangOperator() = "%";
   eq SubExpression.clangOperator() = "-";
-
+  eq AssignmentExpression.clangOperator() = "=";
 
   eq BinaryExpression.asClangExpr() {
     return AST.BinaryOperator.build(clangOperator(), getLeft().asClangExpr(), getRight().asClangExpr());
   }
+
+  syn AST.Expr Initializer.asClangExpr() {
+    throw new RuntimeException(Thread.currentThread().getStackTrace()[1] + " not implemented.");
+  }
+
+  eq InitializerExpression.asClangExpr() = getExpression().asClangExpr();
 }

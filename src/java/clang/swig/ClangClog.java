@@ -178,4 +178,8 @@ public class ClangClog {
     return new VectorLong(clogJNI.ClangClog_cfgPred(swigCPtr, this, Cfg, NodeId), true);
   }
 
+  public String dump(long NodeId) {
+    return clogJNI.ClangClog_dump(swigCPtr, this, NodeId);
+  }
+
 }

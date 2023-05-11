@@ -91,13 +91,21 @@ aspect CDecl {
     }
 
     for (InitDeclarator initDecl : getInitDeclarators()) {
-      ret.add(initDecl.asClangDecl(innerType));
+      // if this does not have a parent, interpret it as a global declaration
+      if (!(getParent() == null && initDecl.isGap()))
+        ret.add(initDecl.asClangDecl(innerType));
     }
 
     return ret;
   }
 
-  syn AST.Decl InitDeclarator.asClangDecl(AST.Type innerType) = getDeclarator().asClangDecl(innerType);
+  syn AST.Decl InitDeclarator.asClangDecl(AST.Type innerType) {
+    AST.Decl d = getDeclarator().asClangDecl(innerType);
+    if (hasInitializer()) {
+      ((AST.VarDecl) d).setInit(getInitializer().asClangExpr());
+    }
+    return d;
+  }
   eq GapInitDeclarator.asClangDecl(AST.Type innerType) = AST.Decl.build().gap();
 
   syn AST.Decl Declarator.asClangDecl(AST.Type innerType) {

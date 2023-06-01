@@ -111,6 +111,9 @@ public class ASTMatcherGen implements ASTVisitor {
       case INT:
         b.add(match("isInteger"));
         break;
+      case VOID:
+        b.add(match("isVoid"));
+        break;
       default:
         throw new MatcherException("Unsupported builtin type " + kind + ".");
       }
@@ -180,6 +183,14 @@ public class ASTMatcherGen implements ASTVisitor {
 
     buildBindings(p, b);
 
+    matcherMap.put(p, match("ignoringParens", b));
+  }
+
+  @Override
+  public void visit(AST.FunctionNoProtoType p) {
+    MatcherBuilder b = match("functionNoProtoType");
+    b.add(match("hasReturnType", lookup(p.getReturnType())));
+    buildBindings(p, b);
     matcherMap.put(p, match("ignoringParens", b));
   }
 
@@ -517,4 +528,5 @@ public class ASTMatcherGen implements ASTVisitor {
     buildBindings(op, b);
     matcherMap.put(op, b);
   }
+
 }

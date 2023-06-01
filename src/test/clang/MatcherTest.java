@@ -44,51 +44,16 @@ public class MatcherTest {
   public static <T extends ASTNode> List<String> genMatchers(String s, Category c) {
     List<String> matchers = new ArrayList<>();
     List<T> res = TypeTest.parse(s, c);
-    for (T internalNode : res) {
-      Iterable<? extends AST.Node> clangNodes;
-      if (internalNode instanceof Declaration) {
-        clangNodes = ((Declaration) internalNode).clangDecls();
-      } else if (internalNode instanceof Statement) {
-        clangNodes = List.of(((Statement) internalNode).asClangStmt());
-      } else {
-        assertTrue(internalNode instanceof Expression);
-        clangNodes = List.of(((Expression) internalNode).asClangExpr());
-      }
 
-      for (AST.Node clangDecl : clangNodes) {
-        ASTMatcherGen gen = new ASTMatcherGen();
-        clangDecl.acceptPO(gen);
-        String pat = gen.lookup(clangDecl).generate();
-        matchers.add(pat);
-        System.err.println(pat);
+    for (T t : res) {
+      List<MatcherBuilder> mbs = ClangEvaluationContext.genMatcherBuilder(t);
+      for (MatcherBuilder mb : mbs) {
+        String m = mb.generate();
+        System.err.println(m);
+        matchers.add(m);
       }
     }
 
-    return matchers;
-  }
-
-  public static <T extends ASTNode> List<MatcherBuilder> genMatcherBuilders(String s, Category c) {
-    List<MatcherBuilder> matchers = new ArrayList<>();
-    List<T> res = TypeTest.parse(s, c);
-    for (T internalNode : res) {
-      Iterable<? extends AST.Node> clangNodes;
-      if (internalNode instanceof Declaration) {
-        clangNodes = ((Declaration) internalNode).clangDecls();
-      } else if (internalNode instanceof Statement) {
-        clangNodes = List.of(((Statement) internalNode).asClangStmt());
-      } else if (internalNode instanceof FunctionDefinition) {
-        clangNodes = List.of(((FunctionDefinition) internalNode).asClangDecl());
-      } else {
-        assertTrue(internalNode instanceof Expression);
-        clangNodes = List.of(((Expression) internalNode).asClangExpr());
-      }
-
-      for (AST.Node clangDecl : clangNodes) {
-        ASTMatcherGen gen = new ASTMatcherGen();
-        clangDecl.acceptPO(gen);
-        matchers.add(gen.lookup(clangDecl));
-      }
-    }
     return matchers;
   }
 
@@ -162,5 +127,23 @@ public class MatcherTest {
 
   @Test public void test15() {
     List<String> res = genMatchers("$f($a, ..)", PatLangParserSEP.n_expression);
+    assertEquals(1, res.size());
+    assertEquals("callExpr(callee(expr().bind(\"$f\")), argumentDistinct(expr().bind(\"$a\")))",
+        res.get(0));
+  }
+
+  @Test public void test16() {
+    List<String> res = genMatchers("void f() {..}", PatLangParserSEP.n_function_definition);
+    assertEquals(1, res.size());
+    assertEquals(
+        "functionDecl(parameterCountIs(0), hasType(ignoringParens(functionNoProtoType(hasReturnType(qualType(isVoid()))))), hasBody(compoundStmt(subStatementDistinct())))",
+        res.get(0));
+  }
+
+  @Test public void test17() {
+    List<String> res = genMatchers("void f(void) {..}", PatLangParserSEP.n_function_definition);
+    assertEquals(1, res.size());
+    assertEquals("functionDecl(parameterCountIs(0), hasType(ignoringParens(functionProtoType(parameterCountIs(0), hasReturnType(qualType(isVoid()))))), hasBody(compoundStmt(subStatementDistinct())))",
+        res.get(0));
   }
 }

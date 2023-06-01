@@ -125,14 +125,22 @@ aspect CDecl {
 
   eq FunctionDeclarator.asClangDecl(AST.Type innerType) {
     AST.Type type = this.asType(innerType);
-    if (type instanceof AST.FunctionProtoType) {
+    if (type instanceof AST.FunctionProtoType ||
+        type instanceof AST.FunctionNoProtoType) {
       java.util.List<AST.ParmVarDecl> params = new ArrayList<>();
       boolean isVarArg = false;
-      for (ParameterType pt : getParameterTypes()) {
-        if (pt instanceof ParameterVarArgType)
-          isVarArg = true;
-        else
-          params.add(pt.asClangDecl());
+
+      if (type instanceof AST.FunctionProtoType) {
+        if (((AST.FunctionProtoType) type).getNumParamType() != 0) {
+          // handle the f(void) case, when the syntactic number of
+          // parameters is 1, but the semantic number is 0.
+          for (ParameterType pt : getParameterTypes()) {
+            if (pt instanceof ParameterVarArgType)
+              isVarArg = true;
+            else
+              params.add(pt.asClangDecl());
+          }
+        }
       }
 
       Declarator innermost = this.innermostDeclarator();
@@ -217,15 +225,28 @@ aspect CDecl {
   }
 
   eq FunctionDeclarator.asType(AST.Type innerType) {
-    java.util.List<AST.Type> paramTypes = new ArrayList<>();
-    boolean isVarArg = false;
-    for (ParameterType pDecl : getParameterTypes()) {
-      if (pDecl instanceof ParameterVarArgType)
-        isVarArg = true;
-      else
-        paramTypes.add(pDecl.asType());
+    if (getNumParameterType() == 0) {
+      return getDeclarator().asType(AST.FunctionNoProtoType.build(innerType));
+    } else {
+      java.util.List<AST.Type> paramTypes = new ArrayList<>();
+      boolean isVarArg = false;
+
+      for (ParameterType pDecl : getParameterTypes()) {
+        if (pDecl instanceof ParameterVarArgType)
+          isVarArg = true;
+        else
+          paramTypes.add(pDecl.asType());
+      }
+
+      if (paramTypes.size() == 1 &&
+          paramTypes.get(0) instanceof AST.BuiltinType &&
+          ((AST.BuiltinType) paramTypes.get(0)).isVoid()) {
+        // int foo(void) is the notation for a function with 0 parameters
+        paramTypes = Collections.emptyList();
+      }
+
+      return getDeclarator().asType(AST.FunctionProtoType.build(innerType , paramTypes, isVarArg));
     }
-    return getDeclarator().asType(AST.FunctionProtoType.build(innerType , paramTypes, isVarArg));
   }
 
 
@@ -278,6 +299,13 @@ aspect CDecl {
       else
         paramTypes.add(pDecl.asType());
     }
+
+    if (paramTypes.size() == 1 &&
+        paramTypes.get(0) instanceof AST.BuiltinType &&
+        ((AST.BuiltinType) paramTypes.get(0)).isVoid()) {
+      paramTypes = Collections.emptyList();
+    }
+
     AST.Type t = AST.FunctionProtoType.build(innerType, paramTypes, isVarArg);
     if (hasAbstractDeclarator()) {
       return getAbstractDeclarator().asType(t);

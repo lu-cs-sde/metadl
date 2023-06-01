@@ -43,6 +43,7 @@ public interface ASTVisitor {
 	default void visit(PointerType t){ visit((Node) t); }
 	default void visit(ParenType t){ visit((Node) t); }
 	default void visit(FunctionProtoType t){ visit((Node) t); }
+  default void visit(FunctionNoProtoType t){ visit((Node) t); }
 	default void visit(BuiltinType t){ visit((Node) t); }
 	default void visit(ArrayType t){ visit((Node) t); }
   default void visit(RecordRefType t){ visit((Node) t); }

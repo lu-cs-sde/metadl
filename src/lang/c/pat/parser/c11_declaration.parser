@@ -263,7 +263,7 @@ Declarator direct_declarator = identifier_declarator
 			     | function_declarator
 			     ;
 
-FunctionDeclarator function_declarator = direct_declarator LPAREN parameter_type_list RPAREN {: return new FunctionDeclarator(direct_declarator, parameter_type_list); :}
+FunctionDeclarator function_declarator = direct_declarator LPAREN parameter_type_list_opt RPAREN {: return new FunctionDeclarator(direct_declarator, parameter_type_list_opt); :}
                                        ;
 
 IdentifierDeclarator identifier_declarator = identifier {: return new IdentifierDeclarator(identifier); :}
@@ -287,6 +287,10 @@ List type_qualifier_list = type_qualifier {: return new List().add(type_qualifie
 // (6.7.6) parameter-type-list:
 // parameter-list
 // parameter-list , ...
+List parameter_type_list_opt = /* empty */ {: return new List(); :}
+                             | parameter_type_list
+			     ;
+
 List parameter_type_list = parameter_list COMMA ELLIPSIS {: return parameter_list.add(new ParameterVarArgType()); :}
      			 | parameter_list {: return parameter_list; :}
 			 ;
@@ -337,7 +341,7 @@ AbstractDeclarator direct_abstract_declarator = LPAREN abstract_declarator RPARE
 			     		      | direct_abstract_declarator? LBRACK STATIC type_qualifier_list_opt assignment_expression? RBRACK {: return new AbstractArrayDeclarator(direct_abstract_declarator, type_qualifier_list_opt, assignment_expression, new Opt(new Static())); :}
 					      | direct_abstract_declarator? LBRACK type_qualifier_list STATIC assignment_expression? RBRACK {: return new AbstractArrayDeclarator(direct_abstract_declarator, type_qualifier_list, assignment_expression, new Opt(new Static())); :}
 			     		      | direct_abstract_declarator? LRBRACK type_qualifier_list_opt STAR RBRACK {: return new AbstractArrayDeclaratorVLA(direct_abstract_declarator, type_qualifier_list_opt); :}
-					      | direct_abstract_declarator? LPAREN parameter_type_list RPAREN {: return new AbstractFunctionDeclarator(direct_abstract_declarator, parameter_type_list); :}
+					      | direct_abstract_declarator? LPAREN parameter_type_list_opt RPAREN {: return new AbstractFunctionDeclarator(direct_abstract_declarator, parameter_type_list_opt); :}
 			     		      ;
 
 

@@ -1253,6 +1253,22 @@ public class AST {
     }
   }
 
+  public static class FunctionNoProtoType extends Type {
+    // Represent K&R style definitions
+    // int f();
+    public void accept(ASTVisitor v) {
+      v.visit(this);
+    }
+
+    public static FunctionNoProtoType build(Type retType) {
+      return new FunctionNoProtoType().setChildren(retType);
+    }
+
+    public Type getReturnType() {
+      return getChild(0);
+    }
+  }
+
   public static class GapType extends Type {
     public String printAsType() {
       return "..";
@@ -1368,6 +1384,10 @@ public class AST {
 
     @Override public void accept(ASTVisitor v) {
       v.visit(this);
+    }
+
+    public boolean isVoid() {
+      return kinds.contains(BuiltinTypeKind.VOID);
     }
 
     @Override public String extraInfo() {

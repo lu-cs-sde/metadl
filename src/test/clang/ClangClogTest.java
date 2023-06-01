@@ -21,6 +21,7 @@ import clang.swig.ClangClogBuilder;
 import clang.swig.VectorLong;
 import clang.swig.VectorString;
 import clang.swig.VectorVectorLong;
+import lang.c.pat.ast.ASTNode;
 import lang.c.pat.ast.PatLangParserSEP;
 import se.lth.sep.Category;
 
@@ -48,9 +49,18 @@ public class ClangClogTest {
     return clog;
   }
 
+  private static <T extends ASTNode> List<MatcherBuilder> genMatcherBuilders(String s, Category c) {
+    List<MatcherBuilder> matchers = new ArrayList<>();
+    List<T> res = TypeTest.parse(s, c);
+    for (T internalNode : res) {
+      matchers.addAll(ClangEvaluationContext.genMatcherBuilder(internalNode));
+    }
+    return matchers;
+  }
+
   private static List<Map<String, ClangClog.Loc>> matchPatternOnFile(String pat, Category c, String srcFile) {
     ClangClog clog = newClog(srcFile);
-    List<MatcherBuilder> matchers = MatcherTest.genMatcherBuilders(pat, c);
+    List<MatcherBuilder> matchers = genMatcherBuilders(pat, c);
     assertTrue(!matchers.isEmpty());
     MatcherBuilder first = matchers.iterator().next();
     SortedSet<String> metavars = first.bindings();
@@ -136,6 +146,10 @@ public class ClangClogTest {
       assertEquals(startLine, loc.getStartLine());
       assertEquals(endLine, loc.getEndLine());
       return this;
+    }
+
+    public Checker check(String metavar, long line) {
+      return check(metavar, line, line);
     }
 
     public Checker check(String metavar,
@@ -525,4 +539,51 @@ public class ClangClogTest {
       .end();
   }
 
+  @Test
+  public void testKRDef1() {
+    List<Map<String, ClangClog.Loc>> results = matchPatternOnFile("void $f() {..}", PatLangParserSEP.n_function_definition,
+        "tests/clang/clog/src/kr.c");
+    dumpResults(results);
+    dumpResults(results);
+    Checker.begin(results)
+      .check("$f", 5)
+      .end();
+
+  }
+
+
+  @Test
+  public void testKRDef2() {
+    List<Map<String, ClangClog.Loc>> results = matchPatternOnFile("void $f(void) {..}",
+        PatLangParserSEP.n_function_definition,
+        "tests/clang/clog/src/kr.c");
+    dumpResults(results);
+    Checker.begin(results)
+      .check("$f", 7)
+      .end();
+  }
+
+  @Test
+  public void testKRDecl1() {
+    List<Map<String, ClangClog.Loc>> results = matchPatternOnFile(
+        "void $f();", PatLangParserSEP.n_declaration,
+        "tests/clang/clog/src/kr.c");
+    dumpResults(results);
+    Checker.begin(results)
+        .check("$f", 1)
+        .end();
+  }
+
+
+  @Test
+  public void testKRDecl2() {
+    List<Map<String, ClangClog.Loc>> results = matchPatternOnFile(
+        "void $f(void);", PatLangParserSEP.n_declaration,
+        "tests/clang/clog/src/kr.c");
+    dumpResults(results);
+    Checker.begin(results)
+        .check("$f", 2)
+        .end();
+
+  }
 }

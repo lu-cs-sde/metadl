@@ -43,7 +43,7 @@ public class ClangEvaluationContext extends EvaluationContext {
     }
   }
 
-  public List<MatcherBuilder> genMatcherBuilder(lang.c.pat.ast.ASTNode internalNode) {
+  public static List<MatcherBuilder> genMatcherBuilder(lang.c.pat.ast.ASTNode internalNode) {
     Iterable<? extends AST.Node> clangNodes;
 
     if (internalNode instanceof lang.c.pat.ast.Declaration) {

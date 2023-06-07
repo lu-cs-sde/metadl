@@ -47,4 +47,15 @@ public class CPatternTest {
   public void test3() {
     testAST("struct S { int x; } s;", lang.c.pat.ast.PatLangParserSEP.n_declaration);
   }
+
+  @Test
+  public void test4() {
+    testAST("{ $s .. }", lang.c.pat.ast.PatLangParserSEP.n_statement);
+  }
+
+  @Test
+  public void test5() {
+    testAST("$t $f(..) { $s .. }", lang.c.pat.ast.PatLangParserSEP.n_function_definition);
+  }
+
 }

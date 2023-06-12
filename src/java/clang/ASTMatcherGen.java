@@ -529,4 +529,26 @@ public class ASTMatcherGen implements ASTVisitor {
     matcherMap.put(op, b);
   }
 
+  @Override public void visit(AST.UnaryOperator op) {
+    MatcherBuilder b = match("unaryOperator", match("hasOperatorName", cst(op.opcode)));
+    b.add(match("hasUnaryOperand", lookup(op.getOperand())));
+    buildBindings(op, b);
+    matcherMap.put(op, b);
+  }
+
+  @Override public void visit(AST.ArraySubscriptExpr op) {
+    MatcherBuilder b = match("arraySubscriptExpr",
+                             match("hasLHS", lookup(op.getLHS())),
+                             match("hasRHS", lookup(op.getRHS())));
+    buildBindings(op, b);
+    matcherMap.put(op, b);
+  }
+
+  @Override public void visit(AST.CStyleCastExpr op) {
+    MatcherBuilder b = match("cStyleCastExpr",
+                             match("hasDestinationType", lookup(op.getDestType())),
+                             match("has", lookup(op.getOperand())));
+    buildBindings(op, b);
+    matcherMap.put(op, b);
+  }
 }

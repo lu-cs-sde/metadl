@@ -354,6 +354,13 @@ public class AST {
     @Override public void accept(ASTVisitor v) {
       v.visit(this);
     }
+
+    public static UnaryOperator build(String opcode, boolean isPostfix, Expr op) {
+      UnaryOperator res = new UnaryOperator().setChildren(op);
+      res.opcode = opcode;
+      res.isPostfix = false;
+      return res;
+    }
   }
 
   public static class DeclRefExpr extends Expr {
@@ -433,28 +440,29 @@ public class AST {
     @Override public void accept(ASTVisitor v) {
       v.visit(this);
     }
-  }
 
-  public static class MetaExpr extends Expr {
-    private String name;
-
-    public MetaExpr(String name) {
-      this.name = name;
-    }
-
-    public MetaExpr() {
-    }
-
-    public boolean isNamed() {
-      return name != null;
-    }
-
-    public String getName() {
-      assert isNamed();
-      return name;
+    public static ArraySubscriptExpr build(Expr lhs, Expr rhs) {
+      return new ArraySubscriptExpr().setChildren(lhs, rhs);
     }
   }
 
+  public static class CStyleCastExpr extends ExplicitCastExpr {
+    Type destType;
+
+    public static CStyleCastExpr build(Expr op, Type destType) {
+      CStyleCastExpr r = new CStyleCastExpr().setChildren(op);
+      r.destType = destType;
+      return r;
+    }
+
+    public Type getDestType() {
+      return destType;
+    }
+
+    @Override public void accept(ASTVisitor v) {
+      v.visit(this);
+    }
+  }
   // --------------------------------------------------------------------------------
   // Statements
   // --------------------------------------------------------------------------------

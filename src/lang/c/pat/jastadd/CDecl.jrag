@@ -467,4 +467,18 @@ aspect CDecl {
 
     return fd;
   }
+
+  syn AST.Type TypeName.asType() {
+    Stream<DeclarationSpecifier> stream = Stream.concat(StreamSupport.stream(getTypeSpecifiers().spliterator(), false),
+                              StreamSupport.stream(getTypeQualifiers().spliterator(), false));
+
+    AST.Type innerType =
+      DeclarationSpecifier.typeFromDeclarationSpecifiers(stream.collect(Collectors.toUnmodifiableList()));
+
+    if (hasAbstractDeclarator()) {
+      return getAbstractDeclarator().asType(innerType);
+    } else {
+      return innerType;
+    }
+  }
 }

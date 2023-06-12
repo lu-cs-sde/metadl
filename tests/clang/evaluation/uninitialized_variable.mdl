@@ -19,3 +19,39 @@ VarUseNoAssign(u) :- VarUse(u, v), VarDeclSucc(v, u).
 UninitializedUse(f, l, c) :- VarUseNoAssign(v), f = io_relative_path(c_src_file(v)), l = c_src_line_start(v), c = c_src_line_end(v).
 
 OUTPUT('UninitializedUse, "UninitializedUse.csv", "csv").
+
+
+PtrDeclNoInit(d, $p) :- d <: $t .., *$p, .. ; :>.
+# PtrDeclInit(d, $p, $e) :- d <: $t .., *$p = $e, .. ; :>.
+
+
+PtrAlloc(p) :- <: $v = alloca(..) :>, p = c_decl($v), PtrDeclNoInit(_, p).
+PtrAlloc(p) :- <: $v = malloc(..) :>, p = c_decl($v), PtrDeclNoInit(_, p).
+
+PtrAlloc($p) :- <: $t .., *$p = malloc(..) , ..; :>.
+PtrAlloc($p) :- <: $t .., *$p = alloc(..) , ..; :>.
+
+# Patterns for matching casts
+PtrAlloc(p) :- <: $v = ($t1) alloca(..) :>, p = c_decl($v), PtrDeclNoInit(_, p).
+PtrAlloc(p) :- <: $v = ($t1) malloc(..) :>, p = c_decl($v), PtrDeclNoInit(_, p).
+
+PtrAlloc($p) :- <: $t .., *$p = ($t1) malloc(..) , ..; :>.
+PtrAlloc($p) :- <: $t .., *$p = ($t1) alloc(..) , ..; :>.
+
+
+PtrAssign(s, p) :- s <: *$v = $_ :>, p = c_decl($v), PtrAlloc(p).
+PtrAssign(s, p) :- s <: $v[$_] = $_ :>, p = c_decl($v), PtrAlloc(p).
+
+PtrDeref(s, p) :- s <: *$v :>, p = c_decl($v), PtrAlloc(p).
+PtrDeref(s, p) :- s <: $v[$_] :>, p = c_decl($v), PtrAlloc(p).
+
+
+PtrDeclSucc(p, s) :- PtrDeclNoInit(s, p).
+PtrDeclSucc(p, succ) :- PtrDeclSucc(p, s), CFG_SUCC(s, succ), NOT(PtrAssign(succ, p)).
+
+PtrDerefNoAssign(s) :- PtrDeref(s, p), PtrDeclSucc(p, s).
+
+UninitializedMemRead(f, l, c) :- PtrDerefNoAssign(u), f = io_relative_path(c_src_file(u)),
+                                 l = c_src_line_start(u), c = c_src_col_start(u).
+
+OUTPUT('UninitializedMemRead, "UninitializedMemRead.csv", "csv").

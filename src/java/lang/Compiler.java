@@ -226,7 +226,7 @@ public class Compiler {
 		profile().startTimer("main", "total");
 		EvaluationContext ctx;
 		if (opts.getLang() == CmdLineOpts.Lang.C4)
-			ctx = new ClangEvaluationContext(opts.getSrcs().keySet());
+			ctx = new ClangEvaluationContext(opts.getSrcs().keySet(), opts.getClangArgs());
 		else
 			ctx = new EvaluationContext();
 

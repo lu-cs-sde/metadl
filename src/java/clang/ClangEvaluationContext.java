@@ -30,12 +30,13 @@ public class ClangEvaluationContext extends EvaluationContext {
   private ClangClogBuilder builder;
   private ClangClog clog;
 
-  public ClangEvaluationContext(Set<String> srcs) {
+  public ClangEvaluationContext(Set<String> srcs, List<String> clangArgs) {
     System.loadLibrary("clangClogSWIG");
 
-    VectorString files = new VectorString(srcs);
+    VectorString args = new VectorString(clangArgs);
+    args.addAll(srcs);
 
-    builder = new ClangClogBuilder(files);
+    builder = new ClangClogBuilder(args);
     clog = builder.build();
 
     if (!clog.init()) {

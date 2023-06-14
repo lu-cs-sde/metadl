@@ -215,7 +215,7 @@ public class CmdLineOpts {
 			.desc("Print warnings.").build();
 		Option profile = Option.builder("P").longOpt("profile").numberOfArgs(1)
 			.desc("Enable profiling and dump the results in JSON format").argName("FILE").build();
-		Option clangArgs = Option.builder().longOpt("Xclang").numberOfArgs(1)
+		Option clangArgs = Option.builder().longOpt("Xclang").numberOfArgs(1).valueSeparator()
 			.desc("Arguments forwarded to clang").build();
     Option debug = Option.builder().longOpt("debug")
       .desc("Output all relations.").build();

@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.nio.file.Files;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -160,7 +161,7 @@ public final class Util {
 		System.out.println(d1.getInputFile());
 
 		EvaluationContext ctx = d1.getLang() == CmdLineOpts.Lang.C4 ?
-      new ClangEvaluationContext(d1.getSrcs().keySet()) :
+      new ClangEvaluationContext(d1.getSrcs().keySet(), Collections.emptyList()) :
       new EvaluationContext();
 		Program program1 = Compiler.run(ctx, d1);
 		FormalPredicate fpOut1 = program1.formalPredicateMap().get(GlobalNames.OUTPUT_NAME);

@@ -25,31 +25,31 @@ PtrDeclNoInit(d, $p) :- d <: $t .., *$p, .. ; :>.
 # PtrDeclInit(d, $p, $e) :- d <: $t .., *$p = $e, .. ; :>.
 
 
-PtrAlloc(p) :- <: $v = alloca(..) :>, p = c_decl($v), PtrDeclNoInit(_, p).
-PtrAlloc(p) :- <: $v = malloc(..) :>, p = c_decl($v), PtrDeclNoInit(_, p).
+PtrAlloc(s, p) :- s <: $v = alloca(..) :>, p = c_decl($v), PtrDeclNoInit(_, p).
+PtrAlloc(s, p) :- s <: $v = malloc(..) :>, p = c_decl($v), PtrDeclNoInit(_, p).
 
-PtrAlloc($p) :- <: $t .., *$p = malloc(..) , ..; :>.
-PtrAlloc($p) :- <: $t .., *$p = alloc(..) , ..; :>.
+PtrAlloc(s, $p) :- s <: $t .., *$p = malloc(..) , ..; :>.
+PtrAlloc(s, $p) :- s <: $t .., *$p = alloc(..) , ..; :>.
 
 # Patterns for matching casts
-PtrAlloc(p) :- <: $v = ($t1) alloca(..) :>, p = c_decl($v), PtrDeclNoInit(_, p).
-PtrAlloc(p) :- <: $v = ($t1) malloc(..) :>, p = c_decl($v), PtrDeclNoInit(_, p).
+PtrAlloc(s, p) :- s <: $v = ($t1) alloca(..) :>, p = c_decl($v), PtrDeclNoInit(_, p).
+PtrAlloc(s, p) :- s <: $v = ($t1) malloc(..) :>, p = c_decl($v), PtrDeclNoInit(_, p).
 
-PtrAlloc($p) :- <: $t .., *$p = ($t1) malloc(..) , ..; :>.
-PtrAlloc($p) :- <: $t .., *$p = ($t1) alloc(..) , ..; :>.
-
-
-PtrAssign(s, p) :- s <: *$v = $_ :>, p = c_decl($v), PtrAlloc(p).
-PtrAssign(s, p) :- s <: $v[$_] = $_ :>, p = c_decl($v), PtrAlloc(p).
-
-PtrDeref(s, p) :- s <: *$v :>, p = c_decl($v), PtrAlloc(p).
-PtrDeref(s, p) :- s <: $v[$_] :>, p = c_decl($v), PtrAlloc(p).
+PtrAlloc(s, $p) :- s <: $t .., *$p = ($t1) malloc(..) , ..; :>.
+PtrAlloc(s, $p) :- s <: $t .., *$p = ($t1) alloc(..) , ..; :>.
 
 
-PtrDeclSucc(p, s) :- PtrDeclNoInit(s, p).
-PtrDeclSucc(p, succ) :- PtrDeclSucc(p, s), CFG_SUCC(s, succ), NOT(PtrAssign(succ, p)).
+PtrAssign(s, p), PtrNotDeref($v) :- s <: *$v = $u :>, p = c_decl($v), PtrAlloc(_, p).
+PtrAssign(s, p), PtrNotDeref($v) :- s <: $v[$i] = $u :>, p = c_decl($v), PtrAlloc(_, p).
 
-PtrDerefNoAssign(s) :- PtrDeref(s, p), PtrDeclSucc(p, s).
+PtrDeref(s, p) :- s <: *$v :>, NOT(PtrNotDeref($v)), p = c_decl($v), PtrAlloc(_, p).
+PtrDeref(s, p) :- s <: $v[$i] :>, NOT(PtrNotDeref($v)), p = c_decl($v), PtrAlloc(_, p).
+
+
+PtrAllocSucc(s, p) :- PtrAlloc(s, p).
+PtrAllocSucc(succ, p) :- PtrAllocSucc(s, p), CFG_SUCC(s, succ), NOT(PtrAssign(succ, p)).
+
+PtrDerefNoAssign(s) :- PtrDeref(s, p), PtrAllocSucc(s, p).
 
 UninitializedMemRead(f, l, c) :- PtrDerefNoAssign(u), f = io_relative_path(c_src_file(u)),
                                  l = c_src_line_start(u), c = c_src_col_start(u).

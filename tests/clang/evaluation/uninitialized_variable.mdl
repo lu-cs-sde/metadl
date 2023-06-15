@@ -24,41 +24,49 @@ UninitializedUse(f, l, c) :- VarUseNoAssign(v), f = io_relative_path(c_src_file(
 OUTPUT('UninitializedUse, "UninitializedUse.csv", "csv").
 
 
-PtrDeclNoInit(d, $p) :- d <: $t .., *$p, .. ; :>.
+PtrAlias(p, q), PtrAlias(q, p) :- <: $p = $q :>, p = c_decl($p), q = c_decl($q), PtrDecl(_, p), PtrDecl(_, q).
+
+PtrDecl(d, $p) :- d <: $t .., *$p, .. ; :>.
+PtrDecl(d, $p), PtrAlloc(d, $p) :- d <: $t .., $p[$_], ..; :>.
 # PtrDeclInit(d, $p, $e) :- d <: $t .., *$p = $e, .. ; :>.
 
+PtrAlloc(s, p) :- s <: $v = __builtin_alloca(..) :>, p = c_decl($v), PtrDecl(_, p).
+PtrAlloc(s, p) :- s <: $v = alloca(..) :>, p = c_decl($v), PtrDecl(_, p).
+PtrAlloc(s, p) :- s <: $v = malloc(..) :>, p = c_decl($v), PtrDecl(_, p).
 
-PtrAlloc(s, p) :- s <: $v = __builtin_alloca(..) :>, p = c_decl($v), PtrDeclNoInit(_, p).
-PtrAlloc(s, p) :- s <: $v = alloca(..) :>, p = c_decl($v), PtrDeclNoInit(_, p).
-PtrAlloc(s, p) :- s <: $v = malloc(..) :>, p = c_decl($v), PtrDeclNoInit(_, p).
-
-PtrAlloc(s, $p) :- s <: $t .., *$p = __builtin_alloca(..) , ..; :>.
-PtrAlloc(s, $p) :- s <: $t .., *$p = alloca(..) , ..; :>.
-PtrAlloc(s, $p) :- s <: $t .., *$p = malloc(..) , ..; :>.
+PtrDecl(s, $p), PtrAlloc(s, $p) :- s <: $t .., *$p = __builtin_alloca(..) , ..; :>.
+PtrDecl(s, $p), PtrAlloc(s, $p) :- s <: $t .., *$p = alloca(..) , ..; :>.
+PtrDecl(s, $p), PtrAlloc(s, $p) :- s <: $t .., *$p = malloc(..) , ..; :>.
 
 # Patterns for matching casts
-PtrAlloc(s, p) :- s <: $v = ($t1) __builtin_alloca(..) :>, p = c_decl($v), PtrDeclNoInit(_, p).
-PtrAlloc(s, p) :- s <: $v = ($t1) alloca(..) :>, p = c_decl($v), PtrDeclNoInit(_, p).
-PtrAlloc(s, p) :- s <: $v = ($t1) malloc(..) :>, p = c_decl($v), PtrDeclNoInit(_, p).
+PtrAlloc(s, p) :- s <: $v = ($t1) __builtin_alloca(..) :>, p = c_decl($v), PtrDecl(_, p).
+PtrAlloc(s, p) :- s <: $v = ($t1) alloca(..) :>, p = c_decl($v), PtrDecl(_, p).
+PtrAlloc(s, p) :- s <: $v = ($t1) malloc(..) :>, p = c_decl($v), PtrDecl(_, p).
 
-PtrAlloc(s, $p) :- s <: $t .., *$p = ($t1) __builtin_alloca(..) , ..; :>.
-PtrAlloc(s, $p) :- s <: $t .., *$p = ($t1) alloca(..) , ..; :>.
-PtrAlloc(s, $p) :- s <: $t .., *$p = ($t1) malloc(..) , ..; :>.
+PtrAlloc(s, $p), PtrDecl(s, $p) :- s <: $t .., *$p = ($t1) __builtin_alloca(..) , ..; :>.
+PtrAlloc(s, $p), PtrDecl(s, $p) :- s <: $t .., *$p = ($t1) alloca(..) , ..; :>.
+PtrAlloc(s, $p), PtrDecl(s, $p) :- s <: $t .., *$p = ($t1) malloc(..) , ..; :>.
 
-PtrAssign(s, p), PtrNotDeref($v) :- s <: *$v = $u :>, p = c_decl($v), PtrAlloc(_, p).
-PtrAssign(s, p), PtrNotDeref($v) :- s <: $v[$i] = $u :>, p = c_decl($v), PtrAlloc(_, p).
+PtrAlloc(s, p) :- PtrAlloc(s, q), PtrAlias(p, q).
 
-PtrDeref(s, p) :- s <: *$v :>, NOT(PtrNotDeref($v)), p = c_decl($v), PtrAlloc(_, p).
-PtrDeref(s, p) :- s <: $v[$i] :>, NOT(PtrNotDeref($v)), p = c_decl($v), PtrAlloc(_, p).
+PtrMemWrite(s, p, $v) :- s <: *$v = $u :>, p = c_decl($v), PtrAlloc(_, p).
+PtrMemWrite(s, p, $v) :- s <: $v[$i] = $u :>, p = c_decl($v), PtrAlloc(_, p).
+
+PtrMemRead(s, p) :- s <: *$v :>, NOT(PtrMemWrite(_, _, $v)), p = c_decl($v), PtrAlloc(_, p).
+PtrMemRead(s, p) :- s <: $v[$i] :>, NOT(PtrMemWrite(_, _, $v)), p = c_decl($v), PtrAlloc(_, p).
 
 # The memory pointed by p is written to at least on one path leading to s.
-PtrAssignSucc(s, p) :- PtrAssign(s, p).
-PtrAssignSucc(succ, p) :- PtrAssignSucc(s, p), CFG_SUCC(s, succ).
+PtrMemWriteSucc(s, p) :- PtrMemWrite(s, p, _).
+PtrMemWriteSucc(succ, p) :- PtrMemWriteSucc(s, p), CFG_SUCC(s, succ).
 
 # There is no memory write to p before reaching s
-PtrDerefNoAssign(s) :- PtrDeref(s, p), NOT(PtrAssignSucc(s, p)).
+PtrMemReadNoWrite(s) :- PtrMemRead(s, p), NOT(PtrMemWriteSucc(s, p)).
 
-UninitializedMemRead(f, l, c) :- PtrDerefNoAssign(u), f = io_relative_path(c_src_file(u)),
+UninitializedMemRead(f, l, c) :- PtrMemReadNoWrite(u), f = io_relative_path(c_src_file(u)),
                                  l = c_src_line_start(u), c = c_src_col_start(u).
 
 OUTPUT('UninitializedMemRead, "UninitializedMemRead.csv", "csv").
+
+PtrDeclDebug(l) :- PtrDecl(d, _), l = c_src_line_start(d).
+PtrAliasDebug(l1, l2) :- PtrAlias(p1, p2), l1 = c_src_line_start(p1), l2 = c_src_line_start(p2).
+PtrMemReadDebug(l1, l2) :- PtrMemRead(s, p), l1 = c_src_line_start(p), l2 = c_src_line_start(s).

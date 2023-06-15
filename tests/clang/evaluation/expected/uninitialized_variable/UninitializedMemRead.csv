@@ -1,1 +1,2 @@
 tests/clang/evaluation/src/uninitialized_variable/CWE457.c,47,33
+tests/clang/evaluation/src/uninitialized_variable/CWE457.c,104,26

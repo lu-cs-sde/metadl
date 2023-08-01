@@ -586,4 +586,45 @@ public class ClangClogTest {
         .end();
 
   }
+
+  @Test
+  public void testMember1() {
+    List<Map<String, ClangClog.Loc>> results = matchPatternOnFile(
+        "$s.$f.$g", PatLangParserSEP.n_expression,
+        "tests/clang/clog/src/member.c");
+    dumpResults(results);
+    Checker.begin(results)
+      .check("$f", 7)
+      .check("$g", 2)
+      .check("$s", 19)
+      .next()
+      .check("$f", 7)
+      .check("$g", 2)
+      .check("$s", 20)
+      .next()
+      .check("$f", 7)
+      .check("$g", 3)
+      .check("$s", 21)
+      .next()
+      .check("$f", 7)
+      .check("$g", 3)
+      .check("$s", 22)
+      .end();
+  }
+
+  @Test
+  public void testMember2() {
+    List<Map<String, ClangClog.Loc>> results = matchPatternOnFile(
+        "$s.$f->x", PatLangParserSEP.n_expression,
+        "tests/clang/clog/src/member.c");
+    dumpResults(results);
+    Checker.begin(results)
+      .check("$s", 26)
+      .check("$f", 11)
+      .next()
+      .check("$s", 27)
+      .check("$f", 11)
+      .end();
+  }
+
 }

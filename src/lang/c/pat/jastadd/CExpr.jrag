@@ -44,6 +44,14 @@ aspect CExpr {
     return AST.BinaryOperator.build(clangOperator(), getLeft().asClangExpr(), getRight().asClangExpr());
   }
 
+  eq MemberExpression.asClangExpr() {
+    return AST.MemberExpr.build(getExpression().asClangExpr(), getFieldName().asClangDecl(), false);
+  }
+
+  eq PointerMemberExpression.asClangExpr() {
+    return AST.MemberExpr.build(getExpression().asClangExpr(), getFieldName().asClangDecl(), true);
+  }
+
   syn AST.Expr Initializer.asClangExpr() {
     throw new RuntimeException(Thread.currentThread().getStackTrace()[1] + " not implemented.");
   }

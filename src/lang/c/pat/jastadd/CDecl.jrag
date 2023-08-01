@@ -481,4 +481,10 @@ aspect CDecl {
       return innerType;
     }
   }
+
+  syn AST.FieldDecl FieldName.asClangDecl() {
+    if (isMetaVar())
+      return AST.FieldDecl.build().trySetBinding(this);
+    return AST.FieldDecl.build().setName(getIdentifier().getID());
+  }
 }

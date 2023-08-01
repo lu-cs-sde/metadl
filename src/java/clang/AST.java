@@ -463,6 +463,28 @@ public class AST {
       v.visit(this);
     }
   }
+
+  public static class MemberExpr extends Expr {
+    boolean isArrow;
+
+    public static MemberExpr build(Expr base, FieldDecl member, boolean isArrow) {
+      MemberExpr ret = new MemberExpr().setChildren(base, member);
+      ret.isArrow = isArrow;
+      return ret;
+    }
+
+    public Expr getBase() {
+      return getChild(0);
+    }
+
+    public FieldDecl getMember() {
+      return getChild(1);
+    }
+
+    @Override public void accept(ASTVisitor v) {
+      v.visit(this);
+    }
+  }
   // --------------------------------------------------------------------------------
   // Statements
   // --------------------------------------------------------------------------------
@@ -949,6 +971,10 @@ public class AST {
       FieldDecl ret = new FieldDecl().setChildren();
       ret.explicitType = t;
       return ret;
+    }
+
+    public static FieldDecl build() {
+      return new FieldDecl().setChildren();
     }
 
     public static FieldDecl build(Type t, Expr bitfieldSize) {

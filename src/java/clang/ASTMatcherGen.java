@@ -551,4 +551,18 @@ public class ASTMatcherGen implements ASTVisitor {
     buildBindings(op, b);
     matcherMap.put(op, b);
   }
+
+  @Override public void visit(AST.MemberExpr op) {
+    MatcherBuilder b = match("memberExpr");
+    if (op.isArrow)
+      b.add(match("isArrow"));
+    else
+      b.add(unless(match("isArrow")));
+
+    b.add(match("has", lookup(op.getBase())));
+    b.add(match("member", lookup(op.getMember())));
+
+    buildBindings(op, b);
+    matcherMap.put(op, b);
+  }
 }

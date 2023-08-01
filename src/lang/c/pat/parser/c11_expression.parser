@@ -33,13 +33,16 @@ Expression primary_expression = identifier {: return new IdentifierExpression(id
 Expression postfix_expression = primary_expression
 	   		      | postfix_expression LBRACK expression RBRACK {: return new ArrayIndexExpression(postfix_expression, expression); :}
 			      | postfix_expression LPAREN argument_expression_list_opt RPAREN {: return new CallExpression(postfix_expression, argument_expression_list_opt); :}
-			      | postfix_expression DOT identifier {: return new MemberExpression(postfix_expression, identifier); :}
-			      | postfix_expression ARROW identifier {: return new PointerMemberExpression(postfix_expression, identifier); :}
+			      | postfix_expression DOT field_name {: return new MemberExpression(postfix_expression, field_name); :}
+			      | postfix_expression ARROW field_name {: return new PointerMemberExpression(postfix_expression, field_name); :}
 			      | postfix_expression ICR {: return new PostIncrementExpression(postfix_expression); :}
 			      | postfix_expression DECR {: return new PostDecrementExpression(postfix_expression); :}
 			      | LPAREN type_name RPAREN LBRACE initializer_list RBRACE {: return new InitializerListExpression(type_name, initializer_list); :}
 			      | LPAREN type_name RPAREN LBRACE initializer_list COMMA RBRACE {: return new InitializerListExpression(type_name, initializer_list); :}
 			      ;
+
+FieldName field_name = identifier {: return new FieldName(identifier); :}
+                     ;
 
 // (6.5.2) argument-expression-list:
 // assignment-expression

@@ -146,4 +146,43 @@ public class MatcherTest {
     assertEquals("functionDecl(parameterCountIs(0), hasType(ignoringParens(functionProtoType(parameterCountIs(0), hasReturnType(qualType(isVoid()))))), hasBody(compoundStmt(subStatementDistinct())))",
         res.get(0));
   }
+
+  @Test public void test18() {
+    List<String> res = genMatchers("s.a", PatLangParserSEP.n_expression);
+    assertEquals(1, res.size());
+    assertEquals("memberExpr(unless(isArrow()), has(declRefExpr(to(namedDecl(hasName(\"s\"))))), member(fieldDecl(hasName(\"a\"))))",
+                 res.get(0));
+  }
+
+  @Test public void test19() {
+    List<String> res = genMatchers("$s.$a", PatLangParserSEP.n_expression);
+    assertEquals(1, res.size());
+    assertEquals("memberExpr(unless(isArrow()), has(expr().bind(\"$s\")), member(fieldDecl().bind(\"$a\")))",
+                 res.get(0));
+  }
+
+  @Test public void test20() {
+    List<String> res = genMatchers("s->a", PatLangParserSEP.n_expression);
+    assertEquals(1, res.size());
+    assertEquals("memberExpr(isArrow(), has(declRefExpr(to(namedDecl(hasName(\"s\"))))), member(fieldDecl(hasName(\"a\"))))", res.get(0));
+  }
+
+  @Test public void test21() {
+    List<String> res = genMatchers("$s->$a", PatLangParserSEP.n_expression);
+    assertEquals(1, res.size());
+    assertEquals("memberExpr(isArrow(), has(expr().bind(\"$s\")), member(fieldDecl().bind(\"$a\")))",
+                 res.get(0));
+  }
+
+
+  @Test public void test22() {
+    List<String> res = genMatchers("$s.$f.$g", PatLangParserSEP.n_expression);
+    assertEquals(1, res.size());
+    assertEquals("memberExpr(unless(isArrow()), has(memberExpr(unless(isArrow()), has(expr().bind(\"$s\")), member(fieldDecl().bind(\"$f\")))), member(fieldDecl().bind(\"$g\")))", res.get(0));
+  }
+
+
+
+
+
 }

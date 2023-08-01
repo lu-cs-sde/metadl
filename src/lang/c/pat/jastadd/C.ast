@@ -58,11 +58,13 @@ StringLiteralExpression : Expression ::= StringLiteral;
 
 ArrayIndexExpression : Expression ::= Base:Expression Index:Expression;
 CallExpression : Expression ::= Callee:Expression Arg:Expression*;
-MemberExpression : Expression ::= Expression Identifier;
-PointerMemberExpression : Expression ::= Expression Identifier;
+MemberExpression : Expression ::= Expression FieldName;
+PointerMemberExpression : Expression ::= Expression FieldName;
 PostIncrementExpression : Expression ::= Expression;
 PostDecrementExpression : Expression ::= Expression;
 InitializerListExpression : Expression ::= TypeName Initializer*;
+
+FieldName ::= Identifier;
 
 // (6.5.2) argument-expression-list:
 // assignment-expression

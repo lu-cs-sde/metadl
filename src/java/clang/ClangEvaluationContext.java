@@ -320,6 +320,9 @@ public class ClangEvaluationContext extends EvaluationContext {
     case "c_dump":
       return makeUnaryOperation(name, args.get(0), nid -> internalizeString(clog.dump(nid)));
 
+    case "c_kind":
+      return makeUnaryOperation(name, args.get(0), nid -> internalizeString(clog.kind(nid)));
+
     default:
       throw new RuntimeException("Unknown external operation '" + name + "'.");
     }

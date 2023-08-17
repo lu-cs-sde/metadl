@@ -50,6 +50,7 @@ aspect Functor {
     c_parent(ASTNodeType.get(), ASTNodeType.get()),
 
     c_dump(StringType.get(), ASTNodeType.get()),
+    c_kind(StringType.get(), ASTNodeType.get()),
 
     c_cfg(ASTNodeType.get(), ASTNodeType.get());
 

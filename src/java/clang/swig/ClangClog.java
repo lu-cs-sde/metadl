@@ -166,6 +166,10 @@ public class ClangClog {
     return clogJNI.ClangClog_name(swigCPtr, this, NodeId);
   }
 
+  public String kind(long NodeId) {
+    return clogJNI.ClangClog_kind(swigCPtr, this, NodeId);
+  }
+
   public long cfg(long NodeId) {
     return clogJNI.ClangClog_cfg(swigCPtr, this, NodeId);
   }

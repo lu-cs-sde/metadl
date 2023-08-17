@@ -90,6 +90,7 @@ public class clogJNI {
   public final static native boolean ClangClog_isParent(long jarg1, ClangClog jarg1_, long jarg2, long jarg3);
   public final static native boolean ClangClog_isAncestor(long jarg1, ClangClog jarg1_, long jarg2, long jarg3);
   public final static native String ClangClog_name(long jarg1, ClangClog jarg1_, long jarg2);
+  public final static native String ClangClog_kind(long jarg1, ClangClog jarg1_, long jarg2);
   public final static native long ClangClog_cfg(long jarg1, ClangClog jarg1_, long jarg2);
   public final static native long ClangClog_cfgSucc(long jarg1, ClangClog jarg1_, long jarg2);
   public final static native long ClangClog_cfgPred(long jarg1, ClangClog jarg1_, long jarg2, long jarg3);

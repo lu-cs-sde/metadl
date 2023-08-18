@@ -14,3 +14,6 @@
 // the user to declare 'anonymous' variables, i.e. "const int;".
 // List init_declarator_list_opt := init_declarator_list
 //                               ;
+
+Declaration single_declaration = declaration_specifiers init_declarator {: return new Declaration(declaration_specifiers, new List().add(init_declarator)); :}
+                                ;

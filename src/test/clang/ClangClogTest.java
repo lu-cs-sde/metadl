@@ -638,4 +638,76 @@ public class ClangClogTest {
       .check("$x", 2)
       .end();
   }
+
+  @Test
+  public void testSingleDecl1() {
+    List<Map<String, ClangClog.Loc>> results =
+      matchPatternOnFile("int $x[$_]",
+                         PatLangParserSEP.n_single_declaration,
+                         "tests/clang/clog/src/decl.c");
+
+    dumpResults(results);
+    Checker.begin(results)
+      .check("$x", 2, 4, 2, 14)
+      .end();
+  }
+
+  @Test
+  public void testSingleDecl2() {
+    List<Map<String, ClangClog.Loc>> results =
+      matchPatternOnFile("int $x",
+                         PatLangParserSEP.n_single_declaration,
+                         "tests/clang/clog/src/decl.c");
+
+    dumpResults(results);
+    Checker.begin(results)
+      .check("$x", 2, 4, 2, 8)
+      .end();
+  }
+
+  @Test
+  public void testSingleDecl3() {
+    List<Map<String, ClangClog.Loc>> results =
+      matchPatternOnFile("int $x = $e",
+                         PatLangParserSEP.n_single_declaration,
+                         "tests/clang/clog/src/decl.c");
+
+    dumpResults(results);
+    Checker.begin(results)
+      .check("$x", 3, 4, 3, 12)
+      .check("$e", 3, 12, 3, 12)
+      .next()
+      .check("$x", 3, 4, 3, 23)
+      .check("$e", 3, 19, 3, 23)
+      .end();
+  }
+
+  @Test
+  public void testSingleDecl4() {
+    List<Map<String, ClangClog.Loc>> results =
+      matchPatternOnFile("int *$p",
+                         PatLangParserSEP.n_single_declaration,
+                         "tests/clang/clog/src/decl.c");
+
+    dumpResults(results);
+    Checker.begin(results)
+      .check("$p", 4, 4, 4, 9)
+      .end();
+  }
+
+  @Test
+  public void testSingleDecl5() {
+    List<Map<String, ClangClog.Loc>> results =
+      matchPatternOnFile("int **$p = $e",
+                         PatLangParserSEP.n_single_declaration,
+                         "tests/clang/clog/src/decl.c");
+
+    dumpResults(results);
+    Checker.begin(results)
+      .check("$p", 4, 4, 4, 19)
+      .check("$e", 4, 18, 4, 19)
+      .end();
+  }
+
+
 }

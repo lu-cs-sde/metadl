@@ -148,7 +148,7 @@ public class ClangEvaluationContext extends EvaluationContext {
 
     L: for (ObjLangASTNode Node : ASTs) {
       lang.c.pat.ast.ASTNode cNode = (lang.c.pat.ast.ASTNode) Node;
-      Node.debugPrint(System.out);
+      // Node.debugPrint(System.out);
 
       // One node may produce multiple matchers. For example
       // <: struct S { int x; } s; :> produces  a varDecl(...)

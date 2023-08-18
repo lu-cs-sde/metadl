@@ -201,9 +201,10 @@ aspect PatternLang {
       tokenNames = lang.c.pat.ast.PatLangParserSEP.Terminals.NAMES;
       astBuilder = lang.c.pat.ast.ASTBuilder.getInstance();
       startSymbols = Arrays.asList(lang.c.pat.ast.PatLangParserSEP.n_expression,
-                     lang.c.pat.ast.PatLangParserSEP.n_statement,
-                     lang.c.pat.ast.PatLangParserSEP.n_declaration,
-                     lang.c.pat.ast.PatLangParserSEP.n_function_definition);
+                                   lang.c.pat.ast.PatLangParserSEP.n_statement,
+                                   lang.c.pat.ast.PatLangParserSEP.n_declaration,
+                                   lang.c.pat.ast.PatLangParserSEP.n_single_declaration,
+                                   lang.c.pat.ast.PatLangParserSEP.n_function_definition);
       break;
     }
 

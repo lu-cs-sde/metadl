@@ -627,4 +627,15 @@ public class ClangClogTest {
       .end();
   }
 
+  @Test
+  public void testDecl() {
+    List<Map<String, ClangClog.Loc>> results =
+      matchPatternOnFile("int .., $x[$_], ..;",
+                         PatLangParserSEP.n_statement,
+                         "tests/clang/clog/src/decl.c");
+    dumpResults(results);
+    Checker.begin(results)
+      .check("$x", 2)
+      .end();
+  }
 }

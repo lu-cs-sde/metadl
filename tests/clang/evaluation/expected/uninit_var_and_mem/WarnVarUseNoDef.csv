@@ -1,0 +1,2 @@
+tests/clang/evaluation/src/uninit_var_and_mem/vars.c,3,10,core.uninitialized.Assign
+tests/clang/evaluation/src/uninit_var_and_mem/vars.c,27,7,core.uninitialized.Assign

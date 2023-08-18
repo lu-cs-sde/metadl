@@ -1,0 +1,85 @@
+VarDeclNoInit($x) :- <: $t $x :>, NOT(ArrayDeclNoInit($x)), NOT(ParamDecl($x)).
+
+# ArrayDeclNoInit(d, $x): d is a declaration statement containing the declaration of an array $x that has
+# MemNoInit(d, $x): at statement d, the memory pointed to by $x is not initialized
+# PtrDecl(d, $x): d is is a declaration statement declarating a pointer $x
+# MemAlloc(d, $x): $x is a pointer to allocated memory
+ArrayDeclNoInit($x), MemNoInit($x), PtrDecl($x), MemAlloc($x) :- <: $t $x[$_] :>.
+
+ParamDecl($x) :- <: $t $f1(.., $t $x, ..) { .. } :>.
+
+PtrDecl($p) :- <: $t *$p :>.
+
+# VarUse: the variable declared at d is read via the variable reference (varref) $u
+VarUse($u, d) :- <: $u :>, d = c_decl($u), node_to_id(d) != 0, VarDeclNoInit(d), NOT(ParamDecl(d)), NOT(VarDef(_, _, $u)).
+
+# VarDef: at statement s, the variable declared by d is written using the variable reference $u
+VarDef(s, d, $u) :- s <: $u = $_ :> , d = c_decl($u), node_to_id(d) != 0.
+
+# VarDeclSucc: the statement s is a CFG successor of the variable declaration v, and there exists a path
+# from v to s on which the variable declared by v is not assigned
+VarDefSucc(cfg_loc, v) :- VarDef(cfg_loc, v, _).
+VarDefSucc(cfg_loc_succ, v) :- VarDefSucc(cfg_loc, v), CFG_SUCC(cfg_loc, cfg_loc_succ).
+
+# VarUseNoDef: variable v is used by varref u and varref u is a CFG successor of v on path on which
+# v is not written to
+VarUseNoDef(cfg_loc, v) :- VarUse(cfg_loc, v), NOT(VarDefSucc(cfg_loc, v)).
+
+
+WarnVarUseNoDef(f, l, c, "core.uninitialized.Assign") :- VarUseNoDef(v, _),
+                    f = io_relative_path(c_src_file(v)),
+                    l = c_src_line_start(v),
+                    c = c_src_col_start(v).
+
+
+# MemAllocExpr: e is an allocation site
+MemAllocExpr(e) :- e <: __builtin_alloca(..) :>.
+MemAllocExpr(e) :- e <: alloca(..) :>.
+MemAllocExpr(e) :- e <: malloc(..) :>.
+
+
+# VarPointsTo: at CFG location cfg_loc, the variable v points to the allocation site e
+VarPointsTo(cfg_loc, v, $e) :- cfg_loc <: $v = $e :>, MemAllocExpr($e), v = c_decl($v), PtrDecl(v).
+VarPointsTo(cfg_loc, v, $e) :- cfg_loc <: $v = ($t) $e :>, MemAllocExpr($e), v = c_decl($v), PtrDecl(v).
+VarPointsTo($v, $v, $e), PtrDecl($v) :- <: $t *$v = $e :>, MemAllocExpr($e).
+VarPointsTo($v, $v, $e), PtrDecl($v) :- <: $t *$v = ($t) $e :>, MemAllocExpr($e).
+VarPointsTo($v, $v, $v), PtrDecl($v) :- <: $t $v[$_] :>.
+
+VarPointsTo(cfg_loc_succ, v, e) :- VarPointsTo(cfg_loc, v, e), CFG_SUCC(cfg_loc, cfg_loc_succ), NOT(VarDef(cfg_loc_succ, v, _)).
+
+VarPointsTo(cfg_loc, v, e) :- VarPointsTo(cfg_loc, w, e), <: $v = $w :>, v = c_decl($v), w = c_decl($w), node_to_id(w) != 0.
+VarPointsTo(cfg_loc, v, e) :- VarPointsTo(cfg_loc, w, e), <: $v = ($t) $w :>, v = c_decl($v), w = c_decl($w).
+VarPointsTo(cfg_loc, $v, e) :- VarPointsTo(cfg_loc, w, e), <: $t $v = $w :>, w = c_decl($w).
+VarPointsTo(cfg_loc, $v, e) :- VarPointsTo(cfg_loc, w, e), <: $t $v = ($u) $w :>, w = c_decl($w).
+
+# VarPointsToDebug(cfg_loc_d, v_d, e_d) :- VarPointsTo(cfg_loc, v, e),
+#                           cfg_loc_d = c_dump(cfg_loc),
+#                           v_d = "", # c_dump(v),
+#                           e_d = "", # c_dump(e),
+#                           debug = c_cfg(cfg_loc).
+
+# MemWrite: memory allocated at e is written at cfg_loc through variable $v
+MemWrite(cfg_loc, e, $v) :- cfg_loc <: *$v = $_ :>, VarPointsTo(cfg_loc, v, e), v = c_decl($v).
+MemWrite(cfg_loc, e, $v) :- cfg_loc <: $v[$_] = $_ :>, VarPointsTo(cfg_loc, v, e), v = c_decl($v).
+
+# MemRead: memory allocated at e is read at cfg_loc through variable $v
+MemRead(cfg_loc, e) :- cfg_loc <: *$v :>, NOT(MemWrite(_, _, $v)), VarPointsTo(cfg_loc, v, e), v = c_decl($v).
+MemRead(cfg_loc, e) :- cfg_loc <: $v[$_] :>, NOT(MemWrite(_, _, $v)), VarPointsTo(cfg_loc, v, e), v = c_decl($v).
+
+MemWriteSucc(cfg_loc, e) :- MemWrite(cfg_loc, e, _).
+MemWriteSucc(cfg_loc_succ, e) :- MemWriteSucc(cfg_loc, e), CFG_SUCC(cfg_loc, cfg_loc_succ).
+
+MemReadNoWrite(cfg_loc, e) :- MemRead(cfg_loc, e), NOT(MemWriteSucc(cfg_loc, e)).
+
+# MemReadUnallocated(cfg_loc, e) :- cfg_loc <: *$v :>, NOT(MemWrite(_, _, $v)), NOT(VarPointsTo(_, v, _)), v = c_decl($v).
+
+WarnMemReadNoWrite(f, l, c, "core.uninitialized.Assign") :- MemReadNoWrite(cfg_loc, _),
+                    f = io_relative_path(c_src_file(cfg_loc)),
+                    l = c_src_line_start(cfg_loc),
+                    c = c_src_col_start(cfg_loc).
+
+# MemWriteDebug(l, c) :- MemWrite(cfg, _, _), l = c_src_line_start(cfg), c = c_src_col_start(cfg).
+
+OUTPUT('WarnMemReadNoWrite, "WarnMemReadNoWrite.csv", "csv").
+OUTPUT('WarnVarUseNoDef, "WarnVarUseNoDef.csv", "csv").
+# OUTPUT('MemAllocExpr, "MemAllocExpr.csv", "csv").

@@ -86,6 +86,10 @@ public class CEvaluationTest {
     runTest("uninitialized_variable");
   }
 
+  @Test void uninit_var_and_mem() {
+    runTest("uninit_var_and_mem");
+  }
+
   @DisplayName("Evaluate MetaDL-C programs with the parallel internal evaluator")
   @ParameterizedTest
   @MethodSource("metadlCTests")

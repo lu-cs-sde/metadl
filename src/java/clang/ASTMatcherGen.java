@@ -523,8 +523,8 @@ public class ASTMatcherGen implements ASTVisitor {
 
   @Override public void visit(AST.BinaryOperator op) {
     MatcherBuilder b = match("binaryOperator", match("hasAnyOperatorName", cst(op.opcode)));
-    b.add(match("hasOperands", lookup(op.getLHS()), lookup(op.getRHS())));
-
+    b.add(match("hasLHS", lookup(op.getLHS())));
+    b.add(match("hasRHS", lookup(op.getRHS())));
     buildBindings(op, b);
     matcherMap.put(op, b);
   }

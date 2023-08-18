@@ -1,0 +1,5 @@
+tests/clang/evaluation/src/uninit_var_and_mem/mem.c,3,10,core.uninitialized.Assign
+tests/clang/evaluation/src/uninit_var_and_mem/mem.c,10,10,core.uninitialized.Assign
+tests/clang/evaluation/src/uninit_var_and_mem/mem.c,15,10,core.uninitialized.Assign
+tests/clang/evaluation/src/uninit_var_and_mem/mem.c,42,10,core.uninitialized.Assign
+tests/clang/evaluation/src/uninit_var_and_mem/mem.c,47,7,core.uninitialized.Assign

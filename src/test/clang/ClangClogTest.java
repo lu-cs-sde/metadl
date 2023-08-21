@@ -710,4 +710,19 @@ public class ClangClogTest {
   }
 
 
+  @Test
+  public void testSingleDecl6() {
+    List<Map<String, ClangClog.Loc>> results =
+      matchPatternOnFile("$t **$p = $e",
+                         PatLangParserSEP.n_single_declaration,
+                         "tests/clang/clog/src/decl.c");
+    Checker.begin(results)
+      .check("$t", 0, 0, 0, 0)
+      .check("$p", 4, 4, 4, 19)
+      .check("$e", 4, 18, 4, 19)
+      .end();
+    dumpResults(results);
+
+  }
+
 }

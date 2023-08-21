@@ -47,10 +47,12 @@ VarPointsTo($v, $v, $v), PtrDecl($v) :- <: $t $v[$_] :>.
 
 VarPointsTo(cfg_loc_succ, v, e) :- VarPointsTo(cfg_loc, v, e), CFG_SUCC(cfg_loc, cfg_loc_succ), NOT(VarDef(cfg_loc_succ, v, _)).
 
-VarPointsTo(cfg_loc, v, e) :- VarPointsTo(cfg_loc, w, e), <: $v = $w :>, v = c_decl($v), w = c_decl($w), node_to_id(w) != 0.
-VarPointsTo(cfg_loc, v, e) :- VarPointsTo(cfg_loc, w, e), <: $v = ($t) $w :>, v = c_decl($v), w = c_decl($w).
-VarPointsTo(cfg_loc, $v, e) :- VarPointsTo(cfg_loc, w, e), <: $t $v = $w :>, w = c_decl($w).
-VarPointsTo(cfg_loc, $v, e) :- VarPointsTo(cfg_loc, w, e), <: $t $v = ($u) $w :>, w = c_decl($w).
+Assign(d, s, $d, $s, cfg_loc) :- cfg_loc <: $d = $s :>, d = c_decl($d), node_to_id(d) != 0, s = c_decl($s), node_to_id(s) != 0.
+Assign(d, s, $d, $s, cfg_loc) :- cfg_loc <: $d = ($t) $s :>, d = c_decl($d), node_to_id(d) != 0, s = c_decl($s), node_to_id(s) != 0.
+Assign($d, s, $d, $s, $d) :- <: $t $d = $s :>, s = c_decl($s), node_to_id(s) != 0.
+Assign($d, s, $d, $s, $d) :- <: $t $d = ($u) $s :>, s = c_decl($s), node_to_id(s) != 0.
+
+VarPointsTo(cfg_loc, v, e) :- VarPointsTo(cfg_loc, w, e), Assign(v, w, _, _, cfg_loc).
 
 # VarPointsToDebug(cfg_loc_d, v_d, e_d) :- VarPointsTo(cfg_loc, v, e),
 #                           cfg_loc_d = c_dump(cfg_loc),

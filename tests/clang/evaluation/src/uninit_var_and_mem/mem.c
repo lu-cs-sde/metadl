@@ -47,3 +47,30 @@ int test8_pos(void) {
   y = x[3];
   return y;
 }
+
+struct S {
+  int a, b;
+};
+
+int test9_pos(void) {
+  struct S *p;
+  struct S s[10];
+
+  p = s;
+
+  return p[3].a + p[3].b;
+}
+
+int test10_neg(void) {
+  struct S *p;
+  struct S s[10];
+
+  p = s;
+
+  for (int i = 0; i < 10; ++i) {
+    p[i].a = 0;
+    p[i].b = 0;
+  }
+
+  return p[2].a + p[3].b;
+}

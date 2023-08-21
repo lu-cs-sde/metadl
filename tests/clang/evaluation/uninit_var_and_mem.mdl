@@ -61,10 +61,12 @@ VarPointsTo(cfg_loc, $v, e) :- VarPointsTo(cfg_loc, w, e), <: $t $v = ($u) $w :>
 # MemWrite: memory allocated at e is written at cfg_loc through variable $v
 MemWrite(cfg_loc, e, $v) :- cfg_loc <: *$v = $_ :>, VarPointsTo(cfg_loc, v, e), v = c_decl($v).
 MemWrite(cfg_loc, e, $v) :- cfg_loc <: $v[$_] = $_ :>, VarPointsTo(cfg_loc, v, e), v = c_decl($v).
+MemWrite(cfg_loc, e, $v) :- cfg_loc <: $v[$_].$f = $_ :>, VarPointsTo(cfg_loc, v, e), v = c_decl($v).
 
 # MemRead: memory allocated at e is read at cfg_loc through variable $v
 MemRead(cfg_loc, e) :- cfg_loc <: *$v :>, NOT(MemWrite(_, _, $v)), VarPointsTo(cfg_loc, v, e), v = c_decl($v).
 MemRead(cfg_loc, e) :- cfg_loc <: $v[$_] :>, NOT(MemWrite(_, _, $v)), VarPointsTo(cfg_loc, v, e), v = c_decl($v).
+MemRead(cfg_loc, e) :- cfg_loc <: $v[$_].$f :>, NOT(MemWrite(_, _, $v)), VarPointsTo(cfg_loc, v, e), v = c_decl($v).
 
 MemWriteSucc(cfg_loc, e) :- MemWrite(cfg_loc, e, _).
 MemWriteSucc(cfg_loc_succ, e) :- MemWriteSucc(cfg_loc, e), CFG_SUCC(cfg_loc, cfg_loc_succ).

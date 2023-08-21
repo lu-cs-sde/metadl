@@ -1,10 +1,10 @@
-VarDeclNoInit($x) :- <: $t $x :>, NOT(ArrayDeclNoInit($x)), NOT(ParamDecl($x)).
+VarDeclNoInit($x) :- <: $t $x :>, NOT(ArrayDeclNoInit($x)), NOT(ParamDecl($x)), c_has_global_storage($x) == 0.
 
 # ArrayDeclNoInit(d, $x): d is a declaration statement containing the declaration of an array $x that has
 # MemNoInit(d, $x): at statement d, the memory pointed to by $x is not initialized
 # PtrDecl(d, $x): d is is a declaration statement declarating a pointer $x
 # MemAlloc(d, $x): $x is a pointer to allocated memory
-ArrayDeclNoInit($x), MemNoInit($x), PtrDecl($x), MemAlloc($x) :- <: $t $x[$_] :>.
+ArrayDeclNoInit($x), MemNoInit($x), PtrDecl($x), MemAlloc($x) :- <: $t $x[$_] :>, c_has_global_storage($x) == 0.
 
 ParamDecl($x) :- <: $t $f1(.., $t $x, ..) { .. } :>.
 

@@ -150,6 +150,10 @@ public class ClangClog {
     return clogJNI.ClangClog_decl(swigCPtr, this, NodeId);
   }
 
+  public boolean hasGlobalStorage(long NodeId) {
+    return clogJNI.ClangClog_hasGlobalStorage(swigCPtr, this, NodeId);
+  }
+
   public long parent(long NodeId) {
     return clogJNI.ClangClog_parent(swigCPtr, this, NodeId);
   }
@@ -166,10 +170,6 @@ public class ClangClog {
     return clogJNI.ClangClog_name(swigCPtr, this, NodeId);
   }
 
-  public String kind(long NodeId) {
-    return clogJNI.ClangClog_kind(swigCPtr, this, NodeId);
-  }
-
   public long cfg(long NodeId) {
     return clogJNI.ClangClog_cfg(swigCPtr, this, NodeId);
   }
@@ -184,6 +184,10 @@ public class ClangClog {
 
   public String dump(long NodeId) {
     return clogJNI.ClangClog_dump(swigCPtr, this, NodeId);
+  }
+
+  public String kind(long NodeId) {
+    return clogJNI.ClangClog_kind(swigCPtr, this, NodeId);
   }
 
 }

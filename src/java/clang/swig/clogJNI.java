@@ -86,15 +86,16 @@ public class clogJNI {
   public final static native long ClangClog_srcLocation(long jarg1, ClangClog jarg1_, long jarg2);
   public final static native long ClangClog_type(long jarg1, ClangClog jarg1_, long jarg2);
   public final static native long ClangClog_decl(long jarg1, ClangClog jarg1_, long jarg2);
+  public final static native boolean ClangClog_hasGlobalStorage(long jarg1, ClangClog jarg1_, long jarg2);
   public final static native long ClangClog_parent(long jarg1, ClangClog jarg1_, long jarg2);
   public final static native boolean ClangClog_isParent(long jarg1, ClangClog jarg1_, long jarg2, long jarg3);
   public final static native boolean ClangClog_isAncestor(long jarg1, ClangClog jarg1_, long jarg2, long jarg3);
   public final static native String ClangClog_name(long jarg1, ClangClog jarg1_, long jarg2);
-  public final static native String ClangClog_kind(long jarg1, ClangClog jarg1_, long jarg2);
   public final static native long ClangClog_cfg(long jarg1, ClangClog jarg1_, long jarg2);
   public final static native long ClangClog_cfgSucc(long jarg1, ClangClog jarg1_, long jarg2);
   public final static native long ClangClog_cfgPred(long jarg1, ClangClog jarg1_, long jarg2, long jarg3);
   public final static native String ClangClog_dump(long jarg1, ClangClog jarg1_, long jarg2);
+  public final static native String ClangClog_kind(long jarg1, ClangClog jarg1_, long jarg2);
   public final static native void delete_ClangClog(long jarg1);
   public final static native long new_ClangClogBuilder(long jarg1, VectorString jarg1_);
   public final static native void delete_ClangClogBuilder(long jarg1);

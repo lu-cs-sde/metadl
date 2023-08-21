@@ -44,6 +44,7 @@ aspect Functor {
     c_type(ASTNodeType.get(), ASTNodeType.get()),
     c_decl(ASTNodeType.get(), ASTNodeType.get()),
     c_name(StringType.get(), ASTNodeType.get()),
+    c_has_global_storage(IntegerType.get(), ASTNodeType.get()),
 
     c_is_ancestor(IntegerType.get(), ASTNodeType.get(), ASTNodeType.get()),
     c_is_parent(IntegerType.get(), ASTNodeType.get(), ASTNodeType.get()),

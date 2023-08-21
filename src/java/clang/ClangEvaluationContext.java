@@ -314,6 +314,9 @@ public class ClangEvaluationContext extends EvaluationContext {
       return makeUnaryOperation(name, args.get(0),
                                 nid -> clog.parent(nid));
 
+    case "c_has_global_storage":
+      return makeUnaryOperation(name, args.get(0), nid -> clog.hasGlobalStorage(nid) ? 1 : 0);
+
     case "c_cfg":
       return makeUnaryOperation(name, args.get(0), nid -> clog.cfg(nid));
 

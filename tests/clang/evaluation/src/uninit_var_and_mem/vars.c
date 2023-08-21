@@ -34,3 +34,11 @@ int test6_neg(void) {
   x = y;
   return x;
 }
+
+int global;
+int test7_neg(void) { return global; }
+
+int test8_neg(void) {
+  static int s;
+  return s;
+}

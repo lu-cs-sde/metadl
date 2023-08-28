@@ -90,6 +90,10 @@ public class CEvaluationTest {
     runTest("uninit_var_and_mem");
   }
 
+  @Test void use_after_free() {
+    runTest("use_after_free");
+  }
+
   @DisplayName("Evaluate MetaDL-C programs with the parallel internal evaluator")
   @ParameterizedTest
   @MethodSource("metadlCTests")

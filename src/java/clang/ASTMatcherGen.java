@@ -210,6 +210,11 @@ public class ASTMatcherGen implements ASTVisitor {
       MatcherBuilder b = match("type");
       buildBindings(t, b);
       matcherMap.put(t, b);
+    } else if (t.isNamed()) {
+      MatcherBuilder b = match("typedefType",
+          match("hasDeclaration", match("typedefDecl", match("hasName", cst(t.getName())))));
+      buildBindings(t, b);
+      matcherMap.put(t, b);
     } else {
       throw new RuntimeException("TypedefType is not yet handled.");
     }

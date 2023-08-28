@@ -1,0 +1,42 @@
+MemAllocExpr(e) :- e <: malloc(..) :>.
+MemAllocExpr(e) :- e <: calloc(..) :>.
+MemAllocExpr(e) :- e <: realloc(..) :>.
+
+VarDef(s, d, $u) :- s <: $u = $_ :> , d = c_decl($u), node_to_id(d) != 0.
+
+VarPointsToFreedMem(cfg_loc, p) :- cfg_loc <: free($p) :>, p = c_decl($p), node_to_id(p) != 0.
+VarPointsToFreedMem(cfg_loc_succ, p) :- VarPointsToFreedMem(cfg_loc, p), CFG_SUCC(cfg_loc, cfg_loc_succ), NOT(VarDef(cfg_loc_succ, p, _)).
+VarPointsToFreedMem(cfg_loc, p) :- VarPointsToFreedMem(cfg_loc, q), Assign(p, q, _, _, cfg_loc).
+
+Assign(d, s, $d, $s, cfg_loc) :- cfg_loc <: $d = $s :>, d = c_decl($d), node_to_id(d) != 0, s = c_decl($s), node_to_id(s) != 0.
+Assign(d, s, $d, $s, cfg_loc) :- cfg_loc <: $d = ($t) $s :>, d = c_decl($d), node_to_id(d) != 0, s = c_decl($s), node_to_id(s) != 0.
+Assign($d, s, $d, $s, $d) :- <: $t $d = $s :>, s = c_decl($s), node_to_id(s) != 0.
+Assign($d, s, $d, $s, $d) :- <: $t $d = ($u) $s :>, s = c_decl($s), node_to_id(s) != 0.
+
+# Malloc(cfg_loc, p) :- cfg_loc <: $p = malloc(..) :>, p = c_decl($p), node_to_id(p) != 0.
+# Malloc(cfg_loc, p) :- cfg_loc <: $p = ($t) malloc(..) :>, p = c_decl($p), node_to_id(p) != 0.
+
+# VarPointsTo(cfg_loc, v, $e) :- cfg_loc <: $v = $e :>, MemAllocExpr($e), v = c_decl($v), PtrDecl(v).
+# VarPointsTo(cfg_loc, v, $e) :- cfg_loc <: $v = ($t) $e :>, MemAllocExpr($e), v = c_decl($v), PtrDecl(v).
+# VarPointsTo($v, $v, $e), PtrDecl($v) :- <: $t *$v = $e :>, MemAllocExpr($e).
+# VarPointsTo($v, $v, $e), PtrDecl($v) :- <: $t *$v = ($t) $e :>, MemAllocExpr($e).
+
+# VarPointsTo(cfg_loc_succ, v, e) :- VarPointsTo(cfg_loc, v, e), CFG_SUCC(cfg_loc, cfg_loc_succ), NOT(VarDef(cfg_loc_succ, v, _)).
+
+MemWrite($v) :- <: *$v = $_ :>.
+MemWrite($v) :- <: $v[$_] = $_ :>.
+MemWrite($v) :- <: $v[$_].$f = $_ :>.
+
+# MemRead: memory allocated at e is read at cfg_loc through variable $v
+MemRead(cfg_loc, v) :- cfg_loc <: *$v :>, NOT(MemWrite($v)), v = c_decl($v), node_to_id(v) != 0.
+MemRead(cfg_loc, v) :- cfg_loc <: $v[$_] :>, NOT(MemWrite($v)), v = c_decl($v), node_to_id(v) != 0.
+MemRead(cfg_loc, v) :- cfg_loc <: $v[$_].$f :>, NOT(MemWrite($v)), v = c_decl($v), node_to_id(v) != 0.
+
+
+WarnUseAfterFree(f, l, c, "UseAfterFree") :- VarPointsToFreedMem(cfg_loc, p), MemRead(cfg_loc, p),
+                                                f = c_src_file(cfg_loc),
+                                                l = c_src_line_start(cfg_loc),
+                                                c = c_src_col_start(cfg_loc).
+
+
+OUTPUT('WarnUseAfterFree, "WarnUseAfterFree.csv", "csv").

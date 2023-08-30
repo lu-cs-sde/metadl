@@ -32,8 +32,12 @@ MemRead(cfg_loc, v) :- cfg_loc <: *$v :>, NOT(MemWrite($v)), v = c_decl($v), nod
 MemRead(cfg_loc, v) :- cfg_loc <: $v[$_] :>, NOT(MemWrite($v)), v = c_decl($v), node_to_id(v) != 0.
 MemRead(cfg_loc, v) :- cfg_loc <: $v[$_].$f :>, NOT(MemWrite($v)), v = c_decl($v), node_to_id(v) != 0.
 
+PotentialMemRead(cfg_loc, v) :- MemRead(cfg_loc, v).
+# Passing a pointer to freed memory into a function can't serve any useful purpose. Report a warning.
+PotentialMemRead($v, v) :- <: $f(.., $v, ..) :>, v = c_decl($v), node_to_id(v) != 0.
 
-WarnUseAfterFree(f, l, c, "UseAfterFree") :- VarPointsToFreedMem(cfg_loc, p), MemRead(cfg_loc, p),
+
+WarnUseAfterFree(f, l, c, "UseAfterFree") :- VarPointsToFreedMem(cfg_loc, p), PotentialMemRead(cfg_loc, p),
                                                 f = c_src_file(cfg_loc),
                                                 l = c_src_line_start(cfg_loc),
                                                 c = c_src_col_start(cfg_loc).

@@ -43,4 +43,12 @@ WarnUseAfterFree(f, l, c, "UseAfterFree") :- VarPointsToFreedMem(cfg_loc, p), Po
                                                 c = c_src_col_start(cfg_loc).
 
 
+
+NaiveCG(cfg_loc, fun) :- cfg_loc <: $fun(..) :>, fun = c_decl($fun).
+
+InterProceduralFlow(src_cfg_loc, $w, v, $w) :- src_cfg_loc <: $c(.., $v, ..) :>, <: $rt $callee(.., $pt $w, ..) { .. } :>,
+                                 v = c_decl($v), node_to_id(v) != 0,
+                                 $callee == c_decl($c),
+                                 c_index($v) == c_index($w), GTE(c_index($v), 0).
+
 OUTPUT('WarnUseAfterFree, "WarnUseAfterFree.csv", "csv").

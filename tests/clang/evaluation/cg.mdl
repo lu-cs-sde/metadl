@@ -1,0 +1,15 @@
+# CallSiteWithArg(src_cfg_loc, $c, $v, k, d, i) :- src_cfg_loc <: $c(.., $v, ..) :>, k = c_kind($v), d = c_decl($c), i = c_index($v).
+Def($rt, $callee, $w, k, i) :- <: $rt $callee(.., $pt $w, ..) { .. } :>, k = c_kind($callee), i = c_index($w).
+
+# InterProceduralFlow(src_cfg_loc, $w, $e, $w) :- src_cfg_loc <: $c(.., $e, ..) :>, <: $rt $callee(.., $pt $w, ..) { .. } :>,
+#                                  $callee == c_decl($c),
+#                                  i = c_index($e),
+#                                  GTE(i, 0),
+#                                  i == c_index($w).
+
+
+# VarPointsTo(var : V, heap : H )
+# CallGraph(invo : I, meth : M )
+# FldPointsTo(baseH : H, ﬂd : F, heap : H )
+# InterProcAssign(to : V, from : V )
+# Reachable(meth : M )

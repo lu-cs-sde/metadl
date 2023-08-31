@@ -158,6 +158,10 @@ public class ClangClog {
     return clogJNI.ClangClog_parent(swigCPtr, this, NodeId);
   }
 
+  public long index(long NodeId) {
+    return clogJNI.ClangClog_index(swigCPtr, this, NodeId);
+  }
+
   public boolean isParent(long ParentId, long NodeId) {
     return clogJNI.ClangClog_isParent(swigCPtr, this, ParentId, NodeId);
   }

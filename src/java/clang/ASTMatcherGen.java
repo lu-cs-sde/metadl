@@ -475,7 +475,25 @@ public class ASTMatcherGen implements ASTVisitor {
       b.add(match("isVariadic"));
     }
 
-    b.add(match("hasType", lookup(d.explicitType)));
+    // Disable matching the type.
+    // In case where the pattern is <: $t $f(.., $pt $p, ..) :>
+    // $pt will show up both in the matcher for the paramater (hasParameter)
+    // and in the matcher for the type (functionProtoType). Since the matcher for the
+    // type is independent from the matcher for the parameter, there will be
+    // wrong matche, when $pt is bound to a type of a parameter and $p is
+    // bound to the declaration of another parameter.
+    // b.add(match("hasType", lookup(d.explicitType)));
+
+    AST.FunctionType t = (AST.FunctionType) d.explicitType;
+    b.add(match("hasReturnTypeLoc", match("loc", lookup(t.getReturnType()))));
+
+    // Shallow hasType matcher, to discriminate between K&R style definitions, i.e. int f();
+    // vs modern definition int f(void);
+    if (t instanceof AST.FunctionProtoType) {
+      b.add(match("hasType", match("functionProtoType")));
+    } else {
+      b.add(match("hasType", match("functionNoProtoType")));
+    }
 
     if (d.getBody() != null) {
       b.add(match("hasBody", lookup(d.getBody())));

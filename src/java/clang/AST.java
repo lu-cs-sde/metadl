@@ -1241,18 +1241,17 @@ public class AST {
     }
   }
 
-  public static class FunctionProtoType extends Type {
+  public static abstract class FunctionType extends Type {
+    public Type getReturnType() {
+      return getChild(0);
+    }
+  }
+
+  public static class FunctionProtoType extends FunctionType {
     public boolean variadic;
 
     public void accept(ASTVisitor v) {
       v.visit(this);
-    }
-
-    public Type getReturnType() {
-      if (inner != null && inner.length > 0) {
-        return (Type) inner[0];
-      }
-      return null;
     }
 
     public int getNumParamType() {
@@ -1287,7 +1286,7 @@ public class AST {
     }
   }
 
-  public static class FunctionNoProtoType extends Type {
+  public static class FunctionNoProtoType extends FunctionType {
     // Represent K&R style definitions
     // int f();
     public void accept(ASTVisitor v) {
@@ -1296,10 +1295,6 @@ public class AST {
 
     public static FunctionNoProtoType build(Type retType) {
       return new FunctionNoProtoType().setChildren(retType);
-    }
-
-    public Type getReturnType() {
-      return getChild(0);
     }
   }
 

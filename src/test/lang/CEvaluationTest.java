@@ -94,6 +94,11 @@ public class CEvaluationTest {
     runTest("use_after_free");
   }
 
+  @Test void cg() {
+    runTest("cg");
+  }
+
+
   @DisplayName("Evaluate MetaDL-C programs with the parallel internal evaluator")
   @ParameterizedTest
   @MethodSource("metadlCTests")

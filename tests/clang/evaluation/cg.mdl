@@ -1,15 +1,31 @@
-# CallSiteWithArg(src_cfg_loc, $c, $v, k, d, i) :- src_cfg_loc <: $c(.., $v, ..) :>, k = c_kind($v), d = c_decl($c), i = c_index($v).
-Def($rt, $callee, $w, k, i) :- <: $rt $callee(.., $pt $w, ..) { .. } :>, k = c_kind($callee), i = c_index($w).
+InterProceduralFlowCall(src_cfg_loc, $w, $e, $w) :- src_cfg_loc <: $c(.., $e, ..) :>, <: $rt $callee(.., $pt $w, ..) { .. } :>,
+                                 $callee == c_decl($c),
+                                 i = c_index($e),
+                                 GTE(i, 0),
+                                 i == c_index($w).
 
-# InterProceduralFlow(src_cfg_loc, $w, $e, $w) :- src_cfg_loc <: $c(.., $e, ..) :>, <: $rt $callee(.., $pt $w, ..) { .. } :>,
-#                                  $callee == c_decl($c),
-#                                  i = c_index($e),
-#                                  GTE(i, 0),
-#                                  i == c_index($w).
+InterProceduralFlowReturn(src_cfg_loc, dst_cfg_loc, $e) :- dst_cfg_loc <: $c(..) :>, <: $rt $callee(..) { .. } :>,
+                                                           $callee == c_decl($c),
+                                                           src_cfg_loc <: return $e; :>,
+                                                           c_is_ancestor($callee, src_cfg_loc) != 0.
 
 
-# VarPointsTo(var : V, heap : H )
-# CallGraph(invo : I, meth : M )
-# FldPointsTo(baseH : H, ﬂd : F, heap : H )
-# InterProcAssign(to : V, from : V )
-# Reachable(meth : M )
+CallDetail(src_f, src_l, src_c, dst_f, dst_l, dst_c) :- InterProceduralFlowCall(src_cfg_loc, dst_cfg_loc, _, _),
+                                                        src_f = io_filename(c_src_file(src_cfg_loc)),
+                                                        src_l = c_src_line_start(src_cfg_loc),
+                                                        src_c = c_src_col_start(src_cfg_loc),
+                                                        dst_f = io_filename(c_src_file(dst_cfg_loc)),
+                                                        dst_l = c_src_line_start(dst_cfg_loc),
+                                                        dst_c = c_src_col_start(dst_cfg_loc).
+
+
+ReturnDetail(src_f, src_l, src_c, dst_f, dst_l, dst_c) :- InterProceduralFlowReturn(src_cfg_loc, dst_cfg_loc, _),
+                                                          src_f = io_filename(c_src_file(src_cfg_loc)),
+                                                          src_l = c_src_line_start(src_cfg_loc),
+                                                          src_c = c_src_col_start(src_cfg_loc),
+                                                          dst_f = io_filename(c_src_file(dst_cfg_loc)),
+                                                          dst_l = c_src_line_start(dst_cfg_loc),
+                                                          dst_c = c_src_col_start(dst_cfg_loc).
+
+OUTPUT('ReturnDetail, "ReturnDetail.csv", "csv").
+OUTPUT('CallDetail, "CallDetail.csv", "csv").

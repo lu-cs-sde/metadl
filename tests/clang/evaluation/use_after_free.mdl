@@ -8,6 +8,26 @@ VarPointsToFreedMem(cfg_loc, p) :- cfg_loc <: free($p) :>, p = c_decl($p), node_
 VarPointsToFreedMem(cfg_loc_succ, p) :- VarPointsToFreedMem(cfg_loc, p), CFG_SUCC(cfg_loc, cfg_loc_succ), NOT(VarDef(cfg_loc_succ, p, _)).
 VarPointsToFreedMem(cfg_loc, p) :- VarPointsToFreedMem(cfg_loc, q), Assign(p, q, _, _, cfg_loc).
 
+# Interprocedural rules
+VarPointsToFreedMem(dst_cfg_loc, d) :- VarPointsToFreedMem(cfg_loc, p), InterproceduralFlowCall(cfg_loc, dst_cfg_loc, e, d), p == c_decl(e).
+
+VarPointsToFreedMem(assign_cfg_loc, d) :- InterproceduralFlowReturn(src_cfg_loc, dst_cfg_loc, src_e),
+                                       assign_cfg_loc <: $d = $e :>,
+                                       $e == dst_cfg_loc,
+                                       v_src_e = c_decl(src_e),
+                                       VarPointsToFreedMem(src_cfg_loc, v_src_e),
+                                       d = c_decl($d).
+
+
+VarPointsToFreedMem($d, $d) :- InterproceduralFlowReturn(src_cfg_loc, dst_cfg_loc, src_e),
+                                        <: $t $d = $e :>,
+                                       $e == dst_cfg_loc,
+                                       v_src_e = c_decl(src_e),
+                                       VarPointsToFreedMem(src_cfg_loc, v_src_e).
+
+
+# Debug(l, c, n) :- VarPointsToFreedMem(cfg_loc, v), n = c_name(v), l = c_src_line_start(cfg_loc), c = c_src_col_start(cfg_loc).
+
 Assign(d, s, $d, $s, cfg_loc) :- cfg_loc <: $d = $s :>, d = c_decl($d), node_to_id(d) != 0, s = c_decl($s), node_to_id(s) != 0.
 Assign(d, s, $d, $s, cfg_loc) :- cfg_loc <: $d = ($t) $s :>, d = c_decl($d), node_to_id(d) != 0, s = c_decl($s), node_to_id(s) != 0.
 Assign($d, s, $d, $s, $d) :- <: $t $d = $s :>, s = c_decl($s), node_to_id(s) != 0.
@@ -43,12 +63,17 @@ WarnUseAfterFree(f, l, c, "UseAfterFree") :- VarPointsToFreedMem(cfg_loc, p), Po
                                                 c = c_src_col_start(cfg_loc).
 
 
-
-NaiveCG(cfg_loc, fun) :- cfg_loc <: $fun(..) :>, fun = c_decl($fun).
-
-InterProceduralFlow(src_cfg_loc, $w, v, $w) :- src_cfg_loc <: $c(.., $v, ..) :>, <: $rt $callee(.., $pt $w, ..) { .. } :>,
-                                 v = c_decl($v), node_to_id(v) != 0,
+InterproceduralFlowCall(src_cfg_loc, $w, $e, $w) :- src_cfg_loc <: $c(.., $e, ..) :>, <: $rt $callee(.., $pt $w, ..) { .. } :>,
                                  $callee == c_decl($c),
-                                 c_index($v) == c_index($w), GTE(c_index($v), 0).
+                                 i = c_index($e),
+                                 GTE(i, 0),
+                                 i == c_index($w).
+
+InterproceduralFlowReturn(src_cfg_loc, dst_cfg_loc, $e) :- dst_cfg_loc <: $c(..) :>, <: $rt $callee(..) { .. } :>,
+                                                           $callee == c_decl($c),
+                                                           src_cfg_loc <: return $e; :>,
+                                                           c_is_ancestor($callee, src_cfg_loc) != 0.
+
+
 
 OUTPUT('WarnUseAfterFree, "WarnUseAfterFree.csv", "csv").

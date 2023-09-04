@@ -11,7 +11,8 @@ VarPointsToFreedMem(cfg_loc, p) :- VarPointsToFreedMem(cfg_loc, q), Assign(p, q,
 # Interprocedural rules
 VarPointsToFreedMem(dst_cfg_loc, d) :- VarPointsToFreedMem(cfg_loc, p), InterproceduralFlowCall(cfg_loc, dst_cfg_loc, e, d), p == c_decl(e).
 
-VarPointsToFreedMem(assign_cfg_loc, d) :- InterproceduralFlowReturn(src_cfg_loc, dst_cfg_loc, src_e),
+VarPointsToFreedMem(assign_cfg_loc, d) :- 0 == 1, # Disabled
+                                       InterproceduralFlowReturn(src_cfg_loc, dst_cfg_loc, src_e),
                                        assign_cfg_loc <: $d = $e :>,
                                        $e == dst_cfg_loc,
                                        v_src_e = c_decl(src_e),
@@ -19,7 +20,8 @@ VarPointsToFreedMem(assign_cfg_loc, d) :- InterproceduralFlowReturn(src_cfg_loc,
                                        d = c_decl($d).
 
 
-VarPointsToFreedMem($d, $d) :- InterproceduralFlowReturn(src_cfg_loc, dst_cfg_loc, src_e),
+VarPointsToFreedMem($d, $d) :- 0 == 1, # Disabled
+                                       InterproceduralFlowReturn(src_cfg_loc, dst_cfg_loc, src_e),
                                         <: $t $d = $e :>,
                                        $e == dst_cfg_loc,
                                        v_src_e = c_decl(src_e),
@@ -55,6 +57,8 @@ MemRead(cfg_loc, v) :- cfg_loc <: $v[$_].$f :>, NOT(MemWrite($v)), v = c_decl($v
 PotentialMemRead(cfg_loc, v) :- MemRead(cfg_loc, v).
 # Passing a pointer to freed memory into a function can't serve any useful purpose. Report a warning.
 PotentialMemRead($v, v) :- <: $f(.., $v, ..) :>, v = c_decl($v), node_to_id(v) != 0.
+PotentialMemRead($v, v) :- <: return $v; :>, v = c_decl($v), node_to_id(v) != 0.
+
 
 
 WarnUseAfterFree(f, l, c, "UseAfterFree") :- VarPointsToFreedMem(cfg_loc, p), PotentialMemRead(cfg_loc, p),

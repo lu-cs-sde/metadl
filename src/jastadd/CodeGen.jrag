@@ -327,7 +327,7 @@ aspect CodeGen {
           return new ExternalIfExists(ctx, rel.arity(), rel.getName(), test, consts, cont, true) {
             @Override protected boolean exists(Tuple t) {
               System.out.println("args: " + argIdx());
-              return false;
+              throw new RuntimeException("ExternalIfExists is not implemented.");
             }
           };
         } else {

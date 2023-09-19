@@ -54,7 +54,8 @@ aspect Functor {
     c_dump(StringType.get(), ASTNodeType.get()),
     c_kind(StringType.get(), ASTNodeType.get()),
 
-    c_cfg(ASTNodeType.get(), ASTNodeType.get());
+    c_cfg(ASTNodeType.get(), ASTNodeType.get()),
+    c_cfg_entry(ASTNodeType.get(), ASTNodeType.get());
 
     private final Type ret;
     private final Type[] args;

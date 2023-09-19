@@ -1,0 +1,76 @@
+TaintSourceArg("fgets", 0).
+TaintSourceReturn("fgets").
+
+TaintPropagationArgToArg("memcpy", 1, 0).
+TaintPropagationArgToRet("memcpy", 1).
+
+TaintSink("system", 0).
+
+# Source rules
+ExprPointsToTaintedMem($v) :- <: $f (.., $v ,..) :>, f = c_name($f), i = c_index($v), TaintSourceArg(f, i).
+
+D1($f, f) :- <: $f (.., $vvv, ..) :>, f = c_name($f).#, i = c_index($v).#, TaintSourceArg(f, i).
+
+
+# Propagation rules
+ExprPointsToTaintedMem(w) :- w <: $v + $_ :>, ExprPointsToTaintedMem($v).
+ExprPointsToTaintedMem($v) :- w <: $v + $_ :>, ExprPointsToTaintedMem(w).
+ExprPointsToTaintedMem(v) :- v <: ($t) $v :>, ExprPointsToTaintedMem($v).
+ExprPointsToTaintedMem($v) :- w <: ($t) $v :>, ExprPointsToTaintedMem(w).
+
+VarPointsToTaintedMem(w, v) :- ExprPointsToTaintedMem(w), v = c_decl(w), node_to_id(v) != 0.
+VarPointsToTaintedMem(cfg_loc, v) :- cfg_loc <: $v = $e :>, ExprPointsToTaintedMem($e), v = c_decl($v), node_to_id(v) != 0.
+VarPointsToTaintedMem($v, $v) :- <: $t $v = $e :>, ExprPointsToTaintedMem($e).
+
+ExprPointsToTaintedMem($v) :- <: $v :>, v = c_decl($v), node_to_id(v) != 0, VarPointsToTaintedMem($v, v), name = c_name(v).
+
+VarDef(s, d) :- s <: $u = $_ :> , d = c_decl($u), node_to_id(d) != 0.
+
+VarPointsToTaintedMem(cfg_loc_succ, v) :- VarPointsToTaintedMem(cfg_loc, v), CFG_SUCC(cfg_loc, cfg_loc_succ), NOT(VarDef(cfg_loc_succ, v)).
+
+
+
+ExprPointsToTaintedMem($v) :- <: $f (.., $v, .., $w, ..) :>,
+                               n = c_name($f),
+                               TaintPropagationArgToArg(n, src_i, dst_i),
+                               src_i == c_index($w),
+                               dst_i == c_index($v),
+                               ExprPointsToTaintedMem($w).
+
+ExprPointsToTaintedMem(c) :- c <: $f (.., $w, ..) :>,
+                               n = c_name($f),
+                               TaintPropagationArgToRet(n, src_i),
+                               src_i == c_index($w),
+                               ExprPointsToTaintedMem($w).
+
+
+# Inter-procedural rules
+
+InterProceduralFlowCall($callee, src_cfg_loc, entry, $e, $w) :- src_cfg_loc <: $c(.., $e, ..) :>, <: $rt $callee(.., $pt $w, ..) { .. } :>,
+                                 $callee == c_decl($c),
+                                 i = c_index($e),
+                                 GTE(i, 0),
+                                 i == c_index($w),
+                                 entry = c_cfg_entry($callee),
+                                 node_to_id(entry) != 0,
+                                 debug = c_cfg(entry),
+                                 debug2 = c_cfg(src_cfg_loc).
+
+VarPointsToTaintedMem(dst_loc, w) :- InterProceduralFlowCall(_, _, dst_loc, e, w), ExprPointsToTaintedMem(e), n = c_name(w).
+ExprPointsToTaintedMem(e) :- InterProceduralFlowCall(callee, _, _, e, w), CFG_EXIT(callee, ww), ww = w, VarPointsToTaintedMem(exit, w).
+
+ExprPointsToTaintedMem(e) :- InterProceduralFlowReturn(_, e, src_expr), ExprPointsToTaintedMem(src_expr).
+
+InterProceduralFlowReturn(src_cfg_loc, dst_cfg_loc, $e) :- dst_cfg_loc <: $c(..) :>, <: $rt $callee(..) { .. } :>,
+                                                           $callee == c_decl($c),
+                                                           src_cfg_loc <: return $e; :>,
+                                                           c_is_ancestor($callee, src_cfg_loc) != 0.
+
+
+
+CommandInjection(c) :- c <: $f(.., $v, .. ) :>, ExprPointsToTaintedMem($v), i = c_index($v), n = c_name($f), TaintSink(n, i).
+
+WarnCommandInjection(f, l, c, "OSCommandInjection") :- CommandInjection(loc), f = c_src_file(loc), l = c_src_line_start(loc), c = c_src_col_start(loc).
+
+
+OUTPUT('WarnCommandInjection, "WarnCommandInjection.csv", "csv").

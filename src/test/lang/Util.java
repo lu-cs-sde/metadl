@@ -161,7 +161,7 @@ public final class Util {
     System.out.println(d1.getInputFile());
 
     EvaluationContext ctx = d1.getLang() == CmdLineOpts.Lang.C4 ?
-      new ClangEvaluationContext(d1.getSrcs().keySet(), Collections.emptyList()) :
+      new ClangEvaluationContext(d1.getSrcs().keySet(), d1.getClangArgs()) :
       new EvaluationContext();
     Program program1 = Compiler.run(ctx, d1);
     FormalPredicate fpOut1 = program1.formalPredicateMap().get(GlobalNames.OUTPUT_NAME);
@@ -211,13 +211,23 @@ public final class Util {
     assertEquals(rels1.size(), rels2.size());
   }
 
+  public static void singleEvaluationTest(String outputDir, String factDir,
+                                          List<File>  analyzedFiles,
+                                          String srcDir, String expectedDir,
+                                          String fileName, String fileExt,
+                                          String lang,
+                                          String cmd) throws Exception {
+    singleEvaluationTest(outputDir, factDir, analyzedFiles, srcDir, expectedDir, fileName, fileExt, lang, cmd, null);
+  }
+
 
   public static void singleEvaluationTest(String outputDir, String factDir,
-                      List<File>  analyzedFiles,
-                      String srcDir, String expectedDir,
-                      String fileName, String fileExt,
-                      String lang,
-                      String cmd) throws Exception {
+                                          List<File>  analyzedFiles,
+                                          String srcDir, String expectedDir,
+                                          String fileName, String fileExt,
+                                          String lang,
+                                          String cmd,
+                                          String Xclang) throws Exception {
 
     String sources = analyzedFiles.stream().map(f -> f.getPath() + ",A").collect(Collectors.joining(":"));
 
@@ -229,9 +239,17 @@ public final class Util {
       + " " + srcDir + "/"
       + fileName + fileExt;
 
-    System.out.println("RUN: java -jar compiler.jar " + desc);
+
 
     CmdLineOpts d1 = FileUtil.parseDescription(desc);
+
+    if (Xclang != null) {
+      // The Xclang argument can contain blanks, so it is forwarded directly
+      // without any parsing
+      d1.setClangArgs(Xclang);
+    }
+
+    System.out.println("RUN: java -jar compiler.jar " + desc + (Xclang != null ? " -Xclang='" + Xclang + "'" : "" ));
 
     Map<String, RelationWrapper> outRelations = doSingleEvaluation(d1);
     for (Map.Entry<String, RelationWrapper> rel : outRelations.entrySet()) {

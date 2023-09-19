@@ -1,0 +1,4 @@
+/work/projects/metadl/tests/clang/evaluation/src/os_command_injection/CWE78_OS_Command_Injection__char_console_system_01.c,31,16,OSCommandInjection
+/work/projects/metadl/tests/clang/evaluation/src/os_command_injection/cmd_inject.c,11,3,OSCommandInjection
+/work/projects/metadl/tests/clang/evaluation/src/os_command_injection/cmd_inject.c,18,3,OSCommandInjection
+/work/projects/metadl/tests/clang/evaluation/src/os_command_injection/cmd_inject.c,29,3,OSCommandInjection

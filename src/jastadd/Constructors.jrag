@@ -43,6 +43,8 @@ aspect Constructors {
     switch (p.getPRED_ID()) {
     case "CFG_SUCC":
       return new ExternalLiteral(p, ts, ClangEvaluationContext.ExternalLiteralPayload.cfgSucc());
+    case "CFG_EXIT":
+      return new ExternalLiteral(p, ts, ClangEvaluationContext.ExternalLiteralPayload.cfgExit());
     default:
       return new Literal(p, ts);
     }

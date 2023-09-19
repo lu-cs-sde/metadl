@@ -10,13 +10,17 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.function.LongBinaryOperator;
 import java.util.function.LongUnaryOperator;
+import java.util.function.Function;
+
 
 import org.apache.commons.collections4.SetUtils;
 
+import clang.AST.UnaryOperator;
 import clang.swig.ClangClog;
 import clang.swig.ClangClogBuilder;
 import clang.swig.VectorString;
 import clang.swig.VectorVectorLong;
+import clang.swig.VectorLong;
 import eval.Control;
 import eval.EvaluationContext;
 import eval.Operation;
@@ -86,6 +90,7 @@ public class ClangEvaluationContext extends EvaluationContext {
     }
   }
 
+
   public static Control genCodeExternalLiteral(ExternalLiteral l, Map<String, Integer> varToIdMap,
                                                ClangEvaluationContext clangCtx, Control cont) {
 
@@ -130,6 +135,33 @@ public class ClangEvaluationContext extends EvaluationContext {
         }
       };
     }
+
+    case CFG_EXIT: {
+      Variable nVar = (Variable) l.getTerms(0);
+      Variable sVar = (Variable) l.getTerms(1);
+
+      int nVarIdx = varToIdMap.get(nVar.getVAR_ID());
+      int sVarIdx = varToIdMap.get(sVar.getVAR_ID());
+
+      return new Control() {
+        @Override public void eval(Tuple t) {
+          long nid = t.get(nVarIdx);
+
+          for (long res : clangCtx.clog.cfgExit(nid)) {
+            t.set(sVarIdx, res);
+            cont.eval(t);
+          }
+        }
+
+        @Override public String prettyPrint(int indent) {
+          String s = Control.Util.indent(indent)
+            + String.format("EXTERNAL FOR t IN %s WHERE ", payload.kind.name())
+            + "\n" + cont.prettyPrint(indent + 1);
+          return s;
+        }
+      };
+    }
+
     default:
     case PARENT:
       return Control.nop();
@@ -183,7 +215,7 @@ public class ClangEvaluationContext extends EvaluationContext {
           System.err.println("Failed to register matcher " + matcher);
           throw new RuntimeException();
         } else {
-          System.err.println("Registered matcher " + matcher);
+          System.err.println("Registered matcher [" + matcherId + "]"  + matcher);
         }
 
         matchers.add(MatcherInfo.of(matcher, matcherId ,mb.bindings(), varToIdMap));
@@ -323,6 +355,9 @@ public class ClangEvaluationContext extends EvaluationContext {
     case "c_cfg":
       return makeUnaryOperation(name, args.get(0), nid -> clog.cfg(nid));
 
+    case "c_cfg_entry":
+      return makeUnaryOperation(name, args.get(0), nid -> clog.cfgEntry(nid));
+
     case "c_dump":
       return makeUnaryOperation(name, args.get(0), nid -> internalizeString(clog.dump(nid)));
 
@@ -356,6 +391,7 @@ public class ClangEvaluationContext extends EvaluationContext {
       PATTERN,
       PARENT,
       CFG_SUCC,
+      CFG_EXIT,
       CFG_PRED
     }
     List<ObjLangASTNode> patterns;
@@ -380,6 +416,13 @@ public class ClangEvaluationContext extends EvaluationContext {
       var ret = new ExternalLiteralPayload();
       ret.kind = Kind.CFG_SUCC;
       return ret;
+    }
+
+    public static ExternalLiteralPayload cfgExit() {
+      var ret = new ExternalLiteralPayload();
+      ret.kind = Kind.CFG_EXIT;
+      return ret;
+
     }
 
   }

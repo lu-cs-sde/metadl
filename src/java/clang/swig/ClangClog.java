@@ -178,6 +178,14 @@ public class ClangClog {
     return clogJNI.ClangClog_cfg(swigCPtr, this, NodeId);
   }
 
+  public long cfgEntry(long NodeId) {
+    return clogJNI.ClangClog_cfgEntry(swigCPtr, this, NodeId);
+  }
+
+  public VectorLong cfgExit(long NodeId) {
+    return new VectorLong(clogJNI.ClangClog_cfgExit(swigCPtr, this, NodeId), true);
+  }
+
   public VectorLong cfgSucc(long NodeId) {
     return new VectorLong(clogJNI.ClangClog_cfgSucc(swigCPtr, this, NodeId), true);
   }

@@ -27,5 +27,6 @@ ReturnDetail(src_f, src_l, src_c, dst_f, dst_l, dst_c) :- InterProceduralFlowRet
                                                           dst_l = c_src_line_start(dst_cfg_loc),
                                                           dst_c = c_src_col_start(dst_cfg_loc).
 
+
 OUTPUT('ReturnDetail, "ReturnDetail.csv", "csv").
 OUTPUT('CallDetail, "CallDetail.csv", "csv").

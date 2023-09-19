@@ -3,6 +3,7 @@ package lang;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.File;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -33,6 +34,7 @@ public class CEvaluationTest {
   private static void runTest(String fileName, boolean parallelEval) throws Exception {
     String analyzedFilesDir = "tests/clang/evaluation/src";
     List<File> analyzedFiles = FileUtil.flattenFilesAndDirs(Collections.singletonList(new File(analyzedFilesDir, fileName)), "*.c", "*.cpp");
+    Path includeDir = Path.of(analyzedFilesDir, "include");
 
     Util.singleEvaluationTest("tests/output/",
                               "tests/clang/evaluation/facts",
@@ -42,7 +44,8 @@ public class CEvaluationTest {
                               fileName,
                               ".mdl",
                               "c4",
-                              parallelEval ? "-e metadl-par" : "-e metadl");
+                              parallelEval ? "-e metadl-par" : "-e metadl",
+                              "--extra-arg -I" + includeDir.toAbsolutePath());
   }
 
   private static void runTest(String fileName) {
@@ -98,24 +101,7 @@ public class CEvaluationTest {
     runTest("cg");
   }
 
-
-  @DisplayName("Evaluate MetaDL-C programs with the parallel internal evaluator")
-  @ParameterizedTest
-  @MethodSource("metadlCTests")
-  @Disabled
-  void evaluationTestMetaDLCParallelInternal(String fileName) throws Exception {
-    String analyzedFilesDir = "tests/clang/evaluation/src";
-    List<File> analyzedFiles = FileUtil.flattenFilesAndDirs(Collections.singletonList(new File(analyzedFilesDir, fileName)), "*.c", "*.cpp");
-
-    Util.singleEvaluationTest("tests/output/",
-                              "tests/clang/evaluation/facts",
-                              analyzedFiles,
-                              "tests/clang/evaluation",
-                              "tests/clang/evaluation/expected",
-                              fileName,
-                              ".mdl",
-                              "c4",
-                              "-e metadl-par");
+  @Test void os_command_injection() {
+    runTest("os_command_injection");
   }
-
 }

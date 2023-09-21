@@ -138,6 +138,10 @@ public class ClangClog {
     return new VectorVectorLong(clogJNI.ClangClog_matchFromNode(swigCPtr, this, MatcherId, NodeId), true);
   }
 
+  public VectorVectorLong matchAtNode(long MatcherId, long NodeId) {
+    return new VectorVectorLong(clogJNI.ClangClog_matchAtNode(swigCPtr, this, MatcherId, NodeId), true);
+  }
+
   public ClangClog.Loc srcLocation(long NodeId) {
     return new ClangClog.Loc(clogJNI.ClangClog_srcLocation(swigCPtr, this, NodeId), true);
   }

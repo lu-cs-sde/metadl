@@ -67,8 +67,7 @@ FunctorSymbol ::= <FUNC_ID>;
 /**
    Patterns
 **/
-Pattern : CommonLiteral ::= <PATTERN> /Literal/;
-BoundedPattern : Pattern ::= CommonVariable;
+Pattern : CommonLiteral ::= <PATTERN> /Literal/ [Root:Variable] [Subtree:Variable];
 
 /**
    Internal AST Nodes

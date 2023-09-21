@@ -124,11 +124,12 @@ aspect PretyPrinting {
 
 	}
 
-	public void Pattern.printRoot(PrettyPrinter pr) { }
-	public void BoundedPattern.printRoot(PrettyPrinter pr) {
-		getCommonVariable().prettyPrint(pr);
-		pr.out.print(" ");
-	}
+	public void Pattern.printRoot(PrettyPrinter pr) {
+    if (hasRoot()) {
+      getRoot().prettyPrint(pr);
+      pr.out.print(" ");
+    }
+  }
 
 	public void Pattern.prettyPrint(PrettyPrinter pr) {
 		if (hasNot())

@@ -252,7 +252,7 @@ aspect Predicate {
 
 	eq Literal.getChild().literal() = this;
 	eq Constraint.getChild().literal() = this;
-	eq BoundedPattern.getCommonVariable().literal() = this;
+	eq Pattern.getRoot().literal() = this;
 
 	public interface PredicateInterface {
 		public boolean isRef();

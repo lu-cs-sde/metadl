@@ -33,10 +33,7 @@ aspect Constructors {
 		this(new Opt(), new List<Expr>().add(l).add(r));
 	}
 	public Pattern.Pattern(String s) {
-		this(new Opt(), s);
-	}
-	public BoundedPattern.BoundedPattern(beaver.Symbol s, CommonVariable v) {
-		this(new Opt(), s, v);
+		this(new Opt(), s, new Opt(), new Opt());
 	}
 
   public static Literal Literal.build(PredicateSymbol p, List<Term> ts) {

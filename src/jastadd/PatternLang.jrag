@@ -81,10 +81,7 @@ aspect PatternLang {
     return program().contextPredicateType(getPRED_ID()) != null;
   }
 
-  syn lazy java.util.List<Clause> Pattern.getClauses() = getClausesHelper(null);
-  eq BoundedPattern.getClauses() = getClausesHelper(getCommonVariable());
-
-  public java.util.List<Clause> Pattern.getClausesHelper(CommonVariable bindVar) {
+  syn lazy java.util.List<Clause> Pattern.getClauses() {
     if (program().getLang() == CmdLineOpts.Lang.C4) {
       return Collections.emptyList();
     }
@@ -92,9 +89,9 @@ aspect PatternLang {
     AnalyzeContext ctx = program().getAnalysisContext();
     ArrayList<Clause> ret = new ArrayList<>();
     for (ObjLangASTNode n : altParse()) {
-      Literal head = getLiteralHelper(bindVar);
+      Literal head = getLiteralHelper();
       Rule r = new Rule(new List<CommonLiteral>().add(head),
-                new List<CommonLiteral>().addAll(n.literals(ctx, bindVar)));
+                        new List<CommonLiteral>().addAll(n.literals(ctx, hasRoot() ? getRoot() : null)));
       ret.add(r);
     }
     return ret;
@@ -115,10 +112,9 @@ aspect PatternLang {
     return null;
   }
 
-  syn String Pattern.predName() = hash(getPATTERN());
-  eq BoundedPattern.predName() = hash(getPATTERN() + "bounded");
+  syn String Pattern.predName() = hash(getPATTERN() + (hasRoot() ? "bounded" : ""));
 
-  protected Literal Pattern.getLiteralHelper(CommonVariable bindVar) {
+  protected Literal Pattern.getLiteralHelper() {
     String predName = program().getAnalysisContext().prefix(predName());
 
     List<Term> headVars = new List<>();
@@ -126,15 +122,15 @@ aspect PatternLang {
     // the same metavariables
     java.util.List<ObjLangASTNode> ASTs = altParse();
     ObjLangASTNode n = ASTs.iterator().next();
-    if (bindVar != null)
-      headVars.add(bindVar.treeCopy());
+    if (hasRoot())
+      headVars.add(getRoot().treeCopy());
     for (String v : n.metavariables())
       headVars.add(new Variable(v));
     if (program().getLang() == CmdLineOpts.Lang.C4) {
+      Optional<String> rootVariable = hasRoot() ? Optional.of(getRoot().getVAR_ID()) : Optional.empty();
       ExternalLiteral head = new ExternalLiteral(new PredicateSymbol(predName),
                                                  headVars,
-                                                 ClangEvaluationContext.ExternalLiteralPayload.pattern(ASTs,
-                                                                                                       getCommonVariableOpt()));
+                                                 ClangEvaluationContext.ExternalLiteralPayload.pattern(ASTs, rootVariable));
       return head;
     } else {
       // we're using a String hash  here; fingers crossed for no collisions
@@ -146,13 +142,7 @@ aspect PatternLang {
   }
 
   syn nta Literal Pattern.getLiteral() {
-    Literal l = getLiteralHelper(null);
-    if (hasNot())
-      l.setNot(new Not());
-    return l;
-  }
-  eq BoundedPattern.getLiteral() {
-    Literal l = getLiteralHelper(getCommonVariable());
+    Literal l = getLiteralHelper();
     if (hasNot())
       l.setNot(new Not());
     return l;
@@ -307,17 +297,10 @@ aspect PatternLang {
     for (ObjLangASTNode ast : altParse()) {
       vars.addAll(ast.metavariables());
     }
+    if (hasRoot())
+      vars.addAll(getRoot().variables());
     return vars;
   }
-
-  eq BoundedPattern.variables() {
-    TreeSet<String> vars = super.variables();
-    vars.addAll(getCommonVariable().variables());
-    return vars;
-  }
-
-  syn Optional<String> Pattern.getCommonVariableOpt() = Optional.empty();
-  eq BoundedPattern.getCommonVariableOpt() = Optional.of(getCommonVariable().variables().iterator().next());
 
   eq Pattern.boundVariables() = getLiteral().boundVariables();
 

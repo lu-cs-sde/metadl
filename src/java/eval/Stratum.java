@@ -100,8 +100,7 @@ public interface Stratum {
 				StopWatch timer = StopWatch.createStarted();
 				profile().startTimer("strata", String.format("%x", desc.hashCode()));
 				for (Control c : stmts) {
-					Tuple t = new Tuple(nEvalVariables);
-					c.eval(t);
+					c.parallelEval(nEvalVariables);
 				}
 				profile().stopTimer("strata", String.format("%x", desc.hashCode()));
 				timer.stop();

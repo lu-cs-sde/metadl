@@ -5,7 +5,7 @@ import clang.swig.VectorLong;
 import clang.swig.VectorVectorLong;
 import eval.Control;
 import eval.Tuple;
-
+import static prof.Profile.profile;
 
 public class ExternalMatcher implements Control {
   private ClangEvaluationContext ctx;
@@ -24,6 +24,7 @@ public class ExternalMatcher implements Control {
     this.ctx = ctx;
     this.cont = cont;
     this.matcher = matcher;
+    this.ID = (cont.prettyPrint(0) + matcher.matcher).hashCode();
   }
 
   @Override public void eval(Tuple t) {
@@ -37,10 +38,14 @@ public class ExternalMatcher implements Control {
 
       cont.eval(t);
     }
+
+    profile().addCounter("loop_count", String.format("%x", ID), rows.size());
   }
 
+  private final int ID;
+
   @Override public String prettyPrint(int indent) {
-    String s = Control.Util.indent(indent) + String.format("EXTERNAL FOR t IN %s WHERE ", matcher.matcher);
+    String s = Control.Util.indent(indent) + String.format("[%x] EXTERNAL FOR t IN %s WHERE ", ID, matcher.matcher);
 
     return s + "\n" + cont.prettyPrint(indent + 1);
   }

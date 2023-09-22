@@ -9,7 +9,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.apache.commons.lang3.tuple.Pair;
-
+import static prof.Profile.profile;
 
 public interface Control {
   public static class Util {
@@ -217,6 +217,7 @@ class ForAll implements Control {
     Index index = new Index(Stream.concat(test.stream(), consts.stream())
                             .map(p -> p.getLeft()).collect(Collectors.toList()), rel.arity());
     this.view = rel.getReadOnlyView(index);
+    this.ID = (cont.prettyPrint(0) + rel.getName()).hashCode();
   }
 
   public void eval(Tuple t) {
@@ -241,6 +242,8 @@ class ForAll implements Control {
       }
       cont.eval(t);
     }
+
+    profile().addCounter("loop_count", String.format("%x", ID), tuples.size());
   }
 
   // @Override public void parallelEval(int nVariables) {
@@ -280,8 +283,10 @@ class ForAll implements Control {
   //   }
   // }
 
+  private final int ID;
+
   @Override public String prettyPrint(int indent) {
-    String s = Util.indent(indent) + String.format("FOR t IN %s WHERE ", rel.getName());
+    String s = Util.indent(indent) + String.format("[%x] FOR t IN %s WHERE ", ID, rel.getName());
 
     for (Pair<Integer, Integer> t : test) {
       s += String.format("%s[%d] = t[%d] ", rel.getName(), t.getLeft(), t.getRight());

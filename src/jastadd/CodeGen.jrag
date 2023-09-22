@@ -13,7 +13,6 @@ import java.util.SortedSet;
 import java.util.SortedMap;
 import java.util.stream.Stream;
 import clang.ClangEvaluationContext;
-import clang.ClangEvaluationContext.MatcherInfo;
 
 aspect CodeGen {
 
@@ -324,18 +323,14 @@ aspect CodeGen {
       }
       if (assign.isEmpty()) {
         if (isExternal()) {
-          return new ExternalIfExists(ctx, rel.arity(), rel.getName(), test, consts, cont, true) {
-            @Override protected boolean exists(Tuple t) {
-              System.out.println("args: " + argIdx());
-              throw new RuntimeException("ExternalIfExists is not implemented.");
-            }
-          };
+          return ClangEvaluationContext.genCodeExternalLiteral((ExternalLiteral) this, varToId, boundVars,
+                                                               (ClangEvaluationContext) ctx, cont);
         } else {
           return Control.ifExists(rel, test, consts, cont);
         }
       } else {
         if (isExternal()) {
-          return ClangEvaluationContext.genCodeExternalLiteral((ExternalLiteral) this, varToId,
+          return ClangEvaluationContext.genCodeExternalLiteral((ExternalLiteral) this, varToId, boundVars,
                                                                (ClangEvaluationContext) ctx, cont);
         } else {
           return Control.forAll(ctx, rel, test, consts, assign, cont);

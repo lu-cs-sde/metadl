@@ -72,38 +72,19 @@ public class ClangEvaluationContext extends EvaluationContext {
     return ret;
   }
 
-  public static class MatcherInfo {
-    public long matcherId;
-    public int[] resultMap;
-    public String matcher;
-
-    public static MatcherInfo of(String matcher, long matcherId, SortedSet<String> usedMetavars, Map<String, Integer> varToIdMap) {
-      var r = new MatcherInfo();
-      r.matcherId = matcherId;
-      r.resultMap = new int[usedMetavars.size()];
-      r.matcher = matcher;
-      int i = 0;
-      for (String v : usedMetavars) {
-        r.resultMap[i++] = varToIdMap.get(v);
-      }
-      return r;
-    }
-  }
-
-
-  public static Control genCodeExternalLiteral(ExternalLiteral l, Map<String, Integer> varToIdMap,
+  public static Control genCodeExternalLiteral(ExternalLiteral l, Map<String, Integer> varToIdMap, Set<String> boundVars,
                                                ClangEvaluationContext clangCtx, Control cont) {
 
     ExternalLiteralPayload payload = (ExternalLiteralPayload) l.getExternalPayload();
 
     switch (payload.kind) {
     case PATTERN: {
-      List<List<MatcherInfo>> matcherIds = clangCtx.registerExternalLiteral(l, varToIdMap);
+      List<List<MatcherInfo>> matcherIds = clangCtx.registerExternalLiteral(payload, varToIdMap, boundVars);
       java.util.List<Control> seq = new ArrayList<>();
       for (java.util.List<MatcherInfo> andMatchers : matcherIds) {
         Control next = cont;
         for (MatcherInfo m : andMatchers) {
-          next = new ExternalMatcher(clangCtx, m, next);
+          next = m.genControl(clangCtx, next);
         }
         seq.add(next);
       }
@@ -168,14 +149,46 @@ public class ClangEvaluationContext extends EvaluationContext {
     }
   }
 
-  private List<List<MatcherInfo>> registerExternalLiteral(ExternalLiteral l, Map<String, Integer> varToIdMap) {
+  private List<List<MatcherInfo>> registerExternalLiteral(ExternalLiteralPayload payload, Map<String, Integer> varToIdMap, Set<String> boundVars) {
+    List<List<MatcherBuilder>> matchers = analyzeExternalLiteral(payload);
+    List<List<MatcherInfo>> matchersOut = new ArrayList<>();
+    for (List<MatcherBuilder> orMatcher : matchers) {
+      List<MatcherInfo> andMatchersOut = new ArrayList<>();
+      for (MatcherBuilder andMatcher : orMatcher) {
+        String m = andMatcher.generate();
+
+        boolean needsGlobalMatcher = !(andMatcher.hasBinding() && boundVars.contains(andMatcher.getBinding()));
+
+        long matcherId = clog.registerMatcher(m, needsGlobalMatcher);
+
+        if (matcherId < 0) {
+          System.err.println("Failed to register matcher " + m);
+          throw new RuntimeException();
+        } else {
+          System.err.println("Registered '" + (needsGlobalMatcher ? "global" :
+                             "atNode") + "' matcher [" + matcherId + "]"  + m);
+        }
+
+        if (needsGlobalMatcher) {
+          andMatchersOut.add(MatcherInfo.global(m, matcherId, andMatcher.bindings(), varToIdMap));
+        } else {
+          andMatchersOut.add(MatcherInfo.matchAtNode(m, matcherId, andMatcher.bindings(), varToIdMap, andMatcher.getBinding()));
+        }
+      }
+
+      matchersOut.add(andMatchersOut);
+    }
+
+    return matchersOut;
+  }
+
+
+  public static List<List<MatcherBuilder>> analyzeExternalLiteral(ExternalLiteralPayload payload) {
     // Each pattern can be parsed multiple ways (outer List)
     // Each parse of the pattern can yield multiple matches (inner List)
     // For a pattern to match as least one of its parses must match (OR outer list)
     // For a parse to match, all the generated clang matchers must match (AND inner list)
-    List<List<MatcherInfo>> res = new ArrayList<>();
-
-    ExternalLiteralPayload payload = (ExternalLiteralPayload) l.getExternalPayload();
+    List<List<MatcherBuilder>> res = new ArrayList<>();
     List<ObjLangASTNode> ASTs = payload.patterns;
 
     L: for (ObjLangASTNode Node : ASTs) {
@@ -185,8 +198,8 @@ public class ClangEvaluationContext extends EvaluationContext {
       // One node may produce multiple matchers. For example
       // <: struct S { int x; } s; :> produces  a varDecl(...)
       // and a recordDecl(...) match
-      Iterator<MatcherBuilder> mit = genMatcherBuilder(cNode).iterator();
-      List<MatcherInfo> matchers = new ArrayList<>();
+      List<MatcherBuilder> matchers = genMatcherBuilder(cNode);
+      Iterator<MatcherBuilder> mit = matchers.iterator();
 
       Set<String> usedMetaVarSet = new TreeSet<>();
       Set<String> rootVariableSet = payload.rootVariable.isPresent() ?
@@ -201,24 +214,13 @@ public class ClangEvaluationContext extends EvaluationContext {
           // TODO: decide if root variables are needed at all in Clog
           if (payload.rootVariable.isPresent() &&
               mb.hasBinding()) {
-            System.err.println("Skipping interpretation of pattern " +
+            System.out.println("Skipping interpretation of pattern " +
                                mb.generate() + " due to double binding of root variable.");
             continue L;
           }
           payload.rootVariable.ifPresent(s -> mb.bind(s));
         }
 
-        String matcher = mb.generate();
-        long matcherId = clog.registerMatcher(matcher, true);
-
-        if (matcherId < 0) {
-          System.err.println("Failed to register matcher " + matcher);
-          throw new RuntimeException();
-        } else {
-          System.err.println("Registered matcher [" + matcherId + "]"  + matcher);
-        }
-
-        matchers.add(MatcherInfo.of(matcher, matcherId ,mb.bindings(), varToIdMap));
 
         if (SetUtils.intersection(usedMetaVarSet, mb.bindings()).isEmpty()) {
           usedMetaVarSet.addAll(mb.bindings());
@@ -236,6 +238,7 @@ public class ClangEvaluationContext extends EvaluationContext {
 
     return res;
   }
+
 
   private static abstract class SrcLocOperation implements Operation {
     private Operation nodeArg;
@@ -382,6 +385,11 @@ public class ClangEvaluationContext extends EvaluationContext {
     }
 
     VectorVectorLong matches = clog.matchFromRoot(matcherId);
+    return matches;
+  }
+
+  public VectorVectorLong lookupAt(long matcherId, long nodeId) {
+    VectorVectorLong matches = clog.matchAtNode(matcherId, nodeId);
     return matches;
   }
 

@@ -6,7 +6,7 @@ import eval.Control;
 import eval.Tuple;
 import static prof.Profile.profile;
 
-public class ExternalMatcher implements Control {
+public class ExternalLocalMatcher implements Control {
   private ClangEvaluationContext ctx;
   private Control cont;
   private MatcherInfo matcher;
@@ -17,17 +17,19 @@ public class ExternalMatcher implements Control {
      consts - pairs of (column, value) of constants to assign
      arity - the arity of the external relation
   */
-  public ExternalMatcher(ClangEvaluationContext ctx,
-                        MatcherInfo matcher,
-                        Control cont) {
+  public ExternalLocalMatcher(ClangEvaluationContext ctx,
+                              MatcherInfo matcher,
+                              Control cont) {
     this.ctx = ctx;
     this.cont = cont;
     this.matcher = matcher;
     this.ID = (cont.prettyPrint(0) + matcher.matcher).hashCode();
+    if (matcher.kind != MatcherInfo.Kind.AT)
+      throw new RuntimeException("This should be an ExternalMatcher.");
   }
 
   @Override public void eval(Tuple t) {
-    VectorVectorLong rows = ctx.lookup(matcher.matcherId);
+    VectorVectorLong rows = ctx.lookupAt(matcher.matcherId, t.get(matcher.atNodeIdx));
     for (VectorLong row : rows) {
       for (int i = 0; i < matcher.resultMap.length; ++i) {
         if (matcher.resultMap[i] >= 0) {

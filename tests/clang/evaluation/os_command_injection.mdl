@@ -22,7 +22,7 @@ VarPointsToTaintedMem(w, v) :- ExprPointsToTaintedMem(w), v = c_decl(w), node_to
 VarPointsToTaintedMem(cfg_loc, v) :- cfg_loc <: $v = $e :>, ExprPointsToTaintedMem($e), v = c_decl($v), node_to_id(v) != 0.
 VarPointsToTaintedMem($v, $v) :- <: $t $v = $e :>, ExprPointsToTaintedMem($e).
 
-ExprPointsToTaintedMem($v) :- <: $v :>, v = c_decl($v), node_to_id(v) != 0, VarPointsToTaintedMem($v, v), name = c_name(v).
+ExprPointsToTaintedMem($v) :- VarPointsToTaintedMem($v, v), <: $v :>, v = c_decl($v), node_to_id(v) != 0, name = c_name(v).
 
 VarDef(s, d) :- s <: $u = $_ :> , d = c_decl($u), node_to_id(d) != 0.
 

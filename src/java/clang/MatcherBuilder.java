@@ -1,12 +1,27 @@
 package clang;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
 interface AbstractMatcherBuilder {
-    String generate();
+  String generate();
+
+  default boolean hasBinding() {
+    return false;
+  }
+
+  default String getBinding() {
+    if (!hasBinding())
+      throw new RuntimeException("No binding for this matcher.");
+    return null;
+  }
+
+  default List<AbstractMatcherBuilder> getChildren() {
+    return Collections.emptyList();
+  }
 }
 
 class ConstMatcherBuilder implements AbstractMatcherBuilder {
@@ -53,8 +68,19 @@ public class MatcherBuilder implements AbstractMatcherBuilder {
     return this;
   }
 
-  public boolean hasBinding() {
+  @Override
+  public List<AbstractMatcherBuilder> getChildren() {
+    return this.inner;
+  }
+
+  @Override public boolean hasBinding() {
     return this.metavar != null;
+  }
+
+  @Override public String getBinding() {
+    if (!hasBinding())
+      throw new RuntimeException("No binding for this matcher.");
+    return this.metavar;
   }
 
   @Override public String generate() {
@@ -78,11 +104,13 @@ public class MatcherBuilder implements AbstractMatcherBuilder {
   }
 
   private static void collectBindings(AbstractMatcherBuilder b, SortedSet<String> bindings) {
-    if (!(b instanceof MatcherBuilder))
-      return;
-    if (((MatcherBuilder) b).metavar != null)
-      bindings.add(((MatcherBuilder) b).metavar);
-    for (AbstractMatcherBuilder ib : ((MatcherBuilder) b).inner) {
+    if (b.hasBinding()) {
+      if (!bindings.add(b.getBinding())) {
+        // TODO: Proper error reporting
+        throw new RuntimeException(String.format("Variable '%s' is bound twice in a pattern.", b.getBinding()));
+      }
+    }
+    for (AbstractMatcherBuilder ib : b.getChildren()) {
       collectBindings(ib, bindings);
     }
   }

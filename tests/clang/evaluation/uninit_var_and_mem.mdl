@@ -6,7 +6,7 @@ VarDeclNoInit($x) :- <: $t $x :>, NOT(ArrayDeclNoInit($x)), NOT(ParamDecl($x)), 
 # MemAlloc(d, $x): $x is a pointer to allocated memory
 ArrayDeclNoInit($x), MemNoInit($x), PtrDecl($x), MemAlloc($x) :- <: $t $x[$_] :>, c_has_global_storage($x) == 0.
 
-ParamDecl($x) :- <: $t $f1(.., $t $x, ..) { .. } :>.
+ParamDecl($x) :- <: $t $f1(.., $pt $x, ..) { .. } :>.
 
 PtrDecl($p) :- <: $t *$p :>.
 
@@ -42,7 +42,7 @@ MemAllocExpr(e) :- e <: malloc(..) :>.
 VarPointsTo(cfg_loc, v, $e) :- cfg_loc <: $v = $e :>, MemAllocExpr($e), v = c_decl($v), PtrDecl(v).
 VarPointsTo(cfg_loc, v, $e) :- cfg_loc <: $v = ($t) $e :>, MemAllocExpr($e), v = c_decl($v), PtrDecl(v).
 VarPointsTo($v, $v, $e), PtrDecl($v) :- <: $t *$v = $e :>, MemAllocExpr($e).
-VarPointsTo($v, $v, $e), PtrDecl($v) :- <: $t *$v = ($t) $e :>, MemAllocExpr($e).
+VarPointsTo($v, $v, $e), PtrDecl($v) :- <: $t *$v = ($t1) $e :>, MemAllocExpr($e).
 VarPointsTo($v, $v, $v), PtrDecl($v) :- <: $t $v[$_] :>.
 
 VarPointsTo(cfg_loc_succ, v, e) :- VarPointsTo(cfg_loc, v, e), CFG_SUCC(cfg_loc, cfg_loc_succ), NOT(VarDef(cfg_loc_succ, v, _)).

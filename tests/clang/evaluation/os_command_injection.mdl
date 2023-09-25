@@ -4,6 +4,8 @@ ArgIndexRange(i) :- ArgIndexRange(j), i = j + 1, LT(i, 100).
 
 TaintSourceArg("fgets", 0).
 TaintSourceReturn("fgets").
+TaintSourceArg("fgetws", 0).
+TaintSourceReturn("fgetws").
 TaintSourceArg("recv", 1).
 TaintSourceReturn("getenv").
 
@@ -18,9 +20,6 @@ TaintSink("popen", 0).
 
 # Source rules
 ExprPointsToTaintedMem($v) :- <: $f (.., $v ,..) :>, f = c_name($f), i = c_index($v), TaintSourceArg(f, i).
-
-D1($f, f) :- <: $f (.., $vvv, ..) :>, f = c_name($f).#, i = c_index($v).#, TaintSourceArg(f, i).
-
 
 # Propagation rules
 ExprPointsToTaintedMem(w) :- w <: $v + $_ :>, ExprPointsToTaintedMem($v).
@@ -74,6 +73,8 @@ ExprPointsToTaintedMem(e) :- InterProceduralFlowCall(callee, _, _, e, w), CFG_EX
 
 ExprPointsToTaintedMem(e) :- InterProceduralFlowReturn(_, e, src_expr), ExprPointsToTaintedMem(src_expr).
 
+ExprPointsToTaintedMem(call_expr), D1(name) :- call_expr <: $callee(..) :>, name = c_name($callee), TaintSourceReturn(name).
+
 InterProceduralFlowReturn(src_cfg_loc, dst_cfg_loc, $e) :- dst_cfg_loc <: $c(..) :>,
                                                            $callee = c_decl($c),
                                                            node_to_id($callee) != 0,
@@ -85,7 +86,7 @@ InterProceduralFlowReturn(src_cfg_loc, dst_cfg_loc, $e) :- dst_cfg_loc <: $c(..)
 
 CommandInjection(c) :- c <: $f(.., $v, .. ) :>, ExprPointsToTaintedMem($v), i = c_index($v), n = c_name($f), TaintSink(n, i).
 
-WarnCommandInjection(f, l, c, "OSCommandInjection") :- CommandInjection(loc), f = c_src_file(loc), l = c_src_line_start(loc), c = c_src_col_start(loc).
+WarnCommandInjection(f, l, c, "OSCommandInjection") :- CommandInjection(loc), f = io_relative_path(c_src_file(loc)), l = c_src_line_start(loc), c = c_src_col_start(loc).
 
 
 OUTPUT('WarnCommandInjection, "WarnCommandInjection.csv", "csv").

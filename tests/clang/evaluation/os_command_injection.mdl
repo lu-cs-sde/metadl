@@ -1,10 +1,20 @@
+ArgIndexRange(0).
+ArgIndexRange(i) :- ArgIndexRange(j), i = j + 1, LT(i, 100).
+# For vararg functions, just mark a fixed range of arguments as tainted
+
 TaintSourceArg("fgets", 0).
 TaintSourceReturn("fgets").
+TaintSourceArg("recv", 1).
+TaintSourceReturn("getenv").
 
 TaintPropagationArgToArg("memcpy", 1, 0).
 TaintPropagationArgToRet("memcpy", 1).
 
 TaintSink("system", 0).
+TaintSink("execl", i) :- ArgIndexRange(i).
+TaintSink("execlp", i) :- ArgIndexRange(i).
+TaintSink("popen", 0).
+
 
 # Source rules
 ExprPointsToTaintedMem($v) :- <: $f (.., $v ,..) :>, f = c_name($f), i = c_index($v), TaintSourceArg(f, i).
@@ -46,8 +56,10 @@ ExprPointsToTaintedMem(c) :- c <: $f (.., $w, ..) :>,
 
 # Inter-procedural rules
 
-InterProceduralFlowCall($callee, src_cfg_loc, entry, $e, $w) :- src_cfg_loc <: $c(.., $e, ..) :>, <: $rt $callee(.., $pt $w, ..) { .. } :>,
-                                 $callee == c_decl($c),
+InterProceduralFlowCall($callee, src_cfg_loc, entry, $e, $w) :- src_cfg_loc <: $c(.., $e, ..) :>,
+                                 $callee = c_decl($c),
+                                 node_to_id($callee) != 0,
+                                 <: $rt $callee(.., $pt $w, ..) { .. } :>,
                                  i = c_index($e),
                                  GTE(i, 0),
                                  i == c_index($w),
@@ -57,12 +69,15 @@ InterProceduralFlowCall($callee, src_cfg_loc, entry, $e, $w) :- src_cfg_loc <: $
                                  debug2 = c_cfg(src_cfg_loc).
 
 VarPointsToTaintedMem(dst_loc, w) :- InterProceduralFlowCall(_, _, dst_loc, e, w), ExprPointsToTaintedMem(e), n = c_name(w).
-ExprPointsToTaintedMem(e) :- InterProceduralFlowCall(callee, _, _, e, w), CFG_EXIT(callee, ww), ww = w, VarPointsToTaintedMem(exit, w).
+
+ExprPointsToTaintedMem(e) :- InterProceduralFlowCall(callee, _, _, e, w), CFG_EXIT(callee, exit), VarPointsToTaintedMem(exit, w).
 
 ExprPointsToTaintedMem(e) :- InterProceduralFlowReturn(_, e, src_expr), ExprPointsToTaintedMem(src_expr).
 
-InterProceduralFlowReturn(src_cfg_loc, dst_cfg_loc, $e) :- dst_cfg_loc <: $c(..) :>, <: $rt $callee(..) { .. } :>,
-                                                           $callee == c_decl($c),
+InterProceduralFlowReturn(src_cfg_loc, dst_cfg_loc, $e) :- dst_cfg_loc <: $c(..) :>,
+                                                           $callee = c_decl($c),
+                                                           node_to_id($callee) != 0,
+                                                           <: $rt $callee(..) { .. } :>,
                                                            src_cfg_loc <: return $e; :>,
                                                            c_is_ancestor($callee, src_cfg_loc) != 0.
 

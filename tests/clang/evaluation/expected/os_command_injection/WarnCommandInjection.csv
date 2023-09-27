@@ -1,3 +1,4 @@
+tests/clang/evaluation/src/os_command_injection/CWE78_OS_Command_Injection__char_console_execl_22a.c,40,15,OSCommandInjection
 tests/clang/evaluation/src/os_command_injection/CWE78_OS_Command_Injection__char_console_system_01.c,31,16,OSCommandInjection
 tests/clang/evaluation/src/os_command_injection/CWE78_OS_Command_Injection__char_environment_execl_01.c,48,15,OSCommandInjection
 tests/clang/evaluation/src/os_command_injection/CWE78_OS_Command_Injection__wchar_t_file_execl_01.c,46,15,OSCommandInjection

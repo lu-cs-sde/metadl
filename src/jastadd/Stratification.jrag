@@ -135,7 +135,7 @@ aspect Stratification {
 		}
 	}
 
-	syn java.util.List<Stratum> Program.strata(EvaluationContext ctx) {
+	syn lazy java.util.List<Stratum> Program.strata(EvaluationContext ctx) {
 		java.util.List<Stratum> strata = new ArrayList<>();
 		ClauseDependencyGraph pdg = clauseDependencyGraph();
 

@@ -23,11 +23,16 @@ aspect CExpr {
     return AST.CallExpr.build(getCallee().asClangExpr(), args);
   }
 
+  syn AST.Expr Constant.asClangExpr() {
+    throw new RuntimeException(Thread.currentThread().getStackTrace()[1] + " not implemented.");
+  }
+  eq IntegerConstant.asClangExpr() = AST.IntegerLiteral.build(getCONSTANT());
+  eq FloatingConstant.asClangExpr() = AST.FloatingLiteral.build(getCONSTANT());
+
   eq ConstantExpression.asClangExpr() {
     // TODO: proper matching for constants
-    return AST.Expr.build();
+    return getConstant().asClangExpr();
   }
-
 
   syn String BinaryExpression.clangOperator() {
     // TODO: add more operators

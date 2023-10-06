@@ -91,6 +91,7 @@ import lang.c.obj.ast.IfStatement;
 import lang.c.obj.ast.InitDeclarator;
 import lang.c.obj.ast.Initializer;
 import lang.c.obj.ast.InitializerExpression;
+import lang.c.obj.ast.IntegerConstant;
 import lang.c.obj.ast.LEQExpression;
 import lang.c.obj.ast.LShiftExpression;
 import lang.c.obj.ast.LTExpression;
@@ -293,7 +294,7 @@ public class ASTTranslator implements ASTVisitor {
 	}
 
 	@Override public void visit(IntegerLiteral n) {
-		t(n, new ConstantExpression(new Constant()));
+		t(n, new ConstantExpression(new IntegerConstant()));
 	}
 
 	@Override public void visit(ArraySubscriptExpr a) {

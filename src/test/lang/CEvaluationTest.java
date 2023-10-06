@@ -31,30 +31,30 @@ public class CEvaluationTest {
     return Arrays.stream(tests);
   }
 
-  private static void runTest(String fileName, boolean parallelEval) throws Exception {
+  private static void runTest(String fileName, boolean parallelEval) {
     String analyzedFilesDir = "tests/clang/evaluation/src";
     List<File> analyzedFiles = FileUtil.flattenFilesAndDirs(Collections.singletonList(new File(analyzedFilesDir, fileName)), "*.c", "*.cpp");
     Path includeDir = Path.of(analyzedFilesDir, "include");
 
-    Util.singleEvaluationTest("tests/output/",
-                              "tests/clang/evaluation/facts",
-                              analyzedFiles,
-                              "tests/clang/evaluation",
-                              "tests/clang/evaluation/expected",
-                              fileName,
-                              ".mdl",
-                              "c4",
-                              parallelEval ? "-e metadl-par" : "-e metadl",
-                              "--extra-arg -I" + includeDir.toAbsolutePath());
-  }
-
-  private static void runTest(String fileName) {
     try {
-      runTest(fileName, false);
+      Util.singleEvaluationTest("tests/output/",
+                                "tests/clang/evaluation/facts",
+                                analyzedFiles,
+                                "tests/clang/evaluation",
+                                "tests/clang/evaluation/expected",
+                                fileName,
+                                ".mdl",
+                                "c4",
+                                parallelEval ? "-e metadl-par" : "-e metadl",
+                                "--extra-arg -I" + includeDir.toAbsolutePath());
     } catch (Exception e) {
       System.err.println("Unexpected exception " + e);
       fail();
     }
+  }
+
+  private static void runTest(String fileName) {
+    runTest(fileName, false);
   }
 
   @Test void first_test() {
@@ -103,5 +103,9 @@ public class CEvaluationTest {
 
   @Test void os_command_injection() {
     runTest("os_command_injection");
+  }
+
+  @Test void null_pointer_dereference() {
+    runTest("null_pointer_dereference");
   }
 }

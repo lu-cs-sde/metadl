@@ -35,11 +35,27 @@ class ConstMatcherBuilder implements AbstractMatcherBuilder {
 }
 
 class ConstIntMatcherBuilder implements AbstractMatcherBuilder {
-  private int value;
-  public ConstIntMatcherBuilder(int value) {
+  private long value;
+
+  public ConstIntMatcherBuilder(long value) {
     this.value = value;
   }
-  @Override public String generate() {
+
+  @Override
+  public String generate() {
+    return "" + value;
+  }
+}
+
+class ConstFloatMatcherBuilder implements AbstractMatcherBuilder {
+  private double value;
+
+  public ConstFloatMatcherBuilder(double value) {
+    this.value = value;
+  }
+
+  @Override
+  public String generate() {
     return "" + value;
   }
 }
@@ -129,8 +145,12 @@ public class MatcherBuilder implements AbstractMatcherBuilder {
     return new ConstMatcherBuilder(name);
   }
 
-  public static ConstIntMatcherBuilder integer(int v){
+  public static ConstIntMatcherBuilder integer(long v){
     return new ConstIntMatcherBuilder(v);
+  }
+
+  public static ConstFloatMatcherBuilder floating(double f) {
+    return new ConstFloatMatcherBuilder(f);
   }
 
   public static MatcherBuilder unless(MatcherBuilder b) {

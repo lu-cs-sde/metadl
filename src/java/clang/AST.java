@@ -426,7 +426,28 @@ public class AST {
     @Override public void accept(ASTVisitor v) {
       v.visit(this);
     }
+
+    public static IntegerLiteral build(String v) {
+      IntegerLiteral r = new IntegerLiteral();
+      r.value = v;
+      return r;
+    }
   }
+
+  public static class FloatingLiteral extends Expr {
+    public String value;
+
+    @Override public void accept(ASTVisitor v) {
+      v.visit(this);
+    }
+
+    public static FloatingLiteral build(String v) {
+      FloatingLiteral r = new FloatingLiteral();
+      r.value = v;
+      return r;
+    }
+  }
+
 
   public static class ArraySubscriptExpr extends Expr {
     public Expr getLHS() {

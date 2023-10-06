@@ -1,7 +1,9 @@
 TranslationUnit ::= DeclarationOrDefinition*;
 
 Identifier ::= <ID>;
-Constant;
+abstract Constant ::= <CONSTANT>;
+FloatingConstant : Constant;
+IntegerConstant : Constant;
 StringLiteral;
 
 // A.2.4 External definitions

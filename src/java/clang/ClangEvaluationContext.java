@@ -159,14 +159,17 @@ public class ClangEvaluationContext extends EvaluationContext {
 
         boolean needsGlobalMatcher = !(andMatcher.hasBinding() && boundVars.contains(andMatcher.getBinding()));
 
+        System.err.print("Registered '" + (needsGlobalMatcher ? "global" :
+            "atNode") + "' matcher " + m);
+
+
         long matcherId = clog.registerMatcher(m, needsGlobalMatcher);
 
         if (matcherId < 0) {
           System.err.println("Failed to register matcher " + m);
           throw new RuntimeException();
         } else {
-          System.err.println("Registered '" + (needsGlobalMatcher ? "global" :
-                             "atNode") + "' matcher [" + matcherId + "]"  + m);
+          System.err.println("[" + matcherId + "]");
         }
 
         if (needsGlobalMatcher) {

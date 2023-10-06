@@ -1,0 +1,15 @@
+
+# VarDef: at statement s, the variable declared by d is written using the variable reference $u
+
+VarAssign(cfg_loc, d, $e) :- cfg_loc <: $v = $e :>, d = c_decl($v), node_to_id(d) != 0.
+VarAssign($v, $v, $e) :-  <: $t $v = $e :>.
+
+NullExpr(e) :- e <: 0 :>.
+# NULL is likely a #define, but let's assume it is not
+NullExpr(e) :- e <: NULL :>.
+NullExpr($l) :- <: $l = $r :>, ExprIsNull($r).
+NullExpr($l) :- <: $l = ($t) $r :>, ExprIsNull($r).
+
+NullPtrDeref("", 0, 0) :- NEQ(0, 0).
+
+OUTPUT('NullPtrDeref, "NullPtrDeref.csv", "csv").

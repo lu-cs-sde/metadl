@@ -588,4 +588,17 @@ public class ASTMatcherGen implements ASTVisitor {
     buildBindings(op, b);
     matcherMap.put(op, b);
   }
+
+  @Override public void visit(AST.IntegerLiteral op) {
+    MatcherBuilder b = match("integerLiteral", match("equals", integer(Long.decode(op.value))));
+    buildBindings(op, b);
+    matcherMap.put(op, b);
+
+  }
+
+  @Override public void visit(AST.FloatingLiteral op) {
+    MatcherBuilder b = match("floatingLiteral", match("equals", floating(Double.parseDouble(op.value))));
+    buildBindings(op, b);
+    matcherMap.put(op, b);
+  }
 }

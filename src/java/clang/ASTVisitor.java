@@ -16,6 +16,7 @@ public interface ASTVisitor {
 	default void visit(ImplicitCastExpr e){ visit((Node) e); }
   default void visit(CStyleCastExpr e) { visit((Node) e); }
 	default void visit(IntegerLiteral n){ visit((Node) n); }
+  default void visit(FloatingLiteral n){ visit((Node) n); }
 	default void visit(ArraySubscriptExpr a){ visit((Node) a); }
   default void visit(MemberExpr e) { visit((Node) e); }
 

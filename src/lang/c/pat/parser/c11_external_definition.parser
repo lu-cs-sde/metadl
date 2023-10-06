@@ -41,9 +41,17 @@ EnumerationConstant enumeration_constant = IDENTIFIER {: return new EnumerationC
 Identifier identifier = IDENTIFIER {: return new Identifier(IDENTIFIER); :}
 	   	      ;
 
-Constant constant = INTEGERConstant {: return new Constant(); :}
-	 	  | OCTALConstant {: return new Constant(); :}
-	 	  ;
+Constant constant = integer_constant
+                  | floating_constant
+                  ;
+
+IntegerConstant integer_constant = INTEGERConstant {: return new IntegerConstant(INTEGERConstant); :}
+                                 | OCTALConstant {: return new IntegerConstant(OCTALConstant); :}
+                                 | HEXConstant {: return new IntegerConstant(HEXConstant); :}
+                                 ;
+
+FloatingConstant floating_constant = FLOATINGConstant {: return new FloatingConstant(FLOATINGConstant); :}
+                             ;
 
 StringLiteral string_literal = STRINGLiteral {: return new StringLiteral(); :}
 	      		     ;

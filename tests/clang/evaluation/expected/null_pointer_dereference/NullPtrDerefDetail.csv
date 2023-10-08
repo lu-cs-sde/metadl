@@ -1,0 +1,3 @@
+/work/projects/metadl/tests/clang/evaluation/src/null_pointer_dereference/CWE476_NULL_Pointer_Dereference__char_01.c,31,22
+/work/projects/metadl/tests/clang/evaluation/src/null_pointer_dereference/CWE476_NULL_Pointer_Dereference__char_22b.c,33,26
+/work/projects/metadl/tests/clang/evaluation/src/null_pointer_dereference/CWE476_NULL_Pointer_Dereference__char_31.c,34,26

@@ -46,6 +46,10 @@ aspect CExpr {
   eq EQExpression.clangOperator() = "==";
   eq NEQExpression.clangOperator() = "!=";
   eq AssignmentExpression.clangOperator() = "=";
+  eq AndExpression.clangOperator() = "&&";
+  eq BitwiseAndExpression.clangOperator() = "&";
+  eq OrExpression.clangOperator() = "||";
+  eq BitwiseOrExpression.clangOperator() = "|";
 
   eq BinaryExpression.asClangExpr() {
     return AST.BinaryOperator.build(clangOperator(), getLeft().asClangExpr(), getRight().asClangExpr());

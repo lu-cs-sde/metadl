@@ -4,12 +4,71 @@
 VarAssign(cfg_loc, d, $e) :- cfg_loc <: $v = $e :>, d = c_decl($v), node_to_id(d) != 0.
 VarAssign($v, $v, $e) :-  <: $t $v = $e :>.
 
-NullExpr(e) :- e <: 0 :>.
+StaticNullExpr(e) :- e <: 0 :>.
 # NULL is likely a #define, but let's assume it is not
-NullExpr(e) :- e <: NULL :>.
-NullExpr($l) :- <: $l = $r :>, ExprIsNull($r).
-NullExpr($l) :- <: $l = ($t) $r :>, ExprIsNull($r).
+StaticNullExpr(e) :- e <: NULL :>.
+StaticNullExpr(e) :- e <: $l = $r :>, StaticNullExpr($r).
+StaticNullExpr(e) :- e <: ($t) $r :>, StaticNullExpr($r).
 
-NullPtrDeref("", 0, 0) :- NEQ(0, 0).
 
-OUTPUT('NullPtrDeref, "NullPtrDeref.csv", "csv").
+NullExpr(e) :- StaticNullExpr(e).
+NullExpr(e) :- e <: $l = $r :>, NullExpr($r).
+NullExpr(e) :- e <: ($t) $r :>, NullExpr($r).
+
+
+NullVar(cfg_loc, d) :- VarAssign(cfg_loc, d, e), NullExpr(e).
+NullExpr($v) :- <: $v :>, d = c_decl($v), NullVar($v, d).
+
+NullVar(succ_loc, d) :- NullVar(loc, d), CFG_SUCC(loc, succ_loc), NOT(VarAssign(succ_loc, d, _)), NOT(NotNullSucc(succ_loc, d)).
+
+NullTest(loc, d) :- loc <: !$v :>, d = c_decl($v).
+NullTest(loc, d) :- loc <: $v == $e :>, StaticNullExpr($e), d = c_decl($v).
+
+NotNullSucc(s, d) :- <: if ($cond) $_ else $false :>, NullTest($cond, d), s = c_cfg_entry($false).
+
+NotNullSucc(s, d) :- <: if ($v) $true :>, d = c_decl($v), node_to_id(d) != 0, s = c_cfg_entry($true).
+NotNullSucc(s, d) :- <: if ($v) $true else $_ :>, d = c_decl($v), node_to_id(d) != 0, s = c_cfg_entry($true).
+
+NotNullSucc(s, d) :- <: ($v != $e) && $other :>, d = c_decl($v), node_to_id(d) != 0, s = c_cfg_entry($other).
+
+NotNullSucc(s, d) :- <: if ($v != $e) $true else $_ :>, d = c_decl($v), StaticNullExpr($e), node_to_id(d) != 0, s = c_cfg_entry($true).
+NotNullSucc(s, d) :- <: if ($v != $e) $true :>, d = c_decl($v), StaticNullExpr($e), node_to_id(d) != 0, s = c_cfg_entry($true).
+
+
+NullVarDebug(l, c, name) :- NullVar(cfg_loc, d), name = c_name(d), l = c_src_line_start(cfg_loc), c = c_src_col_start(cfg_loc).
+
+NullPtrDeref(cfg_loc) :- NullVar(cfg_loc, v), cfg_loc <: *$v :>, v == c_decl($v).
+NullPtrDeref(cfg_loc) :- NullVar(cfg_loc, v), cfg_loc <: $v[$_] :>, v == c_decl($v).
+NullPtrDeref(cfg_loc) :- NullVar(cfg_loc, v), cfg_loc <: $v -> $f :>, v == c_decl($v).
+
+NullPtrDerefDetail(f, l, c) :- NullPtrDeref(loc), f = c_src_file(loc), l = c_src_line_start(loc), c = c_src_col_start(loc).
+
+### Interprocedural analysis
+
+### Flow through calls
+InterProceduralFlowCall($callee, src_cfg_loc, entry, $e, $w) :- src_cfg_loc <: $c(.., $e, ..) :>,
+                                 $callee = c_decl($c),
+                                 node_to_id($callee) != 0,
+                                 <: $rt $callee(.., $pt $w, ..) { .. } :>,
+                                 i = c_index($e),
+                                 GTE(i, 0),
+                                 i == c_index($w),
+                                 entry = c_cfg_entry($callee),
+                                 node_to_id(entry) != 0.
+
+InterProceduralFlowReturn(src_cfg_loc, dst_cfg_loc, $e) :- dst_cfg_loc <: $c(..) :>,
+                                                           $callee = c_decl($c),
+                                                           node_to_id($callee) != 0,
+                                                           <: $rt $callee(..) { .. } :>,
+                                                           src_cfg_loc <: return $e; :>,
+                                                           c_is_ancestor($callee, src_cfg_loc) != 0.
+
+# Interprocedural rules
+# TODO: Add call-site sensitivity
+NullVar(entry, d) :- InterProceduralFlowCall(_, _, entry, e, d), NullExpr(e).
+NullExpr(dst_loc) :- InterProceduralFlowReturn(_, dst_loc, e), NullExpr(e).
+
+
+### End of interprocedural analysis
+
+OUTPUT('NullPtrDerefDetail, "NullPtrDerefDetail.csv", "csv").

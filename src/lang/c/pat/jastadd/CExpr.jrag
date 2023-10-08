@@ -1,6 +1,6 @@
 aspect CExpr {
   syn AST.Expr Expression.asClangExpr() {
-    throw new RuntimeException(Thread.currentThread().getStackTrace()[1] + " not implemented.");
+    throw new RuntimeException(this.getClass() + " " + Thread.currentThread().getStackTrace()[1] + " not implemented.");
   }
 
   eq IdentifierExpression.asClangExpr() {
@@ -43,6 +43,8 @@ aspect CExpr {
   eq DivExpression.clangOperator() = "/";
   eq ModExpression.clangOperator() = "%";
   eq SubExpression.clangOperator() = "-";
+  eq EQExpression.clangOperator() = "==";
+  eq NEQExpression.clangOperator() = "!=";
   eq AssignmentExpression.clangOperator() = "=";
 
   eq BinaryExpression.asClangExpr() {
@@ -64,6 +66,8 @@ aspect CExpr {
   eq InitializerExpression.asClangExpr() = getExpression().asClangExpr();
 
   eq PointerDereferenceExpression.asClangExpr() = AST.UnaryOperator.build("*", false, getExpression().asClangExpr());
+
+  eq NotExpression.asClangExpr() = AST.UnaryOperator.build("!", false, getExpression().asClangExpr());
 
   eq ArrayIndexExpression.asClangExpr() = AST.ArraySubscriptExpr.build(getBase().asClangExpr(), getIndex().asClangExpr());
 

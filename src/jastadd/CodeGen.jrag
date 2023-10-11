@@ -434,7 +434,14 @@ aspect CodeGen {
 
   protected Control BINDLiteral.genCode(EvaluationContext ctx, Control cont, Set<String> boundVars, Set<String> usedVars, boolean isDelta) {
     Variable dst = (Variable) getExpr(0);
-    return Control.bind(cont, dst.varId(), getExpr(1).genCode(ctx));
+    if (boundVars.contains(dst.getVAR_ID())) {
+      // If the lhs variable is already bound, generate just equality test
+      Operation l = getExpr(0).genCode(ctx);
+      Operation r = getExpr(1).genCode(ctx);
+      return Control.eq(cont, l, r);
+    } else {
+      return Control.bind(cont, dst.varId(), getExpr(1).genCode(ctx));
+    }
   }
 
   protected Control MATCHLiteral.genCode(EvaluationContext ctx, Control cont, Set<String> boundVars, Set<String> usedVars, boolean isDelta) {

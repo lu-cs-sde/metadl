@@ -352,6 +352,10 @@ public class ClangEvaluationContext extends EvaluationContext {
       return makeUnaryOperation(name, args.get(0),
                                 nid -> clog.parent(nid));
 
+    case "c_enclosing_function":
+      return makeUnaryOperation(name, args.get(0),
+                                nid -> clog.enclosingFunction(nid));
+
     case "c_index":
       return makeUnaryOperation(name, args.get(0), nid -> clog.index(nid));
 

@@ -206,4 +206,8 @@ public class ClangClog {
     return clogJNI.ClangClog_kind(swigCPtr, this, NodeId);
   }
 
+  public long enclosingFunction(long NodeId) {
+    return clogJNI.ClangClog_enclosingFunction(swigCPtr, this, NodeId);
+  }
+
 }

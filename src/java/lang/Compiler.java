@@ -142,6 +142,11 @@ public class Compiler {
 		try {
 			Program prog = parseProgram(opts);
 
+            if (opts.getDebugFlag()) {
+              prog.getCommonClauseList().addAll(prog.generateDebugClauses());
+              prog.flushCache();
+            }
+
 			switch (opts.getAction()) {
 			case EVAL_INTERNAL:
 				checkProgram(prog, opts);

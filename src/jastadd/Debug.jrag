@@ -1,0 +1,78 @@
+aspect Debug {
+  syn boolean FormalPredicate.containsASTNodes() {
+    PredicateType pType = this.type();
+    for (int i = 0; i < this.realArity(); ++i) {
+      if (pType.get(i) == ASTNodeType.get())
+        return true;
+    }
+    return false;
+  }
+
+  syn boolean FormalPredicate.isExternalPredicate() {
+    for (Literal l : literals()) {
+      if (l instanceof ExternalLiteral)
+        return true;
+      // only look at the first literal
+      break;
+    }
+    return false;
+  }
+
+  public Clause FormalPredicate.debugClause() {
+    Clause c = new Rule();
+
+    List<Term> headVars = new List<>();
+    List<Term> bodyVars = new List<>();
+    PredicateType pType = this.type();
+
+    List<CommonLiteral> bodyLiterals = new List<>();
+
+    for (int i = 0; i < this.realArity(); ++i) {
+      bodyVars.add(new Variable("v_" + i));
+
+      if (pType.get(i) == ASTNodeType.get()) {
+        String v = "v_" + i;
+
+        headVars.add(new Variable(v + "_f"));
+        headVars.add(new Variable(v + "_ls"));
+        headVars.add(new Variable(v + "_cs"));
+        headVars.add(new Variable(v + "_le"));
+        headVars.add(new Variable(v + "_ce"));
+
+        bodyLiterals.add(NEQ(functor("node_to_id", var(v)), integer(0)));
+
+        bodyLiterals.add(BIND(var(v + "_f"),
+                              functor("c_src_file", var(v))));
+        bodyLiterals.add(BIND(var(v + "_ls"),
+                              functor("c_src_line_start", var(v))));
+        bodyLiterals.add(BIND(var(v + "_cs"),
+                              functor("c_src_col_start", var(v))));
+        bodyLiterals.add(BIND(var(v + "_le"),
+                              functor("c_src_line_end", var(v))));
+        bodyLiterals.add(BIND(var(v + "_ce"),
+                              functor("c_src_col_end", var(v))));
+
+      } else {
+        headVars.add(new Variable("v_" + i));
+      }
+    }
+
+    bodyLiterals.add(Literal.build(new PredicateSymbol(getPRED_ID()), bodyVars));
+
+    return new Rule(new List().add(Literal.build(new PredicateSymbol("DEBUG_" + getPRED_ID()),
+                                                 headVars)),
+                    bodyLiterals);
+  }
+
+  public java.util.List<Clause> Program.generateDebugClauses() {
+    java.util.List<Clause> ret = new ArrayList<>();
+    for (FormalPredicate p : getFormalPredicates()) {
+      if (!p.containsASTNodes() || p.isExternalPredicate())
+        continue;
+
+      Clause c = p.debugClause();
+      ret.add(c);
+    }
+    return ret;
+  }
+}

@@ -34,6 +34,8 @@ NotNullSucc(s, d) :- <: ($v != $e) && $other :>, d = c_decl($v), node_to_id(d) !
 NotNullSucc(s, d) :- <: if ($v != $e) $true else $_ :>, d = c_decl($v), StaticNullExpr($e), node_to_id(d) != 0, s = c_cfg_entry($true).
 NotNullSucc(s, d) :- <: if ($v != $e) $true :>, d = c_decl($v), StaticNullExpr($e), node_to_id(d) != 0, s = c_cfg_entry($true).
 
+NotNullSucc(s, d) :- loc <: if ($v == $e) return ; :>, CFG_SUCC(loc, s), d = c_decl($v), node_to_id(d) != 0, StaticNullExpr($e).
+NotNullSucc(s, d) :- loc <: if ($v == $e) { .. return ; .. } :>, CFG_SUCC(loc, s), d = c_decl($v), node_to_id(d) != 0, StaticNullExpr($e).
 
 NullVarDebug(l, c, name) :- NullVar(cfg_loc, d), name = c_name(d), l = c_src_line_start(cfg_loc), c = c_src_col_start(cfg_loc).
 

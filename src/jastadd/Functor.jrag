@@ -41,6 +41,12 @@ aspect Functor {
     c_src_col_start(IntegerType.get(), ASTNodeType.get()),
     c_src_col_end(IntegerType.get(), ASTNodeType.get()),
 
+    c_src_exp_file(StringType.get(), ASTNodeType.get()),
+    c_src_exp_line_start(IntegerType.get(), ASTNodeType.get()),
+    c_src_exp_line_end(IntegerType.get(), ASTNodeType.get()),
+    c_src_exp_col_start(IntegerType.get(), ASTNodeType.get()),
+    c_src_exp_col_end(IntegerType.get(), ASTNodeType.get()),
+
     c_type(ASTNodeType.get(), ASTNodeType.get()),
     c_decl(ASTNodeType.get(), ASTNodeType.get()),
     c_name(StringType.get(), ASTNodeType.get()),

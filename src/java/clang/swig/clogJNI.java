@@ -85,6 +85,7 @@ public class clogJNI {
   public final static native long ClangClog_matchFromNode(long jarg1, ClangClog jarg1_, long jarg2, long jarg3);
   public final static native long ClangClog_matchAtNode(long jarg1, ClangClog jarg1_, long jarg2, long jarg3);
   public final static native long ClangClog_srcLocation(long jarg1, ClangClog jarg1_, long jarg2);
+  public final static native long ClangClog_srcExpansionLocation(long jarg1, ClangClog jarg1_, long jarg2);
   public final static native long ClangClog_type(long jarg1, ClangClog jarg1_, long jarg2);
   public final static native long ClangClog_decl(long jarg1, ClangClog jarg1_, long jarg2);
   public final static native boolean ClangClog_hasGlobalStorage(long jarg1, ClangClog jarg1_, long jarg2);

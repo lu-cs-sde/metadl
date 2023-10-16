@@ -146,6 +146,10 @@ public class ClangClog {
     return new ClangClog.Loc(clogJNI.ClangClog_srcLocation(swigCPtr, this, NodeId), true);
   }
 
+  public ClangClog.Loc srcExpansionLocation(long NodeId) {
+    return new ClangClog.Loc(clogJNI.ClangClog_srcExpansionLocation(swigCPtr, this, NodeId), true);
+  }
+
   public long type(long NodeId) {
     return clogJNI.ClangClog_type(swigCPtr, this, NodeId);
   }

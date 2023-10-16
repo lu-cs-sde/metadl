@@ -244,19 +244,23 @@ public class ClangEvaluationContext extends EvaluationContext {
 
 
   private static abstract class SrcLocOperation implements Operation {
-    private Operation nodeArg;
-    private ClangEvaluationContext ctx;
-    private String name;
+    private final Operation nodeArg;
+    private final ClangEvaluationContext ctx;
+    private final String name;
+    private final boolean expansion;
 
-    public SrcLocOperation(ClangEvaluationContext ctx, String name, Operation nodeArg) {
+    public SrcLocOperation(ClangEvaluationContext ctx, String name, Operation nodeArg, boolean expansion) {
       this.nodeArg = nodeArg;
       this.ctx = ctx;
       this.name = name;
+      this.expansion = expansion;
     }
 
     @Override public long eval(Tuple t) {
       long nid = nodeArg.eval(t);
-      ClangClog.Loc loc = ctx.clog.srcLocation(nid);
+      ClangClog.Loc loc = expansion ?
+        ctx.clog.srcExpansionLocation(nid) :
+        ctx.clog.srcLocation(nid);
       return processLoc(loc);
     }
 
@@ -297,35 +301,71 @@ public class ClangEvaluationContext extends EvaluationContext {
   public Operation genExternalOperation(String name, List<Operation> args) {
     switch (name) {
     case "c_src_file":
-      return new SrcLocOperation(this, name, args.get(0)) {
+      return new SrcLocOperation(this, name, args.get(0), false) {
         @Override public long processLoc(ClangClog.Loc loc) {
           return internalizeString(loc.getFilename());
         }
       };
 
     case "c_src_line_start":
-      return new SrcLocOperation(this, name, args.get(0)) {
+      return new SrcLocOperation(this, name, args.get(0), false) {
         @Override public long processLoc(ClangClog.Loc loc) {
           return loc.getStartLine();
         }
       };
 
     case "c_src_line_end":
-      return new SrcLocOperation(this, name, args.get(0)) {
+      return new SrcLocOperation(this, name, args.get(0), false) {
         @Override public long processLoc(ClangClog.Loc loc) {
           return loc.getEndLine();
         }
       };
 
     case "c_src_col_start":
-      return new SrcLocOperation(this, name, args.get(0)) {
+      return new SrcLocOperation(this, name, args.get(0), false) {
         @Override public long processLoc(ClangClog.Loc loc) {
           return loc.getStartCol();
         }
       };
 
     case "c_src_col_end":
-      return new SrcLocOperation(this, name, args.get(0)) {
+      return new SrcLocOperation(this, name, args.get(0), false) {
+        @Override public long processLoc(ClangClog.Loc loc) {
+          return loc.getEndCol();
+        }
+      };
+
+
+    case "c_src_exp_file":
+      return new SrcLocOperation(this, name, args.get(0), true) {
+        @Override public long processLoc(ClangClog.Loc loc) {
+          return internalizeString(loc.getFilename());
+        }
+      };
+
+    case "c_src_exp_line_start":
+      return new SrcLocOperation(this, name, args.get(0), true) {
+        @Override public long processLoc(ClangClog.Loc loc) {
+          return loc.getStartLine();
+        }
+      };
+
+    case "c_src_exp_line_end":
+      return new SrcLocOperation(this, name, args.get(0), true) {
+        @Override public long processLoc(ClangClog.Loc loc) {
+          return loc.getEndLine();
+        }
+      };
+
+    case "c_src_exp_col_start":
+      return new SrcLocOperation(this, name, args.get(0), true) {
+        @Override public long processLoc(ClangClog.Loc loc) {
+          return loc.getStartCol();
+        }
+      };
+
+    case "c_src_exp_col_end":
+      return new SrcLocOperation(this, name, args.get(0), true) {
         @Override public long processLoc(ClangClog.Loc loc) {
           return loc.getEndCol();
         }

@@ -183,7 +183,7 @@ public class ASTMatcherGen implements ASTVisitor {
 
     buildBindings(p, b);
 
-    matcherMap.put(p, match("ignoringParens", b));
+    matcherMap.put(p, ignoringParens(b));
   }
 
   @Override
@@ -191,7 +191,7 @@ public class ASTMatcherGen implements ASTVisitor {
     MatcherBuilder b = match("functionNoProtoType");
     b.add(match("hasReturnType", lookup(p.getReturnType())));
     buildBindings(p, b);
-    matcherMap.put(p, match("ignoringParens", b));
+    matcherMap.put(p, ignoringParens(b));
   }
 
   @Override public void visit(AST.RecordRefType r) {
@@ -490,9 +490,9 @@ public class ASTMatcherGen implements ASTVisitor {
     // Shallow hasType matcher, to discriminate between K&R style definitions, i.e. int f();
     // vs modern definition int f(void);
     if (t instanceof AST.FunctionProtoType) {
-      b.add(match("hasType", match("functionProtoType")));
+      b.add(match("hasType", ignoringParens(match("functionProtoType"))));
     } else {
-      b.add(match("hasType", match("functionNoProtoType")));
+      b.add(match("hasType", ignoringParens(match("functionNoProtoType"))));
     }
 
     if (d.getBody() != null) {

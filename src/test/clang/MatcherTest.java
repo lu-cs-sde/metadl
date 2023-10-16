@@ -136,7 +136,7 @@ public class MatcherTest {
     List<String> res = genMatchers("void f() {..}", PatLangParserSEP.n_function_definition);
     assertEquals(1, res.size());
     assertEquals(
-        "functionDecl(parameterCountIs(0), hasReturnTypeLoc(loc(qualType(isVoid()))), hasType(functionNoProtoType()), hasBody(compoundStmt(subStatementDistinct())))",
+        "functionDecl(parameterCountIs(0), hasReturnTypeLoc(loc(qualType(isVoid()))), hasType(ignoringParens(functionNoProtoType())), hasBody(compoundStmt(subStatementDistinct())))",
         res.get(0));
   }
 
@@ -144,7 +144,7 @@ public class MatcherTest {
     List<String> res = genMatchers("void f(void) {..}", PatLangParserSEP.n_function_definition);
     assertEquals(1, res.size());
     assertEquals(
-        "functionDecl(parameterCountIs(0), hasReturnTypeLoc(loc(qualType(isVoid()))), hasType(functionProtoType()), hasBody(compoundStmt(subStatementDistinct())))",
+        "functionDecl(parameterCountIs(0), hasReturnTypeLoc(loc(qualType(isVoid()))), hasType(ignoringParens(functionProtoType())), hasBody(compoundStmt(subStatementDistinct())))",
         res.get(0));
   }
 

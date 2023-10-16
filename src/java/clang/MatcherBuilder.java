@@ -157,8 +157,13 @@ public class MatcherBuilder implements AbstractMatcherBuilder {
     return new MatcherBuilder("unless", b);
   }
 
+  public static MatcherBuilder ignoringParens(MatcherBuilder b) {
+    return new MatcherBuilder("ignoringParens", b);
+  }
+
   public static MatcherBuilder anything() {
     return new MatcherBuilder("anything");
   }
+
 
 }

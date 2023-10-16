@@ -510,6 +510,7 @@ aspect TypeInference {
 	eq LTELiteral.getExpr().itype() = IntegerType.get();
 	eq ANCESTORLiteral.getExpr().itype() = ASTNodeType.get();
 	eq Pattern.getRoot().itype() = ASTNodeType.get();
+  eq Pattern.getSubtree().itype() = ASTNodeType.get();
 
 	// For an expression, return the other expression that
 	// has the same type
@@ -521,6 +522,7 @@ aspect TypeInference {
 	eq BINDLiteral.getExpr(int i).sibling() = getExpr(1 - i);
 	eq ANCESTORLiteral.getExpr(int i).sibling() = getExpr(1 - i);
 	eq Pattern.getRoot().sibling() = null;
+  eq Pattern.getSubtree().sibling() = null;
 
 
 	// Constant AST nodes are created inside the naive evaluator, but they

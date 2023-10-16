@@ -1,0 +1,6 @@
+Return(name, l) :- <: $t $f(..) { .. } :>,
+                   @$f ret <: return $e; :>,
+                   name = c_name($f),
+                   l = c_src_exp_line_start(ret).
+
+OUTPUT('Return, "Return.csv", "csv").

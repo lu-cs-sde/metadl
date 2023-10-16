@@ -108,4 +108,8 @@ public class CEvaluationTest {
   @Test void null_pointer_dereference() {
     runTest("null_pointer_dereference");
   }
+
+  @Test void subtree() {
+    runTest("subtree");
+  }
 }

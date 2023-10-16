@@ -28,7 +28,6 @@ Fact fact = lit_list.heads DOT {: return new Fact(heads); :};
 CommonLiteral common_literal = literal
                              | constraint
                              | pattern
-                             | bounded_pattern
                              ;
 
 Constraint constraint = neg_literal
@@ -43,8 +42,11 @@ Constraint constraint = neg_literal
 		      | ancestor_literal
 		      ;
 
-Pattern pattern = PATTERN.pat {: return new Pattern(pat); :};
-Pattern bounded_pattern = variable.var PATTERN {: return new Pattern(new Opt(), PATTERN, new Opt(var), new Opt()); :};
+Pattern pattern = PATTERN.pat {: return new Pattern(pat); :}
+                | variable.var PATTERN {: return new Pattern(new Opt(), PATTERN, new Opt(var), new Opt()); :}
+                | AT variable.subtree PATTERN {: return new Pattern(new Opt(), PATTERN, new Opt(), new Opt(subtree)); :}
+                | AT variable.subtree variable.var PATTERN {: return new Pattern(new Opt(), PATTERN, new Opt(var), new Opt(subtree)); :}
+                ;
 
 Literal neg_literal = NOT LPARA common_literal.lit RPARA {: lit.setNot(new Not()); return lit; :};
 

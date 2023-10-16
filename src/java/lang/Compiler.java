@@ -9,6 +9,8 @@ import java.io.PrintStream;
 import java.sql.SQLException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import org.apache.commons.lang3.time.StopWatch;
 
@@ -221,11 +223,21 @@ public class Compiler {
 		Logger log = Logger.getLogger("lang.io");
 		log.setLevel(Level.FINEST);
 		StopWatch totalTime = StopWatch.createStarted();
+    TimerTask profileDump = null;
 
 		CmdLineOpts opts = CmdLineOpts.parseCmdLineArgs(args);
 		if (opts.getProfileFile() != null) {
 			// set the output file  for the profiling information
 			profile().setOutput(new File(opts.getProfileFile()));
+
+      int period = 30 * 1000; // ms
+      profileDump = new TimerTask() {
+        @Override
+        public void run() {
+          profile().writeOut();
+        }
+        };
+      new Timer(true).scheduleAtFixedRate(profileDump, period, period);
 		}
 
 		profile().startTimer("main", "total");
@@ -244,6 +256,7 @@ public class Compiler {
 		SimpleLogger.logger().time("Total: " + totalTime.getTime() + "ms ");
 
 		if (opts.getProfileFile() != null) {
+      profileDump.cancel();
 			// write out the profiling information
 			profile().writeOut();
 		}

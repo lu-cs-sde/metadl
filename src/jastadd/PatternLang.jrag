@@ -124,13 +124,16 @@ aspect PatternLang {
     ObjLangASTNode n = ASTs.iterator().next();
     if (hasRoot())
       headVars.add(getRoot().treeCopy());
+    if (hasSubtree())
+      headVars.add(getSubtree().treeCopy());
     for (String v : n.metavariables())
       headVars.add(new Variable(v));
     if (program().getLang() == CmdLineOpts.Lang.C4) {
       Optional<String> rootVariable = hasRoot() ? Optional.of(getRoot().getVAR_ID()) : Optional.empty();
+      Optional<String> subtreeVariable = hasSubtree() ? Optional.of(getSubtree().getVAR_ID()) : Optional.empty();
       ExternalLiteral head = new ExternalLiteral(new PredicateSymbol(predName),
                                                  headVars,
-                                                 ClangEvaluationContext.ExternalLiteralPayload.pattern(ASTs, rootVariable));
+                                                 ClangEvaluationContext.ExternalLiteralPayload.pattern(ASTs, rootVariable, subtreeVariable));
       return head;
     } else {
       // we're using a String hash  here; fingers crossed for no collisions

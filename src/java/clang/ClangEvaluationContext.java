@@ -157,11 +157,11 @@ public class ClangEvaluationContext extends EvaluationContext {
       for (MatcherBuilder andMatcher : orMatcher) {
         String m = andMatcher.generate();
 
-        boolean needsGlobalMatcher = !(andMatcher.hasBinding() && boundVars.contains(andMatcher.getBinding()));
+        boolean needsGlobalMatcher = !(payload.subtreeVariable.isPresent() ||
+                                       andMatcher.hasBinding() && boundVars.contains(andMatcher.getBinding()));
 
         System.err.print("Registered '" + (needsGlobalMatcher ? "global" :
-            "atNode") + "' matcher " + m);
-
+                                           (payload.subtreeVariable.isPresent() ? "fromNode" : "atNode")) + "' matcher " + m);
 
         long matcherId = clog.registerMatcher(m, needsGlobalMatcher);
 
@@ -175,7 +175,15 @@ public class ClangEvaluationContext extends EvaluationContext {
         if (needsGlobalMatcher) {
           andMatchersOut.add(MatcherInfo.global(m, matcherId, andMatcher.bindings(), varToIdMap));
         } else {
-          andMatchersOut.add(MatcherInfo.matchAtNode(m, matcherId, andMatcher.bindings(), varToIdMap, andMatcher.getBinding()));
+          if (payload.subtreeVariable.isPresent()) {
+            if (!boundVars.contains(payload.subtreeVariable.get())) {
+              System.err.println("Subtree variable '" + payload.subtreeVariable.get() + "' must be bound earlier in the clause.");
+              throw new RuntimeException();
+            }
+            andMatchersOut.add(MatcherInfo.matchFromNode(m, matcherId, andMatcher.bindings(), varToIdMap, payload.subtreeVariable.get()));
+          } else {
+            andMatchersOut.add(MatcherInfo.matchAtNode(m, matcherId, andMatcher.bindings(), varToIdMap, andMatcher.getBinding()));
+          }
         }
       }
 
@@ -440,6 +448,10 @@ public class ClangEvaluationContext extends EvaluationContext {
     return matches;
   }
 
+  public VectorVectorLong lookupFrom(long matcherId, long nodeId) {
+    VectorVectorLong matches = clog.matchFromNode(matcherId, nodeId);
+    return matches;
+  }
 
   public static class ExternalLiteralPayload {
     public static enum Kind {
@@ -451,13 +463,15 @@ public class ClangEvaluationContext extends EvaluationContext {
     }
     List<ObjLangASTNode> patterns;
     Optional<String> rootVariable;
+    Optional<String> subtreeVariable;
     Kind kind;
 
-    public static ExternalLiteralPayload pattern(List<ObjLangASTNode> patterns, Optional<String> rootVariable) {
+    public static ExternalLiteralPayload pattern(List<ObjLangASTNode> patterns, Optional<String> rootVariable, Optional<String> subtreeVariable) {
       var ret =  new ExternalLiteralPayload();
       ret.kind = Kind.PATTERN;
       ret.patterns = patterns;
       ret.rootVariable = rootVariable;
+      ret.subtreeVariable = subtreeVariable;
       return ret;
     }
 

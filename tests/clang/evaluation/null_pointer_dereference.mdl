@@ -12,12 +12,16 @@ StaticNullExpr(e) :- e <: ($t) $r :>, StaticNullExpr($r).
 
 
 NullExpr(e) :- StaticNullExpr(e).
-NullExpr(e) :- e <: $l = $r :>, NullExpr($r).
-NullExpr(e) :- e <: ($t) $r :>, NullExpr($r).
 
+# Replace the rule NullExpr(e) :- e <: $l = $r :>, NullExpr($r).
+# with another rule that allows for 'atNode' matching
+NullExpr(e) :- NullExpr($r), e = c_parent($r), node_to_id(e) != 0, e <: $l = $r :>.
+# Replace the NullExpr(e) :- e <: ($t) $r :>, NullExpr($r).
+# with another rule that allows for 'atNode' matching
+NullExpr(e) :- NullExpr($r), e = c_parent($r), node_to_id(e) != 0, e <: ($t) $r :>.
 
 NullVar(cfg_loc, d) :- VarAssign(cfg_loc, d, e), NullExpr(e).
-NullExpr($v) :- <: $v :>, d = c_decl($v), NullVar($v, d).
+NullExpr($v) :- NullVar($v, d), <: $v :>, d = c_decl($v).
 
 NullVar(succ_loc, d) :- NullVar(loc, d), CFG_SUCC(loc, succ_loc), NOT(VarAssign(succ_loc, d, _)), NOT(NotNullSucc(succ_loc, d)).
 

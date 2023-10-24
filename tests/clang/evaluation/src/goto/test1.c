@@ -26,5 +26,4 @@ int h(int cond) {
   return 0;
  error_exit:
   return 1;
-
 }

@@ -112,7 +112,7 @@ aspect PatternLang {
     return null;
   }
 
-  syn String Pattern.predName() = hash(getPATTERN() + (hasRoot() ? "bounded" : ""));
+  syn String Pattern.predName() = hash(getPATTERN() + (hasRoot() ? "bounded" : "") + (hasSubtree() ? "subtree" : ""));
 
   protected Literal Pattern.getLiteralHelper() {
     String predName = program().getAnalysisContext().prefix(predName());

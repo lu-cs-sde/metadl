@@ -99,7 +99,12 @@ String  = \"[^\"]*\"
 "-"        {  return  sym(Terminals.SUB);            }
 "*"        {  return  sym(Terminals.MUL);            }
 "/"        {  return  sym(Terminals.DIV);            }
+"<"        {  return  sym(Terminals.ILT);            }
+">"        {  return  sym(Terminals.IGT);            }
+">="       {  return  sym(Terminals.IGTE);           }
+"<="       {  return  sym(Terminals.ILTE);           }
 "@"        {  return  sym(Terminals.AT);             }
+"!"        {  return  sym(Terminals.EXCL);           }
 "EQ"       {  return  sym(Terminals.EQ);             }
 "NEQ"      {  return  sym(Terminals.NEQ);            }
 "LT"       {  return  sym(Terminals.LT);             }

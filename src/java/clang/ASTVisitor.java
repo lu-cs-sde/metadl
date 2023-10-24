@@ -33,6 +33,8 @@ public interface ASTVisitor {
   default void visit(CaseStmt s) { visit((Node) s); }
   default void visit(DefaultStmt s) { visit((Node) s); }
   default void visit(BreakStmt s) { visit((Node) s); }
+  default void visit(GotoStmt s) { visit((Node) s); }
+  default void visit(LabelStmt s) { visit((Node) s); }
 
 	default void visit(Decl d){ visit((Node) d); }
 	default void visit(ParmVarDecl p){ visit((Node) p); }
@@ -41,6 +43,7 @@ public interface ASTVisitor {
 	default void visit(RecordDecl d){ visit((Node) d); }
 	default void visit(FieldDecl f){ visit((Node) f); }
 	default void visit(TranslationUnitDecl u){ visit((Node) u); }
+	default void visit(LabelDecl l){ visit((Node) l); }
 
 	default void visit(Type t){ visit((Node) t); }
 	default void visit(PointerType t){ visit((Node) t); }

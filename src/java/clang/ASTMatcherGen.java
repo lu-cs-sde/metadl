@@ -381,6 +381,21 @@ public class ASTMatcherGen implements ASTVisitor {
     matcherMap.put(s, b);
   }
 
+  @Override public void visit(AST.GotoStmt g) {
+    MatcherBuilder b = match("gotoStmt");
+    b.add(match("hasLabel", lookup(g.getLabel())));
+    buildBindings(g, b);
+    matcherMap.put(g, b);
+  }
+
+  @Override public void visit(AST.LabelStmt l) {
+    MatcherBuilder b = match("labelStmt");
+    b.add(match("hasDeclaration", lookup(l.getLabel())));
+    b.add(match("has", lookup(l.getSubstmt())));
+    buildBindings(l, b);
+    matcherMap.put(l, b);
+  }
+
   @Override public void visit(AST.FieldDecl s) {
     MatcherBuilder b = match("fieldDecl");
     if (s.isNamed()) {
@@ -503,6 +518,16 @@ public class ASTMatcherGen implements ASTVisitor {
 
     buildBindings(d, b);
     matcherMap.put(d, b);
+  }
+
+  @Override public void visit(AST.LabelDecl l) {
+    MatcherBuilder b = match("labelDecl");
+    if (l.isNamed()) {
+      b.add(match("hasName", cst(l.getName())));
+    }
+
+    buildBindings(l, b);
+    matcherMap.put(l, b);
   }
 
   @Override public void visit(AST.DeclRefExpr e) {

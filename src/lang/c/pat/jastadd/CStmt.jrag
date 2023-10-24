@@ -73,6 +73,26 @@ aspect CStmt {
     return AST.BreakStmt.build();
   }
 
+  eq LabelStatement.asClangStmt() {
+    AST.LabelDecl label;
+    if (getIdentifier().isMetaVar()) {
+      label = AST.LabelDecl.build().trySetBinding(getIdentifier());
+    } else {
+      label = AST.LabelDecl.build(getIdentifier().getID());
+    }
+    return AST.LabelStmt.build(label, getStatement().asClangStmt());
+  }
+
+  eq GotoStatement.asClangStmt() {
+    AST.LabelDecl label;
+    if (getIdentifier().isMetaVar()) {
+      label = AST.LabelDecl.build().trySetBinding(getIdentifier());
+    } else {
+      label = AST.LabelDecl.build(getIdentifier().getID());
+    }
+    return AST.GotoStmt.build(label);
+  }
+
   eq ReturnStatement.asClangStmt() {
     if (hasExpression()) {
       return AST.ReturnStmt.build(getExpression().asClangExpr());

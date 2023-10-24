@@ -523,6 +523,24 @@ public class AST {
     }
   }
 
+  public static class LabelStmt extends Stmt {
+    @Override public void accept(ASTVisitor v) {
+      v.visit(this);
+    }
+
+    public Stmt getSubstmt() {
+      return getChild(1);
+    }
+
+    public LabelDecl getLabel() {
+      return getChild(0);
+    }
+
+    public static LabelStmt build(LabelDecl label, Stmt substmt) {
+      return new LabelStmt().setChildren(label, substmt);
+    }
+  }
+
   public static class ForStmt extends Stmt {
     public Optional<Stmt> getInit() {
       return Optional.ofNullable(getChild(0));
@@ -747,6 +765,19 @@ public class AST {
     }
   }
 
+  public static class GotoStmt extends Stmt {
+    @Override public void accept(ASTVisitor v) {
+      v.visit(this);
+    }
+
+    public LabelDecl getLabel() {
+      return getChild(0);
+    }
+
+    public static GotoStmt build(LabelDecl label) {
+      return new GotoStmt().setChildren(label);
+    }
+  }
 
   public static class CXXForRangeStmt extends Stmt {
     public Stmt getBody() {
@@ -941,6 +972,21 @@ public class AST {
       AST.Node[] newChildren = Arrays.copyOf(this.inner, this.inner.length + 1);
       newChildren[newChildren.length - 1] = body;
       return this.setChildren(newChildren);
+    }
+  }
+
+  public static class LabelDecl extends Decl {
+    @Override
+    public void accept(ASTVisitor v) {
+      v.visit(this);
+    }
+
+    public static LabelDecl build(String name) {
+      return new LabelDecl().setName(name).setChildren();
+    }
+
+    public static LabelDecl build() {
+      return new LabelDecl().setChildren();
     }
   }
 

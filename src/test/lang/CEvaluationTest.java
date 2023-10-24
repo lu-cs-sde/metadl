@@ -112,4 +112,8 @@ public class CEvaluationTest {
   @Test void subtree() {
     runTest("subtree");
   }
+
+  @Test void goTo() {
+    runTest("goto");
+  }
 }

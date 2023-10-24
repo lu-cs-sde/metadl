@@ -1,0 +1,21 @@
+FunctionWithGoto($func, g, l) :-
+                    <: $type $func(..) { .. } :>,
+                    @$func g <: goto $label1; :>,
+                    @$func l <: $label2 : $substmt :>,
+                    $label1 == $label2.
+
+WarnBackwardGoto(file, line) :-
+                       FunctionWithGoto(_, g, l),
+                       line = c_src_line_start(g),
+                       GT(line, c_src_line_start(l)),
+                       file = c_src_file(g).
+
+WarnMoreThanOneLabel(file, line) :- FunctionWithGoto(f, _, l1),
+                                    FunctionWithGoto(f, _, l2),
+                                    l1 != l2,
+                                    line = c_src_line_start(l1),
+                                    GTE(line, c_src_line_start(l2)),
+                                    file = c_src_file(f).
+
+OUTPUT('WarnBackwardGoto, "WarnBackwardGoto.csv", "csv").
+OUTPUT('WarnMoreThanOneLabel, "WarnMoreThanOneLabel.csv", "csv").

@@ -116,4 +116,8 @@ public class CEvaluationTest {
   @Test void goTo() {
     runTest("goto");
   }
+
+  @Test void arena() {
+    runTest("arena");
+  }
 }

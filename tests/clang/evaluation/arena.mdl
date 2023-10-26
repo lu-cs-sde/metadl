@@ -1,0 +1,32 @@
+ExprPointsToArena(e) :- e <: aalloc(..) :>.
+ExprPointsToArena(e) :- e <: ($t) $f :>, ExprPointsToArena($f).
+VarPointsToArena($p) :- <: $t *$p = $e :>, ExprPointsToArena($e).
+VarPointsToArena(p) :- <: $p = $e :>, p = c_decl($p), node_to_id(p) != 0, ExprPointsToArena($e).
+ExprPointsToArena($p) :- <: $p :>, p = c_decl($p), node_to_id(p) != 0, VarPointsToArena(p).
+FreeOfArenaPtr($p) :- <: free($p) :>, ExprPointsToArena($p).
+
+WarnFreeOfArenaPtr(file ,line, m) :- FreeOfArenaPtr(p),
+                         line = c_src_line_start(p),
+                         file = io_relative_path(c_src_file(p)),
+                         name = c_name(p),
+                         m = cat("Freeing-arena allocated pointer '", cat(name, "'.")).
+
+# Interprocedural
+
+Call(call_site, $actual, $formal) :-
+                call_site <: $c(.., $actual, ..) :>,
+                $callee = c_decl($c),
+                <: $rt $callee(.., $pt $formal, ..) { .. } :>,
+                c_index($formal) == c_index($actual).
+
+Return(call_site, $val) :-
+                  call_site <: $c(..) :>,
+                  $callee = c_decl($c),
+                  @$callee <: return $val; :>.
+
+
+VarPointsToArena(f) :- Call(_, e, f), ExprPointsToArena(e).
+ExprPointsToArena(call_site) :- Return(call_site, e), ExprPointsToArena(e).
+
+# Output
+OUTPUT('WarnFreeOfArenaPtr, "WarnFreeOfArenaPtr.csv", "csv").

@@ -10,14 +10,24 @@ BackwardGoto(g, l) :-
                        $label1 == $label2,
                        c_src_line_start(g) > c_src_line_start(l).
 
-WarnBackwardGoto(file, line) :- BackwardGoto(g, _), file = c_src_file(g), line = c_src_line_start(g).
+LabeledReturn(l) :-
+                 l <: $label : return $v;  :>.
+
+LabeledReturn(l) :-
+                 l <: $label : return ; :>.
+
+
+WarnBackwardGoto(file, line) :- BackwardGoto(g, _), file = io_relative_path(c_src_file(g)), line = c_src_line_start(g).
 
 WarnMoreThanOneLabel(file, line) :- FunctionWithGoto(f, _, l1),
                                     FunctionWithGoto(f, _, l2),
                                     l1 != l2,
                                     line = c_src_line_start(l1),
                                     line >= c_src_line_start(l2),
-                                    file = c_src_file(f).
+                                    file = io_relative_path(c_src_file(f)).
+
+WarnLabeledReturn(file, line) :- LabeledReturn(l), file = io_relative_path(c_src_file(l)), line = c_src_line_start(l).
 
 OUTPUT('WarnBackwardGoto, "WarnBackwardGoto.csv", "csv").
 OUTPUT('WarnMoreThanOneLabel, "WarnMoreThanOneLabel.csv", "csv").
+OUTPUT('WarnLabeledReturn, "WarnLabeledReturn.csv", "csv").

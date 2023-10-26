@@ -17,3 +17,8 @@ tests/evaluation/bottomupout/*
 .idea
 *.dot
 *.*~
+*.dump
+*.log
+/*.mdl
+/*.dl
+/*.csv

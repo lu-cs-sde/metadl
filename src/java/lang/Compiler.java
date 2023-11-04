@@ -4,23 +4,20 @@ import static prof.Profile.profile;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.sql.SQLException;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import org.apache.commons.lang3.time.StopWatch;
-import com.google.gson.Gson;
 
 import clang.ClangEvaluationContext;
 import eval.EvaluationContext;
 import incremental.IncrementalDriver;
 import incremental.ProgramSplit;
-import lang.ast.DebugInfo;
 import lang.ast.Program;
 import lang.ast.SemanticError;
 import lang.ast.SoufflePrettyPrinter;
@@ -137,16 +134,6 @@ public class Compiler {
 		profile().stopTimer("main", "incremental_driver");
 	}
 
-  private static void printDebugInfo(Program prog) {
-    java.util.List<DebugInfo> debugInfo = prog.generateDebugInfo();
-    try (FileWriter fw = new FileWriter("debug.json")) {
-      Gson gson = new Gson();
-      gson.toJson(debugInfo, fw);
-    } catch (IOException e) {
-      System.err.println("Failed to output debug information." + e);
-    }
-  }
-
 	public static String getCSVSeparatorEscaped() {
 		if (getCSVSeparator() != '\t')
 			return String.valueOf(getCSVSeparator());
@@ -157,12 +144,10 @@ public class Compiler {
 		try {
 			Program prog = parseProgram(opts);
 
-      if (opts.getDebugFlag()) {
-        prog.getCommonClauseList().addAll(prog.generateDebugClauses());
-        prog.flushCache();
-
-        printDebugInfo(prog);
-      }
+            if (opts.getDebugFlag()) {
+              prog.getCommonClauseList().addAll(prog.generateDebugClauses());
+              prog.flushCache();
+            }
 
 			switch (opts.getAction()) {
 			case EVAL_INTERNAL:

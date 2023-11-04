@@ -26,18 +26,42 @@ aspect Debug {
     PredicateType pType = this.type();
 
     List<CommonLiteral> bodyLiterals = new List<>();
-    List<CommonLiteral> headLiterals = new List<>();
 
     for (int i = 0; i < this.realArity(); ++i) {
+      bodyVars.add(new Variable("v_" + i));
+
       if (pType.get(i) == ASTNodeType.get()) {
-        bodyVars.add(var("v_" + i));
-        headLiterals.add(literal("DEBUG_ASTNode", var("v_" + i)));
+        String v = "v_" + i;
+
+        headVars.add(new Variable(v + "_f"));
+        headVars.add(new Variable(v + "_ls"));
+        headVars.add(new Variable(v + "_cs"));
+        headVars.add(new Variable(v + "_le"));
+        headVars.add(new Variable(v + "_ce"));
+
+        bodyLiterals.add(NEQ(functor("node_to_id", var(v)), integer(0)));
+
+        bodyLiterals.add(BIND(var(v + "_f"),
+                              functor("c_src_file", var(v))));
+        bodyLiterals.add(BIND(var(v + "_ls"),
+                              functor("c_src_line_start", var(v))));
+        bodyLiterals.add(BIND(var(v + "_cs"),
+                              functor("c_src_col_start", var(v))));
+        bodyLiterals.add(BIND(var(v + "_le"),
+                              functor("c_src_line_end", var(v))));
+        bodyLiterals.add(BIND(var(v + "_ce"),
+                              functor("c_src_col_end", var(v))));
+
       } else {
-        bodyVars.add(new Wildcard());
+        headVars.add(new Variable("v_" + i));
       }
     }
 
-    return new Rule(headLiterals, new List().add(Literal.build(new PredicateSymbol(getPRED_ID()), bodyVars)));
+    bodyLiterals.add(Literal.build(new PredicateSymbol(getPRED_ID()), bodyVars));
+
+    return new Rule(new List().add(Literal.build(new PredicateSymbol("DEBUG_" + getPRED_ID()),
+                                                 headVars)),
+                    bodyLiterals);
   }
 
   public java.util.List<Clause> Program.generateDebugClauses() {
@@ -48,51 +72,6 @@ aspect Debug {
 
       Clause c = p.debugClause();
       ret.add(c);
-    }
-
-    ret.add(rule(literal("DEBUG_Loc", var("nid"), var("file"), var("ls"), var("cs"), var("le"), var("ce")),
-                 literal("DEBUG_ASTNode", var("nid")),
-                 NEQ(functor("node_to_id", var("nid")), integer(0)),
-                 BIND(var("file"), functor("io_relative_path", functor("c_src_file", var("nid")))),
-                 BIND(var("ls"), functor("c_src_line_start", var("nid"))),
-                 BIND(var("cs"), functor("c_src_col_start", var("nid"))),
-                 BIND(var("le"), functor("c_src_line_end", var("nid"))),
-                 BIND(var("ce"), functor("c_src_col_end", var("nid")))));
-
-    return ret;
-  }
-
-  public class DebugInfo {
-    public String name;
-    public String file;
-    public java.util.List<Integer> locs;
-    public String locFile;
-  }
-
-  public DebugInfo FormalPredicate.debugInfo() {
-    DebugInfo d = new DebugInfo();
-    d.name = getPRED_ID();
-    d.file = getPRED_ID() + ".csv";
-    d.locs = new ArrayList<Integer>();
-    PredicateType pType = this.type();
-    for (int i = 0; i < this.realArity(); ++i) {
-      if (pType.get(i) == ASTNodeType.get()) {
-        d.locs.add(i);
-      }
-    }
-    d.locFile = "DEBUG_Loc.csv";
-    return d;
-  }
-
-  public java.util.List<DebugInfo> Program.generateDebugInfo() {
-    java.util.List<DebugInfo> ret = new ArrayList<>();
-    for (FormalPredicate p : getFormalPredicates()) {
-      if (!p.containsASTNodes() || p.isExternalPredicate())
-        continue;
-      if (p.getPRED_ID().equals("DEBUG_Loc") ||
-          p.getPRED_ID().equals("DEBUG_ASTNode"))
-        continue;
-      ret.add(p.debugInfo());
     }
     return ret;
   }

@@ -1,0 +1,4 @@
+/work/projects/metadl/tests/clang/evaluation/src/stack_buffer_overflow/CWE121_Stack_Based_Buffer_Overflow__CWE805_char_alloca_memcpy_01.c,37,9,StackBufferOverflow
+/work/projects/metadl/tests/clang/evaluation/src/stack_buffer_overflow/CWE121_Stack_Based_Buffer_Overflow__CWE805_char_alloca_ncat_01.c,37,9,StackBufferOverflow
+/work/projects/metadl/tests/clang/evaluation/src/stack_buffer_overflow/CWE121_Stack_Based_Buffer_Overflow__CWE805_char_alloca_ncpy_01.c,37,9,StackBufferOverflow
+/work/projects/metadl/tests/clang/evaluation/src/stack_buffer_overflow/CWE121_Stack_Based_Buffer_Overflow__CWE805_char_alloca_snprintf_10.c,24,18,StackBufferOverflow

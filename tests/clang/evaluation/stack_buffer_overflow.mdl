@@ -1,1 +1,46 @@
-ArrayAlloc(d, $size) :- <: $t a[$size] :>
+
+BufferWriteFunction(name, write_buf, write_size) :- 0 != 0, write_size = 0, write_buf = 0, name = "".
+
+// VarArgRange(0).
+// VarArgRange(i) :- VarArgRange(j), i = j + 1, i <= 100.
+
+BufferWriteFunction("snprintf", 0, 1).
+
+
+ExprPointsToArray(e, s) :- e <: alloca($s * sizeof($t)) :>, c_is_integer_literal($s) != 0, s = c_integer_literal_value($s).
+ExprPointsToArray(e, s) :- e <: __builtin_alloca($s * sizeof($t)) :>, c_is_integer_literal($s) != 0, s = c_integer_literal_value($s).
+ExprPointsToArray(e, s) :- e <: ($t) $e :>, ExprPointsToArray($e, s).
+
+
+VarPointsToArray($v, s) :- <: $t $v = $e :>, ExprPointsToArray($e, s).
+VarPointsToArray(v, s) :- <: $v = $e :>, ExprPointsToArray($e, s), v = c_decl($v), node_to_id(v) != 0.
+ExprPointsToArray($v, s) :- <: $v :>, v = c_decl($v), VarPointsToArray(v, s).
+
+BufferOverflow(c) :- c <: $f(.., $arg1, .., $arg2, ..) :>, name = c_name($f), BufferWriteFunction(name, write_buf_idx, write_size_idx),
+                  write_size_idx == c_index($arg2),
+                  write_buf_idx == c_index ($arg1),
+                  ExprPointsToArray($arg1, buf_size),
+                  c_is_integer_literal($arg2) != 0,
+                  write_size = c_integer_literal_value($arg2),
+                  buf_size < write_size.
+
+NElem(e, 1) :- e <: sizeof($w) :>.
+NElem(e, n) :- e <: $t1 * $t2 :>, c_is_integer_literal($t1) != 0, n1 = c_integer_literal_value($t1), NElem($t2, n2), n = n1 * n2.
+NElem(e, n) :- e <: $t1 * $t2 :>, c_is_integer_literal($t2) != 0, n2 = c_integer_literal_value($t2), NElem($t1, n1), n = n1 * n2.
+
+
+BufferOverflow(c) :- c <: memcpy($dst, $src, $size) :>, ExprPointsToArray($dst, dst_size), NElem($size, n), n > dst_size.
+BufferOverflow(c) :- c <: strncat($dst, $src, $size) :>, ExprPointsToArray($dst, dst_size),
+                     c_is_integer_literal($size) != 0, size = c_integer_literal_value($size), size > dst_size.
+
+BufferOverflow(c) :- c <: strncpy($dst, $src, $size) :>, ExprPointsToArray($dst, dst_size),
+                     c_is_integer_literal($size) != 0, size = c_integer_literal_value($size), size > dst_size.
+BufferOverflow(c) :- c <: strncpy($dst, $src, $size) :>, ExprPointsToArray($dst, dst_size),
+                     $size <: $n1 - $n2 :>,  c_is_integer_literal($n1) != 0, c_is_integer_literal($n2) != 0,
+                     sub(c_integer_literal_value($n1), c_integer_literal_value($n2)) > dst_size.
+# BufferOverflow(c) :- c <: memmove($dst, $src, $size) :>, ExprPointsToArray($dst, dst_size),
+#                      ExprPointsToArray($src, src_size), src_size > dst_size.
+
+WarnBufferOverflow(f, l, c, "StackBufferOverflow") :- BufferOverflow(e), f = c_src_file(e), l = c_src_line_start(e), c = c_src_col_start(e).
+
+OUTPUT('WarnBufferOverflow, "WarnBufferOverflow.csv", "csv").

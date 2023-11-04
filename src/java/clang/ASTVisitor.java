@@ -19,6 +19,8 @@ public interface ASTVisitor {
   default void visit(FloatingLiteral n){ visit((Node) n); }
 	default void visit(ArraySubscriptExpr a){ visit((Node) a); }
   default void visit(MemberExpr e) { visit((Node) e); }
+  default void visit(SizeofExpr e) { visit((Node) e); }
+
 
 	default void visit(Stmt s){ visit((Node) s); }
 	default void visit(ForStmt f){ visit((Node) f); }

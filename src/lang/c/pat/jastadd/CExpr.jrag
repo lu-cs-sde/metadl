@@ -23,6 +23,14 @@ aspect CExpr {
     return AST.CallExpr.build(getCallee().asClangExpr(), args);
   }
 
+  eq SizeofExpressionExpression.asClangExpr() {
+    return AST.SizeofExpr.build(getExpression().asClangExpr());
+  }
+
+  eq SizeofTypeExpression.asClangExpr() {
+    return AST.SizeofExpr.build(getTypeName().asType());
+  }
+
   syn AST.Expr Constant.asClangExpr() {
     throw new RuntimeException(Thread.currentThread().getStackTrace()[1] + " not implemented.");
   }

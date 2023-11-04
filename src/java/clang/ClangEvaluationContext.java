@@ -241,6 +241,9 @@ public class ClangEvaluationContext extends EvaluationContext {
       }
 
       if (!SetUtils.union(rootVariableSet, Node.metavariables()).equals(usedMetaVarSet)) {
+        for (MatcherBuilder mb : matchers) {
+          System.err.println(mb.generate());
+        }
         throw new RuntimeException("Missing metavariables between the Clog and Clang patterns. ");
       }
 
@@ -421,6 +424,12 @@ public class ClangEvaluationContext extends EvaluationContext {
 
     case "c_kind":
       return makeUnaryOperation(name, args.get(0), nid -> internalizeString(clog.kind(nid)));
+
+    case "c_is_integer_literal":
+      return makeUnaryOperation(name, args.get(0), nid -> clog.isIntegerLiteral(nid) ? 1 : 0);
+
+    case "c_integer_literal_value":
+      return makeUnaryOperation(name, args.get(0), nid -> clog.integerLiteralValue(nid));
 
     default:
       throw new RuntimeException("Unknown external operation '" + name + "'.");

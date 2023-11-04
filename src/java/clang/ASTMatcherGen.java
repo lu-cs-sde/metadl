@@ -207,7 +207,7 @@ public class ASTMatcherGen implements ASTVisitor {
 
   @Override public void visit(AST.TypedefType t) {
     if (t.bindsMetaVar()) {
-      MatcherBuilder b = match("type");
+      MatcherBuilder b = match("qualType");
       buildBindings(t, b);
       matcherMap.put(t, b);
     } else if (t.isNamed()) {
@@ -609,6 +609,14 @@ public class ASTMatcherGen implements ASTVisitor {
 
     b.add(match("has", lookup(op.getBase())));
     b.add(match("member", lookup(op.getMember())));
+
+    buildBindings(op, b);
+    matcherMap.put(op, b);
+  }
+
+  @Override public void visit(AST.SizeofExpr op) {
+    MatcherBuilder b = match("sizeOfExpr");
+    b.add(match("has", lookup(op.getChild(0))));
 
     buildBindings(op, b);
     matcherMap.put(op, b);

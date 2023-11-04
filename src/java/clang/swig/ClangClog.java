@@ -182,6 +182,22 @@ public class ClangClog {
     return clogJNI.ClangClog_name(swigCPtr, this, NodeId);
   }
 
+  public boolean isIntegerLiteral(long NodeId) {
+    return clogJNI.ClangClog_isIntegerLiteral(swigCPtr, this, NodeId);
+  }
+
+  public long integerLiteralValue(long NodeId) {
+    return clogJNI.ClangClog_integerLiteralValue(swigCPtr, this, NodeId);
+  }
+
+  public boolean isStringLiteral(long NodeId) {
+    return clogJNI.ClangClog_isStringLiteral(swigCPtr, this, NodeId);
+  }
+
+  public String stringLiteralValue(long NodeId) {
+    return clogJNI.ClangClog_stringLiteralValue(swigCPtr, this, NodeId);
+  }
+
   public long cfg(long NodeId) {
     return clogJNI.ClangClog_cfg(swigCPtr, this, NodeId);
   }

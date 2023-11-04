@@ -1,0 +1,1 @@
+ArrayAlloc(d, $size) :- <: $t a[$size] :>

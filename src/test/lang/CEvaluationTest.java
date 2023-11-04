@@ -120,4 +120,8 @@ public class CEvaluationTest {
   @Test void arena() {
     runTest("arena");
   }
+
+  @Test void stack_buffer_overflow() {
+    runTest("stack_buffer_overflow");
+  }
 }

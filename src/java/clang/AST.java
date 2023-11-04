@@ -343,6 +343,22 @@ public class AST {
     }
   }
 
+  public static class SizeofExpr extends Expr {
+    @Override public void accept(ASTVisitor v) {
+      v.visit(this);
+    }
+
+    public static SizeofExpr build(Expr e) {
+      SizeofExpr res = new SizeofExpr().setChildren(e);
+      return res;
+    }
+
+    public static SizeofExpr build(Type t) {
+      SizeofExpr res = new SizeofExpr().setChildren(t);
+      return res;
+    }
+  }
+
   public static class UnaryOperator extends Expr {
     public String opcode;
     public boolean isPostfix;

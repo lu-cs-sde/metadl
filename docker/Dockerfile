@@ -85,33 +85,42 @@ RUN cd /work/projects/souffle/ && git checkout $SOUFFLE_HASH
 RUN cd /work/projects/souffle && sh ./bootstrap && ./configure --enable-swig --enable-64bit-domain && make -j4
 RUN echo "export PATH=$PATH:/work/projects/souffle/src/" >> ~/.bash_aliases
 
+# Install cmake
+RUN apt install -y cmake
+
 # Build Clang
 RUN cd /work/projects && git clone $LLVM_GIT llvm-project && cd llvm-project && git checkout $LLVM_HASH
-RUN mkidr /work/projects/llvm-project/build-release
+RUN mkdir /work/projects/llvm-project/build-release
 RUN cd /work/projects/llvm-project/build-release && cmake -G Ninja -DCMAKE_BUILD_TYPE=Release \
         -DLLVM_ENABLE_PROJECTS="clang;clang-tools-extra" \
         -DBUILD_SHARED_LIBS=ON  -DLLVM_APPEND_VC_REV=OFF \
         ../llvm
 
-RUN cd /work/projects/llvm-project/build-release && ninja libClangClogSWIG.so
+RUN cd /work/projects/llvm-project/build-release && ninja libclangClogSWIG.so
 
 # Build JavaDL
-RUN git config --global url."https://git.cs.lth.se/".insteadOf "git://git.cs.lth.se:"
-RUN git config --global url."https://git.cs.lth.se/".insteadOf "git@git.cs.lth.se:"
+RUN git config --global url."https://github.com/".insteadOf "git://github.com:"
+RUN git config --global url."https://github.com/".insteadOf "git@github.com:"
 
 RUN cd /work/projects && git clone $JAVADL_GIT metadl
 RUN cd /work/projects/metadl && git checkout $JAVADL_HASH && git submodule update --init --recursive
 
-RUN cd /work/metadl && ./gradlew jar
+RUN cd /work/projects/metadl && ./gradlew jar
 
 # Get Juliet
 RUN cd /work/projects && git clone $JULIET_GIT juliet && cd juliet && git checkout $JULIET_HASH
 
+# Install bear
+RUN apt install -y bear
+
 # Get Magma
-RUN cd /work/projects && git clone $MAGMA_GIT magma && cd magma && git checkout $JULIET_HASH && ./prepare.sh
+RUN cd /work/projects && git clone $MAGMA_GIT magma && cd magma && git checkout $MAGMA_HASH && ./prepare.sh
 
 # Get the evaluation framework
 RUN cd /work/projects && git clone $CLOG_EVAL_GIT  clog-eval && cd clog-eval && git checkout $CLOG_EVAL_HASH
+
+# Build clang tidy
+RUN cd /work/projects/llvm-project/build-release && ninja clang-tidy
 
 # Run the evaluation
 RUN cd /work/projects/clog-eval && ./run-all.sh

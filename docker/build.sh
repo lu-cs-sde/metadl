@@ -1,16 +1,16 @@
 #! /bin/bash
 
-JAVADL_TOKEN=Td8iVr7GdD3Jv688hVBm
-JAVADL_INC_EVAL_TOKEN=4iDr7qWs1JHncUDDyRZy
-JAVADL_EVAL_TOKEN=jQ7vu8WkKzd3_EoAyDhL
-
 docker build \
        --build-arg SOUFFLE_GIT=https://github.com/alexdura/souffle \
        --build-arg SOUFFLE_HASH=84826bb8b6ef739a762c992c06a42441d19b72da \
-       --build-arg JAVADL_GIT=https://oauth2:$JAVADL_TOKEN@git.cs.lth.se/al7330du/metadl \
-       --build-arg JAVADL_HASH=cf5a8ffde175b0d6a8bcaf4a5e9b199324f22859 \
-       --build-arg JAVADL_INC_EVAL_GIT=https://oauth2:$JAVADL_INC_EVAL_TOKEN@git.cs.lth.se/al7330du/metadl-inc-eval \
-       --build-arg JAVADL_INC_EVAL_HASH=780c6c746c4260d4c5758feafa3c0dc2c21b3ef3 \
-       --build-arg JAVADL_EVAL_GIT=https://oauth2:$JAVADL_EVAL_TOKEN@git.cs.lth.se/al7330du/metadl-eval \
-       --build-arg JAVADL_EVAL_HASH=oospla21 \
-       -t javadl:oopsla21 .
+       --build-arg JAVADL_GIT=https://github.com/lu-cs-sde/metadl.git \
+       --build-arg JAVADL_HASH=751f63917b980e3ec652d83fb5d7de9995773540 \
+       --build-arg CLOG_EVAL_GIT=https://github.com/alexdura/clog-eval.git \
+       --build-arg CLOG_EVAL_HASH=79d86f6c6e58756980478790eb2242a3472f839e \
+       --build-arg LLVM_GIT=https://github.com/alexdura/llvm-project.git \
+       --build-arg LLVM_HASH=c9a1d5ea1edc7439f2213fd42a080828d0e7de22 \
+       --build-arg JULIET_GIT=https://github.com/alexdura/juliet.git \
+       --build-arg JULIET_HASH=dc4849eb6072f1fb1dec861aa2eb0e34ba379c1a \
+       --build-arg MAGMA_GIT=https://github.com/alexdura/magma.git \
+       --build-arg MAGMA_HASH=2b5dfb428ad9d8fef3c9e6c3d02a7695649b2c35 \
+       -t clog23 .

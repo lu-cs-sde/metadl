@@ -81,6 +81,8 @@ aspect CExpr {
 
   eq NotExpression.asClangExpr() = AST.UnaryOperator.build("!", false, getExpression().asClangExpr());
 
+  eq AddressOfExpression.asClangExpr() = AST.UnaryOperator.build("&", false, getExpression().asClangExpr());
+
   eq ArrayIndexExpression.asClangExpr() = AST.ArraySubscriptExpr.build(getBase().asClangExpr(), getIndex().asClangExpr());
 
   eq CastExpression.asClangExpr() = AST.CStyleCastExpr.build(getExpression().asClangExpr(), getTypeName().asType());

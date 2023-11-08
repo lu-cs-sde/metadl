@@ -124,4 +124,8 @@ public class CEvaluationTest {
   @Test void stack_buffer_overflow() {
     runTest("stack_buffer_overflow");
   }
+
+  @Test void mpi() {
+    runTest("mpi");
+  }
 }

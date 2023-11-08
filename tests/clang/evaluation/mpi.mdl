@@ -1,0 +1,15 @@
+ISendCall(c, r), Req(c, r) :- c <: MPI_Isend($buf, $count, $datatype, $dest, $tag, $comm, &$req) :>, r = c_decl($req), r != id_to_node(0).
+WaitCall(c, r), Req(c, r) :- c <: MPI_Wait(&$req, $status) :>, r = c_decl($req), r != id_to_node(0).
+
+ISendWithoutWait(s) :- ISendCall(s, r), !WaitCall(_, r).
+
+ISendCallChain(c, s) :- ISendCall(c, _), CFG_SUCC(c, s).
+ISendCallChain(c, t) :- ISendCallChain(c, s), ISendCall(c, r), !Req(s, r), CFG_SUCC(s, t).
+
+
+ISendHasWait(s) :- ISendCall(s, r), ISendCallChain(s, w), WaitCall(w, r).
+ISendWithoutWait(s) :- ISendCall(s, _), !ISendHasWait(s).
+WarnISendWithoutWait(f, l, c, "ISend without wait") :- ISendWithoutWait(s), f = c_src_file(s),
+                        l = c_src_line_start(s), c = c_src_col_start(s).
+
+OUTPUT('WarnISendWithoutWait, "WarnISendWithoutWait.csv", "csv").

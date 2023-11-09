@@ -128,4 +128,8 @@ public class CEvaluationTest {
   @Test void mpi() {
     runTest("mpi");
   }
+
+  @Test void buffer_overread() {
+    runTest("buffer_overread");
+  }
 }

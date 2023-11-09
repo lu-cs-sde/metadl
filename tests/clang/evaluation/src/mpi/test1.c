@@ -30,14 +30,14 @@ void good(const void *buf, int count, MPI_Datatype datatype,
          int dest, int tag, MPI_Comm comm) {
   MPI_Request req;
   MPI_Isend(buf, count, datatype, dest, tag, comm, &req);
-
-
+  // do work
   MPI_Wait(&req, 0);
 }
 
 void bad1(const void *buf, int count, MPI_Datatype datatype,
         int dest, int tag, MPI_Comm comm, int cond) {
   MPI_Request req;
+
   MPI_Isend(buf, count, datatype, dest, tag, comm, &req);
   MPI_Isend(buf, count, datatype, dest, tag, comm, &req);
   MPI_Wait(&req, 0);

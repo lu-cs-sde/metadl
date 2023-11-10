@@ -4,9 +4,9 @@ docker build \
        --build-arg SOUFFLE_GIT=https://github.com/alexdura/souffle \
        --build-arg SOUFFLE_HASH=84826bb8b6ef739a762c992c06a42441d19b72da \
        --build-arg JAVADL_GIT=https://github.com/lu-cs-sde/metadl.git \
-       --build-arg JAVADL_HASH=751f63917b980e3ec652d83fb5d7de9995773540 \
+       --build-arg JAVADL_HASH=e586f9ad190daac73c4a7398ab03e8924819382a \
        --build-arg CLOG_EVAL_GIT=https://github.com/alexdura/clog-eval.git \
-       --build-arg CLOG_EVAL_HASH=1cedb92199bc6d2539b635efa6f8998a9915fe6c \
+       --build-arg CLOG_EVAL_HASH=f1ccca9e664e9a02bd5f9506ed3f84b495573e8e \
        --build-arg LLVM_GIT=https://github.com/alexdura/llvm-project.git \
        --build-arg LLVM_HASH=c9a1d5ea1edc7439f2213fd42a080828d0e7de22 \
        --build-arg JULIET_GIT=https://github.com/alexdura/juliet.git \

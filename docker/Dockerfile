@@ -122,5 +122,8 @@ RUN cd /work/projects && git clone $CLOG_EVAL_GIT  clog-eval && cd clog-eval && 
 # Build clang tidy
 RUN cd /work/projects/llvm-project/build-release && ninja clang-tidy
 
+# Install bc and jq
+RUN apt install -y bc jq
+
 # Run the evaluation
 RUN cd /work/projects/clog-eval && ./run-all.sh

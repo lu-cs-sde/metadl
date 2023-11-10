@@ -111,7 +111,7 @@ RUN cd /work/projects/metadl && ./gradlew jar
 RUN cd /work/projects && git clone $JULIET_GIT juliet && cd juliet && git checkout $JULIET_HASH
 
 # Install bear
-RUN apt install -y bear
+RUN apt install -y bear re2c tcl
 
 # Get Magma
 RUN cd /work/projects && git clone $MAGMA_GIT magma && cd magma && git checkout $MAGMA_HASH && ./prepare.sh
@@ -127,3 +127,4 @@ RUN apt install -y bc jq
 
 # Run the evaluation
 RUN cd /work/projects/clog-eval && ./run-all.sh
+RUN cd /work/projects/clog-eval && ./mrun-all.sh

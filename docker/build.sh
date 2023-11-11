@@ -6,7 +6,7 @@ docker build \
        --build-arg JAVADL_GIT=https://github.com/lu-cs-sde/metadl.git \
        --build-arg JAVADL_HASH=e586f9ad190daac73c4a7398ab03e8924819382a \
        --build-arg CLOG_EVAL_GIT=https://github.com/alexdura/clog-eval.git \
-       --build-arg CLOG_EVAL_HASH=31894a3361e51b81c2a785e7b41770c386bf9a14 \
+       --build-arg CLOG_EVAL_HASH=9d2f0f08ea89100d1e49acef886e509306b36d36 \
        --build-arg LLVM_GIT=https://github.com/alexdura/llvm-project.git \
        --build-arg LLVM_HASH=c9a1d5ea1edc7439f2213fd42a080828d0e7de22 \
        --build-arg JULIET_GIT=https://github.com/alexdura/juliet.git \

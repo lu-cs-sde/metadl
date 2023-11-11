@@ -5,22 +5,6 @@ ENV DEBIAN_FRONTEND noninteractive
 ARG SOUFFLE_GIT
 ARG SOUFFLE_HASH
 
-ARG JAVADL_GIT
-ARG JAVADL_HASH
-
-ARG CLOG_EVAL_GIT
-ARG CLOG_EVAL_HASH
-
-ARG LLVM_GIT
-ARG LLVM_HASH
-
-ARG JULIET_GIT
-ARG JULIET_HASH
-
-ARG MAGMA_GIT
-ARG MAGMA_HASH
-
-
 
 
 
@@ -88,7 +72,9 @@ RUN echo "export PATH=$PATH:/work/projects/souffle/src/" >> ~/.bash_aliases
 # Install cmake
 RUN apt install -y cmake
 
-# Build Clang
+# Build Clang libraries
+ARG LLVM_GIT
+ARG LLVM_HASH
 RUN cd /work/projects && git clone $LLVM_GIT llvm-project && cd llvm-project && git checkout $LLVM_HASH
 RUN mkdir /work/projects/llvm-project/build-release
 RUN cd /work/projects/llvm-project/build-release && cmake -G Ninja -DCMAKE_BUILD_TYPE=Release \
@@ -97,34 +83,42 @@ RUN cd /work/projects/llvm-project/build-release && cmake -G Ninja -DCMAKE_BUILD
         ../llvm
 
 RUN cd /work/projects/llvm-project/build-release && ninja libclangClogSWIG.so
+# Build clang tidy
+RUN cd /work/projects/llvm-project/build-release && ninja clang-tidy
 
 # Build JavaDL
 RUN git config --global url."https://github.com/".insteadOf "git://github.com:"
 RUN git config --global url."https://github.com/".insteadOf "git@github.com:"
 
+ARG JAVADL_GIT
+ARG JAVADL_HASH
 RUN cd /work/projects && git clone $JAVADL_GIT metadl
 RUN cd /work/projects/metadl && git checkout $JAVADL_HASH && git submodule update --init --recursive
 
 RUN cd /work/projects/metadl && ./gradlew jar
 
 # Get Juliet
+ARG JULIET_GIT
+ARG JULIET_HASH
 RUN cd /work/projects && git clone $JULIET_GIT juliet && cd juliet && git checkout $JULIET_HASH
 
 # Install bear
 RUN apt install -y bear re2c tcl
 
 # Get Magma
+ARG MAGMA_GIT
+ARG MAGMA_HASH
 RUN cd /work/projects && git clone $MAGMA_GIT magma && cd magma && git checkout $MAGMA_HASH && ./prepare.sh
 
 # Get the evaluation framework
+ARG CLOG_EVAL_GIT
+ARG CLOG_EVAL_HASH
 RUN cd /work/projects && git clone $CLOG_EVAL_GIT  clog-eval && cd clog-eval && git checkout $CLOG_EVAL_HASH
 
-# Build clang tidy
-RUN cd /work/projects/llvm-project/build-release && ninja clang-tidy
 
 # Install bc and jq
-RUN apt install -y bc jq
+RUN apt install -y bc jq pkg-config libicu-dev
 
 # Run the evaluation
 RUN cd /work/projects/clog-eval && ./run-all.sh
-RUN cd /work/projects/clog-eval && ./mrun-all.sh
+# RUN cd /work/projects/clog-eval && ./mrun-all.sh

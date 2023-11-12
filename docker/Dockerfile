@@ -120,5 +120,5 @@ RUN cd /work/projects && git clone $CLOG_EVAL_GIT  clog-eval && cd clog-eval && 
 RUN apt install -y bc jq pkg-config libicu-dev
 
 # Run the evaluation
-RUN cd /work/projects/clog-eval && ./run-all.sh
+# RUN cd /work/projects/clog-eval && ./run-all.sh
 # RUN cd /work/projects/clog-eval && ./mrun-all.sh

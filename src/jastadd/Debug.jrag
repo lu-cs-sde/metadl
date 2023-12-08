@@ -53,7 +53,7 @@ aspect Debug {
     ret.add(rule(literal("DEBUG_Loc", var("nid"), var("file"), var("ls"), var("cs"), var("le"), var("ce")),
                  literal("DEBUG_ASTNode", var("nid")),
                  NEQ(functor("node_to_id", var("nid")), integer(0)),
-                 BIND(var("file"), functor("io_relative_path", functor("c_src_file", var("nid")))),
+                 BIND(var("file"), functor("c_src_file", var("nid"))),
                  BIND(var("ls"), functor("c_src_line_start", var("nid"))),
                  BIND(var("cs"), functor("c_src_col_start", var("nid"))),
                  BIND(var("le"), functor("c_src_line_end", var("nid"))),

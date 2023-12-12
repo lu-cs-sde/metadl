@@ -132,4 +132,8 @@ public class CEvaluationTest {
   @Test void buffer_overread() {
     runTest("buffer_overread");
   }
+
+  @Test void andersen() {
+    runTest("andersen");
+  }
 }

@@ -1,0 +1,55 @@
+MemAllocExpr(e, e) :- e <: malloc(..) :>.
+MemAllocExpr(e, alloc) :- e <: ($t) $e :>, MemAllocExpr($e, alloc).
+MemAllocExpr(e, e) :- e <: &$f :>.
+
+Alloc(var, heap, f) :- <: $v = $e :>, MemAllocExpr($e, heap), var = c_decl($v), node_to_id(var) != 0, f = c_enclosing_function($v).
+Alloc($v, heap, f) :- <: $t $v = $e :>, MemAllocExpr($e, heap), f = c_enclosing_function($v).
+Move(to, from) :- <: $to = $from :>, to = c_decl($to), node_to_id(to) != 0, from = c_decl($from), node_to_id(from) != 0.
+Load(to, base) :- <: $to = *$base :>, to = c_decl($to), node_to_id(to) != 0, base = c_decl($base), node_to_id(base) != 0.
+Load($to, base) :- <: $t $to = *$base :>, base = c_decl($base), node_to_id(base) != 0.
+Store(base, from) :- <: *$base = $from :>, base = c_decl($base), node_to_id(base) != 0, from = c_decl($from), node_to_id(from) != 0.
+Call($callee_def, c, f) :- c <: $callee(..) :>, $callee_def = c_decl($callee), node_to_id($callee_def) != 0, <: $t $f(..) {..} :>, $f == $callee_def,
+                      f = c_enclosing_function(c).
+VCall(base, c, f) :- c <: $base(..) :>, base = c_decl($base), node_to_id(base) != 0, f = c_enclosing_function(c).
+
+FormalArg($f, n, $arg) :- <: $r $f(.., $t $arg, ..) { .. } :>, n = c_index($arg).
+ActualArg(c, n, arg) :- c <: $f(.., $arg, ..) :>, arg = c_decl($arg), node_to_id(arg) != 0, n = c_index($arg).
+FormalReturn(f, ret) :- <: return $ret; :>, ret = c_decl($ret), node_to_id(ret) != 0, f = c_enclosing_function($ret).
+ActualReturn($c, v) :- <: $r = $c :>, $c <: $f (..) :> , v = c_decl($r), node_to_id(v) != 0.
+
+
+// VarPointsTo(var, heap) ← Reachable(meth), Alloc(var, heap, meth).
+VarPointsTo(var, heap) :- Reachable(f), Alloc(var, heap, f).
+// VarPointsTo(to, heap) ← Move(to, from), VarPointsTo(from, heap).
+VarPointsTo(to, heap) :- Move(to, from), VarPointsTo(from, heap).
+// FldPointsTo(baseH, ﬂd, heap) ← Store(base, ﬂd, from), VarPointsTo(from, heap), VarPointsTo(base, baseH ).
+LocPointsTo(baseH, heap) :- Store(base, from), VarPointsTo(from, heap), VarPointsTo(base, baseH).
+// VarPointsTo(to, heap) ← Load(to, base, ﬂd), VarPointsTo(base, baseH ), FldPointsTo(baseH, ﬂd, heap).
+VarPointsTo(to, heap) :- Load(to, base), VarPointsTo(base, baseH), LocPointsTo(baseH, heap).
+// Reachable(toMeth), VarPointsTo(this, heap), CallGraph(invo, toMeth) ←
+//   VCall(base, sig, invo, inMeth), Reachable(inMeth), VarPointsTo(base, heap), HeapType(heap, heapT ), Lookup(heapT, sig, toMeth), ThisVar(toMeth, this).
+Reachable(callee), CallGraph(c, callee) :-
+  VCall(base, c, caller), Reachable(caller), VarPointsTo(base, callee).
+Reachable(callee), CallGraph(c, callee) :-
+  Call(callee, c, f), Reachable(f).
+// InterProcAssign(to, from) ← CallGraph(invo, meth), FormalArg(meth, n, to), ActualArg(invo, n, from).
+InterProcAssign(to, from) :- CallGraph(c, f), FormalArg(f, n, to), ActualArg(c, n, from).
+// InterProcAssign(to, from) ← CallGraph(invo, meth), FormalReturn(meth, from), ActualReturn(invo, to).
+InterProcAssign(to, from) :- CallGraph(c, f), FormalReturn(f, from), ActualReturn(c, to).
+// VarPointsTo(to, heap) ← InterProcAssign(to, from), VarPointsTo(from, heap).
+VarPointsTo(to, heap) :- InterProcAssign(to, from), VarPointsTo(from, heap).
+
+Reachable(f) :- f <: int main(..) {.. } :>.
+
+// OUTPUT('Call, "Call.csv", "csv").
+// OUTPUT('VarPointsTo, "VarPointsTo.csv", "csv").
+OUTPUT('Alloc, "Alloc.csv", "csv").
+OUTPUT('Move, "Move.csv", "csv").
+OUTPUT('Load, "Load.csv", "csv").
+OUTPUT('Store, "Store.csv", "csv").
+OUTPUT('Call, "Call.csv", "csv").
+OUTPUT('VCall, "VCall.csv", "csv").
+OUTPUT('FormalArg, "FormalArg.csv", "csv").
+OUTPUT('ActualArg, "ActualArg.csv", "csv").
+OUTPUT('FormalReturn, "FormalReturn.csv", "csv").
+OUTPUT('ActualReturn, "ActualReturn.csv", "csv").

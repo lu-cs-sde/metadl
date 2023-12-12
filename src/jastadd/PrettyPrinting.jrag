@@ -11,570 +11,546 @@ import lang.Compiler;
 import java.util.ArrayList;
 
 aspect PretyPrinting {
-	public void ASTNode.prettyPrint(PrettyPrinter pr) {
-		for(int i = 0; i < getNumChild(); ++i) {
-            pr.prettyPrint(getChild(i));
-        }
-	}
-
-	protected static <T extends ASTNode> void ASTNode.printCollection(Iterable<T> collection,
-			String pre, String post, String delim, PrettyPrinter pr) {
-		Iterator<T> itr = collection.iterator();
-
-		pr.out.print(pre);
-		if (itr.hasNext())
-			pr.prettyPrint(itr.next());
-		if (!itr.hasNext()) {
-			pr.out.print(post);
-			return;
-		}
-		while(itr.hasNext()) {
-			pr.out.print(delim);
-			pr.prettyPrint(itr.next());
-		}
-		pr.out.print(post);
-	}
-
-    public String ASTNode.prettyPrint() {
-        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
-        prettyPrint(new StandardPrettyPrinter(new PrintStream(bytes)));
-        return bytes.toString();
+  public void ASTNode.prettyPrint(PrettyPrinter pr) {
+    for(int i = 0; i < getNumChild(); ++i) {
+      pr.prettyPrint(getChild(i));
     }
+  }
 
-	public void Program.prettyPrint(PrettyPrinter pr) {
-		printCollection(getCommonClauses(), "", "\n", "\n", pr);
-		printCollection(getExpandedClauses(), "", "\n", "\n", pr);
+  protected static <T extends ASTNode> void ASTNode.printCollection(Iterable<T> collection,
+                                                                    String pre, String post, String delim, PrettyPrinter pr) {
+    Iterator<T> itr = collection.iterator();
 
-	}
-
-    public void ASTNode.prettyPrint(PrintStream out) {
-        prettyPrint(new StandardPrettyPrinter(out));
+    pr.out.print(pre);
+    if (itr.hasNext())
+      pr.prettyPrint(itr.next());
+    if (!itr.hasNext()) {
+      pr.out.print(post);
+      return;
     }
-
-    public void PredicateSymbol.prettyPrint(PrettyPrinter pr) {
-        pr.out.print(getPRED_ID());
+    while(itr.hasNext()) {
+      pr.out.print(delim);
+      pr.prettyPrint(itr.next());
     }
+    pr.out.print(post);
+  }
 
-    public void PredicateRef.prettyPrint(PrettyPrinter pr) {
-        pr.out.print("'" + getPRED_ID());
-    }
+  public String ASTNode.prettyPrint() {
+    ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+    prettyPrint(new StandardPrettyPrinter(new PrintStream(bytes)));
+    return bytes.toString();
+  }
 
-    public void StringConstant.prettyPrint(PrettyPrinter pr) {
-        pr.out.print("\"" + toString() + "\"");
-    }
+  public void Program.prettyPrint(PrettyPrinter pr) {
+    printCollection(getCommonClauses(), "", "\n", "\n", pr);
+    printCollection(getExpandedClauses(), "", "\n", "\n", pr);
 
-    public void Term.prettyPrint(PrettyPrinter pr) {
-        pr.out.print(toString());
-    }
+  }
 
-    public void Literal.prettyPrint(PrettyPrinter pr) {
-		if (hasNot())
-			pr.negationPrefix();
-        pr.prettyPrint(getPredicate());
-        printCollection(getTermss(), "(", ")", ", ", pr);
-		if (hasNot())
-			pr.negationSuffix();
-    }
+  public void ASTNode.prettyPrint(PrintStream out) {
+    prettyPrint(new StandardPrettyPrinter(out));
+  }
 
-    public void Rule.prettyPrint(PrettyPrinter pr) {
-        printCollection(getHeadss(), "", "", ",", pr);
-        pr.out.print(" :- ");
-        printCollection(getBodys(), "\n\t", ".\n", ",\n\t", pr);
-    }
+  public void PredicateSymbol.prettyPrint(PrettyPrinter pr) {
+    pr.out.print(getPRED_ID());
+  }
 
-    public void Fact.prettyPrint(PrettyPrinter pr) {
-        printCollection(getHeadss(), "", ".\n", ", ", pr);
-    }
+  public void PredicateRef.prettyPrint(PrettyPrinter pr) {
+    pr.out.print("'" + getPRED_ID());
+  }
 
-	syn String Constraint.printName() {
-		throw new RuntimeException("Unknown name for contraint");
-	}
+  public void StringConstant.prettyPrint(PrettyPrinter pr) {
+    pr.out.print("\"" + toString() + "\"");
+  }
 
-	eq EQLiteral.printName() = "EQ";
-	eq NEQLiteral.printName() = "NEQ";
-	eq LTLiteral.printName() = "LT";
-	eq LTELiteral.printName() = "LTE";
-	eq GTLiteral.printName() = "GT";
-	eq GTELiteral.printName() = "GTE";
-	eq MATCHLiteral.printName() = "MATCH";
+  public void Term.prettyPrint(PrettyPrinter pr) {
+    pr.out.print(toString());
+  }
 
-    public void BinaryIntegerConstraint.prettyPrint(PrettyPrinter pr) {
-		if (hasNot())
-			pr.negationPrefix();
-		pr.out.print(printName());
-		pr.out.print("(");
-		pr.prettyPrint(getLeft());
-		pr.out.print(",");
-		pr.prettyPrint(getRight());
-		pr.out.print(")");
-		if (hasNot())
-			pr.negationSuffix();
-    }
+  public void Literal.prettyPrint(PrettyPrinter pr) {
+    if (hasNot())
+      pr.negationPrefix();
+    pr.prettyPrint(getPredicate());
+    printCollection(getTermss(), "(", ")", ", ", pr);
+    if (hasNot())
+      pr.negationSuffix();
+  }
 
-	public void BINDLiteral.prettyPrint(PrettyPrinter pr) {
-		pr.out.print("BIND(");
-		pr.prettyPrint(getDst());
-		pr.out.print(", ");
-		pr.prettyPrint(getSrc());
-		pr.out.print(")");
-	}
+  public void Rule.prettyPrint(PrettyPrinter pr) {
+    printCollection(getHeadss(), "", "", ",", pr);
+    pr.out.print(" :- ");
+    printCollection(getBodys(), "\n\t", ".\n", ",\n\t", pr);
+  }
 
-	public void ANCESTORLiteral.prettyPrint(PrettyPrinter pr) {
-		printCollection(getExprs(), "ANCESTOR(", ")", ",", pr);
+  public void Fact.prettyPrint(PrettyPrinter pr) {
+    printCollection(getHeadss(), "", ".\n", ", ", pr);
+  }
 
-	}
+  syn String Constraint.printName() {
+    throw new RuntimeException("Unknown name for contraint");
+  }
 
-	public void Pattern.printRoot(PrettyPrinter pr) {
+  eq EQLiteral.printName() = "EQ";
+  eq NEQLiteral.printName() = "NEQ";
+  eq LTLiteral.printName() = "LT";
+  eq LTELiteral.printName() = "LTE";
+  eq GTLiteral.printName() = "GT";
+  eq GTELiteral.printName() = "GTE";
+  eq MATCHLiteral.printName() = "MATCH";
+
+  public void BinaryIntegerConstraint.prettyPrint(PrettyPrinter pr) {
+    if (hasNot())
+      pr.negationPrefix();
+    pr.out.print(printName());
+    pr.out.print("(");
+    pr.prettyPrint(getLeft());
+    pr.out.print(",");
+    pr.prettyPrint(getRight());
+    pr.out.print(")");
+    if (hasNot())
+      pr.negationSuffix();
+  }
+
+  public void BINDLiteral.prettyPrint(PrettyPrinter pr) {
+    pr.out.print("BIND(");
+    pr.prettyPrint(getDst());
+    pr.out.print(", ");
+    pr.prettyPrint(getSrc());
+    pr.out.print(")");
+  }
+
+  public void ANCESTORLiteral.prettyPrint(PrettyPrinter pr) {
+    printCollection(getExprs(), "ANCESTOR(", ")", ",", pr);
+
+  }
+
+  public void Pattern.printRoot(PrettyPrinter pr) {
     if (hasRoot()) {
       getRoot().prettyPrint(pr);
       pr.out.print(" ");
     }
   }
 
-	public void Pattern.prettyPrint(PrettyPrinter pr) {
-		if (hasNot())
-			pr.negationPrefix();
-		printRoot(pr);
-		pr.out.print("<:");
-		pr.out.print(getPATTERN());
-		pr.out.print(":>");
-		if (hasNot())
-			pr.negationSuffix();
-	}
+  public void Pattern.prettyPrint(PrettyPrinter pr) {
+    if (hasNot())
+      pr.negationPrefix();
+    printRoot(pr);
+    pr.out.print("<:");
+    pr.out.print(getPATTERN());
+    pr.out.print(":>");
+    if (hasNot())
+      pr.negationSuffix();
+  }
 
-	public void Wildcard.prettyPrint(PrettyPrinter pr) {
-		pr.out.print("_");
-	}
+  public void Wildcard.prettyPrint(PrettyPrinter pr) {
+    pr.out.print("_");
+  }
 
-	public void Functor.prettyPrint(PrettyPrinter pr) {
-		String op = null;
-		String funcId = getFunc().getFUNC_ID();
-		switch (funcId) {
-		default:
-			// generic functor, use prefix notation
-			pr.out.print(funcId);
-			printCollection(getArgs(), "(", ")", ", ", pr);
-			return;
-		case "add":
-			op = "+";
-			break;
-		case "sub":
-			op = "-";
-			break;
-		case "mul":
-			op = "*";
-			break;
-		case "div":
-			op = "/";
-			break;
-		}
-		// arithmetic, infix notation
-		pr.out.print("(");
-		pr.prettyPrint(getArg(0));
-		pr.out.print(")");
-		pr.out.print(op);
-		pr.out.print("(");
-		pr.prettyPrint(getArg(1));
-		pr.out.print(")");
-	}
+  public void Functor.prettyPrint(PrettyPrinter pr) {
+    String op = null;
+    String funcId = getFunc().getFUNC_ID();
+    switch (funcId) {
+    default:
+      // generic functor, use prefix notation
+      pr.out.print(funcId);
+      printCollection(getArgs(), "(", ")", ", ", pr);
+      return;
+    case "add":
+      op = "+";
+      break;
+    case "sub":
+      op = "-";
+      break;
+    case "mul":
+      op = "*";
+      break;
+    case "div":
+      op = "/";
+      break;
+    }
+    // arithmetic, infix notation
+    pr.out.print("(");
+    pr.prettyPrint(getArg(0));
+    pr.out.print(")");
+    pr.out.print(op);
+    pr.out.print("(");
+    pr.prettyPrint(getArg(1));
+    pr.out.print(")");
+  }
 }
 
-aspect ExtensionablePrinting {
-    public abstract class PrettyPrinter<T extends ASTNode> {
-        public final PrintStream out;
-        public abstract void prettyPrint(T node);
+aspect ExtensiblePrinting {
+  public abstract class PrettyPrinter<T extends ASTNode> {
+    public final PrintStream out;
+    public abstract void prettyPrint(T node);
 
-        public PrettyPrinter(PrintStream out) {
-            this.out = out;
-        }
-
-		protected void negationPrefix() {
-			out.print("NOT(");
-		}
-
-		protected void negationSuffix() {
-			out.print(")");
-		}
-
-		protected void printComment(String s) {
-			// out.println("# " + s);
-		}
+    public PrettyPrinter(PrintStream out) {
+      this.out = out;
     }
 
-    public class StandardPrettyPrinter<T extends ASTNode> extends PrettyPrinter<T> {
-        public void prettyPrint(T node) {
-            node.prettyPrint(this);
-        }
-        public StandardPrettyPrinter(PrintStream out) {
-            super(out);
-        }
+    protected void negationPrefix() {
+      out.print("NOT(");
     }
 
-    public class SoufflePrettyPrinter<T extends ASTNode> extends PrettyPrinter<T> {
-        public void prettyPrint(T node) {
-            node.soufflePrint(this);
-        }
-        public SoufflePrettyPrinter(PrintStream out) {
-            super(out);
-        }
-
-		@Override
-		protected void negationPrefix() {
-			out.print("!(");
-		}
-
-		@Override
-		protected void negationSuffix() {
-			out.print(")");
-		}
-
-		@Override
-		protected void printComment(String s) {
-			out.println("// " + s);
-		}
+    protected void negationSuffix() {
+      out.print(")");
     }
+
+    protected void printComment(String s) {
+      // out.println("# " + s);
+    }
+  }
+
+  public class StandardPrettyPrinter<T extends ASTNode> extends PrettyPrinter<T> {
+    public void prettyPrint(T node) {
+      node.prettyPrint(this);
+    }
+    public StandardPrettyPrinter(PrintStream out) {
+      super(out);
+    }
+  }
+
+  public class SoufflePrettyPrinter<T extends ASTNode> extends PrettyPrinter<T> {
+    @Override public void prettyPrint(T node) {
+      node.soufflePrint(this);
+    }
+    public SoufflePrettyPrinter(PrintStream out) {
+      super(out);
+    }
+
+    @Override
+    protected void negationPrefix() {
+      out.print("!(");
+    }
+
+    @Override
+    protected void negationSuffix() {
+      out.print(")");
+    }
+
+    @Override
+    protected void printComment(String s) {
+      out.println("// " + s);
+    }
+  }
 }
 
 aspect SoufflePrinting {
-    public void ASTNode.soufflePrint(String path) throws IOException {
-        File file = new File(path);
-        FileOutputStream fop = new FileOutputStream(file);
-        SoufflePrettyPrinter soufflePrinter = new SoufflePrettyPrinter(new PrintStream(fop));
-        soufflePrinter.prettyPrint(this);
-        fop.close();
+  public void ASTNode.soufflePrint(String path) throws IOException {
+    File file = new File(path);
+    FileOutputStream fop = new FileOutputStream(file);
+    SoufflePrettyPrinter soufflePrinter = new SoufflePrettyPrinter(new PrintStream(fop));
+    soufflePrinter.prettyPrint(this);
+    fop.close();
+  }
+
+  public String ASTNode.soufflePrint() {
+    ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+    SoufflePrettyPrinter soufflePrinter = new SoufflePrettyPrinter(new PrintStream(bytes));
+    soufflePrinter.prettyPrint(this);
+    return bytes.toString();
+  }
+
+  public void ASTNode.soufflePrint(PrettyPrinter pr) {
+    prettyPrint(pr);
+  }
+
+  public void Pattern.soufflePrint(PrettyPrinter pr) {
+    pr.out.print("/* " + getPATTERN() + "*/");
+    pr.prettyPrint(getLiteral());
+  }
+
+  public String BinaryIntegerConstraint.souffleOPString() { throw new RuntimeException("Not implemented"); }
+  public String EQLiteral.souffleOPString()  { return  "="; }
+  public String NEQLiteral.souffleOPString() { return "!="; }
+  public String LTLiteral.souffleOPString()  { return "<";  }
+  public String LTELiteral.souffleOPString() { return "<="; }
+  public String GTLiteral.souffleOPString()  { return ">";  }
+  public String GTELiteral.souffleOPString() { return ">="; }
+
+  public void BinaryIntegerConstraint.soufflePrint(PrettyPrinter pr) {
+    if (hasNot())
+      pr.negationPrefix();
+    pr.prettyPrint(getLeft());
+    pr.out.print(" ");
+    pr.out.print(souffleOPString());
+    pr.out.print(" ");
+    pr.prettyPrint(getRight());
+    if (hasNot())
+      pr.negationSuffix();
+  }
+
+  public void MATCHLiteral.soufflePrint(PrettyPrinter pr) {
+    if (hasNot())
+      pr.negationPrefix();
+    pr.out.print("match(");
+    pr.prettyPrint(getLeft());
+    pr.out.print(", ");
+    pr.prettyPrint(getRight());
+    pr.out.print(")");
+    if (hasNot())
+      pr.negationSuffix();
+  }
+
+  private void ANCESTORLiteral.printExtractField(Expr e, int offset, int size, PrettyPrinter pr) {
+    String mask = String.format("0x%x", (((long) 1) << size) - 1);
+    pr.out.print("(");
+    pr.out.print("("); // band
+    pr.out.print("("); // bshru
+    e.soufflePrint(pr);
+    pr.out.print(" bshru " + offset);
+    pr.out.print(")"); // bshru
+    pr.out.print(" band " + mask);
+    pr.out.print(")"); // band
+    pr.out.print(")");
+  }
+
+  public void ANCESTORLiteral.soufflePrint(PrettyPrinter pr) {
+    Expr left = getExpr(0);
+    Expr right = getExpr(1);
+
+    if (hasNot())
+      pr.negationPrefix();
+
+    printExtractField(left, clang.DatalogProjection.CNodeIdDesc.FILE_ID_OFFSET, clang.DatalogProjection.CNodeIdDesc.FILE_ID_SIZE, pr);
+    pr.out.print("=");
+    printExtractField(right, clang.DatalogProjection.CNodeIdDesc.FILE_ID_OFFSET, clang.DatalogProjection.CNodeIdDesc.FILE_ID_SIZE, pr);
+
+    pr.out.print(",");
+
+    printExtractField(left, clang.DatalogProjection.CNodeIdDesc.PRE_ORD_NUM_OFFSET, clang.DatalogProjection.CNodeIdDesc.PRE_ORD_NUM_SIZE, pr);
+    pr.out.print("<=");
+    printExtractField(right, clang.DatalogProjection.CNodeIdDesc.PRE_ORD_NUM_OFFSET, clang.DatalogProjection.CNodeIdDesc.PRE_ORD_NUM_SIZE, pr);
+
+    pr.out.print(",");
+
+    printExtractField(right, clang.DatalogProjection.CNodeIdDesc.POST_ORD_NUM_OFFSET, clang.DatalogProjection.CNodeIdDesc.POST_ORD_NUM_SIZE, pr);
+    pr.out.print("<=");
+    printExtractField(left, clang.DatalogProjection.CNodeIdDesc.POST_ORD_NUM_OFFSET, clang.DatalogProjection.CNodeIdDesc.POST_ORD_NUM_SIZE, pr);
+
+    if (hasNot())
+      pr.negationSuffix();
+  }
+
+  public void PredicateRef.soufflePrint(PrettyPrinter pr) {
+    pr.out.print("\"");
+    prettyPrint(pr);
+    pr.out.print("\"");
+  }
+
+  public void Functor.soufflePrint(PrettyPrinter pr) {
+    String op = null;
+    String funcId = getFunc().getFUNC_ID();
+    switch (funcId) {
+    default:
+      // generic functor, use prefix notation
+      pr.out.print(funcId);
+      printCollection(getArgs(), "(", ")", ", ", pr);
+      return;
+    case "node_to_id":
+    case "id_to_node":
+      // nodes are represented directly by their integer id
+      // so this is just an identity function
+      pr.out.print("(");
+      pr.prettyPrint(getArg(0));
+      pr.out.print(")");
+      return;
+    case "add":
+      op = "+";
+      break;
+    case "sub":
+      op = "-";
+      break;
+    case "mul":
+      op = "*";
+      break;
+    case "div":
+      op = "/";
+      break;
+    case "band":
+    case "bor":
+    case "bxor":
+    case "lshr":
+    case "bshr":
+    case "bshru":
+      op = funcId;
+      break;
+    }
+    // arithmetic, infix notation
+    pr.out.print("(");
+    pr.prettyPrint(getArg(0));
+    pr.out.print(")");
+    pr.out.print(op);
+    pr.out.print("(");
+    pr.prettyPrint(getArg(1));
+    pr.out.print(")");
+
+  }
+
+  public void Rule.soufflePrint(PrettyPrinter pr) {
+    if (isASTClause()) {
+      pr.printComment("AST clause");
+    }
+    pr.printComment(isLocal() ? "Local clause" : "Global clause");
+    pr.printComment("Local variables: " + localVariables());
+    pr.printComment("Domains: " + domainSignature().equivalenceSets().toString());
+
+    prettyPrint(pr);
+  }
+
+  public void Variable.soufflePrint(PrettyPrinter pr) {
+    pr.out.print(getVAR_ID().replaceAll("[$`]", "?"));
+  }
+
+  public void BINDLiteral.soufflePrint(PrettyPrinter pr) {
+    pr.prettyPrint(getDst());
+    pr.out.print(" = ");
+    pr.prettyPrint(getSrc());
+  }
+
+  public void Fact.soufflePrint(PrettyPrinter pr) {
+    HashSet<Literal> nonIncl = new HashSet<Literal>();
+    for(CommonLiteral il : getHeadss())
+      nonIncl.add((Literal)il);
+    printCollection(nonIncl, "", " :- true.\n", ", ", pr);
+  }
+
+  public String FormalPredicate.prettyDomainSeparationInfo() {
+    return "AST: " + isASTPredicate() + "; Global use: " + hasGlobalUse()
+      + "; Global def: " + hasGlobalDef() + "; Local use: " + hasLocalUse() + "; Local def: " + hasLocalDef();
+  }
+
+  public void FormalPredicate.soufflePrint(PrettyPrinter pr) {
+    pr.printComment("Domains: " + domainSignature().equivalenceSets());
+    pr.printComment("Local terms: " + localTerms());
+    pr.printComment(prettyDomainSeparationInfo());
+    pr.out.print(".decl " + predicateName() + "(");
+    ArrayList<PredicateSymbol> constants = new ArrayList<PredicateSymbol>();
+    for(int i = 0; i != realArity(); ++i) {
+      Type t = type().get(i);
+
+      String souffleType;
+      if (t.storageType() == IntegerType.get()) {
+        souffleType = "number";
+      } else if (t.storageType() == StringType.get()) {
+        souffleType = "symbol";
+      } else if (t.storageType() == PredicateRefType.get()) {
+        souffleType = "symbol";
+      } else if (t.storageType() == BadType.get()) {
+        souffleType = "bad";
+      } else {
+        souffleType = "unknown";
+      }
+      constants.add(new PredicateSymbol("x_" + i + ":" + souffleType));
+    }
+    printCollection(constants, "", "", ", ", pr);
+    pr.out.print(")");
+  }
+
+  private static void Program.printIODescription(PrettyPrinter pr, String file, String format, String table, String mode) {
+    pr.out.print("(IO=");
+    if (format.equals("csv")) {
+      pr.out.print("file");
+      pr.out.print(", filename=\"" + file + "\"");
+      pr.out.print(", delimiter=\"" + Compiler.getCSVSeparatorEscaped() + "\"");
+    } else {
+      pr.out.print(format);
+      pr.out.print(", dbname=\"" + file + "\"");
+      if (table != null) {
+        pr.out.print(", table=\"" + table + "\"");
+      }
+      if (mode != null) {
+        pr.out.print(", mode=\"" + mode + "\"");
+      }
+    }
+    pr.out.println(")");
+  }
+
+  private void Program.soufflePrintEDBDecl(PrettyPrinter pr) {
+
+
+    FormalPredicate fpEDB = formalPredicateMap().get(GlobalNames.EDB_NAME);
+    if (fpEDB == null) {
+      // no EDB in the program, nothing to do
+      return;
     }
 
-    public String ASTNode.soufflePrint() {
-        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
-        SoufflePrettyPrinter soufflePrinter = new SoufflePrettyPrinter(new PrintStream(bytes));
-        soufflePrinter.prettyPrint(this);
-        return bytes.toString();
+    EvaluationContext ctx = new EvaluationContext();
+    fpEDB.eval(ctx);
+
+    // now iterate over the tuples in the EDB relation
+
+    RelationWrapper edbTuples = new RelationWrapper(ctx, ctx.getRelation(fpEDB), fpEDB.type());
+
+    for (RelationWrapper.TupleWrapper t : edbTuples.tuples()) {
+      String pred = t.getAsString(0);
+      String file = t.getAsString(1);
+      String format = t.getAsString(2);
+      String table = null;
+      String mode = null;
+
+      if (ProgramSplit.isInternalDbDesc(file)) {
+        table = ProgramSplit.getInternalDbTable(file);
+        mode = ProgramSplit.getInternalDbMode(file);
+        file = ProgramSplit.INTERNAL_DB_NAME;
+      }
+
+      pr.out.print(".input ");
+      pr.out.print(pred);
+      printIODescription(pr, file, format, table, mode);
+      pr.out.println();
     }
+  }
 
-    public void ASTNode.soufflePrint(PrettyPrinter pr) {
-        prettyPrint(pr);
+  private void Program.soufflePrintOUTPUTDecl(PrettyPrinter pr) {
+    FormalPredicate fpOUTPUT = formalPredicateMap().get(GlobalNames.OUTPUT_NAME);
+    if(fpOUTPUT == null)
+      return;
+
+    EvaluationContext ctx = new EvaluationContext();
+    fpOUTPUT.eval(ctx);
+
+    // now iterate over the tuples in the EDB relation
+    RelationWrapper outputTuples = new RelationWrapper(ctx, ctx.getRelation(fpOUTPUT), fpOUTPUT.type());
+
+    for (RelationWrapper.TupleWrapper t : outputTuples.tuples()) {
+      String pred = t.getAsString(0);
+      String file = t.getAsString(1);
+      String format = t.getAsString(2);
+      String table = null;
+      String mode = null;
+
+      if (ProgramSplit.isInternalDbDesc(file)) {
+        table = ProgramSplit.getInternalDbTable(file);
+        mode = ProgramSplit.getInternalDbMode(file);
+        file = ProgramSplit.INTERNAL_DB_NAME;
+      }
+
+      pr.out.print(".output " + pred);
+      printIODescription(pr, file, format, table, mode);
+      pr.out.println();
     }
+  }
 
-	public void Pattern.soufflePrint(PrettyPrinter pr) {
-		pr.out.print("/* " + getPATTERN() + "*/");
-		pr.prettyPrint(getLiteral());
-	}
-
-    public String BinaryIntegerConstraint.souffleOPString() { throw new RuntimeException("Not implemented"); }
-    public String EQLiteral.souffleOPString()  { return  "="; }
-	public String NEQLiteral.souffleOPString() { return "!="; }
-	public String LTLiteral.souffleOPString()  { return "<";  }
-	public String LTELiteral.souffleOPString() { return "<="; }
-	public String GTLiteral.souffleOPString()  { return ">";  }
-	public String GTELiteral.souffleOPString() { return ">="; }
-
-    public void BinaryIntegerConstraint.soufflePrint(PrettyPrinter pr) {
-		if (hasNot())
-			pr.negationPrefix();
-        pr.prettyPrint(getLeft());
-        pr.out.print(" ");
-        pr.out.print(souffleOPString());
-        pr.out.print(" ");
-        pr.prettyPrint(getRight());
-		if (hasNot())
-			pr.negationSuffix();
+  private void Program.soufflePrintIMPORTFacts(PrettyPrinter pr) {
+    for (FormalPredicate pred : getFormalPredicates()) {
+      if (pred.getProgramRepresentationKind().isPresent()) {
+        pr.out.print(".input ");
+        pr.out.print(pred.getPRED_ID());
+        pr.out.print("(filename=\"");
+        pr.out.print(pred.getPRED_ID() + ".csv");
+        pr.out.print("\", delimiter=\"");
+        pr.out.print(Compiler.getCSVSeparatorEscaped());
+        pr.out.print("\")\n");
+      }
     }
+  }
 
-	public void MATCHLiteral.soufflePrint(PrettyPrinter pr) {
-		if (hasNot())
-			pr.negationPrefix();
-		pr.out.print("match(");
-		pr.prettyPrint(getLeft());
-		pr.out.print(", ");
-		pr.prettyPrint(getRight());
-		pr.out.print(")");
-		if (hasNot())
-			pr.negationSuffix();
-	}
-
-	private void ANCESTORLiteral.printExtractField(Expr e, int offset, int size, PrettyPrinter pr) {
-		String mask = String.format("0x%x", (((long) 1) << size) - 1);
-		pr.out.print("(");
-		pr.out.print("("); // band
-		pr.out.print("("); // bshru
-		e.soufflePrint(pr);
-		pr.out.print(" bshru " + offset);
-		pr.out.print(")"); // bshru
-		pr.out.print(" band " + mask);
-		pr.out.print(")"); // band
-		pr.out.print(")");
-	}
-
-	public void ANCESTORLiteral.soufflePrint(PrettyPrinter pr) {
-		Expr left = getExpr(0);
-		Expr right = getExpr(1);
-
-		if (hasNot())
-			pr.negationPrefix();
-
-		printExtractField(left, clang.DatalogProjection.CNodeIdDesc.FILE_ID_OFFSET, clang.DatalogProjection.CNodeIdDesc.FILE_ID_SIZE, pr);
-		pr.out.print("=");
-		printExtractField(right, clang.DatalogProjection.CNodeIdDesc.FILE_ID_OFFSET, clang.DatalogProjection.CNodeIdDesc.FILE_ID_SIZE, pr);
-
-		pr.out.print(",");
-
-		printExtractField(left, clang.DatalogProjection.CNodeIdDesc.PRE_ORD_NUM_OFFSET, clang.DatalogProjection.CNodeIdDesc.PRE_ORD_NUM_SIZE, pr);
-		pr.out.print("<=");
-		printExtractField(right, clang.DatalogProjection.CNodeIdDesc.PRE_ORD_NUM_OFFSET, clang.DatalogProjection.CNodeIdDesc.PRE_ORD_NUM_SIZE, pr);
-
-		pr.out.print(",");
-
-		printExtractField(right, clang.DatalogProjection.CNodeIdDesc.POST_ORD_NUM_OFFSET, clang.DatalogProjection.CNodeIdDesc.POST_ORD_NUM_SIZE, pr);
-		pr.out.print("<=");
-		printExtractField(left, clang.DatalogProjection.CNodeIdDesc.POST_ORD_NUM_OFFSET, clang.DatalogProjection.CNodeIdDesc.POST_ORD_NUM_SIZE, pr);
-
-		if (hasNot())
-			pr.negationSuffix();
-	}
-
-    public void PredicateRef.soufflePrint(PrettyPrinter pr) {
-        pr.out.print("\"");
-        prettyPrint(pr);
-        pr.out.print("\"");
-    }
-
-	public void Functor.soufflePrint(PrettyPrinter pr) {
-		String op = null;
-		String funcId = getFunc().getFUNC_ID();
-		switch (funcId) {
-		default:
-			// generic functor, use prefix notation
-			pr.out.print(funcId);
-			printCollection(getArgs(), "(", ")", ", ", pr);
-			return;
-		case "node_to_id":
-		case "id_to_node":
-			// nodes are represented directly by their integer id
-			// so this is just an identity function
-			pr.out.print("(");
-			pr.prettyPrint(getArg(0));
-			pr.out.print(")");
-			return;
-		case "add":
-			op = "+";
-			break;
-		case "sub":
-			op = "-";
-			break;
-		case "mul":
-			op = "*";
-			break;
-		case "div":
-			op = "/";
-			break;
-		case "band":
-		case "bor":
-		case "bxor":
-		case "lshr":
-		case "bshr":
-		case "bshru":
-			op = funcId;
-			break;
-		}
-		// arithmetic, infix notation
-		pr.out.print("(");
-		pr.prettyPrint(getArg(0));
-		pr.out.print(")");
-		pr.out.print(op);
-		pr.out.print("(");
-		pr.prettyPrint(getArg(1));
-		pr.out.print(")");
-
-	}
-
-	public void Rule.soufflePrint(PrettyPrinter pr) {
-		if (isASTClause()) {
-			pr.printComment("AST clause");
-		}
-		pr.printComment(isLocal() ? "Local clause" : "Global clause");
-		pr.printComment("Local variables: " + localVariables());
-		pr.printComment("Domains: " + domainSignature().equivalenceSets().toString());
-
-		prettyPrint(pr);
-	}
-
-	public void Variable.soufflePrint(PrettyPrinter pr) {
-		pr.out.print(getVAR_ID().replaceAll("[$`]", "?"));
-	}
-
-    public void BINDLiteral.soufflePrint(PrettyPrinter pr) {
-    	pr.prettyPrint(getDst());
-        pr.out.print(" = ");
-    	pr.prettyPrint(getSrc());
-    }
-
-	public void Fact.soufflePrint(PrettyPrinter pr) {
-		HashSet<Literal> nonIncl = new HashSet<Literal>();
-		for(CommonLiteral il : getHeadss())
-			nonIncl.add((Literal)il);
-		printCollection(nonIncl, "", " :- true.\n", ", ", pr);
-	}
-
-	private boolean FormalPredicate.isSouffleInline() {
-		// TODO: set an attribute on the FormalPredicate to handle this.
-		// The commented relations can't be inlined because they may appear
-		// negated.
-		String n = predicateName();
-		// if (n.endsWith("_SRC"))
-		// 	return true;
-		// if (n.endsWith("_PARENT"))
-		// 	return true;
-		// if (n.endsWith("_REWRITE_MAP"))
-		// 	return true;
-		// if (n.endsWith("_DECL"))
-		// 	return true;
-		// if (n.endsWith("_TYPE"))
-		// 	return true;
-		// if (n.endsWith("_ID"))
-		// 	return true;
-		// if (n.endsWith("_GENERIC"))
-		// 	return true;
-		return false;
-	}
-
-	public String FormalPredicate.prettyDomainSeparationInfo() {
-		return "AST: " + isASTPredicate() + "; Global use: " + hasGlobalUse()
-			+ "; Global def: " + hasGlobalDef() + "; Local use: " + hasLocalUse() + "; Local def: " + hasLocalDef();
-	}
-
-    public void FormalPredicate.soufflePrint(PrettyPrinter pr) {
-		pr.printComment("Domains: " + domainSignature().equivalenceSets());
-		pr.printComment("Local terms: " + localTerms());
-		pr.printComment(prettyDomainSeparationInfo());
-        pr.out.print(".decl " + predicateName() + "(");
-        ArrayList<PredicateSymbol> constants = new ArrayList<PredicateSymbol>();
-        for(int i = 0; i != realArity(); ++i) {
-			Type t = type().get(i);
-
-			String souffleType;
-			if (t.storageType() == IntegerType.get()) {
-				souffleType = "number";
-			} else if (t.storageType() == StringType.get()) {
-				souffleType = "symbol";
-			} else if (t.storageType() == PredicateRefType.get()) {
-				souffleType = "symbol";
-			} else if (t.storageType() == BadType.get()) {
-				souffleType = "bad";
-			} else {
-				souffleType = "unknown";
-			}
-            constants.add(new PredicateSymbol("x_" + i + ":" + souffleType));
-        }
-        printCollection(constants, "", "", ", ", pr);
-        pr.out.print(")");
-		if (isSouffleInline())
-			pr.out.print(" inline");
-    }
-
-	private static void Program.printIODescription(PrettyPrinter pr, String file, String format, String table, String mode) {
-		pr.out.print("(IO=");
-		if (format.equals("csv")) {
-			pr.out.print("file");
-			pr.out.print(", filename=\"" + file + "\"");
-			pr.out.print(", delimiter=\"" + Compiler.getCSVSeparatorEscaped() + "\"");
-		} else {
-			pr.out.print(format);
-			pr.out.print(", dbname=\"" + file + "\"");
-			if (table != null) {
-				pr.out.print(", table=\"" + table + "\"");
-			}
-			if (mode != null) {
-				pr.out.print(", mode=\"" + mode + "\"");
-			}
-		}
-		pr.out.println(")");
-	}
-
-	private void Program.soufflePrintEDBDecl(PrettyPrinter pr) {
-
-
-		FormalPredicate fpEDB = formalPredicateMap().get(GlobalNames.EDB_NAME);
-		if (fpEDB == null) {
-			// no EDB in the program, nothing to do
-			return;
-		}
-
-		EvaluationContext ctx = new EvaluationContext();
-		fpEDB.eval(ctx);
-
-		// now iterate over the tuples in the EDB relation
-
-		RelationWrapper edbTuples = new RelationWrapper(ctx, ctx.getRelation(fpEDB), fpEDB.type());
-
-		for (RelationWrapper.TupleWrapper t : edbTuples.tuples()) {
-			String pred = t.getAsString(0);
-			String file = t.getAsString(1);
-			String format = t.getAsString(2);
-			String table = null;
-			String mode = null;
-
-			if (ProgramSplit.isInternalDbDesc(file)) {
-				table = ProgramSplit.getInternalDbTable(file);
-				mode = ProgramSplit.getInternalDbMode(file);
-				file = ProgramSplit.INTERNAL_DB_NAME;
-			}
-
-			pr.out.print(".input ");
-			pr.out.print(pred);
-			printIODescription(pr, file, format, table, mode);
-			pr.out.println();
-		}
-	}
-
-	private void Program.soufflePrintOUTPUTDecl(PrettyPrinter pr) {
-		FormalPredicate fpOUTPUT = formalPredicateMap().get(GlobalNames.OUTPUT_NAME);
-		if(fpOUTPUT == null)
-			return;
-
-		EvaluationContext ctx = new EvaluationContext();
-		fpOUTPUT.eval(ctx);
-
-		// now iterate over the tuples in the EDB relation
-		RelationWrapper outputTuples = new RelationWrapper(ctx, ctx.getRelation(fpOUTPUT), fpOUTPUT.type());
-
-		for (RelationWrapper.TupleWrapper t : outputTuples.tuples()) {
-			String pred = t.getAsString(0);
-			String file = t.getAsString(1);
-			String format = t.getAsString(2);
-			String table = null;
-			String mode = null;
-
-			if (ProgramSplit.isInternalDbDesc(file)) {
-				table = ProgramSplit.getInternalDbTable(file);
-				mode = ProgramSplit.getInternalDbMode(file);
-				file = ProgramSplit.INTERNAL_DB_NAME;
-			}
-
-			pr.out.print(".output " + pred);
-			printIODescription(pr, file, format, table, mode);
-			pr.out.println();
-		}
-	}
-
-	private void Program.soufflePrintIMPORTFacts(PrettyPrinter pr) {
-		for (FormalPredicate pred : getFormalPredicates()) {
-			if (pred.getProgramRepresentationKind().isPresent()) {
-				pr.out.print(".input ");
-				pr.out.print(pred.getPRED_ID());
-				pr.out.print("(filename=\"");
-				pr.out.print(pred.getPRED_ID() + ".csv");
-				pr.out.print("\", delimiter=\"");
-				pr.out.print(Compiler.getCSVSeparatorEscaped());
-				pr.out.print("\")\n");
-			}
-		}
-	}
-
-	public void Program.soufflePrint(PrettyPrinter pr) {
-		printCollection(getFormalPredicates(), "", "\n", "\n", pr);
-		soufflePrintEDBDecl(pr);
-		soufflePrintOUTPUTDecl(pr);
-		soufflePrintIMPORTFacts(pr);
-		prettyPrint(pr);
-	}
+  public void Program.soufflePrint(PrettyPrinter pr) {
+    printCollection(getFormalPredicates(), "", "\n", "\n", pr);
+    soufflePrintEDBDecl(pr);
+    soufflePrintOUTPUTDecl(pr);
+    soufflePrintIMPORTFacts(pr);
+    prettyPrint(pr);
+  }
 }

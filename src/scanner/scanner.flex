@@ -116,6 +116,7 @@ String  = \"[^\"]*\"
 "BIND"     {  return  sym(Terminals.BIND);           }
 "ANCESTOR" {  return  sym(Terminals.ANCESTOR);       }
 "_"        {  return  sym(Terminals.WILDCARD);       }
+"undef"    {  return  sym(Terminals.UNDEF);          }
 {Numeral}  {  return  sym(Terminals.NUMERAL);        }
 {VAR_ID}   {  return  sym(Terminals.VAR_ID);         }
 {PRED_ID}  {  return  sym(Terminals.PRED_ID);        }

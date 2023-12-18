@@ -2,20 +2,20 @@ MemAllocExpr(e, e) :- e <: malloc(..) :>.
 MemAllocExpr(e, alloc) :- e <: ($t) $e :>, MemAllocExpr($e, alloc).
 MemAllocExpr(e, e) :- e <: &$f :>.
 
-Alloc(var, heap, f) :- <: $v = $e :>, MemAllocExpr($e, heap), var = c_decl($v), node_to_id(var) != 0, f = c_enclosing_function($v).
+Alloc(var, heap, f) :- <: $v = $e :>, MemAllocExpr($e, heap), var = c_decl($v), var != undef, f = c_enclosing_function($v).
 Alloc($v, heap, f) :- <: $t $v = $e :>, MemAllocExpr($e, heap), f = c_enclosing_function($v).
-Move(to, from) :- <: $to = $from :>, to = c_decl($to), node_to_id(to) != 0, from = c_decl($from), node_to_id(from) != 0.
-Load(to, base) :- <: $to = *$base :>, to = c_decl($to), node_to_id(to) != 0, base = c_decl($base), node_to_id(base) != 0.
-Load($to, base) :- <: $t $to = *$base :>, base = c_decl($base), node_to_id(base) != 0.
-Store(base, from) :- <: *$base = $from :>, base = c_decl($base), node_to_id(base) != 0, from = c_decl($from), node_to_id(from) != 0.
-Call($callee_def, c, f) :- c <: $callee(..) :>, $callee_def = c_decl($callee), node_to_id($callee_def) != 0, <: $t $f(..) {..} :>, $f == $callee_def,
+Move(to, from) :- <: $to = $from :>, to = c_decl($to), to != undef, from = c_decl($from), from != undef.
+Load(to, base) :- <: $to = *$base :>, to = c_decl($to), to != undef, base = c_decl($base), base != undef.
+Load($to, base) :- <: $t $to = *$base :>, base = c_decl($base), base != undef.
+Store(base, from) :- <: *$base = $from :>, base = c_decl($base), base != undef, from = c_decl($from), from != undef.
+Call($callee_def, c, f) :- c <: $callee(..) :>, $callee_def = c_decl($callee), $callee_def != undef, <: $t $f(..) {..} :>, $f == $callee_def,
                       f = c_enclosing_function(c).
-VCall(base, c, f) :- c <: $base(..) :>, base = c_decl($base), node_to_id(base) != 0, f = c_enclosing_function(c).
+VCall(base, c, f) :- c <: $base(..) :>, base = c_decl($base), base != undef, f = c_enclosing_function(c).
 
 FormalArg($f, n, $arg) :- <: $r $f(.., $t $arg, ..) { .. } :>, n = c_index($arg).
-ActualArg(c, n, arg) :- c <: $f(.., $arg, ..) :>, arg = c_decl($arg), node_to_id(arg) != 0, n = c_index($arg).
-FormalReturn(f, ret) :- <: return $ret; :>, ret = c_decl($ret), node_to_id(ret) != 0, f = c_enclosing_function($ret).
-ActualReturn($c, v) :- <: $r = $c :>, $c <: $f (..) :> , v = c_decl($r), node_to_id(v) != 0.
+ActualArg(c, n, arg) :- c <: $f(.., $arg, ..) :>, arg = c_decl($arg), arg != undef, n = c_index($arg).
+FormalReturn(f, ret) :- <: return $ret; :>, ret = c_decl($ret), ret != undef, f = c_enclosing_function($ret).
+ActualReturn($c, v) :- <: $r = $c :>, $c <: $f (..) :> , v = c_decl($r), v != undef.
 
 
 // VarPointsTo(var, heap) ← Reachable(meth), Alloc(var, heap, meth).

@@ -41,15 +41,26 @@ VarPointsTo(to, heap) :- InterProcAssign(to, from), VarPointsTo(from, heap).
 
 Reachable(f) :- f <: int main(..) {.. } :>.
 
+VarPointsToDetail(vf, vl, vc, hf, hl, hc) :- VarPointsTo(v, h),
+                      vf = c_src_file(v),
+                      vl = c_src_line_start(v),
+                      vc = c_src_col_start(v),
+                      hf = c_src_file(h),
+                      hl = c_src_line_start(h),
+                      hc = c_src_col_start(h).
+
+
+OUTPUT('VarPointsToDetail, "VarPointsToDetail.csv", "csv").
+
 // OUTPUT('Call, "Call.csv", "csv").
 // OUTPUT('VarPointsTo, "VarPointsTo.csv", "csv").
-OUTPUT('Alloc, "Alloc.csv", "csv").
-OUTPUT('Move, "Move.csv", "csv").
-OUTPUT('Load, "Load.csv", "csv").
-OUTPUT('Store, "Store.csv", "csv").
-OUTPUT('Call, "Call.csv", "csv").
-OUTPUT('VCall, "VCall.csv", "csv").
-OUTPUT('FormalArg, "FormalArg.csv", "csv").
-OUTPUT('ActualArg, "ActualArg.csv", "csv").
-OUTPUT('FormalReturn, "FormalReturn.csv", "csv").
-OUTPUT('ActualReturn, "ActualReturn.csv", "csv").
+// OUTPUT('Alloc, "Alloc.csv", "csv").
+// OUTPUT('Move, "Move.csv", "csv").
+// OUTPUT('Load, "Load.csv", "csv").
+// OUTPUT('Store, "Store.csv", "csv").
+// OUTPUT('Call, "Call.csv", "csv").
+// OUTPUT('VCall, "VCall.csv", "csv").
+// OUTPUT('FormalArg, "FormalArg.csv", "csv").
+// OUTPUT('ActualArg, "ActualArg.csv", "csv").
+// OUTPUT('FormalReturn, "FormalReturn.csv", "csv").
+// OUTPUT('ActualReturn, "ActualReturn.csv", "csv").

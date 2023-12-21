@@ -1,22 +1,21 @@
 #+TITLE: Clog: A Declarative Language for C Static Code Checkers
 
-Clog is a declarative language for describing static code checkers for C. Clog is a dialect of Datalog and add syntactic pattern matching over the C language. We have built Clog using the MetaDL framework and the Clang C compiler frontend. The MetaDL framework supports Datalog evaluation a syntactic patterns, whi
-le the Clang frontend provides AST facts and an AST matching mechanism.
+Clog is a declarative language for describing static code checkers for C. Clog is a dialect of Datalog and adds syntactic pattern matching over the C language. We have built Clog using the MetaDL framework and the Clang C compiler frontend. The MetaDL framework supports Datalog evaluation and syntactic patterns, while the Clang frontend provides AST facts and an AST matching mechanism.
 
 * Artifact Description
-We provide the Clog artifact as a Docker image. The artifact contains the Clog implementation, the evaluation framework and the test suites we have used in our evaluation. The recommended hardware for running this artifact is a multi-core x86-64 CPU, with at least 32 GB RAM. The time needed for running our evaluation scripts is tipically 2 hours.
+We provide the Clog artifact as a Docker image. The artifact contains the Clog implementation, the evaluation framework and the test suites we have used in our evaluation. The recommended hardware for running this artifact is a multi-core x86-64 CPU, with at least 32 GB RAM. The time needed for launching our evaluation scripts is about 5 minutes, while their total running time is typically 2-3 hours.
 
 
 * Getting Started Guide
 ** Installing Docker
 On Linux-based systems, install the ~docker~ command line tool. This tool may be provided by the ~docker.io~ or ~docker~ packages. Alternatively, you can follow the official [[https://docs.docker.com/engine/install/][installation instructions]].
 
-He have tested the artifact on Ubuntu 22.04 LTS, however the Docker image should be runnable on other Linux distributions, as well as on Windows and MacOS.
+He have tested the artifact on Ubuntu Linux 22.04 LTS, however the Docker image should be runnable on other Linux distributions, as well as on Windows and MacOS.
 
 ** Running the Docker image
 Download the Docker image from  TODO
 
-Check the integrity of the image. ~sha256sum clog23-cc24.tgz~ should report ~TODO~.
+Check the integrity of the image. ~sha256sum clog23-cc24.tgz~ should report ~494d4b7fab6a0e02fa662836fddabded2f8d8658278ca2558da643139644764d~.
 
 Install the docker image:
 #+BEGIN_SRC shell
@@ -43,6 +42,15 @@ Run the Magma suite:
 The results produced by running Clog on the Magma suite should be available in ~magma-results.txt~.
 #+BEGIN_SRC shell
   root@7b018976a191:/work/projects/clog-eval# cat magma-results.txt
+  tool,proj,n_clang,n_clang_fixed,n_clog,n_clog_fixed,clog_time,clang_time
+  null_dereference.json,libpng,0,0,0,0,3.71,29.75
+  null_dereference.json,openssl,25,24,217,217,191.07,451.80
+  null_dereference.json,sqlite3,18,17,387,383,150.87,1109.65
+  null_dereference.json,libxml2,33,33,425,425,23.61,353.05
+  use_after_free.json,libpng,0,0,0,0,1.32,31.50
+  use_after_free.json,openssl,0,0,0,0,60.60,502.12
+  use_after_free.json,sqlite3,0,0,0,0,4.48,1195.48
+  use_after_free.json,libxml2,0,0,0,0,3.38,373.37
 #+END_SRC
 
 *** Running Clog on the Juliet Test Suite
@@ -50,14 +58,42 @@ Run the Juliet suite:
 #+BEGIN_SRC shell
   root@7b018976a191:/work/projects/clog-eval# ./run-all.sh
 #+END_SRC
+The output may contain an error message produced by ~bc~: ~Runtime error (func=(main), adr=19): Divide by zero~. This is safe to ignore.
 
-The results are available in the ~juliet-results.tex~ file.
+The results are available in the ~juliet-results.tex~ file. The last line contains information about a checker we did not include in our evaluation and thus it should be ignored.
+
 #+BEGIN_SRC shell
   root@7b018976a191:/work/projects/clog-eval# cat juliet-results.tex
+
+  CWE-134 & alpha.security.taint.* & 1900 & 570 & 1278 &  780 & 0 & 42.22 & 100.00 & 30.00 & 67.26 & 48.32 & 315.12 \tabularnewline
+  CWE-476 & core.NullDereference & 270 & 174 & 150 &  16 & 0 & 91.57 & 100.00 & 64.44 & 55.55 & 4.65 & 6.34 \tabularnewline
+  CWE-78 & alpha.security.taint.* & 1520 & 0 & 1008 &  0 & 0 &  & 100.00 & 0 & 66.31 & 35.51 & 120.51 \tabularnewline
+  CWE-416 & unix.Malloc & 138 & 36 & 108 &  0 & 0 & 100.00 & 100.00 & 26.08 & 78.26 & 2.27 & 2.69 \tabularnewline
+  CWE-121 & alpha.security.ArrayBound,alpha.security.ArrayBoundV2,alpha.security.taint.*,alpha.unix.cstring.OutOfBounds,security.insecureAPI.* & 4036 & 2132 & 240 &  6810 & 20 & 23.84 & 92.30 & 52.82 & 5.94 & 79.97 & 186.33 \tabularnewline
+  CWE-122 & alpha.security.ArrayBound,alpha.security.ArrayBoundV2,alpha.security.taint.*,alpha.unix.cstring.OutOfBounds,security.insecureAPI.* & 2606 & 1174 & 240 &  3542 & 20 & 24.89 & 92.30 & 45.04 & 9.20 & 50.61 & 124.02 \tabularnewline
+  CWE-126 & alpha.security.ArrayBound,alpha.security.ArrayBoundV2,alpha.security.taint.*,alpha.unix.cstring.OutOfBounds,security.insecureAPI.* & 972 & 449 & 160 &  3180 & 0 & 12.37 & 100.00 & 46.19 & 16.46 & 20.19 & 46.00 \tabularnewline
+  CWE-127 & alpha.security.ArrayBound,alpha.security.ArrayBoundV2,alpha.security.taint.*,alpha.unix.cstring.OutOfBounds,security.insecureAPI.* & 1288 & 720 & 300 &  3593 & 0 & 16.69 & 100.00 & 55.90 & 23.29 & 26.45 & 72.02 \tabularnewline
+  CWE-124 & alpha.security.ArrayBound,alpha.security.ArrayBoundV2,alpha.security.taint.*,alpha.unix.cstring.OutOfBounds,security.insecureAPI.* & 1288 & 720 & 300 &  3593 & 0 & 16.69 & 100.00 & 55.90 & 23.29 & 26.81 & 73.73 \tabularnewline
+   & alpha.security.ArrayBound,alpha.security.ArrayBoundV2,alpha.security.taint.*,alpha.unix.cstring.OutOfBounds,security.insecureAPI.DeprecatedOrUnsafeBufferHandling & 228 & 0 & 0 &  76 & 0 & 0 &  & 0 & 0 & 2.57 & 4.22 \tabularnewline
 #+END_SRC
 
 *** Code Size Statistics
+The script running Clog on the Juliet suite also produces the code size statistics.
+#+BEGIN_SRC shell
+  root@7b018976a191:/work/projects/clog-eval# cat clog-src-stats.tex
 
+  CWE-134 & 20 & 18 & 25 \tabularnewline
+  CWE-476 & 14 & 31 & 35 \tabularnewline
+  CWE-78 & 19 & 18 & 24 \tabularnewline
+  CWE-416 & 13 & 23 & 28 \tabularnewline
+  CWE-121 & 8 & 23 & 25 \tabularnewline
+  CWE-122 & 8 & 23 & 25 \tabularnewline
+  CWE-126 & 8 & 22 & 24 \tabularnewline
+  CWE-127 & 9 & 17 & 20 \tabularnewline
+  CWE-124 & 7 & 18 & 19 \tabularnewline
+   & 8 & 22 & 24 \tabularnewline
+#+END_SRC
+The last line contains information about a checker we did not include in our evaluation and thus it should be ignored.
 
 * Mapping the Results to the Claims
 There is a 1:1 correspondence between the files produced by running our evaluation scripts and the tables in the paper:

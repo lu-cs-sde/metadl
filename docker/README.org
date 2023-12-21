@@ -1,0 +1,70 @@
+#+TITLE: Clog: A Declarative Language for C Static Code Checkers
+
+Clog is a declarative language for describing static code checkers for C. Clog is a dialect of Datalog and add syntactic pattern matching over the C language. We have built Clog using the MetaDL framework and the Clang C compiler frontend. The MetaDL framework supports Datalog evaluation a syntactic patterns, whi
+le the Clang frontend provides AST facts and an AST matching mechanism.
+
+* Artifact Description
+We provide the Clog artifact as a Docker image. The artifact contains the Clog implementation, the evaluation framework and the test suites we have used in our evaluation. The recommended hardware for running this artifact is a multi-core x86-64 CPU, with at least 32 GB RAM. The time needed for running our evaluation scripts is tipically 2 hours.
+
+
+* Getting Started Guide
+** Installing Docker
+On Linux-based systems, install the ~docker~ command line tool. This tool may be provided by the ~docker.io~ or ~docker~ packages. Alternatively, you can follow the official [[https://docs.docker.com/engine/install/][installation instructions]].
+
+He have tested the artifact on Ubuntu 22.04 LTS, however the Docker image should be runnable on other Linux distributions, as well as on Windows and MacOS.
+
+** Running the Docker image
+Download the Docker image from  TODO
+
+Check the integrity of the image. ~sha256sum clog23-cc24.tgz~ should report ~TODO~.
+
+Install the docker image:
+#+BEGIN_SRC shell
+  docker load -i clog23-cc24.tgz
+#+END_SRC
+
+Start the docker image:
+#+BEGIN_SRC shell
+  docker run -it clog23:cc24
+#+END_SRC
+
+** Running the Clog Evaluation Framework
+Jump to the directory containing the Clog evaluation framework:
+#+BEGIN_SRC shell
+  root@7b018976a191:/# cd /work/projects/clog-eval/
+#+END_SRC
+
+*** Running Clog on the Magma Test Suite
+Run the Magma suite:
+#+BEGIN_SRC shell
+  root@7b018976a191:/work/projects/clog-eval# ./mrun-all.sh
+#+END_SRC
+
+The results produced by running Clog on the Magma suite should be available in ~magma-results.txt~.
+#+BEGIN_SRC shell
+  root@7b018976a191:/work/projects/clog-eval# cat magma-results.txt
+#+END_SRC
+
+*** Running Clog on the Juliet Test Suite
+Run the Juliet suite:
+#+BEGIN_SRC shell
+  root@7b018976a191:/work/projects/clog-eval# ./run-all.sh
+#+END_SRC
+
+The results are available in the ~juliet-results.tex~ file.
+#+BEGIN_SRC shell
+  root@7b018976a191:/work/projects/clog-eval# cat juliet-results.tex
+#+END_SRC
+
+*** Code Size Statistics
+
+
+* Mapping the Results to the Claims
+There is a 1:1 correspondence between the files produced by running our evaluation scripts and the tables in the paper:
+- /Table 2. CSA and Clog results on Juliet test sets/ : ~juliet-results.tex~
+  The ~juliet-results.tex~ uses LaTeX table formatting.
+- /Table 3. Predicate, rule and pattern literal counts for Clog programs/ : ~clog-src-stats.tex~
+  The ~clog-src-stats.tex~ uses LaTeX table formatting.
+- /Table 4. CSA and Clog report numbers and running times on Magma test programs/ : ~magma-results.txt~
+  The ~magma-results.txt~ uses CSV formatting.
+  Please note that the paper submitted for reviewing contains an error in Table 4. The headers of the two rightmost columns are switched, thus the column with the "CSA" header contains the results of Clog (corresponding to the ~clog_time~ header in the output file) and the column with the "Clog" header contains the results of the Clang Static Analyzer (corresponding to ~clang_time~). We have reported this error to the paper's referees as part of the rebuttal process.

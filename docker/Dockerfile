@@ -108,6 +108,8 @@ RUN apt install -y bear re2c tcl
 # Get Magma
 ARG MAGMA_GIT
 ARG MAGMA_HASH
+
+RUN apt install -y pkgconf
 RUN cd /work/projects && git clone $MAGMA_GIT magma && cd magma && git checkout $MAGMA_HASH && ./prepare.sh
 
 # Get the evaluation framework

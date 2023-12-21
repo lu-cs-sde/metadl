@@ -12,5 +12,5 @@ docker build \
        --build-arg JULIET_GIT=https://github.com/alexdura/juliet.git \
        --build-arg JULIET_HASH=dc4849eb6072f1fb1dec861aa2eb0e34ba379c1a \
        --build-arg MAGMA_GIT=https://github.com/alexdura/magma.git \
-       --build-arg MAGMA_HASH=f0f88cb22bec4054e0a1241d77f300d70106e5b1 \
+       --build-arg MAGMA_HASH=07b321d2ba6d94ed8e26d780d3e079a68e06a682 \
        -t clog23 .

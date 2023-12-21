@@ -1,0 +1,20 @@
+#+TITLE: Clog: A Declarative Language for C Static Code Checkers
+
+* Artifact Description
+Clog is a declarative language for describing static code checkers for C. Clog is a dialect of Datalog and adds syntactic pattern matching over the C language. We have built Clog using the MetaDL framework and the Clang C compiler frontend. The MetaDL framework supports Datalog evaluation and syntactic patterns, while the Clang frontend provides AST facts and an AST matching mechanism.
+
+The artifact is a packaged as a Docker image.
+
+* Requested Badges
+Red (evaluated:reusable) and Blue (results reproduced).
+
+* Hardware Prerequisites
+Laptop, desktop computer or workstation with an x86-64 CPU, at least 4 cores, at least 32 GB RAM.
+
+* Software Prerequisites
+Ubuntu Linux 20.04 or 22.04 with Docker. The artifact will likely run on other distributions or operating system that have Docker installed.
+
+* Time Expectations
+- Installing the Docker image: 20 minutes
+- Launching the evaluation scripts: 5 minutes
+- Total running time of the evaluation: 2-3 hours

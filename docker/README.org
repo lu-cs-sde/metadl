@@ -13,7 +13,7 @@ On Linux-based systems, install the ~docker~ command line tool. This tool may be
 He have tested the artifact on Ubuntu Linux 22.04 LTS, however the Docker image should be runnable on other Linux distributions, as well as on Windows and MacOS.
 
 ** Running the Docker image
-Download the Docker image from [[https://doi.org/10.5281/zenodo.10419046]].
+Download the compressed Docker image ~clog23-cc24.tgz~ from [[https://doi.org/10.5281/zenodo.10419046]].
 
 Check the integrity of the image. ~sha256sum clog23-cc24.tgz~ should report ~494d4b7fab6a0e02fa662836fddabded2f8d8658278ca2558da643139644764d~, ~md5sum clog23-cc24.tgz~ should report ~27be3748220eeaf491c704e5070cd5c6~.
 

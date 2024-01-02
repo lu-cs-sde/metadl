@@ -13,9 +13,9 @@ On Linux-based systems, install the ~docker~ command line tool. This tool may be
 He have tested the artifact on Ubuntu Linux 22.04 LTS, however the Docker image should be runnable on other Linux distributions, as well as on Windows and MacOS.
 
 ** Running the Docker image
-Download the Docker image from  TODO
+Download the Docker image from [[https://doi.org/10.5281/zenodo.10419046]].
 
-Check the integrity of the image. ~sha256sum clog23-cc24.tgz~ should report ~494d4b7fab6a0e02fa662836fddabded2f8d8658278ca2558da643139644764d~.
+Check the integrity of the image. ~sha256sum clog23-cc24.tgz~ should report ~494d4b7fab6a0e02fa662836fddabded2f8d8658278ca2558da643139644764d~, ~md5sum clog23-cc24.tgz~ should report ~27be3748220eeaf491c704e5070cd5c6~.
 
 Install the docker image:
 #+BEGIN_SRC shell
@@ -26,6 +26,11 @@ Start the docker image:
 #+BEGIN_SRC shell
   docker run -it clog23:cc24
 #+END_SRC
+This should launch interactive shell similar to:
+#+BEGIN_SRC shell
+  root@7b018976a191:/#
+#+END_SRC
+We expect that you will get a different host name after the ~@~ symbol.
 
 ** Running the Clog Evaluation Framework
 Jump to the directory containing the Clog evaluation framework:

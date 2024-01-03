@@ -109,3 +109,7 @@ There is a 1:1 correspondence between the files produced by running our evaluati
 - /Table 4. CSA and Clog report numbers and running times on Magma test programs/ : ~magma-results.txt~
   The ~magma-results.txt~ uses CSV formatting.
   Please note that the paper submitted for reviewing contains an error in Table 4. The headers of the two rightmost columns are switched, thus the column with the "CSA" header contains the results of Clog (corresponding to the ~clog_time~ header in the output file) and the column with the "Clog" header contains the results of the Clang Static Analyzer (corresponding to ~clang_time~). We have reported this error to the paper's referees as part of the rebuttal process.
+
+** Criteria for Interpreting the Results
+For /Table 2/ and /Table 4/ we expect that the report counts match precisely. The values for running times may vary, but we expect them to be roughly proportional to the values reported in the table.
+For /Table 3/ we expect that the number of predicates, rules and pattern literals matches precisely.

@@ -1,4 +1,4 @@
-#+TITLE: MetaDL: Datalog analyzing Datalog, Java or any language of your choice
+#+TITLE: MetaDL: Datalog analyzing Datalog, C, Java or any language of your choice
 
 MetaDL is a Datalog language extension that enables analysis of Datalog and Java
 programs inside Datalog. In addition, the subset of the metalanguage that depends on the analyzed language is mechanically generated from a description of the abstract and concrete grammars of the analyzed language.
@@ -6,13 +6,12 @@ programs inside Datalog. In addition, the subset of the metalanguage that depend
 #+BEGIN_SRC prolog
 Srcs("p/t0.mdl").
 
-metadl ('Srcs) {
-  Arity(pname, arity) :- <: ... :- ..., $p(...,$i:$x), ... .:>, BIND(arity, $i+1), ID($p, pname).
-  Arity(pname, arity) :- <: ... :- ..., NOT($p(...,$i:$x)), ... .:>, BIND(arity, $i+1), ID($p, pname).
-  Arity(pname, arity) :- <: ..., $p(...,$i:$x), ... :- ... .:>, BIND(arity, $i+1), ID($p, pname).
-}
+Arity(pname, arity) :- <: ... :- ..., $p(...,$i:$x), ... .:>, arity = $i+1, ID($p, pname).
+Arity(pname, arity) :- <: ... :- ..., NOT($p(...,$i:$x)), ... .:>, arity = $i+1, ID($p, pname).
+Arity(pname, arity) :- <: ..., $p(...,$i:$x), ... :- ... .:>, arity = $i+1, ID($p, pname).
 
-OUTPUT('Arity).
+
+OUTPUT('Arity, "Arity.csv", "csv").
 #+END_SRC
 
 * Building
@@ -31,6 +30,19 @@ When building, make sure to enable 64-bit domains and SWIG (needed only for the 
 make
 #+END_SRC
 
+** C support
+For analyzing C, MetaDL uses the Clang front-end for pattern matching. We have built a Clang library to interface with MetaDL. Run  the following commands to fetch and build a modified version of the LLVM repository:
+#+BEGIN_SRC
+git clone git@github.com:alexdura/llvm-project.git -b clog
+#+END_SRC
+To build the library, run the following commands:
+#+BEGIN_SRC
+cd llvm-project/build-release
+cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DLLVM_ENABLE_PROJECTS="clang;clang-tools-extra"  -DBUILD_SHARED_LIBS=ON  -DLLVM_APPEND_VC_REV=OFF   ../llvm
+ninja
+#+END_SRC
+
+** Java support
 For analyzing Java, MetaDL needs access to a Java 8 runtime library. Set ~METADL_JAVA_RT=/path/to/jre/lib/rt.jr~ in your environment to let MetaDL know where to find this library.
 Run ~./gradlew :jar~ to build MetaDL and  ~./gradlew :test~ to test it. For the tests to run, you need the ~souffle~ executable in your executable path.
 
@@ -42,25 +54,18 @@ cd docker
 #+END_SRC
 then run the image using:
 #+BEGIN_SRC
-docker run -it javadl:oopsla21
+docker run -it clog23:cc24
 #+END_SRC
-Inside the Docker image, run the evaluation scripts using:
-#+BEGIN_SRC
-cd /work
-./run_quality.bash
-./run_performance.bash
-#+END_SRC
-The analysis quality evaluation script prints its results to standard output. The performance evaluation script produces the data in ~/work/javadl-inc-eval/data/~ and the plots in ~/work/javadl-inc-eval/{plots_ep,plots_sb}~.
 
 * Running
-MetaDL support multiple running modes, which represent a trade-off between speed and external dependencies.
-1. Internal evaluation
+MetaDL supports multiple running modes, which represent a trade-off between speed and external dependencies.
+** Internal evaluation
 Uses the internal semi-naive evaluator and it is reasonably fast when the number of tuples is small (< 1 million).
 #+BEGIN_SRC
 java -jar compiler.jar --eval metadl program.mdl -F fact_dir -D output_dir
 #+END_SRC
 ** Internal parallel evaluation
-If the strata dependency is graph, parallel evaluation will speed things up. For that, use the internall parallel evaluator:
+Depending on the shape of the strata dependency is graph, the parallel evaluator may speed things up.
 #+BEGIN_SRC
 java -jar compiler.jar --eval metadl-par program.mdl -F fact_dir -D output_dir
 #+END_SRC
@@ -99,33 +104,18 @@ java -jar compiler.jar --eval souffle program.mdl -F fact_dir -D output_dir
 ** Datalog
 [[https://en.wikipedia.org/wiki/Datalog][Datalog]] is a declarative query language, with roots in logic programming. Relations between tables are expressed as Horn clauses. MetaDL extends Datalog with syntactic patterns and associates side-effects to the following predicates ~EDB~ and ~OUTPUT~. The order of evaluation is as follows:
 1. All predicates the ~EDB~ predicate depends upon are evaluated. For all tuples ~('P, "file")~ in the the ~EDB~ relation, the file is read as a CSV and its tuples are added to the relation ~P~.
-2. The predicate the ~java~ or ~metadl~ block depends upon is evaluated. For an analyze block, ~java ('P) { ... }~, the P predicate is evaluated. The strings in the P relation are interpreted as file system paths and the source files present at those locations are loaded for analysis.
-3. Fixpoint evaluation.
-4. For all values ~('P)~ in the ~OUTPUT~ relation, the contents of relation ~P~ are written out to a file ~P.csv~.
-
-The order of evaluation was chosen for convenience reasons, to make the following patterns possible:
-- Control the analyzed program from a configuration file ~Prog.csv~:
-#+BEGIN_SRC
-EDB('Progs, "Prog.csv", "csv").
-java ('Progs) {
-  ...
-}
-#+END_SRC
+2. Fixpoint evaluation.
+3. For all values ~('P)~ in the ~OUTPUT~ relation, the contents of relation ~P~ are written out to a file ~P.csv~.
 
 Additional Supported features:
-- Stratified negation ~NOT(P(x1,...,xn))~
-- Filtering ~LT(expr1, expr2)~, ~GT(expr1, expr2)~
-- Object creation ~BIND(v, expr)~ binds a variable to the result of an expression
-- Arithmetic expressions ( ~+~, ~-~, ~*~, ~/~) and string concatenation (~cat~) inside ~BIND~ and filtering predicates
-- Type inference
+- Stratified negation ~!P(x1,...,xn)~
+- Filtering ~expr1 < expr2~, ~expr1 > expr2~
+- Object creation ~v = expr~ binds a variable to the result of an expression
+- Arithmetic expressions ( ~+~, ~-~, ~*~, ~/~) and string concatenation (~cat~)
+- Monomorphic type inference
 
 ** Metalanguage description
-*** Analyze blocks
-Datalog:  ~metadl ('P) { }~ or Java:  ~java ('P) { }~
-
-The only blocks that are allowed to contain patterns, metavariables and gaps. All the patterns and special predicates inside these blocks refer to the analyzed program, ~\'P~.
-
-*** Patterns
+*** Syntactic patterns
 Datalog: ~<:$p(x, 1) :- ..., $q(..., $i:$v, ...) , ... .:>~ or Java ~<: class `c implements .., `i, .. { .. } :>~
 
 Patterns are a mechanism to match rules and bind metavariables to terms, expressions and predicate symbols.
@@ -133,7 +123,7 @@ Patterns are a mechanism to match rules and bind metavariables to terms, express
 The root node of a pattern can be accessed by using a bounded pattern ~$p <:$x + $y:>~.
 
 ** Gaps
-Datalog ~...~ or Java ~..~
+Datalog ~...~ and C or Java ~..~
 
 Gaps express missing elements inside a list.
 
@@ -146,8 +136,7 @@ Variables used inside analyze blocks to connect patterns with other literals in 
 - Arithmetic expressions: ~$x + $y~
 - Index metavariables ~p(..., $i:$v, ...)~
 
-*** Special metapredicates
-Special metapredicates are allowed only inside ~analyze~ blocks.
+*** Special metapredicates (Datalog and Java only)
 - ~STR(c, "value")~, ~INT($c, value)~ - relate constants to their value
 - ~ID(v, "name")~ - relate identifiers to their name
 - ~SRC(n, l, c)~ - relate an AST node to its source location
@@ -157,22 +146,20 @@ Special metapredicates are allowed only inside ~analyze~ blocks.
 #+BEGIN_SRC
 #Import a program that contains BIND(t, x*y + ((1 + 2*3) - 1) / 2)
 
-P("bpatterns.in").
 
-metadl ('P) {
-	    Expr($p, 0, $q, "+"), Expr($p, 1, $r, "+") :- $p <:$q + $r:>.
-	    Expr($p, 0, $q, "*"), Expr($p, 1, $r, "*") :- $p <:$q * $r:>.
-	    Expr($p, 0, $q, "-"), Expr($p, 1, $r, "-") :- $p <:$q - $r:>.
-	    Expr($p, 0, $q, "/"), Expr($p, 1, $r, "/") :- $p <:$q / $r:>.
 
-	    Eval(e, v) :- INT(e, v).
-	    Eval(e, v) :- Expr(e, 0, l, "+"), Expr(e, 1, r, "+"), Eval(l, lv), Eval(r, rv), BIND(v, lv + rv).
-	    Eval(e, v) :- Expr(e, 0, l, "*"), Expr(e, 1, r, "*"), Eval(l, lv), Eval(r, rv), BIND(v, lv * rv).
-	    Eval(e, v) :- Expr(e, 0, l, "-"), Expr(e, 1, r, "-"), Eval(l, lv), Eval(r, rv), BIND(v, lv - rv).
-	    Eval(e, v) :- Expr(e, 0, l, "/"), Expr(e, 1, r, "/"), Eval(l, lv), Eval(r, rv), BIND(v, lv / rv).
+Expr($p, 0, $q, "+"), Expr($p, 1, $r, "+") :- $p <:$q + $r:>.
+Expr($p, 0, $q, "*"), Expr($p, 1, $r, "*") :- $p <:$q * $r:>.
+Expr($p, 0, $q, "-"), Expr($p, 1, $r, "-") :- $p <:$q - $r:>.
+Expr($p, 0, $q, "/"), Expr($p, 1, $r, "/") :- $p <:$q / $r:>.
 
-	    OurExprEval(v) :- <: ... :- ..., BIND(t, x*y + $e), ... .:>, Eval($e, v).
-}
+Eval(e, v) :- INT(e, v).
+Eval(e, v) :- Expr(e, 0, l, "+"), Expr(e, 1, r, "+"), Eval(l, lv), Eval(r, rv), BIND(v, lv + rv).
+Eval(e, v) :- Expr(e, 0, l, "*"), Expr(e, 1, r, "*"), Eval(l, lv), Eval(r, rv), BIND(v, lv * rv).
+Eval(e, v) :- Expr(e, 0, l, "-"), Expr(e, 1, r, "-"), Eval(l, lv), Eval(r, rv), BIND(v, lv - rv).
+Eval(e, v) :- Expr(e, 0, l, "/"), Expr(e, 1, r, "/"), Eval(l, lv), Eval(r, rv), BIND(v, lv / rv).
+
+OurExprEval(v) :- <: ... :- ..., BIND(t, x*y + $e), ... .:>, Eval($e, v).
 
 # OurExprEval = {3}.
 OUTPUT('OurExprEval, "OurExprEval", "csv").
@@ -180,22 +167,20 @@ OUTPUT('OurExprEval, "OurExprEval", "csv").
 
 *** Type hierarchy for Java
 #+BEGIN_SRC
-P("tests/evaluation/withimport/evalTest_15_input.java").
 
-java ('P) {
-	ClassImplementsInterface(c, i) :-
+ClassImplementsInterface(c, i) :-
 		<: class `c implements .., `i, .. { .. } :>,
 		ID(`c, c), ID(`i, i).
-	InterfaceExtendsInterface(i, j) :-
+InterfaceExtendsInterface(i, j) :-
 		<: interface `i extends `j { .. } :>,
 		ID(`i, i), ID(`j, j).
-	ClassExtendsClass(c, d) :-
+ClassExtendsClass(c, d) :-
 		<: class `c extends `d { .. } :>,
 		ID(`c, c), ID(`d, d).
-	ClassImplementsInterface(c, i), ClassExtendsClass(c, d) :-
+ClassImplementsInterface(c, i), ClassExtendsClass(c, d) :-
 		<: class `c extends `d implements .., `i, .. { .. } :>,
 		ID(`c, c), ID(`d, d), ID(`i, i).
-}
+
 
 SuperClass(c, s) :- ClassExtendsClass(c, s).
 SuperClass(c, s) :- ClassExtendsClass(c, d), SuperClass(d, s).
@@ -234,21 +219,3 @@ that represent the AST.
 
 ** ExtendJ
 [[https://extendj.org][ExtendJ]] is an extensible Java compiler built using JastAdd.
-
-** Souffle
-[[https://souffle-lang.github.io/][Souffl\'e]] is a high performance Datalog
-engine that MetaDL uses as backend for evaluating complex queries that
-are too slow for the internal evaluator.
-
-** JUnit
-[[https://junit.org/junit5/][JUnit]] is a unit testing framework.
-
-** JFlex
-[[http://jflex.de/][JFlex]] is a lexical analyzer generator.
-
-** Beaver
-[[http://beaver.sourceforge.net/][Beaver]] is a LALR(1) parser
-generator. The parser descriptions are written in EBNF-form.
-
-* Credits
-Based on the Datalog implementation developed by Hampus Balldin for the Project Course in Computer Science, Faculty of Engineering LTH, Lund University.

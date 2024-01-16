@@ -15,12 +15,10 @@
 
 Program program =  clause.clauses+ {: return new Program(clauses); :};
 
-Clause inner_clause = rule
-                    | fact
-                    ;
+Clause clause = rule
+              | fact
+              ;
 
-CommonClause clause = inner_clause
-                    ;
 
 Rule rule = lit_list.heads IMPLIED_BY lit_list.body DOT {: return new Rule(heads, body); :};
 Fact fact = lit_list.heads DOT {: return new Fact(heads); :};

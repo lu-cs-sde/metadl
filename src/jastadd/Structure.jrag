@@ -75,7 +75,7 @@ aspect Program {
 	public void Program.setLang(CmdLineOpts.Lang l) { analyzedLang = l; }
 	public CmdLineOpts.Lang Program.getLang() { return analyzedLang; }
 
-	inh Program CommonClause.program();
+	inh Program Clause.program();
 	eq Program.getChild().program() = this;
 	inh Program FormalPredicate.program();
 	inh Program PredicateSymbol.program();
@@ -113,7 +113,7 @@ aspect Clause {
 	inh Clause CommonLiteral.clause();
 	eq Clause.getChild().clause() = this;
 
-	syn boolean CommonClause.isRule();
+	syn boolean Clause.isRule();
 	eq Rule.isRule() = true;
 	eq Fact.isRule() = false;
 

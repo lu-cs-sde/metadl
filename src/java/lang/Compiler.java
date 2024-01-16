@@ -145,7 +145,7 @@ public class Compiler {
 			Program prog = parseProgram(opts);
 
             if (opts.getDebugFlag()) {
-              prog.getCommonClauseList().addAll(prog.generateDebugClauses());
+              prog.getClauseList().addAll(prog.generateDebugClauses());
               prog.flushCache();
             }
 

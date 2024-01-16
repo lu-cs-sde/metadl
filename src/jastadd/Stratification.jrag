@@ -294,8 +294,8 @@ aspect StratificationError {
 		}
 		return clauseToSCCMap;
 	}
-	inh Map<Clause, Graph<Clause, DefaultEdge>> CommonClause.clauseToSCCMap();
-	eq Program.getCommonClause().clauseToSCCMap() = clauseToSCCMap();
+	inh Map<Clause, Graph<Clause, DefaultEdge>> Clause.clauseToSCCMap();
+	eq Program.getClause().clauseToSCCMap() = clauseToSCCMap();
 	eq Program.getExpandedClause().clauseToSCCMap() = clauseToSCCMap();
 	inh Map<Clause, Graph<Clause, DefaultEdge>> Clause.clauseToSCCMap();
 

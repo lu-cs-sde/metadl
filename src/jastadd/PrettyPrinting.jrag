@@ -42,7 +42,7 @@ aspect PretyPrinting {
   }
 
   public void Program.prettyPrint(PrettyPrinter pr) {
-    printCollection(getCommonClauses(), "", "\n", "\n", pr);
+    printCollection(getClauses(), "", "\n", "\n", pr);
     printCollection(getExpandedClauses(), "", "\n", "\n", pr);
 
   }

@@ -1,13 +1,12 @@
 /**
 	Program
 **/
-Program  ::= CommonClause* /FormalPredicate*/ /ExpandedClause:Clause*/;
+Program  ::= Clause* /FormalPredicate*/ /ExpandedClause:Clause*/;
 
 /**
    Clause
 **/
-abstract CommonClause;
-abstract Clause : CommonClause ::= Heads:CommonLiteral*;
+abstract Clause ::= Heads:CommonLiteral*;
 Rule:Clause ::= Body:CommonLiteral*;
 Fact:Clause;
 

@@ -17,7 +17,6 @@ import org.apache.commons.lang3.tuple.Pair;
 import lang.ast.ASTNodeType;
 import lang.ast.AnalyzeContext;
 import lang.ast.Clause;
-import lang.ast.CommonClause;
 import lang.ast.CommonLiteral;
 import lang.ast.Constraint;
 import lang.ast.Fact;
@@ -233,32 +232,31 @@ public class ProgramSplit {
 		final List<PredicateIOInfo> outputs = getIOPredicateInfo(GlobalNames.OUTPUT_NAME);
 		final Set<FormalPredicate> outputPreds = outputs.stream().map(e -> e.p).collect(Collectors.toSet());
 
-		for (final CommonClause c : program.getCommonClauses()) {
-			final Clause d = (Clause) c;
+		for (final Clause d : program.getClauses()) {
 			if (d.isLocal() && d.isASTClause()) {
-				fusedProgram.addCommonClause(transformLocalClause(d, outputPreds));
+				fusedProgram.addClause(transformLocalClause(d, outputPreds));
 			} else {
-				fusedProgram.addCommonClause(transformClause(d));
+				fusedProgram.addClause(transformClause(d));
 			}
 		}
 
 		for (final Clause d : program.getExpandedClauses()) {
 			if (d.isLocal() && d.isASTClause()) {
-				fusedProgram.addCommonClause(transformLocalClause(d, outputPreds));
+				fusedProgram.addClause(transformLocalClause(d, outputPreds));
 			} else {
-				fusedProgram.addCommonClause(transformClause(d));
+				fusedProgram.addClause(transformClause(d));
 			}
 		}
 
 		for (FormalPredicate p : program.getFormalPredicates()) {
 			if (p.hasLocalDef() && isTaggedPredicate(p, outputPreds)) {
 				// P(x) :- P_local(x, _tag).
-				fusedProgram.addCommonClause(rule(literal(p.getPRED_ID(),
+				fusedProgram.addClause(rule(literal(p.getPRED_ID(),
 														  IntStream.range(0, p.realArity()).mapToObj(i -> var("v_" + i)).toArray()),
 												  literal(p.getPRED_ID() + "_local",
 														  IntStream.range(0, p.realArity() + 1).mapToObj(i -> var("v_" + i)).toArray())));
 				// P(x) :- P_cache(x, _tag).
-				fusedProgram.addCommonClause(rule(literal(p.getPRED_ID(),
+				fusedProgram.addClause(rule(literal(p.getPRED_ID(),
 														  IntStream.range(0, p.realArity()).mapToObj(i -> var("v_" + i)).toArray()),
 												  literal(p.getPRED_ID() + "_cache",
 														  IntStream.range(0, p.realArity() + 1).mapToObj(i -> var("v_" + i)).toArray())));
@@ -272,16 +270,16 @@ public class ProgramSplit {
 
 				// Implicit type declaration for P_cache. P_local does not need an implicit type declaration
 				// since the compiler should always be able to deduce it.
-				fusedProgram.addCommonClause(implicitTypeDeclaration(p.getPRED_ID() + "_cache", cachePredType));
+				fusedProgram.addClause(implicitTypeDeclaration(p.getPRED_ID() + "_cache", cachePredType));
 
 
 				// Output P_local to the cache
-				fusedProgram.addCommonClause(fact(literal(GlobalNames.OUTPUT_NAME, ref(p.getPRED_ID() + "_local"),
+				fusedProgram.addClause(fact(literal(GlobalNames.OUTPUT_NAME, ref(p.getPRED_ID() + "_local"),
 														  str(makeInternalDbDesc(p.getPRED_ID(), "append")),
 														  str("sqlite"))));
 
 				// Read in P_cache from cache
-				fusedProgram.addCommonClause(fact(literal(GlobalNames.EDB_NAME, ref(p.getPRED_ID() + "_cache"),
+				fusedProgram.addClause(fact(literal(GlobalNames.EDB_NAME, ref(p.getPRED_ID() + "_cache"),
 														  str(makeInternalDbDesc(p.getPRED_ID(), "read")),
 														  str("sqlite"))));
 
@@ -294,22 +292,22 @@ public class ProgramSplit {
 		for (ProgramRepresentation pr : ProgramRepresentation.values()) {
 			String predName = program.getAnalysisContext().prefix(pr.getPredicateName());
 			if (program.formalPredicateMap().containsKey(predName)) {
-				fusedProgram.addCommonClause(fact(literal(GlobalNames.EDB_NAME, ref(predName), "__dummy__", "csv")));
+				fusedProgram.addClause(fact(literal(GlobalNames.EDB_NAME, ref(predName), "__dummy__", "csv")));
 			}
 		}
 
 		// cache the provenance relation
 		String provPredName = program.getAnalysisContext().provenanceRelName;
 		if (!cachedPredicates.contains(provPredName)) {
-			fusedProgram.addCommonClause(implicitTypeDeclaration(provPredName,
+			fusedProgram.addClause(implicitTypeDeclaration(provPredName,
 																 FormalPredicate.programRepresentationType(ProgramRepresentation.ATTR_PROVENANCE)));
-			fusedProgram.addCommonClause(rule(literal(provPredName + "_local", var("file_id"), var("other_file_id"), var("file_id")),
+			fusedProgram.addClause(rule(literal(provPredName + "_local", var("file_id"), var("other_file_id"), var("file_id")),
 											  literal(provPredName, var("file_id"), var("other_file_id"))));
 
-			fusedProgram.addCommonClause(fact(literal(GlobalNames.OUTPUT_NAME, ref(provPredName + "_local"),
+			fusedProgram.addClause(fact(literal(GlobalNames.OUTPUT_NAME, ref(provPredName + "_local"),
 													  str(makeInternalDbDesc(provPredName, "append")),
 													  str("sqlite"))));
-			fusedProgram.addCommonClause(fact(literal(GlobalNames.EDB_NAME, ref(provPredName), "__dummy__", "csv")));
+			fusedProgram.addClause(fact(literal(GlobalNames.EDB_NAME, ref(provPredName), "__dummy__", "csv")));
 
 			cachedPredicates.add(provPredName);
 		}
@@ -374,29 +372,29 @@ public class ProgramSplit {
 		final String ATTR_PROVENANCE = program.getAnalysisContext().provenanceRelName;
 
 		// read the analyzed sources
-		p.addCommonClause(fact(literal(GlobalNames.EDB_NAME, ref(ANALYZED_SOURCES_RELATION),
+		p.addClause(fact(literal(GlobalNames.EDB_NAME, ref(ANALYZED_SOURCES_RELATION),
 									   str(makeInternalDbDesc(ANALYZED_SOURCES_RELATION, "read")), str("sqlite"))));
 		// read the file Id database
-		p.addCommonClause(fact(literal(GlobalNames.EDB_NAME, ref(FILE_ID), str(makeInternalDbDesc(FILE_ID, "read")), str("sqlite"))));
+		p.addClause(fact(literal(GlobalNames.EDB_NAME, ref(FILE_ID), str(makeInternalDbDesc(FILE_ID, "read")), str("sqlite"))));
 
 		// Type declarations
-		p.addCommonClause(implicitTypeDeclaration(ANALYZED_SOURCES_RELATION, getTypeForUpdateRelation(ANALYZED_SOURCES_RELATION)));
+		p.addClause(implicitTypeDeclaration(ANALYZED_SOURCES_RELATION, getTypeForUpdateRelation(ANALYZED_SOURCES_RELATION)));
 
-		p.addCommonClause(implicitTypeDeclaration(FILE_ID, getTypeForUpdateRelation(FILE_ID)));
+		p.addClause(implicitTypeDeclaration(FILE_ID, getTypeForUpdateRelation(FILE_ID)));
 
-		p.addCommonClause(implicitTypeDeclaration(ATTR_PROVENANCE,
+		p.addClause(implicitTypeDeclaration(ATTR_PROVENANCE,
 												  FormalPredicate.programRepresentationType(ProgramRepresentation.ATTR_PROVENANCE)));
 
 		// AST_REMOVE_RELATION - files to remove
-		p.addCommonClause(rule(literal(AST_REMOVE_RELATION, var("f")), literal(ANALYZED_SOURCES_RELATION, var("f"), str("D"))));
+		p.addClause(rule(literal(AST_REMOVE_RELATION, var("f")), literal(ANALYZED_SOURCES_RELATION, var("f"), str("D"))));
 
 		// AST_VISIT_RELATION - the files that need to be revisited
 		// visit the files that were modified
-		p.addCommonClause(rule(literal(AST_VISIT_RELATION, var("f")), literal(ANALYZED_SOURCES_RELATION, var("f"), str("M"))));
+		p.addClause(rule(literal(AST_VISIT_RELATION, var("f")), literal(ANALYZED_SOURCES_RELATION, var("f"), str("M"))));
 		// visit new files
-		p.addCommonClause(rule(literal(AST_VISIT_RELATION, var("f")), literal(ANALYZED_SOURCES_RELATION, var("f"), str("A"))));
+		p.addClause(rule(literal(AST_VISIT_RELATION, var("f")), literal(ANALYZED_SOURCES_RELATION, var("f"), str("A"))));
 		// visit the files where attributes affected by a file change are computed
-		p.addCommonClause(rule(literal(AST_VISIT_RELATION, var("f")), literal(ANALYZED_SOURCES_RELATION, var("f_attr"), "_"),
+		p.addClause(rule(literal(AST_VISIT_RELATION, var("f")), literal(ANALYZED_SOURCES_RELATION, var("f_attr"), "_"),
 							   literal(ATTR_PROVENANCE, var("fid"), var("fid_attr")),
 							   literal(FILE_ID, var("f"), var("fid")),
 							   literal(FILE_ID, var("f_attr"), var("fid_attr")),
@@ -404,20 +402,20 @@ public class ProgramSplit {
 
 		// Input
 		// The ANALYZED_SOURCES_RELATION predicate relation should be filled in by the caller
-		p.addCommonClause(fact(literal(GlobalNames.EDB_NAME, ref(ATTR_PROVENANCE),
+		p.addClause(fact(literal(GlobalNames.EDB_NAME, ref(ATTR_PROVENANCE),
 									   makeInternalDbDesc(ATTR_PROVENANCE, "read"),
 									   str("sqlite"))));
 
 		// Output
-		p.addCommonClause(fact(literal(GlobalNames.OUTPUT_NAME, ref(AST_VISIT_RELATION),
+		p.addClause(fact(literal(GlobalNames.OUTPUT_NAME, ref(AST_VISIT_RELATION),
 									   makeInternalDbDesc(AST_VISIT_RELATION, "append"), str("sqlite"))));
-		p.addCommonClause(fact(literal(GlobalNames.OUTPUT_NAME, ref(AST_REMOVE_RELATION),
+		p.addClause(fact(literal(GlobalNames.OUTPUT_NAME, ref(AST_REMOVE_RELATION),
 									   makeInternalDbDesc(AST_REMOVE_RELATION, "append"), str("sqlite"))));
 
 		// Output (Enable for debug purposes)
 		if (false) {
-			p.addCommonClause(fact(literal(GlobalNames.OUTPUT_NAME, ref(AST_VISIT_RELATION), str("AST_VISIT"), str("csv"))));
-			p.addCommonClause(fact(literal(GlobalNames.OUTPUT_NAME, ref(ATTR_PROVENANCE), str("ATTR_PROV"), str("csv"))));
+			p.addClause(fact(literal(GlobalNames.OUTPUT_NAME, ref(AST_VISIT_RELATION), str("AST_VISIT"), str("csv"))));
+			p.addClause(fact(literal(GlobalNames.OUTPUT_NAME, ref(ATTR_PROVENANCE), str("ATTR_PROV"), str("csv"))));
 		}
 	}
 

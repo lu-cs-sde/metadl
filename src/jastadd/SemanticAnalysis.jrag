@@ -136,7 +136,5 @@ aspect ErrorCollection {
 		getNumArg() != expectedArity() && expectedArity() >= 0 to Program.semanticErrors();
 
 	Functor contributes new SemanticError(this, "Unkown functor " + getFunc().getFUNC_ID() + ".") when
-		!(this instanceof InternalFunctor) && expectedArity() < 0 to Program.semanticErrors();
-
-
+		expectedArity() < 0 to Program.semanticErrors();
 }

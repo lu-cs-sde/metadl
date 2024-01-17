@@ -7,6 +7,3 @@
 [submodule "deps/sppf-earley-parser"]
 	path = deps/sppf-earley-parser
 	url = git@github.com:lu-cs-sde/sppf-earley-parser.git
-[submodule "deps/extendj"]
-	path = deps/extendj
-	url = git@github.com:lu-cs-sde/metadl-extendj.git

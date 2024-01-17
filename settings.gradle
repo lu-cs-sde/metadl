@@ -17,9 +17,3 @@ includeBuild('./deps/sppf-earley-parser/') {
 	substitute module('se.lth:sep:100.100.100') with project(':')
     }
 }
-
-includeBuild('./deps/extendj') {
-    dependencySubstitution {
-	substitute module('org.extendj:java8:100.100.100') with project(':java8')
-    }
-}

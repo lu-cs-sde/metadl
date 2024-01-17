@@ -1,17 +1,41 @@
-#+TITLE: MetaDL: Datalog analyzing Datalog, C, Java or any language of your choice
+#+TITLE: Clog: Declarative Program Analysis for C
 
-MetaDL is a Datalog language extension that enables analysis of Datalog and Java
-programs inside Datalog. In addition, the subset of the metalanguage that depends on the analyzed language is mechanically generated from a description of the abstract and concrete grammars of the analyzed language.
+Clog is a Datalog language extension that enables analysis of C programs inside Datalog.
 
-#+BEGIN_SRC prolog
-Srcs("p/t0.mdl").
+#+BEGIN_SRC metadl
+FunctionWithGoto($func, g, l) :-
+                    <: $type $func(..) { .. } :>,
+                    @$func g <: goto $label1; :>,
+                    @$func l <: $label2 : $substmt :>,
+                    $label1 == $label2.
 
-Arity(pname, arity) :- <: ... :- ..., $p(...,$i:$x), ... .:>, arity = $i+1, ID($p, pname).
-Arity(pname, arity) :- <: ... :- ..., NOT($p(...,$i:$x)), ... .:>, arity = $i+1, ID($p, pname).
-Arity(pname, arity) :- <: ..., $p(...,$i:$x), ... :- ... .:>, arity = $i+1, ID($p, pname).
+BackwardGoto(g, l) :-
+                       g <: goto $label1; :>,
+                       l <: $label2 : $substmt :>,
+                       $label1 == $label2,
+                       c_src_line_start(g) > c_src_line_start(l).
+
+LabeledReturn(l) :-
+                 l <: $label : return $v;  :>.
+
+LabeledReturn(l) :-
+                 l <: $label : return ; :>.
 
 
-OUTPUT('Arity, "Arity.csv", "csv").
+WarnBackwardGoto(file, line) :- BackwardGoto(g, _), file = io_relative_path(c_src_file(g)), line = c_src_line_start(g).
+
+WarnMoreThanOneLabel(file, line) :- FunctionWithGoto(f, _, l1),
+                                    FunctionWithGoto(f, _, l2),
+                                    l1 != l2,
+                                    line = c_src_line_start(l1),
+                                    line >= c_src_line_start(l2),
+                                    file = io_relative_path(c_src_file(f)).
+
+WarnLabeledReturn(file, line) :- LabeledReturn(l), file = io_relative_path(c_src_file(l)), line = c_src_line_start(l).
+
+OUTPUT('WarnBackwardGoto, "WarnBackwardGoto.csv", "csv").
+OUTPUT('WarnMoreThanOneLabel, "WarnMoreThanOneLabel.csv", "csv").
+OUTPUT('WarnLabeledReturn, "WarnLabeledReturn.csv", "csv").
 #+END_SRC
 
 * Building
@@ -80,20 +104,6 @@ This will generate a library called ~libSwigInterface.so~ in your current direct
 #+BEGIN_SRC
 java -jar compiler.jar --eval hybrid program.mdl --lib /ABS/PATH/TO/libSwigInterface.so -F fact_dir -D output_dir
 #+END_SRC
-** Incremental evaluation
-For incremental evaluation mode, the source predicate reference for an analyze block, e.g. ~Srcs~ in ~java ('Srcs) { .. }~ must contain tuples of the form ~(FilePath, MDA)~ where MDA is one of "M", "D", "A" and indicates whether the file was added, modified or removed.
-*** Initial run
-The initial run generates the analysis programs and initializes the cache structure.
-For initial runs, the MDA component of the source predicate is always interpreted as "A".
-#+BEGIN_SRC
-java -jar compiler.jar --incremental init -D output_and_cache_dir -F fact_dir
-#+END_SRC
-*** Update run
-The update run, recomputes the analysis results based on the information in the source relations. Results for files that were previously analyzed, but are not present in the source relation, are kept in the cache and updated if necessary.
-#+BEGIN_SRC
-java -jar compiler.jar --incremental update -D output_and_cache_dir -F fact_dir
-#+END_SRC
-The fact that the output and the cache share the same directory is an artifact of the current command line interface and they will be separated in the future.
 ** Souffle evaluation (deprecated)
 When the number of tuples is becoming large, using a high performance evaluator will make the runs faster. For this, MetaDL can generate a Souffle program and then evaluate it:
 #+BEGIN_SRC
@@ -116,13 +126,12 @@ Additional Supported features:
 
 ** Metalanguage description
 *** Syntactic patterns
-Datalog: ~<:$p(x, 1) :- ..., $q(..., $i:$v, ...) , ... .:>~ or Java ~<: class `c implements .., `i, .. { .. } :>~
-
 Patterns are a mechanism to match rules and bind metavariables to terms, expressions and predicate symbols.
+
 *** Bounded patterns
 The root node of a pattern can be accessed by using a bounded pattern ~$p <:$x + $y:>~.
 
-** Gaps
+*** Gaps
 Datalog ~...~ and C or Java ~..~
 
 Gaps express missing elements inside a list.
@@ -135,67 +144,6 @@ Variables used inside analyze blocks to connect patterns with other literals in 
 - Predicates: ~$p(x, y)~
 - Arithmetic expressions: ~$x + $y~
 - Index metavariables ~p(..., $i:$v, ...)~
-
-*** Special metapredicates (Datalog and Java only)
-- ~STR(c, "value")~, ~INT($c, value)~ - relate constants to their value
-- ~ID(v, "name")~ - relate identifiers to their name
-- ~SRC(n, l, c)~ - relate an AST node to its source location
-
-** Examples
-*** Constant folding for Datalog
-#+BEGIN_SRC
-#Import a program that contains BIND(t, x*y + ((1 + 2*3) - 1) / 2)
-
-
-
-Expr($p, 0, $q, "+"), Expr($p, 1, $r, "+") :- $p <:$q + $r:>.
-Expr($p, 0, $q, "*"), Expr($p, 1, $r, "*") :- $p <:$q * $r:>.
-Expr($p, 0, $q, "-"), Expr($p, 1, $r, "-") :- $p <:$q - $r:>.
-Expr($p, 0, $q, "/"), Expr($p, 1, $r, "/") :- $p <:$q / $r:>.
-
-Eval(e, v) :- INT(e, v).
-Eval(e, v) :- Expr(e, 0, l, "+"), Expr(e, 1, r, "+"), Eval(l, lv), Eval(r, rv), BIND(v, lv + rv).
-Eval(e, v) :- Expr(e, 0, l, "*"), Expr(e, 1, r, "*"), Eval(l, lv), Eval(r, rv), BIND(v, lv * rv).
-Eval(e, v) :- Expr(e, 0, l, "-"), Expr(e, 1, r, "-"), Eval(l, lv), Eval(r, rv), BIND(v, lv - rv).
-Eval(e, v) :- Expr(e, 0, l, "/"), Expr(e, 1, r, "/"), Eval(l, lv), Eval(r, rv), BIND(v, lv / rv).
-
-OurExprEval(v) :- <: ... :- ..., BIND(t, x*y + $e), ... .:>, Eval($e, v).
-
-# OurExprEval = {3}.
-OUTPUT('OurExprEval, "OurExprEval", "csv").
-#+END_SRC
-
-*** Type hierarchy for Java
-#+BEGIN_SRC
-
-ClassImplementsInterface(c, i) :-
-		<: class `c implements .., `i, .. { .. } :>,
-		ID(`c, c), ID(`i, i).
-InterfaceExtendsInterface(i, j) :-
-		<: interface `i extends `j { .. } :>,
-		ID(`i, i), ID(`j, j).
-ClassExtendsClass(c, d) :-
-		<: class `c extends `d { .. } :>,
-		ID(`c, c), ID(`d, d).
-ClassImplementsInterface(c, i), ClassExtendsClass(c, d) :-
-		<: class `c extends `d implements .., `i, .. { .. } :>,
-		ID(`c, c), ID(`d, d), ID(`i, i).
-
-
-SuperClass(c, s) :- ClassExtendsClass(c, s).
-SuperClass(c, s) :- ClassExtendsClass(c, d), SuperClass(d, s).
-
-SuperInterface(i, s) :- InterfaceExtendsInterface(i, s).
-SuperInterface(i, s) :- InterfaceExtendsInterface(i, j), SuperInterface(j, s).
-
-Interface(c, i) :- ClassImplementsInterface(c, i).
-Interface(c, i) :- SuperClass(c, d), Interface(d, i).
-Interface(c, i) :- Interface(c, j), SuperInterface(j, i).
-
-OUTPUT('Interface, "Interface.csv", "csv").
-OUTPUT('SuperClass, "SuperClass.csv", "csv").
-OUTPUT('SuperInterface, "SuperInterface.csv", "csv").
-#+END_SRC
 
 * License
 This repository is covered by a BSD 2-clause license, see [[./LICENSE][LICENSE]].

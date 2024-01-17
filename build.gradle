@@ -39,12 +39,10 @@ dependencies {
     compile group: 'commons-cli', name: 'commons-cli', version: '1.4'
     compile group: 'org.jgrapht', name: 'jgrapht-core', version: '1.4.0'
     compile group: 'org.jgrapht', name: 'jgrapht-io', version: '1.4.0'
+    compile group: 'net.sf.beaver', name: 'beaver-rt', version: '0.9.11'
 
     // https://mvnrepository.com/artifact/org.xerial/sqlite-jdbc
     compile group: 'org.xerial', name: 'sqlite-jdbc', version: '3.20.1'
-
-    // use a fictive version of extendj
-    compile 'org.extendj:java8:100.100.100'
 
     jflex 'de.jflex:jflex:1.6.1'
     beaver 'net.sf.beaver:beaver-cc:0.9.11'

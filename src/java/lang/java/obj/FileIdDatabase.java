@@ -8,18 +8,16 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.function.Function;
 
-import eval.EvaluationContext;
-import eval.Relation2;
 import lang.io.CSVUtil;
 import lang.io.SQLUtil;
-import lang.relation.RelationWrapper;
 
-public class FileIdDatabase implements org.extendj.ast.FileIdStorage {
+
+public class FileIdDatabase {
 	private Map<String, Integer> fileToIdMap = new TreeMap<>();
 	private Map<Integer, String> idToFileMap = new HashMap<>();
 
 	int runningId = 1;
-	@Override synchronized public int getIdForLib(String lib) {
+	synchronized public int getIdForLib(String lib) {
 		int ret;
 		if (!fileToIdMap.containsKey(lib)) {
 			fileToIdMap.put(lib, runningId);
@@ -32,7 +30,7 @@ public class FileIdDatabase implements org.extendj.ast.FileIdStorage {
 		return ret;
 	}
 
-	@Override public int getIdForFile(String file) {
+	public int getIdForFile(String file) {
 		return getIdForLib(file);
 	}
 

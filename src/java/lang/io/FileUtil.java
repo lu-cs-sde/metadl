@@ -96,50 +96,6 @@ public class FileUtil {
 		return ret;
 	}
 
-	public static void loadJavaSources(EvaluationContext ctx,
-									   DatalogProjectionSink tupleSink,
-									   java.util.List<String> srcs) throws IOException {
-		org.extendj.ast.Program p = new org.extendj.ast.Program();
-		String fileIdDb = "analyzed-files.csv";
-
-		// p.trace().setReceiver(p.provenance);
-		SimpleLogger.logger().info("Using an empty file-to-id database");
-		p.fileIdStorage = new FileIdDatabase();
-
-
-		// Set the path to the Java runtime
-		String bootCP = System.getenv().get("METADL_JAVA_RT");
-		if (bootCP != null)
-			p.options().setValueForOption(bootCP, "-bootclasspath");
-		String CP = System.getenv().get("METADL_JAVA_CP");
-		if (CP != null)
-			p.options().setValueForOption(CP, "-classpath");
-
-		// Walk all the java files in the directory and add them to the program
-		// for (File src : flattenFilesAndDirs(locs.stream().map(f -> new File(f)).collect(Collectors.toList()), "*.java")) {
-		// 	p.addSourceFile(src.getPath());
-		// }
-		for (String src : srcs) {
-			profile().startTimer("object_file_compile", src);
-			p.addSourceFile(src);
-			profile().stopTimer("object_file_compile", src);
-		}
-
-		// Some sanity check
-		org.extendj.ast.TypeDecl object = p.lookupType("java.lang", "Object");
-		if (object.isUnknown()) {
-			// If we try to continue without java.lang.Object, we'll just get a stack overflow
-			// in member lookups because the unknown (Object) type would be treated as circular.
-			throw new RuntimeException("Error: java.lang.Object is missing."
-									   + " The Java standard library was not found.");
-		}
-
-		// Generate the program relation
-		lang.java.obj.DatalogProjection2 proj2 = new lang.java.obj.DatalogProjection2(p.fileIdStorage, null);
-
-		proj2.generate(p, tupleSink);
-	}
-
 	public static void loadCSources(EvaluationContext ctx,
 									CmdLineOpts opts,
 									DatalogProjectionSink sink,

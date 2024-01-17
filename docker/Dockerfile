@@ -116,7 +116,7 @@ RUN cd /work/projects && git clone $MAGMA_GIT magma && cd magma && git checkout 
 ARG CLOG_EVAL_GIT
 ARG CLOG_EVAL_HASH
 RUN cd /work/projects && git clone $CLOG_EVAL_GIT  clog-eval && cd clog-eval && git checkout $CLOG_EVAL_HASH
-
+RUN cd /work/projects/clog-eval/framework && stack build
 
 # Install bc and jq
 RUN apt install -y bc jq pkg-config libicu-dev

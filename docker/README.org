@@ -15,7 +15,7 @@ He have tested the artifact on Ubuntu Linux 22.04 LTS, however the Docker image 
 ** Running the Docker image
 Download the compressed Docker image ~clog23-cc24.tgz~ from [[https://doi.org/10.5281/zenodo.10419046]].
 
-Check the integrity of the image. ~sha256sum clog23-cc24.tgz~ should report ~494d4b7fab6a0e02fa662836fddabded2f8d8658278ca2558da643139644764d~, ~md5sum clog23-cc24.tgz~ should report ~27be3748220eeaf491c704e5070cd5c6~.
+Check the integrity of the image. ~sha256sum clog23-cc24.tgz~ should report ~b597299a1b4e034a840954e3d90ae5f676feec6f8083866df1ea82166faf28c6~, ~md5sum clog23-cc24.tgz~ should report ~a0c13b81a00c075fba2ac46120397040~.
 
 Install the docker image:
 #+BEGIN_SRC shell
@@ -24,7 +24,7 @@ Install the docker image:
 
 Start the docker image:
 #+BEGIN_SRC shell
-  docker run -it clog23:cc24
+  docker run -it clog23:cc24v1
 #+END_SRC
 This should launch interactive shell similar to:
 #+BEGIN_SRC shell

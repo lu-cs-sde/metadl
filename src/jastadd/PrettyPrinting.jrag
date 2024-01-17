@@ -489,12 +489,6 @@ aspect SoufflePrinting {
       String table = null;
       String mode = null;
 
-      if (ProgramSplit.isInternalDbDesc(file)) {
-        table = ProgramSplit.getInternalDbTable(file);
-        mode = ProgramSplit.getInternalDbMode(file);
-        file = ProgramSplit.INTERNAL_DB_NAME;
-      }
-
       pr.out.print(".input ");
       pr.out.print(pred);
       printIODescription(pr, file, format, table, mode);
@@ -519,12 +513,6 @@ aspect SoufflePrinting {
       String format = t.getAsString(2);
       String table = null;
       String mode = null;
-
-      if (ProgramSplit.isInternalDbDesc(file)) {
-        table = ProgramSplit.getInternalDbTable(file);
-        mode = ProgramSplit.getInternalDbMode(file);
-        file = ProgramSplit.INTERNAL_DB_NAME;
-      }
 
       pr.out.print(".output " + pred);
       printIODescription(pr, file, format, table, mode);

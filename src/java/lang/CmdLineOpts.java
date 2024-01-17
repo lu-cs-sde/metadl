@@ -25,7 +25,6 @@ import lang.io.FileUtil;
 public class CmdLineOpts {
 	private String outputDir;
 	private String factsDir;
-	private String cacheDir;
 	private String outputFile;
 	private String inputFile;
 	private String libFile;
@@ -47,12 +46,9 @@ public class CmdLineOpts {
 		PRETTY_SOUFFLE,
 		PRETTY_INTERNAL,
 		PRETTY_TYPES,
-		INCREMENTAL_INIT,
-		INCREMENTAL_UPDATE,
-		INCREMENTAL_INIT_INTERNAL,
 		GEN_HYBRID,
-		CHECK,
-		INCREMENTAL_UPDATE_INTERNAL}
+		CHECK
+  }
 
 	public enum Lang {
 		C,
@@ -151,14 +147,6 @@ public class CmdLineOpts {
 		this.factsDir = factsDir;
 	}
 
-	public String getCacheDir() {
-		return this.cacheDir;
-	}
-
-	public void setCacheDir(String cacheDir) {
-		this.cacheDir = cacheDir;
-	}
-
 	public void setClangArgs(String args) {
 		this.clangArgs = List.of(args.split("\\s+"));
 	}
@@ -189,20 +177,16 @@ public class CmdLineOpts {
 			.desc("Check that the input represents a valid MetaDL program.").build();
 		Option gen = Option.builder("g").longOpt("gen-hybrid").hasArg(false)
 			.desc("Generate a hybrid MetaDL-Souffle program.").build();
-		Option incremental = Option.builder("s").longOpt("incremental").numberOfArgs(1)
-			.desc("Incrementally evaluate the program (init = initial run, update = subsequent runs).").build();
 		Option lang = Option.builder("L").longOpt("lang").numberOfArgs(1)
 			.desc("The language of the analyzed sources (arg = java or arg = metadl).").build();
 
 		OptionGroup actions = new OptionGroup().addOption(eval).addOption(prettyPrint).addOption(check)
-			.addOption(gen).addOption(incremental);
+            .addOption(gen);
 
 		Option factDir = Option.builder("F").longOpt("facts").numberOfArgs(1)
 			.desc("Fact directory.").argName("DIR").build();
 		Option outDir = Option.builder("D").longOpt("out").numberOfArgs(1)
 			.desc("Output directory.").argName("DIR").build();
-		Option genDir = Option.builder("C").longOpt("cache").numberOfArgs(1)
-			.desc("Incremental evaluation cache.").argName("DIR").build();
 		Option outFile = Option.builder("o").longOpt("output").numberOfArgs(1)
 			.desc("Output file.").argName("FILE").build();
 		Option srcs = Option.builder("S").longOpt("sources").numberOfArgs(1)
@@ -220,7 +204,7 @@ public class CmdLineOpts {
 		Options options = new Options().addOptionGroup(actions)
 			.addOption(factDir).addOption(outDir)
 			.addOption(srcs).addOption(lang)
-			.addOption(genDir).addOption(outFile)
+			.addOption(outFile)
 			.addOption(libFile).addOption(enableWarnings)
 			.addOption(profile).addOption(clangArgs)
       .addOption(debug);
@@ -267,20 +251,6 @@ public class CmdLineOpts {
 				ret.setAction(Action.CHECK);
 			} else if (cmd.hasOption("g")) {
 				ret.setAction(Action.GEN_HYBRID);
-			} else if (cmd.hasOption("s")) {
-				if (cmd.getOptionValue("s").equals("init")) {
-					ret.setAction(Action.INCREMENTAL_INIT);
-				} else if (cmd.getOptionValue("s").equals("update")) {
-					ret.setAction(Action.INCREMENTAL_UPDATE);
-				} else if (cmd.getOptionValue("s").equals("init-metadl")) {
-					ret.setAction(Action.INCREMENTAL_INIT_INTERNAL);
-				} else if (cmd.getOptionValue("s").equals("update-metadl")) {
-					ret.setAction(Action.INCREMENTAL_UPDATE_INTERNAL);
-				} else {
-					System.err.println("Invalid argument to '--incremental' option");
-					printHelp(options);
-					throw new RuntimeException();
-				}
 			}
 
 			if (cmd.hasOption("P")) {
@@ -333,7 +303,6 @@ public class CmdLineOpts {
 
 			ret.setFactsDir(cmd.getOptionValue("F", "."));
 			ret.setOutputDir(cmd.getOptionValue("D", "."));
-			ret.setCacheDir(cmd.getOptionValue("C", ret.getOutputDir()));
 			ret.setOutputFile(cmd.getOptionValue("o",
 												 ret.getOutputDir() + "/" +
 												 FileUtil.changeExtension(FileUtil.fileName(ret.getInputFile()), ".dl")));

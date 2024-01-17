@@ -16,8 +16,6 @@ import org.apache.commons.lang3.time.StopWatch;
 
 import clang.ClangEvaluationContext;
 import eval.EvaluationContext;
-import incremental.IncrementalDriver;
-import incremental.ProgramSplit;
 import lang.ast.Program;
 import lang.ast.SemanticError;
 import lang.ast.SoufflePrettyPrinter;
@@ -116,24 +114,6 @@ public class Compiler {
 		SimpleLogger.logger().time("Run Souffle program: " + souffleRunTimer.getTime() + "ms");
 	}
 
-	public static void generateIncrementalProgram(Program prog, CmdLineOpts opts, boolean useSouffle) throws IOException, SQLException {
-		profile().startTimer("main", "local_and_global_split");
-		// split program into local and global parts
-		ProgramSplit split = new ProgramSplit(prog);
-
-		profile().stopTimer("main", "local_and_global_split");
-
-		profile().startTimer("main", "incremental_driver");
-		IncrementalDriver incDriver = new IncrementalDriver(new File(opts.getCacheDir()), split, useSouffle);
-		incDriver.init();
-
-		incDriver.update(opts);
-
-		incDriver.shutdown();
-
-		profile().stopTimer("main", "incremental_driver");
-	}
-
 	public static String getCSVSeparatorEscaped() {
 		if (getCSVSeparator() != '\t')
 			return String.valueOf(getCSVSeparator());
@@ -189,16 +169,6 @@ public class Compiler {
 			case EVAL_HYBRID:
 				checkProgram(prog, opts);
 				SWIGUtil.evalHybridProgram(ctx, prog, opts);
-				break;
-			case INCREMENTAL_UPDATE:
-			case INCREMENTAL_INIT:
-				checkProgram(prog, opts);
-				generateIncrementalProgram(prog, opts, true);
-				break;
-			case INCREMENTAL_INIT_INTERNAL:
-			case INCREMENTAL_UPDATE_INTERNAL:
-				checkProgram(prog, opts);
-				generateIncrementalProgram(prog, opts, false);
 				break;
 			}
 

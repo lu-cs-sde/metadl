@@ -11,7 +11,6 @@ import lang.relation.RelationWrapper;
 import lang.relation.TupleInserter;
 import org.apache.commons.collections4.map.DefaultedMap;
 import org.apache.commons.lang3.mutable.MutableInt;
-import incremental.ProgramSplit;
 
 aspect Eval {
 	public void Program.evalEDB(EvaluationContext ctx, CmdLineOpts opts) throws IOException, SQLException {
@@ -34,12 +33,7 @@ aspect Eval {
 			FormalPredicate dstPred = formalPredicateMap().get(pred);
 			Relation2 rel = ctx.getRelation(dstPred);
 
-			if (ProgramSplit.isInternalDbDesc(file)) {
-				// special path for the internal DB
-				Connection conn = opts.getSqlDbConnection();
-				SQLUtil.readRelation(ctx, dstPred.type(), ctx.getRelation(dstPred),
-									 conn, ProgramSplit.getInternalDbTable(file), opts.getDbEntryTag());
-			} else if (format.equals("csv")) {
+      if (format.equals("csv")) {
 				CSVUtil.readRelation(ctx, dstPred.type(), ctx.getRelation(dstPred), Paths.get(opts.getFactsDir(), file).toString());
 			} else if (format.equals("sqlite")) {
 				Connection conn = SQLUtil.connect(Paths.get(opts.getFactsDir(), file).toString());
@@ -99,17 +93,7 @@ aspect Eval {
 			String format = t.getAsString(2);
 
 			FormalPredicate srcPred = formalPredicateMap().get(pred);
-			if (ProgramSplit.isInternalDbDesc(file)) {
-				String table = ProgramSplit.getInternalDbTable(file);
-				String mode = ProgramSplit.getInternalDbMode(file);
-
-				// the current write mode is always append
-				assert mode.equals("append");
-
-				Connection conn = opts.getSqlDbConnection();
-				SQLUtil.writeRelation(ctx, srcPred.type(), ctx.getRelation(srcPred),
-									  conn, table, opts.getDbEntryTag());
-			} else if (format.equals("sqlite")) {
+			if (format.equals("sqlite")) {
 				Connection conn = SQLUtil.connect(Paths.get(opts.getFactsDir(), file).toString());
 				SQLUtil.writeRelation(ctx, srcPred.type(), ctx.getRelation(srcPred),
 									  conn, pred, opts.getDbEntryTag());

@@ -124,9 +124,6 @@ jar {
 
 // Before compiling, we should generate some Java code:
 compileJava.dependsOn 'generateJava', 'generateScanner', 'generateParser',
-    'genMetadlPatLang',
-    'genMetadlObjLang',
-    'genJava8Lang',
     'genCLang_Pat',
     'genCLang_Obj'
 
@@ -183,9 +180,6 @@ void makeGenerateScannerTask(String name, String outDir, String srcFile) {
 }
 
 makeGenerateScannerTask('generateScanner', 'src/gen/lang/ast', 'src/scanner/scanner.flex')
-// makeGenerateScannerTask('generateScannerConfig', 'src/gen/lang/ast/config', 'src/config/scanner/scanner.flex')
-
-
 
 void makeGenerateParserTask(String name, String outDir, String srcFile) {
     tasks.create(name, JavaExec) {
@@ -202,9 +196,6 @@ void makeGenerateParserTask(String name, String outDir, String srcFile) {
 	    file(srcFile).path
     }
 }
-
-// makeGenerateParserTask('generateParserConfig', 'src/gen', 'src/config/parser/parser.beaver')
-
 
 void makeGenerateBeaverTask(String name, String outFile, String srcFile) {
     tasks.create(name, JavaExec) {
@@ -369,54 +360,9 @@ void makeGenerateObjLangTask(String taskName, String outDir, String srcLang, Arr
 }
 
 // The order in which the lex files are concatenated
-def java8LexOrder = [
-    "Header.flex",
-    "Preamble.flex",
-    "Macros.flex",
-    "RulesPreamble.flex",
-    "WhiteSpace.flex",
-    "Comments.flex",
-    "Keywords.flex",
-    "Literals.flex",
-    "Operators.flex",
-    "Separators.flex",
-    "Identifiers.flex",
-    "Postamble.flex"
-]
-
-def metadlLexOrder = ['scanner.flex']
-
 def cLexOrder = ['prologue.flex', 'scanner.flex', 'epilogue.flex']
 
 // The order in which the parser files are concatenated
-def java8ParseOrder = [
-    "Java1.4.parser",
-    "java14fix.parser",
-    "Literals.parser",
-    "Generics.parser",
-    "Annotations.parser",
-    "ConstructorReference.parser",
-    "Diamond.parser",
-    "EnhancedFor.parser",
-    "Enums.parser",
-    "ErrorRecovery.parser",
-    "GenericMethods.parser",
-    "Goal.parser",
-    "Header.parser",
-    "InterfaceMethods.parser",
-    "IntersectionCasts.parser",
-    "Lambda.parser",
-    "MethodReference.parser",
-    "MultiCatch.parser",
-    "NonGenericTypes.parser",
-    "PackageModifier.parser",
-    "Preamble.parser",
-    "Precedence.parser",
-    "StaticImports.parser",
-    "TryWithResources.parser",
-    "VariableArityParameters.parser"
-]
-
 def cParseOrder = [
     "c11_prologue.parser",
     "c11_external_definition.parser",
@@ -437,21 +383,14 @@ def cMetaVarNonTerminals = [
     "declaration_statement\$"
 ]
 
-// MetaDL as object language
-makeGenerateObjLangTask('genMetadlObjLang', 'src/gen/', 'metadl', metadlLexOrder)
-makeGeneratePatLangTask('genMetadlPatLang', 'src/gen/', 'metadl', metadlLexOrder)
-// Java, pattern language only
-makeGeneratePatLangTask('genJava8Lang', 'src/gen/', 'java8', java8LexOrder, java8ParseOrder)
 // C11
 makeGeneratePatLangTask('genCLang_Pat', 'src/gen', 'c', cLexOrder, cParseOrder + ["c11_restrictions.parser"], cMetaVarNonTerminals)
 makeGenerateObjLangTask('genCLang_Obj', 'src/gen', 'c', cLexOrder, cParseOrder, true)
-
 
 // MetaDL itself
 makeGenerateBeaverTask('generateBeaver', 'src/gen/LangParser.beaver', 'src/parser/metadl.parser')
 makeGenerateParserTask('generateParser', 'src/gen/lang/ast', 'src/gen/LangParser.beaver')
 generateParser.dependsOn 'generateBeaver'
-
 
 // The following makes the clean task also remove generated code:
 clean.dependsOn 'cleanGeneratedJava'

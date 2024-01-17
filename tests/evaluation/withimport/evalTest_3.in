@@ -1,7 +1,0 @@
-
-   Positive(name) :- <:... :- ..., $p(...) , ... .:>, ID($p, name).
-   Negative(name) :- <:... :- ..., NOT($p(...)), ... .:>, ID($p, name).
-
-
-OUTPUT('Positive, "Positive.csv", "csv").
-OUTPUT('Negative, "Negative.csv", "csv").

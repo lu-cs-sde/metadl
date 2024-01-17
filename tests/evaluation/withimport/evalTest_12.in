@@ -1,5 +1,0 @@
-	IsClass("A") :- <: class A {  } :>.
-	IsClass("D") :- <: class D {  } :>.
-
-
-OUTPUT('IsClass, "IsClass.csv", "csv").

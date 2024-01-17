@@ -1,7 +1,0 @@
-EDB('Programs, "evalTest_19.csv", "csv").
-Programs("") :- NEQ(0, 0).
-java('Programs) {
-		P(p1, p2, p3, p4, p5) :- AST(p1, p2, p3, p4, p5).
-}
-
-OUTPUT('P, "P.csv", "csv").

@@ -1,9 +1,0 @@
-Name(n) :- ID(_, n).
-A1(0) :- Name("x"), Name("y").
-A2(0) :- ID(x, "x"), ID(y, "y").
-A3(0) :- ID(n, _), ID(n, _).
-# dom(B) = {{0}, {1}}
-B(m, n) :- INDEX(m, i), INDEX(n, i).
-# dom(C) = {{0, 1}}
-C(x, y) :- PARENT(x, y), PARENT(y, z).
-Pat(x, `y, `z) :- x <: class `y { `z } :>.

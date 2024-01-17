@@ -136,33 +136,11 @@ aspect Eval {
 		java.util.List<String> locs = opts.getSrcs().keySet().stream().collect(Collectors.toList());
 
 		switch (opts.getLang()) {
-		case JAVA:
-			FileUtil.loadJavaSources(ctx, tupleSink, locs);
-			break;
-
 		case C:
 			FileUtil.loadCSources(ctx, opts, tupleSink, locs);
 			break;
-
-		case METADL:
-			MutableInt nodeCounter = new MutableInt(1);
-			try {
-				if (locs.size() == 0)
-					return;
-
-				if (locs.size() != 1) {
-					throw new RuntimeException("MetaDL for MetaDL is limited to analyzing a single file");
-				}
-				lang.metadl.obj.ast.Program importedProgram = lang.metadl.obj.ast.Program.fromFileLoc(locs.get(0));
-				importedProgram.assignIds(nodeCounter);
-				RelationWrapper rw = (RelationWrapper) tupleSink.getAST();
-				rw.insertTuples(importedProgram.datalogProjection().tuples());
-			} catch (beaver.Parser.Exception exception) {
-				throw new RuntimeException(exception);
-			}
-			break;
-		}
-	}
+    }
+}
 
 	public void Program.generateObjectProgramRelations(EvaluationContext ctx, CmdLineOpts opts) throws IOException, SQLException {
 		// Start a timer to measure the speed of the import

@@ -48,10 +48,6 @@ aspect PatternLang {
 
   public java.util.List<lang.ast.Clause> Program.generateHelperRelations() {
     switch (getLang()) {
-    case METADL:
-      return lang.metadl.pat.ast.PatLang.generateHelperRelations(getAnalysisContext(), usedContextPredicates());
-    case JAVA:
-      return lang.java8.pat.ast.PatLang.generateHelperRelations(getAnalysisContext(), usedContextPredicates());
     case C:
       return lang.c.pat.ast.PatLang.generateHelperRelations(getAnalysisContext(), usedContextPredicates());
     case C4:
@@ -62,10 +58,6 @@ aspect PatternLang {
 
   public PredicateType Program.contextPredicateType(String predName) {
     switch (getLang()) {
-    case METADL:
-      return lang.metadl.pat.ast.PatLang.contextPredicateType(predName);
-    case JAVA:
-      return lang.java8.pat.ast.PatLang.contextPredicateType(predName);
     case C:
     case C4:
       return lang.c.pat.ast.PatLang.contextPredicateType(predName);
@@ -162,32 +154,6 @@ aspect PatternLang {
 
 
     switch (program().getLang()) {
-    case METADL:
-      scanner = new lang.metadl.pat.ast.LangScanner(new StringReader(getPATTERN()));
-      tokenNames = lang.metadl.pat.ast.PatLangParserSEP.Terminals.NAMES;
-      astBuilder = lang.metadl.pat.ast.ASTBuilder.getInstance();
-      startSymbols = Arrays.asList(lang.metadl.pat.ast.PatLangParserSEP.n_clause,
-                     lang.metadl.pat.ast.PatLangParserSEP.n_common_literal,
-                     lang.metadl.pat.ast.PatLangParserSEP.n_expr);
-      break;
-    case JAVA:
-      scanner = new lang.java8.pat.ast.PatLangScanner(new StringReader(getPATTERN()));
-      tokenNames = lang.java8.pat.ast.PatLangParserSEP.Terminals.NAMES;
-      astBuilder = lang.java8.pat.ast.ASTBuilder.getInstance();
-      startSymbols = Arrays.asList(lang.java8.pat.ast.PatLangParserSEP.n_class_declaration,
-                     lang.java8.pat.ast.PatLangParserSEP.n_type_declaration,
-                     lang.java8.pat.ast.PatLangParserSEP.n_class_body_declaration,
-                     lang.java8.pat.ast.PatLangParserSEP.n_interface_member_declaration,
-                     lang.java8.pat.ast.PatLangParserSEP.n_block_statement,
-                     lang.java8.pat.ast.PatLangParserSEP.n_expression,
-                     lang.java8.pat.ast.PatLangParserSEP.n_type,
-                     lang.java8.pat.ast.PatLangParserSEP.n_type_parameter,
-                     lang.java8.pat.ast.PatLangParserSEP.n_type_argument,
-                     lang.java8.pat.ast.PatLangParserSEP.n_annotation,
-                     lang.java8.pat.ast.PatLangParserSEP.n_enum_constant,
-                     lang.java8.pat.ast.PatLangParserSEP.n_field_declarator,
-                     lang.java8.pat.ast.PatLangParserSEP.n_variable_declarator);
-      break;
     case C:
     case C4:
       scanner = new lang.c.pat.ast.PatLangScanner(new StringReader(getPATTERN()));

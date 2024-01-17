@@ -55,8 +55,6 @@ public class CmdLineOpts {
 		INCREMENTAL_UPDATE_INTERNAL}
 
 	public enum Lang {
-		JAVA,
-		METADL,
 		C,
 		C4
 	}
@@ -319,14 +317,10 @@ public class CmdLineOpts {
 				ret.srcs = Collections.emptySortedMap();
 			}
 
-			if (!cmd.hasOption("L") || cmd.getOptionValue("L").equals("java")) {
-				ret.lang = Lang.JAVA;
-			} else if (cmd.getOptionValue("L").equals("metadl")) {
-				ret.lang = Lang.METADL;
+			if (!cmd.hasOption("L") || cmd.getOptionValue("L").equals("c4")) {
+				ret.lang = Lang.C4;
 			} else if (cmd.getOptionValue("L").equals("c")) {
 				ret.lang = Lang.C;
-			} else if (cmd.getOptionValue("L").equals("c4")) {
-				ret.lang = Lang.C4;
 			} else {
 				System.err.println("Unsupported language for the --lang option.");
 				printHelp(options);

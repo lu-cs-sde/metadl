@@ -35,6 +35,9 @@ public class ClangEvaluationContext extends EvaluationContext {
   private ClangClog clog;
 
   public ClangEvaluationContext(Set<String> srcs, List<String> clangArgs) {
+    if (srcs.isEmpty())
+      return;
+
     System.loadLibrary("clangClogSWIG");
 
     VectorString args = new VectorString(clangArgs);

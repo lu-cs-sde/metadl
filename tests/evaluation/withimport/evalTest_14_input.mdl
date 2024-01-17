@@ -1,2 +1,0 @@
-P(x, y) :- A(x, y), NEQ(y, z), B(z, x).
-R(x, y, z, w) :- A(x, x), NEQ(x, 1), B(x, y), C(y, z), NEQ(x, z), NEQ(y, z).

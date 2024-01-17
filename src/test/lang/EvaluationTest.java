@@ -20,9 +20,20 @@ import lang.io.SimpleLogger;
 public class EvaluationTest {
 	@DisplayName("Compare Internal Evaluation to Souffle")
 	@ParameterizedTest(name = "Evaluation Tests Valid")
-	@ValueSource(strings = { "evalTest_1.in", "evalTest_2.in", "evalTest_3.in", "evalTest_4.in", "evalTest_5.in",
-							 "evalTest_6.in", "evalTest_7.in", "evalTest_8.in", "evalTest_9.in", "evalTest_13.in",
-							 "evalTest_14.in"})
+	@ValueSource(strings = {"evalTest_1.in",
+                          "evalTest_2.in",
+                          "evalTest_3.in",
+                          "evalTest_4.in",
+                          "evalTest_5.in",
+                          "evalTest_6.in",
+                          "evalTest_7.in",
+                          "evalTest_8.in",
+                          "evalTest_9.in",
+                          //"evalTest_10.in",
+                          //"evalTest_11.in",
+                          //"evalTest_12.in",
+                          "evalTest_13.in",
+                          "evalTest_14.in"})
 	void evaluationTestsBottomUpNaiveCompareSouffle(String fileName) throws Exception {
 		String inputFile = "./tests/evaluation/" + fileName;
 
@@ -95,83 +106,4 @@ public class EvaluationTest {
 		Util.doEvaluationTest(d1, d2);
 	}
 
-	static Stream<String> metadlPatternTests() {
-		String[] tests = { "evalTest_2:metadl", "evalTest_3:metadl", "evalTest_4:metadl",
-						   "evalTest_5:metadl", "evalTest_6:metadl", "evalTest_7:metadl",
-						   // "evalTest_8", TODO: re-enable once MetaDL uses DatalogProjection2
-						   "evalTest_9:metadl",
-						   // "evalTest_10", TODO: re-enable once MetaDL uses DatalogProjection2
-						   "evalTest_11:metadl", "evalTest_12:java", "evalTest_13:java",
-						   "evalTest_14:metadl", "evalTest_15:java",
-						   // "evalTest_16", Disabled, due to introduction of inexact matches
-						   // "evalTest_17", Disabled, due to stricter type checking
-						   // TODO: re-enable evalTest_17 once conversion functors node -> int and int -> node
-						   // are introduced
-						   "evalTest_18:java"
-		};
-		return Arrays.stream(tests);
-	}
-
-	@DisplayName("Evaluate programs containing patterns using Souffle")
-	@ParameterizedTest
-	@MethodSource("metadlPatternTests")
- 	void evaluationTestPatternsSouffle(String testDesc) throws Exception {
-		String fileName = Util.parseTestDescription(testDesc)[0];
-		String lang = Util.parseTestDescription(testDesc)[1];
-
-		IOFileFilter ff = new WildcardFileFilter(fileName + "_input*");
-		Iterator<File> analyzedFileIt = FileUtils.iterateFiles(new File("./tests/evaluation/withimport"), ff, null);
-
-		Util.singleEvaluationTest("./tests/output/souffle",
-							 "./tests/evaluation/withimport/facts",
-							 analyzedFileIt.hasNext() ? Collections.singletonList(analyzedFileIt.next()) : Collections.emptyList(),
-							 "./tests/evaluation/withimport",
-							 "./tests/evaluation/withimport/expected",
-							 fileName,
-							 ".in",
-							 lang,
-							 "-e souffle");
-	}
-
-	@DisplayName("Evaluate programs containing patterns using internal evaluator")
-	@ParameterizedTest
-	@MethodSource("metadlPatternTests")
-	void evaluationTestPatternsInternal(String testDesc) throws Exception {
-		String fileName = Util.parseTestDescription(testDesc)[0];
-		String lang = Util.parseTestDescription(testDesc)[1];
-
-		IOFileFilter ff = new WildcardFileFilter(fileName + "_input*");
-		Iterator<File> analyzedFileIt = FileUtils.iterateFiles(new File("./tests/evaluation/withimport"), ff, null);
-
-		Util.singleEvaluationTest("./tests/output/souffle",
-							 "./tests/evaluation/withimport/facts",
-							 analyzedFileIt.hasNext() ? Collections.singletonList(analyzedFileIt.next()) : Collections.emptyList(),
-							 "./tests/evaluation/withimport",
-							 "./tests/evaluation/withimport/expected",
-							 fileName,
-							 ".in",
-							 lang,
-							 "-e metadl");
-	}
-
-	@DisplayName("Evaluate programs containing patterns using internal parallel evaluator")
-	@ParameterizedTest
-	@MethodSource("metadlPatternTests")
-	void evaluationTestPatternsInternalParallel(String testDesc) throws Exception {
-		String fileName = Util.parseTestDescription(testDesc)[0];
-		String lang = Util.parseTestDescription(testDesc)[1];
-
-		IOFileFilter ff = new WildcardFileFilter(fileName + "_input*");
-		Iterator<File> analyzedFileIt = FileUtils.iterateFiles(new File("./tests/evaluation/withimport"), ff, null);
-
-		Util.singleEvaluationTest("./tests/output/souffle",
-							 "./tests/evaluation/withimport/facts",
-							 analyzedFileIt.hasNext() ? Collections.singletonList(analyzedFileIt.next()) : Collections.emptyList(),
-							 "./tests/evaluation/withimport",
-							 "./tests/evaluation/withimport/expected",
-							 fileName,
-							 ".in",
-							 lang,
-							 "-e metadl-par");
-	}
 }

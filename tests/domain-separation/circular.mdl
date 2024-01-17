@@ -1,3 +1,0 @@
-B(x1, y1) :- DECL(x1, y1), C(x1, y1).
-C(x2, y2) :- B(x2, y2).
-C(x3, y3) :- PARENT(x3, y3).

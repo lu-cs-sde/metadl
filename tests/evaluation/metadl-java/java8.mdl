@@ -1,8 +1,0 @@
-# A first test case for java8
-
-Lambda1(0) :- <: `p -> `e :>.
-MethodRef(0) :- <: this::`m :>.
-
-
-OUTPUT('Lambda1, "Lambda1.csv", "csv").
-OUTPUT('MethodRef, "MethodRef.csv", "csv").

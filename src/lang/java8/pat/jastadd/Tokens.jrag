@@ -1,8 +1,0 @@
-aspect Tokens {
-	@Override public java.util.List<Pair<String, String>> AnonymousDecl.namedTokens() {
-		// Filter out the ID token in AnonymousDecl. All these declaration in the
-		// object program get an "AnonymousN" name, while in the patterns they always
-		// have the "Anonymous" name.
-		return super.namedTokens().stream().filter(p -> !p.getLeft().equals("ID")).collect(Collectors.toList());
-	}
-}

@@ -1,2 +1,0 @@
-LambdaAnonymousDecl : AnonymousDecl ::=
-    Modifiers <ID:String> /[SuperClass:Access]/ Implements:Access* BodyDecl*;

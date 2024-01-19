@@ -191,6 +191,124 @@ public interface Control {
   }
 }
 
+
+class InlineEnd implements Control {
+  private final List<Pair<Integer, Integer>> copy; // (outerIdx, innerIdx)
+  private final int tupleSize;
+  private final Control cont;
+
+  public InlineEnd(List<Pair<Integer, Integer>> copy,
+                   int tupleSize,
+                   Control cont) {
+    this.copy = copy;
+    this.tupleSize = tupleSize;
+    this.cont = cont;
+  }
+
+  public void eval(Tuple innerTuple) {
+    int outerArity = innerTuple.arity() - tupleSize;
+
+    Tuple outerTuple = new Tuple(outerArity);
+
+    for (int i = 0; i < outerArity; ++i) {
+      outerTuple.set(i, innerTuple.get(i + tupleSize));
+    }
+
+    for (Pair<Integer, Integer> t : copy) {
+      outerTuple.set(t.getLeft(), innerTuple.get(t.getRight()));
+    }
+
+    cont.eval(outerTuple);
+  }
+
+  @Override public String prettyPrint(int indent) {
+    String s = Util.indent(indent) + "INLINE END ";
+
+    for (Pair<Integer, Integer> t : copy) {
+      s += String.format("t[%d] := inner_t[%d] ", t.getRight(), t.getLeft());
+    }
+
+    return s + "\n" + cont.prettyPrint(indent + 1);
+  }
+
+}
+
+class InlineBegin implements Control {
+  private final List<Pair<Integer, Integer>> copy; // (outerIdx, innerIdx)
+  private final List<Pair<Integer, Long>> outerConsts; // (innerIdx, outerConstVal)
+  private final List<Pair<Integer, Long>> constTest; // (outerIdx, innerConstVal)
+
+  private final int tupleSize;
+  private final Control cont;
+
+  public InlineBegin(EvaluationContext ctx,
+                     List<Pair<Integer, Integer>> copy,
+                     List<Pair<Integer, Long>> outerConsts,
+                     List<Pair<Integer, Long>> constTest,
+                     int tupleSize,
+                     Control cont) {
+    this.copy = copy;
+    this.outerConsts = outerConsts;
+    this.constTest = constTest;
+    this.tupleSize = tupleSize;
+    this.cont = cont;
+  }
+
+  public void eval(Tuple outerTuple) {
+    int outerArity = outerTuple.arity();
+    Tuple innerTuple = new Tuple(tupleSize + outerTuple.arity());
+
+    // copy over the contents of the outer tuple
+    for (int i = 0; i < outerArity; ++i) {
+      innerTuple.set(i + tupleSize, outerTuple.get(i));
+    }
+
+    for (Pair<Integer, Long> c : constTest) {
+      // For cases like:
+      // facts : Q(1, 2). [Clause 1]
+      //         P(3, y) :- R(y). [Clause 2]
+      // ... :- Q(x, y), inline P(x, z)
+      // make sure that [Clause 2] is never evaluated
+      int outerIdx = c.getLeft();
+      long val = c.getRight();
+
+      if (outerTuple.get(outerIdx) != val)
+        return;
+    }
+
+    // set the constants
+    for (Pair<Integer, Long> c : outerConsts) {
+      innerTuple.set(c.getLeft(), c.getRight());
+    }
+
+    // set the bound variables
+    for (Pair<Integer, Integer> t : copy) {
+      innerTuple.set(t.getRight(), outerTuple.get(t.getLeft()));
+    }
+
+    cont.eval(innerTuple);
+  }
+
+  @Override public String prettyPrint(int indent) {
+    String s = Util.indent(indent) + "INLINE BEGIN ";
+
+    for (Pair<Integer, Integer> t : copy) {
+      s += String.format("inner_t[%d] := t[%d] ", t.getRight(), t.getLeft());
+    }
+
+    for (Pair<Integer, Long> c : outerConsts) {
+      s += String.format("inner_t[%d] := %s[%d] ", c.getLeft(), c.getRight());
+    }
+
+    for (Pair<Integer, Long> c : constTest) {
+      s += String.format("t[%d] = %d ", c.getLeft(), c.getRight());
+    }
+
+    return s + "\n" + cont.prettyPrint(indent + 1);
+  }
+
+}
+
 class ForAll implements Control {
   private Relation2 rel;
   private List<Pair<Integer, Integer>> test;

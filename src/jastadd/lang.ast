@@ -16,11 +16,16 @@ Fact:Clause;
 Not;
 
 /**
+  Marker AST node for inline Literals
+**/
+Inline;
+
+/**
    Literals
 **/
 abstract CommonLiteral ::= [Not];
 
-Literal:CommonLiteral ::= Predicate:PredicateSymbol Terms:Term*;
+Literal:CommonLiteral ::= Predicate:PredicateSymbol Terms:Term* [Inline];
 ExternalLiteral:Literal ::= <ExternalPayload:Object>;
 
 abstract Constraint:CommonLiteral ::= Expr*;

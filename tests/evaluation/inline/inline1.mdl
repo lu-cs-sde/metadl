@@ -1,0 +1,14 @@
+A(1, 2).
+A(2, 3).
+
+P(5) :- A(_, 3).
+P(x) :- A(x, _), A(_, x).
+
+
+Q(x) :- inline P(x).
+
+R(0) :- inline A(5, _).
+
+
+OUTPUT('Q, "Q.csv", "csv").
+OUTPUT('R, "R.csv", "csv").

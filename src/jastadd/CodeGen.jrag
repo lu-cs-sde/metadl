@@ -290,8 +290,118 @@ aspect CodeGen {
   syn boolean Literal.isExternal() = false;
   eq ExternalLiteral.isExternal() = true;
 
+  private Control Literal.genCodeInlineLiteral(EvaluationContext ctx,
+                                               Control cont,
+                                               Set<String> boundVars,
+                                               Set<String> usedVars,
+                                               boolean isPositive) {
+    FormalPredicate fp = getPredicate().formalpredicate();
+    java.util.List<Control> seq = new ArrayList<>();
+
+    for (Clause c : fp.definedIn()) {
+      for (CommonLiteral cl : c.getHeadss()) {
+        Literal l = (Literal) cl;
+        if (l.getPredicate().formalpredicate() != fp)
+          continue;
+
+        Set<String> initialBoundVars = new HashSet<>();
+        Set<String> usedInHeadVars = new HashSet<>();
+        boolean generateNop = false;
+
+        java.util.List<Pair<Integer, Integer>> copyIn = new ArrayList<>();
+        java.util.List<Pair<Integer, Integer>> copyOut = new ArrayList<>();
+        java.util.List<Pair<Integer, Long>> outerConsts = new ArrayList<>();
+        java.util.List<Pair<Integer, Long>> innerConsts = new ArrayList<>();
+        java.util.List<Pair<Integer, Long>> constTest = new ArrayList<>();
+
+        for (int i = 0; i < arity(); ++i) {
+          if (this.getTerms(i) instanceof Variable) {
+            Variable outerVar = (Variable) this.getTerms(i);
+            if (l.getTerms(i) instanceof Variable) {
+              // Variable - Variable
+              Variable innerVar = (Variable) l.getTerms(i);
+
+              if (boundVars.contains(outerVar.getVAR_ID())) {
+                // variable bound in the outer clause, copy it in
+                copyIn.add(Pair.of(outerVar.varId(), innerVar.varId()));
+                initialBoundVars.add(innerVar.getVAR_ID());
+              } else if (usedVars.contains(outerVar.getVAR_ID())) {
+                // variable used in the outer clause, copy it out
+                copyOut.add(Pair.of(outerVar.varId(), innerVar.varId()));
+                usedInHeadVars.add(innerVar.getVAR_ID());
+              } else {
+                // TODO: Same as for wildcards.
+              }
+            } else if (l.getTerms(i) instanceof Constant) {
+              // Variable - Constant
+              Long innerConstVal = ((Constant) l.getTerms(i)).constVal(ctx);
+
+              if (boundVars.contains(outerVar.getVAR_ID())) {
+                // variable bound in the outer clause, test it against the constant
+                constTest.add(Pair.of(outerVar.varId(), innerConstVal));
+              } else if (usedVars.contains(outerVar.getVAR_ID())) {
+                // variable used in the outer clause
+                innerConsts.add(Pair.of(outerVar.varId(), innerConstVal));
+              } else {
+                // Do nothing. Same as a wildcard.
+              }
+            }
+          } else if (this.getTerms(i) instanceof Constant) {
+            Long outerConstVal = ((Constant) this.getTerms(i)).constVal(ctx);
+
+            if (l.getTerms(i) instanceof Variable) {
+              // Constant - Variable
+              Variable innerVar = (Variable) l.getTerms(i);
+              outerConsts.add(Pair.of(innerVar.varId(), outerConstVal));
+              initialBoundVars.add(innerVar.getVAR_ID());
+            } else if (l.getTerms(i) instanceof Constant) {
+              // Constant - Constant
+              Long innerConstVal = ((Constant) l.getTerms(i)).constVal(ctx);
+              if (!innerConstVal.equals(outerConstVal)) {
+                // constants mismatch, this is no-op
+                generateNop = true;
+                break;
+              }
+            }
+          } else {
+            assert (this.getTerms(i).isWildcard());
+            // do nothing
+          }
+        }
+
+        if (!generateNop) {
+          int tupleSize = c.evalVariables().size();
+          Control inlineEnd;
+
+          if (isPositive) {
+            inlineEnd = Control.inlineEnd(copyOut, innerConsts, tupleSize, cont);
+          } else {
+            inlineEnd = Control.negInlineEnd();
+          }
+
+          Control inlinedBody;
+          if (c instanceof Rule) {
+            inlinedBody = ((Rule) c).genCodeBody(ctx, inlineEnd, usedInHeadVars, initialBoundVars, false, -1);
+          } else {
+            // pass-through for facts
+            inlinedBody = inlineEnd;
+          }
+          Control inlineBegin = Control.inlineBegin(copyIn, outerConsts, constTest, tupleSize, inlinedBody);
+          seq.add(inlineBegin);
+        }
+      }
+    }
+
+    if (isPositive) {
+      return Control.sequence(seq);
+    } else {
+      Control negBegin = Control.negInlineBegin(Control.sequence(seq), cont);
+      return negBegin;
+    }
+  }
+
   private Control Literal.genCodePositiveLiteral(Relation2 rel, EvaluationContext ctx, Control cont,
-                           Set<String> boundVars, Set<String> usedVars) {
+                                                 Set<String> boundVars, Set<String> usedVars) {
     java.util.List<Pair<Integer, Integer>> assign = new ArrayList<>();
     java.util.List<Pair<Integer, Long>> consts = new ArrayList<>();
     java.util.List<Pair<Integer, Integer>> test = new ArrayList<>();
@@ -329,6 +439,11 @@ aspect CodeGen {
           // do nothing for wildcards
         }
       }
+
+      if (hasInline()) {
+        return genCodeInlineLiteral(ctx, cont, boundVars, usedVars, true);
+      }
+
       if (assign.isEmpty()) {
         if (isExternal()) {
           return ClangEvaluationContext.genCodeExternalLiteral((ExternalLiteral) this, varToId, boundVars,
@@ -352,12 +467,20 @@ aspect CodeGen {
     java.util.List<Pair<Integer, Long>> consts = new ArrayList<>();
     java.util.List<Pair<Integer, Integer>> test = new ArrayList<>();
 
+    Set<String> boundVars = new HashSet<>();
+
     for (int i = 0; i < getNumTerms(); ++i) {
       if (getTerms(i).isVariable()) {
         test.add(Pair.of(i, ((Variable) getTerms(i)).varId()));
+        // all variables in a negative literal are bound
+        boundVars.add(((Variable) getTerms(i)).getVAR_ID());
       } else if (getTerms(i).isConstant()) {
         consts.add(Pair.of(i, ((Constant) getTerms(i)).constVal(ctx)));
       }
+    }
+
+    if (hasInline()) {
+      return genCodeInlineLiteral(ctx, cont, boundVars, Collections.emptySet(), false);
     }
 
     if (isExternal()) {

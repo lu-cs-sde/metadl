@@ -106,4 +106,15 @@ public class EvaluationTest {
 		Util.doEvaluationTest(d1, d2);
 	}
 
+
+  @DisplayName("Compare Internal Evaluation to Souffle Inline")
+  @ParameterizedTest
+  @ValueSource(strings = {"inline1.mdl", "inline2.mdl", "inline3.mdl"})
+  void evaluationTestsBottomUpNaiveCompareInline(String fileName) throws Exception {
+    CmdLineOpts d1 = FileUtil.parseDescription(
+        "-e souffle -D ./tests/output/souffle -F ./tests/evaluation/withwildcard/facts ./tests/evaluation/inline/" + fileName);
+    CmdLineOpts d2 = FileUtil.parseDescription(
+        "-e metadl -D ./tests/output -F ./tests/evaluation/withwildcard/facts ./tests/evaluation/inline/" + fileName);
+    Util.doEvaluationTest(d1, d2);
+  }
 }

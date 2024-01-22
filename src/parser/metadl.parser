@@ -28,8 +28,15 @@ CommonLiteral common_literal = literal
                              | pattern
                              ;
 
-Constraint constraint = neg_literal
-		      | bind_literal
+CommonLiteral positive_or_negative_common_literal = common_literal
+                                                  | NOT LPARA common_literal.lit RPARA {: lit.setNot(new Not()); return lit; :}
+                                                  | EXCL common_literal.lit {: lit.setNot(new Not()); return lit; :}
+                                                  | INLINE literal {: literal.setInline(new Inline()); return literal; :}
+                                                  | INLINE NOT LPARA literal.lit RPARA {: lit.setNot(new Not()).setInline(new Inline()); return lit; :}
+                                                  | INLINE EXCL literal.lit {: lit.setNot(new Not()).setInline(new Inline()); return lit; :}
+                                                  ;
+
+Constraint constraint = bind_literal
 		      | eq_literal
 		      | neq_literal
 		      | lt_literal
@@ -45,10 +52,6 @@ Pattern pattern = PATTERN.pat {: return new Pattern(pat); :}
                 | AT variable.subtree PATTERN {: return new Pattern(new Opt(), PATTERN, new Opt(), new Opt(subtree)); :}
                 | AT variable.subtree variable.var PATTERN {: return new Pattern(new Opt(), PATTERN, new Opt(var), new Opt(subtree)); :}
                 ;
-
-Literal neg_literal = NOT LPARA common_literal.lit RPARA {: lit.setNot(new Not()); return lit; :}
-                    | EXCL common_literal.lit {: lit.setNot(new Not()); return lit; :}
-                    ;
 
 BINDLiteral bind_literal = BIND LPARA variable.var COMMA expr.right RPARA {: return new BINDLiteral(var, right); :}
                          | variable.var IEQ expr.right {: return new BINDLiteral(var, right); :}
@@ -71,13 +74,16 @@ GTLiteral gt_literal = GT LPARA expr.left COMMA expr.right RPARA {: return new G
 GTELiteral gte_literal = GTE LPARA expr.left COMMA expr.right RPARA {: return new GTELiteral(left, right); :}
                        | expr.left IGTE expr.right {: return new GTELiteral(left, right); :}
                        ;
-MATCHLiteral match_literal = MATCH LPARA expr.left COMMA expr.right RPARA {: return new MATCHLiteral(left, right); :};
+MATCHLiteral match_literal = MATCH LPARA expr.left COMMA expr.right RPARA {: return new MATCHLiteral(left, right); :}
+                           ;
 ANCESTORLiteral ancestor_literal = ANCESTOR LPARA expr.left COMMA expr.right RPARA {: return new ANCESTORLiteral(left, right); :}
+                                 ;
 
-Literal literal = pred_sym.pred LPARA term_list.terms RPARA {: return Literal.build(pred, terms); :};
+Literal literal = pred_sym.pred LPARA term_list.terms RPARA {: return Literal.build(pred, terms); :}
+                ;
 
-List lit_list = common_literal.lit {: return new List().add(lit); :}
-              | lit_list.list COMMA common_literal.c {: return list.add(c); :}
+List lit_list = positive_or_negative_common_literal.lit {: return new List().add(lit); :}
+              | lit_list.list COMMA positive_or_negative_common_literal.c {: return list.add(c); :}
               ;
 
 List term_list = term_list_no_empty

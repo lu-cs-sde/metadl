@@ -1,0 +1,8 @@
+A(1, 2).
+A(1, 3).
+A(2, 4).
+
+Q(x) :- inline A(x, _).
+R(x) :- x = 1, inline Q(x).
+
+OUTPUT('R, "R.csv", "csv").

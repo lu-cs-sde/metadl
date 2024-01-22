@@ -56,6 +56,29 @@ public interface Control {
     return new Sequence(conts);
   }
 
+  public static Control inlineBegin(List<Pair<Integer, Integer>> copy,
+                                    List<Pair<Integer, Long>> outerConsts,
+                                    List<Pair<Integer, Long>> constTest,
+                                    int tupleSize,
+                                    Control cont) {
+    return new InlineBegin(copy, outerConsts, constTest, tupleSize, cont);
+  }
+
+  public static Control inlineEnd(List<Pair<Integer, Integer>> copy,
+                                  List<Pair<Integer, Long>> innerConsts,
+                                  int tupleSize,
+                                  Control cont) {
+    return new InlineEnd(copy, innerConsts, tupleSize, cont);
+  }
+
+  public static Control negInlineBegin(Control inlineCont, Control cont) {
+    return new NegativeInlineBegin(inlineCont, cont);
+  }
+
+  public static Control negInlineEnd() {
+    return new NegativeInlineEnd();
+  }
+
   public static Control nop() {
     return new Control() {
       @Override public void eval(Tuple t) {
@@ -191,16 +214,18 @@ public interface Control {
   }
 }
 
-
 class InlineEnd implements Control {
   private final List<Pair<Integer, Integer>> copy; // (outerIdx, innerIdx)
+  private final List<Pair<Integer, Long>> innerConsts; // (outerIdx, innerConstVal)
   private final int tupleSize;
   private final Control cont;
 
   public InlineEnd(List<Pair<Integer, Integer>> copy,
+                   List<Pair<Integer, Long>> innerConsts,
                    int tupleSize,
                    Control cont) {
     this.copy = copy;
+    this.innerConsts = innerConsts;
     this.tupleSize = tupleSize;
     this.cont = cont;
   }
@@ -216,6 +241,10 @@ class InlineEnd implements Control {
 
     for (Pair<Integer, Integer> t : copy) {
       outerTuple.set(t.getLeft(), innerTuple.get(t.getRight()));
+    }
+
+    for (Pair<Integer, Long> c : innerConsts) {
+      outerTuple.set(c.getLeft(), c.getRight());
     }
 
     cont.eval(outerTuple);
@@ -241,12 +270,11 @@ class InlineBegin implements Control {
   private final int tupleSize;
   private final Control cont;
 
-  public InlineBegin(EvaluationContext ctx,
-                     List<Pair<Integer, Integer>> copy,
-                     List<Pair<Integer, Long>> outerConsts,
-                     List<Pair<Integer, Long>> constTest,
-                     int tupleSize,
-                     Control cont) {
+  public InlineBegin(List<Pair<Integer, Integer>> copy,
+      List<Pair<Integer, Long>> outerConsts,
+      List<Pair<Integer, Long>> constTest,
+      int tupleSize,
+      Control cont) {
     this.copy = copy;
     this.outerConsts = outerConsts;
     this.constTest = constTest;
@@ -255,14 +283,6 @@ class InlineBegin implements Control {
   }
 
   public void eval(Tuple outerTuple) {
-    int outerArity = outerTuple.arity();
-    Tuple innerTuple = new Tuple(tupleSize + outerTuple.arity());
-
-    // copy over the contents of the outer tuple
-    for (int i = 0; i < outerArity; ++i) {
-      innerTuple.set(i + tupleSize, outerTuple.get(i));
-    }
-
     for (Pair<Integer, Long> c : constTest) {
       // For cases like:
       // facts : Q(1, 2). [Clause 1]
@@ -274,6 +294,14 @@ class InlineBegin implements Control {
 
       if (outerTuple.get(outerIdx) != val)
         return;
+    }
+
+    int outerArity = outerTuple.arity();
+    Tuple innerTuple = new Tuple(tupleSize + outerTuple.arity());
+
+    // copy over the contents of the outer tuple
+    for (int i = 0; i < outerArity; ++i) {
+      innerTuple.set(i + tupleSize, outerTuple.get(i));
     }
 
     // set the constants
@@ -289,7 +317,8 @@ class InlineBegin implements Control {
     cont.eval(innerTuple);
   }
 
-  @Override public String prettyPrint(int indent) {
+  @Override
+  public String prettyPrint(int indent) {
     String s = Util.indent(indent) + "INLINE BEGIN ";
 
     for (Pair<Integer, Integer> t : copy) {
@@ -297,7 +326,7 @@ class InlineBegin implements Control {
     }
 
     for (Pair<Integer, Long> c : outerConsts) {
-      s += String.format("inner_t[%d] := %s[%d] ", c.getLeft(), c.getRight());
+      s += String.format("inner_t[%d] := %d ", c.getLeft(), c.getRight());
     }
 
     for (Pair<Integer, Long> c : constTest) {
@@ -306,8 +335,54 @@ class InlineBegin implements Control {
 
     return s + "\n" + cont.prettyPrint(indent + 1);
   }
-
 }
+
+class InlineException extends RuntimeException {
+}
+
+class NegativeInlineBegin implements Control {
+  private final Control cont;
+  private final Control inlineCont;
+
+  public NegativeInlineBegin(Control inlineCont,
+      Control cont) {
+    this.cont = cont;
+    this.inlineCont = inlineCont;
+  }
+
+  public void eval(Tuple t) {
+    boolean existentialCheckSuccess = false;
+    try {
+      inlineCont.eval(t);
+    } catch (InlineException e) {
+      existentialCheckSuccess = true;
+    }
+
+    if (!existentialCheckSuccess) {
+      // the inner relation is empty
+      cont.eval(t);
+    }
+  }
+
+  @Override
+  public String prettyPrint(int indent) {
+    String s = Util.indent(indent) + "NEGATIVE INLINE BEGIN\n";
+    s += inlineCont.prettyPrint(indent + 1);
+    return s + "\n" + cont.prettyPrint(indent + 1);
+  }
+}
+
+class NegativeInlineEnd implements Control {
+  @Override public void eval(Tuple t) {
+    throw new InlineException();
+  }
+
+  @Override public String prettyPrint(int indent) {
+    return Util.indent(indent) + "NEGATIVE INLINE END\n";
+  }
+}
+
+
 
 class ForAll implements Control {
   private Relation2 rel;

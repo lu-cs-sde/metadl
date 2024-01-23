@@ -6,10 +6,12 @@ A(3, 4).
 Path(x, y) :- A(x, y).
 Path(x, y) :- Path(x, t), A(t, y).
 
+Path1(x, y) :- Path(x, y).
+
 P(1) :- inline !A(1, _).
 P(2) :- inline !A(2, _).
-P(3) :- inline !Path(1, 4).
-P(4) :- inline !Path(0, 4).
+P(3) :- inline !Path1(1, 4).
+P(4) :- inline !Path1(0, 4).
 
 Q(3) :- inline !P(3).
 

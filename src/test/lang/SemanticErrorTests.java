@@ -32,7 +32,7 @@ public class SemanticErrorTests {
 	@ValueSource(strings = { "semantic1.in", "semantic2.in", "semantic3.in",
 							 "semantic4.in", "semantic5.in", "semantic6.in",
 							 "semantic8.in", "semantic9.in", "semantic10.in",
-							 "semantic11.in"
+							 "semantic11.in", "semantic12.in"
 						   })
 	public void semanticTests(String fileName) {
 		String dir = "tests/semantic/";

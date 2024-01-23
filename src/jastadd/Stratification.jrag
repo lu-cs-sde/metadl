@@ -315,12 +315,26 @@ aspect StratificationError {
 					((Literal) l).getPredicate().formalpredicate().equals(fp))
 					return true;
 		}
-
 		return false;
-	}
+  }
+
+  syn boolean FormalPredicate.hasCircularDefinition() {
+    ClauseDependencyGraph pdg = program().clauseDependencyGraph();
+
+    for (Clause c : this.definedIn()) {
+      java.util.List<Clause> sccClauses = new ArrayList<>(c.getSCC().vertexSet());
+      if (sccClauses.size() != 1)
+        return true;
+      else if (pdg.containsEdge(c, c))
+        return true;
+    }
+
+    return false;
+  }
 
 	Literal contributes new SemanticError(this, "Unstratifiable program due to literal " + this + ".") when
 		unstratifiableNegation() to Program.semanticErrors();
 
-
+  Literal contributes new SemanticError(this, "Literal " + this + " can't be inlined. The predicate is defined in a recursive rule.") when
+    hasInline() && getPredicate().formalpredicate().hasCircularDefinition() to Program.semanticErrors();
 }

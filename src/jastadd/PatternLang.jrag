@@ -74,18 +74,29 @@ aspect PatternLang {
   }
 
   syn lazy java.util.List<Clause> Pattern.getClauses() {
-    if (program().getLang() == CmdLineOpts.Lang.C4) {
-      return Collections.emptyList();
-    }
-
     AnalyzeContext ctx = program().getAnalysisContext();
     ArrayList<Clause> ret = new ArrayList<>();
+
     for (ObjLangASTNode n : altParse()) {
       Literal head = getLiteralHelper();
-      Rule r = new Rule(new List<CommonLiteral>().add(head),
-                        new List<CommonLiteral>().addAll(n.literals(ctx, hasRoot() ? getRoot() : null)));
+      Rule r;
+
+      if (program().getLang() != CmdLineOpts.Lang.C4) {
+        r = new Rule(new List<CommonLiteral>().add(head),
+                     new List<CommonLiteral>().addAll(n.literals(ctx, hasRoot() ? getRoot() : null)));
+
+      } else {
+        ExternalLiteral matcher = new ExternalLiteral(new PredicateSymbol(head.getPredicate().getPRED_ID() + "_matcher"),
+                                                      head.getTermss().treeCopy(),
+                                                      ClangEvaluationContext.ExternalLiteralPayload.pattern(Collections.singletonList(n),
+                                                                                                            hasRoot() ? Optional.of(getRoot().getVAR_ID()) : Optional.empty(),
+                                                                                                            hasSubtree() ? Optional.of(getSubtree().getVAR_ID()) : Optional.empty()
+                                                                                                            ));
+        r = rule(head, matcher);
+      }
       ret.add(r);
     }
+
     return ret;
   }
 
@@ -106,6 +117,8 @@ aspect PatternLang {
 
   syn String Pattern.predName() = hash(getPATTERN() + (hasRoot() ? "bounded" : "") + (hasSubtree() ? "subtree" : ""));
 
+
+
   protected Literal Pattern.getLiteralHelper() {
     String predName = program().getAnalysisContext().prefix(predName());
 
@@ -120,26 +133,15 @@ aspect PatternLang {
       headVars.add(getSubtree().treeCopy());
     for (String v : n.metavariables())
       headVars.add(new Variable(v));
-    if (program().getLang() == CmdLineOpts.Lang.C4) {
-      Optional<String> rootVariable = hasRoot() ? Optional.of(getRoot().getVAR_ID()) : Optional.empty();
-      Optional<String> subtreeVariable = hasSubtree() ? Optional.of(getSubtree().getVAR_ID()) : Optional.empty();
-      ExternalLiteral head = new ExternalLiteral(new PredicateSymbol(predName),
-                                                 headVars,
-                                                 ClangEvaluationContext.ExternalLiteralPayload.pattern(ASTs, rootVariable, subtreeVariable));
-      return head;
-    } else {
-      // we're using a String hash  here; fingers crossed for no collisions
-      Literal head = new Literal(new PredicateSymbol(predName),
-                     headVars);
-      return head;
-    }
-
+    Literal head = new Literal(new PredicateSymbol(predName), headVars);
+    return head;
   }
 
   syn nta Literal Pattern.getLiteral() {
     Literal l = getLiteralHelper();
     if (hasNot())
       l.setNot(new Not());
+    l.setInline(new Inline());
     return l;
   }
 

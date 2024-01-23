@@ -67,7 +67,16 @@ aspect PretyPrinting {
     pr.out.print(toString());
   }
 
+  public void Inline.prettyPrint(PrettyPrinter pr) {
+    pr.out.print("inline");
+  }
+
   public void Literal.prettyPrint(PrettyPrinter pr) {
+    if (hasInline()) {
+      pr.prettyPrint(getInline());
+      pr.out.print(" ");
+    }
+
     if (hasNot())
       pr.negationPrefix();
     pr.prettyPrint(getPredicate());
@@ -258,6 +267,10 @@ aspect SoufflePrinting {
   public void Pattern.soufflePrint(PrettyPrinter pr) {
     pr.out.print("/* " + getPATTERN() + "*/");
     pr.prettyPrint(getLiteral());
+  }
+
+  public void Inline.soufflePrint(PrettyPrinter pr) {
+    // Do nothing
   }
 
   public String BinaryIntegerConstraint.souffleOPString() { throw new RuntimeException("Not implemented"); }

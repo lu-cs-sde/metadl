@@ -1,0 +1,47 @@
+aspect DeadCodeAnalysis {
+  syn boolean FormalPredicate.isLive() circular [false] {
+    // Mark the predicates P used in a predicate ref 'P as 'live'. This is the case
+    // for output predicates.
+    if (!this.predicateRefs().isEmpty())
+      return true;
+
+    // A predicate is 'live' if it appears in the body of any clause which
+    // has at least one 'live' predicate in the head.
+    for (PredicateSymbol p : predicates()) {
+      if (p.parentLiteral().isDef())
+        continue;
+
+      Clause c = p.parentLiteral().clause();
+      for (CommonLiteral l : c.getHeadss()) {
+        if (((Literal) l).getPredicate().formalpredicate().isLive())
+          return true;
+      }
+    }
+
+    return false;
+  }
+
+  /**
+     Are all the uses of the predicate inlined?
+   */
+  syn boolean FormalPredicate.isInlined() {
+    if (!this.predicateRefs().isEmpty())
+      return false;
+
+    for (PredicateSymbol p : predicates()) {
+      if (p.parentLiteral().isUse() && !p.parentLiteral().hasInline())
+        return false;
+    }
+    return true;
+  }
+
+  syn boolean Clause.isLive() {
+    for (CommonLiteral cl : this.getHeadss()) {
+      Literal l = (Literal) cl;
+      if (l.getPredicate().formalpredicate().isLive() &&
+          !l.getPredicate().formalpredicate().isInlined())
+        return true;
+    }
+    return false;
+  }
+}

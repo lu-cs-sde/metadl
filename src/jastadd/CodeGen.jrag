@@ -187,6 +187,9 @@ aspect CodeGen {
   syn java.util.List<Control> Clause.genCode(EvaluationContext ctx, boolean isDelta, Set<FormalPredicate> currentStratum);
 
   eq Fact.genCode(EvaluationContext ctx, boolean isDelta, Set<FormalPredicate> currentStratum) {
+    if (!isLive())
+      return Collections.emptyList();
+
     Control currentCont = Control.nop();
 
     for (CommonLiteral h : getHeadss()) {
@@ -246,6 +249,12 @@ aspect CodeGen {
   }
 
   eq Rule.genCode(EvaluationContext ctx, boolean isDelta, Set<FormalPredicate> currentStratum) {
+    if (!isLive()) {
+      System.out.println("Dropping rule: ");
+      this.prettyPrint(System.out);
+      return Collections.emptyList();
+    }
+
     if (!isDelta) {
       return Collections.singletonList(genCodeHelper(ctx, false, -1));
     } else {

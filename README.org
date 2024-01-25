@@ -39,7 +39,7 @@ OUTPUT('WarnLabeledReturn, "WarnLabeledReturn.csv", "csv").
 #+END_SRC
 
 * Building
-MetaDL depends on modified versions of [[http://jastadd.org/web/][JastAdd]] and [[https://bitbucket.org/jastadd/jastaddparser/][JastAddParser]]. These dependencies are packaged as submodules, so run ~git submodule update --init --recursive~ to fetch them.
+Clog depends on modified versions of [[http://jastadd.org/web/][JastAdd]] and [[https://bitbucket.org/jastadd/jastaddparser/][JastAddParser]]. These dependencies are packaged as submodules, so run ~git submodule update --init --recursive~ to fetch them.
 
 Ensure that the ~souffle~ executable is available in your ~$PATH~.
 
@@ -55,7 +55,7 @@ make
 #+END_SRC
 
 ** C support
-For analyzing C, MetaDL uses the Clang front-end for pattern matching. We have built a Clang library to interface with MetaDL. Run  the following commands to fetch and build a modified version of the LLVM repository:
+For analyzing C, Clog uses the Clang front-end for pattern matching. We have built a Clang library to interface with Clog. Run  the following commands to fetch and build a modified version of the LLVM repository:
 #+BEGIN_SRC
 git clone git@github.com:alexdura/llvm-project.git -b clog
 #+END_SRC
@@ -66,12 +66,8 @@ cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DLLVM_ENABLE_PROJECTS="clang;clang-to
 ninja
 #+END_SRC
 
-** Java support
-For analyzing Java, MetaDL needs access to a Java 8 runtime library. Set ~METADL_JAVA_RT=/path/to/jre/lib/rt.jr~ in your environment to let MetaDL know where to find this library.
-Run ~./gradlew :jar~ to build MetaDL and  ~./gradlew :test~ to test it. For the tests to run, you need the ~souffle~ executable in your executable path.
-
 ** Docker
-We provide a Docker image which contains MetaDL and evaluation scripts, packaged together with all the required dependencies.
+We provide a Docker image which contains Clog and evaluation scripts, packaged together with all the required dependencies.
 #+BEGIN_SRC
 cd docker
 ./build.sh
@@ -82,7 +78,7 @@ docker run -it clog23:cc24
 #+END_SRC
 
 * Running
-MetaDL supports multiple running modes, which represent a trade-off between speed and external dependencies.
+Clog supports multiple running modes, which represent a trade-off between speed and external dependencies.
 ** Internal evaluation
 Uses the internal semi-naive evaluator and it is reasonably fast when the number of tuples is small (< 1 million).
 #+BEGIN_SRC
@@ -93,26 +89,10 @@ Depending on the shape of the strata dependency is graph, the parallel evaluator
 #+BEGIN_SRC
 java -jar compiler.jar --eval metadl-par program.mdl -F fact_dir -D output_dir
 #+END_SRC
-** Hybrid MetaDL-Souffle evaluation
-This is performed in two-steps:
-*** The MetaDL program is compiled to a native library.
-#+BEGIN_SRC
-java -jar compiler.jar --gen-hybrid program.mdl
-#+END_SRC
-This will generate a library called ~libSwigInterface.so~ in your current directory.
-*** Running the compiled program
-#+BEGIN_SRC
-java -jar compiler.jar --eval hybrid program.mdl --lib /ABS/PATH/TO/libSwigInterface.so -F fact_dir -D output_dir
-#+END_SRC
-** Souffle evaluation (deprecated)
-When the number of tuples is becoming large, using a high performance evaluator will make the runs faster. For this, MetaDL can generate a Souffle program and then evaluate it:
-#+BEGIN_SRC
-java -jar compiler.jar --eval souffle program.mdl -F fact_dir -D output_dir
-#+END_SRC
 
 * Language description
 ** Datalog
-[[https://en.wikipedia.org/wiki/Datalog][Datalog]] is a declarative query language, with roots in logic programming. Relations between tables are expressed as Horn clauses. MetaDL extends Datalog with syntactic patterns and associates side-effects to the following predicates ~EDB~ and ~OUTPUT~. The order of evaluation is as follows:
+[[https://en.wikipedia.org/wiki/Datalog][Datalog]] is a declarative query language, with roots in logic programming. Relations between tables are expressed as Horn clauses. Clog extends Datalog with syntactic patterns and associates side-effects to the following predicates ~EDB~ and ~OUTPUT~. The order of evaluation is as follows:
 1. All predicates the ~EDB~ predicate depends upon are evaluated. For all tuples ~('P, "file")~ in the the ~EDB~ relation, the file is read as a CSV and its tuples are added to the relation ~P~.
 2. Fixpoint evaluation.
 3. For all values ~('P)~ in the ~OUTPUT~ relation, the contents of relation ~P~ are written out to a file ~P.csv~.
@@ -149,8 +129,8 @@ Variables used inside analyze blocks to connect patterns with other literals in 
 This repository is covered by a BSD 2-clause license, see [[./LICENSE][LICENSE]].
 
 * Debugging
-The following commands are useful when debugging MetaDL:
-- Pretty print the desugared program in MetaDL format ~java -jar compiler.jar --pretty-print metadl program.mdl~
+The following commands are useful when debugging Clog:
+- Pretty print the desugared program in Clog format ~java -jar compiler.jar --pretty-print metadl program.mdl~
 - Pretty print the desugared program in Souffle format ~java -jar compiler.jar --pretty-print metadl program.mdl~
 - Enable internal debug printouts by setting ~METADL_LOG=debug|time|info~ in the environment.
 
@@ -163,7 +143,4 @@ The following commands are useful when debugging MetaDL:
 supports Reference Attribute Grammars (RAGs). It uses the parser
 generated from Beaver. In addition it takes an abstract grammar description file as
 input. The abstract grammar description is used to generate the classes
-that represent the AST.
-
-** ExtendJ
-[[https://extendj.org][ExtendJ]] is an extensible Java compiler built using JastAdd.
+that represent the pattern AST.

@@ -471,6 +471,11 @@ aspect CodeGen {
     }
   }
 
+  // private Control ExternalLiteral.genCodePositiveLiteral(EvaluationContext ctx, Control cont,
+  //                                                        Set<String> boundVars, Set<String> usedVars) {
+
+  // }
+
   private Control Literal.genCodeNegativeLiteral(Relation2 rel, EvaluationContext ctx, Control cont) {
     java.util.List<Pair<Integer, Integer>> assign = new ArrayList<>();
     java.util.List<Pair<Integer, Long>> consts = new ArrayList<>();

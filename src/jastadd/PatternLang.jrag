@@ -88,7 +88,7 @@ aspect PatternLang {
       } else {
         ExternalLiteral matcher = new ExternalLiteral(new PredicateSymbol(head.getPredicate().getPRED_ID() + "_matcher"),
                                                       head.getTermss().treeCopy(),
-                                                      ClangEvaluationContext.ExternalLiteralPayload.pattern(Collections.singletonList(n),
+                                                      ClangEvaluationContext.ExternalLiteralPayload.pattern(n,
                                                                                                             hasRoot() ? Optional.of(getRoot().getVAR_ID()) : Optional.empty(),
                                                                                                             hasSubtree() ? Optional.of(getSubtree().getVAR_ID()) : Optional.empty()
                                                                                                             ));

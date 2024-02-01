@@ -82,17 +82,17 @@ public class ClangEvaluationContext extends EvaluationContext {
 
     switch (payload.kind) {
     case PATTERN: {
-      List<List<MatcherInfo>> matcherIds = clangCtx.registerExternalLiteral(payload, varToIdMap, boundVars);
-      java.util.List<Control> seq = new ArrayList<>();
-      for (java.util.List<MatcherInfo> andMatchers : matcherIds) {
-        Control next = cont;
-        for (MatcherInfo m : andMatchers) {
-          next = m.genControl(clangCtx, next);
-        }
-        seq.add(next);
+      List<MatcherInfo> andMatchers = clangCtx.registerExternalLiteral(payload, varToIdMap, boundVars);
+
+      if (andMatchers.isEmpty())
+        return Control.nop();
+
+      Control next = cont;
+      for (MatcherInfo m : andMatchers) {
+        next = m.genControl(clangCtx, next);
       }
 
-      return Control.sequence(seq);
+      return next;
     }
     case CFG_SUCC: {
       Variable nVar = (Variable) l.getTerms(0);
@@ -152,108 +152,97 @@ public class ClangEvaluationContext extends EvaluationContext {
     }
   }
 
-  private List<List<MatcherInfo>> registerExternalLiteral(ExternalLiteralPayload payload, Map<String, Integer> varToIdMap, Set<String> boundVars) {
-    List<List<MatcherBuilder>> matchers = analyzeExternalLiteral(payload);
-    List<List<MatcherInfo>> matchersOut = new ArrayList<>();
-    for (List<MatcherBuilder> orMatcher : matchers) {
-      List<MatcherInfo> andMatchersOut = new ArrayList<>();
-      for (MatcherBuilder andMatcher : orMatcher) {
-        String m = andMatcher.generate();
+  private List<MatcherInfo> registerExternalLiteral(ExternalLiteralPayload payload, Map<String, Integer> varToIdMap, Set<String> boundVars) {
+    List<MatcherBuilder> matchers = analyzeExternalLiteral(payload);
+    List<MatcherInfo> andMatchersOut = new ArrayList<>();
 
-        boolean needsGlobalMatcher = !(payload.subtreeVariable.isPresent() ||
-                                       andMatcher.hasBinding() && boundVars.contains(andMatcher.getBinding()));
+    for (MatcherBuilder andMatcher : matchers) {
+      String m = andMatcher.generate();
 
-        System.err.print("Registered '" + (needsGlobalMatcher ? "global" :
-                                           (payload.subtreeVariable.isPresent() ? "fromNode" : "atNode")) + "' matcher " + m);
+      boolean needsGlobalMatcher = !(payload.subtreeVariable.isPresent() ||
+                                     andMatcher.hasBinding() && boundVars.contains(andMatcher.getBinding()));
 
-        long matcherId = clog.registerMatcher(m, needsGlobalMatcher);
+      System.err.print("Registered '" + (needsGlobalMatcher ? "global" :
+                                         (payload.subtreeVariable.isPresent() ? "fromNode" : "atNode")) + "' matcher " + m);
 
-        if (matcherId < 0) {
-          System.err.println("Failed to register matcher " + m);
-          throw new RuntimeException();
-        } else {
-          System.err.println("[" + matcherId + "]");
-        }
+      long matcherId = clog.registerMatcher(m, needsGlobalMatcher);
 
-        if (needsGlobalMatcher) {
-          andMatchersOut.add(MatcherInfo.global(m, matcherId, andMatcher.bindings(), varToIdMap));
-        } else {
-          if (payload.subtreeVariable.isPresent()) {
-            if (!boundVars.contains(payload.subtreeVariable.get())) {
-              System.err.println("Subtree variable '" + payload.subtreeVariable.get() + "' must be bound earlier in the clause.");
-              throw new RuntimeException();
-            }
-            andMatchersOut.add(MatcherInfo.matchFromNode(m, matcherId, andMatcher.bindings(), varToIdMap, payload.subtreeVariable.get()));
-          } else {
-            andMatchersOut.add(MatcherInfo.matchAtNode(m, matcherId, andMatcher.bindings(), varToIdMap, andMatcher.getBinding()));
-          }
-        }
+      if (matcherId < 0) {
+        System.err.println("Failed to register matcher " + m);
+        throw new RuntimeException();
+      } else {
+        System.err.println("[" + matcherId + "]");
       }
 
-      matchersOut.add(andMatchersOut);
+      if (needsGlobalMatcher) {
+        andMatchersOut.add(MatcherInfo.global(m, matcherId, andMatcher.bindings(), varToIdMap));
+      } else {
+        if (payload.subtreeVariable.isPresent()) {
+          if (!boundVars.contains(payload.subtreeVariable.get())) {
+            System.err.println("Subtree variable '" + payload.subtreeVariable.get() + "' must be bound earlier in the clause.");
+            throw new RuntimeException();
+          }
+          andMatchersOut.add(MatcherInfo.matchFromNode(m, matcherId, andMatcher.bindings(), varToIdMap, payload.subtreeVariable.get()));
+        } else {
+          andMatchersOut.add(MatcherInfo.matchAtNode(m, matcherId, andMatcher.bindings(), varToIdMap, andMatcher.getBinding()));
+        }
+      }
     }
 
-    return matchersOut;
+    return andMatchersOut;
   }
 
 
-  public static List<List<MatcherBuilder>> analyzeExternalLiteral(ExternalLiteralPayload payload) {
+  public static List<MatcherBuilder> analyzeExternalLiteral(ExternalLiteralPayload payload) {
     // Each pattern can be parsed multiple ways (outer List)
-    // Each parse of the pattern can yield multiple matches (inner List)
+    // Each parse of the pattern can yield multiple matchers (inner List)
     // For a pattern to match as least one of its parses must match (OR outer list)
     // For a parse to match, all the generated clang matchers must match (AND inner list)
-    List<List<MatcherBuilder>> res = new ArrayList<>();
-    List<ObjLangASTNode> ASTs = payload.patterns;
+    lang.c.pat.ast.ASTNode cNode = (lang.c.pat.ast.ASTNode) payload.pattern;
+    // Node.debugPrint(System.out);
 
-    L: for (ObjLangASTNode Node : ASTs) {
-      lang.c.pat.ast.ASTNode cNode = (lang.c.pat.ast.ASTNode) Node;
-      // Node.debugPrint(System.out);
+    // One node may produce multiple matchers. For example
+    // <: struct S { int x; } s; :> produces  a varDecl(...)
+    // and a recordDecl(...) match
+    List<MatcherBuilder> matchers = genMatcherBuilder(cNode);
+    Iterator<MatcherBuilder> mit = matchers.iterator();
 
-      // One node may produce multiple matchers. For example
-      // <: struct S { int x; } s; :> produces  a varDecl(...)
-      // and a recordDecl(...) match
-      List<MatcherBuilder> matchers = genMatcherBuilder(cNode);
-      Iterator<MatcherBuilder> mit = matchers.iterator();
-
-      Set<String> usedMetaVarSet = new TreeSet<>();
-      Set<String> rootVariableSet = payload.rootVariable.isPresent() ?
-        Collections.singleton(payload.rootVariable.get()) : Collections.emptySet();
+    Set<String> usedMetaVarSet = new TreeSet<>();
+    Set<String> rootVariableSet = payload.rootVariable.isPresent() ?
+      Collections.singleton(payload.rootVariable.get()) : Collections.emptySet();
 
 
-      while (mit.hasNext()) {
-        MatcherBuilder mb = mit.next();
-        if (!mit.hasNext()) {
-          // ASSUME: if the pattern has a root variable, attach it to last
-          // matcher in the list (convention)
-          // TODO: decide if root variables are needed at all in Clog
-          if (payload.rootVariable.isPresent() &&
-              mb.hasBinding()) {
-            System.out.println("Skipping interpretation of pattern " +
-                               mb.generate() + " due to double binding of root variable.");
-            continue L;
-          }
-          payload.rootVariable.ifPresent(s -> mb.bind(s));
+    while (mit.hasNext()) {
+      MatcherBuilder mb = mit.next();
+      if (!mit.hasNext()) {
+        // ASSUME: if the pattern has a root variable, attach it to last
+        // matcher in the list (convention)
+        // TODO: decide if root variables are needed at all in Clog
+        if (payload.rootVariable.isPresent() &&
+            mb.hasBinding()) {
+          System.out.println("Skipping interpretation of pattern " +
+                             mb.generate() + " due to double binding of root variable.");
+          return Collections.emptyList();
         }
-
-
-        if (SetUtils.intersection(usedMetaVarSet, mb.bindings()).isEmpty()) {
-          usedMetaVarSet.addAll(mb.bindings());
-        } else {
-          throw new RuntimeException("Metavariable used in two distinct clang patterns.");
-        }
+        payload.rootVariable.ifPresent(s -> mb.bind(s));
       }
 
-      if (!SetUtils.union(rootVariableSet, Node.metavariables()).equals(usedMetaVarSet)) {
-        for (MatcherBuilder mb : matchers) {
-          System.err.println(mb.generate());
-        }
-        throw new RuntimeException("Missing metavariables between the Clog and Clang patterns. ");
-      }
 
-      res.add(matchers);
+      if (SetUtils.intersection(usedMetaVarSet, mb.bindings()).isEmpty()) {
+        usedMetaVarSet.addAll(mb.bindings());
+      } else {
+        throw new RuntimeException("Metavariable used in two distinct clang patterns.");
+      }
     }
 
-    return res;
+    if (!SetUtils.union(rootVariableSet, cNode.metavariables()).equals(usedMetaVarSet)) {
+      for (MatcherBuilder mb : matchers) {
+        System.err.println(mb.generate());
+      }
+      throw new RuntimeException("Missing metavariables between the Clog and Clang patterns. ");
+    }
+
+    return matchers;
   }
 
 
@@ -473,15 +462,16 @@ public class ClangEvaluationContext extends EvaluationContext {
       CFG_EXIT,
       CFG_PRED
     }
-    List<ObjLangASTNode> patterns;
+
+    ObjLangASTNode pattern;
     Optional<String> rootVariable;
     Optional<String> subtreeVariable;
     Kind kind;
 
-    public static ExternalLiteralPayload pattern(List<ObjLangASTNode> patterns, Optional<String> rootVariable, Optional<String> subtreeVariable) {
+    public static ExternalLiteralPayload pattern(ObjLangASTNode pattern, Optional<String> rootVariable, Optional<String> subtreeVariable) {
       var ret =  new ExternalLiteralPayload();
       ret.kind = Kind.PATTERN;
-      ret.patterns = patterns;
+      ret.pattern = pattern;
       ret.rootVariable = rootVariable;
       ret.subtreeVariable = subtreeVariable;
       return ret;

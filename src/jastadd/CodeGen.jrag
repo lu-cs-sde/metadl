@@ -181,12 +181,36 @@ aspect CodeGen {
   }
   eq Fact.evalVariables() = Collections.emptyMap();
 
+
+  class CodeGenContext {
+    private int varIdx = 0;
+    private Map<String, Integer> varMap = new HashMap<>();
+
+    public int varIndex(String var) {
+      Integer v = varMap.get(var);
+      if (v != null)
+        return v;
+
+      int ret = varIdx;
+      varMap.put(var, varIdx++);
+      return ret;
+    }
+
+    public int freshIndex() {
+      return varIdx++;
+    }
+
+    public int indexCount() {
+      return varIdx;
+    }
+  }
+
   /**
      Generate a statement sequence for the clause
    */
-  syn java.util.List<Control> Clause.genCode(EvaluationContext ctx, boolean isDelta, Set<FormalPredicate> currentStratum);
+  public abstract java.util.List<Control> Clause.genCode(EvaluationContext ctx, boolean isDelta, Set<FormalPredicate> currentStratum);
 
-  eq Fact.genCode(EvaluationContext ctx, boolean isDelta, Set<FormalPredicate> currentStratum) {
+  @Override public java.util.List<Control> Fact.genCode(EvaluationContext ctx, boolean isDelta, Set<FormalPredicate> currentStratum) {
     if (!isLive())
       return Collections.emptyList();
 
@@ -248,7 +272,7 @@ aspect CodeGen {
     return genCodeBody(ctx, currentCont, usedInHeadVars, Collections.emptySet(), isDelta, deltaRelIndex);
   }
 
-  eq Rule.genCode(EvaluationContext ctx, boolean isDelta, Set<FormalPredicate> currentStratum) {
+  @Override public java.util.List<Control> Rule.genCode(EvaluationContext ctx, boolean isDelta, Set<FormalPredicate> currentStratum) {
     if (!isLive()) {
       System.out.println("Dropping rule: ");
       this.prettyPrint(System.out);

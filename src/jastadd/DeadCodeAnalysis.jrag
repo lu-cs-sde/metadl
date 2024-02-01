@@ -38,6 +38,10 @@ aspect DeadCodeAnalysis {
   syn boolean Clause.isLive() {
     for (CommonLiteral cl : this.getHeadss()) {
       Literal l = (Literal) cl;
+
+      if (l.isEDB() || l.isOUTPUT())
+        return true;
+
       if (l.getPredicate().formalpredicate().isLive() &&
           !l.getPredicate().formalpredicate().isInlined())
         return true;

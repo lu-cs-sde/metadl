@@ -105,7 +105,8 @@ aspect Stratification {
 			// itself, then it's safe to evaluate all its rules only once
 			Clause c = orderedClauses.get(0);
 			// control statements in the current stratum
-			java.util.List<Control> stmts = c.genCode(ctx, false, Collections.emptySet());
+			CodeGenContext cgx = new CodeGenContext();
+			java.util.List<Control> stmts = c.genCode(cgx, ctx, false, Collections.emptySet());
 			return Stratum.single(stmts, c.evalVariables().size(), c.toString());
 		} else {
 			// collect the predicates defined in the current stratum
@@ -120,7 +121,8 @@ aspect Stratification {
 			java.util.List<Pair<Control, Integer>> stmts = new ArrayList<>();
 			String desc = "";
 			for (Clause c : orderedClauses) {
-				c.genCode(ctx, true, definedPreds).stream()
+				CodeGenContext cgx = new CodeGenContext();
+				c.genCode(cgx, ctx, true, definedPreds).stream()
 					.map(s -> Pair.of(s, c.evalVariables().size()))
 					.forEachOrdered(stmts::add);
 				desc += c.toString();

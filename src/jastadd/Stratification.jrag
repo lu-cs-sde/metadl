@@ -268,12 +268,22 @@ aspect Stratification {
 	}
 
 	public void Program.dumpStrata(EvaluationContext ctx) throws IOException {
-		PrintStream f = new PrintStream("strata.dump");
+
+		java.util.List<String> strs = new ArrayList<>();
 
 		for (Stratum s : strata(ctx)) {
-			s.prettyPrint(f);
-			f.println();
+			ByteArrayOutputStream bs = new ByteArrayOutputStream();
+			s.prettyPrint(new PrintStream(bs));
+			strs.add(bs.toString());
 		}
+
+		Collections.sort(strs);
+
+		PrintStream f = new PrintStream("strata.dump");
+		for (String s : strs) {
+			f.println(s);
+		}
+
 		f.close();
 	}
 }

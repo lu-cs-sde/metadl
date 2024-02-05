@@ -47,63 +47,15 @@ aspect CodeGen {
     return false;
   }
 
-  syn boolean Literal.isSelfJoin() {
-    if (hasNot())
-      return false;
-
-    for (Term t : getTermss()) {
-      if (t.isVariable() && ((Variable) t).isSelfJoinVariable())
-        return true;
-    }
-    return false;
-  }
-
   inh int CommonLiteral.positionInRule();
   eq Rule.getBody(int i).positionInRule() = i;
 
-  /**
-     nameForDuplicateVar = fresh name to be used for duplicate variable
-   */
-  inh String Variable.nameForDuplicateVar();
-  eq Literal.getTerms(int i).nameForDuplicateVar() {
-    Variable v = (Variable) getTerms(i);
-    return "j_" + v.getVAR_ID() + i + "_" + positionInRule();
-  }
 
   /**
      Literals for evaluation
    */
   syn nta List<CommonLiteral> CommonLiteral.evalLiteralList();
-  eq Literal.evalLiteralList() {
-    if (!isSelfJoin())
-      return new List<CommonLiteral>().add(this.treeCopy());
-
-    List<CommonLiteral> ret = new List<>();
-    Literal l = new Literal(getPredicate().treeCopy(), new List<>());
-
-    ret.add(l);
-
-    for (Term t : getTermss()) {
-      if (t.isVariable()) {
-        Variable v = (Variable) t;
-        if (v.isSelfJoinVariable()) {
-          // Create a fresh variable
-          Variable v1 = new Variable(v.nameForDuplicateVar());
-          l.addTerms(v1);
-          // Introduce a constraint
-          ret.add(Constructors.EQ(new Variable(v.getVAR_ID()),
-                      new Variable(v.nameForDuplicateVar())));
-        } else {
-          l.addTerms(t.treeCopy());
-        }
-      } else {
-        l.addTerms(t.treeCopy());
-      }
-    }
-
-    return ret;
-  }
-
+  eq Literal.evalLiteralList() = new List<CommonLiteral>().add(this.treeCopy());
   eq Pattern.evalLiteralList() = new List<CommonLiteral>().add(getLiteral().treeCopy());
   eq Constraint.evalLiteralList() = new List<CommonLiteral>().add(this.treeCopy());
 
@@ -160,28 +112,6 @@ aspect CodeGen {
     return schedule;
   }
 
-  /**
-     Assign variable names in the order in which they appear
-     in the schedule. This allows us to keep track of the bound
-     variables by using a single integer instead of a set.
-   */
-  syn lazy Map<String, Integer> Clause.evalVariables();
-  eq Rule.evalVariables() {
-    int i = 0;
-    Map<String, Integer> varMap = new HashMap<>();
-    for (CommonLiteral l : evalSchedule()) {
-      for (String v : l.variables()) {
-        if (!varMap.containsKey(v)) {
-          varMap.put(v, i);
-          i++;
-        }
-      }
-    }
-    return varMap;
-  }
-  eq Fact.evalVariables() = Collections.emptyMap();
-
-
   class CodeGenContext {
     private int varIdx = 0;
     private Map<String, Integer> varMap = new HashMap<>();
@@ -194,6 +124,10 @@ aspect CodeGen {
       int ret = varIdx;
       varMap.put(var, varIdx++);
       return ret;
+    }
+
+    public int varIndex(Variable v) {
+      return varIndex(v.getVAR_ID());
     }
 
     public int freshIndex() {
@@ -307,10 +241,6 @@ aspect CodeGen {
     throw new RuntimeException("Can't generate code for literal " + toString());
   }
 
-  syn int Variable.varId() {
-    return literal().clause().evalVariables().get(getVAR_ID());
-  }
-
   /**
      constVal = value of constant, internalized in the case of predicate symbols
      and strings
@@ -332,12 +262,14 @@ aspect CodeGen {
     FormalPredicate fp = getPredicate().formalpredicate();
     java.util.List<Control> seq = new ArrayList<>();
 
+
     for (Clause c : fp.definedIn()) {
       for (CommonLiteral cl : c.getHeadss()) {
         Literal l = (Literal) cl;
         if (l.getPredicate().formalpredicate() != fp)
           continue;
 
+        CodeGenContext innerCgx = new CodeGenContext();
         Set<String> initialBoundVars = new HashSet<>();
         Set<String> usedInHeadVars = new HashSet<>();
         boolean generateNop = false;
@@ -357,11 +289,11 @@ aspect CodeGen {
 
               if (boundVars.contains(outerVar.getVAR_ID())) {
                 // variable bound in the outer clause, copy it in
-                copyIn.add(Pair.of(outerVar.varId(), innerVar.varId()));
+                copyIn.add(Pair.of(cgx.varIndex(outerVar), innerCgx.varIndex(innerVar)));
                 initialBoundVars.add(innerVar.getVAR_ID());
               } else if (usedVars.contains(outerVar.getVAR_ID())) {
                 // variable used in the outer clause, copy it out
-                copyOut.add(Pair.of(outerVar.varId(), innerVar.varId()));
+                copyOut.add(Pair.of(cgx.varIndex(outerVar), innerCgx.varIndex(innerVar)));
                 usedInHeadVars.add(innerVar.getVAR_ID());
               } else {
                 // TODO: Same as for wildcards.
@@ -372,10 +304,10 @@ aspect CodeGen {
 
               if (boundVars.contains(outerVar.getVAR_ID())) {
                 // variable bound in the outer clause, test it against the constant
-                constTest.add(Pair.of(outerVar.varId(), innerConstVal));
+                constTest.add(Pair.of(cgx.varIndex(outerVar), innerConstVal));
               } else if (usedVars.contains(outerVar.getVAR_ID())) {
                 // variable used in the outer clause
-                innerConsts.add(Pair.of(outerVar.varId(), innerConstVal));
+                innerConsts.add(Pair.of(cgx.varIndex(outerVar), innerConstVal));
               } else {
                 // Do nothing. Same as a wildcard.
               }
@@ -386,7 +318,7 @@ aspect CodeGen {
             if (l.getTerms(i) instanceof Variable) {
               // Constant - Variable
               Variable innerVar = (Variable) l.getTerms(i);
-              outerConsts.add(Pair.of(innerVar.varId(), outerConstVal));
+              outerConsts.add(Pair.of(innerCgx.varIndex(innerVar), outerConstVal));
               initialBoundVars.add(innerVar.getVAR_ID());
             } else if (l.getTerms(i) instanceof Constant) {
               // Constant - Constant
@@ -404,7 +336,7 @@ aspect CodeGen {
         }
 
         if (!generateNop) {
-          int tupleSize = c.evalVariables().size();
+          int tupleSize = innerCgx.indexCount();
           Control inlineEnd;
 
           if (isPositive) {
@@ -415,7 +347,7 @@ aspect CodeGen {
 
           Control inlinedBody;
           if (c instanceof Rule) {
-            inlinedBody = ((Rule) c).genCodeBody(cgx, ctx, inlineEnd, usedInHeadVars, initialBoundVars, false, -1);
+            inlinedBody = ((Rule) c).genCodeBody(innerCgx, ctx, inlineEnd, usedInHeadVars, initialBoundVars, false, -1);
           } else {
             // pass-through for facts
             inlinedBody = inlineEnd;
@@ -439,12 +371,13 @@ aspect CodeGen {
     java.util.List<Pair<Integer, Integer>> assign = new ArrayList<>();
     java.util.List<Pair<Integer, Long>> consts = new ArrayList<>();
     java.util.List<Pair<Integer, Integer>> test = new ArrayList<>();
+    java.util.List<Pair<Integer, Integer>> selfJoins = new ArrayList<>();
 
     if (isDef()) {
       // literal in the head
       for (int i = 0; i < getNumTerms(); ++i) {
         if (getTerms(i).isVariable()) {
-          assign.add(Pair.of(i, ((Variable) getTerms(i)).varId()));
+          assign.add(Pair.of(i, cgx.varIndex((Variable) getTerms(i))));
         } else {
           assert getTerms(i).isConstant();
           consts.add(Pair.of(i, ((Constant) getTerms(i)).constVal(ctx)));
@@ -457,14 +390,21 @@ aspect CodeGen {
       for (int i = 0; i < getNumTerms(); ++i) {
         if (getTerms(i).isVariable()) {
           Variable v = (Variable) getTerms(i);
-          varToId.put(v.getVAR_ID(), v.varId());
+          varToId.put(v.getVAR_ID(), cgx.varIndex(v));
 
           if (boundVars.contains(v.getVAR_ID())) {
             // the variable  is bound by previous literals, so use its value for lookup
-            test.add(Pair.of(i, v.varId()));
+            test.add(Pair.of(i, cgx.varIndex(v)));
           } else if (usedVars.contains(v.getVAR_ID())) {
-            // the variable is free, and subsequently refered to, assign it a value
-            assign.add(Pair.of(i, v.varId()));
+            if (v.isSelfJoinVariable()) {
+              // the variable is bound earlier in this literal, the second occurence causes a self-join
+              int fresh = cgx.freshIndex();
+              selfJoins.add(Pair.of(cgx.varIndex(v), fresh));
+              assign.add(Pair.of(i, fresh));
+            } else {
+              // the variable is free, and subsequently refered to, assign it a value
+              assign.add(Pair.of(i, cgx.varIndex(v)));
+            }
           }
         } else if (getTerms(i).isConstant()) {
           // ground terms
@@ -490,6 +430,11 @@ aspect CodeGen {
           return ClangEvaluationContext.genCodeExternalLiteral((ExternalLiteral) this, varToId, boundVars,
                                                                (ClangEvaluationContext) ctx, cont);
         } else {
+          // generate any equality tests due to self-joins
+          for (Pair<Integer, Integer> selfJoin : selfJoins) {
+            cont = Control.eq(cont, Operation.component(selfJoin.getLeft()), Operation.component(selfJoin.getRight()));
+          }
+          // generate the actual lookup
           return Control.forAll(ctx, rel, test, consts, assign, cont);
         }
       }
@@ -510,7 +455,7 @@ aspect CodeGen {
 
     for (int i = 0; i < getNumTerms(); ++i) {
       if (getTerms(i).isVariable()) {
-        test.add(Pair.of(i, ((Variable) getTerms(i)).varId()));
+        test.add(Pair.of(i, cgx.varIndex((Variable) getTerms(i))));
         // all variables in a negative literal are bound
         boundVars.add(((Variable) getTerms(i)).getVAR_ID());
       } else if (getTerms(i).isConstant()) {
@@ -605,7 +550,7 @@ aspect CodeGen {
       Operation r = getExpr(1).genCode(cgx, ctx);
       return Control.eq(cont, l, r);
     } else {
-      return Control.bind(cont, dst.varId(), getExpr(1).genCode(cgx, ctx));
+      return Control.bind(cont, cgx.varIndex(dst), getExpr(1).genCode(cgx, ctx));
     }
   }
 
@@ -686,7 +631,7 @@ aspect CodeGen {
     throw new RuntimeException("Functor not implemented: " + getFunc().getFUNC_ID());
   }
   @Override public Operation Variable.genCode(CodeGenContext cgx, EvaluationContext ctx) {
-    return Operation.component(varId());
+    return Operation.component(cgx.varIndex(this));
   }
   @Override public Operation Constant.genCode(CodeGenContext cgx, EvaluationContext ctx) {
     return Operation.constant(constVal(ctx));

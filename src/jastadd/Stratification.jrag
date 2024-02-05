@@ -107,7 +107,7 @@ aspect Stratification {
 			// control statements in the current stratum
 			CodeGenContext cgx = new CodeGenContext();
 			java.util.List<Control> stmts = c.genCode(cgx, ctx, false, Collections.emptySet());
-			return Stratum.single(stmts, c.evalVariables().size(), c.toString());
+			return Stratum.single(stmts, cgx.indexCount(), c.toString());
 		} else {
 			// collect the predicates defined in the current stratum
 			Set<FormalPredicate> definedPreds = new LinkedHashSet<>();
@@ -123,7 +123,7 @@ aspect Stratification {
 			for (Clause c : orderedClauses) {
 				CodeGenContext cgx = new CodeGenContext();
 				c.genCode(cgx, ctx, true, definedPreds).stream()
-					.map(s -> Pair.of(s, c.evalVariables().size()))
+					.map(s -> Pair.of(s, cgx.indexCount()))
 					.forEachOrdered(stmts::add);
 				desc += c.toString();
 			}

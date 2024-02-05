@@ -63,7 +63,7 @@ aspect Stratification {
 	syn Set<Clause> Clause.dependsOn();
 	eq Fact.dependsOn() = Collections.emptySet();
 	eq Rule.dependsOn() {
-		Set<Clause> deps = new HashSet<>();
+		Set<Clause> deps = new LinkedHashSet<>();
 		for (CommonLiteral b : getBodys()) {
 			for (CommonLiteral t : b.evalLiteralList()) {
 				if (t instanceof Literal) {

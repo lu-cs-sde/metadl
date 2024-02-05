@@ -254,7 +254,7 @@ class InlineEnd implements Control {
     String s = Util.indent(indent) + "INLINE END ";
 
     for (Pair<Integer, Integer> t : copy) {
-      s += String.format("t[%d] := inner_t[%d] ", t.getRight(), t.getLeft());
+      s += String.format("t[%d] := inner_t[%d] ", t.getLeft(), t.getRight());
     }
 
     return s + "\n" + cont.prettyPrint(indent + 1);

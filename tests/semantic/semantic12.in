@@ -1,0 +1,7 @@
+Arc(1, 2).
+Arc(2, 3).
+
+Path(x, y) :- Arc(x, y).
+Path(x, y) :- inline Arc(x, t), Path(t, y).
+
+Circular(x) :- inline Path(x, y), inline Path(y, x).

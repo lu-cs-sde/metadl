@@ -113,7 +113,7 @@ aspect CodeGen {
     return schedule;
   }
 
-  class CodeGenContext {
+  public class CodeGenContext {
     private int varIdx = 0;
     private Map<String, Integer> varMap = new HashMap<>();
 
@@ -427,14 +427,14 @@ aspect CodeGen {
 
       if (assign.isEmpty()) {
         if (isExternal()) {
-          return ClangEvaluationContext.genCodeExternalLiteral((ExternalLiteral) this, varToId, boundVars,
+          return ClangEvaluationContext.genCodeExternalLiteral(cgx, (ExternalLiteral) this, boundVars,
                                                                (ClangEvaluationContext) ctx, cont);
         } else {
           return Control.ifExists(rel, test, consts, cont);
         }
       } else {
         if (isExternal()) {
-          return ClangEvaluationContext.genCodeExternalLiteral((ExternalLiteral) this, varToId, boundVars,
+          return ClangEvaluationContext.genCodeExternalLiteral(cgx, (ExternalLiteral) this, boundVars,
                                                                (ClangEvaluationContext) ctx, cont);
         } else {
           // generate any equality tests due to self-joins

@@ -1,30 +1,27 @@
 package clang;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.function.LongBinaryOperator;
 import java.util.function.LongUnaryOperator;
-import java.util.function.Function;
-
 
 import org.apache.commons.collections4.SetUtils;
 
-import clang.AST.UnaryOperator;
 import clang.swig.ClangClog;
 import clang.swig.ClangClogBuilder;
 import clang.swig.VectorString;
 import clang.swig.VectorVectorLong;
-import clang.swig.VectorLong;
 import eval.Control;
 import eval.EvaluationContext;
 import eval.Operation;
 import eval.Tuple;
+import lang.ast.CodeGenContext;
 import lang.ast.ExternalLiteral;
 import lang.ast.Variable;
 import lang.cons.ObjLangASTNode;
@@ -75,14 +72,14 @@ public class ClangEvaluationContext extends EvaluationContext {
     return ret;
   }
 
-  public static Control genCodeExternalLiteral(ExternalLiteral l, Map<String, Integer> varToIdMap, Set<String> boundVars,
+  public static Control genCodeExternalLiteral(CodeGenContext cgx, ExternalLiteral l, Set<String> boundVars,
                                                ClangEvaluationContext clangCtx, Control cont) {
 
     ExternalLiteralPayload payload = (ExternalLiteralPayload) l.getExternalPayload();
 
     switch (payload.kind) {
     case PATTERN: {
-      List<MatcherInfo> andMatchers = clangCtx.registerExternalLiteral(payload, varToIdMap, boundVars);
+      List<MatcherInfo> andMatchers = clangCtx.registerExternalLiteral(cgx, payload, boundVars);
 
       if (andMatchers.isEmpty())
         return Control.nop();
@@ -98,8 +95,8 @@ public class ClangEvaluationContext extends EvaluationContext {
       Variable nVar = (Variable) l.getTerms(0);
       Variable sVar = (Variable) l.getTerms(1);
 
-      int nVarIdx = varToIdMap.get(nVar.getVAR_ID());
-      int sVarIdx = varToIdMap.get(sVar.getVAR_ID());
+      int nVarIdx = cgx.varIndex(nVar);
+      int sVarIdx = cgx.varIndex(sVar);
 
       return new Control() {
         @Override public void eval(Tuple t) {
@@ -124,8 +121,8 @@ public class ClangEvaluationContext extends EvaluationContext {
       Variable nVar = (Variable) l.getTerms(0);
       Variable sVar = (Variable) l.getTerms(1);
 
-      int nVarIdx = varToIdMap.get(nVar.getVAR_ID());
-      int sVarIdx = varToIdMap.get(sVar.getVAR_ID());
+      int nVarIdx = cgx.varIndex(nVar);
+      int sVarIdx = cgx.varIndex(sVar);
 
       return new Control() {
         @Override public void eval(Tuple t) {
@@ -152,7 +149,7 @@ public class ClangEvaluationContext extends EvaluationContext {
     }
   }
 
-  private List<MatcherInfo> registerExternalLiteral(ExternalLiteralPayload payload, Map<String, Integer> varToIdMap, Set<String> boundVars) {
+  private List<MatcherInfo> registerExternalLiteral(CodeGenContext cgx, ExternalLiteralPayload payload, Set<String> boundVars) {
     List<MatcherBuilder> matchers = analyzeExternalLiteral(payload);
     List<MatcherInfo> andMatchersOut = new ArrayList<>();
 
@@ -172,6 +169,17 @@ public class ClangEvaluationContext extends EvaluationContext {
         throw new RuntimeException();
       } else {
         System.err.println("[" + matcherId + "]");
+      }
+
+
+      Map<String, Integer> varToIdMap = new HashMap<>();
+
+      for (String binding : andMatcher.bindings()) {
+        varToIdMap.put(binding, cgx.varIndex(binding));
+      }
+
+      if (payload.subtreeVariable.isPresent()) {
+        varToIdMap.put(payload.subtreeVariable.get(), cgx.varIndex(payload.subtreeVariable.get()));
       }
 
       if (needsGlobalMatcher) {

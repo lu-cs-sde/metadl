@@ -8,6 +8,7 @@ import eval.Relation2;
 import eval.EvaluationContext;
 import eval.Operation;
 import eval.Tuple;
+import eval.Sequence;
 import clang.ExternalIfExists;
 import java.util.SortedSet;
 import java.util.SortedMap;
@@ -336,22 +337,28 @@ aspect CodeGen {
         }
 
         if (!generateNop) {
-          int tupleSize = innerCgx.indexCount();
-          Control inlineEnd;
+          // this is an empty sequence so far
+          Sequence dummyCont = Control.sequence(Collections.emptyList());
 
-          if (isPositive) {
-            inlineEnd = Control.inlineEnd(copyOut, innerConsts, tupleSize, cont);
-          } else {
-            inlineEnd = Control.negInlineEnd();
-          }
-
+          // generate the inline body; after this we will know the tuple size
           Control inlinedBody;
           if (c instanceof Rule) {
-            inlinedBody = ((Rule) c).genCodeBody(innerCgx, ctx, inlineEnd, usedInHeadVars, initialBoundVars, false, -1);
+            inlinedBody = ((Rule) c).genCodeBody(innerCgx, ctx, dummyCont, usedInHeadVars, initialBoundVars, false, -1);
           } else {
             // pass-through for facts
-            inlinedBody = inlineEnd;
+            inlinedBody = dummyCont;
           }
+
+          // now we know the tuple size
+          int tupleSize = innerCgx.indexCount();
+          Control inlineEnd;
+          if (isPositive) {
+            dummyCont.addCont(Control.inlineEnd(copyOut, innerConsts, tupleSize, cont));
+          } else {
+            dummyCont.addCont(Control.negInlineEnd());
+          }
+
+          // inline begin is the last bit
           Control inlineBegin = Control.inlineBegin(copyIn, outerConsts, constTest, tupleSize, inlinedBody);
           seq.add(inlineBegin);
         }

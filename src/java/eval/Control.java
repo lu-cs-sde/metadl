@@ -52,7 +52,7 @@ public interface Control {
     return new Insert(rel, assign, consts, cont);
   }
 
-  public static Control sequence(List<Control> conts) {
+  public static Sequence sequence(List<Control> conts) {
     return new Sequence(conts);
   }
 
@@ -255,6 +255,10 @@ class InlineEnd implements Control {
 
     for (Pair<Integer, Integer> t : copy) {
       s += String.format("t[%d] := inner_t[%d] ", t.getLeft(), t.getRight());
+    }
+
+    for (Pair<Integer, Long> c : innerConsts) {
+      s += String.format("t[%d] := %d ", c.getLeft(), c.getRight());
     }
 
     return s + "\n" + cont.prettyPrint(indent + 1);
@@ -610,33 +614,6 @@ class Insert implements Control {
 
     s += ") INTO " + rel.getName() + "\n" + cont.prettyPrint(indent + 1);
 
-    return s;
-  }
-
-  @Override public String toString() {
-    return prettyPrint(0);
-  }
-}
-
-class Sequence implements Control {
-  private List<Control> conts;
-
-  Sequence(List<Control> conts) {
-    this.conts = conts;
-  }
-
-  @Override public void eval(Tuple t) {
-    for (Control c : conts) {
-      // Tuple tt = t.clone();
-      c.eval(t);
-    }
-  }
-
-  @Override public String prettyPrint(int indent) {
-    String s  = Util.indent(indent) + "SEQUENCE\n";
-    for (Control c : conts) {
-      s += c.prettyPrint(indent + 1);
-    }
     return s;
   }
 

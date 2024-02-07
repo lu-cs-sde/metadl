@@ -46,8 +46,12 @@ public class ExternalLocalMatcher implements Control {
   private final int ID;
 
   @Override public String prettyPrint(int indent) {
-    String s = Control.Util.indent(indent) + String.format("[%x] EXTERNAL FOR t IN %s WHERE ", ID, matcher.matcher);
-
+    String s = Control.Util.indent(indent) + String.format("[%x] EXTERNAL FOR t IN %s:%s AT t[%d] WHERE ", ID, matcher.kind.name(), matcher.matcher, matcher.atNodeIdx);
+    for (int i = 0; i < matcher.resultMap.length; ++i) {
+      if (matcher.resultMap[i] >= 0) {
+        s += String.format("t[%d] := match[%d] ", matcher.resultMap[i], i);
+      }
+    }
     return s + "\n" + cont.prettyPrint(indent + 1);
   }
 }

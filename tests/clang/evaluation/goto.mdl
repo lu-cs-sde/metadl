@@ -1,13 +1,11 @@
 FunctionWithGoto($func, g, l) :-
                     <: $type $func(..) { .. } :>,
-                    @$func g <: goto $label1; :>,
-                    @$func l <: $label2 : $substmt :>,
-                    $label1 == $label2.
+                    @$func g <: goto $label; :>,
+                    @$func l <: $label : $substmt :>.
 
 BackwardGoto(g, l) :-
-                       g <: goto $label1; :>,
-                       l <: $label2 : $substmt :>,
-                       $label1 == $label2,
+                       g <: goto $label; :>,
+                       l <: $label : $substmt :>,
                        c_src_line_start(g) > c_src_line_start(l).
 
 LabeledReturn(l) :-

@@ -4,6 +4,7 @@ import java.util.Map;
 import java.util.SortedSet;
 
 import eval.Control;
+import eval.Operation;
 
 public class MatcherInfo {
   public long matcherId;
@@ -11,11 +12,13 @@ public class MatcherInfo {
   public String matcher;
   public int atNodeIdx;
   public int fromNodeIdx;
+  public int eqLeft, eqRight;
 
   public static enum Kind {
     GLOBAL,
     AT,
-    FROM
+    FROM,
+    EQ
   }
 
   Kind kind;
@@ -63,6 +66,14 @@ public class MatcherInfo {
     return r;
   }
 
+  public static MatcherInfo eq(int left, int right) {
+    var r = new MatcherInfo();
+    r.eqLeft = left;
+    r.eqRight = right;
+    r.kind = Kind.EQ;
+    return r;
+  }
+
 
   public Control genControl(ClangEvaluationContext ctx, Control cont) {
     switch (this.kind) {
@@ -72,6 +83,8 @@ public class MatcherInfo {
       return new ExternalLocalMatcher(ctx, this, cont);
     case FROM:
       return new ExternalSubtreeMatcher(ctx, this, cont);
+    case EQ:
+      return Control.eq(cont, Operation.component(eqLeft), Operation.component(eqRight));
     }
     return null;
   }

@@ -8,10 +8,12 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.SortedSet;
 import java.util.function.LongBinaryOperator;
 import java.util.function.LongUnaryOperator;
 
 import org.apache.commons.collections4.SetUtils;
+import org.apache.commons.lang3.tuple.Pair;
 
 import clang.swig.ClangClog;
 import clang.swig.ClangClogBuilder;
@@ -154,28 +156,48 @@ public class ClangEvaluationContext extends EvaluationContext {
     List<MatcherInfo> andMatchersOut = new ArrayList<>();
 
     for (MatcherBuilder andMatcher : matchers) {
-      String m = andMatcher.generate();
+      Map<String, Integer> varToIdMap = new HashMap<>();
 
       boolean needsGlobalMatcher = !(payload.subtreeVariable.isPresent() ||
-                                     andMatcher.hasBinding() && boundVars.contains(andMatcher.getBinding()));
+          andMatcher.hasBinding() && boundVars.contains(andMatcher.getBinding()));
 
-      System.err.print("Registered '" + (needsGlobalMatcher ? "global" :
-                                         (payload.subtreeVariable.isPresent() ? "fromNode" : "atNode")) + "' matcher " + m);
 
-      long matcherId = clog.registerMatcher(m, needsGlobalMatcher);
-
-      if (matcherId < 0) {
-        System.err.println("Failed to register matcher " + m);
-        throw new RuntimeException();
-      } else {
-        System.err.println("[" + matcherId + "]");
+      // iterate through all the variables that occur inside the matcher and make
+      // sure they are not bound
+      for (String binding : andMatcher.bindings()) {
+        if (!varToIdMap.containsKey(binding)) {
+          int varIdx;
+          if (boundVars.contains(binding) &&
+              !(andMatcher.hasBinding() && andMatcher.getBinding().equals(binding))) {
+            // this variable is bound by a previous literal, but it is not the root of the matcher,
+            // rename it
+            varIdx = cgx.freshIndex();
+            // and add an equality constraint
+            andMatchersOut.add(MatcherInfo.eq(varIdx, cgx.varIndex(binding)));
+          } else {
+            varIdx = cgx.varIndex(binding);
+          }
+          varToIdMap.put(binding, varIdx);
+        }
       }
 
 
-      Map<String, Integer> varToIdMap = new HashMap<>();
+      String m = andMatcher.generate();
 
-      for (String binding : andMatcher.bindings()) {
-        varToIdMap.put(binding, cgx.varIndex(binding));
+
+      long matcherId = -1;
+
+      if (clog != null) {
+        System.err.print("Registered '" + (needsGlobalMatcher ? "global" :
+                                           (payload.subtreeVariable.isPresent() ? "fromNode" : "atNode")) + "' matcher " + m);
+
+        matcherId = clog.registerMatcher(m, needsGlobalMatcher);
+        if (matcherId < 0) {
+          System.err.println("Failed to register matcher " + m);
+          throw new RuntimeException();
+        } else {
+          System.err.println("[" + matcherId + "]");
+        }
       }
 
       if (payload.subtreeVariable.isPresent()) {
@@ -202,10 +224,8 @@ public class ClangEvaluationContext extends EvaluationContext {
 
 
   public static List<MatcherBuilder> analyzeExternalLiteral(ExternalLiteralPayload payload) {
-    // Each pattern can be parsed multiple ways (outer List)
     // Each parse of the pattern can yield multiple matchers (inner List)
-    // For a pattern to match as least one of its parses must match (OR outer list)
-    // For a parse to match, all the generated clang matchers must match (AND inner list)
+    // For a pattern to match, all the generated clang matchers must match (AND inner list)
     lang.c.pat.ast.ASTNode cNode = (lang.c.pat.ast.ASTNode) payload.pattern;
     // Node.debugPrint(System.out);
 

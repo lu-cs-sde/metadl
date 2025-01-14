@@ -159,7 +159,7 @@ void makeConcatenateTask(String name, String outFile, FileCollection sources) {
 	    file(file(outFile).getParent()).mkdirs()
 	}
 	doLast {
-	    (new File(outFile)).text = sources.collect{it.getText()}.join('\n')
+	    file(outFile).text = sources.collect{it.getText()}.join('\n')
 	}
     }
 }
